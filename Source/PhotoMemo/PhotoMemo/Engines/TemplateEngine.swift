@@ -1,23 +1,30 @@
 import Foundation
 
-struct TemplateEngine {
+final class TemplateEngine {
 
-    static func render(
-        template: String,
-        values: [String:String]
-    ) -> String {
+    func classicWhite() -> Template {
 
-        var result = template
-
-        for (key,value) in values {
-
-            result = result.replacingOccurrences(
-                of: "{{\(key)}}",
-                with: value
-            )
-        }
-
-        return result
+        Template(
+            name: "Classic White",
+            areas: [
+                .areaA,
+                .areaB,
+                .areaC,
+                .areaD,
+                .badgeSlot
+            ]
+        )
     }
 
+    func defaultTemplate() -> Template {
+        classicWhite()
+    }
+
+    func contains(
+        _ area: TemplateArea,
+        in template: Template
+    ) -> Bool {
+
+        template.areas.contains(area)
+    }
 }

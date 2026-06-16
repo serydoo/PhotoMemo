@@ -1,8 +1,28 @@
 import Foundation
 
-struct Anchor: Identifiable, Codable {
+struct Anchor: Identifiable, Codable, Hashable {
+
     let id: UUID
-    var name: String
-    var date: Date
+
     var type: AnchorType
+
+    var title: String
+
+    var date: Date
+
+    var isCountdown: Bool
+
+    init(
+        id: UUID = UUID(),
+        type: AnchorType,
+        title: String,
+        date: Date,
+        isCountdown: Bool = false
+    ) {
+        self.id = id
+        self.type = type
+        self.title = title
+        self.date = date
+        self.isCountdown = isCountdown
+    }
 }

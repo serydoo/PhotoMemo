@@ -1,13 +1,20 @@
 import Foundation
 
-struct Template {
+struct Template: Identifiable, Codable, Hashable {
+
+    let id: UUID
 
     var name: String
 
-    var areaA: String
-    var areaB: String
-    var areaC: String
-    var areaD: String
+    var areas: [TemplateArea]
 
-    var badgeEnabled: Bool
+    init(
+        id: UUID = UUID(),
+        name: String,
+        areas: [TemplateArea]
+    ) {
+        self.id = id
+        self.name = name
+        self.areas = areas
+    }
 }
