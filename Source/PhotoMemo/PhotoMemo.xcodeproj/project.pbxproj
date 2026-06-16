@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		B38991532FE14FE5003C41E2 /* PhotoMemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3DBA4F42FE1581100945016 /* PhotoMemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		B38991552FE14FE5003C41E2 /* PhotoMemo */ = {
+		B3DBA4F62FE1581100945016 /* PhotoMemo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PhotoMemo;
 			sourceTree = "<group>";
@@ -19,7 +19,7 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		B38991502FE14FE5003C41E2 /* Frameworks */ = {
+		B3DBA4F12FE1581100945016 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -27,18 +27,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		B389914A2FE14FE5003C41E2 = {
+		B3DBA4EB2FE1581100945016 = {
 			isa = PBXGroup;
 			children = (
-				B38991552FE14FE5003C41E2 /* PhotoMemo */,
-				B38991542FE14FE5003C41E2 /* Products */,
+				B3DBA4F62FE1581100945016 /* PhotoMemo */,
+				B3DBA4F52FE1581100945016 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		B38991542FE14FE5003C41E2 /* Products */ = {
+		B3DBA4F52FE1581100945016 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B38991532FE14FE5003C41E2 /* PhotoMemo.app */,
+				B3DBA4F42FE1581100945016 /* PhotoMemo.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -46,60 +46,60 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B38991522FE14FE5003C41E2 /* PhotoMemo */ = {
+		B3DBA4F32FE1581100945016 /* PhotoMemo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B389915E2FE14FE8003C41E2 /* Build configuration list for PBXNativeTarget "PhotoMemo" */;
+			buildConfigurationList = B3DBA4FF2FE1581300945016 /* Build configuration list for PBXNativeTarget "PhotoMemo" */;
 			buildPhases = (
-				B389914F2FE14FE5003C41E2 /* Sources */,
-				B38991502FE14FE5003C41E2 /* Frameworks */,
-				B38991512FE14FE5003C41E2 /* Resources */,
+				B3DBA4F02FE1581100945016 /* Sources */,
+				B3DBA4F12FE1581100945016 /* Frameworks */,
+				B3DBA4F22FE1581100945016 /* Resources */,
 			);
 			buildRules = (
 			);
 			fileSystemSynchronizedGroups = (
-				B38991552FE14FE5003C41E2 /* PhotoMemo */,
+				B3DBA4F62FE1581100945016 /* PhotoMemo */,
 			);
 			name = PhotoMemo;
 			productName = PhotoMemo;
-			productReference = B38991532FE14FE5003C41E2 /* PhotoMemo.app */;
+			productReference = B3DBA4F42FE1581100945016 /* PhotoMemo.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		B389914B2FE14FE5003C41E2 /* Project object */ = {
+		B3DBA4EC2FE1581100945016 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
-					B38991522FE14FE5003C41E2 = {
+					B3DBA4F32FE1581100945016 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
-			buildConfigurationList = B389914E2FE14FE5003C41E2 /* Build configuration list for PBXProject "PhotoMemo" */;
+			buildConfigurationList = B3DBA4EF2FE1581100945016 /* Build configuration list for PBXProject "PhotoMemo" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = B389914A2FE14FE5003C41E2;
+			mainGroup = B3DBA4EB2FE1581100945016;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = B38991542FE14FE5003C41E2 /* Products */;
+			productRefGroup = B3DBA4F52FE1581100945016 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B38991522FE14FE5003C41E2 /* PhotoMemo */,
+				B3DBA4F32FE1581100945016 /* PhotoMemo */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		B38991512FE14FE5003C41E2 /* Resources */ = {
+		B3DBA4F22FE1581100945016 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -107,7 +107,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		B389914F2FE14FE5003C41E2 /* Sources */ = {
+		B3DBA4F02FE1581100945016 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
@@ -115,7 +115,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		B389915C2FE14FE8003C41E2 /* Debug configuration for PBXProject "PhotoMemo" */ = {
+		B3DBA4FD2FE1581300945016 /* Debug configuration for PBXProject "PhotoMemo" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -179,7 +179,7 @@
 			};
 			name = Debug;
 		};
-		B389915D2FE14FE8003C41E2 /* Release configuration for PBXProject "PhotoMemo" */ = {
+		B3DBA4FE2FE1581300945016 /* Release configuration for PBXProject "PhotoMemo" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -235,7 +235,7 @@
 			};
 			name = Release;
 		};
-		B389915F2FE14FE8003C41E2 /* Debug configuration for PBXNativeTarget "PhotoMemo" */ = {
+		B3DBA5002FE1581300945016 /* Debug configuration for PBXNativeTarget "PhotoMemo" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -267,7 +267,7 @@
 			};
 			name = Debug;
 		};
-		B38991602FE14FE8003C41E2 /* Release configuration for PBXNativeTarget "PhotoMemo" */ = {
+		B3DBA5012FE1581300945016 /* Release configuration for PBXNativeTarget "PhotoMemo" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -302,24 +302,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B389914E2FE14FE5003C41E2 /* Build configuration list for PBXProject "PhotoMemo" */ = {
+		B3DBA4EF2FE1581100945016 /* Build configuration list for PBXProject "PhotoMemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B389915C2FE14FE8003C41E2 /* Debug configuration for PBXProject "PhotoMemo" */,
-				B389915D2FE14FE8003C41E2 /* Release configuration for PBXProject "PhotoMemo" */,
+				B3DBA4FD2FE1581300945016 /* Debug configuration for PBXProject "PhotoMemo" */,
+				B3DBA4FE2FE1581300945016 /* Release configuration for PBXProject "PhotoMemo" */,
 			);
 			defaultConfigurationName = Release;
 		};
-		B389915E2FE14FE8003C41E2 /* Build configuration list for PBXNativeTarget "PhotoMemo" */ = {
+		B3DBA4FF2FE1581300945016 /* Build configuration list for PBXNativeTarget "PhotoMemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B389915F2FE14FE8003C41E2 /* Debug configuration for PBXNativeTarget "PhotoMemo" */,
-				B38991602FE14FE8003C41E2 /* Release configuration for PBXNativeTarget "PhotoMemo" */,
+				B3DBA5002FE1581300945016 /* Debug configuration for PBXNativeTarget "PhotoMemo" */,
+				B3DBA5012FE1581300945016 /* Release configuration for PBXNativeTarget "PhotoMemo" */,
 			);
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = B389914B2FE14FE5003C41E2 /* Project object */;
+	rootObject = B3DBA4EC2FE1581100945016 /* Project object */;
 	validationLevel = 1;
 }
