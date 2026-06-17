@@ -7,27 +7,35 @@ final class TemplateEngine {
         .classicWhite
     }
 
-    func leftItems(
+    func leftTopItems(
         from template: Template
     ) -> [TemplateItem] {
 
-        template.leftArea.items
+        template.leftTopArea.items
             .filter(\.isEnabled)
     }
 
-    func centerItems(
+    func leftBottomItems(
         from template: Template
     ) -> [TemplateItem] {
 
-        template.centerArea.items
+        template.leftBottomArea.items
             .filter(\.isEnabled)
     }
 
-    func rightItems(
+    func rightTopItems(
         from template: Template
     ) -> [TemplateItem] {
 
-        template.rightArea.items
+        template.rightTopArea.items
+            .filter(\.isEnabled)
+    }
+
+    func rightBottomItems(
+        from template: Template
+    ) -> [TemplateItem] {
+
+        template.rightBottomArea.items
             .filter(\.isEnabled)
     }
 
@@ -43,11 +51,13 @@ final class TemplateEngine {
         from template: Template
     ) -> [TemplateItem] {
 
-        leftItems(from: template)
+        leftTopItems(from: template)
         +
-        centerItems(from: template)
+        leftBottomItems(from: template)
         +
-        rightItems(from: template)
+        rightTopItems(from: template)
+        +
+        rightBottomItems(from: template)
         +
         badgeItems(from: template)
     }

@@ -26,6 +26,14 @@ final class SettingsService: ObservableObject {
         loadTemplate()
 
         loadBadge()
+
+        if selectedTemplate == nil {
+            selectedTemplate = .classicWhite
+        }
+
+        if selectedBadge == nil {
+            selectedBadge = Badge.none
+        }
     }
 
     func saveAnchors() {
@@ -43,6 +51,9 @@ final class SettingsService: ObservableObject {
     func saveTemplate() {
 
         guard let selectedTemplate else {
+            UserDefaults.standard.removeObject(
+                forKey: Keys.selectedTemplate
+            )
             return
         }
 
@@ -59,6 +70,9 @@ final class SettingsService: ObservableObject {
     func saveBadge() {
 
         guard let selectedBadge else {
+            UserDefaults.standard.removeObject(
+                forKey: Keys.selectedBadge
+            )
             return
         }
 
@@ -70,6 +84,13 @@ final class SettingsService: ObservableObject {
             data,
             forKey: Keys.selectedBadge
         )
+    }
+
+    func saveAll() {
+
+        saveAnchors()
+        saveTemplate()
+        saveBadge()
     }
 
     private func loadAnchors() {

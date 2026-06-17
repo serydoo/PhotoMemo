@@ -157,51 +157,69 @@ extension MetadataContext {
             let calendar =
                 Calendar.current
 
-            context.set(
+            let year =
                 calendar.component(
                     .year,
                     from: date
-                ),
+                )
+
+            let month =
+                calendar.component(
+                    .month,
+                    from: date
+                )
+
+            let day =
+                calendar.component(
+                    .day,
+                    from: date
+                )
+
+            let hour =
+                calendar.component(
+                    .hour,
+                    from: date
+                )
+
+            let minute =
+                calendar.component(
+                    .minute,
+                    from: date
+                )
+
+            let second =
+                calendar.component(
+                    .second,
+                    from: date
+                )
+
+            context.set(
+                "\(year)",
                 for: "year"
             )
 
             context.set(
-                calendar.component(
-                    .month,
-                    from: date
-                ),
+                padded(month),
                 for: "month"
             )
 
             context.set(
-                calendar.component(
-                    .day,
-                    from: date
-                ),
+                padded(day),
                 for: "day"
             )
 
             context.set(
-                calendar.component(
-                    .hour,
-                    from: date
-                ),
+                padded(hour),
                 for: "hour"
             )
 
             context.set(
-                calendar.component(
-                    .minute,
-                    from: date
-                ),
+                padded(minute),
                 for: "minute"
             )
 
             context.set(
-                calendar.component(
-                    .second,
-                    from: date
-                ),
+                padded(second),
                 for: "second"
             )
 
@@ -228,5 +246,12 @@ extension MetadataContext {
         }
 
         return context
+    }
+
+    private static func padded(
+        _ value: Int
+    ) -> String {
+
+        String(format: "%02d", value)
     }
 }

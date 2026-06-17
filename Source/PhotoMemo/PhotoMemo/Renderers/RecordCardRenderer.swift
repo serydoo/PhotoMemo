@@ -4,121 +4,279 @@ struct RecordCardRenderer: View {
 
     let image: Image
 
-    let metadata: PhotoMetadata
+    let card: RecordCard
 
-    let anchorResult: AnchorResult
-
-    let badgeImage: Image?
+    private let textBlockEngine =
+        CardTextBlockEngine()
 
     init(
         image: Image,
-        metadata: PhotoMetadata,
-        anchorResult: AnchorResult,
-        badgeImage: Image? = nil
+        card: RecordCard
     ) {
         self.image = image
-        self.metadata = metadata
-        self.anchorResult = anchorResult
-        self.badgeImage = badgeImage
+        self.card = card
     }
 
     var body: some View {
 
-        VStack(spacing: 0) {
-
-            image
-                .resizable()
-                .scaledToFit()
-
-            infoBar
-        }
-    }
-
-    private var infoBar: some View {
-
         GeometryReader { geometry in
 
-            HStack(spacing: 0) {
+            let layout =
+                ClassicWhiteRenderer.layout(
+                    for: orientation
+                )
 
-                leftArea(width: geometry.size.width)
+            let imageHeight =
+                geometry.size.height
+                / (1 + layout.borderToImageHeightRatio)
 
-                centerArea(width: geometry.size.width)
+            let infoBarHeight =
+                geometry.size.height
+                - imageHeight
 
-                rightArea(width: geometry.size.width)
+            VStack(spacing: 0) {
+
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(
+                        width: geometry.size.width,
+                        height: imageHeight
+                    )
+                    .clipped()
+
+                infoBar(
+                    width: geometry.size.width,
+                    height: infoBarHeight,
+                    layout: layout
+                )
             }
-            .padding(ClassicWhiteRenderer.padding)
-            .background(
-                ClassicWhiteRenderer.infoBarColor
-            )
         }
-        .frame(
-            height: ClassicWhiteRenderer.infoBarHeight
+        .aspectRatio(
+            ClassicWhiteRenderer
+                .layout(for: orientation)
+                .finalAspectRatio(
+                    imageAspectRatio: imageAspectRatio
+                ),
+            contentMode: .fit
         )
     }
 
-    private func leftArea(width: CGFloat) -> some View {
+    private func infoBar(
+        width: CGFloat,
+        height: CGFloat,
+        layout: ClassicWhiteRenderer.Layout
+    ) -> some View {
+
+        HStack(
+            alignment: .center,
+            spacing: width * layout.interItemSpacingRatio
+        ) {
+
+            leftArea(
+                height: height,
+                layout: layout
+            )
+
+            BadgeRenderer(
+                badge: card.badge
+            )
+            .render(
+                size: height * layout.badgeSizeRatio
+            )
+
+            Rectangle()
+                .fill(
+                    ClassicWhiteRenderer.dividerColor
+                )
+                .frame(
+                    width: ClassicWhiteRenderer.dividerWidth,
+                    height: height * layout.dividerHeightRatio
+                )
+
+            rightArea(
+                width: width,
+                height: height,
+                layout: layout
+            )
+        }
+        .padding(
+            .horizontal,
+            width * layout.horizontalPaddingRatio
+        )
+        .padding(
+            .vertical,
+            height * layout.verticalPaddingRatio
+        )
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity
+        )
+        .background(
+            ClassicWhiteRenderer.infoBarColor
+        )
+    }
+
+    private func leftArea(
+        height: CGFloat,
+        layout: ClassicWhiteRenderer.Layout
+    ) -> some View {
 
         VStack(
             alignment: .leading,
-            spacing: 8
+            spacing: height * 0.08
         ) {
 
-            Text(anchorResult.title)
-                .font(.title2)
-                .fontWeight(.semibold)
+            blockGroup(
+                leftTopBlocks,
+                fontSize: max(
+                    16,
+                    height * layout.titleFontRatio
+                ),
+                weight: .semibold,
+                color: .primary
+            )
 
-            Text(anchorResult.primaryText)
-                .font(.headline)
-
-            Text(anchorResult.secondaryText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            blockGroup(
+                leftBottomBlocks,
+                fontSize: max(
+                    13,
+                    height * layout.secondaryFontRatio
+                ),
+                weight: .regular,
+                color: .secondary
+            )
         }
         .frame(
-            width: width * ClassicWhiteRenderer.leftWidthRatio,
+            maxWidth: .infinity,
             alignment: .leading
         )
     }
 
-    private func centerArea(width: CGFloat) -> some View {
+    private func rightArea(
+        width: CGFloat,
+        height: CGFloat,
+        layout: ClassicWhiteRenderer.Layout
+    ) -> some View {
 
-        VStack {
+        VStack(
+            alignment: .leading,
+            spacing: height * 0.08
+        ) {
 
-            BadgeRenderer(
-                image: badgeImage
+            blockGroup(
+                rightTopBlocks,
+                fontSize: max(
+                    16,
+                    height * layout.metadataFontRatio
+                ),
+                weight: .semibold,
+                color: .primary
             )
-            .render()
+
+            blockGroup(
+                rightBottomBlocks,
+                fontSize: max(
+                    13,
+                    height * layout.secondaryFontRatio
+                ),
+                weight: .regular,
+                color: .secondary
+            )
         }
         .frame(
-            width: width * ClassicWhiteRenderer.centerWidthRatio
+            width: width * layout.rightColumnWidthRatio,
+            alignment: .leading
         )
     }
 
-    private func rightArea(width: CGFloat) -> some View {
+    private var blocks: [CardTextBlock] {
 
-        VStack(
-            alignment: .trailing,
-            spacing: 6
-        ) {
-
-            Text(metadata.deviceModel)
-                .font(.headline)
-
-            Text(metadata.lensModel)
-                .font(.caption)
-
-            Text("ISO \(metadata.iso)")
-                .font(.caption2)
-
-            Text(metadata.aperture)
-                .font(.caption2)
-
-            Text(metadata.shutterSpeed)
-                .font(.caption2)
-        }
-        .frame(
-            width: width * ClassicWhiteRenderer.rightWidthRatio,
-            alignment: .trailing
+        textBlockEngine.build(
+            from: card
         )
+    }
+
+    private var leftTopBlocks: [CardTextBlock] {
+
+        blocks.filter {
+            $0.area == .leftTop
+        }
+    }
+
+    private var leftBottomBlocks: [CardTextBlock] {
+
+        blocks.filter {
+            $0.area == .leftBottom
+        }
+    }
+
+    private var rightTopBlocks: [CardTextBlock] {
+
+        blocks.filter {
+            $0.area == .rightTop
+        }
+    }
+
+    private var rightBottomBlocks: [CardTextBlock] {
+
+        blocks.filter {
+            $0.area == .rightBottom
+        }
+    }
+
+    private var imageAspectRatio: CGFloat {
+
+        let width =
+            CGFloat(card.metadata.imageWidth ?? 1)
+
+        let height =
+            CGFloat(card.metadata.imageHeight ?? 1)
+
+        guard height > 0 else {
+            return 1
+        }
+
+        return width / height
+    }
+
+    private var orientation: ClassicWhiteRenderer.CardOrientation {
+
+        imageAspectRatio >= 1
+            ? .landscape
+            : .portrait
+    }
+
+    @ViewBuilder
+    private func blockGroup(
+        _ blocks: [CardTextBlock],
+        fontSize: CGFloat,
+        weight: Font.Weight,
+        color: Color
+    ) -> some View {
+
+        if !blocks.isEmpty {
+
+            VStack(
+                alignment: .leading,
+                spacing: fontSize * 0.28
+            ) {
+
+                ForEach(blocks) { block in
+
+                    Text(block.value)
+                        .font(
+                            .system(
+                                size: fontSize,
+                                weight: weight
+                            )
+                        )
+                        .foregroundStyle(color)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .multilineTextAlignment(.leading)
+                }
+            }
+        }
     }
 }

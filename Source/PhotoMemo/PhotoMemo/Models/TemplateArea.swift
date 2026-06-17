@@ -21,30 +21,31 @@ struct TemplateArea: Identifiable, Codable, Hashable {
 
 extension TemplateArea {
 
-    static let left = TemplateArea(
-        name: "Left",
+    static let leftTop = TemplateArea(
+        name: "Left Top",
         items: [
-            .title,
-            .story
+            .title
         ]
     )
 
-    static let center = TemplateArea(
-        name: "Center",
+    static let leftBottom = TemplateArea(
+        name: "Left Bottom",
         items: [
-            .badge
+            .captureDateLine
         ]
     )
 
-    static let right = TemplateArea(
-        name: "Right",
+    static let rightTop = TemplateArea(
+        name: "Right Top",
         items: [
-            .model,
-            .lens,
-            .aperture,
-            .shutter,
-            .iso,
-            .location
+            .cameraSummary
+        ]
+    )
+
+    static let rightBottom = TemplateArea(
+        name: "Right Bottom",
+        items: [
+            .memorySummary
         ]
     )
 

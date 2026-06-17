@@ -2,12 +2,25 @@ import Foundation
 import AppKit
 import UniformTypeIdentifiers
 
+enum PhotoImportError: LocalizedError {
+
+    case imageLoadFailed
+
+    var errorDescription: String? {
+
+        switch self {
+
+        case .imageLoadFailed:
+            return "Unable to load this image."
+        }
+    }
+}
+
 final class PhotoImportService {
 
     private let metadataReader = PhotoMetadataReader()
-    private let locationResolver = LocationResolver()
 
-    func importPhoto(from url: URL) async -> SelectedPhoto {
+    func importPhoto(from url: URL) async throws -> SelectedPhoto {
 
         let accessGranted = url.startAccessingSecurityScopedResource()
         defer {
@@ -16,31 +29,17 @@ final class PhotoImportService {
             }
         }
 
-        var metadata = metadataReader.read(from: url)
-
-        if let latitude = metadata.latitude,
-           let longitude = metadata.longitude {
-
-            let location = await locationResolver.resolve(
-                latitude: latitude,
-                longitude: longitude
-            )
-
-            metadata.country = location.country
-            metadata.province = location.province
-            metadata.city = location.city
-            metadata.district = location.district
-            metadata.locationName = location.locationName
-        }
+        let metadata = metadataReader.read(from: url)
 
         // ✅ 关键修复：用 Data 读取（稳定）
         guard let data = try? Data(contentsOf: url),
               let image = NSImage(data: data) else {
 
-            fatalError("IMAGE LOAD FAILED (Data method failed)")
+            throw PhotoImportError.imageLoadFailed
         }
 
         return SelectedPhoto(
+            sourceURL: url,
             image: image,
             metadata: metadata
         )

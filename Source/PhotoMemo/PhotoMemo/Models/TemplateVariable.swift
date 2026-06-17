@@ -151,6 +151,12 @@ extension TemplateVariable {
             token: "{{weekday_name}}"
         ),
 
+        TemplateVariable(
+            category: .recognized,
+            title: "完整时间",
+            token: "{{capture_date_display}}"
+        ),
+
         // MARK: - Image
 
         TemplateVariable(
@@ -227,6 +233,66 @@ extension TemplateVariable {
             category: .intelligent,
             title: "纪念副文本",
             token: "{{anchor_secondary}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念摘要",
+            token: "{{anchor_summary}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念计时",
+            token: "{{anchor_duration_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "年龄岁数",
+            token: "{{anchor_age_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念年数",
+            token: "{{anchor_years}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念月数",
+            token: "{{anchor_months}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念天数",
+            token: "{{anchor_days}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念小时",
+            token: "{{anchor_hours}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念分钟",
+            token: "{{anchor_minutes}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "纪念秒数",
+            token: "{{anchor_seconds}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "总天数",
+            token: "{{anchor_total_days}}"
         )
     ]
 }

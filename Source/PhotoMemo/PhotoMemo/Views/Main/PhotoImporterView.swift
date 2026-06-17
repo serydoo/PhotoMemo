@@ -25,10 +25,12 @@ struct PhotoImporterView: View {
             } label: {
 
                 Label(
-                    "Select Photo",
+                    "选择照片",
                     systemImage: "photo"
                 )
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
 
             if let errorMessage {
 
@@ -76,18 +78,30 @@ private extension PhotoImporterView {
 
             Task {
 
-                let photo =
-                    await importService.importPhoto(
-                        from: url
-                    )
+                do {
 
-                await MainActor.run {
+                    let photo =
+                        try await importService.importPhoto(
+                            from: url
+                        )
 
-                    onImport(photo)
+                    await MainActor.run {
+
+                        errorMessage = nil
+                        onImport(photo)
+                    }
+
+                } catch {
+
+                    await MainActor.run {
+
+                        errorMessage =
+                            (error as? LocalizedError)?
+                            .errorDescription
+                            ?? error.localizedDescription
+                    }
                 }
             }
-
-            errorMessage = nil
 
         } catch {
 

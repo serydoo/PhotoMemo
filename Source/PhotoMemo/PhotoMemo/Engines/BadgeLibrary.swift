@@ -10,6 +10,34 @@ import Foundation
 
 struct BadgeLibrary {
 
+    static let wedding = Badge(
+        name: "Wedding",
+        type: .systemSymbol,
+        systemSymbol: "heart.circle.fill",
+        isSystemDefault: true
+    )
+
+    static let birthday = Badge(
+        name: "Birthday",
+        type: .systemSymbol,
+        systemSymbol: "birthday.cake.fill",
+        isSystemDefault: true
+    )
+
+    static let baby = Badge(
+        name: "Baby",
+        type: .systemSymbol,
+        systemSymbol: "figure.and.child.holdinghands",
+        isSystemDefault: true
+    )
+
+    static let pet = Badge(
+        name: "Pet",
+        type: .systemSymbol,
+        systemSymbol: "pawprint.fill",
+        isSystemDefault: true
+    )
+
     static var defaults: [Badge] {
 
         [
@@ -17,34 +45,10 @@ struct BadgeLibrary {
             .family,
             .travel,
             .memory,
-
-            Badge(
-                name: "Wedding",
-                type: .systemSymbol,
-                systemSymbol: "heart.circle.fill",
-                isSystemDefault: true
-            ),
-
-            Badge(
-                name: "Birthday",
-                type: .systemSymbol,
-                systemSymbol: "birthday.cake.fill",
-                isSystemDefault: true
-            ),
-
-            Badge(
-                name: "Baby",
-                type: .systemSymbol,
-                systemSymbol: "figure.and.child.holdinghands",
-                isSystemDefault: true
-            ),
-
-            Badge(
-                name: "Pet",
-                type: .systemSymbol,
-                systemSymbol: "pawprint.fill",
-                isSystemDefault: true
-            )
+            wedding,
+            birthday,
+            baby,
+            pet
         ]
     }
 

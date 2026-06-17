@@ -151,6 +151,12 @@ extension TemplateItem {
         value: "{{year}}-{{month}}-{{day}} {{hour}}:{{minute}}"
     )
 
+    static let captureDateLine = TemplateItem(
+        type: .variable,
+        name: "Capture Date Line",
+        value: "记录于{{capture_date_display}}"
+    )
+
     // MARK: - GPS
 
     static let latitude = TemplateItem(
@@ -175,6 +181,12 @@ extension TemplateItem {
         type: .variable,
         name: "Location",
         value: "{{location}}"
+    )
+
+    static let cameraSummary = TemplateItem(
+        type: .variable,
+        name: "Camera Summary",
+        value: "{{camera_summary}}"
     )
 
     static let city = TemplateItem(
@@ -213,6 +225,12 @@ extension TemplateItem {
         type: .variable,
         name: "Anchor Secondary",
         value: "{{anchor_secondary}}"
+    )
+
+    static let memorySummary = TemplateItem(
+        type: .variable,
+        name: "Memory Summary",
+        value: "{{memory_summary}}"
     )
 
     // MARK: - Badge

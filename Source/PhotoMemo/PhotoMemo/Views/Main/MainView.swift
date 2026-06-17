@@ -1,19 +1,240 @@
 import SwiftUI
 import AppKit
 
+private enum MainFieldSlot: String, CaseIterable, Hashable {
+
+    case leftTop
+
+    case rightTop
+
+    case leftBottom
+
+    case rightBottom
+
+    var title: String {
+
+        switch self {
+
+        case .leftTop:
+            return "第一项"
+
+        case .rightTop:
+            return "第二项"
+
+        case .leftBottom:
+            return "第三项"
+
+        case .rightBottom:
+            return "第四项"
+        }
+    }
+
+    var placeholder: String {
+
+        switch self {
+
+        case .leftTop:
+            return "例如：他爹手持{{model}}记录"
+
+        case .rightTop:
+            return "例如：{{focal_len_in_35mm_film}}mm f/{{aperture}} {{shutter}}s ISO{{iso}}"
+
+        case .leftBottom:
+            return "例如：记录于{{capture_date_display}}"
+
+        case .rightBottom:
+            return "例如：{{anchor_title}}今天{{anchor_age_text}}啦"
+        }
+    }
+}
+
+private enum MinimalPalette {
+
+    static let background =
+        Color(
+            red: 246 / 255,
+            green: 247 / 255,
+            blue: 249 / 255
+        )
+
+    static let surface = Color.white
+
+    static let border =
+        Color.black.opacity(0.05)
+
+    static let accent =
+        Color(
+            red: 111 / 255,
+            green: 125 / 255,
+            blue: 166 / 255
+        )
+}
+
+private struct MinimalCardGroupBoxStyle: GroupBoxStyle {
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
+
+            configuration.label
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            configuration.content
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 24,
+                style: .continuous
+            )
+            .fill(
+                MinimalPalette.surface
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 24,
+                style: .continuous
+            )
+            .stroke(
+                MinimalPalette.border
+            )
+        )
+        .shadow(
+            color: .black.opacity(0.04),
+            radius: 20,
+            y: 10
+        )
+    }
+}
+
 struct MainView: View {
 
-    @State private var selectedPhoto: SelectedPhoto?
+    @StateObject
+    private var settings = SettingsService()
+
+    @State
+    private var selectedPhoto: SelectedPhoto?
+
+    @State
+    private var selectedAnchorID: Anchor.ID?
+
+    @State
+    private var titleText = ""
+
+    @State
+    private var storyText = ""
+
+    @State
+    private var showAnchorManager = false
+
+    @State
+    private var alertTitle = ""
+
+    @State
+    private var alertMessage = ""
+
+    @State
+    private var showAlert = false
+
+    @FocusState
+    private var focusedField: MainFieldSlot?
+
+    private let templatePresetEngine =
+        TemplatePresetEngine()
+
+    private let anchorEngine =
+        AnchorEngine()
+
+    private let exportService =
+        RecordCardExportService()
 
     var body: some View {
 
-        NavigationSplitView {
+        ZStack {
 
-            sidebar
+            MinimalPalette.background
+                .ignoresSafeArea()
 
-        } detail: {
+            NavigationSplitView {
 
-            detail
+                sidebar
+
+            } detail: {
+
+                detail
+            }
+        }
+        .tint(
+            MinimalPalette.accent
+        )
+        .sheet(
+            isPresented: $showAnchorManager
+        ) {
+
+            NavigationStack {
+
+                AnchorListView(
+                    anchors: $settings.anchors,
+                    selectedAnchorID: $selectedAnchorID
+                ) {
+
+                    settings.saveAnchors()
+                }
+            }
+            .frame(
+                minWidth: 520,
+                minHeight: 420
+            )
+        }
+        .onAppear {
+
+            configureInitialState()
+        }
+        .onChange(
+            of: settings.anchors
+        ) { _, anchors in
+
+            syncSelectedAnchor(
+                with: anchors
+            )
+        }
+        .toolbar {
+
+            ToolbarItemGroup(
+                placement: .primaryAction
+            ) {
+
+                Button("保存配置") {
+                    saveCurrentConfiguration()
+                }
+
+                Button("导出") {
+                    exportCurrentCard()
+                }
+                .disabled(
+                    selectedPhoto == nil
+                    || currentCard == nil
+                )
+            }
+        }
+        .alert(
+            alertTitle,
+            isPresented: $showAlert
+        ) {
+
+            Button("好") {
+            }
+
+        } message: {
+
+            Text(alertMessage)
         }
     }
 }
@@ -23,23 +244,391 @@ private extension MainView {
 
     var sidebar: some View {
 
-        VStack(alignment: .leading, spacing: 20) {
+        ScrollView {
 
-            Text("PhotoMemo")
-                .font(.largeTitle)
+            VStack(
+                alignment: .leading,
+                spacing: 20
+            ) {
 
-            PhotoImporterView { photo in
+                Text("PhotoMemo")
+                    .font(.system(
+                        size: 32,
+                        weight: .semibold
+                    ))
 
-                print("==========")
-                print(photo.metadata)
+                Text("本地 EXIF 卡片生成")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-                selectedPhoto = photo
+                GroupBox("Photo") {
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+
+                        PhotoImporterView { photo in
+
+                            selectedPhoto = photo
+
+                            if titleText.trimmingCharacters(
+                                in: .whitespacesAndNewlines
+                            ).isEmpty {
+
+                                titleText =
+                                    selectedAnchor?.title
+                                    ?? "PhotoMemo"
+                            }
+
+                        }
+
+                        if let selectedPhoto {
+
+                            metadataSummary(
+                                for: selectedPhoto
+                            )
+                        }
+                    }
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+                }
+
+                GroupBox("Template") {
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+
+                        Picker(
+                            "Preset",
+                            selection: selectedTemplatePreset
+                        ) {
+
+                            ForEach(
+                                TemplatePreset.allCases,
+                                id: \.self
+                            ) { preset in
+
+                                Text(
+                                    preset.displayName
+                                )
+                                .tag(preset)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(
+                            maxWidth: .infinity,
+                            alignment: .leading
+                        )
+
+                        Button("Restore Preset Fields") {
+
+                            settings.selectedTemplate =
+                                templatePresetEngine.build(
+                                    preset: currentPreset
+                                )
+                            settings.saveTemplate()
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+                }
+
+                GroupBox("时间锚点") {
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+
+                        Picker(
+                            "选择时间点",
+                            selection: $selectedAnchorID
+                        ) {
+
+                            Text("未选择")
+                                .tag(
+                                    Optional<Anchor.ID>.none
+                                )
+
+                            ForEach(
+                                settings.anchors
+                            ) { anchor in
+
+                                Text(anchor.title)
+                                    .tag(
+                                        Optional(anchor.id)
+                                    )
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        Button {
+
+                            showAnchorManager = true
+
+                        } label: {
+
+                            Label(
+                                "设置时间点",
+                                systemImage: "calendar.badge.plus"
+                            )
+                        }
+
+                        Text(
+                            photoTimeDescription
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                        if let preview = anchorPreviewResult {
+
+                            VStack(
+                                alignment: .leading,
+                                spacing: 4
+                            ) {
+
+                                Text(preview.summaryText)
+                                    .font(.headline)
+
+                                Text(
+                                    "\(preview.primaryText) · \(preview.secondaryText)"
+                                )
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            }
+                        } else {
+
+                            Text(
+                                "选择一个时间点后，系统会按照片 EXIF 拍摄时间自动计算年龄、月数、天数等字段。"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+                }
+
+                GroupBox("字段编辑") {
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 18
+                    ) {
+
+                        variableLibraryPanel(
+                            title: "识别数据",
+                            variables: TemplateVariableLibrary.recognized
+                        )
+
+                        variableLibraryPanel(
+                            title: "智能数据",
+                            variables: TemplateVariableLibrary.intelligent
+                        )
+
+                        variableLibraryPanel(
+                            title: "用户数据",
+                            variables: TemplateVariableLibrary.user
+                        )
+
+                        Text(
+                            "先点下面任意一项，再点上方变量按钮插入。字段前后都可以直接输入自定义文案。"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                        templateFieldEditor(
+                            for: .leftTop
+                        )
+
+                        templateFieldEditor(
+                            for: .rightTop
+                        )
+
+                        templateFieldEditor(
+                            for: .leftBottom
+                        )
+
+                        templateFieldEditor(
+                            for: .rightBottom
+                        )
+                    }
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+                }
+
+                GroupBox("Custom Content") {
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+
+                        TextField(
+                            "Title",
+                            text: $titleText
+                        )
+
+                        TextField(
+                            "Story",
+                            text: $storyText,
+                            axis: .vertical
+                        )
+                        .lineLimit(3...6)
+                    }
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+                }
+
+                GroupBox("Badge") {
+
+                    Picker(
+                        "Badge",
+                        selection: selectedBadgeName
+                    ) {
+
+                        ForEach(
+                            BadgeLibrary.defaults,
+                            id: \.name
+                        ) { badge in
+
+                            Text(badge.name)
+                                .tag(badge.name)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
+                }
+                
+                Spacer(minLength: 0)
             }
-
-            Spacer()
         }
-        .padding()
-        .frame(minWidth: 260)
+        .groupBoxStyle(
+            MinimalCardGroupBoxStyle()
+        )
+        .padding(24)
+        .frame(
+            minWidth: 360,
+            maxWidth: .infinity,
+            alignment: .topLeading
+        )
+    }
+}
+
+private extension MainView {
+
+    @ViewBuilder
+    func variableLibraryPanel(
+        title: String,
+        variables: [TemplateVariable]
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 10
+        ) {
+
+            Text(title)
+                .font(.headline)
+
+            ScrollView(
+                .horizontal,
+                showsIndicators: false
+            ) {
+
+                HStack(spacing: 10) {
+
+                    ForEach(variables) { variable in
+
+                        Button(variable.title) {
+                            insertToken(
+                                variable.token
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(
+                            .horizontal,
+                            14
+                        )
+                        .padding(
+                            .vertical,
+                            9
+                        )
+                        .background(
+                            Capsule()
+                                .fill(
+                                    Color.gray.opacity(0.1)
+                                )
+                        )
+                    }
+                }
+                .padding(.vertical, 1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    func templateFieldEditor(
+        for slot: MainFieldSlot
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 8
+        ) {
+
+            Text(slot.title)
+                .font(.headline)
+
+            HStack(spacing: 8) {
+
+                TextField(
+                    slot.placeholder,
+                    text: fieldBinding(
+                        for: slot
+                    )
+                )
+                .textFieldStyle(.roundedBorder)
+                .font(.system(
+                    size: 15
+                ))
+                .focused(
+                    $focusedField,
+                    equals: slot
+                )
+
+                Button {
+
+                    updateTemplateValue(
+                        "",
+                        for: slot
+                    )
+
+                } label: {
+
+                    Image(systemName: "xmark")
+                        .frame(width: 18)
+                }
+                .buttonStyle(.borderless)
+            }
+        }
     }
 }
 
@@ -49,23 +638,55 @@ private extension MainView {
     @ViewBuilder
     var detail: some View {
 
-        if let photo = selectedPhoto {
+        if let selectedPhoto,
+           let card = currentCard {
 
             ScrollView {
 
-                VStack(spacing: 0) {
+                VStack(
+                    alignment: .leading,
+                    spacing: 22
+                ) {
 
-                    // 图片区域
                     RecordCardRenderer(
-                        image: Image(nsImage: photo.image),
-                        metadata: photo.metadata,
-                        anchorResult: AnchorResult(
-                            title: "汪小宝成长记录",
-                            primaryText: "记录于 \(photo.metadata.locationName ?? "未知地点")",
-                            secondaryText: "快乐长大 ❤️"
+                        image: Image(
+                            nsImage: selectedPhoto.image
+                        ),
+                        card: card
+                    )
+                    .frame(
+                        maxWidth: previewCardMaxWidth(
+                            for: selectedPhoto
                         )
                     )
-                    .frame(maxWidth: 900)
+                    .padding(18)
+                    .background(
+                        RoundedRectangle(
+                            cornerRadius: 30,
+                            style: .continuous
+                        )
+                        .fill(
+                            MinimalPalette.surface
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: 30,
+                            style: .continuous
+                        )
+                        .stroke(
+                            MinimalPalette.border
+                        )
+                    )
+                    .shadow(
+                        color: .black.opacity(0.05),
+                        radius: 24,
+                        y: 12
+                    )
+
+                    previewSummary(
+                        for: card
+                    )
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
@@ -77,29 +698,500 @@ private extension MainView {
                 "No Photo Selected",
                 systemImage: "photo"
             )
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity
+            )
+        }
+    }
+}
+
+private extension MainView {
+
+    var currentCard: RecordCard? {
+
+        guard let selectedPhoto else {
+            return nil
+        }
+
+        return RecordCard(
+            template: activeTemplate,
+            metadata: selectedPhoto.metadata,
+            context: MetadataContext.build(
+                from: selectedPhoto.metadata
+            ),
+            anchorResult: selectedAnchor.map {
+                anchorEngine.build(
+                    from: $0,
+                    referenceDate:
+                        selectedPhoto.metadata.captureDate
+                        ?? Date()
+                )
+            },
+            badge: activeBadge,
+            title: resolvedTitle,
+            story: resolvedStory
+        )
+    }
+
+    var activeTemplate: Template {
+
+        settings.selectedTemplate
+        ?? .classicWhite
+    }
+
+    var currentPreset: TemplatePreset {
+
+        TemplatePreset.allCases.first {
+            $0.displayName == activeTemplate.name
+        } ?? .classicWhite
+    }
+
+    var activeBadge: Badge? {
+
+        guard
+            let selectedBadge = settings.selectedBadge,
+            selectedBadge.type != .none
+        else {
+            return nil
+        }
+
+        return selectedBadge
+    }
+
+    var selectedAnchor: Anchor? {
+
+        settings.anchors.first {
+            $0.id == selectedAnchorID
         }
     }
 
-    func cardView(for photo: SelectedPhoto) -> some View {
+    var anchorPreviewResult: AnchorResult? {
 
-        VStack(spacing: 6) {
+        guard let selectedAnchor else {
+            return nil
+        }
 
-            Text(photo.metadata.deviceModel.isEmpty ? "未知设备" : photo.metadata.deviceModel)
+        return anchorEngine.build(
+            from: selectedAnchor,
+            referenceDate:
+                selectedPhoto?.metadata.captureDate
+                ?? Date()
+        )
+    }
+
+    var photoTimeDescription: String {
+
+        guard let captureDate =
+            selectedPhoto?.metadata.captureDate
+        else {
+            return "导入照片后，会优先使用 EXIF 拍摄时间来计算纪念字段。"
+        }
+
+        return "当前基准时间：\(captureDate.formatted(date: .numeric, time: .standard))"
+    }
+
+    var resolvedTitle: String {
+
+        let trimmed =
+            titleText.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !trimmed.isEmpty {
+            return trimmed
+        }
+
+        return selectedAnchor?.title ?? ""
+    }
+
+    var resolvedStory: String {
+
+        let trimmed =
+            storyText.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !trimmed.isEmpty {
+            return trimmed
+        }
+
+        return ""
+    }
+
+    var selectedTemplatePreset: Binding<TemplatePreset> {
+
+        Binding(
+            get: {
+
+                currentPreset
+            },
+            set: { preset in
+
+                settings.selectedTemplate =
+                    templatePresetEngine.build(
+                        preset: preset
+                    )
+
+                settings.saveTemplate()
+            }
+        )
+    }
+
+    var selectedBadgeName: Binding<String> {
+
+        Binding(
+            get: {
+
+                settings.selectedBadge?.name
+                ?? Badge.none.name
+            },
+            set: { badgeName in
+
+                settings.selectedBadge =
+                    BadgeLibrary.defaults.first {
+                        $0.name == badgeName
+                    } ?? Badge.none
+
+                settings.saveBadge()
+            }
+        )
+    }
+
+    func fieldBinding(
+        for slot: MainFieldSlot
+    ) -> Binding<String> {
+
+        Binding(
+            get: {
+                templateValue(for: slot)
+            },
+            set: { newValue in
+                updateTemplateValue(
+                    newValue,
+                    for: slot
+                )
+            }
+        )
+    }
+
+    func templateValue(
+        for slot: MainFieldSlot
+    ) -> String {
+
+        switch slot {
+
+        case .leftTop:
+            return activeTemplate.leftTopArea.items.first?.value ?? ""
+
+        case .rightTop:
+            return activeTemplate.rightTopArea.items.first?.value ?? ""
+
+        case .leftBottom:
+            return activeTemplate.leftBottomArea.items.first?.value ?? ""
+
+        case .rightBottom:
+            return activeTemplate.rightBottomArea.items.first?.value ?? ""
+        }
+    }
+
+    func updateTemplateValue(
+        _ value: String,
+        for slot: MainFieldSlot
+    ) {
+
+        var template = activeTemplate
+
+        switch slot {
+
+        case .leftTop:
+            update(
+                &template.leftTopArea.items,
+                fallback: .title,
+                value: value
+            )
+
+        case .rightTop:
+            update(
+                &template.rightTopArea.items,
+                fallback: .cameraSummary,
+                value: value
+            )
+
+        case .leftBottom:
+            update(
+                &template.leftBottomArea.items,
+                fallback: .captureDateLine,
+                value: value
+            )
+
+        case .rightBottom:
+            update(
+                &template.rightBottomArea.items,
+                fallback: .memorySummary,
+                value: value
+            )
+        }
+
+        settings.selectedTemplate = template
+        settings.saveTemplate()
+    }
+
+    func update(
+        _ items: inout [TemplateItem],
+        fallback: TemplateItem,
+        value: String
+    ) {
+
+        if items.isEmpty {
+
+            var item = fallback
+            item.value = value
+            items = [item]
+
+        } else {
+
+            items[0].value = value
+            items[0].isEnabled = true
+        }
+    }
+
+    func insertToken(
+        _ token: String
+    ) {
+
+        let slot =
+            focusedField
+            ?? .rightBottom
+
+        let currentValue =
+            templateValue(for: slot)
+
+        if currentValue.isEmpty {
+
+            updateTemplateValue(
+                token,
+                for: slot
+            )
+
+        } else {
+
+            updateTemplateValue(
+                currentValue + token,
+                for: slot
+            )
+        }
+
+        focusedField = slot
+    }
+
+    func configureInitialState() {
+
+        if selectedAnchorID == nil {
+            selectedAnchorID =
+                settings.anchors.first?.id
+        }
+
+        if focusedField == nil {
+            focusedField = .rightBottom
+        }
+    }
+
+    func syncSelectedAnchor(
+        with anchors: [Anchor]
+    ) {
+
+        guard let selectedAnchorID else {
+
+            self.selectedAnchorID =
+                anchors.first?.id
+            return
+        }
+
+        if !anchors.contains(
+            where: {
+                $0.id == selectedAnchorID
+            }
+        ) {
+
+            self.selectedAnchorID =
+                anchors.first?.id
+        }
+    }
+
+    @ViewBuilder
+    func metadataSummary(
+        for selectedPhoto: SelectedPhoto
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 4
+        ) {
+
+            Text(
+                selectedPhoto.metadata.deviceModel
+                .isEmpty
+                ? "Unknown Device"
+                : selectedPhoto.metadata.deviceModel
+            )
+            .font(.headline)
+
+            if let captureDate =
+                selectedPhoto.metadata.captureDate {
+
+                Text(
+                    captureDate.formatted(
+                        date: .abbreviated,
+                        time: .shortened
+                    )
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            if let locationName =
+                selectedPhoto.metadata.locationName {
+
+                Text(locationName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    func previewSummary(
+        for card: RecordCard
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 8
+        ) {
+
+            Text("Live Context")
                 .font(.headline)
 
-            Text(photo.metadata.captureDate?.description ?? "无时间")
-                .font(.subheadline)
+            Text(
+                "Template: \(card.template.name)"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
 
-            Text(photo.metadata.locationName ?? "未知地点")
-                .font(.caption)
+            if let anchorResult =
+                card.anchorResult {
+
+                Text(anchorResult.summaryText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(18)
         .background(
-            Color(red: 244/255,
-                  green: 243/255,
-                  blue: 243/255)
+            RoundedRectangle(
+                cornerRadius: 22,
+                style: .continuous
+            )
+            .fill(
+                MinimalPalette.surface
+            )
         )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 22,
+                style: .continuous
+            )
+            .stroke(
+                MinimalPalette.border
+            )
+        )
+        .frame(
+            maxWidth: 900,
+            alignment: .leading
+        )
+    }
+
+    func previewCardMaxWidth(
+        for selectedPhoto: SelectedPhoto
+    ) -> CGFloat {
+
+        let width =
+            CGFloat(
+                selectedPhoto.metadata.imageWidth
+                ?? Int(selectedPhoto.image.size.width)
+            )
+
+        let height =
+            CGFloat(
+                selectedPhoto.metadata.imageHeight
+                ?? Int(selectedPhoto.image.size.height)
+            )
+
+        guard height > 0 else {
+            return 900
+        }
+
+        return width >= height ? 900 : 560
+    }
+
+    func saveCurrentConfiguration() {
+
+        settings.saveAll()
+
+        presentAlert(
+            title: "配置已保存",
+            message: "当前模板、徽标和时间锚点已经保存到本地。"
+        )
+    }
+
+    func exportCurrentCard() {
+
+        guard
+            let selectedPhoto,
+            let currentCard
+        else {
+            return
+        }
+
+        do {
+
+            let url =
+                try exportService.export(
+                    photo: selectedPhoto,
+                    card: currentCard
+                )
+
+            presentAlert(
+                title: "导出完成",
+                message:
+                    "图片已导出到：\(url.path)"
+            )
+
+        } catch RecordCardExportError.saveCancelled {
+
+            return
+
+        } catch {
+
+            presentAlert(
+                title: "导出失败",
+                message:
+                    (error as? LocalizedError)?
+                    .errorDescription
+                    ?? error.localizedDescription
+            )
+        }
+    }
+
+    func presentAlert(
+        title: String,
+        message: String
+    ) {
+
+        alertTitle = title
+        alertMessage = message
+        showAlert = true
     }
 }
 

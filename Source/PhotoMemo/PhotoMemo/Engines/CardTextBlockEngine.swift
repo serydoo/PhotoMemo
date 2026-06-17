@@ -23,31 +23,39 @@ final class CardTextBlockEngine {
 
         blocks.append(
             contentsOf: buildBlocks(
-                area: "Left",
-                items: card.template.leftArea.items,
+                area: .leftTop,
+                items: card.template.leftTopArea.items,
                 context: context
             )
         )
 
         blocks.append(
             contentsOf: buildBlocks(
-                area: "Center",
-                items: card.template.centerArea.items,
+                area: .leftBottom,
+                items: card.template.leftBottomArea.items,
                 context: context
             )
         )
 
         blocks.append(
             contentsOf: buildBlocks(
-                area: "Right",
-                items: card.template.rightArea.items,
+                area: .rightTop,
+                items: card.template.rightTopArea.items,
                 context: context
             )
         )
 
         blocks.append(
             contentsOf: buildBlocks(
-                area: "Badge",
+                area: .rightBottom,
+                items: card.template.rightBottomArea.items,
+                context: context
+            )
+        )
+
+        blocks.append(
+            contentsOf: buildBlocks(
+                area: .badge,
                 items: card.template.badgeArea.items,
                 context: context
             )
@@ -57,21 +65,31 @@ final class CardTextBlockEngine {
     }
 
     private func buildBlocks(
-        area: String,
+        area: CardTextArea,
         items: [TemplateItem],
         context: MetadataContext
     ) -> [CardTextBlock] {
 
         items
             .filter(\.isEnabled)
-            .map { item in
+            .compactMap { item in
 
-                CardTextBlock(
-                    title: item.name,
-                    value: variableEngine.render(
+                let renderedValue =
+                    variableEngine.render(
                         item.value,
                         context: context
-                    ),
+                    )
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+
+                guard !renderedValue.isEmpty else {
+                    return nil
+                }
+
+                return CardTextBlock(
+                    title: item.name,
+                    value: renderedValue,
                     area: area
                 )
             }

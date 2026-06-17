@@ -16,9 +16,10 @@ final class TemplatePresetEngine {
 
             return Template(
                 name: "Dark",
-                leftArea: .left,
-                centerArea: .center,
-                rightArea: .right,
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: .rightTop,
+                rightBottomArea: .rightBottom,
                 badgeArea: .badge
             )
 
@@ -26,9 +27,10 @@ final class TemplatePresetEngine {
 
             return Template(
                 name: "Travel",
-                leftArea: .left,
-                centerArea: .center,
-                rightArea: .right,
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: .rightTop,
+                rightBottomArea: .rightBottom,
                 badgeArea: .badge
             )
 
@@ -36,9 +38,10 @@ final class TemplatePresetEngine {
 
             return Template(
                 name: "Film",
-                leftArea: .left,
-                centerArea: .center,
-                rightArea: .right,
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: .rightTop,
+                rightBottomArea: .rightBottom,
                 badgeArea: .badge
             )
 
@@ -46,9 +49,10 @@ final class TemplatePresetEngine {
 
             return Template(
                 name: "Family",
-                leftArea: .left,
-                centerArea: .center,
-                rightArea: .right,
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: .rightTop,
+                rightBottomArea: .rightBottom,
                 badgeArea: .badge
             )
         }
