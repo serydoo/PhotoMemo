@@ -1,144 +1,109 @@
 import SwiftUI
-import PhotosUI
 import AppKit
 
 struct MainView: View {
 
-    @StateObject
-    private var settingsService = SettingsService()
-
-    @State
-    private var selectedItem: PhotosPickerItem?
-
-    @State
-    private var selectedImage: Image?
-
-    @State
-    private var anchorResult = AnchorResult(
-        title: "",
-        primaryText: "",
-        secondaryText: ""
-    )
-
-    private let anchorEngine = AnchorEngine()
+    @State private var selectedPhoto: SelectedPhoto?
 
     var body: some View {
 
-        NavigationStack {
+        NavigationSplitView {
 
-            VStack(spacing: 24) {
+            sidebar
 
-                previewArea
+        } detail: {
 
-                templateSection
-
-                photoPicker
-
-                generateButton
-            }
-            .padding()
-            .navigationTitle("PhotoMemo")
+            detail
         }
     }
+}
 
-    private var previewArea: some View {
+// MARK: - Sidebar
+private extension MainView {
 
-        Group {
+    var sidebar: some View {
 
-            if let selectedImage {
+        VStack(alignment: .leading, spacing: 20) {
 
-                RecordCardRenderer(
-                    image: selectedImage,
-                    metadata: PhotoMetadata(),
-                    anchorResult: anchorResult
-                )
+            Text("PhotoMemo")
+                .font(.largeTitle)
 
-            } else {
+            PhotoImporterView { photo in
 
-                RoundedRectangle(
-                    cornerRadius: 16
-                )
-                .fill(.gray.opacity(0.15))
-                .frame(height: 300)
-                .overlay {
+                print("==========")
+                print(photo.metadata)
 
-                    Text("Preview")
-                        .foregroundStyle(.secondary)
+                selectedPhoto = photo
+            }
+
+            Spacer()
+        }
+        .padding()
+        .frame(minWidth: 260)
+    }
+}
+
+// MARK: - Detail
+private extension MainView {
+
+    @ViewBuilder
+    var detail: some View {
+
+        if let photo = selectedPhoto {
+
+            ScrollView {
+
+                VStack(spacing: 0) {
+
+                    // 图片区域
+                    RecordCardRenderer(
+                        image: Image(nsImage: photo.image),
+                        metadata: photo.metadata,
+                        anchorResult: AnchorResult(
+                            title: "汪小宝成长记录",
+                            primaryText: "记录于 \(photo.metadata.locationName ?? "未知地点")",
+                            secondaryText: "快乐长大 ❤️"
+                        )
+                    )
+                    .frame(maxWidth: 900)
                 }
+                .frame(maxWidth: .infinity)
+                .padding()
             }
-        }
-    }
 
-    private var templateSection: some View {
+        } else {
 
-        VStack(alignment: .leading) {
-
-            Text("Template")
-                .font(.headline)
-
-            Text(
-                settingsService.selectedTemplate?.name
-                ?? "Classic White"
-            )
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
-        )
-    }
-
-    private var photoPicker: some View {
-
-        PhotosPicker(
-            selection: $selectedItem,
-            matching: .images
-        ) {
-
-            Label(
-                "Select Photo",
+            ContentUnavailableView(
+                "No Photo Selected",
                 systemImage: "photo"
             )
         }
-        .onChange(of: selectedItem) { _, _ in
-
-            Task {
-                await loadImage()
-            }
-        }
     }
 
-    private var generateButton: some View {
+    func cardView(for photo: SelectedPhoto) -> some View {
 
-        Button("Generate") {
+        VStack(spacing: 6) {
 
-            guard
-                let anchor = settingsService.anchors.first
-            else {
-                return
-            }
+            Text(photo.metadata.deviceModel.isEmpty ? "未知设备" : photo.metadata.deviceModel)
+                .font(.headline)
 
-            anchorResult =
-                anchorEngine.build(
-                    from: anchor
-                )
+            Text(photo.metadata.captureDate?.description ?? "无时间")
+                .font(.subheadline)
+
+            Text(photo.metadata.locationName ?? "未知地点")
+                .font(.caption)
         }
-        .buttonStyle(.borderedProminent)
-    }
-
-    private func loadImage() async {
-
-        guard
-            let data = try? await selectedItem?
-                .loadTransferable(
-                    type: Data.self
-                ),
-            let nsImage = NSImage(data: data)
-        else {
-            return
-        }
-
-        selectedImage = Image(
-            nsImage: nsImage
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .background(
+            Color(red: 244/255,
+                  green: 243/255,
+                  blue: 243/255)
         )
     }
+}
+
+#Preview {
+
+    MainView()
 }

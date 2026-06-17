@@ -1,20 +1,23 @@
 import SwiftUI
 
-struct ClassicWhiteRenderer {
+enum ClassicWhiteRenderer {
 
-    static let infoBarHeight: CGFloat = 220
-
-    static let infoBarColor = Color(
-        red: 242 / 255,
-        green: 242 / 255,
-        blue: 242 / 255
-    )
+    static let infoBarColor =
+        Color(
+            red: 244 / 255,
+            green: 243 / 255,
+            blue: 243 / 255
+        )
 
     static let padding: CGFloat = 40
 
-    static let leftWidthRatio: CGFloat = 0.45
+    static let infoBarHeight: CGFloat = 260
 
-    static let centerWidthRatio: CGFloat = 0.15
+    static let leftWidthRatio: CGFloat = 0.42
 
-    static let rightWidthRatio: CGFloat = 0.40
+    static let centerWidthRatio: CGFloat = 0.16
+
+    static let rightWidthRatio: CGFloat = 0.42
+
+    static let dividerWidth: CGFloat = 1
 }

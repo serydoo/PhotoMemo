@@ -1,14 +1,57 @@
 import Foundation
 
-enum TemplateArea: String, Codable, CaseIterable {
+struct TemplateArea: Identifiable, Codable, Hashable {
 
-    case areaA
+    let id: UUID
 
-    case areaB
+    var name: String
 
-    case areaC
+    var items: [TemplateItem]
 
-    case areaD
+    init(
+        id: UUID = UUID(),
+        name: String,
+        items: [TemplateItem] = []
+    ) {
+        self.id = id
+        self.name = name
+        self.items = items
+    }
+}
 
-    case badgeSlot
+extension TemplateArea {
+
+    static let left = TemplateArea(
+        name: "Left",
+        items: [
+            .title,
+            .story
+        ]
+    )
+
+    static let center = TemplateArea(
+        name: "Center",
+        items: [
+            .badge
+        ]
+    )
+
+    static let right = TemplateArea(
+        name: "Right",
+        items: [
+            .model,
+            .lens,
+            .aperture,
+            .shutter,
+            .iso,
+            .location
+        ]
+    )
+
+    static let badge = TemplateArea(
+        name: "Badge",
+        items: [
+            .badge
+        ]
+    )
 }

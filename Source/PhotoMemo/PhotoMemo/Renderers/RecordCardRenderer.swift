@@ -69,6 +69,10 @@ struct RecordCardRenderer: View {
 
             Text(anchorResult.primaryText)
                 .font(.headline)
+
+            Text(anchorResult.secondaryText)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .frame(
             width: width * ClassicWhiteRenderer.leftWidthRatio,
