@@ -6,48 +6,28 @@ final class AnchorEngine {
 
     func build(
         from anchor: Anchor,
-        referenceDate: Date = Date()
+        photoDate: Date = Date()
     ) -> AnchorResult {
+
+        if photoDate < anchor.date {
+
+            return buildFutureResult(
+                from: anchor,
+                photoDate: photoDate
+            )
+        }
 
         if anchor.isCountdown {
 
-            let metrics = metrics(
-                from: referenceDate,
-                to: anchor.date
-            )
-
-            let durationText =
-                durationText(
-                    from: metrics,
-                    includeTime: true
-                )
-
-            return AnchorResult(
-                title: anchor.title,
-                primaryText:
-                    durationText.isEmpty
-                    ? "0天"
-                    : durationText,
-                secondaryText: formattedDateTime(anchor.date),
-                summaryText:
-                    anchor.title.isEmpty
-                    ? durationText
-                    : "\(anchor.title)还有\(durationText)",
-                ageText: "",
-                durationText: durationText,
-                years: metrics.years,
-                months: metrics.months,
-                days: metrics.days,
-                hours: metrics.hours,
-                minutes: metrics.minutes,
-                seconds: metrics.seconds,
-                totalDays: metrics.totalDays
+            return buildPastCountdownResult(
+                from: anchor,
+                photoDate: photoDate
             )
         }
 
         let metrics = metrics(
             from: anchor.date,
-            to: referenceDate
+            to: photoDate
         )
 
         let durationText =
@@ -85,7 +65,10 @@ final class AnchorEngine {
                 totalDays: metrics.totalDays
             )
 
-        case .relationship, .marriage, .custom:
+        case .relationship,
+             .marriage,
+             .custom,
+             .exam:
 
             return AnchorResult(
                 title: anchor.title,
@@ -106,6 +89,91 @@ final class AnchorEngine {
                 totalDays: metrics.totalDays
             )
         }
+    }
+}
+
+private extension AnchorEngine {
+
+    func buildFutureResult(
+        from anchor: Anchor,
+        photoDate: Date
+    ) -> AnchorResult {
+
+        let metrics = metrics(
+            from: photoDate,
+            to: anchor.date
+        )
+
+        let countdownText =
+            durationText(
+                from: metrics,
+                includeTime: anchor.isCountdown
+            )
+
+        let primary =
+            countdownText.isEmpty
+            ? "0天"
+            : countdownText
+
+        return AnchorResult(
+            title: anchor.title,
+            primaryText: primary,
+            secondaryText: formattedDateTime(anchor.date),
+            summaryText:
+                anchor.title.isEmpty
+                ? "还有\(primary)"
+                : "\(anchor.title)还有\(primary)",
+            ageText: "",
+            durationText: primary,
+            years: metrics.years,
+            months: metrics.months,
+            days: metrics.days,
+            hours: metrics.hours,
+            minutes: metrics.minutes,
+            seconds: metrics.seconds,
+            totalDays: metrics.totalDays
+        )
+    }
+
+    func buildPastCountdownResult(
+        from anchor: Anchor,
+        photoDate: Date
+    ) -> AnchorResult {
+
+        let metrics = metrics(
+            from: anchor.date,
+            to: photoDate
+        )
+
+        let countdownText =
+            durationText(
+                from: metrics,
+                includeTime: true
+            )
+
+        let primary =
+            countdownText.isEmpty
+            ? "0天"
+            : countdownText
+
+        return AnchorResult(
+            title: anchor.title,
+            primaryText: primary,
+            secondaryText: formattedDateTime(anchor.date),
+            summaryText:
+                anchor.title.isEmpty
+                ? "已过\(primary)"
+                : "\(anchor.title)已过\(primary)",
+            ageText: "",
+            durationText: primary,
+            years: metrics.years,
+            months: metrics.months,
+            days: metrics.days,
+            hours: metrics.hours,
+            minutes: metrics.minutes,
+            seconds: metrics.seconds,
+            totalDays: metrics.totalDays
+        )
     }
 
     private func formattedDateTime(

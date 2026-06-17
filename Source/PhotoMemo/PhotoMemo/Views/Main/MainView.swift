@@ -703,67 +703,80 @@ private extension MainView {
 
             ScrollView {
 
+                let previewWidth =
+                    previewCardMaxWidth(
+                        for: selectedPhoto
+                    )
+
                 VStack(
-                    alignment: .leading,
+                    alignment: .center,
                     spacing: 22
                 ) {
 
-                    HStack {
+                    VStack(
+                        alignment: .leading,
+                        spacing: 22
+                    ) {
 
-                        VStack(
-                            alignment: .leading,
-                            spacing: 4
-                        ) {
+                        HStack {
 
-                            Text("实时预览")
-                                .font(.title3.weight(.semibold))
+                            VStack(
+                                alignment: .leading,
+                                spacing: 4
+                            ) {
 
-                            Text("按当前模板、时间点与 EXIF 数据即时生成")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                Text("实时预览")
+                                    .font(.title3.weight(.semibold))
+
+                                Text("按当前模板、时间点与 EXIF 数据即时生成")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
                         }
 
-                        Spacer()
+                        RecordCardRenderer(
+                            image: Image(
+                                nsImage: selectedPhoto.image
+                            ),
+                            card: card
+                        )
+                        .frame(
+                            maxWidth: previewWidth
+                        )
+                        .padding(18)
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: 30,
+                                style: .continuous
+                            )
+                            .fill(
+                                MinimalPalette.surface
+                            )
+                        )
+                        .overlay(
+                            RoundedRectangle(
+                                cornerRadius: 30,
+                                style: .continuous
+                            )
+                            .stroke(
+                                MinimalPalette.border
+                            )
+                        )
+                        .shadow(
+                            color: .black.opacity(0.05),
+                            radius: 24,
+                            y: 12
+                        )
+
+                        previewSummary(
+                            for: card
+                        )
                     }
-
-                    RecordCardRenderer(
-                        image: Image(
-                            nsImage: selectedPhoto.image
-                        ),
-                        card: card
-                    )
                     .frame(
-                        maxWidth: previewCardMaxWidth(
-                            for: selectedPhoto
-                        )
-                    )
-                    .padding(18)
-                    .background(
-                        RoundedRectangle(
-                            cornerRadius: 30,
-                            style: .continuous
-                        )
-                        .fill(
-                            MinimalPalette.surface
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: 30,
-                            style: .continuous
-                        )
-                        .stroke(
-                            MinimalPalette.border
-                        )
-                    )
-                    .shadow(
-                        color: .black.opacity(0.05),
-                        radius: 24,
-                        y: 12
-                    )
-
-                    previewSummary(
-                        for: card
+                        maxWidth: previewWidth,
+                        alignment: .leading
                     )
                 }
                 .frame(maxWidth: .infinity)
@@ -842,7 +855,7 @@ private extension MainView {
             anchorResult: selectedAnchor.map {
                 anchorEngine.build(
                     from: $0,
-                    referenceDate:
+                    photoDate:
                         selectedPhoto.metadata.captureDate
                         ?? Date()
                 )
@@ -905,7 +918,7 @@ private extension MainView {
 
         return anchorEngine.build(
             from: selectedAnchor,
-            referenceDate:
+            photoDate:
                 selectedPhoto?.metadata.captureDate
                 ?? Date()
         )
@@ -916,10 +929,10 @@ private extension MainView {
         guard let captureDate =
             selectedPhoto?.metadata.captureDate
         else {
-            return "导入照片后，会优先使用 EXIF 拍摄时间来计算纪念字段。"
+            return "导入照片后，系统会用照片 EXIF 拍摄时间与锚点时间做差值计算。"
         }
 
-        return "当前基准时间：\(captureDate.formatted(date: .numeric, time: .standard))"
+        return "当前照片 EXIF 时间：\(captureDate.formatted(date: .numeric, time: .standard))"
     }
 
     var resolvedTitle: String {

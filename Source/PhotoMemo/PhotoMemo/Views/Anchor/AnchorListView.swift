@@ -26,7 +26,7 @@ struct AnchorListView: View {
             if anchors.isEmpty {
 
                 ContentUnavailableView(
-                    "No Anchors Yet",
+                    "还没有时间锚点",
                     systemImage: "calendar"
                 )
 
@@ -54,7 +54,7 @@ struct AnchorListView: View {
                                     .font(.headline)
 
                                 Text(
-                                    "\(anchor.type.rawValue.capitalized) · \(anchor.date.formatted(date: .abbreviated, time: .shortened))"
+                                    "\(anchor.type.displayName) · \(anchorModeText(for: anchor)) · \(anchor.date.formatted(date: .abbreviated, time: .shortened))"
                                 )
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -96,14 +96,14 @@ struct AnchorListView: View {
                 )
             }
         }
-        .navigationTitle("Time Anchors")
+        .navigationTitle("时间锚点")
         .toolbar {
 
             ToolbarItem(
                 placement: .cancellationAction
             ) {
 
-                Button("Done") {
+                Button("完成") {
                     dismiss()
                 }
             }
@@ -119,10 +119,10 @@ struct AnchorListView: View {
 
                 } label: {
 
-                    Label(
-                        "New Time Anchor",
-                        systemImage: "plus"
-                    )
+                        Label(
+                            "新建时间锚点",
+                            systemImage: "plus"
+                        )
                 }
             }
         }
@@ -199,5 +199,14 @@ struct AnchorListView: View {
     private var anchorItems: [Anchor] {
 
         anchors.map { $0 }
+    }
+
+    private func anchorModeText(
+        for anchor: Anchor
+    ) -> String {
+
+        anchor.isCountdown
+            ? "未来倒计时"
+            : "已发生纪念"
     }
 }
