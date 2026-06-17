@@ -8,53 +8,17 @@ final class TemplatePresetEngine {
 
         switch preset {
 
-        case .classicWhite:
+        case .template1:
 
-            return .classicWhite
+            return .template1
 
-        case .dark:
+        case .template2:
 
-            return Template(
-                name: "Dark",
-                leftTopArea: .leftTop,
-                leftBottomArea: .leftBottom,
-                rightTopArea: .rightTop,
-                rightBottomArea: .rightBottom,
-                badgeArea: .badge
-            )
+            return .template2
 
-        case .travel:
+        case .template3:
 
-            return Template(
-                name: "Travel",
-                leftTopArea: .leftTop,
-                leftBottomArea: .leftBottom,
-                rightTopArea: .rightTop,
-                rightBottomArea: .rightBottom,
-                badgeArea: .badge
-            )
-
-        case .film:
-
-            return Template(
-                name: "Film",
-                leftTopArea: .leftTop,
-                leftBottomArea: .leftBottom,
-                rightTopArea: .rightTop,
-                rightBottomArea: .rightBottom,
-                badgeArea: .badge
-            )
-
-        case .family:
-
-            return Template(
-                name: "Family",
-                leftTopArea: .leftTop,
-                leftBottomArea: .leftBottom,
-                rightTopArea: .rightTop,
-                rightBottomArea: .rightBottom,
-                badgeArea: .badge
-            )
+            return .template3
         }
     }
 

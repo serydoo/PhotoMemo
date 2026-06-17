@@ -2,15 +2,11 @@ import Foundation
 
 enum TemplatePreset: String, Codable, CaseIterable {
 
-    case classicWhite
+    case template1
 
-    case dark
+    case template2
 
-    case travel
-
-    case film
-
-    case family
+    case template3
 }
 
 extension TemplatePreset {
@@ -19,20 +15,29 @@ extension TemplatePreset {
 
         switch self {
 
-        case .classicWhite:
-            return "Classic White"
+        case .template1:
+            return "模板 1"
 
-        case .dark:
-            return "Dark"
+        case .template2:
+            return "模板 2"
 
-        case .travel:
-            return "Travel"
+        case .template3:
+            return "模板 3"
+        }
+    }
 
-        case .film:
-            return "Film"
+    var summary: String {
 
-        case .family:
-            return "Family"
+        switch self {
+
+        case .template1:
+            return "成长纪念：右下角默认使用时间锚点文案，适合“今天几岁了”这类效果。"
+
+        case .template2:
+            return "日常记录：保留拍摄信息，同时把你的自定义故事作为主记忆文案。"
+
+        case .template3:
+            return "器材笔记：更强调机型、镜头和拍摄参数，适合摄影记录。"
         }
     }
 }

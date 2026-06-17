@@ -28,7 +28,7 @@ final class SettingsService: ObservableObject {
         loadBadge()
 
         if selectedTemplate == nil {
-            selectedTemplate = .classicWhite
+            selectedTemplate = .template1
         }
 
         if selectedBadge == nil {

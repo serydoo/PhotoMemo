@@ -79,7 +79,7 @@ struct MetadataDebugView: View {
                 )
             }
 
-            Section("Location") {
+            Section("GPS") {
 
                 row(
                     "Latitude",
@@ -102,25 +102,6 @@ struct MetadataDebugView: View {
                     ?? ""
                 )
 
-                row(
-                    "City",
-                    metadata.city ?? ""
-                )
-
-                row(
-                    "Province",
-                    metadata.province ?? ""
-                )
-
-                row(
-                    "Country",
-                    metadata.country ?? ""
-                )
-
-                row(
-                    "Location",
-                    metadata.locationName ?? ""
-                )
             }
 
             Section("Date") {

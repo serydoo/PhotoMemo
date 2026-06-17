@@ -175,30 +175,6 @@ extension TemplateVariable {
 
         TemplateVariable(
             category: .intelligent,
-            title: "位置",
-            token: "{{location}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "城市",
-            token: "{{city}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "省份",
-            token: "{{province}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "国家",
-            token: "{{country}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
             title: "纬度",
             token: "{{latitude}}"
         ),

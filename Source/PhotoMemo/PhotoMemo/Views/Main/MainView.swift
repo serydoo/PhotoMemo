@@ -16,16 +16,16 @@ private enum MainFieldSlot: String, CaseIterable, Hashable {
         switch self {
 
         case .leftTop:
-            return "第一项"
+            return "左上区域"
 
         case .rightTop:
-            return "第二项"
+            return "右上区域"
 
         case .leftBottom:
-            return "第三项"
+            return "左下区域"
 
         case .rightBottom:
-            return "第四项"
+            return "右下区域"
         }
     }
 
@@ -291,7 +291,7 @@ private extension MainView {
 
                 heroPanel
 
-                GroupBox("Photo") {
+                GroupBox("照片") {
 
                     VStack(
                         alignment: .leading,
@@ -326,7 +326,7 @@ private extension MainView {
                     )
                 }
 
-                GroupBox("Template") {
+                GroupBox("模板") {
 
                     VStack(
                         alignment: .leading,
@@ -334,7 +334,7 @@ private extension MainView {
                     ) {
 
                         Picker(
-                            "Preset",
+                            "模板",
                             selection: selectedTemplatePreset
                         ) {
 
@@ -355,7 +355,11 @@ private extension MainView {
                             alignment: .leading
                         )
 
-                        Button("Restore Preset Fields") {
+                        Text(currentPreset.summary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Button("恢复模板默认字段") {
 
                             settings.selectedTemplate =
                                 templatePresetEngine.build(
@@ -499,7 +503,7 @@ private extension MainView {
                     )
                 }
 
-                GroupBox("Custom Content") {
+                GroupBox("自定义内容") {
 
                     VStack(
                         alignment: .leading,
@@ -507,12 +511,12 @@ private extension MainView {
                     ) {
 
                         TextField(
-                            "Title",
+                            "标题",
                             text: $titleText
                         )
 
                         TextField(
-                            "Story",
+                            "记忆文案",
                             text: $storyText,
                             axis: .vertical
                         )
@@ -524,11 +528,11 @@ private extension MainView {
                     )
                 }
 
-                GroupBox("Badge") {
+                GroupBox("图标") {
 
                     Picker(
-                        "Badge",
-                        selection: selectedBadgeName
+                            "图标",
+                            selection: selectedBadgeName
                     ) {
 
                         ForEach(
@@ -769,7 +773,7 @@ private extension MainView {
         } else {
 
             ContentUnavailableView(
-                "No Photo Selected",
+                "还没有导入照片",
                 systemImage: "photo"
             )
             .frame(
@@ -852,14 +856,26 @@ private extension MainView {
     var activeTemplate: Template {
 
         settings.selectedTemplate
-        ?? .classicWhite
+        ?? .template1
     }
 
     var currentPreset: TemplatePreset {
 
-        TemplatePreset.allCases.first {
-            $0.displayName == activeTemplate.name
-        } ?? .classicWhite
+        switch activeTemplate.name {
+
+        case TemplatePreset.template1.displayName,
+             "Classic White":
+            return .template1
+
+        case TemplatePreset.template2.displayName:
+            return .template2
+
+        case TemplatePreset.template3.displayName:
+            return .template3
+
+        default:
+            return .template1
+        }
     }
 
     var activeBadge: Badge? {
@@ -1147,7 +1163,7 @@ private extension MainView {
             Text(
                 selectedPhoto.metadata.deviceModel
                 .isEmpty
-                ? "Unknown Device"
+                ? "未识别设备"
                 : selectedPhoto.metadata.deviceModel
             )
             .font(.headline)
@@ -1165,13 +1181,6 @@ private extension MainView {
                 .foregroundStyle(.secondary)
             }
 
-            if let locationName =
-                selectedPhoto.metadata.locationName {
-
-                Text(locationName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 
