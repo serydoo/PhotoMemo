@@ -8,6 +8,7 @@ LOG_DIR="$SUPPORT_DIR/AutoSync"
 LOG_FILE="$LOG_DIR/auto-sync.log"
 
 mkdir -p "$LOG_DIR"
+cd "$LOG_DIR"
 
 exec >>"$LOG_FILE" 2>&1
 
