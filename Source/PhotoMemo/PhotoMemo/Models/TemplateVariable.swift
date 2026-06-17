@@ -171,103 +171,83 @@ extension TemplateVariable {
             token: "{{height}}"
         ),
 
-        // MARK: - GPS
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "纬度",
-            token: "{{latitude}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "经度",
-            token: "{{longitude}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "海拔",
-            token: "{{altitude}}"
-        ),
-
         // MARK: - Anchor
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念标题",
+            title: "时间点名称",
             token: "{{anchor_title}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念主文本",
+            title: "通用结果",
             token: "{{anchor_primary}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念副文本",
+            title: "智能结果（自动匹配场景）",
+            token: "{{anchor_smart_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "锚点日期",
             token: "{{anchor_secondary}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念摘要",
+            title: "完整摘要",
             token: "{{anchor_summary}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念计时",
+            title: "纪念时长（X年X个月X天）",
             token: "{{anchor_duration_text}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "年龄岁数",
+            title: "宝宝年龄（X岁X个月X天）",
             token: "{{anchor_age_text}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念年数",
+            title: "纪念天数（XX天）",
+            token: "{{anchor_total_days_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "未来倒计时（XX天）",
+            token: "{{anchor_countdown_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "年数（数字）",
             token: "{{anchor_years}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念月数",
+            title: "月数（数字）",
             token: "{{anchor_months}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念天数",
+            title: "天数（数字）",
             token: "{{anchor_days}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念小时",
-            token: "{{anchor_hours}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "纪念分钟",
-            token: "{{anchor_minutes}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "纪念秒数",
-            token: "{{anchor_seconds}}"
-        ),
-
-        TemplateVariable(
-            category: .intelligent,
-            title: "总天数",
+            title: "总天数（数字）",
             token: "{{anchor_total_days}}"
         )
     ]

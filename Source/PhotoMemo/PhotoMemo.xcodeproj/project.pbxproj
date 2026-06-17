@@ -250,6 +250,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的相册，并把处理后的照片保存进去。";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -282,6 +284,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的相册，并把处理后的照片保存进去。";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

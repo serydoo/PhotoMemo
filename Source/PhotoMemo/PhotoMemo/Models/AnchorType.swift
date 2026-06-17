@@ -24,7 +24,7 @@ extension AnchorType {
             return "结婚纪念"
 
         case .exam:
-            return "高考 / 考试"
+            return "未来目标 / 高考 / 毕业"
 
         case .custom:
             return "自定义"
@@ -81,10 +81,31 @@ extension AnchorType {
             return "适合结婚纪念、领证纪念等。会计算到照片拍摄当天已经过去多少年、月、天。"
 
         case .exam:
-            return "适合高考、考试、旅行出发等未来目标。会优先按倒计时文案生成剩余天数。"
+            return "适合高考、毕业、入学、考试、旅行出发、演唱会、回家、搬家等目标时间点。可用于未来倒计时，也可用于已发生后的纪念时长。"
 
         case .custom:
             return "任何你想记录的关键时间点都可以。可手动选择“已发生纪念”或“未来倒计时”。"
+        }
+    }
+
+    var sceneExamples: String {
+
+        switch self {
+
+        case .birthday:
+            return "常见场景：出生、满月、百天、周岁、第一次站立、第一次入园。"
+
+        case .relationship:
+            return "常见场景：在一起、第一次见面、第一次旅行、求婚成功。"
+
+        case .marriage:
+            return "常见场景：领证、婚礼、结婚纪念日、蜜月出发。"
+
+        case .exam:
+            return "常见场景：高考、毕业典礼、入学报到、旅行出发、演唱会、回家倒计时。"
+
+        case .custom:
+            return "常见场景：任何自定义纪念日、目标日、截止日或生活节点。"
         }
     }
 }

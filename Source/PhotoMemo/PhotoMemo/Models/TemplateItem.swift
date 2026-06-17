@@ -211,19 +211,49 @@ extension TemplateItem {
 
     static let anchorTitle = TemplateItem(
         type: .variable,
-        name: "Anchor Title",
+        name: "时间点名称",
         value: "{{anchor_title}}"
     )
 
     static let anchorPrimary = TemplateItem(
         type: .variable,
-        name: "Anchor Primary",
+        name: "通用结果",
         value: "{{anchor_primary}}"
+    )
+
+    static let anchorSmartText = TemplateItem(
+        type: .variable,
+        name: "智能结果",
+        value: "{{anchor_smart_text}}"
+    )
+
+    static let anchorAgeText = TemplateItem(
+        type: .variable,
+        name: "宝宝年龄",
+        value: "{{anchor_age_text}}"
+    )
+
+    static let anchorDurationText = TemplateItem(
+        type: .variable,
+        name: "纪念时长",
+        value: "{{anchor_duration_text}}"
+    )
+
+    static let anchorTotalDaysText = TemplateItem(
+        type: .variable,
+        name: "纪念天数",
+        value: "{{anchor_total_days_text}}"
+    )
+
+    static let anchorCountdownText = TemplateItem(
+        type: .variable,
+        name: "未来倒计时",
+        value: "{{anchor_countdown_text}}"
     )
 
     static let anchorSecondary = TemplateItem(
         type: .variable,
-        name: "Anchor Secondary",
+        name: "锚点日期",
         value: "{{anchor_secondary}}"
     )
 

@@ -20,6 +20,21 @@ struct CardVariableProvider {
 
         if let anchor = card.anchorResult {
 
+            let totalDaysText =
+                "\(anchor.totalDays)天"
+
+            let smartText =
+                smartAnchorText(
+                    anchor: card.anchor,
+                    result: anchor
+                )
+
+            let countdownText =
+                countdownText(
+                    anchor: card.anchor,
+                    result: anchor
+                )
+
             context.set(
                 anchor.title,
                 for: "anchor_title"
@@ -41,6 +56,16 @@ struct CardVariableProvider {
             )
 
             context.set(
+                smartText,
+                for: "anchor_smart_text"
+            )
+
+            context.set(
+                countdownText,
+                for: "anchor_countdown_text"
+            )
+
+            context.set(
                 anchor.ageText,
                 for: "anchor_age_text"
             )
@@ -48,6 +73,11 @@ struct CardVariableProvider {
             context.set(
                 anchor.durationText,
                 for: "anchor_duration_text"
+            )
+
+            context.set(
+                totalDaysText,
+                for: "anchor_total_days_text"
             )
 
             context.set(
@@ -247,5 +277,61 @@ private extension CardVariableProvider {
         }
 
         return anchor.summaryText
+    }
+
+    static func smartAnchorText(
+        anchor: Anchor?,
+        result: AnchorResult
+    ) -> String {
+
+        guard let anchor else {
+            return result.primaryText
+        }
+
+        if anchor.isCountdown {
+            return "\(result.totalDays)天"
+        }
+
+        switch anchor.type {
+
+        case .birthday:
+            return result.ageText
+
+        case .relationship:
+            return result.totalDays < 365
+                ? "\(result.totalDays)天"
+                : result.durationText
+
+        case .marriage:
+            return result.durationText
+
+        case .exam:
+            return result.totalDays < 100
+                ? "\(result.totalDays)天"
+                : result.durationText
+
+        case .custom:
+            if result.totalDays < 100 {
+                return "\(result.totalDays)天"
+            }
+
+            return result.durationText
+        }
+    }
+
+    static func countdownText(
+        anchor: Anchor?,
+        result: AnchorResult
+    ) -> String {
+
+        guard let anchor else {
+            return ""
+        }
+
+        guard anchor.isCountdown else {
+            return ""
+        }
+
+        return "\(result.totalDays)天"
     }
 }

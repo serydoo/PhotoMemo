@@ -17,6 +17,10 @@ struct RecordCardRenderer: View {
         let lineLimit: Int
 
         let lineSpacing: CGFloat
+
+        let alignment: HorizontalAlignment
+
+        let textAlignment: TextAlignment
     }
 
     let image: Image
@@ -91,27 +95,14 @@ struct RecordCardRenderer: View {
         ) {
 
             leftArea(
+                width: width,
                 height: height,
                 layout: layout
             )
 
-            BadgeRenderer(
-                badge: card.badge
-            )
-            .render(
-                size: height * layout.badgeSizeRatio
-            )
+            Spacer(minLength: 0)
 
-            Rectangle()
-                .fill(
-                    ClassicWhiteRenderer.dividerColor
-                )
-                .frame(
-                    width: ClassicWhiteRenderer.dividerWidth,
-                    height: height * layout.dividerHeightRatio
-                )
-
-            rightArea(
+            trailingCluster(
                 width: width,
                 height: height,
                 layout: layout
@@ -135,12 +126,13 @@ struct RecordCardRenderer: View {
     }
 
     private func leftArea(
+        width: CGFloat,
         height: CGFloat,
         layout: ClassicWhiteRenderer.Layout
     ) -> some View {
 
         VStack(
-            alignment: .leading,
+            alignment: .center,
             spacing: height * layout.groupSpacingRatio
         ) {
 
@@ -156,7 +148,9 @@ struct RecordCardRenderer: View {
                     color: ClassicWhiteRenderer.titleTextColor,
                     tracking: layout.titleTracking,
                     lineLimit: 2,
-                    lineSpacing: height * 0.01
+                    lineSpacing: height * 0.01,
+                    alignment: .center,
+                    textAlignment: .center
                 )
             )
 
@@ -172,14 +166,51 @@ struct RecordCardRenderer: View {
                     color: ClassicWhiteRenderer.secondaryTextColor,
                     tracking: layout.secondaryTracking,
                     lineLimit: 2,
-                    lineSpacing: height * 0.008
+                    lineSpacing: height * 0.008,
+                    alignment: .center,
+                    textAlignment: .center
                 )
             )
         }
         .frame(
-            maxWidth: .infinity,
-            alignment: .leading
+            width: width * layout.leftColumnWidthRatio,
+            alignment: .center
         )
+    }
+
+    private func trailingCluster(
+        width: CGFloat,
+        height: CGFloat,
+        layout: ClassicWhiteRenderer.Layout
+    ) -> some View {
+
+        HStack(
+            alignment: .center,
+            spacing: width * layout.trailingClusterSpacingRatio
+        ) {
+
+            BadgeRenderer(
+                badge: card.badge
+            )
+            .render(
+                size: height * layout.badgeSizeRatio
+            )
+
+            Rectangle()
+                .fill(
+                    ClassicWhiteRenderer.dividerColor
+                )
+                .frame(
+                    width: ClassicWhiteRenderer.dividerWidth,
+                    height: height * layout.dividerHeightRatio
+                )
+
+            rightArea(
+                width: width,
+                height: height,
+                layout: layout
+            )
+        }
     }
 
     private func rightArea(
@@ -189,7 +220,7 @@ struct RecordCardRenderer: View {
     ) -> some View {
 
         VStack(
-            alignment: .leading,
+            alignment: .center,
             spacing: height * layout.groupSpacingRatio
         ) {
 
@@ -205,7 +236,9 @@ struct RecordCardRenderer: View {
                     color: ClassicWhiteRenderer.metadataTextColor,
                     tracking: layout.metadataTracking,
                     lineLimit: 2,
-                    lineSpacing: height * 0.006
+                    lineSpacing: height * 0.006,
+                    alignment: .center,
+                    textAlignment: .center
                 )
             )
 
@@ -221,13 +254,15 @@ struct RecordCardRenderer: View {
                     color: ClassicWhiteRenderer.secondaryTextColor,
                     tracking: layout.secondaryTracking,
                     lineLimit: 2,
-                    lineSpacing: height * 0.01
+                    lineSpacing: height * 0.01,
+                    alignment: .center,
+                    textAlignment: .center
                 )
             )
         }
         .frame(
             width: width * layout.rightColumnWidthRatio,
-            alignment: .leading
+            alignment: .center
         )
     }
 
@@ -297,7 +332,7 @@ struct RecordCardRenderer: View {
         if !blocks.isEmpty {
 
             VStack(
-                alignment: .leading,
+                alignment: style.alignment,
                 spacing: style.fontSize * 0.24
             ) {
 
@@ -309,6 +344,7 @@ struct RecordCardRenderer: View {
                     )
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
@@ -332,6 +368,7 @@ struct RecordCardRenderer: View {
             .foregroundStyle(style.color)
             .lineLimit(style.lineLimit)
             .minimumScaleFactor(0.7)
-            .multilineTextAlignment(.leading)
+            .multilineTextAlignment(style.textAlignment)
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 }

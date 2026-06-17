@@ -45,11 +45,7 @@ extension Template {
         rightBottomArea: TemplateArea(
             name: "Right Bottom",
             items: [
-                TemplateItem(
-                    type: .variable,
-                    name: "Anchor Summary",
-                    value: "{{anchor_summary}}"
-                )
+                .anchorSmartText
             ]
         ),
         badgeArea: .badge

@@ -155,6 +155,10 @@ struct AnchorEditorView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
+                Text(type.sceneExamples)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 Text(mode.helperText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -225,22 +229,25 @@ struct AnchorEditorView: View {
         switch (type, mode) {
 
         case (.birthday, .elapsed):
-            return "示例：\(resolvedTitle) 2025.05.26 出生，照片拍摄于 2026.05.26，可生成“\(resolvedTitle)今天1岁”。"
+            return "示例：\(resolvedTitle) 2025.05.26 出生，照片拍摄于 2026.05.26，可生成“\(resolvedTitle)今天1岁”或“\(resolvedTitle)到今天1岁0个月0天”。"
 
         case (.relationship, .elapsed):
-            return "示例：2024.02.14 在一起，照片拍摄于 2025.02.14，可生成“恋爱1年”。"
+            return "示例：2024.02.14 在一起，照片拍摄于 2025.02.14，可生成“我们已经在一起1年”或“恋爱365天”。"
 
         case (.marriage, .elapsed):
             return "示例：2023.10.01 结婚，照片拍摄于 2026.10.01，可生成“结婚纪念3年”。"
 
+        case (.exam, .elapsed):
+            return "示例：毕业时间设为 2026.06.30，照片拍摄于 2027.06.30，可生成“毕业1年”；如果刚毕业不久，也可生成“已毕业30天”。"
+
         case (.exam, .countdown):
-            return "示例：高考时间设为 2027.06.07，照片拍摄于 2027.05.08，可生成“距离高考还有30天”。"
+            return "示例：高考设为 2027.06.07，照片拍摄于 2027.05.08，可生成“距离高考还有30天”；毕业设为 2027.06.30，也可生成“距离毕业还有XX天”。"
 
         case (_, .countdown):
-            return "示例：旅行出发日或截止日设为未来时间，系统会生成“还有XX天”。"
+            return "示例：把毕业、入学、旅行出发、演唱会、回家日期设为未来时间，系统会生成“还有XX天”。"
 
         case (_, .elapsed):
-            return "示例：恋爱、出生、结婚等已发生事件设为过去时间，系统会生成“已经XX天 / XX岁”。"
+            return "示例：恋爱、出生、结婚、纪念日等已发生事件设为过去时间，系统会生成“已经XX天 / XX岁 / X年X个月X天”。"
         }
     }
 }

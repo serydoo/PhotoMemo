@@ -13,6 +13,8 @@ enum RecordCardExportError: LocalizedError {
 
     case writeFailed
 
+    case temporaryFileCreateFailed
+
     var errorDescription: String? {
 
         switch self {
@@ -28,6 +30,9 @@ enum RecordCardExportError: LocalizedError {
 
         case .writeFailed:
             return "Unable to save the exported image."
+
+        case .temporaryFileCreateFailed:
+            return "Unable to prepare the temporary export file."
         }
     }
 }
@@ -43,6 +48,60 @@ final class RecordCardExportService {
         let saveURL = try chooseSaveURL(
             for: photo
         )
+
+        return try export(
+            photo: photo,
+            card: card,
+            to: saveURL
+        )
+    }
+
+    func exportToTemporaryFile(
+        photo: SelectedPhoto,
+        card: RecordCard
+    ) throws -> URL {
+
+        let folderURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoExports",
+                isDirectory: true
+            )
+
+        do {
+
+            try FileManager.default.createDirectory(
+                at: folderURL,
+                withIntermediateDirectories: true
+            )
+
+        } catch {
+
+            throw RecordCardExportError
+                .temporaryFileCreateFailed
+        }
+
+        let fileURL =
+            uniqueTemporaryURL(
+                in: folderURL,
+                for: photo
+            )
+
+        return try export(
+            photo: photo,
+            card: card,
+            to: fileURL
+        )
+    }
+}
+
+private extension RecordCardExportService {
+
+    func export(
+        photo: SelectedPhoto,
+        card: RecordCard,
+        to saveURL: URL
+    ) throws -> URL {
 
         let renderSize =
             outputPixelSize(for: photo)
@@ -106,9 +165,6 @@ final class RecordCardExportService {
 
         return saveURL
     }
-}
-
-private extension RecordCardExportService {
 
     func chooseSaveURL(
         for photo: SelectedPhoto
@@ -144,6 +200,38 @@ private extension RecordCardExportService {
             .lastPathComponent
 
         return baseName + "_PhotoMemo.jpg"
+    }
+
+    func uniqueTemporaryURL(
+        in folderURL: URL,
+        for photo: SelectedPhoto
+    ) -> URL {
+
+        let baseName =
+            photo.sourceURL
+            .deletingPathExtension()
+            .lastPathComponent
+
+        let formatter =
+            ISO8601DateFormatter()
+
+        formatter.formatOptions = [
+            .withInternetDateTime,
+            .withDashSeparatorInDate,
+            .withColonSeparatorInTime,
+            .withFractionalSeconds
+        ]
+
+        let timestamp =
+            formatter.string(from: Date())
+            .replacingOccurrences(
+                of: ":",
+                with: "-"
+            )
+
+        return folderURL.appendingPathComponent(
+            "\(baseName)_PhotoMemo_\(timestamp).jpg"
+        )
     }
 
     func outputType(

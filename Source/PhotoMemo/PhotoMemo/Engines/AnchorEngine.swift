@@ -106,8 +106,7 @@ private extension AnchorEngine {
 
         let countdownText =
             durationText(
-                from: metrics,
-                includeTime: anchor.isCountdown
+                from: metrics
             )
 
         let primary =
@@ -147,8 +146,7 @@ private extension AnchorEngine {
 
         let countdownText =
             durationText(
-                from: metrics,
-                includeTime: true
+                from: metrics
             )
 
         let primary =
@@ -234,9 +232,7 @@ private extension AnchorEngine {
         let parts = [
             metrics.years > 0 ? "\(metrics.years)岁" : nil,
             metrics.months > 0 ? "\(metrics.months)个月" : nil,
-            metrics.days > 0 && metrics.years == 0
-                ? "\(metrics.days)天"
-                : nil
+            metrics.days > 0 ? "\(metrics.days)天" : nil
         ]
         .compactMap { $0 }
 
@@ -244,15 +240,7 @@ private extension AnchorEngine {
             return parts.joined()
         }
 
-        if metrics.hours > 0 {
-            return "\(metrics.hours)小时"
-        }
-
-        if metrics.minutes > 0 {
-            return "\(metrics.minutes)分钟"
-        }
-
-        return "\(metrics.seconds)秒"
+        return "0天"
     }
 
     private func durationText(
@@ -268,6 +256,10 @@ private extension AnchorEngine {
         .compactMap { $0 }
 
         if includeTime || parts.isEmpty {
+
+            if !includeTime {
+                return "0天"
+            }
 
             if metrics.hours > 0 {
                 parts.append("\(metrics.hours)小时")

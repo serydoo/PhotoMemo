@@ -17,6 +17,10 @@ enum ClassicWhiteRenderer {
 
         let interItemSpacingRatio: CGFloat
 
+        let trailingClusterSpacingRatio: CGFloat
+
+        let leftColumnWidthRatio: CGFloat
+
         let rightColumnWidthRatio: CGFloat
 
         let badgeSizeRatio: CGFloat
@@ -85,9 +89,11 @@ enum ClassicWhiteRenderer {
 
             return Layout(
                 borderToImageHeightRatio: 1021 / 4536,
-                horizontalPaddingRatio: 0.038,
+                horizontalPaddingRatio: 0.031,
                 verticalPaddingRatio: 0.19,
                 interItemSpacingRatio: 0.024,
+                trailingClusterSpacingRatio: 0.017,
+                leftColumnWidthRatio: 0.39,
                 rightColumnWidthRatio: 0.33,
                 badgeSizeRatio: 0.43,
                 dividerHeightRatio: 0.48,
@@ -104,9 +110,11 @@ enum ClassicWhiteRenderer {
 
             return Layout(
                 borderToImageHeightRatio: 753 / 8064,
-                horizontalPaddingRatio: 0.048,
+                horizontalPaddingRatio: 0.04,
                 verticalPaddingRatio: 0.19,
                 interItemSpacingRatio: 0.031,
+                trailingClusterSpacingRatio: 0.021,
+                leftColumnWidthRatio: 0.35,
                 rightColumnWidthRatio: 0.42,
                 badgeSizeRatio: 0.46,
                 dividerHeightRatio: 0.5,
