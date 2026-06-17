@@ -7,8 +7,7 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/zsh</string>
-    <string>/Users/rui/Desktop/PhotoMemo/scripts/auto_sync_to_github.sh</string>
+    <string>__TARGET_SCRIPT__</string>
   </array>
 
   <key>RunAtLoad</key>
@@ -18,12 +17,12 @@
   <integer>1800</integer>
 
   <key>WorkingDirectory</key>
-  <string>/Users/rui/Desktop/PhotoMemo</string>
+  <string>__SUPPORT_DIR__/AutoSync</string>
 
   <key>StandardOutPath</key>
-  <string>/Users/rui/Desktop/PhotoMemo/.autosync/launchd.out.log</string>
+  <string>__SUPPORT_DIR__/AutoSync/launchd.out.log</string>
 
   <key>StandardErrorPath</key>
-  <string>/Users/rui/Desktop/PhotoMemo/.autosync/launchd.err.log</string>
+  <string>__SUPPORT_DIR__/AutoSync/launchd.err.log</string>
 </dict>
 </plist>
