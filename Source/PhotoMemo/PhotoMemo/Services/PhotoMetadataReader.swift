@@ -11,9 +11,9 @@ import ImageIO
 
 final class PhotoMetadataReader {
 
-    func read(
+    func properties(
         from url: URL
-    ) -> PhotoMetadata {
+    ) -> [CFString: Any]? {
 
         guard
             let source = CGImageSourceCreateWithURL(
@@ -27,9 +27,28 @@ final class PhotoMetadataReader {
                     nil
                 ) as? [CFString: Any]
         else {
+            return nil
+        }
 
+        return properties
+    }
+
+    func read(
+        from url: URL
+    ) -> PhotoMetadata {
+
+        guard let properties = properties(from: url) else {
             return PhotoMetadata()
         }
+
+        return read(
+            from: properties
+        )
+    }
+
+    func read(
+        from properties: [CFString: Any]
+    ) -> PhotoMetadata {
 
         var metadata = PhotoMetadata()
 

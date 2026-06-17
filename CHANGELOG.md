@@ -7,6 +7,7 @@
 - Added source file tracking on imported photos so exports can reuse original metadata where possible.
 - Added time-anchor based smart fields including age text, duration text, total day count, and anchor summary variables.
 - Added a minimalist white system-style main interface with dedicated sections for photo import, template preset, time anchor, variable insertion, and field editing.
+- Added export description generation so the rendered card's memory text can also be written into image metadata comment/description fields for later indexing.
 
 ### Changed
 - Refactored the card template model from a simple three-column structure to fixed semantic regions: left top, left bottom, right top, right bottom, and badge.
@@ -15,9 +16,12 @@
 - Changed anchor editing to support precise date and time input.
 - Reworked the live preview renderer to use orientation-specific bottom border proportions for landscape and portrait images.
 - Changed photo import to stay local-only by default and stop automatic reverse geocoding during import.
+- Updated export metadata sanitization to keep source properties, refresh rendered pixel dimensions, and write PhotoMemo descriptions into TIFF, IPTC, EXIF, and PNG metadata dictionaries when available.
+- Polished the main screen with stronger status feedback, softer system-style chips, and cleaner field editor presentation.
 
 ### Notes
 - Locked sample-derived border height ratios:
   - Landscape: `1021 / 4536`
   - Portrait: `753 / 8064`
 - Current export preserves original metadata where possible through ImageIO property copying, while rendering a new final image file.
+- The right-bottom memory text and anchor summary now share the same export description source to keep preview content and saved metadata aligned.

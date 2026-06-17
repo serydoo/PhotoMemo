@@ -29,7 +29,14 @@ final class PhotoImportService {
             }
         }
 
-        let metadata = metadataReader.read(from: url)
+        let sourceProperties =
+            metadataReader.properties(from: url)
+            ?? [:]
+
+        let metadata =
+            metadataReader.read(
+                from: sourceProperties
+            )
 
         // ✅ 关键修复：用 Data 读取（稳定）
         guard let data = try? Data(contentsOf: url),
@@ -40,6 +47,7 @@ final class PhotoImportService {
 
         return SelectedPhoto(
             sourceURL: url,
+            sourceProperties: sourceProperties,
             image: image,
             metadata: metadata
         )

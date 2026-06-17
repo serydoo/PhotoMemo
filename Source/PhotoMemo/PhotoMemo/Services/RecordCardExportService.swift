@@ -83,7 +83,10 @@ final class RecordCardExportService {
 
         let properties =
             sanitizedMetadata(
-                from: photo.sourceURL
+                from: photo.sourceProperties,
+                renderSize: renderSize,
+                outputType: type,
+                card: card
             )
 
         CGImageDestinationAddImage(
@@ -95,6 +98,11 @@ final class RecordCardExportService {
         guard CGImageDestinationFinalize(destination) else {
             throw RecordCardExportError.writeFailed
         }
+
+        applyFileDates(
+            to: saveURL,
+            captureDate: photo.metadata.captureDate
+        )
 
         return saveURL
     }
@@ -184,35 +192,123 @@ private extension RecordCardExportService {
     }
 
     func sanitizedMetadata(
-        from sourceURL: URL
+        from sourceProperties: [CFString: Any],
+        renderSize: CGSize,
+        outputType: UTType,
+        card: RecordCard
     ) -> [CFString: Any] {
-
-        guard
-            let source =
-                CGImageSourceCreateWithURL(
-                    sourceURL as CFURL,
-                    nil
-                ),
-            let sourceProperties =
-                CGImageSourceCopyPropertiesAtIndex(
-                    source,
-                    0,
-                    nil
-                ) as? [CFString: Any]
-        else {
-            return [:]
-        }
 
         var properties = sourceProperties
 
-        properties.removeValue(
-            forKey: kCGImagePropertyPixelWidth
-        )
-        properties.removeValue(
-            forKey: kCGImagePropertyPixelHeight
-        )
+        let pixelWidth = Int(renderSize.width)
+        let pixelHeight = Int(renderSize.height)
+        let exportDescription =
+            CardVariableProvider.exportDescription(
+                from: card
+            )
+
+        properties[kCGImagePropertyPixelWidth] =
+            pixelWidth
+        properties[kCGImagePropertyPixelHeight] =
+            pixelHeight
+
         properties[kCGImagePropertyOrientation] = 1
 
+        var exif =
+            properties[
+                kCGImagePropertyExifDictionary
+            ] as? [CFString: Any] ?? [:]
+
+        exif[
+            kCGImagePropertyExifPixelXDimension
+        ] = pixelWidth
+
+        exif[
+            kCGImagePropertyExifPixelYDimension
+        ] = pixelHeight
+
+        if !exportDescription.isEmpty {
+            exif[
+                "UserComment" as CFString
+            ] = exportDescription
+        }
+
+        properties[
+            kCGImagePropertyExifDictionary
+        ] = exif
+
+        var tiff =
+            properties[
+                kCGImagePropertyTIFFDictionary
+            ] as? [CFString: Any] ?? [:]
+
+        tiff[
+            kCGImagePropertyTIFFSoftware
+        ] = "PhotoMemo"
+
+        if !exportDescription.isEmpty {
+            tiff[
+                kCGImagePropertyTIFFImageDescription
+            ] = exportDescription
+        }
+
+        properties[
+            kCGImagePropertyTIFFDictionary
+        ] = tiff
+
+        if !exportDescription.isEmpty {
+
+            var iptc =
+                properties[
+                    kCGImagePropertyIPTCDictionary
+                ] as? [CFString: Any] ?? [:]
+
+            iptc[
+                kCGImagePropertyIPTCCaptionAbstract
+            ] = exportDescription
+
+            properties[
+                kCGImagePropertyIPTCDictionary
+            ] = iptc
+        }
+
+        if outputType.conforms(
+            to: .png
+        ),
+           !exportDescription.isEmpty {
+
+            var png =
+                properties[
+                    kCGImagePropertyPNGDictionary
+                ] as? [CFString: Any] ?? [:]
+
+            png[
+                kCGImagePropertyPNGDescription
+            ] = exportDescription
+
+            properties[
+                kCGImagePropertyPNGDictionary
+            ] = png
+        }
+
         return properties
+    }
+
+    func applyFileDates(
+        to url: URL,
+        captureDate: Date?
+    ) {
+
+        guard let captureDate else {
+            return
+        }
+
+        try? FileManager.default.setAttributes(
+            [
+                .creationDate: captureDate,
+                .modificationDate: captureDate
+            ],
+            ofItemAtPath: url.path
+        )
     }
 }

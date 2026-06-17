@@ -7,6 +7,8 @@ struct SelectedPhoto: Identifiable {
 
     var sourceURL: URL
 
+    var sourceProperties: [CFString: Any]
+
     var image: NSImage
 
     var metadata: PhotoMetadata
@@ -14,11 +16,13 @@ struct SelectedPhoto: Identifiable {
     init(
         id: UUID = UUID(),
         sourceURL: URL,
+        sourceProperties: [CFString: Any] = [:],
         image: NSImage,
         metadata: PhotoMetadata
     ) {
         self.id = id
         self.sourceURL = sourceURL
+        self.sourceProperties = sourceProperties
         self.image = image
         self.metadata = metadata
     }

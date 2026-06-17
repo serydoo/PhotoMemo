@@ -114,6 +114,34 @@ private struct MinimalCardGroupBoxStyle: GroupBoxStyle {
     }
 }
 
+private struct MinimalChipStyle: ButtonStyle {
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+
+        configuration.label
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(
+                .primary.opacity(
+                    configuration.isPressed ? 0.7 : 1
+                )
+            )
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                Capsule()
+                    .fill(
+                        Color.gray.opacity(
+                            configuration.isPressed
+                            ? 0.14
+                            : 0.1
+                        )
+                    )
+            )
+    }
+}
+
 struct MainView: View {
 
     @StateObject
@@ -260,6 +288,8 @@ private extension MainView {
                 Text("本地 EXIF 卡片生成")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                heroPanel
 
                 GroupBox("Photo") {
 
@@ -534,6 +564,29 @@ private extension MainView {
 
 private extension MainView {
 
+    var heroPanel: some View {
+
+        HStack(spacing: 10) {
+
+            statusPill(
+                title: "模板",
+                value: currentPreset.displayName
+            )
+
+            statusPill(
+                title: "时间点",
+                value:
+                    selectedAnchor?.title
+                    ?? "未设置"
+            )
+
+            statusPill(
+                title: "导出",
+                value: "保留EXIF"
+            )
+        }
+    }
+
     @ViewBuilder
     func variableLibraryPanel(
         title: String,
@@ -562,20 +615,8 @@ private extension MainView {
                                 variable.token
                             )
                         }
-                        .buttonStyle(.plain)
-                        .padding(
-                            .horizontal,
-                            14
-                        )
-                        .padding(
-                            .vertical,
-                            9
-                        )
-                        .background(
-                            Capsule()
-                                .fill(
-                                    Color.gray.opacity(0.1)
-                                )
+                        .buttonStyle(
+                            MinimalChipStyle()
                         )
                     }
                 }
@@ -599,34 +640,49 @@ private extension MainView {
 
             HStack(spacing: 8) {
 
-                TextField(
-                    slot.placeholder,
-                    text: fieldBinding(
-                        for: slot
+                HStack(spacing: 10) {
+
+                    TextField(
+                        slot.placeholder,
+                        text: fieldBinding(
+                            for: slot
+                        )
                     )
-                )
-                .textFieldStyle(.roundedBorder)
-                .font(.system(
-                    size: 15
-                ))
-                .focused(
-                    $focusedField,
-                    equals: slot
-                )
-
-                Button {
-
-                    updateTemplateValue(
-                        "",
-                        for: slot
+                    .textFieldStyle(.plain)
+                    .font(.system(
+                        size: 15
+                    ))
+                    .focused(
+                        $focusedField,
+                        equals: slot
                     )
 
-                } label: {
+                    Button {
 
-                    Image(systemName: "xmark")
-                        .frame(width: 18)
+                        updateTemplateValue(
+                            "",
+                            for: slot
+                        )
+
+                    } label: {
+
+                        Image(systemName: "xmark")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 18)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.borderless)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 18,
+                        style: .continuous
+                    )
+                    .fill(
+                        Color.gray.opacity(0.08)
+                    )
+                )
             }
         }
     }
@@ -647,6 +703,24 @@ private extension MainView {
                     alignment: .leading,
                     spacing: 22
                 ) {
+
+                    HStack {
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: 4
+                        ) {
+
+                            Text("实时预览")
+                                .font(.title3.weight(.semibold))
+
+                            Text("按当前模板、时间点与 EXIF 数据即时生成")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+                    }
 
                     RecordCardRenderer(
                         image: Image(
@@ -703,6 +777,47 @@ private extension MainView {
                 maxHeight: .infinity
             )
         }
+    }
+
+    @ViewBuilder
+    func statusPill(
+        title: String,
+        value: String
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 3
+        ) {
+
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .fill(
+                MinimalPalette.surface
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .stroke(
+                MinimalPalette.border
+            )
+        )
     }
 }
 

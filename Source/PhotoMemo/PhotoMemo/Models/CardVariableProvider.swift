@@ -125,6 +125,53 @@ struct CardVariableProvider {
 
         return context
     }
+
+    static func exportDescription(
+        from card: RecordCard
+    ) -> String {
+
+        let title =
+            card.title.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        let memory =
+            memorySummary(from: card)
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        let captureDate =
+            captureDateDisplay(
+                from: card.metadata.captureDate
+            )
+
+        let camera =
+            cameraSummary(
+                from: card.metadata
+            )
+
+        var lines: [String] = []
+
+        if !title.isEmpty {
+            lines.append(title)
+        }
+
+        if !memory.isEmpty,
+           memory != title {
+            lines.append(memory)
+        }
+
+        if !captureDate.isEmpty {
+            lines.append("Captured: \(captureDate)")
+        }
+
+        if !camera.isEmpty {
+            lines.append(camera)
+        }
+
+        return lines.joined(separator: "\n")
+    }
 }
 
 private extension CardVariableProvider {
