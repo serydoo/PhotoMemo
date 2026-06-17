@@ -2,6 +2,23 @@ import SwiftUI
 
 struct RecordCardRenderer: View {
 
+    private struct BlockStyle {
+
+        let fontSize: CGFloat
+
+        let weight: Font.Weight
+
+        let design: Font.Design
+
+        let color: Color
+
+        let tracking: CGFloat
+
+        let lineLimit: Int
+
+        let lineSpacing: CGFloat
+    }
+
     let image: Image
 
     let card: RecordCard
@@ -124,27 +141,39 @@ struct RecordCardRenderer: View {
 
         VStack(
             alignment: .leading,
-            spacing: height * 0.08
+            spacing: height * layout.groupSpacingRatio
         ) {
 
             blockGroup(
                 leftTopBlocks,
-                fontSize: max(
-                    16,
-                    height * layout.titleFontRatio
-                ),
-                weight: .semibold,
-                color: .primary
+                style: BlockStyle(
+                    fontSize: max(
+                        16,
+                        height * layout.titleFontRatio
+                    ),
+                    weight: .semibold,
+                    design: .rounded,
+                    color: ClassicWhiteRenderer.titleTextColor,
+                    tracking: layout.titleTracking,
+                    lineLimit: 2,
+                    lineSpacing: height * 0.01
+                )
             )
 
             blockGroup(
                 leftBottomBlocks,
-                fontSize: max(
-                    13,
-                    height * layout.secondaryFontRatio
-                ),
-                weight: .regular,
-                color: .secondary
+                style: BlockStyle(
+                    fontSize: max(
+                        13,
+                        height * layout.secondaryFontRatio
+                    ),
+                    weight: .regular,
+                    design: .rounded,
+                    color: ClassicWhiteRenderer.secondaryTextColor,
+                    tracking: layout.secondaryTracking,
+                    lineLimit: 2,
+                    lineSpacing: height * 0.008
+                )
             )
         }
         .frame(
@@ -161,27 +190,39 @@ struct RecordCardRenderer: View {
 
         VStack(
             alignment: .leading,
-            spacing: height * 0.08
+            spacing: height * layout.groupSpacingRatio
         ) {
 
             blockGroup(
                 rightTopBlocks,
-                fontSize: max(
-                    16,
-                    height * layout.metadataFontRatio
-                ),
-                weight: .semibold,
-                color: .primary
+                style: BlockStyle(
+                    fontSize: max(
+                        15,
+                        height * layout.metadataFontRatio
+                    ),
+                    weight: .medium,
+                    design: .rounded,
+                    color: ClassicWhiteRenderer.metadataTextColor,
+                    tracking: layout.metadataTracking,
+                    lineLimit: 2,
+                    lineSpacing: height * 0.006
+                )
             )
 
             blockGroup(
                 rightBottomBlocks,
-                fontSize: max(
-                    13,
-                    height * layout.secondaryFontRatio
-                ),
-                weight: .regular,
-                color: .secondary
+                style: BlockStyle(
+                    fontSize: max(
+                        13,
+                        height * layout.secondaryFontRatio
+                    ),
+                    weight: .medium,
+                    design: .rounded,
+                    color: ClassicWhiteRenderer.secondaryTextColor,
+                    tracking: layout.secondaryTracking,
+                    lineLimit: 2,
+                    lineSpacing: height * 0.01
+                )
             )
         }
         .frame(
@@ -250,33 +291,47 @@ struct RecordCardRenderer: View {
     @ViewBuilder
     private func blockGroup(
         _ blocks: [CardTextBlock],
-        fontSize: CGFloat,
-        weight: Font.Weight,
-        color: Color
+        style: BlockStyle
     ) -> some View {
 
         if !blocks.isEmpty {
 
             VStack(
                 alignment: .leading,
-                spacing: fontSize * 0.28
+                spacing: style.fontSize * 0.24
             ) {
 
                 ForEach(blocks) { block in
 
-                    Text(block.value)
-                        .font(
-                            .system(
-                                size: fontSize,
-                                weight: weight
-                            )
-                        )
-                        .foregroundStyle(color)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.7)
-                        .multilineTextAlignment(.leading)
+                    styledText(
+                        block.value,
+                        style: style
+                    )
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func styledText(
+        _ value: String,
+        style: BlockStyle
+    ) -> some View {
+
+        Text(value)
+            .font(
+                .system(
+                    size: style.fontSize,
+                    weight: style.weight,
+                    design: style.design
+                )
+            )
+            .monospacedDigit()
+            .kerning(style.tracking)
+            .lineSpacing(style.lineSpacing)
+            .foregroundStyle(style.color)
+            .lineLimit(style.lineLimit)
+            .minimumScaleFactor(0.7)
+            .multilineTextAlignment(.leading)
     }
 }

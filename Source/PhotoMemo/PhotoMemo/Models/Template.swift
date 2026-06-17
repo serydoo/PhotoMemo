@@ -47,8 +47,8 @@ extension Template {
             items: [
                 TemplateItem(
                     type: .variable,
-                    name: "Anchor Age Summary",
-                    value: "{{anchor_title}}今天{{anchor_age_text}}了"
+                    name: "Anchor Summary",
+                    value: "{{anchor_summary}}"
                 )
             ]
         ),

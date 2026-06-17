@@ -29,6 +29,14 @@ enum ClassicWhiteRenderer {
 
         let metadataFontRatio: CGFloat
 
+        let groupSpacingRatio: CGFloat
+
+        let titleTracking: CGFloat
+
+        let metadataTracking: CGFloat
+
+        let secondaryTracking: CGFloat
+
         func finalAspectRatio(
             imageAspectRatio: CGFloat
         ) -> CGFloat {
@@ -39,14 +47,31 @@ enum ClassicWhiteRenderer {
     }
 
     static let infoBarColor =
+        Color.white
+
+    static let titleTextColor =
         Color(
-            red: 248 / 255,
-            green: 247 / 255,
-            blue: 245 / 255
+            red: 34 / 255,
+            green: 37 / 255,
+            blue: 43 / 255
+        )
+
+    static let metadataTextColor =
+        Color(
+            red: 64 / 255,
+            green: 68 / 255,
+            blue: 76 / 255
+        )
+
+    static let secondaryTextColor =
+        Color(
+            red: 116 / 255,
+            green: 121 / 255,
+            blue: 130 / 255
         )
 
     static let dividerColor =
-        Color.black.opacity(0.12)
+        Color.black.opacity(0.08)
 
     static let dividerWidth: CGFloat = 1
 
@@ -60,30 +85,38 @@ enum ClassicWhiteRenderer {
 
             return Layout(
                 borderToImageHeightRatio: 1021 / 4536,
-                horizontalPaddingRatio: 0.034,
-                verticalPaddingRatio: 0.2,
-                interItemSpacingRatio: 0.022,
-                rightColumnWidthRatio: 0.31,
-                badgeSizeRatio: 0.48,
-                dividerHeightRatio: 0.55,
-                titleFontRatio: 0.27,
-                secondaryFontRatio: 0.17,
-                metadataFontRatio: 0.27
+                horizontalPaddingRatio: 0.038,
+                verticalPaddingRatio: 0.19,
+                interItemSpacingRatio: 0.024,
+                rightColumnWidthRatio: 0.33,
+                badgeSizeRatio: 0.43,
+                dividerHeightRatio: 0.48,
+                titleFontRatio: 0.235,
+                secondaryFontRatio: 0.148,
+                metadataFontRatio: 0.182,
+                groupSpacingRatio: 0.068,
+                titleTracking: -0.2,
+                metadataTracking: 0.35,
+                secondaryTracking: 0
             )
 
         case .portrait:
 
             return Layout(
                 borderToImageHeightRatio: 753 / 8064,
-                horizontalPaddingRatio: 0.045,
-                verticalPaddingRatio: 0.2,
-                interItemSpacingRatio: 0.03,
+                horizontalPaddingRatio: 0.048,
+                verticalPaddingRatio: 0.19,
+                interItemSpacingRatio: 0.031,
                 rightColumnWidthRatio: 0.42,
-                badgeSizeRatio: 0.52,
-                dividerHeightRatio: 0.6,
-                titleFontRatio: 0.28,
-                secondaryFontRatio: 0.17,
-                metadataFontRatio: 0.28
+                badgeSizeRatio: 0.46,
+                dividerHeightRatio: 0.5,
+                titleFontRatio: 0.24,
+                secondaryFontRatio: 0.15,
+                metadataFontRatio: 0.19,
+                groupSpacingRatio: 0.072,
+                titleTracking: -0.15,
+                metadataTracking: 0.28,
+                secondaryTracking: 0
             )
         }
     }

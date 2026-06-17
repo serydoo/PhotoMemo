@@ -43,7 +43,7 @@ private enum MainFieldSlot: String, CaseIterable, Hashable {
             return "例如：记录于{{capture_date_display}}"
 
         case .rightBottom:
-            return "例如：{{anchor_title}}今天{{anchor_age_text}}啦"
+            return "例如：{{anchor_summary}}"
         }
     }
 }

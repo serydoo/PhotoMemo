@@ -18,7 +18,7 @@ struct BadgeRenderer {
 
             case .none:
 
-                placeholder(
+                emptyBadge(
                     size: size
                 )
 
@@ -53,7 +53,7 @@ struct BadgeRenderer {
 
                 } else {
 
-                    placeholder(
+                    emptyBadge(
                         size: size
                     )
                 }
@@ -61,7 +61,7 @@ struct BadgeRenderer {
 
         } else {
 
-            placeholder(
+            emptyBadge(
                 size: size
             )
         }
@@ -80,17 +80,14 @@ struct BadgeRenderer {
         return nil
     }
 
-    private func placeholder(
+    private func emptyBadge(
         size: CGFloat
     ) -> some View {
 
-        Image(systemName: "circle.dashed")
-            .resizable()
-            .scaledToFit()
+        Color.clear
             .frame(
                 width: size,
                 height: size
             )
-            .foregroundStyle(.tertiary)
     }
 }

@@ -21,6 +21,8 @@
 - Polished the main screen with stronger status feedback, softer system-style chips, and cleaner field editor presentation.
 - Removed the unused reverse-geocoding service so the default offline workflow no longer compiles deprecated location lookup code.
 - Reduced the main variable picker to offline-safe fields by removing reverse-geocoded location placeholders from the default UI.
+- Refined the bottom card renderer with cleaner white card styling, lighter dividers, better text hierarchy, and an invisible empty badge state for final exports.
+- Changed template 1 to use the anchor summary as its default right-bottom memory line so preview text and exported metadata stay aligned.
 
 ### Notes
 - Locked sample-derived border height ratios:
