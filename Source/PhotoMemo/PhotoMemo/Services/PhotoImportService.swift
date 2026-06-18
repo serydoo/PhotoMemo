@@ -1,5 +1,4 @@
 import Foundation
-import AppKit
 import UniformTypeIdentifiers
 
 enum PhotoImportError: LocalizedError {
@@ -22,6 +21,45 @@ final class PhotoImportService {
 
     func importPhoto(from url: URL) async throws -> SelectedPhoto {
 
+        try importPhotoSync(from: url)
+    }
+
+    func importPhotoOffMainThread(
+        from url: URL
+    ) async throws -> SelectedPhoto {
+
+        try await withCheckedThrowingContinuation {
+            continuation in
+
+            DispatchQueue.global(
+                qos: .userInitiated
+            ).async {
+
+                do {
+
+                    let photo =
+                        try self.importPhotoSync(
+                            from: url
+                        )
+
+                    continuation.resume(
+                        returning: photo
+                    )
+
+                } catch {
+
+                    continuation.resume(
+                        throwing: error
+                    )
+                }
+            }
+        }
+    }
+
+    private func importPhotoSync(
+        from url: URL
+    ) throws -> SelectedPhoto {
+
         let accessGranted = url.startAccessingSecurityScopedResource()
         defer {
             if accessGranted {
@@ -40,7 +78,7 @@ final class PhotoImportService {
 
         // ✅ 关键修复：用 Data 读取（稳定）
         guard let data = try? Data(contentsOf: url),
-              let image = NSImage(data: data) else {
+              let image = PlatformImage.loadPhotoMemoImage(from: data) else {
 
             throw PhotoImportError.imageLoadFailed
         }

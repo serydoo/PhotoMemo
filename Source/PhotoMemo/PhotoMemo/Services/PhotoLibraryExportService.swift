@@ -1,6 +1,12 @@
 import Foundation
 import Photos
-import CoreLocation
+
+struct PhotoLibrarySaveResult: Hashable {
+
+    let albumTitle: String
+
+    let assetLocalIdentifier: String
+}
 
 struct PhotoAlbumOption: Identifiable, Hashable {
 
@@ -111,6 +117,20 @@ final class PhotoLibraryExportService {
         preferredAlbumIdentifier: String?
     ) async throws -> String {
 
+        try await saveImageResult(
+            at: fileURL,
+            metadata: metadata,
+            preferredAlbumIdentifier:
+                preferredAlbumIdentifier
+        ).albumTitle
+    }
+
+    func saveImageResult(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?
+    ) async throws -> PhotoLibrarySaveResult {
+
         let status = await requestAuthorizationIfNeeded()
 
         guard isAuthorized(status) else {
@@ -131,15 +151,6 @@ final class PhotoLibraryExportService {
 
             assetRequest.creationDate =
                 metadata.captureDate
-
-            if let location =
-                self.preservedLocation(
-                    from: metadata
-                ) {
-
-                assetRequest.location =
-                    location
-            }
 
             let resourceOptions =
                 PHAssetResourceCreationOptions()
@@ -176,41 +187,17 @@ final class PhotoLibraryExportService {
             throw PhotoLibraryExportError.assetSaveFailed
         }
 
-        return album.localizedTitle ?? defaultAlbumTitle
+        return PhotoLibrarySaveResult(
+            albumTitle:
+                album.localizedTitle
+                ?? defaultAlbumTitle,
+            assetLocalIdentifier:
+                placeholderIdentifier ?? ""
+        )
     }
 }
 
 private extension PhotoLibraryExportService {
-
-    func preservedLocation(
-        from metadata: PhotoMetadata
-    ) -> CLLocation? {
-
-        guard
-            let latitude = metadata.latitude,
-            let longitude = metadata.longitude
-        else {
-            return nil
-        }
-
-        if let altitude = metadata.altitude {
-            return CLLocation(
-                coordinate: CLLocationCoordinate2D(
-                    latitude: latitude,
-                    longitude: longitude
-                ),
-                altitude: altitude,
-                horizontalAccuracy: kCLLocationAccuracyNearestTenMeters,
-                verticalAccuracy: kCLLocationAccuracyNearestTenMeters,
-                timestamp: metadata.captureDate ?? Date()
-            )
-        }
-
-        return CLLocation(
-            latitude: latitude,
-            longitude: longitude
-        )
-    }
 
     func isAuthorized(
         _ status: PHAuthorizationStatus

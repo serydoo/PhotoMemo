@@ -1,5 +1,10 @@
+import Foundation
 import SwiftUI
+#if os(macOS)
 import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 private enum MainFieldSlot: String, CaseIterable, Hashable {
 
@@ -43,19 +48,8 @@ private enum MainFieldSlot: String, CaseIterable, Hashable {
             return "例如：记录于{{capture_date_display}}"
 
         case .rightBottom:
-            return "例如：途途宝宝到今天{{anchor_age_text}} / 距离毕业还有{{anchor_countdown_text}}"
+            return "例如：途途到今天{{anchor_age_text}} / 距离高考{{anchor_countdown_text}}"
         }
-    }
-}
-
-private struct SmartSentencePreset: Identifiable, Hashable {
-
-    let title: String
-
-    let value: String
-
-    var id: String {
-        title + value
     }
 }
 
@@ -80,6 +74,419 @@ private struct TemplateComposerItem: Identifiable, Hashable {
         self.segment = segment
     }
 }
+
+private struct ComposerDragModifier: ViewModifier {
+
+    let isEnabled: Bool
+
+    let item: TemplateComposerItem
+
+    @ViewBuilder
+    func body(
+        content: Content
+    ) -> some View {
+
+        if isEnabled {
+
+            content.draggable(item.id) {
+
+                HStack(spacing: 8) {
+
+                    Image(
+                        systemName: previewIcon
+                    )
+                    .font(.caption.weight(.semibold))
+
+                    Text(previewTitle)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(
+                    Capsule()
+                        .fill(Color.white)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(
+                            Color.black.opacity(0.08)
+                        )
+                )
+            }
+
+        } else {
+
+            content
+        }
+    }
+
+    private var previewIcon: String {
+
+        switch item.segment {
+
+        case .variable:
+            return "square.stack.3d.up"
+
+        case .literal:
+            return "character.textbox"
+        }
+    }
+
+    private var previewTitle: String {
+
+        switch item.segment {
+
+        case .variable(let variable):
+            return variable.title
+
+        case .literal(let literal):
+            return literal
+        }
+    }
+}
+
+private struct InlineTemplateTextEditor: View {
+
+    @Binding
+    var text: String
+
+    @Binding
+    var selection: NSRange
+
+    var onFocus: () -> Void
+
+#if os(macOS)
+    var body: some View {
+        MacInlineTemplateTextEditor(
+            text: $text,
+            selection: $selection,
+            onFocus: onFocus
+        )
+    }
+#elseif canImport(UIKit)
+    var body: some View {
+        UIKitInlineTemplateTextEditor(
+            text: $text,
+            selection: $selection,
+            onFocus: onFocus
+        )
+    }
+#else
+    var body: some View {
+        TextField(
+            "",
+            text: $text,
+            axis: .vertical
+        )
+        .textFieldStyle(.plain)
+        .font(.system(size: 14, weight: .medium))
+        .onTapGesture {
+            onFocus()
+            selection = NSRange(
+                location: (text as NSString).length,
+                length: 0
+            )
+        }
+    }
+#endif
+}
+
+#if os(macOS)
+private struct MacInlineTemplateTextEditor: NSViewRepresentable {
+
+    @Binding
+    var text: String
+
+    @Binding
+    var selection: NSRange
+
+    var onFocus: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeNSView(
+        context: Context
+    ) -> NSScrollView {
+
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = false
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+
+        let textView = NSTextView()
+        textView.delegate = context.coordinator
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.drawsBackground = false
+        textView.textContainerInset = NSSize(
+            width: 0,
+            height: 6
+        )
+        textView.font = .systemFont(
+            ofSize: 14,
+            weight: .medium
+        )
+        textView.textColor = NSColor.labelColor
+        textView.alignment = .left
+        textView.string = text
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainer?.widthTracksTextView = true
+        textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
+        textView.autoresizingMask = [.width]
+
+        scrollView.documentView = textView
+        context.coordinator.textView = textView
+        context.coordinator.applySelection()
+        return scrollView
+    }
+
+    func updateNSView(
+        _ nsView: NSScrollView,
+        context: Context
+    ) {
+
+        guard let textView =
+            context.coordinator.textView
+        else {
+            return
+        }
+
+        context.coordinator.parent = self
+
+        // Preserve macOS IME composition so Chinese pinyin input
+        // is not interrupted by SwiftUI state synchronization.
+        guard !textView.hasMarkedText() else {
+            return
+        }
+
+        if textView.string != text {
+            textView.string = text
+        }
+
+        context.coordinator.applySelection()
+    }
+
+    final class Coordinator:
+        NSObject,
+        NSTextViewDelegate
+    {
+
+        var parent: MacInlineTemplateTextEditor
+
+        weak var textView: NSTextView?
+
+        init(
+            _ parent: MacInlineTemplateTextEditor
+        ) {
+            self.parent = parent
+        }
+
+        func textDidBeginEditing(
+            _ notification: Notification
+        ) {
+
+            parent.onFocus()
+        }
+
+        func textDidChange(
+            _ notification: Notification
+        ) {
+
+            guard let textView else {
+                return
+            }
+
+            parent.text = textView.string
+            parent.selection = textView.selectedRange()
+        }
+
+        func textViewDidChangeSelection(
+            _ notification: Notification
+        ) {
+
+            guard let textView else {
+                return
+            }
+
+            parent.selection = textView.selectedRange()
+        }
+
+        func applySelection() {
+
+            guard let textView else {
+                return
+            }
+
+            let length =
+                (textView.string as NSString).length
+
+            let clampedLocation =
+                min(
+                    max(parent.selection.location, 0),
+                    length
+                )
+
+            let clampedLength =
+                min(
+                    max(parent.selection.length, 0),
+                    length - clampedLocation
+                )
+
+            let safeRange = NSRange(
+                location: clampedLocation,
+                length: clampedLength
+            )
+
+            if textView.selectedRange() != safeRange {
+                textView.setSelectedRange(safeRange)
+            }
+        }
+    }
+}
+#endif
+
+#if canImport(UIKit)
+private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
+
+    @Binding
+    var text: String
+
+    @Binding
+    var selection: NSRange
+
+    var onFocus: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(
+        context: Context
+    ) -> UITextView {
+
+        let textView = UITextView()
+        textView.delegate = context.coordinator
+        textView.backgroundColor = .clear
+        textView.font = .systemFont(
+            ofSize: 14,
+            weight: .medium
+        )
+        textView.textColor = .label
+        textView.textContainerInset = UIEdgeInsets(
+            top: 6,
+            left: 0,
+            bottom: 6,
+            right: 0
+        )
+        textView.textContainer.lineFragmentPadding = 0
+        textView.isScrollEnabled = false
+        textView.autocorrectionType = .no
+        textView.autocapitalizationType = .none
+        textView.text = text
+
+        context.coordinator.textView = textView
+        context.coordinator.applySelection()
+        return textView
+    }
+
+    func updateUIView(
+        _ uiView: UITextView,
+        context: Context
+    ) {
+
+        context.coordinator.parent = self
+
+        guard
+            uiView.markedTextRange == nil
+        else {
+            return
+        }
+
+        if uiView.text != text {
+            uiView.text = text
+        }
+
+        context.coordinator.applySelection()
+    }
+
+    final class Coordinator:
+        NSObject,
+        UITextViewDelegate
+    {
+
+        var parent: UIKitInlineTemplateTextEditor
+
+        weak var textView: UITextView?
+
+        init(
+            _ parent: UIKitInlineTemplateTextEditor
+        ) {
+            self.parent = parent
+        }
+
+        func textViewDidBeginEditing(
+            _ textView: UITextView
+        ) {
+
+            parent.onFocus()
+        }
+
+        func textViewDidChange(
+            _ textView: UITextView
+        ) {
+
+            parent.text = textView.text
+            parent.selection = textView.selectedRange
+        }
+
+        func textViewDidChangeSelection(
+            _ textView: UITextView
+        ) {
+
+            parent.selection = textView.selectedRange
+        }
+
+        func applySelection() {
+
+            guard let textView else {
+                return
+            }
+
+            let length =
+                (textView.text as NSString?)?.length ?? 0
+
+            let clampedLocation =
+                min(
+                    max(parent.selection.location, 0),
+                    length
+                )
+
+            let clampedLength =
+                min(
+                    max(parent.selection.length, 0),
+                    length - clampedLocation
+                )
+
+            let safeRange = NSRange(
+                location: clampedLocation,
+                length: clampedLength
+            )
+
+            if textView.selectedRange != safeRange {
+                textView.selectedRange = safeRange
+            }
+        }
+    }
+}
+#endif
 
 private enum MinimalPalette {
 
@@ -175,10 +582,47 @@ private struct MinimalChipStyle: ButtonStyle {
     }
 }
 
+private struct MinimalInsetCard<Content: View>: View {
+
+    @ViewBuilder
+    let content: Content
+
+    var body: some View {
+        VStack(
+            alignment: .leading,
+            spacing: 10
+        ) {
+            content
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .fill(
+                Color.gray.opacity(0.08)
+            )
+        )
+    }
+}
+
 struct MainView: View {
+
+    @EnvironmentObject
+    private var batchQueueStore:
+        BatchQueueStore
+
+    @Environment(\.scenePhase)
+    private var scenePhase
 
     @StateObject
     private var settings = SettingsService()
+
+    @StateObject
+    private var permissionCenter =
+        PermissionCenter()
 
     @State
     private var selectedPhoto: SelectedPhoto?
@@ -218,8 +662,38 @@ struct MainView: View {
     private var isSavingToAlbum = false
 
     @State
-    private var customTextDrafts:
-        [MainFieldSlot: String] = [:]
+    private var showLiteralComposerSheet = false
+
+    @State
+    private var showTemplateRenameSheet = false
+
+    @State
+    private var showPermissionSetupSheet = false
+
+    @State
+    private var templateNameDraft = ""
+
+    @State
+    private var literalComposerDraft = ""
+
+    @State
+    private var literalComposerTargetSlot:
+        MainFieldSlot?
+
+    @State
+    private var arrangingComposerSlot:
+        MainFieldSlot?
+
+    @State
+    private var composerWigglePhase = false
+
+    @State
+    private var templateEditorSelections:
+        [MainFieldSlot: NSRange] = [:]
+
+    @State
+    private var activeTemplateEditorSlot:
+        MainFieldSlot?
 
     @State
     private var selectedComposerItemIDs:
@@ -242,28 +716,20 @@ struct MainView: View {
         [MainFieldSlot: String] = [:]
 
     @State
-    private var editingComposerItemIDs:
-        [MainFieldSlot: String] = [:]
-
-    @State
-    private var editingComposerDrafts:
-        [MainFieldSlot: String] = [:]
-
-    @State
     private var insertionComposerIndices:
         [MainFieldSlot: Int] = [:]
 
-    @FocusState
+    @State
     private var focusedField: MainFieldSlot?
-
-    @FocusState
-    private var focusedComposerEditorID: String?
 
     private let templatePresetEngine =
         TemplatePresetEngine()
 
     private let anchorEngine =
         AnchorEngine()
+
+    private let templateVariableEngine =
+        TemplateVariableEngine()
 
     private let exportService =
         RecordCardExportService()
@@ -278,14 +744,7 @@ struct MainView: View {
             MinimalPalette.background
                 .ignoresSafeArea()
 
-            NavigationSplitView {
-
-                sidebar
-
-            } detail: {
-
-                detail
-            }
+            rootContent
         }
         .tint(
             MinimalPalette.accent
@@ -309,9 +768,43 @@ struct MainView: View {
                 minHeight: 420
             )
         }
+        .sheet(
+            isPresented: $showLiteralComposerSheet
+        ) {
+
+            literalComposerSheet
+        }
+        .sheet(
+            isPresented: $showTemplateRenameSheet
+        ) {
+
+            templateRenameSheet
+        }
+        .sheet(
+            isPresented: $showPermissionSetupSheet
+        ) {
+
+            permissionSetupSheet
+        }
         .onAppear {
 
             configureInitialState()
+
+            Task {
+                await preparePermissionsOnAppear()
+            }
+        }
+        .onChange(
+            of: scenePhase
+        ) { _, newValue in
+
+            guard newValue == .active else {
+                return
+            }
+
+            Task {
+                await refreshPermissionsForActiveScene()
+            }
         }
         .onChange(
             of: settings.anchors
@@ -320,6 +813,50 @@ struct MainView: View {
             syncSelectedAnchor(
                 with: anchors
             )
+        }
+        .onChange(
+            of: selectedAnchorID
+        ) { _, newValue in
+
+            persistEditorDraftState(
+                selectedAnchorID: newValue
+            )
+        }
+        .onChange(
+            of: titleText
+        ) { _, newValue in
+
+            persistEditorDraftState(
+                draftTitleText: newValue
+            )
+        }
+        .onChange(
+            of: storyText
+        ) { _, newValue in
+
+            persistEditorDraftState(
+                draftStoryText: newValue
+            )
+        }
+        .onChange(
+            of: selectedAlbumIdentifier
+        ) { _, newValue in
+
+            persistEditorDraftState(
+                selectedAlbumIdentifier: newValue
+            )
+        }
+        .onChange(
+            of: settings.shouldWritePhotoDescription
+        ) { _, _ in
+
+            settings.schedulePhotoDescriptionSettingsSave()
+        }
+        .onChange(
+            of: settings.photoDescriptionOverride
+        ) { _, _ in
+
+            settings.schedulePhotoDescriptionSettingsSave()
         }
         .toolbar {
 
@@ -345,372 +882,111 @@ struct MainView: View {
             Text(alertMessage)
         }
     }
+
+    @ViewBuilder
+    var rootContent: some View {
+
+#if os(macOS)
+        NavigationSplitView {
+
+            sidebar
+
+        } detail: {
+
+            detail
+        }
+#else
+        NavigationStack {
+
+            ScrollView {
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 24
+                ) {
+
+                    detailContent
+
+                    editorContent
+                }
+                .padding(20)
+            }
+            .navigationTitle("PhotoMemo")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+#endif
+    }
 }
 
 // MARK: - Sidebar
 private extension MainView {
 
-    var sidebar: some View {
+    var editorContent: some View {
 
-        ScrollView {
+        VStack(
+            alignment: .leading,
+            spacing: 20
+        ) {
 
-            VStack(
-                alignment: .leading,
-                spacing: 20
-            ) {
+            Text("PhotoMemo")
+                .font(.system(
+                    size: 32,
+                    weight: .semibold
+                ))
 
-                Text("PhotoMemo")
-                    .font(.system(
-                        size: 32,
-                        weight: .semibold
-                    ))
+            Text("本地 EXIF 卡片生成")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
-                Text("本地 EXIF 卡片生成")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            heroPanel
 
-                heroPanel
+            memoryProgressPanel
 
-                GroupBox("照片") {
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 12
-                    ) {
-
-                        PhotoImporterView { photo in
-
-                            selectedPhoto = photo
-
-                            if titleText.trimmingCharacters(
-                                in: .whitespacesAndNewlines
-                            ).isEmpty {
-
-                                titleText =
-                                    selectedAnchor?.title
-                                    ?? "PhotoMemo"
-                            }
-
-                        }
-
-                        if let selectedPhoto {
-
-                            metadataSummary(
-                                for: selectedPhoto
-                            )
-                        }
-                    }
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                }
-
-                GroupBox("模板") {
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 12
-                    ) {
-
-                        Picker(
-                            "模板",
-                            selection: selectedTemplatePreset
-                        ) {
-
-                            ForEach(
-                                TemplatePreset.allCases,
-                                id: \.self
-                            ) { preset in
-
-                                Text(
-                                    preset.displayName
-                                )
-                                .tag(preset)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .frame(
-                            maxWidth: .infinity,
-                            alignment: .leading
-                        )
-
-                        Text(currentPreset.summary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Button("恢复模板默认字段") {
-
-                            settings.selectedTemplate =
-                                templatePresetEngine.build(
-                                    preset: currentPreset
-                                )
-                            settings.saveTemplate()
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                }
-
-                GroupBox("时间锚点") {
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 12
-                    ) {
-
-                        Picker(
-                            "选择时间点",
-                            selection: $selectedAnchorID
-                        ) {
-
-                            Text("未选择")
-                                .tag(
-                                    Optional<Anchor.ID>.none
-                                )
-
-                            ForEach(
-                                settings.anchors
-                            ) { anchor in
-
-                                Text(anchor.title)
-                                    .tag(
-                                        Optional(anchor.id)
-                                    )
-                            }
-                        }
-                        .pickerStyle(.menu)
-
-                        Button {
-
-                            showAnchorManager = true
-
-                        } label: {
-
-                            Label(
-                                "设置时间点",
-                                systemImage: "calendar.badge.plus"
-                            )
-                        }
-
-                        Text(
-                            photoTimeDescription
-                        )
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                        if let preview = anchorPreviewResult {
-
-                            VStack(
-                                alignment: .leading,
-                                spacing: 4
-                            ) {
-
-                                Text(preview.summaryText)
-                                    .font(.headline)
-
-                                Text(
-                                    "\(preview.primaryText) · \(preview.secondaryText)"
-                                )
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            }
-                        } else {
-
-                            Text(
-                                "选择一个时间点后，系统会按照片 EXIF 拍摄时间自动计算宝宝年龄、纪念时长、纪念天数或未来倒计时。"
-                            )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                }
-
-                GroupBox("字段编辑") {
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 18
-                    ) {
-
-                        variableLibraryPanel(
-                            title: "识别数据",
-                            variables: TemplateVariableLibrary.recognized
-                        )
-
-                        variableLibraryPanel(
-                            title: "智能数据",
-                            variables: TemplateVariableLibrary.intelligent
-                        )
-
-                        variableLibraryPanel(
-                            title: "用户数据",
-                            variables: TemplateVariableLibrary.user
-                        )
-
-                        templateFieldEditor(
-                            for: .leftTop
-                        )
-
-                        templateFieldEditor(
-                            for: .rightTop
-                        )
-
-                        templateFieldEditor(
-                            for: .leftBottom
-                        )
-
-                        templateFieldEditor(
-                            for: .rightBottom
-                        )
-                    }
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                }
-
-                GroupBox("自定义内容") {
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 12
-                    ) {
-
-                        TextField(
-                            "标题",
-                            text: $titleText
-                        )
-
-                        TextField(
-                            "记忆文案",
-                            text: $storyText,
-                            axis: .vertical
-                        )
-                        .lineLimit(3...6)
-                    }
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                }
-
-                GroupBox("图标") {
-
-                    Picker(
-                            "图标",
-                            selection: selectedBadgeName
-                    ) {
-
-                        ForEach(
-                            BadgeLibrary.defaults,
-                            id: \.name
-                        ) { badge in
-
-                            Text(badge.name)
-                                .tag(badge.name)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                }
-
-                GroupBox("输出") {
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 10
-                    ) {
-
-                        HStack(
-                            alignment: .center,
-                            spacing: 8
-                        ) {
-
-                            Picker(
-                                "系统相册",
-                                selection: $selectedAlbumIdentifier
-                            ) {
-
-                                Text("自动存入 PhotoMemo")
-                                    .tag(
-                                        PhotoAlbumOption
-                                        .automaticIdentifier
-                                    )
-
-                                ForEach(availableAlbums) { album in
-
-                                    Text(album.title)
-                                        .tag(album.id)
-                                }
-                            }
-                            .pickerStyle(.menu)
-
-                            Button {
-
-                                Task {
-                                    await reloadAlbums()
-                                }
-
-                            } label: {
-
-                                Image(
-                                    systemName:
-                                        isLoadingAlbums
-                                        ? "arrow.trianglehead.2.clockwise.rotate.90"
-                                        : "arrow.clockwise"
-                                )
-                            }
-                            .buttonStyle(.borderless)
-                            .disabled(isLoadingAlbums)
-                        }
-
-                        Text(
-                            "处理后的图片会直接写入系统图库；不选现有相册时，会自动创建或复用 PhotoMemo 相册。除分辨率变化外，会尽量保留原图 EXIF、拍摄时间与元数据。"
-                        )
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                        Button(
-                            isSavingToAlbum
-                                ? "正在存入系统相册..."
-                                : "存入系统相册"
-                        ) {
-
-                            Task {
-                                await saveCurrentCardToAlbum()
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        .disabled(
-                            selectedPhoto == nil
-                            || currentCard == nil
-                            || isSavingToAlbum
-                        )
-                    }
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                }
-                
-                Spacer(minLength: 0)
+            GroupBox("本地权限") {
+                permissionSection
             }
+
+            GroupBox("照片") {
+                photoSection
+            }
+
+            GroupBox("模板") {
+                templateSection
+            }
+
+            GroupBox("时间锚点") {
+                anchorSection
+            }
+
+            GroupBox("个性化区域") {
+                fieldEditorSection
+            }
+
+            GroupBox("补充信息") {
+                customContentSection
+            }
+
+            GroupBox("图标") {
+                badgeSection
+            }
+
+            GroupBox("输出") {
+                outputSection
+            }
+
+            Spacer(minLength: 0)
         }
         .groupBoxStyle(
             MinimalCardGroupBoxStyle()
         )
+    }
+
+    var sidebar: some View {
+
+        ScrollView {
+
+            editorContent
+        }
         .padding(24)
         .frame(
             minWidth: 360,
@@ -722,13 +998,513 @@ private extension MainView {
 
 private extension MainView {
 
+    var photoSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 12
+        ) {
+
+            PhotoImporterView { photo in
+
+                selectedPhoto = photo
+
+                if titleText.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ).isEmpty {
+
+                    titleText =
+                        selectedAnchor?.title
+                        ?? "PhotoMemo"
+                }
+            }
+
+            if let selectedPhoto {
+
+                metadataSummary(
+                    for: selectedPhoto
+                )
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var templateSection: some View {
+
+            VStack(
+                alignment: .leading,
+                spacing: 14
+            ) {
+
+            HStack(
+                alignment: .center,
+                spacing: 10
+            ) {
+
+                Picker(
+                    "模板",
+                    selection: selectedTemplatePreset
+                ) {
+
+                    ForEach(
+                        TemplatePreset.allCases,
+                        id: \.self
+                    ) { preset in
+
+                        Text(
+                            preset.displayName
+                        )
+                        .tag(preset)
+                    }
+                }
+                .pickerStyle(.menu)
+                .controlSize(.small)
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+
+                Button {
+                    presentTemplateRenameSheet()
+                } label: {
+                    Label(
+                        "自定义名称",
+                        systemImage: "pencil"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+
+            MinimalInsetCard {
+                LabeledContent("当前定位") {
+                    Text(resolvedTemplateDisplayName)
+                        .font(.subheadline.weight(.medium))
+                }
+
+                Divider()
+
+                LabeledContent("预设骨架") {
+                    Text(currentPreset.displayName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                LabeledContent("默认右下") {
+                    Text(currentPresetDefaultOutput)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HStack(spacing: 10) {
+                Button("恢复模板默认字段") {
+
+                    settings.selectedTemplate =
+                        templatePresetEngine.build(
+                            preset: currentPreset
+                        )
+                    settings.saveTemplate()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Text(currentPreset.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var anchorSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 14
+        ) {
+
+            HStack(spacing: 10) {
+                Picker(
+                    "选择时间点",
+                    selection: $selectedAnchorID
+                ) {
+
+                    Text("未选择")
+                        .tag(Optional<Anchor.ID>.none)
+
+                    ForEach(settings.anchors) { anchor in
+
+                        Text(anchor.title)
+                            .tag(Optional(anchor.id))
+                    }
+                }
+                .pickerStyle(.menu)
+                .controlSize(.small)
+
+                Button {
+
+                    showAnchorManager = true
+
+                } label: {
+
+                    Label(
+                        "设置时间点",
+                        systemImage: "calendar.badge.plus"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+
+            MinimalInsetCard {
+                LabeledContent("照片时间") {
+                    Text(anchorPhotoSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+
+                if let anchor = selectedAnchor {
+
+                    Divider()
+
+                    LabeledContent("基准时间") {
+                        Text(anchorDateText(anchor))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let preview = anchorPreviewResult {
+
+                        Divider()
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: 8
+                        ) {
+
+                            Text(preview.summaryText)
+                                .font(.subheadline.weight(.medium))
+
+                            ScrollView(
+                                .horizontal,
+                                showsIndicators: false
+                            ) {
+
+                                HStack(spacing: 8) {
+
+                                    ForEach(
+                                        anchorQuickFacts(
+                                            preview
+                                        ),
+                                        id: \.label
+                                    ) { fact in
+
+                                        compactFactPill(
+                                            title: fact.label,
+                                            value: fact.value
+                                        )
+                                    }
+                                }
+                                .padding(.vertical, 1)
+                            }
+                        }
+                    }
+
+                } else {
+
+                    Divider()
+
+                    Text(
+                        "选择一个时间点后，系统会按照片 EXIF 拍摄时间自动计算年岁、纪念时长、已过天数、未来倒计时，以及第几天、周数、月龄等时间结果模块。"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var fieldEditorSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 18
+        ) {
+
+            composerEntryPanel
+
+            variableLibraryPanel(
+                title: "识别数据",
+                variables: TemplateVariableLibrary.recognized
+            )
+
+            variableLibraryPanel(
+                title: "智能数据",
+                variables: TemplateVariableLibrary.intelligent
+            )
+
+            variableLibraryPanel(
+                title: "用户数据",
+                variables: TemplateVariableLibrary.user
+            )
+
+            templateFieldEditors
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var templateFieldEditors: some View {
+
+        ForEach(
+            MainFieldSlot.allCases,
+            id: \.self
+        ) { slot in
+
+            templateFieldEditor(for: slot)
+        }
+    }
+
+    var customContentSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 14
+        ) {
+
+            MinimalInsetCard {
+                Text("内容")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                TextField(
+                    "标题",
+                    text: $titleText
+                )
+                .textFieldStyle(.roundedBorder)
+
+                TextField(
+                    "记忆文案",
+                    text: $storyText,
+                    axis: .vertical
+                )
+                .lineLimit(3...5)
+                .textFieldStyle(.roundedBorder)
+            }
+
+            MinimalInsetCard {
+                Toggle(
+                    "同步到苹果相册说明",
+                    isOn: $settings.shouldWritePhotoDescription
+                )
+
+                if settings.shouldWritePhotoDescription {
+
+                    Divider()
+
+                    TextField(
+                        "说明内容留空时，默认写入右下区域完整内容",
+                        text: $settings.photoDescriptionOverride,
+                        axis: .vertical
+                    )
+                    .lineLimit(2...4)
+                    .textFieldStyle(.roundedBorder)
+                }
+
+                Divider()
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 4
+                ) {
+
+                    Text("说明预览")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+
+                    Text(defaultPhotoDescriptionHint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var badgeSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 14
+        ) {
+
+            Picker(
+                "图标",
+                selection: selectedBadgeName
+            ) {
+
+                ForEach(
+                    BadgeLibrary.defaults,
+                    id: \.name
+                ) { badge in
+
+                    Text(badge.name)
+                        .tag(badge.name)
+                }
+            }
+            .pickerStyle(.menu)
+            .controlSize(.small)
+
+            MinimalInsetCard {
+                HStack(spacing: 12) {
+
+                    badgePreviewIcon
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 4
+                    ) {
+
+                        Text(selectedBadgeTitle)
+                            .font(.subheadline.weight(.medium))
+
+                        Text(selectedBadgeSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var outputSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 14
+        ) {
+
+            HStack(
+                alignment: .center,
+                spacing: 8
+            ) {
+
+                Picker(
+                    "系统相册",
+                    selection: $selectedAlbumIdentifier
+                ) {
+
+                    Text("自动存入 PhotoMemo")
+                        .tag(
+                            PhotoAlbumOption
+                                .automaticIdentifier
+                        )
+
+                    ForEach(availableAlbums) { album in
+
+                        Text(album.title)
+                            .tag(album.id)
+                    }
+                }
+                .pickerStyle(.menu)
+                .controlSize(.small)
+
+                Button {
+
+                    Task {
+                        await reloadAlbums()
+                    }
+
+                } label: {
+
+                    Image(
+                        systemName:
+                            isLoadingAlbums
+                            ? "arrow.trianglehead.2.clockwise.rotate.90"
+                            : "arrow.clockwise"
+                    )
+                }
+                .buttonStyle(.borderless)
+                .disabled(isLoadingAlbums)
+            }
+
+            MinimalInsetCard {
+                LabeledContent("写入位置") {
+                    Text(selectedAlbumSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                Text(
+                    "处理后的图片会直接写入系统图库；不选现有相册时，会自动创建或复用 PhotoMemo 相册。除分辨率变化外，会尽量保留原图 EXIF、拍摄时间与元数据。"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button(
+                isSavingToAlbum
+                    ? "正在存入系统相册..."
+                    : "存入系统相册"
+            ) {
+
+                Task {
+                    await saveCurrentCardToAlbum()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .disabled(
+                selectedPhoto == nil
+                || currentCard == nil
+                || isSavingToAlbum
+            )
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
     var heroPanel: some View {
 
         HStack(spacing: 10) {
 
             statusPill(
                 title: "模板",
-                value: currentPreset.displayName
+                value: resolvedTemplateDisplayName
             )
 
             statusPill(
@@ -740,9 +1516,528 @@ private extension MainView {
 
             statusPill(
                 title: "图库",
-                value: "原信息保留"
+                value:
+                    permissionCenter.canAccessPhotoLibrary
+                    ? "原信息保留"
+                    : "待授权"
             )
         }
+    }
+
+    var permissionSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 12
+        ) {
+
+            MinimalInsetCard {
+                permissionRow(
+                    title: "系统相册",
+                    icon: "photo.on.rectangle.angled",
+                    state:
+                        permissionCenter
+                        .photoLibraryState,
+                    description:
+                        "用于读取你选择的照片，并把处理后的新图直接写回系统图库。"
+                ) {
+                    Task {
+                        await requestPhotoLibraryPermission()
+                    }
+                } openSettingsAction: {
+                    permissionCenter
+                        .openSystemSettings(
+                            for: .photoLibrary
+                        )
+                }
+
+                Divider()
+
+                permissionRow(
+                    title: "系统通知",
+                    icon: "bell.badge",
+                    state:
+                        permissionCenter
+                        .notificationState,
+                    description:
+                        "用于在后台处理开始、完成或失败时给你明确反馈。"
+                ) {
+                    Task {
+                        await requestNotificationPermission()
+                    }
+                } openSettingsAction: {
+                    permissionCenter
+                        .openSystemSettings(
+                            for: .notifications
+                        )
+                }
+            }
+
+            Text(
+                "PhotoMemo 完全本地运行，不依赖联网；这里只会请求相册与通知两项必要能力。"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var memoryProgressPanel: some View {
+
+        let snapshot =
+            batchQueueStore.usageSnapshot
+
+        return MinimalInsetCard {
+            HStack(
+                alignment: .top,
+                spacing: 14
+            ) {
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 6
+                ) {
+
+                    Text("记忆进度")
+                        .font(.subheadline.weight(.medium))
+
+                    Text(memoryProgressHeadline(snapshot))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                VStack(
+                    alignment: .trailing,
+                    spacing: 6
+                ) {
+
+                    progressStatLine(
+                        title: "累计盖章",
+                        value: "\(snapshot.completedPhotoCount) 张"
+                    )
+
+                    progressStatLine(
+                        title: "完成批次",
+                        value: "\(snapshot.completedBatchCount) 次"
+                    )
+
+                    progressStatLine(
+                        title: "后台状态",
+                        value:
+                            snapshot.activePhotoCount > 0
+                            ? "处理中 \(snapshot.activePhotoCount) 张"
+                            : "当前空闲"
+                    )
+                }
+            }
+
+            if snapshot.templateChampion != nil
+                || snapshot.anchorChampion != nil
+                || snapshot.lastCompletedAt != nil
+                || snapshot.failedPhotoCount > 0 {
+
+                Divider()
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 8
+                ) {
+
+                    if let templateChampion =
+                        snapshot.templateChampion {
+
+                        Text("最常用模板“\(templateChampion.title)”已经陪你处理了 \(templateChampion.count) 张照片。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if let anchorChampion =
+                        snapshot.anchorChampion {
+
+                        Text("最常出现的时间点是“\(anchorChampion.title)”，目前已经用了 \(anchorChampion.count) 次。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if let lastCompletedAt =
+                        snapshot.lastCompletedAt {
+
+                        Text("最近一次完成：\(lastCompletedAt.formatted(date: .abbreviated, time: .shortened))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if snapshot.failedPhotoCount > 0 {
+
+                        Text("还有 \(snapshot.failedPhotoCount) 张图片处理失败，后续可以做重试入口。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    var permissionSetupSheet: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 18
+        ) {
+
+            Text("启用本地权限")
+                .font(.system(
+                    size: 26,
+                    weight: .semibold
+                ))
+
+            Text("PhotoMemo 完全本地运行，不需要联网。为了读取照片 EXIF、把处理后的图片存回系统图库，以及在后台任务完成时提醒你，需要先允许相册和通知权限。")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            MinimalInsetCard {
+                permissionPrimerLine(
+                    icon: "photo.on.rectangle.angled",
+                    title: "系统相册",
+                    description:
+                        "用于读取你挑选的照片，并把处理结果写回图库或指定相册。"
+                )
+
+                Divider()
+
+                permissionPrimerLine(
+                    icon: "bell.badge",
+                    title: "系统通知",
+                    description:
+                        "用于在后台处理开始、完成或失败时提醒你。"
+                )
+            }
+
+            HStack(spacing: 10) {
+                Button("稍后再说") {
+                    showPermissionSetupSheet = false
+                }
+                .buttonStyle(.bordered)
+
+                Button("现在授权") {
+                    Task {
+                        await requestInitialPermissions()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(.top, 4)
+        }
+        .padding(24)
+        .frame(
+            minWidth: 460,
+            idealWidth: 520
+        )
+        .background(
+            MinimalPalette.background
+        )
+    }
+
+    @ViewBuilder
+    func permissionRow(
+        title: String,
+        icon: String,
+        state: PermissionState,
+        description: String,
+        requestAction: @escaping () -> Void,
+        openSettingsAction: @escaping () -> Void
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 10
+        ) {
+
+            HStack(
+                alignment: .top,
+                spacing: 12
+            ) {
+
+                Image(systemName: icon)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(
+                        MinimalPalette.accent
+                    )
+                    .frame(width: 24)
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 4
+                ) {
+
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.subheadline.weight(.medium))
+
+                        Text(state.statusText)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(
+                                state.isGranted
+                                ? Color.green
+                                : Color.secondary
+                            )
+                    }
+
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            HStack(spacing: 10) {
+
+                if state.isGranted {
+
+                    Label(
+                        "已就绪",
+                        systemImage: "checkmark.circle.fill"
+                    )
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.green)
+
+                } else {
+
+                    Button(
+                        state == .notDetermined
+                            ? "允许访问"
+                            : "重新授权"
+                    ) {
+                        requestAction()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+
+                if state == .denied {
+
+                    Button("打开系统设置") {
+                        openSettingsAction()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    func permissionPrimerLine(
+        icon: String,
+        title: String,
+        description: String
+    ) -> some View {
+
+        HStack(
+            alignment: .top,
+            spacing: 12
+        ) {
+
+            Image(systemName: icon)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(
+                    MinimalPalette.accent
+                )
+                .frame(width: 24)
+
+            VStack(
+                alignment: .leading,
+                spacing: 4
+            ) {
+
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    var composerEntryPanel: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 10
+        ) {
+
+            HStack(
+                alignment: .center,
+                spacing: 10
+            ) {
+
+                Label(
+                    "当前自定义区域",
+                    systemImage: "rectangle.3.group"
+                )
+                .font(.subheadline.weight(.medium))
+
+                Text(
+                    currentEditingSlot.title
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button("添加文字") {
+                    presentLiteralComposer()
+                }
+                .buttonStyle(.bordered)
+
+                Button("退出整理") {
+                    dismissComposerArrangeMode()
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .opacity(
+                    arrangingComposerSlot == nil
+                    ? 0
+                    : 1
+                )
+                .disabled(
+                    arrangingComposerSlot == nil
+                )
+            }
+
+            ScrollView(
+                .horizontal,
+                showsIndicators: false
+            ) {
+
+                HStack(spacing: 8) {
+
+                    ForEach(
+                        MainFieldSlot.allCases,
+                        id: \.self
+                    ) { slot in
+
+                        Button {
+                            activateEditingSlot(
+                                slot,
+                                preferInlineEditor: true
+                            )
+                        } label: {
+                            Text(slot.title)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(
+                                    focusedField == slot
+                                        ? .white
+                                        : .primary
+                                )
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 9)
+                                .background(
+                                    Capsule()
+                                        .fill(
+                                            focusedField == slot
+                                                ? MinimalPalette.accent
+                                                : Color.gray.opacity(0.1)
+                                        )
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 1)
+            }
+
+            Text(
+                "下方左上、右上、左下、右下 4 个自定义区域都可以独立编辑。你可以直接点区域本身，也可以先点这里的四区切换条；选中后再点上方 EXIF、智能数据或用户数据，就会插入到当前区域。长按已选中的模块可进入整理状态，并显示删除按钮与拖动排序。"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissComposerArrangeMode()
+        }
+    }
+
+    @ViewBuilder
+    var literalComposerSheet: some View {
+
+        NavigationStack {
+
+            VStack(
+                alignment: .leading,
+                spacing: 16
+            ) {
+
+                Text(
+                    "为\((literalComposerTargetSlot ?? currentEditingSlot).title)添加文字"
+                )
+                .font(.headline)
+
+                TextField(
+                    "例如：儿子到今天 / 高考冲刺 / 旅行第",
+                    text: $literalComposerDraft,
+                    axis: .vertical
+                )
+                .lineLimit(3...5)
+                .textFieldStyle(.roundedBorder)
+
+                Text(
+                    "保存后会作为一个独立模块加入当前区域，可继续和 EXIF、智能数据自由组合。"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                Spacer(minLength: 0)
+            }
+            .padding(24)
+            .navigationTitle("添加文字")
+            .toolbar {
+
+                ToolbarItem(
+                    placement: .cancellationAction
+                ) {
+
+                    Button("取消") {
+                        closeLiteralComposer()
+                    }
+                }
+
+                ToolbarItem(
+                    placement: .confirmationAction
+                ) {
+
+                    Button("加入") {
+                        commitLiteralComposer()
+                    }
+                    .disabled(
+                        literalComposerDraft
+                        .trimmingCharacters(
+                            in: .whitespacesAndNewlines
+                        )
+                        .isEmpty
+                    )
+                }
+            }
+        }
+        .frame(
+            minWidth: 360,
+            minHeight: 220
+        )
     }
 
     @ViewBuilder
@@ -762,40 +2057,10 @@ private extension MainView {
             if title == "智能数据" {
 
                 Text(
-                    "宝宝成长推荐插入 {{anchor_age_text}}；恋爱、结婚、纪念日推荐插入 {{anchor_smart_text}}、{{anchor_duration_text}} 或 {{anchor_total_days_text}}；高考、毕业、入学、旅行、演唱会等未来目标推荐插入 {{anchor_countdown_text}}。普通文字和智能数据可以自由混写。"
+                    "过去时间点常用：{{anchor_age_text}} 表示年岁，{{anchor_duration_text}} 表示纪念时长，{{anchor_elapsed_text}} 表示已过天数，{{anchor_day_index_text}} 表示第几天；未来目标常用：{{anchor_countdown_text}} 表示倒计时；扩展结果可用 {{anchor_week_text}}、{{anchor_month_age_text}}、{{anchor_milestone_text}}，想让系统自动判断时可用 {{anchor_smart_text}}。"
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-                Text(
-                    "点下面的句式，可直接插入到当前选中的区域，再把主体、目标名称、鼓励语改成你自己的表达。"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-                ScrollView(
-                    .horizontal,
-                    showsIndicators: false
-                ) {
-
-                    HStack(spacing: 10) {
-
-                        ForEach(
-                            smartSentencePresets
-                        ) { preset in
-
-                            Button(preset.title) {
-                                insertSnippet(
-                                    preset.value
-                                )
-                            }
-                            .buttonStyle(
-                                MinimalChipStyle()
-                            )
-                        }
-                    }
-                    .padding(.vertical, 1)
-                }
             }
 
             ScrollView(
@@ -808,6 +2073,7 @@ private extension MainView {
                     ForEach(variables) { variable in
 
                         Button(variable.title) {
+                            dismissComposerArrangeMode()
                             insertToken(
                                 variable.token
                             )
@@ -819,6 +2085,10 @@ private extension MainView {
                 }
                 .padding(.vertical, 1)
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissComposerArrangeMode()
         }
     }
 
@@ -838,9 +2108,6 @@ private extension MainView {
         let hoveredItemID =
             hoveredComposerItemIDs[slot]
 
-        let editingItemID =
-            editingComposerItemIDs[slot]
-
         VStack(
             alignment: .leading,
             spacing: 8
@@ -855,7 +2122,11 @@ private extension MainView {
 
                 if focusedField == slot {
 
-                    Text("当前编辑")
+                    Text(
+                        arrangingComposerSlot == slot
+                        ? "整理中"
+                        : "当前区域"
+                    )
                         .font(.caption.weight(.medium))
                         .foregroundStyle(
                             MinimalPalette.accent
@@ -888,13 +2159,7 @@ private extension MainView {
 
                             if items.isEmpty {
 
-                                Text(slot.placeholder)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .frame(
-                                        maxWidth: .infinity,
-                                        alignment: .leading
-                                    )
+                                EmptyView()
                             } else {
 
                                 ScrollView(
@@ -904,18 +2169,27 @@ private extension MainView {
 
                                     HStack(spacing: 10) {
 
-                                        composerInsertionHandle(
-                                            for: slot,
-                                            index: 0,
-                                            proxy: proxy
-                                        )
-
                                         ForEach(
                                             Array(
                                                 items.enumerated()
                                             ),
                                             id: \.element.id
                                         ) { index, item in
+
+                                            if arrangingComposerSlot != slot,
+                                               shouldShowInsertionHandle(
+                                                slot: slot,
+                                                index: index,
+                                                itemID: item.id,
+                                                items: items
+                                               ) {
+
+                                                composerInsertionHandle(
+                                                    for: slot,
+                                                    index: index,
+                                                    proxy: proxy
+                                                )
+                                            }
 
                                             composerChip(
                                                 item,
@@ -926,23 +2200,27 @@ private extension MainView {
                                                 isHovered:
                                                     hoveredItemID
                                                     == item.id,
-                                                isEditing:
-                                                    editingItemID
-                                                    == item.id
+                                                isArranging:
+                                                    arrangingComposerSlot
+                                                    == slot
                                             )
                                             .id(item.id)
                                             .onTapGesture {
+                                                if arrangingComposerSlot != slot {
+                                                    dismissComposerArrangeMode()
+                                                }
                                                 focusComposerItem(
                                                     item.id,
                                                     slot: slot,
                                                     proxy: proxy
                                                 )
                                             }
-                                            .onTapGesture(count: 2) {
-                                                beginEditingComposerItem(
-                                                    item,
-                                                    in: slot,
-                                                    proxy: proxy
+                                            .onLongPressGesture(
+                                                minimumDuration: 0.4
+                                            ) {
+                                                enterComposerArrangeMode(
+                                                    for: slot,
+                                                    itemID: item.id
                                                 )
                                             }
                                             .onHover { isHovered in
@@ -954,15 +2232,14 @@ private extension MainView {
                                                         nil
                                                 }
                                             }
-                                            .draggable(item.id) {
-                                                composerChip(
-                                                    item,
-                                                    slot: slot,
-                                                    isSelected: true,
-                                                    isHovered: false,
-                                                    isEditing: false
+                                            .modifier(
+                                                ComposerDragModifier(
+                                                    isEnabled:
+                                                        arrangingComposerSlot
+                                                        == slot,
+                                                    item: item
                                                 )
-                                            }
+                                            )
                                             .dropDestination(
                                                 for: String.self
                                             ) { droppedIDs, _ in
@@ -994,7 +2271,8 @@ private extension MainView {
                                                 return true
                                             } isTargeted: { isTargeted in
 
-                                                if isTargeted {
+                                                if isTargeted,
+                                                   arrangingComposerSlot == slot {
                                                     draggedComposerItemIDs[slot] =
                                                         item.id
                                                 } else if draggedComposerItemIDs[slot] == item.id {
@@ -1003,11 +2281,20 @@ private extension MainView {
                                                 }
                                             }
 
-                                            composerInsertionHandle(
-                                                for: slot,
+                                            if arrangingComposerSlot != slot,
+                                               shouldShowInsertionHandle(
+                                                slot: slot,
                                                 index: index + 1,
-                                                proxy: proxy
-                                            )
+                                                itemID: item.id,
+                                                items: items
+                                               ) {
+
+                                                composerInsertionHandle(
+                                                    for: slot,
+                                                    index: index + 1,
+                                                    proxy: proxy
+                                                )
+                                            }
                                         }
                                     }
                                     .background(
@@ -1094,14 +2381,9 @@ private extension MainView {
                             )
                         }
 
-                        if !items.isEmpty {
-
-                            composerToolbar(
-                                for: slot,
-                                items: items,
-                                proxy: proxy
-                            )
-                        }
+                        inlineTemplateEditor(
+                            for: slot
+                        )
                     }
                 }
                 .padding(.horizontal, 16)
@@ -1122,52 +2404,19 @@ private extension MainView {
                     )
                 )
                 .onTapGesture {
-                    focusedField = slot
-                }
-
-                HStack(
-                    alignment: .center,
-                    spacing: 10
-                ) {
-
-                    TextField(
-                        "输入普通文字后加入当前区域",
-                        text: customTextBinding(
-                            for: slot
-                        )
+                    activateEditingSlot(
+                        slot,
+                        preferInlineEditor: true
                     )
-                    .textFieldStyle(.roundedBorder)
-                    .focused(
-                        $focusedField,
-                        equals: slot
-                    )
-
-                    Button("加入文字") {
-                        appendCustomText(
-                            for: slot
-                        )
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(
-                        customTextBinding(
-                            for: slot
-                        ).wrappedValue
-                        .trimmingCharacters(
-                            in: .whitespacesAndNewlines
-                        ).isEmpty
-                    )
-
-                    Button("清空") {
-                        updateTemplateValue(
-                            "",
-                            for: slot
-                        )
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                    .disabled(items.isEmpty)
                 }
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            activateEditingSlot(
+                slot,
+                preferInlineEditor: true
+            )
         }
     }
 
@@ -1177,7 +2426,7 @@ private extension MainView {
         slot: MainFieldSlot,
         isSelected: Bool,
         isHovered: Bool,
-        isEditing: Bool
+        isArranging: Bool
     ) -> some View {
 
         let style =
@@ -1185,85 +2434,124 @@ private extension MainView {
                 for: item
             )
 
-        let focusID =
-            composerEditorFocusID(
-                for: slot,
-                itemID: item.id
-            )
+        let isPlainLiteral =
+            plainLiteralText(
+                for: item
+            ) != nil
 
         HStack(spacing: 8) {
 
-            Image(
-                systemName: style.icon
+            if !isPlainLiteral {
+
+                Image(
+                    systemName: style.icon
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(
+                    style.tint
+                )
+            }
+
+            Text(
+                composerChipTitle(
+                    for: item
+                )
             )
-            .font(.caption.weight(.semibold))
+            .font(
+                isPlainLiteral
+                ? .subheadline
+                : .subheadline.weight(.medium)
+            )
             .foregroundStyle(
-                style.tint
+                isPlainLiteral
+                ? Color.primary.opacity(0.88)
+                : .primary
             )
+            .lineLimit(1)
 
-            if isEditing,
-               case .literal = item.segment {
+            if isArranging {
 
-                TextField(
-                    "编辑文字",
-                    text: editingComposerDraftBinding(
-                        for: slot
-                    )
+                Image(
+                    systemName: "line.3.horizontal"
                 )
-                .textFieldStyle(.plain)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
-                .frame(minWidth: 42)
-                .focused(
-                    $focusedComposerEditorID,
-                    equals: focusID
-                )
-                .onSubmit {
-                    commitEditingComposerItem(
-                        in: slot
-                    )
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, isPlainLiteral ? 2 : 12)
+        .padding(.vertical, 9)
+        .background(
+            Group {
+
+                if isPlainLiteral {
+                    Color.clear
+                } else {
+                    Capsule()
+                        .fill(
+                            style.background
+                        )
                 }
+            }
+        )
+        .overlay(
+            Group {
 
-                Button {
-                    commitEditingComposerItem(
-                        in: slot
-                    )
-                } label: {
-
-                    Image(
-                        systemName: "checkmark.circle.fill"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(
-                        MinimalPalette.accent
-                    )
+                if isPlainLiteral {
+                    Rectangle()
+                        .fill(
+                            isSelected
+                                ? MinimalPalette.accent.opacity(0.16)
+                                : Color.clear
+                        )
+                        .frame(height: 2)
+                        .offset(y: 15)
+                } else {
+                    Capsule()
+                        .stroke(
+                            isSelected
+                                ? MinimalPalette.accent
+                                : style.border,
+                            lineWidth:
+                                isSelected ? 1.5 : 1
+                        )
                 }
-                .buttonStyle(.plain)
+            }
+        )
+        .shadow(
+            color:
+                isPlainLiteral
+                ? .clear
+                : (isSelected
+                ? MinimalPalette.accent.opacity(0.22)
+                : .black.opacity(
+                    isHovered ? 0.06 : 0
+                )),
+            radius: isSelected ? 10 : 6,
+            y: isSelected ? 4 : 2
+        )
+        .scaleEffect(
+            isPlainLiteral
+            ? 1
+            : (isSelected ? 1.015 : (isHovered ? 1.01 : 1))
+        )
+        .rotationEffect(
+            isArranging
+            ? .degrees(
+                composerWigglePhase ? 1.2 : -1.2
+            )
+            : .zero
+        )
+        .offset(
+            y:
+                isArranging
+                ? (composerWigglePhase ? -0.8 : 0.8)
+                : 0
+        )
+        .overlay(
+            alignment: .topTrailing
+        ) {
 
-                Button {
-                    cancelEditingComposerItem(
-                        in: slot
-                    )
-                } label: {
-
-                    Image(
-                        systemName: "xmark.circle.fill"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-
-            } else {
-
-                Text(
-                    composerChipTitle(
-                        for: item
-                    )
-                )
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+            if isArranging {
 
                 Button {
                     removeComposerItem(
@@ -1273,45 +2561,19 @@ private extension MainView {
                 } label: {
 
                     Image(
-                        systemName: "xmark.circle.fill"
+                        systemName: "minus.circle.fill"
                     )
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(
+                        .white,
+                        Color.red.opacity(0.9)
+                    )
                 }
                 .buttonStyle(.plain)
+                .offset(x: 5, y: -5)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .background(
-            Capsule()
-                .fill(
-                    style.background
-                )
-        )
-        .overlay(
-            Capsule()
-                .stroke(
-                    isSelected
-                        ? MinimalPalette.accent
-                        : style.border,
-                    lineWidth:
-                        isSelected ? 1.5 : 1
-                )
-        )
-        .shadow(
-            color:
-                isSelected
-                ? MinimalPalette.accent.opacity(0.22)
-                : .black.opacity(
-                    isHovered ? 0.06 : 0
-                ),
-            radius: isSelected ? 10 : 6,
-            y: isSelected ? 4 : 2
-        )
-        .scaleEffect(
-            isSelected ? 1.015 : (isHovered ? 1.01 : 1)
-        )
         .animation(
             .spring(
                 response: 0.22,
@@ -1322,6 +2584,10 @@ private extension MainView {
         .animation(
             .easeInOut(duration: 0.16),
             value: isHovered
+        )
+        .animation(
+            .easeInOut(duration: 0.14),
+            value: composerWigglePhase
         )
     }
 
@@ -1343,7 +2609,18 @@ private extension MainView {
             )
         } label: {
 
-            VStack(spacing: 4) {
+            ZStack {
+
+                Capsule()
+                    .fill(
+                        Color.black.opacity(
+                            isSelected ? 0.08 : 0.04
+                        )
+                    )
+                    .frame(
+                        width: isSelected ? 18 : 12,
+                        height: isSelected ? 34 : 24
+                    )
 
                 RoundedRectangle(
                     cornerRadius: 999,
@@ -1352,11 +2629,11 @@ private extension MainView {
                 .fill(
                     isSelected
                         ? MinimalPalette.accent
-                        : Color.black.opacity(0.08)
+                        : Color.black.opacity(0.16)
                 )
                 .frame(
-                    width: isSelected ? 18 : 14,
-                    height: isSelected ? 4 : 3
+                    width: isSelected ? 3 : 2,
+                    height: isSelected ? 24 : 16
                 )
 
                 if isSelected {
@@ -1368,9 +2645,10 @@ private extension MainView {
                     .foregroundStyle(
                         MinimalPalette.accent
                     )
+                    .offset(y: 18)
                 }
             }
-            .frame(width: 18, height: 24)
+            .frame(width: 20, height: 42)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1378,127 +2656,79 @@ private extension MainView {
     }
 
     @ViewBuilder
-    func composerToolbar(
-        for slot: MainFieldSlot,
-        items: [TemplateComposerItem],
-        proxy: ScrollViewProxy
+    func inlineTemplateEditor(
+        for slot: MainFieldSlot
     ) -> some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 10
+        ZStack(
+            alignment: .topLeading
         ) {
 
-            HStack(spacing: 8) {
-
-                toolbarIconButton(
-                    title: "左移",
-                    systemImage: "arrow.left"
-                ) {
-                    moveSelectedComposerItem(
-                        in: slot,
-                        direction: -1
-                    )
-
-                    scrollSelectedComposerItem(
-                        in: slot,
-                        proxy: proxy
-                    )
-                }
-                .disabled(
-                    !canMoveSelectedComposerItem(
-                        in: slot,
-                        direction: -1
-                    )
+            RoundedRectangle(
+                cornerRadius: 14,
+                style: .continuous
+            )
+            .fill(Color.white.opacity(0.84))
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 14,
+                    style: .continuous
                 )
-
-                toolbarIconButton(
-                    title: "右移",
-                    systemImage: "arrow.right"
-                ) {
-                    moveSelectedComposerItem(
-                        in: slot,
-                        direction: 1
-                    )
-
-                    scrollSelectedComposerItem(
-                        in: slot,
-                        proxy: proxy
-                    )
-                }
-                .disabled(
-                    !canMoveSelectedComposerItem(
-                        in: slot,
-                        direction: 1
-                    )
+                .stroke(
+                    focusedField == slot
+                        ? MinimalPalette
+                        .accent.opacity(0.28)
+                        : Color.black.opacity(0.04)
                 )
+            )
 
-                Spacer()
+            if templateValue(
+                for: slot
+            ).isEmpty {
 
-                Text("可拖动排序")
-                    .font(.caption)
+                Text(slot.placeholder)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 11)
+                    .allowsHitTesting(false)
             }
 
-            ScrollView(
-                .horizontal,
-                showsIndicators: false
+            InlineTemplateTextEditor(
+                text: templateValueBinding(
+                    for: slot
+                ),
+                selection: templateEditorSelectionBinding(
+                    for: slot
+                )
             ) {
 
-                HStack(spacing: 8) {
-
-                    separatorButton(
-                        title: "空格",
-                        value: " "
-                    )
-
-                    separatorButton(
-                        title: "·",
-                        value: " · "
-                    )
-
-                    separatorButton(
-                        title: "|",
-                        value: " | "
-                    )
-
-                    separatorButton(
-                        title: ",",
-                        value: ", "
-                    )
-                }
+                activateEditingSlot(
+                    slot,
+                    preferInlineEditor: true
+                )
             }
+            .padding(.horizontal, 12)
+            .frame(
+                minHeight: 48,
+                maxHeight: 72,
+                alignment: .topLeading
+            )
+        }
+        .contentShape(
+            RoundedRectangle(
+                cornerRadius: 14,
+                style: .continuous
+            )
+        )
+        .onTapGesture {
+            activateEditingSlot(
+                slot,
+                preferInlineEditor: true
+            )
         }
     }
 
-    @ViewBuilder
-    func toolbarIconButton(
-        title: String,
-        systemImage: String,
-        action: @escaping () -> Void
-    ) -> some View {
-
-        Button(action: action) {
-
-            Label(title, systemImage: systemImage)
-                .font(.caption.weight(.medium))
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
-    }
-
-    @ViewBuilder
-    func separatorButton(
-        title: String,
-        value: String
-    ) -> some View {
-
-        Button(title) {
-            insertSeparator(value)
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
-    }
 }
 
 // MARK: - Detail
@@ -1507,90 +2737,23 @@ private extension MainView {
     @ViewBuilder
     var detail: some View {
 
+        ScrollView {
+
+            detailContent
+                .padding()
+        }
+    }
+
+    @ViewBuilder
+    var detailContent: some View {
+
         if let selectedPhoto,
            let card = currentCard {
 
-            ScrollView {
-
-                let previewWidth =
-                    previewCardMaxWidth(
-                        for: selectedPhoto
-                    )
-
-                VStack(
-                    alignment: .center,
-                    spacing: 22
-                ) {
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 22
-                    ) {
-
-                        HStack {
-
-                            VStack(
-                                alignment: .leading,
-                                spacing: 4
-                            ) {
-
-                                Text("实时预览")
-                                    .font(.title3.weight(.semibold))
-
-                                Text("按当前模板、时间点与 EXIF 数据即时生成")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-                        }
-
-                        RecordCardRenderer(
-                            image: Image(
-                                nsImage: selectedPhoto.image
-                            ),
-                            card: card
-                        )
-                        .frame(
-                            maxWidth: previewWidth
-                        )
-                        .padding(18)
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: 30,
-                                style: .continuous
-                            )
-                            .fill(
-                                MinimalPalette.surface
-                            )
-                        )
-                        .overlay(
-                            RoundedRectangle(
-                                cornerRadius: 30,
-                                style: .continuous
-                            )
-                            .stroke(
-                                MinimalPalette.border
-                            )
-                        )
-                        .shadow(
-                            color: .black.opacity(0.05),
-                            radius: 24,
-                            y: 12
-                        )
-
-                        previewSummary(
-                            for: card
-                        )
-                    }
-                    .frame(
-                        maxWidth: previewWidth,
-                        alignment: .leading
-                    )
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-            }
+            previewDetailContent(
+                selectedPhoto: selectedPhoto,
+                card: card
+            )
 
         } else {
 
@@ -1603,6 +2766,109 @@ private extension MainView {
                 maxHeight: .infinity
             )
         }
+    }
+
+    @ViewBuilder
+    func previewDetailContent(
+        selectedPhoto: SelectedPhoto,
+        card: RecordCard
+    ) -> some View {
+
+        let previewWidth =
+            previewCardMaxWidth(
+                for: selectedPhoto
+            )
+
+        VStack(
+            alignment: .center,
+            spacing: 22
+        ) {
+
+            VStack(
+                alignment: .leading,
+                spacing: 22
+            ) {
+
+                previewHeader
+
+                previewCanvas(
+                    selectedPhoto: selectedPhoto,
+                    card: card,
+                    previewWidth: previewWidth
+                )
+
+                previewSummary(
+                    for: card
+                )
+            }
+            .frame(
+                maxWidth: previewWidth,
+                alignment: .leading
+            )
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    var previewHeader: some View {
+
+        HStack {
+
+            VStack(
+                alignment: .leading,
+                spacing: 4
+            ) {
+
+                Text("实时预览")
+                    .font(.title3.weight(.semibold))
+
+                Text("按当前模板、时间点与 EXIF 数据即时生成")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+    }
+
+    @ViewBuilder
+    func previewCanvas(
+        selectedPhoto: SelectedPhoto,
+        card: RecordCard,
+        previewWidth: CGFloat
+    ) -> some View {
+
+        RecordCardRenderer(
+            image: selectedPhoto.image
+                .swiftUIImage,
+            card: card
+        )
+        .frame(
+            maxWidth: previewWidth
+        )
+        .padding(18)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 30,
+                style: .continuous
+            )
+            .fill(
+                MinimalPalette.surface
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 30,
+                style: .continuous
+            )
+            .stroke(
+                MinimalPalette.border
+            )
+        )
+        .shadow(
+            color: .black.opacity(0.05),
+            radius: 24,
+            y: 12
+        )
     }
 
     @ViewBuilder
@@ -1645,11 +2911,98 @@ private extension MainView {
             )
         )
     }
+
+    @ViewBuilder
+    func compactFactPill(
+        title: String,
+        value: String
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 2
+        ) {
+
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            Text(value)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(
+                    Color.white.opacity(0.92)
+                )
+        )
+        .overlay(
+            Capsule()
+                .stroke(
+                    MinimalPalette.border
+                )
+        )
+    }
+
+    @ViewBuilder
+    var badgePreviewIcon: some View {
+
+        ZStack {
+
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .fill(
+                Color.white.opacity(0.92)
+            )
+
+            if let selectedBadge = settings.selectedBadge,
+               selectedBadge.type != .none,
+               let symbol = selectedBadge.systemSymbol {
+
+                Image(systemName: symbol)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(MinimalPalette.accent)
+
+            } else {
+
+                Image(systemName: "sparkles")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .stroke(
+                MinimalPalette.border
+            )
+        )
+    }
 }
 
 private extension MainView {
 
     var currentCard: RecordCard? {
+
+        buildCurrentCard(
+            exportDescriptionOverride:
+                settings.shouldWritePhotoDescription
+                ? resolvedPhotoDescription
+                : ""
+        )
+    }
+
+    func buildCurrentCard(
+        exportDescriptionOverride: String?
+    ) -> RecordCard? {
 
         guard let selectedPhoto else {
             return nil
@@ -1672,7 +3025,9 @@ private extension MainView {
             },
             badge: activeBadge,
             title: resolvedTitle,
-            story: resolvedStory
+            story: resolvedStory,
+            exportDescriptionOverride:
+                exportDescriptionOverride
         )
     }
 
@@ -1684,20 +3039,21 @@ private extension MainView {
 
     var currentPreset: TemplatePreset {
 
-        switch activeTemplate.name {
+        activeTemplate.preset
+    }
 
-        case TemplatePreset.template1.displayName,
-             "Classic White":
-            return .template1
+    var currentPresetDefaultOutput: String {
 
-        case TemplatePreset.template2.displayName:
-            return .template2
+        switch currentPreset {
 
-        case TemplatePreset.template3.displayName:
-            return .template3
+        case .template1:
+            return "今天{{anchor_age_text}}"
 
-        default:
-            return .template1
+        case .template2:
+            return "已经{{anchor_duration_text}}"
+
+        case .template3:
+            return "{{anchor_countdown_text}}"
         }
     }
 
@@ -1739,10 +3095,118 @@ private extension MainView {
         guard let captureDate =
             selectedPhoto?.metadata.captureDate
         else {
-            return "导入照片后，系统会用照片 EXIF 拍摄时间与锚点时间做差值计算，可生成宝宝年龄、纪念时长或未来倒计时。"
+            return "导入照片后，系统会用照片 EXIF 拍摄时间与锚点时间做差值计算，可生成年岁、纪念时长、已过天数、未来倒计时，以及第几天、周数、月龄等时间结果。"
         }
 
         return "当前照片 EXIF 时间：\(captureDate.formatted(date: .numeric, time: .standard))"
+    }
+
+    var anchorPhotoSummary: String {
+
+        guard let captureDate =
+            selectedPhoto?.metadata.captureDate
+        else {
+            return "导入照片后会自动读取 EXIF 拍摄时间"
+        }
+
+        return captureDate.formatted(
+            date: .abbreviated,
+            time: .shortened
+        )
+    }
+
+    var selectedAlbumSummary: String {
+
+        guard permissionCenter.canAccessPhotoLibrary else {
+            return "请先允许访问系统相册"
+        }
+
+        if selectedAlbumIdentifier
+            == PhotoAlbumOption.automaticIdentifier {
+            return "自动存入 PhotoMemo"
+        }
+
+        return availableAlbums.first {
+            $0.id == selectedAlbumIdentifier
+        }?.title ?? "当前相册"
+    }
+
+    var selectedBadgeTitle: String {
+
+        guard let badge = settings.selectedBadge,
+              badge.type != .none else {
+            return "不显示图标"
+        }
+
+        return badge.name
+    }
+
+    var selectedBadgeSummary: String {
+
+        guard let badge = settings.selectedBadge,
+              badge.type != .none else {
+            return "当前模板会保留右侧图标区域留白，适合更极简的版式。"
+        }
+
+        if badge.isSystemDefault {
+            return "使用系统符号图标，适合和当前极简白色界面保持一致。"
+        }
+
+        return "使用自定义图标资源。"
+    }
+
+    var resolvedPhotoDescription: String {
+
+        let override =
+            settings.photoDescriptionOverride
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !override.isEmpty {
+            return override
+        }
+
+        return defaultPhotoDescription
+    }
+
+    var defaultPhotoDescription: String {
+
+        guard
+            let card = buildCurrentCard(
+                exportDescriptionOverride: nil
+            )
+        else {
+            return ""
+        }
+
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        return templateVariableEngine
+            .render(
+                templateValue(
+                    for: .rightBottom
+                ),
+                context: context
+            )
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+    }
+
+    var defaultPhotoDescriptionHint: String {
+
+        let resolvedDefault =
+            defaultPhotoDescription
+
+        if resolvedDefault.isEmpty {
+            return "默认说明会跟随右下区域内容；如果右下区域暂时为空，就不会额外写入说明。"
+        }
+
+        return "默认说明：\(resolvedDefault)"
     }
 
     var resolvedTitle: String {
@@ -1757,6 +3221,55 @@ private extension MainView {
         }
 
         return selectedAnchor?.title ?? ""
+    }
+
+    func anchorDateText(
+        _ anchor: Anchor
+    ) -> String {
+
+        anchor.date.formatted(
+            date: .abbreviated,
+            time: .shortened
+        )
+    }
+
+    func anchorQuickFacts(
+        _ preview: AnchorResult
+    ) -> [(label: String, value: String)] {
+
+        if preview.isFutureRelative {
+            return [
+                ("倒计时", preview.countdownText),
+                ("时间点", preview.secondaryText)
+            ]
+        }
+
+        if let anchor = selectedAnchor,
+           anchor.type == .birthday {
+            return [
+                ("年岁", preview.ageText),
+                ("第几天", preview.dayIndexText),
+                ("月龄", preview.monthAgeText)
+            ]
+            .filter {
+                !$0.value.isEmpty
+            }
+        }
+
+        var facts: [(String, String)] = [
+            ("时长", preview.durationText),
+            ("已过", preview.elapsedText)
+        ]
+
+        if !preview.milestoneText.isEmpty {
+            facts.append(
+                ("里程碑", preview.milestoneText)
+            )
+        }
+
+        return facts.filter {
+            !$0.1.isEmpty
+        }
     }
 
     var resolvedStory: String {
@@ -1792,6 +3305,140 @@ private extension MainView {
         )
     }
 
+    var resolvedTemplateDisplayName: String {
+
+        let trimmed =
+            activeTemplate.name
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !trimmed.isEmpty {
+            return trimmed
+        }
+
+        return currentPreset.displayName
+    }
+
+    func memoryProgressHeadline(
+        _ snapshot: BatchUsageSnapshot
+    ) -> String {
+
+        if snapshot.completedPhotoCount == 0 {
+            return "等你第一次处理完成后，这里会慢慢积累属于 PhotoMemo 的小记录。"
+        }
+
+        return "PhotoMemo 已经帮你把 \(snapshot.completedPhotoCount) 张照片整理成带记忆注脚的样子。"
+    }
+
+    @ViewBuilder
+    func progressStatLine(
+        title: String,
+        value: String
+    ) -> some View {
+
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(value)
+                .font(.caption.weight(.medium))
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    @ViewBuilder
+    var templateRenameSheet: some View {
+
+        NavigationStack {
+
+            VStack(
+                alignment: .leading,
+                spacing: 16
+            ) {
+
+                Text("为当前模板设置一个更贴近你使用场景的名字。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                TextField(
+                    "例如：途途成长版",
+                    text: $templateNameDraft
+                )
+                .textFieldStyle(.roundedBorder)
+
+                MinimalInsetCard {
+                    LabeledContent("当前预设") {
+                        Text(currentPreset.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Divider()
+
+                    LabeledContent("当前显示") {
+                        Text(resolvedTemplateDisplayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(20)
+            .navigationTitle("模板名称")
+            .toolbar {
+                ToolbarItem(
+                    placement: .cancellationAction
+                ) {
+                    Button("取消") {
+                        showTemplateRenameSheet = false
+                    }
+                }
+
+                ToolbarItem(
+                    placement: .primaryAction
+                ) {
+                    Button("保存") {
+                        applyTemplateRename()
+                    }
+                }
+            }
+            .frame(
+                minWidth: 360,
+                minHeight: 220
+            )
+        }
+    }
+
+    func presentTemplateRenameSheet() {
+
+        templateNameDraft =
+            resolvedTemplateDisplayName
+        showTemplateRenameSheet = true
+    }
+
+    func applyTemplateRename() {
+
+        var template = activeTemplate
+
+        let trimmedName =
+            templateNameDraft
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        template.name =
+            trimmedName.isEmpty
+            ? currentPreset.displayName
+            : trimmedName
+
+        settings.selectedTemplate = template
+        settings.scheduleTemplateSave()
+        showTemplateRenameSheet = false
+    }
+
     var selectedBadgeName: Binding<String> {
 
         Binding(
@@ -1810,6 +3457,13 @@ private extension MainView {
                 settings.saveBadge()
             }
         )
+    }
+
+    var currentEditingSlot: MainFieldSlot {
+
+        activeTemplateEditorSlot
+        ?? focusedField
+        ?? .rightBottom
     }
 
     func templateValue(
@@ -1871,43 +3525,77 @@ private extension MainView {
         }
 
         settings.selectedTemplate = template
-        settings.saveTemplate()
+        settings.scheduleTemplateSave()
+
+        let length =
+            (value as NSString).length
+
+        if let currentSelection =
+            templateEditorSelections[slot] {
+
+            let clampedLocation =
+                min(
+                    currentSelection.location,
+                    length
+                )
+
+            let clampedLength =
+                min(
+                    currentSelection.length,
+                    max(length - clampedLocation, 0)
+                )
+
+            templateEditorSelections[slot] =
+                NSRange(
+                    location: clampedLocation,
+                    length: clampedLength
+                )
+        } else {
+            templateEditorSelections[slot] =
+                NSRange(
+                    location: length,
+                    length: 0
+                )
+        }
     }
 
-    func customTextBinding(
+    func templateValueBinding(
         for slot: MainFieldSlot
     ) -> Binding<String> {
 
         Binding(
             get: {
-                customTextDrafts[slot] ?? ""
+                templateValue(for: slot)
             },
             set: { newValue in
-                customTextDrafts[slot] = newValue
+                updateTemplateValue(
+                    newValue,
+                    for: slot
+                )
             }
         )
     }
 
-    func editingComposerDraftBinding(
+    func templateEditorSelectionBinding(
         for slot: MainFieldSlot
-    ) -> Binding<String> {
+    ) -> Binding<NSRange> {
 
         Binding(
             get: {
-                editingComposerDrafts[slot] ?? ""
+                templateEditorSelections[slot]
+                ?? NSRange(
+                    location:
+                        (templateValue(
+                            for: slot
+                        ) as NSString).length,
+                    length: 0
+                )
             },
             set: { newValue in
-                editingComposerDrafts[slot] = newValue
+                templateEditorSelections[slot] =
+                    newValue
             }
         )
-    }
-
-    func composerEditorFocusID(
-        for slot: MainFieldSlot,
-        itemID: String
-    ) -> String {
-
-        slot.rawValue + "-" + itemID
     }
 
     func composerItems(
@@ -2103,36 +3791,6 @@ private extension MainView {
         }
     }
 
-    func appendCustomText(
-        for slot: MainFieldSlot
-    ) {
-
-        let trimmed =
-            customTextBinding(
-                for: slot
-            ).wrappedValue
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        guard !trimmed.isEmpty else {
-            return
-        }
-
-        appendComposerItems(
-            [
-                TemplateComposerItem(
-                    id: UUID().uuidString,
-                    segment: .literal(trimmed)
-                )
-            ],
-            to: slot
-        )
-
-        customTextDrafts[slot] = ""
-        focusedField = slot
-    }
-
     func removeComposerItem(
         _ item: TemplateComposerItem,
         from slot: MainFieldSlot
@@ -2173,106 +3831,10 @@ private extension MainView {
         insertionComposerIndices[slot] =
             min(nextIndex + 1, items.count)
 
-        focusedField = slot
-    }
-
-    func beginEditingComposerItem(
-        _ item: TemplateComposerItem,
-        in slot: MainFieldSlot,
-        proxy: ScrollViewProxy
-    ) {
-
-        guard case .literal(let literal) = item.segment else {
-            return
-        }
-
-        editingComposerItemIDs[slot] = item.id
-        editingComposerDrafts[slot] = literal
-        focusedField = slot
-        selectedComposerItemIDs[slot] = item.id
-
-        let focusID =
-            composerEditorFocusID(
-                for: slot,
-                itemID: item.id
-            )
-
-        DispatchQueue.main.async {
-            focusedComposerEditorID = focusID
-        }
-
-        withAnimation(.easeInOut(duration: 0.2)) {
-            proxy.scrollTo(
-                item.id,
-                anchor: .center
-            )
-        }
-    }
-
-    func commitEditingComposerItem(
-        in slot: MainFieldSlot
-    ) {
-
-        guard
-            let itemID =
-                editingComposerItemIDs[slot]
-        else {
-            return
-        }
-
-        let trimmed =
-            editingComposerDrafts[slot]?
-            .trimmingCharacters(
-                in: .newlines
-            ) ?? ""
-
-        var items =
-            composerItems(for: slot)
-
-        guard
-            let itemIndex =
-                items.firstIndex(
-                    where: { $0.id == itemID }
-                )
-        else {
-            cancelEditingComposerItem(
-                in: slot
-            )
-            return
-        }
-
-        if trimmed.isEmpty {
-            items.remove(at: itemIndex)
-        } else {
-            items[itemIndex].segment =
-                .literal(trimmed)
-        }
-
-        updateTemplateValue(
-            serializeComposerItems(items),
-            for: slot
+        activateEditingSlot(
+            slot,
+            preferInlineEditor: false
         )
-
-        editingComposerItemIDs[slot] = nil
-        editingComposerDrafts[slot] = nil
-        focusedComposerEditorID = nil
-        selectedComposerItemIDs[slot] =
-            items.isEmpty
-            ? nil
-            : "item-\(min(itemIndex, items.count - 1))"
-        insertionComposerIndices[slot] =
-            items.isEmpty
-            ? 0
-            : min(itemIndex + 1, items.count)
-    }
-
-    func cancelEditingComposerItem(
-        in slot: MainFieldSlot
-    ) {
-
-        editingComposerItemIDs[slot] = nil
-        editingComposerDrafts[slot] = nil
-        focusedComposerEditorID = nil
     }
 
     func selectedComposerIndex(
@@ -2292,6 +3854,31 @@ private extension MainView {
         }
     }
 
+    func shouldShowInsertionHandle(
+        slot: MainFieldSlot,
+        index: Int,
+        itemID: String,
+        items: [TemplateComposerItem]
+    ) -> Bool {
+
+        guard
+            let selectedIndex =
+                selectedComposerIndex(
+                    in: slot,
+                    items: items
+                )
+        else {
+            return false
+        }
+
+        if items[selectedIndex].id != itemID {
+            return false
+        }
+
+        return index == selectedIndex
+            || index == selectedIndex + 1
+    }
+
     func removedIndex(
         for itemID: String,
         in items: [TemplateComposerItem]
@@ -2309,7 +3896,10 @@ private extension MainView {
     ) {
 
         selectedComposerItemIDs[slot] = itemID
-        focusedField = slot
+        activateEditingSlot(
+            slot,
+            preferInlineEditor: false
+        )
 
         if let index =
             composerItems(for: slot)
@@ -2411,107 +4001,10 @@ private extension MainView {
             "item-\(adjustedDestination)"
         insertionComposerIndices[slot] =
             adjustedDestination + 1
-        focusedField = slot
-    }
-
-    func canMoveSelectedComposerItem(
-        in slot: MainFieldSlot,
-        direction: Int
-    ) -> Bool {
-
-        let items =
-            composerItems(for: slot)
-
-        guard
-            let currentIndex =
-                selectedComposerIndex(
-                    in: slot,
-                    items: items
-                )
-        else {
-            return false
-        }
-
-        let targetIndex =
-            currentIndex + direction
-
-        return targetIndex >= 0
-            && targetIndex < items.count
-    }
-
-    func moveSelectedComposerItem(
-        in slot: MainFieldSlot,
-        direction: Int
-    ) {
-
-        let items =
-            composerItems(for: slot)
-
-        guard
-            let currentIndex =
-                selectedComposerIndex(
-                    in: slot,
-                    items: items
-                )
-        else {
-            return
-        }
-
-        let targetIndex =
-            currentIndex + direction
-
-        guard
-            targetIndex >= 0,
-            targetIndex < items.count
-        else {
-            return
-        }
-
-        reorderComposerItems(
-            in: slot,
-            from: "item-\(currentIndex)",
-            to: "item-\(targetIndex)"
+        activateEditingSlot(
+            slot,
+            preferInlineEditor: false
         )
-    }
-
-    func scrollSelectedComposerItem(
-        in slot: MainFieldSlot,
-        proxy: ScrollViewProxy
-    ) {
-
-        guard let selectedID =
-            selectedComposerItemIDs[slot]
-        else {
-            return
-        }
-
-        withAnimation(.easeInOut(duration: 0.2)) {
-            proxy.scrollTo(
-                selectedID,
-                anchor: .center
-            )
-        }
-    }
-
-    func insertSeparator(
-        _ value: String
-    ) {
-
-        let slot =
-            focusedField
-            ?? .rightBottom
-
-        appendComposerItems(
-            [
-                TemplateComposerItem(
-                    id: UUID().uuidString,
-                    segment: .literal(value)
-                )
-            ],
-            to: slot
-        )
-
-        focusedField = slot
     }
 
     func resolvedInsertionIndex(
@@ -2550,7 +4043,10 @@ private extension MainView {
     ) {
 
         insertionComposerIndices[slot] = index
-        focusedField = slot
+        activateEditingSlot(
+            slot,
+            preferInlineEditor: false
+        )
 
         let items =
             composerItems(for: slot)
@@ -2754,6 +4250,23 @@ private extension MainView {
         }
     }
 
+    func plainLiteralText(
+        for item: TemplateComposerItem
+    ) -> String? {
+
+        guard case .literal(let literal) = item.segment else {
+            return nil
+        }
+
+        if separatorDisplayTitle(
+            for: literal
+        ) != nil {
+            return nil
+        }
+
+        return literal
+    }
+
     func composerChipStyle(
         for item: TemplateComposerItem
     ) -> (
@@ -2896,8 +4409,23 @@ private extension MainView {
         case "{{anchor_duration_text}}":
             return "hourglass"
 
+        case "{{anchor_elapsed_text}}":
+            return "clock.arrow.circlepath"
+
         case "{{anchor_countdown_text}}":
             return "flag.checkered"
+
+        case "{{anchor_day_index_text}}":
+            return "calendar.badge.plus"
+
+        case "{{anchor_week_text}}":
+            return "calendar.day.timeline.left"
+
+        case "{{anchor_month_age_text}}":
+            return "calendar.badge.person.crop"
+
+        case "{{anchor_milestone_text}}":
+            return "rosette"
 
         case "{{anchor_total_days_text}}", "{{anchor_total_days}}":
             return "calendar.badge.clock"
@@ -2964,17 +4492,12 @@ private extension MainView {
         value: String
     ) {
 
-        if items.isEmpty {
+        var item =
+            items.first ?? fallback
 
-            var item = fallback
-            item.value = value
-            items = [item]
-
-        } else {
-
-            items[0].value = value
-            items[0].isEnabled = true
-        }
+        item.value = value
+        item.isEnabled = true
+        items = [item]
     }
 
     func insertToken(
@@ -2988,9 +4511,16 @@ private extension MainView {
         _ snippet: String
     ) {
 
-        let slot =
-            focusedField
-            ?? .rightBottom
+        let slot = currentEditingSlot
+
+        if activeTemplateEditorSlot == slot {
+
+            insertSnippetIntoTemplateEditor(
+                snippet,
+                slot: slot
+            )
+            return
+        }
 
         appendComposerItems(
             parseComposerItems(
@@ -3002,16 +4532,275 @@ private extension MainView {
         focusedField = slot
     }
 
+    func insertSnippetIntoTemplateEditor(
+        _ snippet: String,
+        slot: MainFieldSlot
+    ) {
+
+        let currentValue =
+            templateValue(for: slot)
+
+        let nsValue =
+            currentValue as NSString
+
+        let currentSelection =
+            templateEditorSelections[slot]
+            ?? NSRange(
+                location: nsValue.length,
+                length: 0
+            )
+
+        let clampedLocation =
+            min(
+                max(currentSelection.location, 0),
+                nsValue.length
+            )
+
+        let clampedLength =
+            min(
+                max(currentSelection.length, 0),
+                nsValue.length - clampedLocation
+            )
+
+        let safeRange =
+            NSRange(
+                location: clampedLocation,
+                length: clampedLength
+            )
+
+        let updatedValue =
+            nsValue.replacingCharacters(
+                in: safeRange,
+                with: snippet
+            )
+
+        updateTemplateValue(
+            updatedValue,
+            for: slot
+        )
+
+        templateEditorSelections[slot] =
+            NSRange(
+                location: clampedLocation
+                    + (snippet as NSString).length,
+                length: 0
+            )
+
+        activateEditingSlot(
+            slot,
+            preferInlineEditor: true
+        )
+    }
+
+    func activateEditingSlot(
+        _ slot: MainFieldSlot,
+        preferInlineEditor: Bool
+    ) {
+
+        focusedField = slot
+        activeTemplateEditorSlot =
+            preferInlineEditor
+            ? slot
+            : nil
+
+        if arrangingComposerSlot != slot {
+            dismissComposerArrangeMode()
+        }
+    }
+
+    func presentLiteralComposer(
+        for slot: MainFieldSlot? = nil
+    ) {
+
+        literalComposerTargetSlot =
+            slot
+            ?? currentEditingSlot
+        literalComposerDraft = ""
+        showLiteralComposerSheet = true
+        dismissComposerArrangeMode()
+    }
+
+    func closeLiteralComposer() {
+
+        showLiteralComposerSheet = false
+        literalComposerDraft = ""
+        literalComposerTargetSlot = nil
+    }
+
+    func commitLiteralComposer() {
+
+        let trimmed =
+            literalComposerDraft
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !trimmed.isEmpty else {
+            return
+        }
+
+        let slot =
+            literalComposerTargetSlot
+            ?? currentEditingSlot
+
+        appendComposerItems(
+            [
+                TemplateComposerItem(
+                    id: UUID().uuidString,
+                    segment: .literal(trimmed)
+                )
+            ],
+            to: slot
+        )
+
+        activateEditingSlot(
+            slot,
+            preferInlineEditor: true
+        )
+        closeLiteralComposer()
+    }
+
+    func enterComposerArrangeMode(
+        for slot: MainFieldSlot,
+        itemID: String
+    ) {
+
+        activateEditingSlot(
+            slot,
+            preferInlineEditor: false
+        )
+        selectedComposerItemIDs[slot] = itemID
+        arrangingComposerSlot = slot
+
+        withAnimation(
+            .easeInOut(duration: 0.14)
+            .repeatForever(autoreverses: true)
+        ) {
+            composerWigglePhase = true
+        }
+    }
+
+    func dismissComposerArrangeMode() {
+
+        arrangingComposerSlot = nil
+        composerWigglePhase = false
+    }
+
     func configureInitialState() {
 
         if selectedAnchorID == nil {
-            selectedAnchorID =
-                settings.anchors.first?.id
+            let persistedAnchorID =
+                UUID(uuidString: settings.selectedAnchorIDString)
+
+            if let persistedAnchorID,
+               settings.anchors.contains(
+                where: { $0.id == persistedAnchorID }
+               ) {
+                selectedAnchorID = persistedAnchorID
+            } else {
+                selectedAnchorID =
+                    settings.anchors.first?.id
+            }
         }
 
         if focusedField == nil {
             focusedField = .rightBottom
         }
+
+        if titleText.isEmpty {
+            titleText = settings.draftTitleText
+        }
+
+        if storyText.isEmpty {
+            storyText = settings.draftStoryText
+        }
+
+        if selectedAlbumIdentifier
+            == PhotoAlbumOption.automaticIdentifier,
+           !settings.selectedAlbumIdentifier.isEmpty {
+            selectedAlbumIdentifier =
+                settings.selectedAlbumIdentifier
+        }
+    }
+
+    func preparePermissionsOnAppear() async {
+
+        await permissionCenter.refreshStatuses()
+
+        if permissionCenter.shouldPresentPrimer {
+            permissionCenter.markPrimerPresented()
+            showPermissionSetupSheet = true
+        }
+
+        if permissionCenter.canAccessPhotoLibrary {
+            await reloadAlbums()
+        } else {
+            availableAlbums = []
+        }
+    }
+
+    func refreshPermissionsForActiveScene() async {
+
+        let couldAccessBefore =
+            permissionCenter.canAccessPhotoLibrary
+
+        await permissionCenter.refreshStatuses()
+
+        if permissionCenter.canAccessPhotoLibrary {
+            if !couldAccessBefore
+                || availableAlbums.isEmpty {
+                await reloadAlbums()
+            }
+        } else {
+            availableAlbums = []
+        }
+    }
+
+    func requestInitialPermissions() async {
+
+        _ = await permissionCenter
+            .requestPhotoLibraryPermission()
+        _ = await permissionCenter
+            .requestNotificationPermission()
+
+        showPermissionSetupSheet = false
+
+        if permissionCenter.canAccessPhotoLibrary {
+            await reloadAlbums()
+        }
+    }
+
+    func requestPhotoLibraryPermission() async {
+
+        let granted =
+            await permissionCenter
+            .requestPhotoLibraryPermission()
+
+        if granted {
+            await reloadAlbums()
+            return
+        }
+
+        presentAlert(
+            title: "需要相册权限",
+            message: "请允许 PhotoMemo 访问系统相册，这样才能读取照片并把处理后的图片存回图库。"
+        )
+    }
+
+    func requestNotificationPermission() async {
+
+        let granted =
+            await permissionCenter
+            .requestNotificationPermission()
+
+        guard !granted else {
+            return
+        }
+
+        presentAlert(
+            title: "通知尚未开启",
+            message: "你仍然可以继续使用 PhotoMemo，只是后台处理完成时不会自动弹出系统通知。"
+        )
     }
 
     func syncSelectedAnchor(
@@ -3033,111 +4822,6 @@ private extension MainView {
 
             self.selectedAnchorID =
                 anchors.first?.id
-        }
-    }
-
-    var smartSentencePresets: [SmartSentencePreset] {
-
-        let genericTitle =
-            "{{anchor_title}}"
-
-        let anchorName =
-            selectedAnchor?.title.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        let resolvedTitle =
-            anchorName.isEmpty
-            ? genericTitle
-            : anchorName
-
-        let basePresets = [
-            SmartSentencePreset(
-                title: "宝宝年龄",
-                value: "宝宝到今天{{anchor_age_text}}"
-            ),
-            SmartSentencePreset(
-                title: "纪念时长",
-                value: "\(resolvedTitle){{anchor_duration_text}}"
-            ),
-            SmartSentencePreset(
-                title: "纪念天数",
-                value: "今天是\(resolvedTitle)第{{anchor_total_days_text}}"
-            ),
-            SmartSentencePreset(
-                title: "未来倒计时",
-                value: "距离\(resolvedTitle)还有{{anchor_countdown_text}}"
-            ),
-            SmartSentencePreset(
-                title: "加油文案",
-                value: "距离\(resolvedTitle)还有{{anchor_countdown_text}}，加油呀"
-            ),
-            SmartSentencePreset(
-                title: "主体 + 目标",
-                value: "XX距离\(resolvedTitle)还有{{anchor_countdown_text}}"
-            )
-        ]
-
-        guard let selectedAnchor else {
-            return basePresets
-        }
-
-        switch (selectedAnchor.type, selectedAnchor.isCountdown) {
-
-        case (.birthday, _):
-            return [
-                SmartSentencePreset(
-                    title: "成长记录",
-                    value: "宝宝到今天{{anchor_age_text}}"
-                ),
-                SmartSentencePreset(
-                    title: "名字版",
-                    value: "XX宝宝到今天{{anchor_age_text}}"
-                ),
-                SmartSentencePreset(
-                    title: "成长天数",
-                    value: "宝宝已经{{anchor_total_days_text}}"
-                )
-            ]
-
-        case (.exam, true):
-            return [
-                SmartSentencePreset(
-                    title: "毕业倒计时",
-                    value: "距离\(resolvedTitle)还有{{anchor_countdown_text}}"
-                ),
-                SmartSentencePreset(
-                    title: "鼓励版",
-                    value: "距离\(resolvedTitle)还有{{anchor_countdown_text}}，加油呀"
-                ),
-                SmartSentencePreset(
-                    title: "主体版",
-                    value: "XX距离\(resolvedTitle)还有{{anchor_countdown_text}}"
-                ),
-                SmartSentencePreset(
-                    title: "目标提醒",
-                    value: "\(resolvedTitle)倒计时{{anchor_countdown_text}}"
-                )
-            ]
-
-        case (.exam, false):
-            return [
-                SmartSentencePreset(
-                    title: "毕业纪念",
-                    value: "\(resolvedTitle){{anchor_duration_text}}"
-                ),
-                SmartSentencePreset(
-                    title: "毕业天数",
-                    value: "今天是\(resolvedTitle)第{{anchor_total_days_text}}"
-                ),
-                SmartSentencePreset(
-                    title: "主体版",
-                    value: "XX在\(resolvedTitle)这一天{{anchor_duration_text}}"
-                )
-            ]
-
-        default:
-            return basePresets
         }
     }
 
@@ -3234,13 +4918,19 @@ private extension MainView {
         let width =
             CGFloat(
                 selectedPhoto.metadata.imageWidth
-                ?? Int(selectedPhoto.image.size.width)
+                ?? Int(
+                    selectedPhoto.image
+                        .photoMemoSize.width
+                )
             )
 
         let height =
             CGFloat(
                 selectedPhoto.metadata.imageHeight
-                ?? Int(selectedPhoto.image.size.height)
+                ?? Int(
+                    selectedPhoto.image
+                        .photoMemoSize.height
+                )
             )
 
         guard height > 0 else {
@@ -3259,6 +4949,23 @@ private extension MainView {
     }
 
     func reloadAlbums() async {
+
+        await permissionCenter.refreshStatuses()
+
+        guard permissionCenter.canAccessPhotoLibrary else {
+            availableAlbums = []
+
+            if permissionCenter.photoLibraryState
+                == .notDetermined {
+                await requestPhotoLibraryPermission()
+            } else {
+                presentAlert(
+                    title: "需要相册权限",
+                    message: "请先允许 PhotoMemo 访问系统相册，之后才能读取相册列表和保存处理结果。"
+                )
+            }
+            return
+        }
 
         isLoadingAlbums = true
 
@@ -3299,11 +5006,35 @@ private extension MainView {
 
     func saveCurrentConfiguration() {
 
+        persistEditorDraftState(
+            selectedAnchorID: selectedAnchorID,
+            draftTitleText: titleText,
+            draftStoryText: storyText,
+            selectedAlbumIdentifier:
+                selectedAlbumIdentifier
+        )
+
         settings.saveAll()
 
         presentAlert(
             title: "配置已保存",
-            message: "当前模板、徽标和时间锚点已经保存到本地。"
+            message: "当前模板、徽标、时间锚点、文案草稿和相册去向已经保存到本地。"
+        )
+    }
+
+    func persistEditorDraftState(
+        selectedAnchorID: UUID? = nil,
+        draftTitleText: String? = nil,
+        draftStoryText: String? = nil,
+        selectedAlbumIdentifier: String? = nil
+    ) {
+
+        settings.scheduleEditorStateSave(
+            selectedAnchorID: selectedAnchorID,
+            draftTitleText: draftTitleText,
+            draftStoryText: draftStoryText,
+            selectedAlbumIdentifier:
+                selectedAlbumIdentifier
         )
     }
 
@@ -3314,6 +5045,15 @@ private extension MainView {
             let currentCard
         else {
             return
+        }
+
+        await permissionCenter.refreshStatuses()
+
+        if !permissionCenter.canAccessPhotoLibrary {
+            await requestPhotoLibraryPermission()
+            guard permissionCenter.canAccessPhotoLibrary else {
+                return
+            }
         }
 
         isSavingToAlbum = true
@@ -3389,4 +5129,7 @@ private extension MainView {
 #Preview {
 
     MainView()
+        .environmentObject(
+            BatchQueueStore()
+        )
 }

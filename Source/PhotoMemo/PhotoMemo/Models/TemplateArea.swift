@@ -21,6 +21,11 @@ struct TemplateArea: Identifiable, Codable, Hashable {
 
 extension TemplateArea {
 
+    static let empty = TemplateArea(
+        name: "Empty",
+        items: []
+    )
+
     static let leftTop = TemplateArea(
         name: "Left Top",
         items: [

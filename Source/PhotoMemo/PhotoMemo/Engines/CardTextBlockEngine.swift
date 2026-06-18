@@ -70,7 +70,10 @@ final class CardTextBlockEngine {
         context: MetadataContext
     ) -> [CardTextBlock] {
 
-        items
+        resolvedItems(
+            for: area,
+            items: items
+        )
             .filter(\.isEnabled)
             .compactMap { item in
 
@@ -91,7 +94,25 @@ final class CardTextBlockEngine {
                     title: item.name,
                     value: renderedValue,
                     area: area
-                )
+                    )
             }
+    }
+
+    private func resolvedItems(
+        for area: CardTextArea,
+        items: [TemplateItem]
+    ) -> [TemplateItem] {
+
+        switch area {
+
+        case .badge:
+            return items
+
+        case .leftTop,
+             .leftBottom,
+             .rightTop,
+             .rightBottom:
+            return items.first.map { [$0] } ?? []
+        }
     }
 }

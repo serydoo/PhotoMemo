@@ -36,12 +36,32 @@ final class AnchorEngine {
         let ageText =
             ageText(from: metrics)
 
+        let elapsedText =
+            elapsedText(from: metrics.totalDays)
+
+        let dayIndexText =
+            dayIndexText(from: metrics.totalDays)
+
+        let weekText =
+            weekText(from: metrics.totalDays)
+
+        let monthAgeText =
+            monthAgeText(from: metrics)
+
+        let milestoneText =
+            milestoneText(
+                anchor: anchor,
+                metrics: metrics,
+                isFutureRelative: false
+            )
+
         switch anchor.type {
 
         case .birthday:
 
             return AnchorResult(
                 title: anchor.title,
+                isFutureRelative: false,
                 primaryText:
                     ageText.isEmpty
                     ? durationText
@@ -56,6 +76,12 @@ final class AnchorEngine {
                     : "\(anchor.title)今天\(ageText)",
                 ageText: ageText,
                 durationText: durationText,
+                countdownText: "",
+                elapsedText: elapsedText,
+                dayIndexText: dayIndexText,
+                weekText: weekText,
+                monthAgeText: monthAgeText,
+                milestoneText: milestoneText,
                 years: metrics.years,
                 months: metrics.months,
                 days: metrics.days,
@@ -72,6 +98,7 @@ final class AnchorEngine {
 
             return AnchorResult(
                 title: anchor.title,
+                isFutureRelative: false,
                 primaryText: durationText,
                 secondaryText: formattedDateTime(anchor.date),
                 summaryText:
@@ -80,6 +107,12 @@ final class AnchorEngine {
                     : "\(anchor.title)\(durationText)",
                 ageText: ageText,
                 durationText: durationText,
+                countdownText: "",
+                elapsedText: elapsedText,
+                dayIndexText: dayIndexText,
+                weekText: weekText,
+                monthAgeText: monthAgeText,
+                milestoneText: milestoneText,
                 years: metrics.years,
                 months: metrics.months,
                 days: metrics.days,
@@ -104,26 +137,39 @@ private extension AnchorEngine {
             to: anchor.date
         )
 
-        let countdownText =
-            durationText(
-                from: metrics
-            )
+        let countdownValue =
+            rawDayText(from: metrics.totalDays)
 
         let primary =
-            countdownText.isEmpty
+            countdownValue.isEmpty
             ? "0天"
-            : countdownText
+            : countdownValue
+
+        let countdownText =
+            countdownText(from: metrics.totalDays)
 
         return AnchorResult(
             title: anchor.title,
+            isFutureRelative: true,
             primaryText: primary,
             secondaryText: formattedDateTime(anchor.date),
             summaryText:
                 anchor.title.isEmpty
-                ? "还有\(primary)"
-                : "\(anchor.title)还有\(primary)",
+                ? countdownText
+                : "\(anchor.title)\(countdownText)",
             ageText: "",
             durationText: primary,
+            countdownText: countdownText,
+            elapsedText: "",
+            dayIndexText: "",
+            weekText: "",
+            monthAgeText: "",
+            milestoneText:
+                milestoneText(
+                    anchor: anchor,
+                    metrics: metrics,
+                    isFutureRelative: true
+                ),
             years: metrics.years,
             months: metrics.months,
             days: metrics.days,
@@ -144,26 +190,47 @@ private extension AnchorEngine {
             to: photoDate
         )
 
-        let countdownText =
-            durationText(
-                from: metrics
-            )
+        let elapsedValue =
+            rawDayText(from: metrics.totalDays)
 
         let primary =
-            countdownText.isEmpty
+            elapsedValue.isEmpty
             ? "0天"
-            : countdownText
+            : elapsedValue
+
+        let durationText =
+            durationText(from: metrics)
+
+        let ageText =
+            ageText(from: metrics)
+
+        let elapsedText =
+            elapsedText(from: metrics.totalDays)
 
         return AnchorResult(
             title: anchor.title,
+            isFutureRelative: false,
             primaryText: primary,
             secondaryText: formattedDateTime(anchor.date),
             summaryText:
                 anchor.title.isEmpty
-                ? "已过\(primary)"
-                : "\(anchor.title)已过\(primary)",
-            ageText: "",
-            durationText: primary,
+                ? elapsedText
+                : "\(anchor.title)\(elapsedText)",
+            ageText: ageText,
+            durationText: durationText.isEmpty
+                ? primary
+                : durationText,
+            countdownText: "",
+            elapsedText: elapsedText,
+            dayIndexText: dayIndexText(from: metrics.totalDays),
+            weekText: weekText(from: metrics.totalDays),
+            monthAgeText: monthAgeText(from: metrics),
+            milestoneText:
+                milestoneText(
+                    anchor: anchor,
+                    metrics: metrics,
+                    isFutureRelative: false
+                ),
             years: metrics.years,
             months: metrics.months,
             days: metrics.days,
@@ -229,18 +296,141 @@ private extension AnchorEngine {
         from metrics: AnchorMetrics
     ) -> String {
 
-        let parts = [
-            metrics.years > 0 ? "\(metrics.years)岁" : nil,
-            metrics.months > 0 ? "\(metrics.months)个月" : nil,
-            metrics.days > 0 ? "\(metrics.days)天" : nil
-        ]
-        .compactMap { $0 }
+        "\(metrics.years)岁\(metrics.months)月\(metrics.days)天"
+    }
 
-        if !parts.isEmpty {
-            return parts.joined()
+    private func monthAgeText(
+        from metrics: AnchorMetrics
+    ) -> String {
+
+        "\(max(metrics.years * 12 + metrics.months, 0))个月"
+    }
+
+    private func elapsedText(
+        from totalDays: Int
+    ) -> String {
+
+        "已过\(max(totalDays, 0))天"
+    }
+
+    private func countdownText(
+        from totalDays: Int
+    ) -> String {
+
+        "还有\(max(totalDays, 0))天"
+    }
+
+    private func rawDayText(
+        from totalDays: Int
+    ) -> String {
+
+        "\(max(totalDays, 0))天"
+    }
+
+    private func dayIndexText(
+        from totalDays: Int
+    ) -> String {
+
+        "第\(max(totalDays, 1))天"
+    }
+
+    private func weekText(
+        from totalDays: Int
+    ) -> String {
+
+        let safeTotalDays =
+            max(totalDays, 0)
+
+        let weeks =
+            safeTotalDays / 7
+
+        let days =
+            safeTotalDays % 7
+
+        if weeks == 0,
+           days == 0 {
+            return "0周"
         }
 
-        return "0天"
+        if days == 0 {
+            return "\(weeks)周"
+        }
+
+        return "\(weeks)周\(days)天"
+    }
+
+    private func milestoneText(
+        anchor: Anchor,
+        metrics: AnchorMetrics,
+        isFutureRelative: Bool
+    ) -> String {
+
+        let totalDays =
+            max(metrics.totalDays, 0)
+
+        if isFutureRelative {
+
+            if metrics.years > 0,
+               metrics.months == 0,
+               metrics.days == 0 {
+                return countdownText(from: totalDays)
+            }
+
+            if metrics.years == 0,
+               metrics.months > 0,
+               metrics.days == 0,
+               futureMonthMilestones.contains(metrics.months) {
+                return countdownText(from: totalDays)
+            }
+
+            if futureDayMilestones.contains(totalDays) {
+                return countdownText(from: totalDays)
+            }
+
+            return ""
+        }
+
+        if anchor.type == .birthday {
+
+            if totalDays == 7 {
+                return "满7天"
+            }
+
+            if metrics.years == 0,
+               metrics.months == 1,
+               metrics.days == 0 {
+                return "满月"
+            }
+
+            if totalDays == 100 {
+                return "百天"
+            }
+
+            if metrics.years == 0,
+               metrics.days == 0,
+               birthdayMonthMilestones.contains(metrics.months) {
+                return "\(metrics.months)个月"
+            }
+        }
+
+        if metrics.years > 0,
+           metrics.months == 0,
+           metrics.days == 0 {
+            return "\(metrics.years)周年"
+        }
+
+        if totalDays > 0,
+           genericDayMilestones.contains(totalDays) {
+            return "\(totalDays)天"
+        }
+
+        if metrics.years == 0,
+           metrics.days == 0,
+           genericMonthMilestones.contains(metrics.months) {
+            return "\(metrics.months)个月"
+        }
+
+        return ""
     }
 
     private func durationText(
@@ -275,6 +465,50 @@ private extension AnchorEngine {
         }
 
         return parts.joined()
+    }
+
+    var futureDayMilestones: Set<Int> {
+        [
+            1,
+            3,
+            7,
+            30,
+            100,
+            365
+        ]
+    }
+
+    var futureMonthMilestones: Set<Int> {
+        [
+            1,
+            3,
+            6
+        ]
+    }
+
+    var birthdayMonthMilestones: Set<Int> {
+        [
+            3,
+            6,
+            9
+        ]
+    }
+
+    var genericDayMilestones: Set<Int> {
+        [
+            100,
+            500,
+            1000
+        ]
+    }
+
+    var genericMonthMilestones: Set<Int> {
+        [
+            1,
+            3,
+            6,
+            12
+        ]
     }
 }
 

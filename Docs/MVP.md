@@ -1,84 +1,60 @@
 # PhotoMemo MVP
 
-Version: v0.2
+## Goal
 
-## Product Goal
+Ship a reliable local-first pipeline that turns a photo into a finished PhotoMemo image with real EXIF-driven context.
 
-Generate a memory card from a photo.
+## MVP Workflow
 
-The original photo remains untouched.
-
-A new image is generated with:
-
-- EXIF information
-- Device information
-- Location information
-- Anniversary information
-- Custom story information
-
----
+1. Set template
+2. Set anchor
+3. Import one preview photo
+4. Read EXIF and capture time
+5. Render bottom card with custom regions and smart modules
+6. Save configuration
+7. Receive future photos from external entry points
+8. Process in background
+9. Save generated images to the system photo library and chosen album
 
 ## Must Have
 
-### Metadata
+### Template Calibration
 
-- Read EXIF
-- Read Device Model
-- Read Lens Information
-- Read ISO
-- Read Aperture
-- Read Shutter
+- one stable preview surface
+- four independently editable custom regions
+- module insertion based on the active region
+- badge/icon slot
 
-### Location
+### Anchor Semantics
 
-- Read GPS
-- Reverse Geocode Location
+- past anchor support
+- future anchor support
+- smart outputs such as age, duration, elapsed days, countdown, day index, week text, month age
 
-### Anchor System
+### Real Metadata
 
-Support:
-
-- Birthday
-- Relationship
-- Marriage
-- Custom Anniversary
-
-Output:
-
-- Age
-- Days Since
-- Countdown
-
-### Template System
-
-Support:
-
-- Area A
-- Area B
-- Area C
-- Area D
-- Badge Slot
-
-### Classic White Template
-
-- Fixed Height Info Bar
-- Three Column Layout
-- Light Background
+- capture date
+- device and lens fields
+- exposure fields
+- graceful fallback when metadata is incomplete
 
 ### Export
 
-- Generate New Image
-- Save To Photos
-- Save To Custom Album
+- generate a new image
+- write to system photo library
+- support default PhotoMemo album or chosen existing album
+- preserve metadata usefulness as much as platform APIs allow
 
----
+### Background Entry
+
+- open file or external intake into queue
+- background batch processing
+- success and failure notifications
 
 ## Not In MVP
 
-- Share Extension
-- Dynamic Island
-- Live Activity
-- Template Marketplace
-- Cloud Sync
-- AI Generation
-
+- cloud sync
+- online reverse geocoding as a default requirement
+- template marketplace
+- social sharing layer
+- Live Activities or Dynamic Island as a shipping requirement on macOS

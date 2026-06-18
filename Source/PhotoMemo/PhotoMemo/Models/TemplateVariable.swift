@@ -211,20 +211,50 @@ extension TemplateVariable {
 
         TemplateVariable(
             category: .intelligent,
-            title: "宝宝年龄（X岁X个月X天）",
+            title: "年岁（过去锚点，X岁X月X天）",
             token: "{{anchor_age_text}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "纪念天数（XX天）",
+            title: "天数值（XX天）",
             token: "{{anchor_total_days_text}}"
         ),
 
         TemplateVariable(
             category: .intelligent,
-            title: "未来倒计时（XX天）",
+            title: "已过天数（过去锚点，已过XX天）",
+            token: "{{anchor_elapsed_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "倒计时（未来锚点，还有XX天）",
             token: "{{anchor_countdown_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "第几天（第XX天）",
+            token: "{{anchor_day_index_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "周数（XX周X天）",
+            token: "{{anchor_week_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "月龄（XX个月）",
+            token: "{{anchor_month_age_text}}"
+        ),
+
+        TemplateVariable(
+            category: .intelligent,
+            title: "里程碑（100天 / 1周年）",
+            token: "{{anchor_milestone_text}}"
         ),
 
         TemplateVariable(

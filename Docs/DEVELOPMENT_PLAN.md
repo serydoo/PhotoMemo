@@ -1,86 +1,85 @@
-# Development Plan
+# PhotoMemo Development Plan
 
 ## Phase 1
 
-Metadata
+### Real Single-Photo Pipeline
 
-- EXIF
-- GPS
-- Reverse Geocode
+- EXIF import
+- anchor calculation
+- preview rendering
+- export to new image
+- save to photo library
 
 Status:
 
-Completed
-
----
+Completed as the foundation.
 
 ## Phase 2
 
-Anchor System
+### Template Calibration Center
 
-Files:
-
-- Anchor.swift
-- AnchorType.swift
-- AnchorEngine.swift
+- one persistent preview surface
+- four custom text regions
+- smart module insertion
+- badge and output preferences
 
 Status:
 
-Current
-
----
+In active refinement.
 
 ## Phase 3
 
-Template System
+### Background Intake And Queue
 
-Files:
-
-- Template.swift
-- TemplateArea.swift
-- TemplateEngine.swift
+- external file intake
+- frozen configuration snapshots
+- queue state model
+- background processing coordinator
+- system notifications
 
 Status:
 
-Planned
-
----
+Implemented as the current processing backbone.
 
 ## Phase 4
 
-Classic White Renderer
+### Permission And Reliability Layer
 
-Files:
-
-- ClassicWhiteRenderer.swift
-- BadgeRenderer.swift
-- RecordCardRenderer.swift
+- clear first-run permission guidance
+- explicit photo-library access state
+- explicit notification access state
+- stable album refresh and save flows
 
 Status:
 
-Planned
-
----
+Current.
 
 ## Phase 5
 
-Album Export
+### Render Fidelity And Metadata Hardening
 
-Files:
-
-- AlbumExportService.swift
+- preview/export parity
+- border metrics
+- typography consistency
+- metadata retention validation
+- failed-task retry polish
 
 Status:
 
-Planned
-
----
+Next.
 
 ## Phase 6
 
-Share Extension
+### iOS Readiness
+
+- reduce macOS-only assumptions
+- preserve architecture for future share-extension style intake
+- prepare notification and background concepts for iOS equivalents
 
 Status:
 
-Future
+Future, but current code should not block it.
 
+## Working Rule
+
+Do not expand feature surface faster than the real processing chain can support.

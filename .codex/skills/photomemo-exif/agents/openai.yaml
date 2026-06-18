@@ -1,0 +1,4 @@
+interface:
+  display_name: "PhotoMemo EXIF"
+  short_description: "Check EXIF extraction and metadata mapping"
+  default_prompt: "Use $photomemo-exif to inspect PhotoMemo EXIF parsing and metadata flow."

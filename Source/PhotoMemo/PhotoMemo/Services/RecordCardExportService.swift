@@ -1,7 +1,9 @@
 import SwiftUI
-import AppKit
 import ImageIO
 import UniformTypeIdentifiers
+#if os(macOS)
+import AppKit
+#endif
 
 enum RecordCardExportError: LocalizedError {
 
@@ -45,6 +47,7 @@ final class RecordCardExportService {
         card: RecordCard
     ) throws -> URL {
 
+#if os(macOS)
         let saveURL = try chooseSaveURL(
             for: photo
         )
@@ -54,6 +57,12 @@ final class RecordCardExportService {
             card: card,
             to: saveURL
         )
+#else
+        return try exportToTemporaryFile(
+            photo: photo,
+            card: card
+        )
+#endif
     }
 
     func exportToTemporaryFile(
@@ -107,7 +116,7 @@ private extension RecordCardExportService {
             outputPixelSize(for: photo)
 
         let content = RecordCardRenderer(
-            image: Image(nsImage: photo.image),
+            image: photo.image.swiftUIImage,
             card: card
         )
         .frame(
@@ -166,6 +175,7 @@ private extension RecordCardExportService {
         return saveURL
     }
 
+#if os(macOS)
     func chooseSaveURL(
         for photo: SelectedPhoto
     ) throws -> URL {
@@ -190,6 +200,7 @@ private extension RecordCardExportService {
 
         return url
     }
+#endif
 
     func defaultFileName(
         for photo: SelectedPhoto
@@ -251,13 +262,13 @@ private extension RecordCardExportService {
         let width =
             CGFloat(
                 photo.metadata.imageWidth
-                ?? Int(photo.image.size.width)
+                ?? Int(photo.image.photoMemoSize.width)
             )
 
         let imageHeight =
             CGFloat(
                 photo.metadata.imageHeight
-                ?? Int(photo.image.size.height)
+                ?? Int(photo.image.photoMemoSize.height)
             )
 
         let orientation:

@@ -29,12 +29,6 @@ struct CardVariableProvider {
                     result: anchor
                 )
 
-            let countdownText =
-                countdownText(
-                    anchor: card.anchor,
-                    result: anchor
-                )
-
             context.set(
                 anchor.title,
                 for: "anchor_title"
@@ -61,7 +55,7 @@ struct CardVariableProvider {
             )
 
             context.set(
-                countdownText,
+                anchor.countdownText,
                 for: "anchor_countdown_text"
             )
 
@@ -78,6 +72,31 @@ struct CardVariableProvider {
             context.set(
                 totalDaysText,
                 for: "anchor_total_days_text"
+            )
+
+            context.set(
+                anchor.elapsedText,
+                for: "anchor_elapsed_text"
+            )
+
+            context.set(
+                anchor.dayIndexText,
+                for: "anchor_day_index_text"
+            )
+
+            context.set(
+                anchor.weekText,
+                for: "anchor_week_text"
+            )
+
+            context.set(
+                anchor.monthAgeText,
+                for: "anchor_month_age_text"
+            )
+
+            context.set(
+                anchor.milestoneText,
+                for: "anchor_milestone_text"
             )
 
             context.set(
@@ -159,6 +178,15 @@ struct CardVariableProvider {
     static func exportDescription(
         from card: RecordCard
     ) -> String {
+
+        if let explicitDescription =
+            card.exportDescriptionOverride {
+
+            return explicitDescription
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+        }
 
         let title =
             card.title.trimmingCharacters(
@@ -288,18 +316,32 @@ private extension CardVariableProvider {
             return result.primaryText
         }
 
-        if anchor.isCountdown {
-            return "\(result.totalDays)天"
+        if !result.milestoneText.isEmpty {
+            return result.milestoneText
+        }
+
+        if result.isFutureRelative {
+            return firstNonEmpty(
+                result.countdownText,
+                result.primaryText
+            )
         }
 
         switch anchor.type {
 
         case .birthday:
-            return result.ageText
+            return firstNonEmpty(
+                result.ageText,
+                result.monthAgeText,
+                result.durationText
+            )
 
         case .relationship:
             return result.totalDays < 365
-                ? "\(result.totalDays)天"
+                ? firstNonEmpty(
+                    result.elapsedText,
+                    rawDayText(result)
+                )
                 : result.durationText
 
         case .marriage:
@@ -307,31 +349,39 @@ private extension CardVariableProvider {
 
         case .exam:
             return result.totalDays < 100
-                ? "\(result.totalDays)天"
+                ? firstNonEmpty(
+                    result.elapsedText,
+                    rawDayText(result)
+                )
                 : result.durationText
 
         case .custom:
             if result.totalDays < 100 {
-                return "\(result.totalDays)天"
+                return firstNonEmpty(
+                    result.elapsedText,
+                    rawDayText(result)
+                )
             }
 
             return result.durationText
         }
     }
 
-    static func countdownText(
-        anchor: Anchor?,
-        result: AnchorResult
+    static func firstNonEmpty(
+        _ candidates: String...
     ) -> String {
 
-        guard let anchor else {
-            return ""
-        }
+        candidates.first {
+            !$0.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ).isEmpty
+        } ?? ""
+    }
 
-        guard anchor.isCountdown else {
-            return ""
-        }
+    static func rawDayText(
+        _ result: AnchorResult
+    ) -> String {
 
-        return "\(result.totalDays)天"
+        "\(result.totalDays)天"
     }
 }

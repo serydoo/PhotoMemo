@@ -157,6 +157,12 @@ extension TemplateItem {
         value: "记录于{{capture_date_display}}"
     )
 
+    static let captureDateCompact = TemplateItem(
+        type: .variable,
+        name: "Capture Date Compact",
+        value: "{{year}}.{{month}}.{{day}}"
+    )
+
     // MARK: - GPS
 
     static let latitude = TemplateItem(
@@ -187,6 +193,18 @@ extension TemplateItem {
         type: .variable,
         name: "Camera Summary",
         value: "{{camera_summary}}"
+    )
+
+    static let deviceCameraLine = TemplateItem(
+        type: .variable,
+        name: "Device Camera Line",
+        value: "{{model}} · {{camera_summary}}"
+    )
+
+    static let gearLine = TemplateItem(
+        type: .variable,
+        name: "Gear Line",
+        value: "{{model}} · {{lens}}"
     )
 
     static let city = TemplateItem(
@@ -229,7 +247,7 @@ extension TemplateItem {
 
     static let anchorAgeText = TemplateItem(
         type: .variable,
-        name: "宝宝年龄",
+        name: "年岁",
         value: "{{anchor_age_text}}"
     )
 
@@ -241,13 +259,61 @@ extension TemplateItem {
 
     static let anchorTotalDaysText = TemplateItem(
         type: .variable,
-        name: "纪念天数",
+        name: "天数值",
         value: "{{anchor_total_days_text}}"
+    )
+
+    static let anchorElapsedText = TemplateItem(
+        type: .variable,
+        name: "已过天数",
+        value: "{{anchor_elapsed_text}}"
     )
 
     static let anchorCountdownText = TemplateItem(
         type: .variable,
-        name: "未来倒计时",
+        name: "倒计时",
+        value: "{{anchor_countdown_text}}"
+    )
+
+    static let anchorDayIndexText = TemplateItem(
+        type: .variable,
+        name: "第几天",
+        value: "{{anchor_day_index_text}}"
+    )
+
+    static let anchorWeekText = TemplateItem(
+        type: .variable,
+        name: "周数",
+        value: "{{anchor_week_text}}"
+    )
+
+    static let anchorMonthAgeText = TemplateItem(
+        type: .variable,
+        name: "月龄",
+        value: "{{anchor_month_age_text}}"
+    )
+
+    static let anchorMilestoneText = TemplateItem(
+        type: .variable,
+        name: "里程碑",
+        value: "{{anchor_milestone_text}}"
+    )
+
+    static let anchorAgeSentence = TemplateItem(
+        type: .variable,
+        name: "成长纪念句",
+        value: "今天{{anchor_age_text}}"
+    )
+
+    static let anchorDurationSentence = TemplateItem(
+        type: .variable,
+        name: "纪念时长句",
+        value: "已经{{anchor_duration_text}}"
+    )
+
+    static let anchorCountdownSentence = TemplateItem(
+        type: .variable,
+        name: "倒计时句",
         value: "{{anchor_countdown_text}}"
     )
 

@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 struct BadgeRenderer {
 
@@ -72,9 +71,11 @@ struct BadgeRenderer {
     ) -> Image? {
 
         if let imagePath = badge.imagePath,
-           let image = NSImage(contentsOfFile: imagePath) {
+           let image = PlatformImage.loadPhotoMemoImage(
+                contentsOfFile: imagePath
+           ) {
 
-            return Image(nsImage: image)
+            return image.swiftUIImage
         }
 
         return nil

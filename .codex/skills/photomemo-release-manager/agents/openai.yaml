@@ -1,0 +1,4 @@
+interface:
+  display_name: "PhotoMemo ReleaseManager"
+  short_description: "Build, verify, and sync PhotoMemo safely"
+  default_prompt: "Use $photomemo-release-manager to verify and ship the current PhotoMemo changes."

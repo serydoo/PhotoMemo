@@ -1,0 +1,4 @@
+interface:
+  display_name: "PhotoMemo SwiftUIReviewer"
+  short_description: "Review PhotoMemo SwiftUI layout and state"
+  default_prompt: "Use $photomemo-swiftui-reviewer to review the current PhotoMemo SwiftUI implementation."

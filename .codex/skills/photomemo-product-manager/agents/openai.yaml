@@ -1,0 +1,4 @@
+interface:
+  display_name: "PhotoMemo ProductManager"
+  short_description: "Plan MVP work for the PhotoMemo app"
+  default_prompt: "Use $photomemo-product-manager to plan the next PhotoMemo milestone."

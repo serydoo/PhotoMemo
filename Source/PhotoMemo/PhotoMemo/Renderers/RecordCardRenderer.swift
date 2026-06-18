@@ -131,47 +131,39 @@ struct RecordCardRenderer: View {
         layout: ClassicWhiteRenderer.Layout
     ) -> some View {
 
-        VStack(
-            alignment: .center,
+        pinnedBlockColumn(
+            topBlocks: leftTopBlocks,
+            bottomBlocks: leftBottomBlocks,
+            topStyle: BlockStyle(
+                fontSize: max(
+                    16,
+                    height * layout.titleFontRatio
+                ),
+                weight: .semibold,
+                design: .rounded,
+                color: ClassicWhiteRenderer.titleTextColor,
+                tracking: layout.titleTracking,
+                lineLimit: 2,
+                lineSpacing: height * 0.01,
+                alignment: .center,
+                textAlignment: .center
+            ),
+            bottomStyle: BlockStyle(
+                fontSize: max(
+                    13,
+                    height * layout.secondaryFontRatio
+                ),
+                weight: .regular,
+                design: .rounded,
+                color: ClassicWhiteRenderer.secondaryTextColor,
+                tracking: layout.secondaryTracking,
+                lineLimit: 2,
+                lineSpacing: height * 0.008,
+                alignment: .center,
+                textAlignment: .center
+            ),
             spacing: height * layout.groupSpacingRatio
-        ) {
-
-            blockGroup(
-                leftTopBlocks,
-                style: BlockStyle(
-                    fontSize: max(
-                        16,
-                        height * layout.titleFontRatio
-                    ),
-                    weight: .semibold,
-                    design: .rounded,
-                    color: ClassicWhiteRenderer.titleTextColor,
-                    tracking: layout.titleTracking,
-                    lineLimit: 2,
-                    lineSpacing: height * 0.01,
-                    alignment: .center,
-                    textAlignment: .center
-                )
-            )
-
-            blockGroup(
-                leftBottomBlocks,
-                style: BlockStyle(
-                    fontSize: max(
-                        13,
-                        height * layout.secondaryFontRatio
-                    ),
-                    weight: .regular,
-                    design: .rounded,
-                    color: ClassicWhiteRenderer.secondaryTextColor,
-                    tracking: layout.secondaryTracking,
-                    lineLimit: 2,
-                    lineSpacing: height * 0.008,
-                    alignment: .center,
-                    textAlignment: .center
-                )
-            )
-        }
+        )
         .frame(
             width: width * layout.leftColumnWidthRatio,
             alignment: .center
@@ -219,47 +211,39 @@ struct RecordCardRenderer: View {
         layout: ClassicWhiteRenderer.Layout
     ) -> some View {
 
-        VStack(
-            alignment: .center,
+        pinnedBlockColumn(
+            topBlocks: rightTopBlocks,
+            bottomBlocks: rightBottomBlocks,
+            topStyle: BlockStyle(
+                fontSize: max(
+                    15,
+                    height * layout.metadataFontRatio
+                ),
+                weight: .medium,
+                design: .rounded,
+                color: ClassicWhiteRenderer.metadataTextColor,
+                tracking: layout.metadataTracking,
+                lineLimit: 2,
+                lineSpacing: height * 0.006,
+                alignment: .center,
+                textAlignment: .center
+            ),
+            bottomStyle: BlockStyle(
+                fontSize: max(
+                    13,
+                    height * layout.secondaryFontRatio
+                ),
+                weight: .medium,
+                design: .rounded,
+                color: ClassicWhiteRenderer.secondaryTextColor,
+                tracking: layout.secondaryTracking,
+                lineLimit: 2,
+                lineSpacing: height * 0.01,
+                alignment: .center,
+                textAlignment: .center
+            ),
             spacing: height * layout.groupSpacingRatio
-        ) {
-
-            blockGroup(
-                rightTopBlocks,
-                style: BlockStyle(
-                    fontSize: max(
-                        15,
-                        height * layout.metadataFontRatio
-                    ),
-                    weight: .medium,
-                    design: .rounded,
-                    color: ClassicWhiteRenderer.metadataTextColor,
-                    tracking: layout.metadataTracking,
-                    lineLimit: 2,
-                    lineSpacing: height * 0.006,
-                    alignment: .center,
-                    textAlignment: .center
-                )
-            )
-
-            blockGroup(
-                rightBottomBlocks,
-                style: BlockStyle(
-                    fontSize: max(
-                        13,
-                        height * layout.secondaryFontRatio
-                    ),
-                    weight: .medium,
-                    design: .rounded,
-                    color: ClassicWhiteRenderer.secondaryTextColor,
-                    tracking: layout.secondaryTracking,
-                    lineLimit: 2,
-                    lineSpacing: height * 0.01,
-                    alignment: .center,
-                    textAlignment: .center
-                )
-            )
-        }
+        )
         .frame(
             width: width * layout.rightColumnWidthRatio,
             alignment: .center
@@ -321,6 +305,44 @@ struct RecordCardRenderer: View {
         imageAspectRatio >= 1
             ? .landscape
             : .portrait
+    }
+
+    @ViewBuilder
+    private func pinnedBlockColumn(
+        topBlocks: [CardTextBlock],
+        bottomBlocks: [CardTextBlock],
+        topStyle: BlockStyle,
+        bottomStyle: BlockStyle,
+        spacing: CGFloat
+    ) -> some View {
+
+        VStack(
+            alignment: .center,
+            spacing: 0
+        ) {
+
+            blockGroup(
+                topBlocks,
+                style: topStyle
+            )
+
+            Spacer(
+                minLength:
+                    topBlocks.isEmpty || bottomBlocks.isEmpty
+                    ? 0
+                    : spacing
+            )
+
+            blockGroup(
+                bottomBlocks,
+                style: bottomStyle
+            )
+        }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .center
+        )
     }
 
     @ViewBuilder

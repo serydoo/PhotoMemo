@@ -1,0 +1,124 @@
+import Foundation
+
+final class RecordCardBuildService {
+
+    private let anchorEngine =
+        AnchorEngine()
+
+    private let templateVariableEngine =
+        TemplateVariableEngine()
+
+    func buildCard(
+        from selectedPhoto: SelectedPhoto,
+        configuration: BatchConfigurationSnapshot
+    ) -> RecordCard {
+
+        let anchorResult =
+            configuration.anchor.map {
+                anchorEngine.build(
+                    from: $0,
+                    photoDate:
+                        selectedPhoto.metadata.captureDate
+                        ?? Date()
+                )
+            }
+
+        var card = RecordCard(
+            template: configuration.template,
+            metadata: selectedPhoto.metadata,
+            context: MetadataContext.build(
+                from: selectedPhoto.metadata
+            ),
+            anchor: configuration.anchor,
+            anchorResult: anchorResult,
+            badge: configuration.badge,
+            title: resolvedTitle(
+                from: configuration
+            ),
+            story: resolvedStory(
+                from: configuration
+            ),
+            exportDescriptionOverride: nil
+        )
+
+        card.exportDescriptionOverride =
+            configuration.shouldWritePhotoDescription
+            ? resolvedPhotoDescription(
+                from: card,
+                configuration: configuration
+            )
+            : ""
+
+        return card
+    }
+}
+
+private extension RecordCardBuildService {
+
+    func resolvedTitle(
+        from configuration: BatchConfigurationSnapshot
+    ) -> String {
+
+        let trimmed =
+            configuration.titleText
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !trimmed.isEmpty {
+            return trimmed
+        }
+
+        return configuration.anchor?.title ?? ""
+    }
+
+    func resolvedStory(
+        from configuration: BatchConfigurationSnapshot
+    ) -> String {
+
+        configuration.storyText
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+    }
+
+    func resolvedPhotoDescription(
+        from card: RecordCard,
+        configuration: BatchConfigurationSnapshot
+    ) -> String {
+
+        let override =
+            configuration.photoDescriptionOverride
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !override.isEmpty {
+            return override
+        }
+
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        return templateVariableEngine
+            .render(
+                rightBottomTemplate(
+                    from: configuration.template
+                ),
+                context: context
+            )
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+    }
+
+    func rightBottomTemplate(
+        from template: Template
+    ) -> String {
+
+        template.rightBottomArea.items.first?.value
+        ?? ""
+    }
+}

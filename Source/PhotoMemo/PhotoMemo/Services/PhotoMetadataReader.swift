@@ -102,6 +102,15 @@ private extension PhotoMetadataReader {
         metadata.deviceModel =
             tiff[kCGImagePropertyTIFFModel]
             as? String ?? ""
+
+        if metadata.captureDate == nil,
+           let dateString =
+            tiff[kCGImagePropertyTIFFDateTime]
+            as? String {
+
+            metadata.captureDate =
+                parseDate(dateString)
+        }
     }
 
     func loadEXIF(
@@ -225,15 +234,25 @@ private extension PhotoMetadataReader {
         _ value: String
     ) -> Date? {
 
-        let formatter =
-            DateFormatter()
+        let trimmedValue =
+            value.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
 
-        formatter.dateFormat =
-            "yyyy:MM:dd HH:mm:ss"
+        guard !trimmedValue.isEmpty else {
+            return nil
+        }
 
-        return formatter.date(
-            from: value
-        )
+        for formatter in dateFormatters {
+            if let date =
+                formatter.date(
+                    from: trimmedValue
+                ) {
+                return date
+            }
+        }
+
+        return nil
     }
 
     func shutterText(
@@ -253,5 +272,36 @@ private extension PhotoMetadataReader {
             format: "%.1fs",
             value
         )
+    }
+
+    var dateFormatters: [DateFormatter] {
+
+        [
+            makeDateFormatter(
+                "yyyy:MM:dd HH:mm:ss"
+            ),
+            makeDateFormatter(
+                "yyyy-MM-dd HH:mm:ss"
+            ),
+            makeDateFormatter(
+                "yyyy-MM-dd'T'HH:mm:ssZ"
+            ),
+            makeDateFormatter(
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+            )
+        ]
+    }
+
+    func makeDateFormatter(
+        _ format: String
+    ) -> DateFormatter {
+
+        let formatter =
+            DateFormatter()
+
+        formatter.locale =
+            Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = format
+        return formatter
     }
 }

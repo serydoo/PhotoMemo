@@ -22,6 +22,8 @@ struct RecordCard: Identifiable, Hashable {
 
     var tags: [String]
 
+    var exportDescriptionOverride: String?
+
     init(
         id: UUID = UUID(),
         template: Template = .classicWhite,
@@ -32,7 +34,8 @@ struct RecordCard: Identifiable, Hashable {
         badge: Badge? = nil,
         title: String = "",
         story: String = "",
-        tags: [String] = []
+        tags: [String] = [],
+        exportDescriptionOverride: String? = nil
     ) {
         self.id = id
         self.template = template
@@ -44,5 +47,7 @@ struct RecordCard: Identifiable, Hashable {
         self.title = title
         self.story = story
         self.tags = tags
+        self.exportDescriptionOverride =
+            exportDescriptionOverride
     }
 }

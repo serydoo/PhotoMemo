@@ -31,13 +31,30 @@ extension TemplatePreset {
         switch self {
 
         case .template1:
-            return "成长纪念：右下角默认使用时间锚点文案，适合“今天几岁了”这类效果。"
+            return "成长纪念：左上标题、左下记录时间、右上设备摘要、右下默认展示“今天{{anchor_age_text}}”。"
 
         case .template2:
-            return "日常记录：保留拍摄信息，同时把你的自定义故事作为主记忆文案。"
+            return "纪念时长：保留完整拍摄信息，右下默认展示“已经{{anchor_duration_text}}”，适合恋爱、结婚、搬家等场景。"
 
         case .template3:
-            return "器材笔记：更强调机型、镜头和拍摄参数，适合摄影记录。"
+            return "未来倒计时：左下改为紧凑日期，右上保留机型与镜头，右下默认展示“{{anchor_countdown_text}}”。"
+        }
+    }
+
+    static func infer(
+        from templateName: String
+    ) -> TemplatePreset {
+
+        switch templateName {
+
+        case TemplatePreset.template2.displayName:
+            return .template2
+
+        case TemplatePreset.template3.displayName:
+            return .template3
+
+        default:
+            return .template1
         }
     }
 }
