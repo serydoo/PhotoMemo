@@ -28,16 +28,16 @@ extension BadgeType {
         switch self {
 
         case .none:
-            return "None"
+            return "自动"
 
         case .png:
             return "PNG"
 
         case .systemSymbol:
-            return "System Symbol"
+            return "系统标识"
 
         case .customUpload:
-            return "Custom Upload"
+            return "自定义图片"
 
         case .svg:
             return "SVG"

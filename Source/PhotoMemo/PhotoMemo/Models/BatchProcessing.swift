@@ -199,6 +199,45 @@ struct BatchTaskFailure:
     }
 }
 
+extension BatchTaskFailure {
+
+    var phaseTitle: String {
+
+        switch phase {
+
+        case .queued:
+            return "排队"
+
+        case .importing:
+            return "读取原图"
+
+        case .metadataReady:
+            return "读取 EXIF"
+
+        case .previewReady:
+            return "生成模板内容"
+
+        case .waitingForExport:
+            return "等待导出"
+
+        case .exporting:
+            return "生成图片"
+
+        case .savingToPhotoLibrary:
+            return "写入系统图库"
+
+        case .completed:
+            return "处理完成"
+
+        case .failed:
+            return "处理失败"
+
+        case .cancelled:
+            return "已取消"
+        }
+    }
+}
+
 struct BatchTaskProgress:
     Codable,
     Hashable {
@@ -377,6 +416,14 @@ extension BatchJob {
 
         tasks.count
     }
+
+    var latestFailure: BatchTaskFailure? {
+
+        tasks.compactMap(\.failure)
+            .max {
+                $0.timestamp < $1.timestamp
+            }
+    }
 }
 
 struct BatchUsageLeaderboardEntry: Hashable {
@@ -401,4 +448,55 @@ struct BatchUsageSnapshot: Hashable {
     let anchorChampion: BatchUsageLeaderboardEntry?
 
     let lastCompletedAt: Date?
+}
+
+struct BatchFailureSummary: Hashable {
+
+    let jobID: UUID
+
+    let jobTitle: String
+
+    let failedTaskCount: Int
+
+    let latestFailure: BatchTaskFailure
+
+    let updatedAt: Date
+}
+
+struct BatchFailureRecord:
+    Identifiable,
+    Hashable {
+
+    let id: String
+
+    let jobID: UUID
+
+    let jobTitle: String
+
+    let taskID: UUID
+
+    let fileName: String
+
+    let retryCount: Int
+
+    let failure: BatchTaskFailure
+}
+
+struct ExternalIntakeSummary: Hashable {
+
+    let jobID: UUID
+
+    let title: String
+
+    let launchSource: BatchJobLaunchSource
+
+    let taskCount: Int
+
+    let state: BatchJobState
+
+    let templateName: String
+
+    let anchorTitle: String?
+
+    let updatedAt: Date
 }

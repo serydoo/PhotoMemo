@@ -384,9 +384,18 @@ extension SettingsService {
 
     var resolvedSelectedAnchor: Anchor? {
 
+        resolvedAnchor(
+            for: selectedAnchorIDString
+        )
+    }
+
+    func resolvedAnchor(
+        for identifierString: String
+    ) -> Anchor? {
+
         guard
             let identifier = UUID(
-                uuidString: selectedAnchorIDString
+                uuidString: identifierString
             )
         else {
             return nil
@@ -397,9 +406,32 @@ extension SettingsService {
         }
     }
 
-    func buildBatchConfigurationSnapshot() -> BatchConfigurationSnapshot {
+    func buildBatchConfigurationSnapshot(
+        selectedAnchorID: UUID? = nil,
+        draftTitleText: String? = nil,
+        draftStoryText: String? = nil,
+        selectedAlbumIdentifier: String? = nil
+    ) -> BatchConfigurationSnapshot {
 
-        BatchConfigurationSnapshot(
+        let resolvedAnchorIdentifier =
+            selectedAnchorID?.uuidString
+            ?? selectedAnchorIDString
+
+        let resolvedTitleText =
+            draftTitleText
+            ?? self.draftTitleText
+
+        let resolvedStoryText =
+            draftStoryText
+            ?? self.draftStoryText
+
+        let resolvedAlbumIdentifier =
+            normalizedAlbumIdentifier(
+                selectedAlbumIdentifier
+                ?? self.selectedAlbumIdentifier
+            )
+
+        return BatchConfigurationSnapshot(
             template:
                 (selectedTemplate ?? .template1)
                 .normalizedForEditing,
@@ -407,26 +439,37 @@ extension SettingsService {
                 selectedBadge?.type == BadgeType.none
                 ? nil
                 : selectedBadge,
-            anchor: resolvedSelectedAnchor,
+            anchor: resolvedAnchor(
+                for: resolvedAnchorIdentifier
+            ),
             shouldWritePhotoDescription:
                 shouldWritePhotoDescription,
             photoDescriptionOverride:
                 photoDescriptionOverride,
             selectedAlbumIdentifier:
-                normalizedSelectedAlbumIdentifier,
-            titleText: draftTitleText,
-            storyText: draftStoryText
+                resolvedAlbumIdentifier,
+            titleText: resolvedTitleText,
+            storyText: resolvedStoryText
         )
     }
 
     var normalizedSelectedAlbumIdentifier: String {
 
-        if selectedAlbumIdentifier.isEmpty
-            || selectedAlbumIdentifier
+        normalizedAlbumIdentifier(
+            selectedAlbumIdentifier
+        )
+    }
+
+    func normalizedAlbumIdentifier(
+        _ identifier: String
+    ) -> String {
+
+        if identifier.isEmpty
+            || identifier
             == PhotoAlbumOption.automaticIdentifier {
             return ""
         }
 
-        return selectedAlbumIdentifier
+        return identifier
     }
 }

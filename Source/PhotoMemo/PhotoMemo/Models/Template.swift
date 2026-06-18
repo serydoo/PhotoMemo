@@ -106,6 +106,26 @@ extension Template {
         badgeArea: .badge
     )
 
+    static let immersWhite = Template(
+        preset: .immersWhite,
+        name: "Immers 白边",
+        leftTopArea: .leftTop,
+        leftBottomArea: .leftBottom,
+        rightTopArea: TemplateArea(
+            name: "Right Top",
+            items: [
+                .deviceCameraLine
+            ]
+        ),
+        rightBottomArea: TemplateArea(
+            name: "Right Bottom",
+            items: [
+                .memorySummary
+            ]
+        ),
+        badgeArea: .badge
+    )
+
     static let classicWhite = template1
 
     var normalizedForEditing: Template {

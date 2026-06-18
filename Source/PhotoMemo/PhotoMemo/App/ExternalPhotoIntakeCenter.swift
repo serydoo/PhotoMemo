@@ -12,17 +12,23 @@ struct ExternalPhotoIntakeRequest:
 
     let urls: [URL]
 
+    let configurationSnapshot:
+        BatchConfigurationSnapshot
+
     let receivedAt: Date
 
     init(
         id: UUID = UUID(),
         launchSource: BatchJobLaunchSource,
         urls: [URL],
+        configurationSnapshot: BatchConfigurationSnapshot,
         receivedAt: Date = Date()
     ) {
         self.id = id
         self.launchSource = launchSource
         self.urls = urls
+        self.configurationSnapshot =
+            configurationSnapshot
         self.receivedAt = receivedAt
     }
 }
@@ -37,6 +43,9 @@ final class ExternalPhotoIntakeCenter:
     @Published private(set) var revision =
         UUID()
 
+    @Published private(set) var defaultConfigurationSnapshot:
+        BatchConfigurationSnapshot
+
     private var pendingRequests:
         [ExternalPhotoIntakeRequest] = []
 
@@ -50,6 +59,17 @@ final class ExternalPhotoIntakeCenter:
         ]
 
     private init() {
+
+        self.defaultConfigurationSnapshot =
+            SettingsService()
+            .buildBatchConfigurationSnapshot()
+    }
+
+    func updateDefaultConfiguration(
+        _ snapshot: BatchConfigurationSnapshot
+    ) {
+
+        defaultConfigurationSnapshot = snapshot
     }
 
     func submit(
@@ -69,7 +89,9 @@ final class ExternalPhotoIntakeCenter:
         pendingRequests.append(
             ExternalPhotoIntakeRequest(
                 launchSource: source,
-                urls: acceptedURLs
+                urls: acceptedURLs,
+                configurationSnapshot:
+                    defaultConfigurationSnapshot
             )
         )
 

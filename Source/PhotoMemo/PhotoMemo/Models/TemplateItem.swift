@@ -201,6 +201,30 @@ extension TemplateItem {
         value: "{{model}} · {{camera_summary}}"
     )
 
+    static let immersCameraLine = TemplateItem(
+        type: .variable,
+        name: "Immers Camera Line",
+        value: "{{focal_len_in_35mm_film}}mm f/{{aperture}} {{shutter}}s ISO{{iso}}"
+    )
+
+    static let immersDateTimeLine = TemplateItem(
+        type: .variable,
+        name: "Immers Date Time Line",
+        value: "{{year}}.{{month}}.{{day}} {{hour}}:{{minute}}:{{second}}"
+    )
+
+    static let immersLocationLine = TemplateItem(
+        type: .variable,
+        name: "Immers Location Line",
+        value: "{{latitude}} {{longitude}}"
+    )
+
+    static let immersAgeLine = TemplateItem(
+        type: .variable,
+        name: "Immers Age Line",
+        value: "今天{{anchor_age_text}}"
+    )
+
     static let gearLine = TemplateItem(
         type: .variable,
         name: "Gear Line",
@@ -333,7 +357,7 @@ extension TemplateItem {
 
     static let badge = TemplateItem(
         type: .badge,
-        name: "Badge",
-        value: "badge"
+        name: "Logo",
+        value: "logo"
     )
 }

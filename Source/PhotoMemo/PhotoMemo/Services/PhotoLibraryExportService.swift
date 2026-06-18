@@ -59,6 +59,9 @@ final class PhotoLibraryExportService {
 
     private let defaultAlbumTitle = "PhotoMemo"
 
+    private let metadataReader =
+        PhotoMetadataReader()
+
     func fetchAlbumOptions() async throws -> [PhotoAlbumOption] {
 
         let status = await requestAuthorizationIfNeeded()
@@ -195,6 +198,35 @@ final class PhotoLibraryExportService {
                 placeholderIdentifier ?? ""
         )
     }
+
+    func readMetadata(
+        forSavedAsset localIdentifier: String
+    ) async throws -> PhotoMetadata {
+
+        let asset =
+            fetchAsset(
+                with: localIdentifier
+            )
+
+        guard let asset else {
+            throw PhotoLibraryExportError.assetSaveFailed
+        }
+
+        let temporaryURL =
+            try await exportAssetResourceToTemporaryFile(
+                for: asset
+            )
+
+        defer {
+            try? FileManager.default.removeItem(
+                at: temporaryURL
+            )
+        }
+
+        return metadataReader.read(
+            from: temporaryURL
+        )
+    }
 }
 
 private extension PhotoLibraryExportService {
@@ -263,6 +295,16 @@ private extension PhotoLibraryExportService {
                 options: nil
             )
             .firstObject
+    }
+
+    func fetchAsset(
+        with localIdentifier: String
+    ) -> PHAsset? {
+
+        PHAsset.fetchAssets(
+            withLocalIdentifiers: [localIdentifier],
+            options: nil
+        ).firstObject
     }
 
     func fetchAlbum(
@@ -354,6 +396,79 @@ private extension PhotoLibraryExportService {
 
                 continuation.resume()
             }
+        }
+    }
+
+    func exportAssetResourceToTemporaryFile(
+        for asset: PHAsset
+    ) async throws -> URL {
+
+        let resources =
+            PHAssetResource.assetResources(
+                for: asset
+            )
+
+        guard let resource =
+            resources.first(where: {
+                $0.type == .photo
+                    || $0.type == .fullSizePhoto
+            }) ?? resources.first
+        else {
+            throw PhotoLibraryExportError.assetSaveFailed
+        }
+
+        let temporaryFolder =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoPhotoLibraryValidation",
+                isDirectory: true
+            )
+
+        try FileManager.default.createDirectory(
+            at: temporaryFolder,
+            withIntermediateDirectories: true
+        )
+
+        let baseName =
+            resource.originalFilename
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        let fileName =
+            baseName.isEmpty
+            ? "\(asset.localIdentifier).jpg"
+            : baseName
+
+        let targetURL =
+            temporaryFolder.appendingPathComponent(
+                UUID().uuidString + "_" + fileName
+            )
+
+        return try await withCheckedThrowingContinuation {
+            (
+                continuation:
+                    CheckedContinuation<URL, Error>
+            ) in
+
+            PHAssetResourceManager.default()
+                .writeData(
+                    for: resource,
+                    toFile: targetURL,
+                    options: nil
+                ) { error in
+
+                    if let error {
+                        continuation.resume(
+                            throwing: error
+                        )
+                        return
+                    }
+
+                    continuation.resume(
+                        returning: targetURL
+                    )
+                }
         }
     }
 }

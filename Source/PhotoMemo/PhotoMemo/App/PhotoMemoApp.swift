@@ -86,7 +86,13 @@ private extension PhotoMemoApp {
 
         for request in requests {
             _ = batchQueueStore.enqueue(
-                urls: request.urls,
+                payloads: request.urls.map {
+                    BatchTaskIntakePayload(
+                        sourceURL: $0
+                    )
+                },
+                configuration:
+                    request.configurationSnapshot,
                 launchSource:
                     request.launchSource,
                 title:

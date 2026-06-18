@@ -40,6 +40,25 @@ struct RecordCardRenderer: View {
 
     var body: some View {
 
+        switch card.template.preset {
+
+        case .immersWhite:
+
+            ImmersWhiteCardRenderer(
+                image: image,
+                card: card
+            )
+
+        case .template1,
+             .template2,
+             .template3:
+
+            classicWhiteCard
+        }
+    }
+
+    private var classicWhiteCard: some View {
+
         GeometryReader { geometry in
 
             let layout =

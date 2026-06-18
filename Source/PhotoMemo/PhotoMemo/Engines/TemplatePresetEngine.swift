@@ -19,6 +19,10 @@ final class TemplatePresetEngine {
         case .template3:
 
             return .template3
+
+        case .immersWhite:
+
+            return .immersWhite
         }
     }
 

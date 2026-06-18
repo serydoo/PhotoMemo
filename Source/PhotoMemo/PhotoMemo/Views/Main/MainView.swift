@@ -6,7 +6,7 @@ import AppKit
 import UIKit
 #endif
 
-private enum MainFieldSlot: String, CaseIterable, Hashable {
+enum MainFieldSlot: String, CaseIterable, Hashable {
 
     case leftTop
 
@@ -53,14 +53,14 @@ private enum MainFieldSlot: String, CaseIterable, Hashable {
     }
 }
 
-private enum TemplateComposerSegment: Hashable {
+enum TemplateComposerSegment: Hashable {
 
     case variable(TemplateVariable)
 
     case literal(String)
 }
 
-private struct TemplateComposerItem: Identifiable, Hashable {
+struct TemplateComposerItem: Identifiable, Hashable {
 
     let id: String
 
@@ -146,7 +146,7 @@ private struct ComposerDragModifier: ViewModifier {
     }
 }
 
-private struct InlineTemplateTextEditor: View {
+struct InlineTemplateTextEditor: View {
 
     @Binding
     var text: String
@@ -488,7 +488,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
 }
 #endif
 
-private enum MinimalPalette {
+enum MinimalPalette {
 
     static let background =
         Color(
@@ -554,7 +554,7 @@ private struct MinimalCardGroupBoxStyle: GroupBoxStyle {
     }
 }
 
-private struct MinimalChipStyle: ButtonStyle {
+struct MinimalChipStyle: ButtonStyle {
 
     func makeBody(
         configuration: Configuration
@@ -582,7 +582,7 @@ private struct MinimalChipStyle: ButtonStyle {
     }
 }
 
-private struct MinimalInsetCard<Content: View>: View {
+struct MinimalInsetCard<Content: View>: View {
 
     @ViewBuilder
     let content: Content
@@ -662,6 +662,14 @@ struct MainView: View {
     private var isSavingToAlbum = false
 
     @State
+    private var isPreparingMetadataValidation =
+        false
+
+    @State
+    private var isPreparingLibraryMetadataValidation =
+        false
+
+    @State
     private var showLiteralComposerSheet = false
 
     @State
@@ -669,6 +677,10 @@ struct MainView: View {
 
     @State
     private var showPermissionSetupSheet = false
+
+    @State
+    private var metadataValidationReport:
+        MetadataValidationReport?
 
     @State
     private var templateNameDraft = ""
@@ -690,6 +702,10 @@ struct MainView: View {
     @State
     private var templateEditorSelections:
         [MainFieldSlot: NSRange] = [:]
+
+    @State
+    private var composerItemsBySlot:
+        [MainFieldSlot: [TemplateComposerItem]] = [:]
 
     @State
     private var activeTemplateEditorSlot:
@@ -728,14 +744,17 @@ struct MainView: View {
     private let anchorEngine =
         AnchorEngine()
 
-    private let templateVariableEngine =
-        TemplateVariableEngine()
+    private let cardBuildService =
+        RecordCardBuildService()
 
     private let exportService =
         RecordCardExportService()
 
     private let photoLibraryExportService =
         PhotoLibraryExportService()
+
+    private let metadataReader =
+        PhotoMetadataReader()
 
     var body: some View {
 
@@ -786,9 +805,24 @@ struct MainView: View {
 
             permissionSetupSheet
         }
+        .sheet(
+            item: $metadataValidationReport
+        ) { report in
+
+            NavigationStack {
+                MetadataValidationDebugView(
+                    report: report
+                )
+            }
+            .frame(
+                minWidth: 720,
+                minHeight: 640
+            )
+        }
         .onAppear {
 
             configureInitialState()
+            syncBatchQueueDefaultConfiguration()
 
             Task {
                 await preparePermissionsOnAppear()
@@ -813,6 +847,22 @@ struct MainView: View {
             syncSelectedAnchor(
                 with: anchors
             )
+            syncBatchQueueDefaultConfiguration()
+        }
+        .onChange(
+            of: settings.selectedTemplate
+        ) { _, _ in
+
+            guard
+                shouldRefreshComposerItemsFromTemplate()
+            else {
+                return
+            }
+
+            syncComposerItemsFromTemplate(
+                resetTransientState: true
+            )
+            syncBatchQueueDefaultConfiguration()
         }
         .onChange(
             of: selectedAnchorID
@@ -821,6 +871,7 @@ struct MainView: View {
             persistEditorDraftState(
                 selectedAnchorID: newValue
             )
+            syncBatchQueueDefaultConfiguration()
         }
         .onChange(
             of: titleText
@@ -829,6 +880,7 @@ struct MainView: View {
             persistEditorDraftState(
                 draftTitleText: newValue
             )
+            syncBatchQueueDefaultConfiguration()
         }
         .onChange(
             of: storyText
@@ -837,6 +889,7 @@ struct MainView: View {
             persistEditorDraftState(
                 draftStoryText: newValue
             )
+            syncBatchQueueDefaultConfiguration()
         }
         .onChange(
             of: selectedAlbumIdentifier
@@ -845,18 +898,27 @@ struct MainView: View {
             persistEditorDraftState(
                 selectedAlbumIdentifier: newValue
             )
+            syncBatchQueueDefaultConfiguration()
+        }
+        .onChange(
+            of: settings.selectedBadge
+        ) { _, _ in
+
+            syncBatchQueueDefaultConfiguration()
         }
         .onChange(
             of: settings.shouldWritePhotoDescription
         ) { _, _ in
 
             settings.schedulePhotoDescriptionSettingsSave()
+            syncBatchQueueDefaultConfiguration()
         }
         .onChange(
             of: settings.photoDescriptionOverride
         ) { _, _ in
 
             settings.schedulePhotoDescriptionSettingsSave()
+            syncBatchQueueDefaultConfiguration()
         }
         .toolbar {
 
@@ -966,7 +1028,7 @@ private extension MainView {
                 customContentSection
             }
 
-            GroupBox("图标") {
+            GroupBox("Logo 标识") {
                 badgeSection
             }
 
@@ -999,244 +1061,95 @@ private extension MainView {
 private extension MainView {
 
     var photoSection: some View {
+        MainPhotoSectionView(
+            selectedPhotoDeviceModel: {
+                guard let selectedPhoto else {
+                    return nil
+                }
 
-        VStack(
-            alignment: .leading,
-            spacing: 12
-        ) {
+                let deviceModel =
+                    selectedPhoto.metadata.deviceModel
 
-            PhotoImporterView { photo in
+                return deviceModel.isEmpty
+                    ? "未识别设备"
+                    : deviceModel
+            }(),
+            selectedPhotoCaptureDateText:
+                selectedPhoto?.metadata.captureDate?
+                .formatted(
+                    date: .abbreviated,
+                    time: .shortened
+                ),
+            importer: {
+                PhotoImporterView { photo in
 
-                selectedPhoto = photo
+                    selectedPhoto = photo
 
-                if titleText.trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                ).isEmpty {
+                    if titleText.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    ).isEmpty {
 
-                    titleText =
-                        selectedAnchor?.title
-                        ?? "PhotoMemo"
+                        titleText =
+                            selectedAnchor?.title
+                            ?? "PhotoMemo"
+                    }
                 }
             }
-
-            if let selectedPhoto {
-
-                metadataSummary(
-                    for: selectedPhoto
-                )
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
         )
     }
 
     var templateSection: some View {
-
-            VStack(
-                alignment: .leading,
-                spacing: 14
-            ) {
-
-            HStack(
-                alignment: .center,
-                spacing: 10
-            ) {
-
-                Picker(
-                    "模板",
-                    selection: selectedTemplatePreset
-                ) {
-
-                    ForEach(
-                        TemplatePreset.allCases,
-                        id: \.self
-                    ) { preset in
-
-                        Text(
-                            preset.displayName
-                        )
-                        .tag(preset)
-                    }
-                }
-                .pickerStyle(.menu)
-                .controlSize(.small)
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .leading
-                )
-
-                Button {
-                    presentTemplateRenameSheet()
-                } label: {
-                    Label(
-                        "自定义名称",
-                        systemImage: "pencil"
+        MainTemplateSectionView(
+            selectedPreset: selectedTemplatePreset,
+            resolvedTemplateDisplayName:
+                resolvedTemplateDisplayName,
+            currentPresetDisplayName:
+                currentPreset.displayName,
+            currentPresetDefaultOutput:
+                currentPresetDefaultOutput,
+            currentPresetSummary:
+                currentPreset.summary,
+            onPresentTemplateRename: {
+                presentTemplateRenameSheet()
+            },
+            onResetTemplateDefaults: {
+                settings.selectedTemplate =
+                    templatePresetEngine.build(
+                        preset: currentPreset
                     )
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                syncComposerItemsFromTemplate(
+                    resetTransientState: true
+                )
+                settings.saveTemplate()
             }
-
-            MinimalInsetCard {
-                LabeledContent("当前定位") {
-                    Text(resolvedTemplateDisplayName)
-                        .font(.subheadline.weight(.medium))
-                }
-
-                Divider()
-
-                LabeledContent("预设骨架") {
-                    Text(currentPreset.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
-                LabeledContent("默认右下") {
-                    Text(currentPresetDefaultOutput)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            HStack(spacing: 10) {
-                Button("恢复模板默认字段") {
-
-                    settings.selectedTemplate =
-                        templatePresetEngine.build(
-                            preset: currentPreset
-                        )
-                    settings.saveTemplate()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-
-                Text(currentPreset.summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
         )
     }
 
     var anchorSection: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 14
-        ) {
-
-            HStack(spacing: 10) {
-                Picker(
-                    "选择时间点",
-                    selection: $selectedAnchorID
-                ) {
-
-                    Text("未选择")
-                        .tag(Optional<Anchor.ID>.none)
-
-                    ForEach(settings.anchors) { anchor in
-
-                        Text(anchor.title)
-                            .tag(Optional(anchor.id))
+        MainAnchorSectionView(
+            anchors: settings.anchors,
+            selectedAnchorID: $selectedAnchorID,
+            anchorPhotoSummary: anchorPhotoSummary,
+            selectedAnchorDateText:
+                selectedAnchor.map {
+                    anchorDateText($0)
+                },
+            previewSummaryText:
+                anchorPreviewResult?.summaryText,
+            quickFacts:
+                anchorPreviewResult.map { preview in
+                    anchorQuickFacts(preview).map {
+                        MainAnchorQuickFact(
+                            label: $0.label,
+                            value: $0.value
+                        )
                     }
-                }
-                .pickerStyle(.menu)
-                .controlSize(.small)
-
-                Button {
-
-                    showAnchorManager = true
-
-                } label: {
-
-                    Label(
-                        "设置时间点",
-                        systemImage: "calendar.badge.plus"
-                    )
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                } ?? [],
+            emptyStateText:
+                "选择一个时间点后，系统会按照片 EXIF 拍摄时间自动计算年岁、纪念时长、已过天数、未来倒计时，以及第几天、周数、月龄等时间结果模块。",
+            onPresentAnchorManager: {
+                showAnchorManager = true
             }
-
-            MinimalInsetCard {
-                LabeledContent("照片时间") {
-                    Text(anchorPhotoSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
-                }
-
-                if let anchor = selectedAnchor {
-
-                    Divider()
-
-                    LabeledContent("基准时间") {
-                        Text(anchorDateText(anchor))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let preview = anchorPreviewResult {
-
-                        Divider()
-
-                        VStack(
-                            alignment: .leading,
-                            spacing: 8
-                        ) {
-
-                            Text(preview.summaryText)
-                                .font(.subheadline.weight(.medium))
-
-                            ScrollView(
-                                .horizontal,
-                                showsIndicators: false
-                            ) {
-
-                                HStack(spacing: 8) {
-
-                                    ForEach(
-                                        anchorQuickFacts(
-                                            preview
-                                        ),
-                                        id: \.label
-                                    ) { fact in
-
-                                        compactFactPill(
-                                            title: fact.label,
-                                            value: fact.value
-                                        )
-                                    }
-                                }
-                                .padding(.vertical, 1)
-                            }
-                        }
-                    }
-
-                } else {
-
-                    Divider()
-
-                    Text(
-                        "选择一个时间点后，系统会按照片 EXIF 拍摄时间自动计算年岁、纪念时长、已过天数、未来倒计时，以及第几天、周数、月龄等时间结果模块。"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
         )
     }
 
@@ -1284,217 +1197,67 @@ private extension MainView {
     }
 
     var customContentSection: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 14
-        ) {
-
-            MinimalInsetCard {
-                Text("内容")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-
-                TextField(
-                    "标题",
-                    text: $titleText
-                )
-                .textFieldStyle(.roundedBorder)
-
-                TextField(
-                    "记忆文案",
-                    text: $storyText,
-                    axis: .vertical
-                )
-                .lineLimit(3...5)
-                .textFieldStyle(.roundedBorder)
-            }
-
-            MinimalInsetCard {
-                Toggle(
-                    "同步到苹果相册说明",
-                    isOn: $settings.shouldWritePhotoDescription
-                )
-
-                if settings.shouldWritePhotoDescription {
-
-                    Divider()
-
-                    TextField(
-                        "说明内容留空时，默认写入右下区域完整内容",
-                        text: $settings.photoDescriptionOverride,
-                        axis: .vertical
-                    )
-                    .lineLimit(2...4)
-                    .textFieldStyle(.roundedBorder)
-                }
-
-                Divider()
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 4
-                ) {
-
-                    Text("说明预览")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-
-                    Text(defaultPhotoDescriptionHint)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
+        MainCustomContentSectionView(
+            titleText: $titleText,
+            storyText: $storyText,
+            shouldWritePhotoDescription:
+                $settings.shouldWritePhotoDescription,
+            photoDescriptionOverride:
+                $settings.photoDescriptionOverride,
+            defaultPhotoDescriptionHint:
+                defaultPhotoDescriptionHint
         )
     }
 
     var badgeSection: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 14
-        ) {
-
-            Picker(
-                "图标",
-                selection: selectedBadgeName
-            ) {
-
-                ForEach(
-                    BadgeLibrary.defaults,
-                    id: \.name
-                ) { badge in
-
-                    Text(badge.name)
-                        .tag(badge.name)
-                }
+        MainBadgeSectionView(
+            badgeNames:
+                BadgeLibrary.defaults.map(\.name),
+            selectedBadgeName: selectedBadgeName,
+            selectedBadgeTitle: selectedBadgeTitle,
+            selectedBadgeSummary: selectedBadgeSummary,
+            preview: {
+                badgePreviewIcon
             }
-            .pickerStyle(.menu)
-            .controlSize(.small)
-
-            MinimalInsetCard {
-                HStack(spacing: 12) {
-
-                    badgePreviewIcon
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 4
-                    ) {
-
-                        Text(selectedBadgeTitle)
-                            .font(.subheadline.weight(.medium))
-
-                        Text(selectedBadgeSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
         )
     }
 
     var outputSection: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 14
-        ) {
-
-            HStack(
-                alignment: .center,
-                spacing: 8
-            ) {
-
-                Picker(
-                    "系统相册",
-                    selection: $selectedAlbumIdentifier
-                ) {
-
-                    Text("自动存入 PhotoMemo")
-                        .tag(
-                            PhotoAlbumOption
-                                .automaticIdentifier
-                        )
-
-                    ForEach(availableAlbums) { album in
-
-                        Text(album.title)
-                            .tag(album.id)
-                    }
+        MainOutputSection(
+            selectedAlbumIdentifier:
+                $selectedAlbumIdentifier,
+            availableAlbums: availableAlbums,
+            isLoadingAlbums: isLoadingAlbums,
+            selectedAlbumSummary:
+                selectedAlbumSummary,
+            isSavingToAlbum: isSavingToAlbum,
+            isPreparingMetadataValidation:
+                isPreparingMetadataValidation,
+            isPreparingLibraryMetadataValidation:
+                isPreparingLibraryMetadataValidation,
+            canExportCurrentCard:
+                selectedPhoto != nil
+                && currentCard != nil,
+            reloadAlbums: {
+                Task {
+                    await reloadAlbums()
                 }
-                .pickerStyle(.menu)
-                .controlSize(.small)
-
-                Button {
-
-                    Task {
-                        await reloadAlbums()
-                    }
-
-                } label: {
-
-                    Image(
-                        systemName:
-                            isLoadingAlbums
-                            ? "arrow.trianglehead.2.clockwise.rotate.90"
-                            : "arrow.clockwise"
-                    )
-                }
-                .buttonStyle(.borderless)
-                .disabled(isLoadingAlbums)
-            }
-
-            MinimalInsetCard {
-                LabeledContent("写入位置") {
-                    Text(selectedAlbumSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
-                Text(
-                    "处理后的图片会直接写入系统图库；不选现有相册时，会自动创建或复用 PhotoMemo 相册。除分辨率变化外，会尽量保留原图 EXIF、拍摄时间与元数据。"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Button(
-                isSavingToAlbum
-                    ? "正在存入系统相册..."
-                    : "存入系统相册"
-            ) {
-
+            },
+            saveCurrentCardToAlbum: {
                 Task {
                     await saveCurrentCardToAlbum()
                 }
+            },
+            validateExportedMetadata: {
+                Task {
+                    await validateExportedMetadata()
+                }
+            },
+            saveAndValidatePhotoLibraryMetadata: {
+                Task {
+                    await saveAndValidatePhotoLibraryMetadata()
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .disabled(
-                selectedPhoto == nil
-                || currentCard == nil
-                || isSavingToAlbum
-            )
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
         )
     }
 
@@ -1502,19 +1265,19 @@ private extension MainView {
 
         HStack(spacing: 10) {
 
-            statusPill(
+            MainStatusPillView(
                 title: "模板",
                 value: resolvedTemplateDisplayName
             )
 
-            statusPill(
+            MainStatusPillView(
                 title: "时间点",
                 value:
                     selectedAnchor?.title
                     ?? "未设置"
             )
 
-            statusPill(
+            MainStatusPillView(
                 title: "图库",
                 value:
                     permissionCenter.canAccessPhotoLibrary
@@ -1525,518 +1288,117 @@ private extension MainView {
     }
 
     var permissionSection: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 12
-        ) {
-
-            MinimalInsetCard {
-                permissionRow(
-                    title: "系统相册",
-                    icon: "photo.on.rectangle.angled",
-                    state:
-                        permissionCenter
-                        .photoLibraryState,
-                    description:
-                        "用于读取你选择的照片，并把处理后的新图直接写回系统图库。"
-                ) {
-                    Task {
-                        await requestPhotoLibraryPermission()
-                    }
-                } openSettingsAction: {
-                    permissionCenter
-                        .openSystemSettings(
-                            for: .photoLibrary
-                        )
+        MainPermissionSection(
+            photoLibraryState:
+                permissionCenter
+                .photoLibraryState,
+            notificationState:
+                permissionCenter
+                .notificationState,
+            requestPhotoLibraryPermission: {
+                Task {
+                    await requestPhotoLibraryPermission()
                 }
-
-                Divider()
-
-                permissionRow(
-                    title: "系统通知",
-                    icon: "bell.badge",
-                    state:
-                        permissionCenter
-                        .notificationState,
-                    description:
-                        "用于在后台处理开始、完成或失败时给你明确反馈。"
-                ) {
-                    Task {
-                        await requestNotificationPermission()
-                    }
-                } openSettingsAction: {
-                    permissionCenter
-                        .openSystemSettings(
-                            for: .notifications
-                        )
+            },
+            openPhotoLibrarySettings: {
+                permissionCenter
+                    .openSystemSettings(
+                        for: .photoLibrary
+                    )
+            },
+            requestNotificationPermission: {
+                Task {
+                    await requestNotificationPermission()
                 }
+            },
+            openNotificationSettings: {
+                permissionCenter
+                    .openSystemSettings(
+                        for: .notifications
+                    )
             }
-
-            Text(
-                "PhotoMemo 完全本地运行，不依赖联网；这里只会请求相册与通知两项必要能力。"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
         )
     }
 
     var memoryProgressPanel: some View {
-
-        let snapshot =
-            batchQueueStore.usageSnapshot
-
-        return MinimalInsetCard {
-            HStack(
-                alignment: .top,
-                spacing: 14
-            ) {
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 6
-                ) {
-
-                    Text("记忆进度")
-                        .font(.subheadline.weight(.medium))
-
-                    Text(memoryProgressHeadline(snapshot))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-
-                VStack(
-                    alignment: .trailing,
-                    spacing: 6
-                ) {
-
-                    progressStatLine(
-                        title: "累计盖章",
-                        value: "\(snapshot.completedPhotoCount) 张"
-                    )
-
-                    progressStatLine(
-                        title: "完成批次",
-                        value: "\(snapshot.completedBatchCount) 次"
-                    )
-
-                    progressStatLine(
-                        title: "后台状态",
-                        value:
-                            snapshot.activePhotoCount > 0
-                            ? "处理中 \(snapshot.activePhotoCount) 张"
-                            : "当前空闲"
-                    )
-                }
+        MainMemoryProgressPanel(
+            snapshot: batchQueueStore.usageSnapshot,
+            defaultConfigurationSnapshot:
+                batchQueueStore
+                .defaultConfigurationSnapshot,
+            availableAlbums: availableAlbums,
+            latestExternalIntakeSummary:
+                batchQueueStore
+                .latestExternalIntakeSummary,
+            latestFailureSummary:
+                batchQueueStore
+                .latestFailureSummary,
+            recentFailureRecords:
+                Array(
+                    batchQueueStore
+                    .recentFailureRecords
+                    .prefix(3)
+                ),
+            retryFailedTasks: { jobID in
+                batchQueueStore.retryFailedTasks(
+                    in: jobID
+                )
             }
-
-            if snapshot.templateChampion != nil
-                || snapshot.anchorChampion != nil
-                || snapshot.lastCompletedAt != nil
-                || snapshot.failedPhotoCount > 0 {
-
-                Divider()
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 8
-                ) {
-
-                    if let templateChampion =
-                        snapshot.templateChampion {
-
-                        Text("最常用模板“\(templateChampion.title)”已经陪你处理了 \(templateChampion.count) 张照片。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    if let anchorChampion =
-                        snapshot.anchorChampion {
-
-                        Text("最常出现的时间点是“\(anchorChampion.title)”，目前已经用了 \(anchorChampion.count) 次。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    if let lastCompletedAt =
-                        snapshot.lastCompletedAt {
-
-                        Text("最近一次完成：\(lastCompletedAt.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if snapshot.failedPhotoCount > 0 {
-
-                        Text("还有 \(snapshot.failedPhotoCount) 张图片处理失败，后续可以做重试入口。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
+        )
     }
 
     var permissionSetupSheet: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 18
-        ) {
-
-            Text("启用本地权限")
-                .font(.system(
-                    size: 26,
-                    weight: .semibold
-                ))
-
-            Text("PhotoMemo 完全本地运行，不需要联网。为了读取照片 EXIF、把处理后的图片存回系统图库，以及在后台任务完成时提醒你，需要先允许相册和通知权限。")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            MinimalInsetCard {
-                permissionPrimerLine(
-                    icon: "photo.on.rectangle.angled",
-                    title: "系统相册",
-                    description:
-                        "用于读取你挑选的照片，并把处理结果写回图库或指定相册。"
-                )
-
-                Divider()
-
-                permissionPrimerLine(
-                    icon: "bell.badge",
-                    title: "系统通知",
-                    description:
-                        "用于在后台处理开始、完成或失败时提醒你。"
-                )
-            }
-
-            HStack(spacing: 10) {
-                Button("稍后再说") {
-                    showPermissionSetupSheet = false
+        MainPermissionSetupSheet(
+            dismiss: {
+                showPermissionSetupSheet = false
+            },
+            requestInitialPermissions: {
+                Task {
+                    await requestInitialPermissions()
                 }
-                .buttonStyle(.bordered)
-
-                Button("现在授权") {
-                    Task {
-                        await requestInitialPermissions()
-                    }
-                }
-                .buttonStyle(.borderedProminent)
             }
-            .padding(.top, 4)
-        }
-        .padding(24)
-        .frame(
-            minWidth: 460,
-            idealWidth: 520
         )
-        .background(
-            MinimalPalette.background
-        )
-    }
-
-    @ViewBuilder
-    func permissionRow(
-        title: String,
-        icon: String,
-        state: PermissionState,
-        description: String,
-        requestAction: @escaping () -> Void,
-        openSettingsAction: @escaping () -> Void
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 10
-        ) {
-
-            HStack(
-                alignment: .top,
-                spacing: 12
-            ) {
-
-                Image(systemName: icon)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(
-                        MinimalPalette.accent
-                    )
-                    .frame(width: 24)
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 4
-                ) {
-
-                    HStack(spacing: 8) {
-                        Text(title)
-                            .font(.subheadline.weight(.medium))
-
-                        Text(state.statusText)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(
-                                state.isGranted
-                                ? Color.green
-                                : Color.secondary
-                            )
-                    }
-
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            HStack(spacing: 10) {
-
-                if state.isGranted {
-
-                    Label(
-                        "已就绪",
-                        systemImage: "checkmark.circle.fill"
-                    )
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(Color.green)
-
-                } else {
-
-                    Button(
-                        state == .notDetermined
-                            ? "允许访问"
-                            : "重新授权"
-                    ) {
-                        requestAction()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                }
-
-                if state == .denied {
-
-                    Button("打开系统设置") {
-                        openSettingsAction()
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    func permissionPrimerLine(
-        icon: String,
-        title: String,
-        description: String
-    ) -> some View {
-
-        HStack(
-            alignment: .top,
-            spacing: 12
-        ) {
-
-            Image(systemName: icon)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(
-                    MinimalPalette.accent
-                )
-                .frame(width: 24)
-
-            VStack(
-                alignment: .leading,
-                spacing: 4
-            ) {
-
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
     }
 
     @ViewBuilder
     var composerEntryPanel: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 10
-        ) {
-
-            HStack(
-                alignment: .center,
-                spacing: 10
-            ) {
-
-                Label(
-                    "当前自定义区域",
-                    systemImage: "rectangle.3.group"
-                )
-                .font(.subheadline.weight(.medium))
-
-                Text(
-                    currentEditingSlot.title
-                )
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button("添加文字") {
-                    presentLiteralComposer()
-                }
-                .buttonStyle(.bordered)
-
-                Button("退出整理") {
-                    dismissComposerArrangeMode()
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-                .opacity(
-                    arrangingComposerSlot == nil
-                    ? 0
-                    : 1
-                )
-                .disabled(
-                    arrangingComposerSlot == nil
+        MainComposerEntryPanel(
+            currentEditingSlotTitle:
+                currentEditingSlotTitle,
+            currentEditingSlot:
+                currentEditingSlot,
+            focusedField: focusedField,
+            arrangingComposerSlot:
+                arrangingComposerSlot,
+            onPresentLiteralComposer: {
+                presentLiteralComposer()
+            },
+            onDismissComposerArrangeMode: {
+                dismissComposerArrangeMode()
+            },
+            onActivateEditingSlot: { slot in
+                activateEditingSlot(
+                    slot,
+                    preferInlineEditor: true
                 )
             }
-
-            ScrollView(
-                .horizontal,
-                showsIndicators: false
-            ) {
-
-                HStack(spacing: 8) {
-
-                    ForEach(
-                        MainFieldSlot.allCases,
-                        id: \.self
-                    ) { slot in
-
-                        Button {
-                            activateEditingSlot(
-                                slot,
-                                preferInlineEditor: true
-                            )
-                        } label: {
-                            Text(slot.title)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(
-                                    focusedField == slot
-                                        ? .white
-                                        : .primary
-                                )
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 9)
-                                .background(
-                                    Capsule()
-                                        .fill(
-                                            focusedField == slot
-                                                ? MinimalPalette.accent
-                                                : Color.gray.opacity(0.1)
-                                        )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 1)
-            }
-
-            Text(
-                "下方左上、右上、左下、右下 4 个自定义区域都可以独立编辑。你可以直接点区域本身，也可以先点这里的四区切换条；选中后再点上方 EXIF、智能数据或用户数据，就会插入到当前区域。长按已选中的模块可进入整理状态，并显示删除按钮与拖动排序。"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            dismissComposerArrangeMode()
-        }
+        )
     }
 
     @ViewBuilder
     var literalComposerSheet: some View {
-
-        NavigationStack {
-
-            VStack(
-                alignment: .leading,
-                spacing: 16
-            ) {
-
-                Text(
-                    "为\((literalComposerTargetSlot ?? currentEditingSlot).title)添加文字"
-                )
-                .font(.headline)
-
-                TextField(
-                    "例如：儿子到今天 / 高考冲刺 / 旅行第",
-                    text: $literalComposerDraft,
-                    axis: .vertical
-                )
-                .lineLimit(3...5)
-                .textFieldStyle(.roundedBorder)
-
-                Text(
-                    "保存后会作为一个独立模块加入当前区域，可继续和 EXIF、智能数据自由组合。"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-                Spacer(minLength: 0)
+        MainLiteralComposerSheetView(
+            targetSlotTitle:
+                (literalComposerTargetSlot
+                ?? currentEditingSlot)?
+                .title ?? "未选择区域",
+            draft: $literalComposerDraft,
+            onCancel: {
+                closeLiteralComposer()
+            },
+            onCommit: {
+                commitLiteralComposer()
             }
-            .padding(24)
-            .navigationTitle("添加文字")
-            .toolbar {
-
-                ToolbarItem(
-                    placement: .cancellationAction
-                ) {
-
-                    Button("取消") {
-                        closeLiteralComposer()
-                    }
-                }
-
-                ToolbarItem(
-                    placement: .confirmationAction
-                ) {
-
-                    Button("加入") {
-                        commitLiteralComposer()
-                    }
-                    .disabled(
-                        literalComposerDraft
-                        .trimmingCharacters(
-                            in: .whitespacesAndNewlines
-                        )
-                        .isEmpty
-                    )
-                }
-            }
-        }
-        .frame(
-            minWidth: 360,
-            minHeight: 220
         )
     }
 
@@ -2045,51 +1407,19 @@ private extension MainView {
         title: String,
         variables: [TemplateVariable]
     ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 10
-        ) {
-
-            Text(title)
-                .font(.headline)
-
-            if title == "智能数据" {
-
-                Text(
-                    "过去时间点常用：{{anchor_age_text}} 表示年岁，{{anchor_duration_text}} 表示纪念时长，{{anchor_elapsed_text}} 表示已过天数，{{anchor_day_index_text}} 表示第几天；未来目标常用：{{anchor_countdown_text}} 表示倒计时；扩展结果可用 {{anchor_week_text}}、{{anchor_month_age_text}}、{{anchor_milestone_text}}，想让系统自动判断时可用 {{anchor_smart_text}}。"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        MainVariableLibraryPanel(
+            title: title,
+            variables: variables,
+            isEnabled:
+                currentEditingSlot != nil,
+            onInsertVariable: { variable in
+                dismissComposerArrangeMode()
+                insertToken(variable.token)
+            },
+            onDismissArrangeMode: {
+                dismissComposerArrangeMode()
             }
-
-            ScrollView(
-                .horizontal,
-                showsIndicators: false
-            ) {
-
-                HStack(spacing: 10) {
-
-                    ForEach(variables) { variable in
-
-                        Button(variable.title) {
-                            dismissComposerArrangeMode()
-                            insertToken(
-                                variable.token
-                            )
-                        }
-                        .buttonStyle(
-                            MinimalChipStyle()
-                        )
-                    }
-                }
-                .padding(.vertical, 1)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            dismissComposerArrangeMode()
-        }
+        )
     }
 
     @ViewBuilder
@@ -2108,625 +1438,205 @@ private extension MainView {
         let hoveredItemID =
             hoveredComposerItemIDs[slot]
 
-        VStack(
-            alignment: .leading,
-            spacing: 8
-        ) {
-
-            HStack {
-
-                Text(slot.title)
-                    .font(.headline)
-
-                Spacer()
-
-                if focusedField == slot {
-
-                    Text(
-                        arrangingComposerSlot == slot
-                        ? "整理中"
-                        : "当前区域"
-                    )
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(
-                            MinimalPalette.accent
-                        )
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(
-                            Capsule()
-                                .fill(
-                                    MinimalPalette
-                                    .accent.opacity(0.12)
-                                )
-                        )
-                }
-            }
-
-            VStack(
-                alignment: .leading,
-                spacing: 12
-            ) {
-
-                ScrollViewReader { proxy in
-
-                    VStack(
-                        alignment: .leading,
-                        spacing: 10
-                    ) {
-
-                        Group {
-
-                            if items.isEmpty {
-
-                                EmptyView()
-                            } else {
-
-                                ScrollView(
-                                    .horizontal,
-                                    showsIndicators: false
-                                ) {
-
-                                    HStack(spacing: 10) {
-
-                                        ForEach(
-                                            Array(
-                                                items.enumerated()
-                                            ),
-                                            id: \.element.id
-                                        ) { index, item in
-
-                                            if arrangingComposerSlot != slot,
-                                               shouldShowInsertionHandle(
-                                                slot: slot,
-                                                index: index,
-                                                itemID: item.id,
-                                                items: items
-                                               ) {
-
-                                                composerInsertionHandle(
-                                                    for: slot,
-                                                    index: index,
-                                                    proxy: proxy
-                                                )
-                                            }
-
-                                            composerChip(
-                                                item,
-                                                slot: slot,
-                                                isSelected:
-                                                    selectedItemID
-                                                    == item.id,
-                                                isHovered:
-                                                    hoveredItemID
-                                                    == item.id,
-                                                isArranging:
-                                                    arrangingComposerSlot
-                                                    == slot
-                                            )
-                                            .id(item.id)
-                                            .onTapGesture {
-                                                if arrangingComposerSlot != slot {
-                                                    dismissComposerArrangeMode()
-                                                }
-                                                focusComposerItem(
-                                                    item.id,
-                                                    slot: slot,
-                                                    proxy: proxy
-                                                )
-                                            }
-                                            .onLongPressGesture(
-                                                minimumDuration: 0.4
-                                            ) {
-                                                enterComposerArrangeMode(
-                                                    for: slot,
-                                                    itemID: item.id
-                                                )
-                                            }
-                                            .onHover { isHovered in
-                                                if isHovered {
-                                                    hoveredComposerItemIDs[slot] =
-                                                        item.id
-                                                } else if hoveredComposerItemIDs[slot] == item.id {
-                                                    hoveredComposerItemIDs[slot] =
-                                                        nil
-                                                }
-                                            }
-                                            .modifier(
-                                                ComposerDragModifier(
-                                                    isEnabled:
-                                                        arrangingComposerSlot
-                                                        == slot,
-                                                    item: item
-                                                )
-                                            )
-                                            .dropDestination(
-                                                for: String.self
-                                            ) { droppedIDs, _ in
-
-                                                guard
-                                                    let droppedID =
-                                                        droppedIDs.first
-                                                else {
-                                                    return false
-                                                }
-
-                                                reorderComposerItems(
-                                                    in: slot,
-                                                    from: droppedID,
-                                                    to: item.id
-                                                )
-
-                                                if let selectedID =
-                                                    selectedComposerItemIDs[slot] {
-
-                                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                                        proxy.scrollTo(
-                                                            selectedID,
-                                                            anchor: .center
-                                                        )
-                                                    }
-                                                }
-
-                                                return true
-                                            } isTargeted: { isTargeted in
-
-                                                if isTargeted,
-                                                   arrangingComposerSlot == slot {
-                                                    draggedComposerItemIDs[slot] =
-                                                        item.id
-                                                } else if draggedComposerItemIDs[slot] == item.id {
-                                                    draggedComposerItemIDs[slot] =
-                                                        nil
-                                                }
-                                            }
-
-                                            if arrangingComposerSlot != slot,
-                                               shouldShowInsertionHandle(
-                                                slot: slot,
-                                                index: index + 1,
-                                                itemID: item.id,
-                                                items: items
-                                               ) {
-
-                                                composerInsertionHandle(
-                                                    for: slot,
-                                                    index: index + 1,
-                                                    proxy: proxy
-                                                )
-                                            }
-                                        }
-                                    }
-                                    .background(
-                                        GeometryReader { geometry in
-
-                                            Color.clear
-                                                .onAppear {
-                                                    composerContentWidths[slot] =
-                                                        geometry.size.width
-                                                }
-                                                .onChange(
-                                                    of: geometry.size.width
-                                                ) { _, newWidth in
-                                                    composerContentWidths[slot] =
-                                                        newWidth
-                                                }
-                                        }
-                                    )
-                                    .padding(.vertical, 1)
-                                }
-                                .background(
-                                    GeometryReader { geometry in
-
-                                        Color.clear
-                                            .onAppear {
-                                                composerViewportWidths[slot] =
-                                                    geometry.size.width
-                                            }
-                                            .onChange(
-                                                of: geometry.size.width
-                                            ) { _, newWidth in
-                                                composerViewportWidths[slot] =
-                                                    newWidth
-                                            }
-                                    }
-                                )
-                                .frame(height: 44)
-                                .onAppear {
-                                    syncSelectedComposerItem(
-                                        for: slot,
-                                        items: items,
-                                        proxy: proxy
-                                    )
-                                }
-                                .onChange(
-                                    of: items.map(\.id)
-                                ) { _, _ in
-                                    syncSelectedComposerItem(
-                                        for: slot,
-                                        items: items,
-                                        proxy: proxy
-                                    )
-                                }
-                                .onChange(
-                                    of: selectedComposerItemIDs[slot]
-                                ) { _, newID in
-                                    guard let newID else {
-                                        return
-                                    }
-
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        proxy.scrollTo(
-                                            newID,
-                                            anchor: .center
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        .frame(
-                            maxWidth: .infinity,
-                            alignment: .leading
-                        )
-
-                        if shouldShowComposerScrubber(
-                            for: slot
-                        ),
-                           !items.isEmpty {
-
-                            composerScrubber(
-                                for: slot,
-                                items: items,
-                                proxy: proxy
-                            )
-                        }
-
-                        inlineTemplateEditor(
-                            for: slot
-                        )
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: 18,
-                        style: .continuous
-                    )
-                    .fill(
-                        Color.gray.opacity(0.08)
-                    )
-                )
-                .contentShape(
-                    RoundedRectangle(
-                        cornerRadius: 18,
-                        style: .continuous
-                    )
-                )
-                .onTapGesture {
-                    activateEditingSlot(
-                        slot,
-                        preferInlineEditor: true
-                    )
-                }
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            activateEditingSlot(
-                slot,
-                preferInlineEditor: true
-            )
-        }
-    }
-
-    @ViewBuilder
-    func composerChip(
-        _ item: TemplateComposerItem,
-        slot: MainFieldSlot,
-        isSelected: Bool,
-        isHovered: Bool,
-        isArranging: Bool
-    ) -> some View {
-
-        let style =
-            composerChipStyle(
-                for: item
-            )
-
-        let isPlainLiteral =
-            plainLiteralText(
-                for: item
-            ) != nil
-
-        HStack(spacing: 8) {
-
-            if !isPlainLiteral {
-
-                Image(
-                    systemName: style.icon
-                )
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(
-                    style.tint
-                )
-            }
-
-            Text(
-                composerChipTitle(
-                    for: item
-                )
-            )
-            .font(
-                isPlainLiteral
-                ? .subheadline
-                : .subheadline.weight(.medium)
-            )
-            .foregroundStyle(
-                isPlainLiteral
-                ? Color.primary.opacity(0.88)
-                : .primary
-            )
-            .lineLimit(1)
-
-            if isArranging {
-
-                Image(
-                    systemName: "line.3.horizontal"
-                )
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, isPlainLiteral ? 2 : 12)
-        .padding(.vertical, 9)
-        .background(
-            Group {
-
-                if isPlainLiteral {
-                    Color.clear
-                } else {
-                    Capsule()
-                        .fill(
-                            style.background
-                        )
-                }
-            }
-        )
-        .overlay(
-            Group {
-
-                if isPlainLiteral {
-                    Rectangle()
-                        .fill(
-                            isSelected
-                                ? MinimalPalette.accent.opacity(0.16)
-                                : Color.clear
-                        )
-                        .frame(height: 2)
-                        .offset(y: 15)
-                } else {
-                    Capsule()
-                        .stroke(
-                            isSelected
-                                ? MinimalPalette.accent
-                                : style.border,
-                            lineWidth:
-                                isSelected ? 1.5 : 1
-                        )
-                }
-            }
-        )
-        .shadow(
-            color:
-                isPlainLiteral
-                ? .clear
-                : (isSelected
-                ? MinimalPalette.accent.opacity(0.22)
-                : .black.opacity(
-                    isHovered ? 0.06 : 0
-                )),
-            radius: isSelected ? 10 : 6,
-            y: isSelected ? 4 : 2
-        )
-        .scaleEffect(
-            isPlainLiteral
-            ? 1
-            : (isSelected ? 1.015 : (isHovered ? 1.01 : 1))
-        )
-        .rotationEffect(
-            isArranging
-            ? .degrees(
-                composerWigglePhase ? 1.2 : -1.2
-            )
-            : .zero
-        )
-        .offset(
-            y:
-                isArranging
-                ? (composerWigglePhase ? -0.8 : 0.8)
-                : 0
-        )
-        .overlay(
-            alignment: .topTrailing
-        ) {
-
-            if isArranging {
-
-                Button {
-                    removeComposerItem(
-                        item,
-                        from: slot
-                    )
-                } label: {
-
-                    Image(
-                        systemName: "minus.circle.fill"
-                    )
-                    .font(.caption)
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(
-                        .white,
-                        Color.red.opacity(0.9)
-                    )
-                }
-                .buttonStyle(.plain)
-                .offset(x: 5, y: -5)
-            }
-        }
-        .animation(
-            .spring(
-                response: 0.22,
-                dampingFraction: 0.9
-            ),
-            value: isSelected
-        )
-        .animation(
-            .easeInOut(duration: 0.16),
-            value: isHovered
-        )
-        .animation(
-            .easeInOut(duration: 0.14),
-            value: composerWigglePhase
-        )
-    }
-
-    @ViewBuilder
-    func composerInsertionHandle(
-        for slot: MainFieldSlot,
-        index: Int,
-        proxy: ScrollViewProxy
-    ) -> some View {
-
-        let isSelected =
-            insertionComposerIndices[slot] == index
-
-        Button {
-            selectInsertionPoint(
-                index,
-                in: slot,
-                proxy: proxy
-            )
-        } label: {
-
-            ZStack {
-
-                Capsule()
-                    .fill(
-                        Color.black.opacity(
-                            isSelected ? 0.08 : 0.04
-                        )
-                    )
-                    .frame(
-                        width: isSelected ? 18 : 12,
-                        height: isSelected ? 34 : 24
-                    )
-
-                RoundedRectangle(
-                    cornerRadius: 999,
-                    style: .continuous
-                )
-                .fill(
-                    isSelected
-                        ? MinimalPalette.accent
-                        : Color.black.opacity(0.16)
-                )
-                .frame(
-                    width: isSelected ? 3 : 2,
-                    height: isSelected ? 24 : 16
-                )
-
-                if isSelected {
-
-                    Image(
-                        systemName: "plus.circle.fill"
-                    )
-                    .font(.caption2)
-                    .foregroundStyle(
-                        MinimalPalette.accent
-                    )
-                    .offset(y: 18)
-                }
-            }
-            .frame(width: 20, height: 42)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help("插入到这里")
-    }
-
-    @ViewBuilder
-    func inlineTemplateEditor(
-        for slot: MainFieldSlot
-    ) -> some View {
-
-        ZStack(
-            alignment: .topLeading
-        ) {
-
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .fill(Color.white.opacity(0.84))
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
-                )
-                .stroke(
-                    focusedField == slot
-                        ? MinimalPalette
-                        .accent.opacity(0.28)
-                        : Color.black.opacity(0.04)
-                )
-            )
-
-            if templateValue(
-                for: slot
-            ).isEmpty {
-
-                Text(slot.placeholder)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 11)
-                    .allowsHitTesting(false)
-            }
-
-            InlineTemplateTextEditor(
-                text: templateValueBinding(
+        MainTemplateFieldEditorView(
+            slot: slot,
+            items: items,
+            selectedItemID: selectedItemID,
+            hoveredItemID: hoveredItemID,
+            arrangingComposerSlot:
+                arrangingComposerSlot,
+            focusedField: focusedField,
+            shouldShowScrubber:
+                shouldShowComposerScrubber(
                     for: slot
                 ),
-                selection: templateEditorSelectionBinding(
-                    for: slot
-                )
-            ) {
-
+            onActivateEditingSlot: {
                 activateEditingSlot(
                     slot,
                     preferInlineEditor: true
                 )
+            },
+            onTapComposerItem: { itemID, proxy in
+                if arrangingComposerSlot != slot {
+                    dismissComposerArrangeMode()
+                }
+
+                focusComposerItem(
+                    itemID,
+                    slot: slot,
+                    proxy: proxy
+                )
+            },
+            onEnterArrangeMode: { itemID in
+                enterComposerArrangeMode(
+                    for: slot,
+                    itemID: itemID
+                )
+            },
+            onHoverComposerItem: {
+                itemID,
+                isHovered in
+
+                if isHovered {
+                    hoveredComposerItemIDs[slot] =
+                        itemID
+                } else if hoveredComposerItemIDs[slot]
+                    == itemID {
+                    hoveredComposerItemIDs[slot] =
+                        nil
+                }
+            },
+            onDropComposerItem: {
+                droppedID,
+                targetID,
+                proxy in
+
+                reorderComposerItems(
+                    in: slot,
+                    from: droppedID,
+                    to: targetID
+                )
+
+                if let selectedID =
+                    selectedComposerItemIDs[slot] {
+
+                    withAnimation(
+                        .easeInOut(duration: 0.2)
+                    ) {
+                        proxy.scrollTo(
+                            selectedID,
+                            anchor: .center
+                        )
+                    }
+                }
+
+                return true
+            },
+            onDropTargetingComposerItem: {
+                itemID,
+                isTargeted in
+
+                if isTargeted,
+                   arrangingComposerSlot == slot {
+                    draggedComposerItemIDs[slot] =
+                        itemID
+                } else if draggedComposerItemIDs[slot]
+                    == itemID {
+                    draggedComposerItemIDs[slot] =
+                        nil
+                }
+            },
+            onComposerContentWidthChange: {
+                newWidth in
+                composerContentWidths[slot] =
+                    newWidth
+            },
+            onComposerViewportWidthChange: {
+                newWidth in
+                composerViewportWidths[slot] =
+                    newWidth
+            },
+            onSyncSelectedComposerItem: {
+                proxy,
+                syncedItems in
+
+                syncSelectedComposerItem(
+                    for: slot,
+                    items: syncedItems,
+                    proxy: proxy
+                )
+            },
+            showInsertionHandle: {
+                index,
+                itemID,
+                composerItems in
+
+                shouldShowInsertionHandle(
+                    slot: slot,
+                    index: index,
+                    itemID: itemID,
+                    items: composerItems
+                )
+            },
+            chip: {
+                item,
+                isSelected,
+                isHovered,
+                isArranging in
+                MainComposerChipView(
+                    title:
+                        composerChipTitle(
+                            for: item
+                        ),
+                    plainLiteralText:
+                        plainLiteralText(
+                            for: item
+                        ),
+                    style:
+                        composerChipStyle(
+                            for: item
+                        ),
+                    isSelected: isSelected,
+                    isHovered: isHovered,
+                    isArranging: isArranging,
+                    composerWigglePhase:
+                        composerWigglePhase,
+                    onRemove: {
+                        removeComposerItem(
+                            item,
+                            from: slot
+                        )
+                    }
+                )
+            },
+            insertionHandle: {
+                index,
+                proxy in
+                MainComposerInsertionHandleView(
+                    isSelected:
+                        insertionComposerIndices[slot]
+                        == index,
+                    onSelect: {
+                        selectInsertionPoint(
+                            index,
+                            in: slot,
+                            proxy: proxy
+                        )
+                    }
+                )
+            },
+            scrubber: {
+                proxy,
+                scrubberItems in
+
+                composerScrubber(
+                    for: slot,
+                    items: scrubberItems,
+                    proxy: proxy
+                )
+            },
+            inlineEditor: {
+                MainInlineTemplateEditorView(
+                    slot: slot,
+                    isFocused:
+                        focusedField == slot,
+                    text:
+                        templateValueBinding(
+                            for: slot
+                        ),
+                    selection:
+                        templateEditorSelectionBinding(
+                            for: slot
+                        ),
+                    onFocus: {
+                        activateEditingSlot(
+                            slot,
+                            preferInlineEditor: true
+                        )
+                    }
+                )
             }
-            .padding(.horizontal, 12)
-            .frame(
-                minHeight: 48,
-                maxHeight: 72,
-                alignment: .topLeading
-            )
-        }
-        .contentShape(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
         )
-        .onTapGesture {
-            activateEditingSlot(
-                slot,
-                preferInlineEditor: true
-            )
-        }
     }
 
 }
@@ -2750,9 +1660,15 @@ private extension MainView {
         if let selectedPhoto,
            let card = currentCard {
 
-            previewDetailContent(
-                selectedPhoto: selectedPhoto,
-                card: card
+            MainPreviewDetailView(
+                previewImage:
+                    selectedPhoto.image
+                    .swiftUIImage,
+                card: card,
+                previewWidth:
+                    previewCardMaxWidth(
+                        for: selectedPhoto
+                    )
             )
 
         } else {
@@ -2766,185 +1682,6 @@ private extension MainView {
                 maxHeight: .infinity
             )
         }
-    }
-
-    @ViewBuilder
-    func previewDetailContent(
-        selectedPhoto: SelectedPhoto,
-        card: RecordCard
-    ) -> some View {
-
-        let previewWidth =
-            previewCardMaxWidth(
-                for: selectedPhoto
-            )
-
-        VStack(
-            alignment: .center,
-            spacing: 22
-        ) {
-
-            VStack(
-                alignment: .leading,
-                spacing: 22
-            ) {
-
-                previewHeader
-
-                previewCanvas(
-                    selectedPhoto: selectedPhoto,
-                    card: card,
-                    previewWidth: previewWidth
-                )
-
-                previewSummary(
-                    for: card
-                )
-            }
-            .frame(
-                maxWidth: previewWidth,
-                alignment: .leading
-            )
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    var previewHeader: some View {
-
-        HStack {
-
-            VStack(
-                alignment: .leading,
-                spacing: 4
-            ) {
-
-                Text("实时预览")
-                    .font(.title3.weight(.semibold))
-
-                Text("按当前模板、时间点与 EXIF 数据即时生成")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-        }
-    }
-
-    @ViewBuilder
-    func previewCanvas(
-        selectedPhoto: SelectedPhoto,
-        card: RecordCard,
-        previewWidth: CGFloat
-    ) -> some View {
-
-        RecordCardRenderer(
-            image: selectedPhoto.image
-                .swiftUIImage,
-            card: card
-        )
-        .frame(
-            maxWidth: previewWidth
-        )
-        .padding(18)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 30,
-                style: .continuous
-            )
-            .fill(
-                MinimalPalette.surface
-            )
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 30,
-                style: .continuous
-            )
-            .stroke(
-                MinimalPalette.border
-            )
-        )
-        .shadow(
-            color: .black.opacity(0.05),
-            radius: 24,
-            y: 12
-        )
-    }
-
-    @ViewBuilder
-    func statusPill(
-        title: String,
-        value: String
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 3
-        ) {
-
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.subheadline.weight(.medium))
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-            .fill(
-                MinimalPalette.surface
-            )
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-            .stroke(
-                MinimalPalette.border
-            )
-        )
-    }
-
-    @ViewBuilder
-    func compactFactPill(
-        title: String,
-        value: String
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 2
-        ) {
-
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.caption.weight(.medium))
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(
-                    Color.white.opacity(0.92)
-                )
-        )
-        .overlay(
-            Capsule()
-                .stroke(
-                    MinimalPalette.border
-                )
-        )
     }
 
     @ViewBuilder
@@ -2970,7 +1707,12 @@ private extension MainView {
 
             } else {
 
-                Image(systemName: "sparkles")
+                Image(
+                    systemName:
+                        currentPreset == .immersWhite
+                        ? "applelogo"
+                        : "sparkles"
+                )
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
@@ -2992,42 +1734,26 @@ private extension MainView {
 
     var currentCard: RecordCard? {
 
-        buildCurrentCard(
-            exportDescriptionOverride:
-                settings.shouldWritePhotoDescription
-                ? resolvedPhotoDescription
-                : ""
-        )
-    }
-
-    func buildCurrentCard(
-        exportDescriptionOverride: String?
-    ) -> RecordCard? {
-
         guard let selectedPhoto else {
             return nil
         }
 
-        return RecordCard(
-            template: activeTemplate,
-            metadata: selectedPhoto.metadata,
-            context: MetadataContext.build(
-                from: selectedPhoto.metadata
-            ),
-            anchor: selectedAnchor,
-            anchorResult: selectedAnchor.map {
-                anchorEngine.build(
-                    from: $0,
-                    photoDate:
-                        selectedPhoto.metadata.captureDate
-                        ?? Date()
-                )
-            },
-            badge: activeBadge,
-            title: resolvedTitle,
-            story: resolvedStory,
-            exportDescriptionOverride:
-                exportDescriptionOverride
+        return cardBuildService.buildCard(
+            from: selectedPhoto,
+            configuration:
+                currentBatchConfigurationSnapshot
+        )
+    }
+
+    var currentBatchConfigurationSnapshot:
+        BatchConfigurationSnapshot {
+
+        settings.buildBatchConfigurationSnapshot(
+            selectedAnchorID: selectedAnchorID,
+            draftTitleText: titleText,
+            draftStoryText: storyText,
+            selectedAlbumIdentifier:
+                selectedAlbumIdentifier
         )
     }
 
@@ -3054,19 +1780,10 @@ private extension MainView {
 
         case .template3:
             return "{{anchor_countdown_text}}"
+
+        case .immersWhite:
+            return "{{memory_summary}}"
         }
-    }
-
-    var activeBadge: Badge? {
-
-        guard
-            let selectedBadge = settings.selectedBadge,
-            selectedBadge.type != .none
-        else {
-            return nil
-        }
-
-        return selectedBadge
     }
 
     var selectedAnchor: Anchor? {
@@ -3135,7 +1852,11 @@ private extension MainView {
 
         guard let badge = settings.selectedBadge,
               badge.type != .none else {
-            return "不显示图标"
+            if currentPreset == .immersWhite {
+                return "自动 Apple 标识"
+            }
+
+            return "保持留白"
         }
 
         return badge.name
@@ -3145,55 +1866,31 @@ private extension MainView {
 
         guard let badge = settings.selectedBadge,
               badge.type != .none else {
-            return "当前模板会保留右侧图标区域留白，适合更极简的版式。"
+            if currentPreset == .immersWhite {
+                return "未自定义时，Immers 白边会自动使用经典 Apple 小标识，并贴近右侧信息区显示。"
+            }
+
+            return "当前模板会保留标识区域留白，适合更极简的版式。"
         }
 
         if badge.isSystemDefault {
-            return "使用系统符号图标，适合和当前极简白色界面保持一致。"
+            return "使用系统标识，适合底栏白边的克制视觉风格。"
         }
 
-        return "使用自定义图标资源。"
-    }
-
-    var resolvedPhotoDescription: String {
-
-        let override =
-            settings.photoDescriptionOverride
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        if !override.isEmpty {
-            return override
-        }
-
-        return defaultPhotoDescription
+        return "使用自定义标识资源。"
     }
 
     var defaultPhotoDescription: String {
 
-        guard
-            let card = buildCurrentCard(
-                exportDescriptionOverride: nil
-            )
-        else {
+        guard let selectedPhoto else {
             return ""
         }
 
-        let context =
-            CardVariableProvider.build(
-                from: card
-            )
-
-        return templateVariableEngine
-            .render(
-                templateValue(
-                    for: .rightBottom
-                ),
-                context: context
-            )
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
+        return cardBuildService
+            .defaultPhotoDescription(
+                from: selectedPhoto,
+                configuration:
+                    currentBatchConfigurationSnapshot
             )
     }
 
@@ -3207,20 +1904,6 @@ private extension MainView {
         }
 
         return "默认说明：\(resolvedDefault)"
-    }
-
-    var resolvedTitle: String {
-
-        let trimmed =
-            titleText.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        if !trimmed.isEmpty {
-            return trimmed
-        }
-
-        return selectedAnchor?.title ?? ""
     }
 
     func anchorDateText(
@@ -3272,20 +1955,6 @@ private extension MainView {
         }
     }
 
-    var resolvedStory: String {
-
-        let trimmed =
-            storyText.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        if !trimmed.isEmpty {
-            return trimmed
-        }
-
-        return ""
-    }
-
     var selectedTemplatePreset: Binding<TemplatePreset> {
 
         Binding(
@@ -3300,6 +1969,9 @@ private extension MainView {
                         preset: preset
                     )
 
+                syncComposerItemsFromTemplate(
+                    resetTransientState: true
+                )
                 settings.saveTemplate()
             }
         )
@@ -3320,96 +1992,21 @@ private extension MainView {
         return currentPreset.displayName
     }
 
-    func memoryProgressHeadline(
-        _ snapshot: BatchUsageSnapshot
-    ) -> String {
-
-        if snapshot.completedPhotoCount == 0 {
-            return "等你第一次处理完成后，这里会慢慢积累属于 PhotoMemo 的小记录。"
-        }
-
-        return "PhotoMemo 已经帮你把 \(snapshot.completedPhotoCount) 张照片整理成带记忆注脚的样子。"
-    }
-
-    @ViewBuilder
-    func progressStatLine(
-        title: String,
-        value: String
-    ) -> some View {
-
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.caption.weight(.medium))
-                .multilineTextAlignment(.trailing)
-        }
-    }
-
     @ViewBuilder
     var templateRenameSheet: some View {
-
-        NavigationStack {
-
-            VStack(
-                alignment: .leading,
-                spacing: 16
-            ) {
-
-                Text("为当前模板设置一个更贴近你使用场景的名字。")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                TextField(
-                    "例如：途途成长版",
-                    text: $templateNameDraft
-                )
-                .textFieldStyle(.roundedBorder)
-
-                MinimalInsetCard {
-                    LabeledContent("当前预设") {
-                        Text(currentPreset.displayName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Divider()
-
-                    LabeledContent("当前显示") {
-                        Text(resolvedTemplateDisplayName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer(minLength: 0)
+        MainTemplateRenameSheetView(
+            templateNameDraft: $templateNameDraft,
+            currentPresetDisplayName:
+                currentPreset.displayName,
+            resolvedTemplateDisplayName:
+                resolvedTemplateDisplayName,
+            onCancel: {
+                showTemplateRenameSheet = false
+            },
+            onSave: {
+                applyTemplateRename()
             }
-            .padding(20)
-            .navigationTitle("模板名称")
-            .toolbar {
-                ToolbarItem(
-                    placement: .cancellationAction
-                ) {
-                    Button("取消") {
-                        showTemplateRenameSheet = false
-                    }
-                }
-
-                ToolbarItem(
-                    placement: .primaryAction
-                ) {
-                    Button("保存") {
-                        applyTemplateRename()
-                    }
-                }
-            }
-            .frame(
-                minWidth: 360,
-                minHeight: 220
-            )
-        }
+        )
     }
 
     func presentTemplateRenameSheet() {
@@ -3435,6 +2032,9 @@ private extension MainView {
             : trimmedName
 
         settings.selectedTemplate = template
+        syncComposerItemsFromTemplate(
+            resetTransientState: true
+        )
         settings.scheduleTemplateSave()
         showTemplateRenameSheet = false
     }
@@ -3459,11 +2059,37 @@ private extension MainView {
         )
     }
 
-    var currentEditingSlot: MainFieldSlot {
+    var currentEditingSlot: MainFieldSlot? {
 
         activeTemplateEditorSlot
         ?? focusedField
-        ?? .rightBottom
+    }
+
+    var currentEditingSlotTitle: String {
+
+        currentEditingSlot?.title
+        ?? "请先选择区域"
+    }
+
+    func shouldRefreshComposerItemsFromTemplate()
+    -> Bool {
+
+        for slot in MainFieldSlot.allCases {
+
+            guard
+                let items =
+                    composerItemsBySlot[slot]
+            else {
+                return true
+            }
+
+            if serializeComposerItems(items)
+                != templateValue(for: slot) {
+                return true
+            }
+        }
+
+        return false
     }
 
     func templateValue(
@@ -3488,7 +2114,9 @@ private extension MainView {
 
     func updateTemplateValue(
         _ value: String,
-        for slot: MainFieldSlot
+        for slot: MainFieldSlot,
+        composerItemsOverride:
+            [TemplateComposerItem]? = nil
     ) {
 
         var template = activeTemplate
@@ -3526,6 +2154,12 @@ private extension MainView {
 
         settings.selectedTemplate = template
         settings.scheduleTemplateSave()
+        composerItemsBySlot[slot] =
+            composerItemsOverride
+            ?? reconciledComposerItems(
+                for: slot,
+                from: value
+            )
 
         let length =
             (value as NSString).length
@@ -3602,7 +2236,9 @@ private extension MainView {
         for slot: MainFieldSlot
     ) -> [TemplateComposerItem] {
 
-        parseComposerItems(
+        composerItemsBySlot[slot]
+        ?? reconciledComposerItems(
+            for: slot,
             from: templateValue(for: slot)
         )
     }
@@ -3610,6 +2246,19 @@ private extension MainView {
     func parseComposerItems(
         from value: String
     ) -> [TemplateComposerItem] {
+
+        parsedComposerSegments(from: value)
+            .map { segment in
+                TemplateComposerItem(
+                    id: UUID().uuidString,
+                    segment: segment
+                )
+            }
+    }
+
+    func parsedComposerSegments(
+        from value: String
+    ) -> [TemplateComposerSegment] {
 
         guard !value.isEmpty else {
             return []
@@ -3623,10 +2272,7 @@ private extension MainView {
             )
         else {
             return [
-                TemplateComposerItem(
-                    id: "literal-0",
-                    segment: .literal(value)
-                )
+                .literal(value)
             ]
         }
 
@@ -3642,23 +2288,8 @@ private extension MainView {
                 range: nsRange
             )
 
-        var items: [TemplateComposerItem] = []
+        var items: [TemplateComposerSegment] = []
         var cursor = value.startIndex
-        var runningIndex = 0
-
-        func makeItem(
-            segment: TemplateComposerSegment
-        ) -> TemplateComposerItem {
-
-            defer {
-                runningIndex += 1
-            }
-
-            return TemplateComposerItem(
-                id: "item-\(runningIndex)",
-                segment: segment
-            )
-        }
 
         for match in matches {
 
@@ -3680,9 +2311,7 @@ private extension MainView {
 
                 if !literal.isEmpty {
                     items.append(
-                        makeItem(
-                            segment: .literal(literal)
-                        )
+                        .literal(literal)
                     )
                 }
             }
@@ -3696,17 +2325,13 @@ private extension MainView {
                 ) {
 
                 items.append(
-                    makeItem(
-                        segment: .variable(variable)
-                    )
+                    .variable(variable)
                 )
 
             } else {
 
                 items.append(
-                    makeItem(
-                        segment: .literal(token)
-                    )
+                    .literal(token)
                 )
             }
 
@@ -3720,14 +2345,68 @@ private extension MainView {
 
             if !trailing.isEmpty {
                 items.append(
-                    makeItem(
-                        segment: .literal(trailing)
-                    )
+                    .literal(trailing)
                 )
             }
         }
 
         return items
+    }
+
+    func reconciledComposerItems(
+        for slot: MainFieldSlot,
+        from value: String
+    ) -> [TemplateComposerItem] {
+
+        let segments =
+            parsedComposerSegments(from: value)
+
+        guard !segments.isEmpty else {
+            return []
+        }
+
+        let previousItems =
+            composerItemsBySlot[slot] ?? []
+
+        var nextItems: [TemplateComposerItem] = []
+        var searchStartIndex = 0
+
+        for segment in segments {
+
+            let matchedIndex: Int?
+
+            if searchStartIndex < previousItems.count {
+                matchedIndex =
+                    previousItems[searchStartIndex...]
+                    .firstIndex {
+                        $0.segment == segment
+                    }
+            } else {
+                matchedIndex = nil
+            }
+
+            if let matchedIndex {
+                nextItems.append(
+                    TemplateComposerItem(
+                        id: previousItems[matchedIndex].id,
+                        segment: segment
+                    )
+                )
+                searchStartIndex =
+                    previousItems.index(
+                        after: matchedIndex
+                    )
+            } else {
+                nextItems.append(
+                    TemplateComposerItem(
+                        id: UUID().uuidString,
+                        segment: segment
+                    )
+                )
+            }
+        }
+
+        return nextItems
     }
 
     func templateVariable(
@@ -3780,12 +2459,14 @@ private extension MainView {
             serializeComposerItems(
                 existingItems
             ),
-            for: slot
+            for: slot,
+            composerItemsOverride:
+                existingItems
         )
 
         if !items.isEmpty {
             selectedComposerItemIDs[slot] =
-                "item-\(insertionIndex + items.count - 1)"
+                items.last?.id
             insertionComposerIndices[slot] =
                 insertionIndex + items.count
         }
@@ -3821,13 +2502,14 @@ private extension MainView {
             serializeComposerItems(
                 items
             ),
-            for: slot
+            for: slot,
+            composerItemsOverride: items
         )
 
         selectedComposerItemIDs[slot] =
             items.isEmpty
             ? nil
-            : "item-\(nextIndex)"
+            : items[nextIndex].id
         insertionComposerIndices[slot] =
             min(nextIndex + 1, items.count)
 
@@ -3984,7 +2666,7 @@ private extension MainView {
 
         let adjustedDestination =
             sourceIndex < destinationIndex
-            ? destinationIndex
+            ? max(destinationIndex - 1, 0)
             : destinationIndex
 
         items.insert(
@@ -3994,11 +2676,12 @@ private extension MainView {
 
         updateTemplateValue(
             serializeComposerItems(items),
-            for: slot
+            for: slot,
+            composerItemsOverride: items
         )
 
         selectedComposerItemIDs[slot] =
-            "item-\(adjustedDestination)"
+            movedItem.id
         insertionComposerIndices[slot] =
             adjustedDestination + 1
         activateEditingSlot(
@@ -4269,12 +2952,7 @@ private extension MainView {
 
     func composerChipStyle(
         for item: TemplateComposerItem
-    ) -> (
-        icon: String,
-        tint: Color,
-        background: Color,
-        border: Color
-    ) {
+    ) -> MainComposerChipStyle {
 
         switch item.segment {
 
@@ -4288,19 +2966,19 @@ private extension MainView {
             switch variable.category {
 
             case .recognized:
-                return (
-                    resolvedIcon,
-                    Color(
+                return MainComposerChipStyle(
+                    icon: resolvedIcon,
+                    tint: Color(
                         red: 61 / 255,
                         green: 92 / 255,
                         blue: 168 / 255
                     ),
-                    Color(
+                    background: Color(
                         red: 61 / 255,
                         green: 92 / 255,
                         blue: 168 / 255
                     ).opacity(0.12),
-                    Color(
+                    border: Color(
                         red: 61 / 255,
                         green: 92 / 255,
                         blue: 168 / 255
@@ -4308,19 +2986,19 @@ private extension MainView {
                 )
 
             case .intelligent:
-                return (
-                    resolvedIcon,
-                    Color(
+                return MainComposerChipStyle(
+                    icon: resolvedIcon,
+                    tint: Color(
                         red: 188 / 255,
                         green: 108 / 255,
                         blue: 37 / 255
                     ),
-                    Color(
+                    background: Color(
                         red: 188 / 255,
                         green: 108 / 255,
                         blue: 37 / 255
                     ).opacity(0.12),
-                    Color(
+                    border: Color(
                         red: 188 / 255,
                         green: 108 / 255,
                         blue: 37 / 255
@@ -4328,19 +3006,19 @@ private extension MainView {
                 )
 
             case .user:
-                return (
-                    resolvedIcon,
-                    Color(
+                return MainComposerChipStyle(
+                    icon: resolvedIcon,
+                    tint: Color(
                         red: 80 / 255,
                         green: 102 / 255,
                         blue: 84 / 255
                     ),
-                    Color(
+                    background: Color(
                         red: 80 / 255,
                         green: 102 / 255,
                         blue: 84 / 255
                     ).opacity(0.12),
-                    Color(
+                    border: Color(
                         red: 80 / 255,
                         green: 102 / 255,
                         blue: 84 / 255
@@ -4355,16 +3033,20 @@ private extension MainView {
                     for: literal
                 ) != nil
 
-            return (
+            return MainComposerChipStyle(
+                icon:
                 isSeparator
                     ? "line.3.horizontal.decrease"
                     : "character.textbox",
+                tint:
                 isSeparator
                     ? MinimalPalette.accent
                     : Color.secondary,
+                background:
                 isSeparator
                     ? MinimalPalette.accent.opacity(0.1)
                     : Color.gray.opacity(0.08),
+                border:
                 isSeparator
                     ? MinimalPalette.accent.opacity(0.18)
                     : Color.black.opacity(0.06)
@@ -4511,7 +3193,13 @@ private extension MainView {
         _ snippet: String
     ) {
 
-        let slot = currentEditingSlot
+        guard let slot = currentEditingSlot else {
+            presentAlert(
+                title: "请先选择自定义区域",
+                message: "先点左上、右上、左下或右下任意一个区域，再插入 EXIF、智能数据或自定义文字。"
+            )
+            return
+        }
 
         if activeTemplateEditorSlot == slot {
 
@@ -4612,9 +3300,20 @@ private extension MainView {
         for slot: MainFieldSlot? = nil
     ) {
 
-        literalComposerTargetSlot =
+        let targetSlot =
             slot
             ?? currentEditingSlot
+
+        guard let targetSlot else {
+            presentAlert(
+                title: "请先选择自定义区域",
+                message: "先点四个自定义区域中的任意一个，再添加文字模块。"
+            )
+            return
+        }
+
+        literalComposerTargetSlot =
+            targetSlot
         literalComposerDraft = ""
         showLiteralComposerSheet = true
         dismissComposerArrangeMode()
@@ -4639,9 +3338,13 @@ private extension MainView {
             return
         }
 
-        let slot =
+        guard let slot =
             literalComposerTargetSlot
             ?? currentEditingSlot
+        else {
+            closeLiteralComposer()
+            return
+        }
 
         appendComposerItems(
             [
@@ -4704,7 +3407,7 @@ private extension MainView {
         }
 
         if focusedField == nil {
-            focusedField = .rightBottom
+            activeTemplateEditorSlot = nil
         }
 
         if titleText.isEmpty {
@@ -4720,6 +3423,67 @@ private extension MainView {
            !settings.selectedAlbumIdentifier.isEmpty {
             selectedAlbumIdentifier =
                 settings.selectedAlbumIdentifier
+        }
+
+        syncComposerItemsFromTemplate(
+            resetTransientState: true
+        )
+    }
+
+    func syncComposerItemsFromTemplate(
+        resetTransientState: Bool = false
+    ) {
+
+        if resetTransientState {
+            dismissComposerArrangeMode()
+        }
+
+        for slot in MainFieldSlot.allCases {
+
+            let items =
+                reconciledComposerItems(
+                    for: slot,
+                    from: templateValue(for: slot)
+                )
+
+            composerItemsBySlot[slot] = items
+
+            let validIDs =
+                Set(items.map(\.id))
+
+            if items.isEmpty {
+                selectedComposerItemIDs[slot] = nil
+                insertionComposerIndices[slot] = 0
+            } else {
+                if let selectedID =
+                    selectedComposerItemIDs[slot],
+                   !validIDs.contains(selectedID) {
+                    selectedComposerItemIDs[slot] =
+                        items.last?.id
+                }
+
+                let currentInsertionIndex =
+                    insertionComposerIndices[slot]
+                    ?? items.count
+
+                insertionComposerIndices[slot] =
+                    min(
+                        max(currentInsertionIndex, 0),
+                        items.count
+                    )
+            }
+
+            if let draggedID =
+                draggedComposerItemIDs[slot],
+               !validIDs.contains(draggedID) {
+                draggedComposerItemIDs[slot] = nil
+            }
+
+            if let hoveredID =
+                hoveredComposerItemIDs[slot],
+               !validIDs.contains(hoveredID) {
+                hoveredComposerItemIDs[slot] = nil
+            }
         }
     }
 
@@ -4823,92 +3587,6 @@ private extension MainView {
             self.selectedAnchorID =
                 anchors.first?.id
         }
-    }
-
-    @ViewBuilder
-    func metadataSummary(
-        for selectedPhoto: SelectedPhoto
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 4
-        ) {
-
-            Text(
-                selectedPhoto.metadata.deviceModel
-                .isEmpty
-                ? "未识别设备"
-                : selectedPhoto.metadata.deviceModel
-            )
-            .font(.headline)
-
-            if let captureDate =
-                selectedPhoto.metadata.captureDate {
-
-                Text(
-                    captureDate.formatted(
-                        date: .abbreviated,
-                        time: .shortened
-                    )
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-
-        }
-    }
-
-    @ViewBuilder
-    func previewSummary(
-        for card: RecordCard
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 8
-        ) {
-
-            Text("Live Context")
-                .font(.headline)
-
-            Text(
-                "Template: \(card.template.name)"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
-            if let anchorResult =
-                card.anchorResult {
-
-                Text(anchorResult.summaryText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(18)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .fill(
-                MinimalPalette.surface
-            )
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .stroke(
-                MinimalPalette.border
-            )
-        )
-        .frame(
-            maxWidth: 900,
-            alignment: .leading
-        )
     }
 
     func previewCardMaxWidth(
@@ -5038,6 +3716,17 @@ private extension MainView {
         )
     }
 
+    func syncBatchQueueDefaultConfiguration() {
+
+        batchQueueStore.updateDefaultConfiguration(
+            currentBatchConfigurationSnapshot
+        )
+        ExternalPhotoIntakeCenter.shared
+            .updateDefaultConfiguration(
+                currentBatchConfigurationSnapshot
+            )
+    }
+
     func saveCurrentCardToAlbum() async {
 
         guard
@@ -5111,6 +3800,156 @@ private extension MainView {
                     (error as? LocalizedError)?
                     .errorDescription
                     ?? error.localizedDescription
+            )
+        }
+    }
+
+    func validateExportedMetadata() async {
+
+        guard
+            let selectedPhoto,
+            let currentCard
+        else {
+            return
+        }
+
+        isPreparingMetadataValidation = true
+
+        defer {
+            isPreparingMetadataValidation = false
+        }
+
+        var temporaryURL: URL?
+
+        do {
+
+            let url =
+                try exportService.exportToTemporaryFile(
+                    photo: selectedPhoto,
+                    card: currentCard
+                )
+
+            temporaryURL = url
+
+            let exportedMetadata =
+                metadataReader.read(
+                    from: url
+                )
+
+            metadataValidationReport =
+                MetadataValidationReport(
+                    validatedTargetName:
+                        url.lastPathComponent,
+                    sourceLabel: "Source",
+                    targetLabel: "Exported",
+                    source: selectedPhoto.metadata,
+                    exported: exportedMetadata
+                )
+
+        } catch {
+
+            presentAlert(
+                title: "无法验证导出元数据",
+                message:
+                    (error as? LocalizedError)?
+                    .errorDescription
+                    ?? error.localizedDescription
+            )
+        }
+
+        if let temporaryURL {
+            try? FileManager.default.removeItem(
+                at: temporaryURL
+            )
+        }
+    }
+
+    func saveAndValidatePhotoLibraryMetadata() async {
+
+        guard
+            let selectedPhoto,
+            let currentCard
+        else {
+            return
+        }
+
+        await permissionCenter.refreshStatuses()
+
+        if !permissionCenter.canAccessPhotoLibrary {
+            await requestPhotoLibraryPermission()
+            guard permissionCenter.canAccessPhotoLibrary else {
+                return
+            }
+        }
+
+        isPreparingLibraryMetadataValidation = true
+
+        defer {
+            isPreparingLibraryMetadataValidation = false
+        }
+
+        var temporaryURL: URL?
+
+        do {
+
+            let url =
+                try exportService.exportToTemporaryFile(
+                    photo: selectedPhoto,
+                    card: currentCard
+                )
+
+            temporaryURL = url
+
+            let saveResult =
+                try await photoLibraryExportService
+                .saveImageResult(
+                    at: url,
+                    metadata: selectedPhoto.metadata,
+                    preferredAlbumIdentifier:
+                        selectedAlbumLocalIdentifier
+                )
+
+            let savedMetadata =
+                try await photoLibraryExportService
+                .readMetadata(
+                    forSavedAsset:
+                        saveResult.assetLocalIdentifier
+                )
+
+            metadataValidationReport =
+                MetadataValidationReport(
+                    validatedTargetName:
+                        "\(saveResult.albumTitle) / \(saveResult.assetLocalIdentifier)",
+                    sourceLabel: "Source",
+                    targetLabel: "Library",
+                    source: selectedPhoto.metadata,
+                    exported: savedMetadata
+                )
+
+            presentAlert(
+                title: "已完成图库验证",
+                message:
+                    "图片已经写入系统图库“\(saveResult.albumTitle)”，并完成了写回后元数据复核。"
+            )
+
+            if availableAlbums.isEmpty {
+                await reloadAlbums()
+            }
+
+        } catch {
+
+            presentAlert(
+                title: "无法验证图库元数据",
+                message:
+                    (error as? LocalizedError)?
+                    .errorDescription
+                    ?? error.localizedDescription
+            )
+        }
+
+        if let temporaryURL {
+            try? FileManager.default.removeItem(
+                at: temporaryURL
             )
         }
     }

@@ -113,7 +113,10 @@ private extension RecordCardExportService {
     ) throws -> URL {
 
         let renderSize =
-            outputPixelSize(for: photo)
+            outputPixelSize(
+                for: photo,
+                template: card.template
+            )
 
         let content = RecordCardRenderer(
             image: photo.image.swiftUIImage,
@@ -256,8 +259,19 @@ private extension RecordCardExportService {
     }
 
     func outputPixelSize(
-        for photo: SelectedPhoto
+        for photo: SelectedPhoto,
+        template: Template
     ) -> CGSize {
+
+        if template.preset == .immersWhite {
+
+            return ImmersWhiteRenderer
+                .outputPixelSize(
+                    for: photo.metadata,
+                    fallbackSize:
+                        photo.image.photoMemoSize
+                )
+        }
 
         let width =
             CGFloat(

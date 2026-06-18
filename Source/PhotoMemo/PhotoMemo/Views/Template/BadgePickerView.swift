@@ -58,7 +58,7 @@ struct BadgePickerView: View {
             }
         }
         .navigationTitle(
-            "Badge"
+            "Logo 标识"
         )
     }
 
@@ -72,7 +72,7 @@ struct BadgePickerView: View {
         case .none:
 
             Image(
-                systemName: "circle"
+                systemName: "applelogo"
             )
 
         case .systemSymbol:

@@ -13,6 +13,51 @@ final class RecordCardBuildService {
         configuration: BatchConfigurationSnapshot
     ) -> RecordCard {
 
+        var card = baseCard(
+            from: selectedPhoto,
+            configuration: configuration
+        )
+
+        card.exportDescriptionOverride =
+            configuration.shouldWritePhotoDescription
+            ? resolvedPhotoDescription(
+                from: card,
+                configuration: configuration
+            )
+            : ""
+
+        return card
+    }
+
+    func defaultPhotoDescription(
+        from selectedPhoto: SelectedPhoto,
+        configuration: BatchConfigurationSnapshot
+    ) -> String {
+
+        var descriptionConfiguration =
+            configuration
+        descriptionConfiguration.photoDescriptionOverride =
+            ""
+
+        let card = baseCard(
+            from: selectedPhoto,
+            configuration: descriptionConfiguration
+        )
+
+        return resolvedPhotoDescription(
+            from: card,
+            configuration: descriptionConfiguration
+        )
+    }
+}
+
+private extension RecordCardBuildService {
+
+    func baseCard(
+        from selectedPhoto: SelectedPhoto,
+        configuration: BatchConfigurationSnapshot
+    ) -> RecordCard {
+
         let anchorResult =
             configuration.anchor.map {
                 anchorEngine.build(
@@ -23,7 +68,7 @@ final class RecordCardBuildService {
                 )
             }
 
-        var card = RecordCard(
+        return RecordCard(
             template: configuration.template,
             metadata: selectedPhoto.metadata,
             context: MetadataContext.build(
@@ -40,20 +85,7 @@ final class RecordCardBuildService {
             ),
             exportDescriptionOverride: nil
         )
-
-        card.exportDescriptionOverride =
-            configuration.shouldWritePhotoDescription
-            ? resolvedPhotoDescription(
-                from: card,
-                configuration: configuration
-            )
-            : ""
-
-        return card
     }
-}
-
-private extension RecordCardBuildService {
 
     func resolvedTitle(
         from configuration: BatchConfigurationSnapshot

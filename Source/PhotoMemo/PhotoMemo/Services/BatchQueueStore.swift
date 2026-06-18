@@ -14,6 +14,9 @@ final class BatchQueueStore: ObservableObject {
 
     @Published private(set) var lastErrorMessage = ""
 
+    @Published private(set) var defaultConfigurationSnapshot:
+        BatchConfigurationSnapshot
+
     private let storageKey =
         "photomemo.batchQueue.jobs"
 
@@ -36,10 +39,20 @@ final class BatchQueueStore: ObservableObject {
             BatchProcessingCoordinator()
         self.notificationService =
             BatchNotificationService()
+        self.defaultConfigurationSnapshot =
+            settingsService
+            .buildBatchConfigurationSnapshot()
 
         loadPersistedJobs()
         normalizeJobsForResume()
         startProcessingIfNeeded()
+    }
+
+    func updateDefaultConfiguration(
+        _ snapshot: BatchConfigurationSnapshot
+    ) {
+
+        defaultConfigurationSnapshot = snapshot
     }
 
     func enqueue(
@@ -57,8 +70,7 @@ final class BatchQueueStore: ObservableObject {
         return enqueue(
             payloads: payloads,
             configuration:
-                settingsService
-                .buildBatchConfigurationSnapshot(),
+                defaultConfigurationSnapshot,
             launchSource: launchSource,
             title: title
         )
@@ -299,6 +311,126 @@ final class BatchQueueStore: ObservableObject {
                 lastCompletedAt
         )
     }
+
+    var latestFailureSummary:
+        BatchFailureSummary? {
+
+        jobs
+            .filter {
+                $0.failedTaskCount > 0
+            }
+            .sorted {
+                $0.updatedAt > $1.updatedAt
+            }
+            .compactMap { job in
+
+                guard let latestFailure =
+                    job.latestFailure
+                else {
+                    return nil
+                }
+
+                return BatchFailureSummary(
+                    jobID: job.id,
+                    jobTitle: job.title,
+                    failedTaskCount:
+                        job.failedTaskCount,
+                    latestFailure:
+                        latestFailure,
+                    updatedAt: job.updatedAt
+                )
+            }
+            .first
+    }
+
+    var recentFailureRecords:
+        [BatchFailureRecord] {
+
+        jobs.flatMap { job in
+            job.tasks.compactMap { task in
+
+                guard let failure = task.failure else {
+                    return nil
+                }
+
+                return BatchFailureRecord(
+                    id:
+                        "\(job.id.uuidString)-\(task.id.uuidString)-\(failure.timestamp.timeIntervalSince1970)",
+                    jobID: job.id,
+                    jobTitle: job.title,
+                    taskID: task.id,
+                    fileName: task.fileName,
+                    retryCount: task.retryCount,
+                    failure: failure
+                )
+            }
+        }
+        .sorted {
+            $0.failure.timestamp
+            > $1.failure.timestamp
+        }
+    }
+
+    var latestExternalIntakeSummary:
+        ExternalIntakeSummary? {
+
+        jobs
+            .filter {
+                $0.launchSource != .inAppPreview
+            }
+            .sorted {
+                $0.updatedAt > $1.updatedAt
+            }
+            .first
+            .map { job in
+
+                let trimmedTemplateName =
+                    job.configuration.template.name
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+
+                let templateName =
+                    trimmedTemplateName.isEmpty
+                    ? job.configuration
+                        .template.preset.displayName
+                    : trimmedTemplateName
+
+                let trimmedAnchorTitle =
+                    job.configuration.anchor?.title
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    ) ?? ""
+
+                return ExternalIntakeSummary(
+                    jobID: job.id,
+                    title: job.title,
+                    launchSource:
+                        job.launchSource,
+                    taskCount:
+                        job.totalTaskCount,
+                    state: job.state,
+                    templateName:
+                        templateName,
+                    anchorTitle:
+                        trimmedAnchorTitle.isEmpty
+                        ? nil
+                        : trimmedAnchorTitle,
+                    updatedAt: job.updatedAt
+                )
+            }
+    }
+
+    func retryLatestFailedTasks() {
+
+        guard let latestFailureSummary else {
+            return
+        }
+
+        retryFailedTasks(
+            in: latestFailureSummary.jobID
+        )
+    }
 }
 
 private extension BatchQueueStore {
@@ -481,6 +613,10 @@ private extension BatchQueueStore {
 
         } catch {
 
+            let failurePhase =
+                jobs[reference.jobIndex]
+                .tasks[reference.taskIndex].phase
+
             coordinator.cleanupTemporaryFile(
                 at: temporaryFileURL
             )
@@ -491,7 +627,7 @@ private extension BatchQueueStore {
                 task.renderedFileURL = nil
                 task.phase = .failed
                 task.failure = BatchTaskFailure(
-                    phase: task.phase,
+                    phase: failurePhase,
                     message:
                         (error as? LocalizedError)?
                         .errorDescription

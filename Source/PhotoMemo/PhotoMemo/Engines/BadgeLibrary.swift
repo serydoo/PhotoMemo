@@ -42,6 +42,7 @@ struct BadgeLibrary {
 
         [
             .none,
+            .appleClassic,
             .family,
             .travel,
             .memory,

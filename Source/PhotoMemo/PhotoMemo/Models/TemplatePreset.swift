@@ -7,6 +7,8 @@ enum TemplatePreset: String, Codable, CaseIterable {
     case template2
 
     case template3
+
+    case immersWhite
 }
 
 extension TemplatePreset {
@@ -23,6 +25,9 @@ extension TemplatePreset {
 
         case .template3:
             return "模板 3"
+
+        case .immersWhite:
+            return "Immers 白边"
         }
     }
 
@@ -38,6 +43,9 @@ extension TemplatePreset {
 
         case .template3:
             return "未来倒计时：左下改为紧凑日期，右上保留机型与镜头，右下默认展示“{{anchor_countdown_text}}”。"
+
+        case .immersWhite:
+            return "Immers 风格：只借用更沉浸的白色底栏排版，默认内容继续沿用 PhotoMemo 的标题、记录时间、设备摘要和记忆摘要。"
         }
     }
 
@@ -52,6 +60,9 @@ extension TemplatePreset {
 
         case TemplatePreset.template3.displayName:
             return .template3
+
+        case TemplatePreset.immersWhite.displayName:
+            return .immersWhite
 
         default:
             return .template1

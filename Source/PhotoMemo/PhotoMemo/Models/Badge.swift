@@ -38,8 +38,15 @@ struct Badge: Identifiable, Codable, Hashable {
 extension Badge {
 
     static let none = Badge(
-        name: "None",
+        name: "自动",
         type: .none,
+        isSystemDefault: true
+    )
+
+    static let appleClassic = Badge(
+        name: "Apple",
+        type: .systemSymbol,
+        systemSymbol: "applelogo",
         isSystemDefault: true
     )
 
