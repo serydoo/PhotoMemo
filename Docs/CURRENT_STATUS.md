@@ -116,6 +116,56 @@ Key related files:
 - `Source/PhotoMemo/PhotoMemo/Models/TemplateItem.swift`
 - `Source/PhotoMemo/PhotoMemo/Views/Template/BadgePickerView.swift`
 
+### 5. Permission and content wording refinement started
+
+Latest refinement work now also covers:
+
+- denied photo-library permission no longer pretends the system prompt can be re-shown; the UI now guides the user toward System Settings
+- birthday-style smart text suppresses awkward under-one-year wording like `0岁8个月`
+- the `补充信息` section now uses a single card and treats the checkbox as custom batch-description mode; when it is off, PhotoMemo falls back to the rendered right-bottom content
+
+### 6. Multi-configuration workspace controls are now in progress
+
+Latest MainView work now also adds a real right-side configuration workflow:
+
+- three persisted local configuration slots
+- one active slot at a time
+- right-side save / restore-default actions instead of the old toolbar-only save entry
+- a right-side operation-guide menu and sheet
+- dismissible helper cards for anchor, smart-module, and supplemental-content guidance
+
+Behavior expectations for this slice:
+
+- switching slots should refresh the left-side configuration state and right-side preview together
+- unsaved slots should fall back to `模板 1 / 2 / 3` default skeletons
+- the active slot should remain aligned with the batch queue's default configuration snapshot
+
+### 7. Workspace naming and help-center navigation were refined
+
+The latest follow-up refinement now also adds:
+
+- custom naming for each of the three configuration slots
+- a dedicated rename sheet for the active slot
+- a grouped right-side help-center menu instead of a flat operation-guide list
+- a formal split-view help center with category navigation and topic detail panes
+
+Important behavior choices:
+
+- slot renaming changes only the workspace slot label, not the template name
+- restoring a slot to its default skeleton clears the saved snapshot but keeps the custom slot name
+- already-dismissed inline tips remain removable from the left side, while the full explanation stays available inside the help center
+
+### 8. Left-side clutter and output controls were reduced further
+
+The latest cleanup pass now also does the following:
+
+- memory-progress guidance is dismissible like the other helper cards
+- the personalized-region guidance is dismissible instead of being hard-coded inline text
+- the supplemental-content area is truly reduced to a single card
+- the permission block no longer occupies the sidebar after both permissions are granted
+- the help center no longer keeps a separate permission topic after the permission flow is already understood
+- the output area now focuses on album selection plus save-to-library, without the extra metadata-validation buttons
+
 ## Behavior Rules Preserved During Refactor
 
 These behaviors were intentionally preserved and should not be reverted:
@@ -149,6 +199,10 @@ Status:
 ### Coordinator-adjacent editing helpers still need decomposition
 
 The preview/detail display shell has now been extracted, but `MainView` still contains a large amount of editing, routing, and synchronization helper logic that should keep moving toward clearer coordinator-only responsibilities.
+
+### Multi-config and in-app guidance still need a dedicated design slice
+
+The newly requested three-slot configuration system and right-side operation guide are both product-shaping changes. They should be implemented as a dedicated state/persistence redesign instead of being mixed into small UI tweaks.
 
 ### Manual UI regression checks are still needed
 

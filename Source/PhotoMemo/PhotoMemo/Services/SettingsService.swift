@@ -1,6 +1,162 @@
 import Foundation
 import Combine
 
+enum WorkspaceConfigurationSlotID:
+    String,
+    Codable,
+    CaseIterable,
+    Hashable,
+    Identifiable {
+
+    case slot1
+
+    case slot2
+
+    case slot3
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+
+        switch self {
+
+        case .slot1:
+            return "配置 1"
+
+        case .slot2:
+            return "配置 2"
+
+        case .slot3:
+            return "配置 3"
+        }
+    }
+
+    var defaultPreset: TemplatePreset {
+
+        switch self {
+
+        case .slot1:
+            return .template1
+
+        case .slot2:
+            return .template2
+
+        case .slot3:
+            return .template3
+        }
+    }
+}
+
+struct WorkspaceConfigurationSlot:
+    Identifiable,
+    Codable,
+    Hashable {
+
+    let id: WorkspaceConfigurationSlotID
+
+    var customTitle: String?
+
+    var snapshot: BatchConfigurationSnapshot?
+
+    var updatedAt: Date?
+
+    var title: String {
+        id.title
+    }
+
+    var resolvedCustomTitle: String? {
+
+        guard
+            let trimmedTitle =
+                customTitle?
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ),
+            !trimmedTitle.isEmpty
+        else {
+            return nil
+        }
+
+        return trimmedTitle
+    }
+
+    var displayTitle: String {
+        resolvedCustomTitle ?? title
+    }
+
+    var displayTitleWithReference: String {
+
+        guard let resolvedCustomTitle else {
+            return title
+        }
+
+        return "\(resolvedCustomTitle)（\(title)）"
+    }
+
+    var defaultPreset: TemplatePreset {
+        id.defaultPreset
+    }
+
+    var isCustomized: Bool {
+        snapshot != nil
+    }
+
+    var resolvedDisplayName: String {
+
+        guard
+            let trimmedName =
+                snapshot?.template.name
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ),
+            !trimmedName.isEmpty
+        else {
+            return defaultPreset.displayName
+        }
+
+        return trimmedName
+    }
+
+    var statusText: String {
+        isCustomized ? "已保存" : "默认"
+    }
+
+    static var defaultSlots: [WorkspaceConfigurationSlot] {
+
+        WorkspaceConfigurationSlotID
+            .allCases
+            .map {
+                WorkspaceConfigurationSlot(
+                    id: $0,
+                    customTitle: nil,
+                    snapshot: nil,
+                    updatedAt: nil
+                )
+            }
+    }
+
+    static func normalized(
+        _ slots: [WorkspaceConfigurationSlot]
+    ) -> [WorkspaceConfigurationSlot] {
+
+        WorkspaceConfigurationSlotID
+            .allCases
+            .map { slotID in
+
+                slots.first(where: {
+                    $0.id == slotID
+                }) ?? WorkspaceConfigurationSlot(
+                    id: slotID,
+                    customTitle: nil,
+                    snapshot: nil,
+                    updatedAt: nil
+                )
+            }
+    }
+}
+
 @MainActor
 final class SettingsService: ObservableObject {
 
@@ -41,6 +197,12 @@ final class SettingsService: ObservableObject {
 
         static let selectedAlbumIdentifier =
             "photomemo.selectedAlbumIdentifier"
+
+        static let activeConfigurationSlotID =
+            "photomemo.activeConfigurationSlotID"
+
+        static let configurationSlots =
+            "photomemo.configurationSlots"
     }
 
     @Published var anchors: [Anchor] = []
@@ -61,7 +223,18 @@ final class SettingsService: ObservableObject {
 
     @Published var selectedAlbumIdentifier = ""
 
+    @Published
+    var activeConfigurationSlotID:
+        WorkspaceConfigurationSlotID = .slot1
+
+    @Published
+    var configurationSlots:
+        [WorkspaceConfigurationSlot] =
+            WorkspaceConfigurationSlot.defaultSlots
+
     init() {
+
+        loadConfigurationSlots()
 
         loadAnchors()
 
@@ -186,6 +359,7 @@ final class SettingsService: ObservableObject {
         saveBadge()
         savePhotoDescriptionSettings()
         saveEditorState()
+        saveConfigurationSlots()
     }
 
     func saveEditorState(
@@ -232,6 +406,79 @@ final class SettingsService: ObservableObject {
             self.selectedAlbumIdentifier,
             forKey: Keys.selectedAlbumIdentifier
         )
+    }
+
+    func saveConfigurationSlots() {
+
+        guard
+            let slotsData =
+                try? JSONEncoder().encode(
+                    configurationSlots
+                )
+        else {
+            return
+        }
+
+        UserDefaults.standard.set(
+            activeConfigurationSlotID.rawValue,
+            forKey: Keys.activeConfigurationSlotID
+        )
+
+        UserDefaults.standard.set(
+            slotsData,
+            forKey: Keys.configurationSlots
+        )
+    }
+
+    func updateConfigurationSlot(
+        _ slotID: WorkspaceConfigurationSlotID,
+        snapshot: BatchConfigurationSnapshot?
+    ) {
+
+        configurationSlots =
+            configurationSlots.map { slot in
+
+                guard slot.id == slotID else {
+                    return slot
+                }
+
+                var updatedSlot = slot
+                updatedSlot.snapshot = snapshot
+                updatedSlot.updatedAt =
+                    snapshot == nil ? nil : Date()
+                return updatedSlot
+            }
+
+        saveConfigurationSlots()
+    }
+
+    func configurationSlot(
+        for slotID: WorkspaceConfigurationSlotID
+    ) -> WorkspaceConfigurationSlot? {
+
+        configurationSlots.first {
+            $0.id == slotID
+        }
+    }
+
+    func renameConfigurationSlot(
+        _ slotID: WorkspaceConfigurationSlotID,
+        customTitle: String?
+    ) {
+
+        configurationSlots =
+            configurationSlots.map { slot in
+
+                guard slot.id == slotID else {
+                    return slot
+                }
+
+                var updatedSlot = slot
+                updatedSlot.customTitle = customTitle
+                return updatedSlot
+            }
+
+        saveConfigurationSlots()
     }
 
     func scheduleEditorStateSave(
@@ -377,6 +624,42 @@ final class SettingsService: ObservableObject {
             UserDefaults.standard.string(
                 forKey: Keys.selectedAlbumIdentifier
             ) ?? ""
+    }
+
+    private func loadConfigurationSlots() {
+
+        if let activeSlotRawValue =
+            UserDefaults.standard.string(
+                forKey: Keys.activeConfigurationSlotID
+            ),
+           let activeSlotID =
+            WorkspaceConfigurationSlotID(
+                rawValue: activeSlotRawValue
+            ) {
+            activeConfigurationSlotID =
+                activeSlotID
+        }
+
+        guard
+            let slotsData =
+                UserDefaults.standard.data(
+                    forKey: Keys.configurationSlots
+                ),
+            let decodedSlots =
+                try? JSONDecoder().decode(
+                    [WorkspaceConfigurationSlot].self,
+                    from: slotsData
+                )
+        else {
+            configurationSlots =
+                WorkspaceConfigurationSlot.defaultSlots
+            return
+        }
+
+        configurationSlots =
+            WorkspaceConfigurationSlot.normalized(
+                decodedSlots
+            )
     }
 }
 

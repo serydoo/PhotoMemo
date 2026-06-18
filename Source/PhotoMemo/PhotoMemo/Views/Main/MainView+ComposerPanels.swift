@@ -101,9 +101,12 @@ struct MainVariableLibraryPanel: View {
 
             if let guidanceText {
 
-                Text(guidanceText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                MainDismissibleGuideCard(
+                    storageKey:
+                        "photomemo.guide.smartModule.dismissed",
+                    title: "智能模块说明",
+                    message: guidanceText
+                )
             }
 
             ScrollView(

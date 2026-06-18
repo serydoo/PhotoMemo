@@ -19,12 +19,10 @@ final class RecordCardBuildService {
         )
 
         card.exportDescriptionOverride =
-            configuration.shouldWritePhotoDescription
-            ? resolvedPhotoDescription(
+            resolvedPhotoDescription(
                 from: card,
                 configuration: configuration
             )
-            : ""
 
         return card
     }

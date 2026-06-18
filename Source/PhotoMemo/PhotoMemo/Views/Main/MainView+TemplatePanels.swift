@@ -121,72 +121,98 @@ struct MainCustomContentSectionView: View {
 
     var body: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 14
-        ) {
+        MinimalInsetCard {
+            Text("这里负责标题、记忆文案，以及是否使用单独批量说明内容。若不单独填写批量说明，系统会自动回退到右下区域最终生成的完整内容。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            MinimalInsetCard {
-                Text("内容")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+            Divider()
 
-                TextField(
-                    "标题",
-                    text: $titleText
-                )
-                .textFieldStyle(.roundedBorder)
+            Text("内容")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
 
-                TextField(
-                    "记忆文案",
-                    text: $storyText,
-                    axis: .vertical
-                )
-                .lineLimit(3...5)
-                .textFieldStyle(.roundedBorder)
-            }
+            TextField(
+                "标题",
+                text: $titleText
+            )
+            .textFieldStyle(.roundedBorder)
 
-            MinimalInsetCard {
-                Toggle(
-                    "同步到苹果相册说明",
-                    isOn: $shouldWritePhotoDescription
-                )
+            TextField(
+                "记忆文案",
+                text: $storyText,
+                axis: .vertical
+            )
+            .lineLimit(3...5)
+            .textFieldStyle(.roundedBorder)
 
-                if shouldWritePhotoDescription {
+            Divider()
 
-                    Divider()
+            Toggle(
+                "使用单独批量说明内容",
+                isOn: $shouldWritePhotoDescription
+            )
 
-                    TextField(
-                        "说明内容留空时，默认写入右下区域完整内容",
-                        text: $photoDescriptionOverride,
-                        axis: .vertical
-                    )
-                    .lineLimit(2...4)
-                    .textFieldStyle(.roundedBorder)
-                }
+            if shouldWritePhotoDescription {
 
                 Divider()
 
-                VStack(
-                    alignment: .leading,
-                    spacing: 4
-                ) {
+                Text("勾选后，图片说明会优先写入这里的自定义内容；如果这里留空，会回退到右下区域的完整结果。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                    Text("说明预览")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                TextField(
+                    "例如：这是这次批量统一写入图片内的说明",
+                    text: $photoDescriptionOverride,
+                    axis: .vertical
+                )
+                .lineLimit(2...4)
+                .textFieldStyle(.roundedBorder)
+            }
 
-                    Text(defaultPhotoDescriptionHint)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            Divider()
+
+            VStack(
+                alignment: .leading,
+                spacing: 4
+            ) {
+
+                Text("图片说明写入预览")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                Text(descriptionPreviewText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
+    }
+
+    private var descriptionPreviewText: String {
+
+        let trimmedOverride =
+            photoDescriptionOverride
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if shouldWritePhotoDescription,
+           !trimmedOverride.isEmpty {
+            return "当前会批量写入：\(trimmedOverride)"
+        }
+
+        if shouldWritePhotoDescription {
+            return "当前未填写单独批量说明，将回退到右下区域最终内容。\(defaultPhotoDescriptionHint)"
+        }
+
+        return "未勾选单独批量说明时，会直接写入右下区域最终内容。\(defaultPhotoDescriptionHint)"
     }
 }
 

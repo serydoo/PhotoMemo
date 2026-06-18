@@ -683,6 +683,21 @@ struct MainView: View {
         MetadataValidationReport?
 
     @State
+    private var showOperationGuideSheet = false
+
+    @State
+    private var showWorkspaceConfigurationRenameSheet =
+        false
+
+    @State
+    private var selectedOperationGuideTopic:
+        MainOperationGuideTopic = .overview
+
+    @State
+    private var workspaceConfigurationNameDraft =
+        ""
+
+    @State
     private var templateNameDraft = ""
 
     @State
@@ -806,6 +821,19 @@ struct MainView: View {
             permissionSetupSheet
         }
         .sheet(
+            isPresented: $showOperationGuideSheet
+        ) {
+
+            operationGuideSheet
+        }
+        .sheet(
+            isPresented:
+                $showWorkspaceConfigurationRenameSheet
+        ) {
+
+            workspaceConfigurationRenameSheet
+        }
+        .sheet(
             item: $metadataValidationReport
         ) { report in
 
@@ -822,6 +850,7 @@ struct MainView: View {
         .onAppear {
 
             configureInitialState()
+            migrateLegacyConfigurationIntoActiveSlotIfNeeded()
             syncBatchQueueDefaultConfiguration()
 
             Task {
@@ -920,17 +949,6 @@ struct MainView: View {
             settings.schedulePhotoDescriptionSettingsSave()
             syncBatchQueueDefaultConfiguration()
         }
-        .toolbar {
-
-            ToolbarItemGroup(
-                placement: .primaryAction
-            ) {
-
-                Button("保存配置") {
-                    saveCurrentConfiguration()
-                }
-            }
-        }
         .alert(
             alertTitle,
             isPresented: $showAlert
@@ -1004,8 +1022,10 @@ private extension MainView {
 
             memoryProgressPanel
 
-            GroupBox("本地权限") {
-                permissionSection
+            if shouldShowPermissionSection {
+                GroupBox("本地权限") {
+                    permissionSection
+                }
             }
 
             GroupBox("照片") {
@@ -1227,35 +1247,15 @@ private extension MainView {
             selectedAlbumIdentifier:
                 $selectedAlbumIdentifier,
             availableAlbums: availableAlbums,
-            isLoadingAlbums: isLoadingAlbums,
             selectedAlbumSummary:
                 selectedAlbumSummary,
             isSavingToAlbum: isSavingToAlbum,
-            isPreparingMetadataValidation:
-                isPreparingMetadataValidation,
-            isPreparingLibraryMetadataValidation:
-                isPreparingLibraryMetadataValidation,
             canExportCurrentCard:
                 selectedPhoto != nil
                 && currentCard != nil,
-            reloadAlbums: {
-                Task {
-                    await reloadAlbums()
-                }
-            },
             saveCurrentCardToAlbum: {
                 Task {
                     await saveCurrentCardToAlbum()
-                }
-            },
-            validateExportedMetadata: {
-                Task {
-                    await validateExportedMetadata()
-                }
-            },
-            saveAndValidatePhotoLibraryMetadata: {
-                Task {
-                    await saveAndValidatePhotoLibraryMetadata()
                 }
             }
         )
@@ -1318,6 +1318,12 @@ private extension MainView {
                     )
             }
         )
+    }
+
+    var shouldShowPermissionSection: Bool {
+        !permissionCenter.photoLibraryState.isGranted
+            || !permissionCenter.notificationState
+            .isGranted
     }
 
     var memoryProgressPanel: some View {
@@ -1657,31 +1663,46 @@ private extension MainView {
     @ViewBuilder
     var detailContent: some View {
 
-        if let selectedPhoto,
-           let card = currentCard {
+        VStack(
+            alignment: .center,
+            spacing: 22
+        ) {
 
-            MainPreviewDetailView(
-                previewImage:
-                    selectedPhoto.image
-                    .swiftUIImage,
-                card: card,
-                previewWidth:
+            workspaceConfigurationPanel
+                .frame(
+                    maxWidth: 900,
+                    alignment: .leading
+                )
+
+            if let selectedPhoto,
+               let card = currentCard {
+
+                let previewWidth =
                     previewCardMaxWidth(
                         for: selectedPhoto
                     )
-            )
 
-        } else {
+                MainPreviewDetailView(
+                    previewImage:
+                        selectedPhoto.image
+                        .swiftUIImage,
+                    card: card,
+                    previewWidth: previewWidth
+                )
 
-            ContentUnavailableView(
-                "还没有导入照片",
-                systemImage: "photo"
-            )
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity
-            )
+            } else {
+
+                ContentUnavailableView(
+                    "还没有导入照片",
+                    systemImage: "photo"
+                )
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity
+                )
+            }
         }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -1755,6 +1776,27 @@ private extension MainView {
             selectedAlbumIdentifier:
                 selectedAlbumIdentifier
         )
+    }
+
+    var activeWorkspaceConfigurationSlot:
+        WorkspaceConfigurationSlot {
+
+        settings.configurationSlot(
+            for: settings.activeConfigurationSlotID
+        )
+        ?? WorkspaceConfigurationSlot.defaultSlots[0]
+    }
+
+    var workspaceConfigurationSummary: String {
+
+        let slot =
+            activeWorkspaceConfigurationSlot
+
+        if slot.isCustomized {
+            return "当前生效：\(slot.displayTitleWithReference)。切换到其他配置后，左侧模板、时间点、Logo 标识、补充信息和输出规则会整体刷新。"
+        }
+
+        return "当前生效：\(slot.displayTitleWithReference)。这套配置还未单独保存，暂时使用\(slot.defaultPreset.displayName)默认骨架。"
     }
 
     var activeTemplate: Template {
@@ -1993,6 +2035,71 @@ private extension MainView {
     }
 
     @ViewBuilder
+    var operationGuideSheet: some View {
+        MainOperationGuideSheetView(
+            selectedTopic:
+                selectedOperationGuideTopic,
+            onDismiss: {
+                showOperationGuideSheet = false
+            }
+        )
+    }
+
+    @ViewBuilder
+    var workspaceConfigurationRenameSheet:
+        some View {
+
+        MainWorkspaceConfigurationRenameSheetView(
+            slotReferenceTitle:
+                activeWorkspaceConfigurationSlot.title,
+            currentDisplayTitle:
+                activeWorkspaceConfigurationSlot
+                .displayTitle,
+            titleDraft:
+                $workspaceConfigurationNameDraft,
+            onCancel: {
+                showWorkspaceConfigurationRenameSheet =
+                    false
+            },
+            onSave: {
+                applyWorkspaceConfigurationRename()
+            }
+        )
+    }
+
+    var workspaceConfigurationPanel: some View {
+        MainWorkspaceConfigurationPanelView(
+            slots: settings.configurationSlots,
+            activeSlotID:
+                settings.activeConfigurationSlotID,
+            activeSlotSummary:
+                workspaceConfigurationSummary,
+            activeSlotDisplayTitle:
+                activeWorkspaceConfigurationSlot
+                .displayTitle,
+            onSelectSlot: { slotID in
+                selectWorkspaceConfigurationSlot(
+                    slotID
+                )
+            },
+            onRenameActiveSlot: {
+                presentWorkspaceConfigurationRenameSheet()
+            },
+            onSaveActiveSlot: {
+                saveCurrentConfiguration()
+            },
+            onRestoreActiveSlotDefault: {
+                restoreActiveWorkspaceConfigurationToDefault()
+            },
+            onOpenGuideTopic: { topic in
+                selectedOperationGuideTopic =
+                    topic
+                showOperationGuideSheet = true
+            }
+        )
+    }
+
+    @ViewBuilder
     var templateRenameSheet: some View {
         MainTemplateRenameSheetView(
             templateNameDraft: $templateNameDraft,
@@ -2016,6 +2123,15 @@ private extension MainView {
         showTemplateRenameSheet = true
     }
 
+    func presentWorkspaceConfigurationRenameSheet() {
+
+        workspaceConfigurationNameDraft =
+            activeWorkspaceConfigurationSlot
+            .resolvedCustomTitle
+            ?? ""
+        showWorkspaceConfigurationRenameSheet = true
+    }
+
     func applyTemplateRename() {
 
         var template = activeTemplate
@@ -2037,6 +2153,25 @@ private extension MainView {
         )
         settings.scheduleTemplateSave()
         showTemplateRenameSheet = false
+    }
+
+    func applyWorkspaceConfigurationRename() {
+
+        let trimmedName =
+            workspaceConfigurationNameDraft
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        settings.renameConfigurationSlot(
+            settings.activeConfigurationSlotID,
+            customTitle:
+                trimmedName.isEmpty
+                ? nil
+                : trimmedName
+        )
+
+        showWorkspaceConfigurationRenameSheet = false
     }
 
     var selectedBadgeName: Binding<String> {
@@ -3430,6 +3565,24 @@ private extension MainView {
         )
     }
 
+    func migrateLegacyConfigurationIntoActiveSlotIfNeeded() {
+
+        let hasNoCustomizedSlots =
+            settings.configurationSlots.allSatisfy {
+                !$0.isCustomized
+            }
+
+        guard hasNoCustomizedSlots else {
+            return
+        }
+
+        settings.updateConfigurationSlot(
+            settings.activeConfigurationSlotID,
+            snapshot:
+                currentBatchConfigurationSnapshot
+        )
+    }
+
     func syncComposerItemsFromTemplate(
         resetTransientState: Bool = false
     ) {
@@ -3542,6 +3695,15 @@ private extension MainView {
 
         if granted {
             await reloadAlbums()
+            return
+        }
+
+        if permissionCenter.photoLibraryState
+            == .denied {
+            presentAlert(
+                title: "请到系统设置开启相册权限",
+                message: "macOS 在你拒绝后不会再次自动弹出相册授权框。请点击权限区里的“打开系统设置”，然后为 PhotoMemo 重新开启相册权限。"
+            )
             return
         }
 
@@ -3684,6 +3846,22 @@ private extension MainView {
 
     func saveCurrentConfiguration() {
 
+        settings.selectedAnchorIDString =
+            selectedAnchorID?.uuidString
+            ?? ""
+        settings.draftTitleText = titleText
+        settings.draftStoryText = storyText
+        settings.selectedAlbumIdentifier =
+            settings.normalizedAlbumIdentifier(
+                selectedAlbumIdentifier
+            )
+
+        settings.updateConfigurationSlot(
+            settings.activeConfigurationSlotID,
+            snapshot:
+                currentBatchConfigurationSnapshot
+        )
+
         persistEditorDraftState(
             selectedAnchorID: selectedAnchorID,
             draftTitleText: titleText,
@@ -3693,11 +3871,131 @@ private extension MainView {
         )
 
         settings.saveAll()
+        syncBatchQueueDefaultConfiguration()
 
         presentAlert(
             title: "配置已保存",
-            message: "当前模板、徽标、时间锚点、文案草稿和相册去向已经保存到本地。"
+            message: "当前内容已经保存到\(activeWorkspaceConfigurationSlot.displayTitleWithReference)，之后切换这套配置时会整体恢复模板、锚点、标识、文案和输出规则。"
         )
+    }
+
+    func selectWorkspaceConfigurationSlot(
+        _ slotID: WorkspaceConfigurationSlotID
+    ) {
+
+        settings.activeConfigurationSlotID = slotID
+        settings.saveConfigurationSlots()
+
+        let slot =
+            settings.configurationSlot(for: slotID)
+            ?? WorkspaceConfigurationSlot(
+                id: slotID,
+                customTitle: nil,
+                snapshot: nil,
+                updatedAt: nil
+            )
+
+        let snapshot =
+            slot.snapshot
+            ?? defaultWorkspaceConfigurationSnapshot(
+                for: slotID
+            )
+
+        applyWorkspaceConfigurationSnapshot(
+            snapshot
+        )
+    }
+
+    func restoreActiveWorkspaceConfigurationToDefault() {
+
+        let activeSlotID =
+            settings.activeConfigurationSlotID
+
+        settings.updateConfigurationSlot(
+            activeSlotID,
+            snapshot: nil
+        )
+
+        applyWorkspaceConfigurationSnapshot(
+            defaultWorkspaceConfigurationSnapshot(
+                for: activeSlotID
+            )
+        )
+
+        presentAlert(
+            title: "已恢复默认",
+            message: "\(activeWorkspaceConfigurationSlot.displayTitleWithReference) 已恢复到\(activeSlotID.defaultPreset.displayName)默认骨架。"
+        )
+    }
+
+    func defaultWorkspaceConfigurationSnapshot(
+        for slotID: WorkspaceConfigurationSlotID
+    ) -> BatchConfigurationSnapshot {
+
+        BatchConfigurationSnapshot(
+            template:
+                templatePresetEngine.build(
+                    preset: slotID.defaultPreset
+                )
+                .normalizedForEditing,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: "",
+            titleText: "",
+            storyText: ""
+        )
+    }
+
+    func applyWorkspaceConfigurationSnapshot(
+        _ snapshot: BatchConfigurationSnapshot
+    ) {
+
+        settings.selectedTemplate =
+            snapshot.template.normalizedForEditing
+        settings.selectedBadge =
+            snapshot.badge ?? Badge.none
+        settings.shouldWritePhotoDescription =
+            snapshot.shouldWritePhotoDescription
+        settings.photoDescriptionOverride =
+            snapshot.photoDescriptionOverride
+
+        if let anchor = snapshot.anchor,
+           !settings.anchors.contains(
+            where: { $0.id == anchor.id }
+           ) {
+            settings.anchors.append(anchor)
+            settings.saveAnchors()
+        }
+
+        selectedAnchorID =
+            snapshot.anchor?.id
+        settings.selectedAnchorIDString =
+            snapshot.anchor?.id.uuidString
+            ?? ""
+
+        titleText = snapshot.titleText
+        storyText = snapshot.storyText
+        settings.draftTitleText = snapshot.titleText
+        settings.draftStoryText = snapshot.storyText
+
+        let normalizedAlbumIdentifier =
+            snapshot.selectedAlbumIdentifier
+            .isEmpty
+            ? PhotoAlbumOption.automaticIdentifier
+            : snapshot.selectedAlbumIdentifier
+
+        selectedAlbumIdentifier =
+            normalizedAlbumIdentifier
+        settings.selectedAlbumIdentifier =
+            snapshot.selectedAlbumIdentifier
+
+        settings.saveAll()
+        syncComposerItemsFromTemplate(
+            resetTransientState: true
+        )
+        syncBatchQueueDefaultConfiguration()
     }
 
     func persistEditorDraftState(

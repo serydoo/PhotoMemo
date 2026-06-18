@@ -100,11 +100,12 @@ struct MainComposerEntryPanel: View {
                 .padding(.vertical, 1)
             }
 
-            Text(
-                "下方左上、右上、左下、右下 4 个自定义区域都可以独立编辑。你可以直接点区域本身，也可以先点这里的四区切换条；选中后再点上方 EXIF、智能数据或用户数据，就会插入到当前区域。长按已选中的模块可进入整理状态，并显示删除按钮与拖动排序。"
+            MainDismissibleGuideCard(
+                storageKey:
+                    "photomemo.guide.composerEntry.dismissed",
+                title: "个性化区域说明",
+                message: "左上、右上、左下、右下 4 个自定义区域都可以独立编辑。你可以直接点区域本身，也可以先点这里的四区切换条；选中后再点上方 EXIF、智能数据或用户数据，就会插入到当前区域。长按已选中的模块可进入整理状态，并显示删除按钮与拖动排序。"
             )
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
         .onTapGesture {

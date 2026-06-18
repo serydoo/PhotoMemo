@@ -296,7 +296,32 @@ private extension AnchorEngine {
         from metrics: AnchorMetrics
     ) -> String {
 
-        "\(metrics.years)岁\(metrics.months)月\(metrics.days)天"
+        if metrics.years > 0 {
+            return [
+                "\(metrics.years)岁",
+                metrics.months > 0
+                    ? "\(metrics.months)个月"
+                    : nil,
+                metrics.days > 0
+                    ? "\(metrics.days)天"
+                    : nil
+            ]
+            .compactMap { $0 }
+            .joined()
+        }
+
+        if metrics.months > 0 {
+            return [
+                "\(metrics.months)个月",
+                metrics.days > 0
+                    ? "\(metrics.days)天"
+                    : nil
+            ]
+            .compactMap { $0 }
+            .joined()
+        }
+
+        return "\(max(metrics.days, 0))天"
     }
 
     private func monthAgeText(

@@ -2,6 +2,11 @@ import SwiftUI
 
 struct MainPermissionSection: View {
 
+    @AppStorage(
+        "photomemo.showResolvedPermissionDetails"
+    )
+    private var showResolvedPermissionDetails = false
+
     let photoLibraryState: PermissionState
 
     let notificationState: PermissionState
@@ -15,6 +20,56 @@ struct MainPermissionSection: View {
     let openNotificationSettings: () -> Void
 
     var body: some View {
+
+        if shouldShowCollapsedSummary {
+
+            MinimalInsetCard {
+                HStack(
+                    alignment: .top,
+                    spacing: 12
+                ) {
+
+                    Image(
+                        systemName:
+                            "checkmark.shield.fill"
+                    )
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.green)
+                    .frame(width: 24)
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 4
+                    ) {
+
+                        Text("本地权限已就绪")
+                            .font(.subheadline.weight(.medium))
+
+                        Text("系统相册和系统通知都已经授权完成，默认先收起，避免继续占用主界面空间。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
+                            )
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button("查看详情") {
+                        showResolvedPermissionDetails =
+                            true
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+            .frame(
+                maxWidth: .infinity,
+                alignment: .leading
+            )
+
+        } else {
 
         VStack(
             alignment: .leading,
@@ -54,11 +109,31 @@ struct MainPermissionSection: View {
             )
             .font(.caption)
             .foregroundStyle(.secondary)
+
+            if shouldAllowManualCollapse {
+                Button("收起已授权权限") {
+                    showResolvedPermissionDetails =
+                        false
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
         }
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
+        }
+    }
+
+    private var shouldShowCollapsedSummary: Bool {
+        shouldAllowManualCollapse
+            && !showResolvedPermissionDetails
+    }
+
+    private var shouldAllowManualCollapse: Bool {
+        photoLibraryState.isGranted
+            && notificationState.isGranted
     }
 
     @ViewBuilder
@@ -129,24 +204,26 @@ struct MainPermissionSection: View {
                 } else {
 
                     Button(
-                        state == .notDetermined
-                            ? "允许访问"
-                            : "重新授权"
+                        state == .denied
+                            ? "打开系统设置"
+                            : "允许访问"
                     ) {
-                        requestAction()
+                        if state == .denied {
+                            openSettingsAction()
+                        } else {
+                            requestAction()
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
                 }
+            }
 
-                if state == .denied {
-
-                    Button("打开系统设置") {
-                        openSettingsAction()
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
+            if state == .denied {
+                Text("macOS 拒绝后不会再次自动弹出相册授权框，请到系统设置里重新开启 PhotoMemo 的相册权限。")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

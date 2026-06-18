@@ -21,180 +21,193 @@ struct MainMemoryProgressPanel: View {
 
     var body: some View {
 
-        MinimalInsetCard {
-            HStack(
-                alignment: .top,
-                spacing: 14
-            ) {
+        VStack(
+            alignment: .leading,
+            spacing: 12
+        ) {
 
-                VStack(
-                    alignment: .leading,
-                    spacing: 6
+            MainDismissibleGuideCard(
+                storageKey:
+                    "photomemo.guide.memoryProgress.dismissed",
+                title: "记忆进度说明",
+                message: "这里会累计 PhotoMemo 的处理进度、默认配置去向和最近的后台结果。如果你已经熟悉这块用途，可以直接关闭，保留更干净的主界面。"
+            )
+
+            MinimalInsetCard {
+                HStack(
+                    alignment: .top,
+                    spacing: 14
                 ) {
 
-                    Text("记忆进度")
-                        .font(.subheadline.weight(.medium))
+                    VStack(
+                        alignment: .leading,
+                        spacing: 6
+                    ) {
 
-                    Text(memoryProgressHeadline)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                        Text("记忆进度")
+                            .font(.subheadline.weight(.medium))
 
-                Spacer(minLength: 0)
-
-                VStack(
-                    alignment: .trailing,
-                    spacing: 6
-                ) {
-
-                    progressStatLine(
-                        title: "累计盖章",
-                        value:
-                            "\(snapshot.completedPhotoCount) 张"
-                    )
-
-                    progressStatLine(
-                        title: "完成批次",
-                        value:
-                            "\(snapshot.completedBatchCount) 次"
-                    )
-
-                    progressStatLine(
-                        title: "后台状态",
-                        value: backgroundStatusTitle
-                    )
-                }
-            }
-
-            Text(defaultConfigurationSummary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            if let latestExternalIntakeSummary {
-
-                Text(
-                    externalIntakeSummaryText(
-                        latestExternalIntakeSummary
-                    )
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if shouldShowInsights {
-
-                Divider()
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 8
-                ) {
-
-                    if let templateChampion =
-                        snapshot.templateChampion {
-
-                        Text("最常用模板“\(templateChampion.title)”已经陪你处理了 \(templateChampion.count) 张照片。")
+                        Text(memoryProgressHeadline)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    if let anchorChampion =
-                        snapshot.anchorChampion {
+                    Spacer(minLength: 0)
 
-                        Text("最常出现的时间点是“\(anchorChampion.title)”，目前已经用了 \(anchorChampion.count) 次。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                    VStack(
+                        alignment: .trailing,
+                        spacing: 6
+                    ) {
+
+                        progressStatLine(
+                            title: "累计盖章",
+                            value:
+                                "\(snapshot.completedPhotoCount) 张"
+                        )
+
+                        progressStatLine(
+                            title: "完成批次",
+                            value:
+                                "\(snapshot.completedBatchCount) 次"
+                        )
+
+                        progressStatLine(
+                            title: "后台状态",
+                            value: backgroundStatusTitle
+                        )
                     }
+                }
 
-                    if let lastCompletedAt =
-                        snapshot.lastCompletedAt {
+                Text(defaultConfigurationSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                        Text("最近一次完成：\(lastCompletedAt.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                if let latestExternalIntakeSummary {
 
-                    if let latestFailureSummary {
+                    Text(
+                        externalIntakeSummaryText(
+                            latestExternalIntakeSummary
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
 
-                        VStack(
-                            alignment: .leading,
-                            spacing: 8
-                        ) {
+                if shouldShowInsights {
 
-                            Text("最近有 \(latestFailureSummary.failedTaskCount) 张图片在“\(latestFailureSummary.jobTitle)”里处理失败。")
+                    Divider()
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 8
+                    ) {
+
+                        if let templateChampion =
+                            snapshot.templateChampion {
+
+                            Text("最常用模板“\(templateChampion.title)”已经陪你处理了 \(templateChampion.count) 张照片。")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
+                        }
 
-                            Text("失败阶段：\(latestFailureSummary.latestFailure.phaseTitle)")
+                        if let anchorChampion =
+                            snapshot.anchorChampion {
+
+                            Text("最常出现的时间点是“\(anchorChampion.title)”，目前已经用了 \(anchorChampion.count) 次。")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-
-                            Text(
-                                latestFailureSummary
-                                .latestFailure.message
-                            )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                            HStack(spacing: 10) {
-
-                                Button("重试失败项") {
-                                    retryFailedTasks(
-                                        latestFailureSummary
-                                        .jobID
-                                    )
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-
-                                Text("最近更新：\(latestFailureSummary.updatedAt.formatted(date: .abbreviated, time: .shortened))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                    }
 
-                    if !recentFailureRecords.isEmpty {
+                        if let lastCompletedAt =
+                            snapshot.lastCompletedAt {
 
-                        Divider()
-
-                        VStack(
-                            alignment: .leading,
-                            spacing: 8
-                        ) {
-
-                            Text("最近失败记录")
-                                .font(.caption.weight(.medium))
+                            Text("最近一次完成：\(lastCompletedAt.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
 
-                            ForEach(recentFailureRecords) {
-                                record in
+                        if let latestFailureSummary {
 
-                                VStack(
-                                    alignment: .leading,
-                                    spacing: 4
-                                ) {
+                            VStack(
+                                alignment: .leading,
+                                spacing: 8
+                            ) {
 
-                                    Text(
-                                        failureRecordHeadline(
-                                            record
-                                        )
-                                    )
+                                Text("最近有 \(latestFailureSummary.failedTaskCount) 张图片在“\(latestFailureSummary.jobTitle)”里处理失败。")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
 
-                                    Text(record.failure.message)
+                                Text("失败阶段：\(latestFailureSummary.latestFailure.phaseTitle)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Text(
+                                    latestFailureSummary
+                                    .latestFailure.message
+                                )
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                                HStack(spacing: 10) {
+
+                                    Button("重试失败项") {
+                                        retryFailedTasks(
+                                            latestFailureSummary
+                                            .jobID
+                                        )
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+
+                                    Text("最近更新：\(latestFailureSummary.updatedAt.formatted(date: .abbreviated, time: .shortened))")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+
+                        if !recentFailureRecords.isEmpty {
+
+                            Divider()
+
+                            VStack(
+                                alignment: .leading,
+                                spacing: 8
+                            ) {
+
+                                Text("最近失败记录")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.secondary)
+
+                                ForEach(recentFailureRecords) {
+                                    record in
+
+                                    VStack(
+                                        alignment: .leading,
+                                        spacing: 4
+                                    ) {
+
+                                        Text(
+                                            failureRecordHeadline(
+                                                record
+                                            )
+                                        )
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
+
+                                        Text(record.failure.message)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
                                 }
                             }
                         }

@@ -129,6 +129,13 @@ struct MainAnchorSectionView: View {
             spacing: 14
         ) {
 
+            MainDismissibleGuideCard(
+                storageKey:
+                    "photomemo.guide.anchorSection.dismissed",
+                title: "时间点说明",
+                message: "时间点决定 PhotoMemo 该算年岁、纪念时长、倒计时还是第几天。选中不同时间点后，右侧预览和右下智能结果会一起刷新。"
+            )
+
             HStack(spacing: 10) {
                 Picker(
                     "选择时间点",
