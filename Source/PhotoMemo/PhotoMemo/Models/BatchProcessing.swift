@@ -19,6 +19,39 @@ enum BatchJobState: String, Codable, Hashable {
     case cancelled
 }
 
+extension BatchJobState {
+
+    var displayTitle: String {
+
+        switch self {
+
+        case .draft:
+            return "等待开始"
+
+        case .queued:
+            return "排队中"
+
+        case .preparing:
+            return "准备处理"
+
+        case .ready:
+            return "处理中"
+
+        case .running:
+            return "正在写入"
+
+        case .completed:
+            return "已完成"
+
+        case .failed:
+            return "有失败项"
+
+        case .cancelled:
+            return "已取消"
+        }
+    }
+}
+
 enum BatchJobLaunchSource: String, Codable, Hashable {
 
     case inAppPreview
@@ -30,6 +63,30 @@ enum BatchJobLaunchSource: String, Codable, Hashable {
     case quickAction
 
     case automation
+}
+
+extension BatchJobLaunchSource {
+
+    var displayTitle: String {
+
+        switch self {
+
+        case .shareExtension:
+            return "分享进入"
+
+        case .fileOpen:
+            return "文件打开"
+
+        case .quickAction:
+            return "快捷动作"
+
+        case .automation:
+            return "自动流程"
+
+        case .inAppPreview:
+            return "主界面"
+        }
+    }
 }
 
 enum BatchTaskPhase: String, Codable, Hashable {
@@ -56,6 +113,42 @@ enum BatchTaskPhase: String, Codable, Hashable {
 }
 
 extension BatchTaskPhase {
+
+    var displayTitle: String {
+
+        switch self {
+
+        case .queued:
+            return "排队中"
+
+        case .importing:
+            return "读取原图"
+
+        case .metadataReady:
+            return "读取 EXIF"
+
+        case .previewReady:
+            return "生成模板内容"
+
+        case .waitingForExport:
+            return "等待导出"
+
+        case .exporting:
+            return "生成图片"
+
+        case .savingToPhotoLibrary:
+            return "写入系统图库"
+
+        case .completed:
+            return "处理完成"
+
+        case .failed:
+            return "处理失败"
+
+        case .cancelled:
+            return "已取消"
+        }
+    }
 
     var isTerminal: Bool {
 
@@ -198,39 +291,7 @@ struct BatchTaskFailure:
 extension BatchTaskFailure {
 
     var phaseTitle: String {
-
-        switch phase {
-
-        case .queued:
-            return "排队"
-
-        case .importing:
-            return "读取原图"
-
-        case .metadataReady:
-            return "读取 EXIF"
-
-        case .previewReady:
-            return "生成模板内容"
-
-        case .waitingForExport:
-            return "等待导出"
-
-        case .exporting:
-            return "生成图片"
-
-        case .savingToPhotoLibrary:
-            return "写入系统图库"
-
-        case .completed:
-            return "处理完成"
-
-        case .failed:
-            return "处理失败"
-
-        case .cancelled:
-            return "已取消"
-        }
+        phase.displayTitle
     }
 }
 
@@ -350,6 +411,9 @@ struct BatchJob:
 
     var tasks: [BatchTask]
 
+    var intakeSummary:
+        ExternalPhotoImportSummary?
+
     var policy: BatchPipelinePolicy
 
     var startNotificationSentAt: Date?
@@ -367,6 +431,8 @@ struct BatchJob:
         launchSource: BatchJobLaunchSource = .inAppPreview,
         configuration: BatchConfigurationSnapshot,
         tasks: [BatchTask],
+        intakeSummary:
+            ExternalPhotoImportSummary? = nil,
         policy: BatchPipelinePolicy = .init(),
         startNotificationSentAt: Date? = nil,
         lastProgressNotificationStage: String? = nil,
@@ -380,6 +446,8 @@ struct BatchJob:
         self.launchSource = launchSource
         self.configuration = configuration
         self.tasks = tasks
+        self.intakeSummary =
+            intakeSummary
         self.policy = policy
         self.startNotificationSentAt =
             startNotificationSentAt
@@ -534,6 +602,9 @@ struct ExternalIntakeSummary: Hashable {
     let templateName: String
 
     let anchorTitle: String?
+
+    let importSummary:
+        ExternalPhotoImportSummary?
 
     let updatedAt: Date
 }

@@ -3,14 +3,23 @@ import Foundation
 
 struct PhotoMemoShareExtensionImportResult {
 
-    let importedCount: Int
+    let summary:
+        ExternalPhotoImportSummary
 
-    let skippedCount: Int
+    var importedCount: Int {
+        summary.importedCount
+    }
 
-    let failedCount: Int
+    var skippedCount: Int {
+        summary.skippedCount
+    }
+
+    var failedCount: Int {
+        summary.failedCount
+    }
 
     var hasWarnings: Bool {
-        skippedCount > 0 || failedCount > 0
+        summary.hasWarnings
     }
 }
 #endif

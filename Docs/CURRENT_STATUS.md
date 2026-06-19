@@ -23,6 +23,196 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 
 ## What Was Completed In This Round
 
+### 0. Project-local Swift/iOS skills were added for the next PhotoMemo phase
+
+The project-local skills folder now also includes:
+
+- `activitykit`
+- `background-processing`
+- `ios-simulator`
+- `photokit`
+- `swift-testing`
+- `swiftui-patterns`
+
+Why these were added:
+
+- `photokit` directly supports photo-library permission, picker, and save-back work
+- `background-processing` matches the share-intake and batch/export direction
+- `activitykit` prepares for iPhone progress surfaces like Dynamic Island / Lock Screen
+- `swiftui-patterns` helps keep `MainView` and the future iPhone UI aligned with modern state/composition rules
+- `swift-testing` gives a better path for new Swift-native tests
+- `ios-simulator` helps future iPhone regression, privacy, push, and location validation
+
+These were installed into:
+
+- `Source control path`: `/Users/rui/Desktop/PhotoMemo/.codex/skills`
+
+Important current-session note:
+
+- the skills are already present in the project and readable on disk
+- but an already-open Codex session may not auto-refresh its built-in skill registry
+- in practice, a restart or a fresh session is the stable way to make them appear as normal installed skills
+
+### 0.1 iPhone background-status groundwork was added
+
+The latest iPhone-facing slice also adds a lightweight intermediate status layer:
+
+- `Source/PhotoMemo/PhotoMemo/App/PhotoMemoBackgroundStatusService.swift`
+
+What it does:
+
+- observes `BatchQueueStore`
+- resolves the most relevant external/background job snapshot
+- normalizes progress, phase title, retryability, and status text into one stable model
+
+Why this matters:
+
+- future iPhone progress surfaces should not couple directly to `BatchQueueStore`
+- the next Dynamic Island / Lock Screen / iPhone shell work can build on this snapshot service instead of re-deriving queue state ad hoc
+
+### 0.2 iPhone now has a dedicated background-status entry without polluting the main editor
+
+The latest follow-up iPhone slice also adds:
+
+- a top-right background-status entry in `PhotoMemoiOSHomeView`
+- a dedicated sheet:
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheet.swift`
+
+Behavior choice for this slice:
+
+- the main iPhone editor remains focused on template calibration and preview
+- background progress is not pushed back into the main editing content area
+- users can open a separate sheet to check queue status, failure summaries, and retry failed items
+
+### 0.3 iPhone background-status updates are now live, and active jobs get extra background run time
+
+The latest follow-up after that also tightens the iPhone shell behavior:
+
+- `PhotoMemoiOSHomeView` now directly observes both:
+  - `BatchQueueStore`
+  - `PhotoMemoBackgroundStatusService`
+- the background-status sheet now reads live queue state instead of only receiving a one-time snapshot payload
+- iPhone app runtime now owns:
+  - `PhotoMemoiOSBackgroundExecutionService`
+- when the app moves to the background while `BatchQueueStore` is still processing, PhotoMemo now requests a standard iOS background task window so the current batch has a better chance to keep progressing before suspension
+
+Why this matters:
+
+- the iPhone background-status entry is no longer just structurally present; it now reflects queue changes in real time
+- the app is better aligned with the intended workflow of “share photo -> leave the foreground -> let PhotoMemo continue for a while”
+- this improves reliability without turning the main calibration UI into a progress dashboard and without changing the underlying import-render-export behavior
+
+### 0.4 iPhone background-status sheet is now closer to a formal control center
+
+The latest follow-up also upgrades the dedicated iPhone background-status sheet:
+
+- adds a clearer processing-focus card:
+  - current photo
+  - task state
+  - latest update time
+- adds a per-job configuration card:
+  - template
+  - anchor
+  - description-writing mode
+  - save destination summary
+- adds a current-job recent-records card so users can see which photos are:
+  - currently running
+  - failed
+  - queued
+  - completed
+
+Why this matters:
+
+- users no longer need to infer everything from one hero string and a failure list
+- the sheet now behaves more like a real mobile-side background control center while still staying outside the main editor
+- this also creates a cleaner stepping stone before any future ActivityKit / Dynamic Island integration
+
+### 0.5 ActivityKit-ready bridge groundwork now exists without forcing a widget target yet
+
+The latest follow-up also adds a dedicated bridge layer for future Live Activity work:
+
+- shared display titles were normalized in `BatchProcessing` for:
+  - `BatchJobState`
+  - `BatchJobLaunchSource`
+- added a Live Activity payload model:
+  - `Source/PhotoMemo/PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift`
+- added a bridge service:
+  - `Source/PhotoMemo/PhotoMemo/iOS/Activity/PhotoMemoiOSLiveActivityBridgeService.swift`
+- iPhone app runtime now owns that bridge service so future ActivityKit driver code can consume one stable source instead of re-deriving queue state again
+
+What this bridge does:
+
+- converts `PhotoMemoBackgroundStatusService` output into ActivityKit-ready attributes and content-state payloads
+- tracks the current projected job and any obsolete job IDs that a future ActivityKit driver should end
+- keeps Live Activity preparation separated from the main editor and from the raw queue model
+
+Why this matters:
+
+- the next Dynamic Island / Lock Screen slice can focus on the actual ActivityKit lifecycle and widget presentation
+- PhotoMemo avoids coupling future Live Activity code directly to `BatchQueueStore`
+- this keeps the current iteration small and build-safe while still moving the iPhone roadmap forward
+
+### 0.6 App-side Live Activity driver is now wired, with a safe fallback when presentation is not fully available yet
+
+The latest follow-up after that takes one more small step:
+
+- adds an app-side driver:
+  - `Source/PhotoMemo/PhotoMemo/iOS/Activity/PhotoMemoiOSLiveActivityDriverService.swift`
+- the driver now:
+  - observes `PhotoMemoiOSLiveActivityBridgeService`
+  - restores any existing PhotoMemo activities on launch
+  - requests a new Live Activity for an active external job
+  - updates the activity while progress changes
+  - ends the activity when the job becomes terminal or obsolete
+- `PhotoMemoiOS` target now declares:
+  - `NSSupportsLiveActivities = YES`
+
+Safety choice for this slice:
+
+- if the current environment can compile ActivityKit but still cannot successfully request a Live Activity, the driver disables repeated request attempts instead of spamming the pipeline with the same failure over and over
+
+Why this matters:
+
+- the iPhone app now has a real ActivityKit lifecycle driver, not only payload preparation
+- the next slice can focus on the widget / Lock Screen / Dynamic Island presentation side instead of redoing app-side lifecycle work
+- the current implementation still keeps risk controlled because it fails closed when full presentation support is not ready
+
+### 0.7 Live Activity presentation and widget-extension wiring are now buildable end to end
+
+The latest follow-up first added a presentational shell:
+
+- `Source/PhotoMemo/PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift`
+
+What it contains:
+
+- a `Widget` definition for the PhotoMemo Live Activity presentation
+- Lock Screen layout
+- Dynamic Island compact / minimal / expanded regions
+- shared icon, tint, and status helpers that read from the new ActivityKit-ready payload
+
+This line then moved past the project-wiring blocker:
+
+- `Source/PhotoMemo/PhotoMemoWidgetExtension/PhotoMemoWidgetExtensionBundle.swift`
+- `Source/PhotoMemo/PhotoMemoWidgetExtension-Info.plist`
+- `Source/PhotoMemo/ShareExtension-Info.plist`
+- `Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj`
+
+What was resolved:
+
+- the share extension plist now includes the base bundle keys Xcode expects, so the embedded extension no longer collapses to a `(null)` bundle identifier
+- `PhotoMemoiOS` now embeds both:
+  - `PhotoMemoShareExtension.appex`
+  - `PhotoMemoWidgetExtension.appex`
+- the new widget extension target now builds cleanly and hosts:
+  - `PhotoMemoLiveActivityWidgetDefinition`
+  - shared Live Activity payload/presentation files
+
+Why this matters:
+
+- the UI/presentation side for Live Activities is no longer just a shell inside the app target; it now has a real extension target and real embedded product output
+- PhotoMemo's iPhone line has crossed from “ActivityKit groundwork only” into “project can build app + share extension + widget extension together”
+- the next Live Activity slice can focus on runtime behavior and device validation instead of re-fighting `xcodeproj` embed wiring
+
 ### 1. Addy Osmani skills installed for future development workflow
 
 The following skills are now installed in local Codex:

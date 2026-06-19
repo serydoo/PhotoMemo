@@ -305,60 +305,74 @@ struct MainMemoryProgressPanel: View {
         _ summary: ExternalIntakeSummary
     ) -> String {
 
-        let sourceTitle: String
+        let sourceTitle =
+            summary.launchSource
+            .displayTitle
 
-        switch summary.launchSource {
-
-        case .inAppPreview:
-            sourceTitle = "主界面"
-
-        case .shareExtension:
-            sourceTitle = "分享入口"
-
-        case .fileOpen:
-            sourceTitle = "打开文件"
-
-        case .quickAction:
-            sourceTitle = "快捷操作"
-
-        case .automation:
-            sourceTitle = "自动化"
-        }
-
-        let stateTitle: String
-
-        switch summary.state {
-
-        case .draft:
-            stateTitle = "草稿"
-
-        case .queued:
-            stateTitle = "排队中"
-
-        case .preparing:
-            stateTitle = "准备中"
-
-        case .ready:
-            stateTitle = "待导出"
-
-        case .running:
-            stateTitle = "处理中"
-
-        case .completed:
-            stateTitle = "已完成"
-
-        case .failed:
-            stateTitle = "有失败项"
-
-        case .cancelled:
-            stateTitle = "已取消"
-        }
+        let stateTitle =
+            summary.state
+            .displayTitle
 
         let anchorTitle =
             summary.anchorTitle
             ?? "未设置时间点"
 
-        return "最近一次外部导入来自\(sourceTitle)：\(summary.taskCount) 张，当前\(stateTitle)。使用模板“\(summary.templateName)”，时间点“\(anchorTitle)”。"
+        let intakeCountText =
+            summary.importSummary
+            .map {
+                intakeCountText($0)
+            }
+            ?? "\(summary.taskCount) 张"
+
+        let importSummaryText =
+            summary.importSummary
+            .map {
+                importSummaryWarningText($0)
+            } ?? ""
+
+        return "最近一次外部导入来自\(sourceTitle)：\(intakeCountText)，当前\(stateTitle)。使用模板“\(summary.templateName)”，时间点“\(anchorTitle)”。\(importSummaryText)"
+    }
+
+    private func intakeCountText(
+        _ summary:
+            ExternalPhotoImportSummary
+    ) -> String {
+
+        if summary.selectedCount == summary.importedCount {
+            return "\(summary.importedCount) 张"
+        }
+
+        return "选中 \(summary.selectedCount) 张，入队 \(summary.importedCount) 张"
+    }
+
+    private func importSummaryWarningText(
+        _ summary:
+            ExternalPhotoImportSummary
+    ) -> String {
+
+        guard summary.hasWarnings else {
+            return ""
+        }
+
+        var parts: [String] = []
+
+        if summary.skippedCount > 0 {
+            parts.append(
+                "重复跳过 \(summary.skippedCount) 张"
+            )
+        }
+
+        if summary.failedCount > 0 {
+            parts.append(
+                "未能导入 \(summary.failedCount) 张"
+            )
+        }
+
+        guard !parts.isEmpty else {
+            return ""
+        }
+
+        return " 本次分享里，\(parts.joined(separator: "，"))。"
     }
 
     private func failureRecordHeadline(

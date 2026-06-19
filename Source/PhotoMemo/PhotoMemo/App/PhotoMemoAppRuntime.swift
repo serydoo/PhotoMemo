@@ -7,6 +7,22 @@ final class PhotoMemoAppRuntime:
 
     let batchQueueStore: BatchQueueStore
 
+    let backgroundStatusService:
+        PhotoMemoBackgroundStatusService
+
+#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+    let backgroundExecutionService:
+        PhotoMemoiOSBackgroundExecutionService
+
+#if canImport(ActivityKit)
+    let liveActivityBridgeService:
+        PhotoMemoiOSLiveActivityBridgeService
+
+    let liveActivityDriverService:
+        PhotoMemoiOSLiveActivityDriverService
+#endif
+#endif
+
     let externalIntakeCenter:
         ExternalPhotoIntakeCenter
 
@@ -21,6 +37,32 @@ final class PhotoMemoAppRuntime:
         self.batchQueueStore =
             batchQueueStore
             ?? BatchQueueStore()
+        self.backgroundStatusService =
+            PhotoMemoBackgroundStatusService(
+                batchQueueStore:
+                    self.batchQueueStore
+            )
+#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+        self.backgroundExecutionService =
+            PhotoMemoiOSBackgroundExecutionService(
+                batchQueueStore:
+                    self.batchQueueStore
+            )
+#if canImport(ActivityKit)
+        self.liveActivityBridgeService =
+            PhotoMemoiOSLiveActivityBridgeService(
+                backgroundStatusService:
+                    self
+                    .backgroundStatusService
+            )
+        self.liveActivityDriverService =
+            PhotoMemoiOSLiveActivityDriverService(
+                bridgeService:
+                    self
+                    .liveActivityBridgeService
+            )
+#endif
+#endif
         self.externalIntakeCenter =
             externalIntakeCenter
             ?? .shared
@@ -35,6 +77,7 @@ final class PhotoMemoAppRuntime:
 
         externalIntakeCenter.submit(
             urls: urls,
+            importSummary: nil,
             source: source
         )
     }
@@ -54,6 +97,13 @@ final class PhotoMemoAppRuntime:
                 request.urls.filter {
                     isValidRequestSourceURL($0)
                 }
+
+            let intakeSummary =
+                resolvedIntakeSummary(
+                    for: request,
+                    validURLCount:
+                        validURLs.count
+                )
 
             guard !validURLs.isEmpty else {
                 request.urls.forEach {
@@ -75,6 +125,8 @@ final class PhotoMemoAppRuntime:
                     request.configurationSnapshot,
                 launchSource:
                     request.launchSource,
+                intakeSummary:
+                    intakeSummary,
                 title:
                     resolvedRequestTitle(
                         receivedAt:
@@ -140,5 +192,59 @@ private extension PhotoMemoAppRuntime {
                     url.standardizedFileURL
                     .path
             )
+    }
+
+    func resolvedIntakeSummary(
+        for request:
+            ExternalPhotoIntakeRequest,
+        validURLCount: Int
+    ) -> ExternalPhotoImportSummary? {
+
+        let droppedCount =
+            max(
+                request.urls.count
+                - validURLCount,
+                0
+            )
+
+        guard
+            let existingSummary =
+                request.importSummary
+        else {
+            guard droppedCount > 0 else {
+                return nil
+            }
+
+            return ExternalPhotoImportSummary(
+                importedCount:
+                    validURLCount,
+                skippedCount: 0,
+                failedCount:
+                    droppedCount
+            )
+        }
+
+        let adjustedImportedCount =
+            min(
+                existingSummary.importedCount,
+                validURLCount
+            )
+
+        let additionalFailedCount =
+            max(
+                existingSummary.importedCount
+                - adjustedImportedCount,
+                0
+            )
+
+        return ExternalPhotoImportSummary(
+            importedCount:
+                adjustedImportedCount,
+            skippedCount:
+                existingSummary.skippedCount,
+            failedCount:
+                existingSummary.failedCount
+                + additionalFailedCount
+        )
     }
 }

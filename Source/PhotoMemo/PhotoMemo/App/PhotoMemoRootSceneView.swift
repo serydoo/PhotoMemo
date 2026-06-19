@@ -2,6 +2,9 @@ import SwiftUI
 
 struct PhotoMemoRootSceneView: View {
 
+    @Environment(\.scenePhase)
+    private var scenePhase
+
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
@@ -28,6 +31,13 @@ struct PhotoMemoRootSceneView: View {
                 runtime.refreshExternalIntakeState()
             }
             .onAppear {
+                runtime.refreshExternalIntakeState()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else {
+                    return
+                }
+
                 runtime.refreshExternalIntakeState()
             }
     }

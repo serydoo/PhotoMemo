@@ -1,5 +1,6 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import Foundation
+import CryptoKit
 import UniformTypeIdentifiers
 import UIKit
 
@@ -120,14 +121,28 @@ final class PhotoMemoShareExtensionIntakeService {
         }
 
         let request =
-            intakeStore.persistManagedRequest(
-                id: requestID,
-                urls: managedURLs,
-                source: .shareExtension,
-                configurationSnapshot:
-                    snapshotService
-                    .loadSnapshot()
-        )
+            {
+                let importSummary =
+                    ExternalPhotoImportSummary(
+                        importedCount:
+                            managedURLs.count,
+                        skippedCount:
+                            skippedCount,
+                        failedCount:
+                            failedCount
+                    )
+
+                return intakeStore.persistManagedRequest(
+                    id: requestID,
+                    urls: managedURLs,
+                    source: .shareExtension,
+                    importSummary:
+                        importSummary,
+                    configurationSnapshot:
+                        snapshotService
+                        .loadSnapshot()
+                )
+            }()
 
         guard request != nil else {
             managedURLs.forEach {
@@ -141,9 +156,15 @@ final class PhotoMemoShareExtensionIntakeService {
         }
 
         return PhotoMemoShareExtensionImportResult(
-            importedCount: managedURLs.count,
-            skippedCount: skippedCount,
-            failedCount: failedCount
+            summary:
+                ExternalPhotoImportSummary(
+                    importedCount:
+                        managedURLs.count,
+                    skippedCount:
+                        skippedCount,
+                    failedCount:
+                        failedCount
+                )
         )
     }
 }
@@ -357,7 +378,11 @@ private extension PhotoMemoShareExtensionIntakeService {
                         returning: FallbackImportResult(
                             managedURL: managedURL,
                             dedupeKey:
-                                "data:\(data.count):\(suggestedName ?? "")"
+                                Self.dedupeKey(
+                                    for: data,
+                                    suggestedName:
+                                        suggestedName
+                                )
                         )
                     )
                     return
@@ -384,6 +409,35 @@ private extension PhotoMemoShareExtensionIntakeService {
 
         return supportedType?
             .preferredFilenameExtension
+    }
+
+    nonisolated static
+    func dedupeKey(
+        for data: Data,
+        suggestedName: String?
+    ) -> String {
+
+        let digest =
+            SHA256.hash(data: data)
+                .compactMap {
+                    String(
+                        format: "%02x",
+                        $0
+                    )
+                }
+                .joined()
+
+        let normalizedName =
+            suggestedName?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        if normalizedName.isEmpty {
+            return "data:\(digest)"
+        }
+
+        return "data:\(digest):\(normalizedName)"
     }
 }
 #endif

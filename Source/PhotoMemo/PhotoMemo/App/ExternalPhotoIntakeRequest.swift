@@ -1,5 +1,24 @@
 import Foundation
 
+struct ExternalPhotoImportSummary:
+    Hashable,
+    Codable {
+
+    let importedCount: Int
+
+    let skippedCount: Int
+
+    let failedCount: Int
+
+    var selectedCount: Int {
+        importedCount + skippedCount + failedCount
+    }
+
+    var hasWarnings: Bool {
+        skippedCount > 0 || failedCount > 0
+    }
+}
+
 struct ExternalPhotoIntakeRequest:
     Identifiable,
     Hashable,
@@ -14,6 +33,9 @@ struct ExternalPhotoIntakeRequest:
     let configurationSnapshot:
         BatchConfigurationSnapshot
 
+    let importSummary:
+        ExternalPhotoImportSummary?
+
     let receivedAt: Date
 
     init(
@@ -21,6 +43,8 @@ struct ExternalPhotoIntakeRequest:
         launchSource: BatchJobLaunchSource,
         urls: [URL],
         configurationSnapshot: BatchConfigurationSnapshot,
+        importSummary:
+            ExternalPhotoImportSummary? = nil,
         receivedAt: Date = Date()
     ) {
         self.id = id
@@ -28,6 +52,8 @@ struct ExternalPhotoIntakeRequest:
         self.urls = urls
         self.configurationSnapshot =
             configurationSnapshot
+        self.importSummary =
+            importSummary
         self.receivedAt = receivedAt
     }
 }

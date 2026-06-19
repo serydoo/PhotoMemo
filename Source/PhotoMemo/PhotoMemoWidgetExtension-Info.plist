@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>PhotoMemo Share</string>
+	<string>PhotoMemo Live</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -22,18 +22,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSExtension</key>
 	<dict>
-		<key>NSExtensionAttributes</key>
-		<dict>
-			<key>NSExtensionActivationRule</key>
-			<dict>
-				<key>NSExtensionActivationSupportsImageWithMaxCount</key>
-				<integer>50</integer>
-			</dict>
-		</dict>
 		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.share-services</string>
-		<key>NSExtensionPrincipalClass</key>
-		<string>$(PRODUCT_MODULE_NAME).PhotoMemoShareExtensionViewController</string>
+		<string>com.apple.widgetkit-extension</string>
 	</dict>
 </dict>
 </plist>

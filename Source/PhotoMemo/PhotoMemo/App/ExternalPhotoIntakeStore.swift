@@ -28,6 +28,8 @@ final class ExternalPhotoIntakeStore {
     func persistRequest(
         urls: [URL],
         source: BatchJobLaunchSource,
+        importSummary:
+            ExternalPhotoImportSummary? = nil,
         configurationSnapshot:
             BatchConfigurationSnapshot
     ) -> ExternalPhotoIntakeRequest? {
@@ -52,6 +54,8 @@ final class ExternalPhotoIntakeStore {
             id: requestID,
             urls: managedURLs,
             source: source,
+            importSummary:
+                importSummary,
             configurationSnapshot:
                 configurationSnapshot
         )
@@ -61,6 +65,8 @@ final class ExternalPhotoIntakeStore {
         id: UUID = UUID(),
         urls: [URL],
         source: BatchJobLaunchSource,
+        importSummary:
+            ExternalPhotoImportSummary? = nil,
         configurationSnapshot:
             BatchConfigurationSnapshot
     ) -> ExternalPhotoIntakeRequest? {
@@ -80,7 +86,9 @@ final class ExternalPhotoIntakeStore {
                 launchSource: source,
                 urls: normalizedURLs,
                 configurationSnapshot:
-                    configurationSnapshot
+                    configurationSnapshot,
+                importSummary:
+                    importSummary
             )
 
         var requests = loadRequests()

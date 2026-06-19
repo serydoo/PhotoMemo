@@ -94,6 +94,8 @@ final class BatchQueueStore: ObservableObject {
         payloads: [BatchTaskIntakePayload],
         configuration: BatchConfigurationSnapshot,
         launchSource: BatchJobLaunchSource,
+        intakeSummary:
+            ExternalPhotoImportSummary? = nil,
         title: String? = nil
     ) -> BatchJob? {
 
@@ -117,7 +119,9 @@ final class BatchQueueStore: ObservableObject {
             state: .queued,
             launchSource: launchSource,
             configuration: configuration,
-            tasks: tasks
+            tasks: tasks,
+            intakeSummary:
+                intakeSummary
         )
 
         jobs.insert(job, at: 0)
@@ -450,6 +454,8 @@ final class BatchQueueStore: ObservableObject {
                         trimmedAnchorTitle.isEmpty
                         ? nil
                         : trimmedAnchorTitle,
+                    importSummary:
+                        job.intakeSummary,
                     updatedAt: job.updatedAt
                 )
             }
@@ -556,6 +562,12 @@ private extension BatchQueueStore {
                         .tasks[reference.taskIndex]
                 )
 
+            guard !shouldAbortFurtherProcessing(
+                at: reference
+            ) else {
+                return
+            }
+
             updateTask(
                 at: reference
             ) { task in
@@ -623,6 +635,15 @@ private extension BatchQueueStore {
             temporaryFileURL =
                 exportedFileURL
 
+            guard !shouldAbortFurtherProcessing(
+                at: reference
+            ) else {
+                coordinator.cleanupTemporaryFile(
+                    at: exportedFileURL
+                )
+                return
+            }
+
             updateTask(
                 at: reference
             ) { task in
@@ -641,6 +662,15 @@ private extension BatchQueueStore {
                 for: jobs[reference.jobIndex].id,
                 stage: "saving"
             )
+
+            guard !shouldAbortFurtherProcessing(
+                at: reference
+            ) else {
+                coordinator.cleanupTemporaryFile(
+                    at: exportedFileURL
+                )
+                return
+            }
 
             let saveResult =
                 try await coordinator
@@ -684,6 +714,24 @@ private extension BatchQueueStore {
 
         } catch {
 
+            if shouldIgnoreErrorBecauseTaskEnded(
+                at: reference
+            ) {
+                coordinator.cleanupTemporaryFile(
+                    at: temporaryFileURL
+                )
+
+                if let jobID =
+                    currentJobID(
+                        at: reference
+                    ) {
+                    await deliverFinalNotificationIfNeeded(
+                        for: jobID
+                    )
+                }
+                return
+            }
+
             let failurePhase =
                 jobs[reference.jobIndex]
                 .tasks[reference.taskIndex].phase
@@ -695,6 +743,11 @@ private extension BatchQueueStore {
             updateTask(
                 at: reference
             ) { task in
+                let canRetry =
+                    canRetryTaskAfterFailure(
+                        sourceURL: task.sourceURL
+                    )
+
                 task.renderedFileURL = nil
                 task.phase = .failed
                 task.failure = BatchTaskFailure(
@@ -703,10 +756,7 @@ private extension BatchQueueStore {
                         (error as? LocalizedError)?
                         .errorDescription
                         ?? error.localizedDescription,
-                    canRetry:
-                        !isManagedIntakeSourceURL(
-                            task.sourceURL
-                        )
+                    canRetry: canRetry
                 )
                 task.progress = BatchTaskProgress(
                     currentUnit: 0,
@@ -715,7 +765,7 @@ private extension BatchQueueStore {
                 )
             }
 
-            cleanupManagedTaskSourceIfNeeded(
+            preserveManagedTaskSourceForRetryIfNeeded(
                 at: reference
             )
 
@@ -728,6 +778,62 @@ private extension BatchQueueStore {
                 for: jobs[reference.jobIndex].id
             )
         }
+    }
+
+    func currentJobID(
+        at reference: TaskReference
+    ) -> UUID? {
+
+        guard jobs.indices.contains(reference.jobIndex)
+        else {
+            return nil
+        }
+
+        return jobs[reference.jobIndex].id
+    }
+
+    func currentTaskPhase(
+        at reference: TaskReference
+    ) -> BatchTaskPhase? {
+
+        guard jobs.indices.contains(reference.jobIndex),
+              jobs[reference.jobIndex].tasks.indices.contains(reference.taskIndex) else {
+            return nil
+        }
+
+        return jobs[reference.jobIndex]
+            .tasks[reference.taskIndex]
+            .phase
+    }
+
+    func shouldAbortFurtherProcessing(
+        at reference: TaskReference
+    ) -> Bool {
+
+        guard let phase =
+            currentTaskPhase(
+                at: reference
+            )
+        else {
+            return true
+        }
+
+        return phase.isTerminal
+    }
+
+    func shouldIgnoreErrorBecauseTaskEnded(
+        at reference: TaskReference
+    ) -> Bool {
+
+        guard let phase =
+            currentTaskPhase(
+                at: reference
+            )
+        else {
+            return true
+        }
+
+        return phase.isTerminal
     }
 
     func updateTask(
@@ -770,6 +876,36 @@ private extension BatchQueueStore {
             )
     }
 
+    func preserveManagedTaskSourceForRetryIfNeeded(
+        at reference: TaskReference
+    ) {
+
+        guard jobs.indices.contains(reference.jobIndex),
+              jobs[reference.jobIndex].tasks.indices.contains(reference.taskIndex) else {
+            return
+        }
+
+        let sourceURL =
+            jobs[reference.jobIndex]
+            .tasks[reference.taskIndex]
+            .sourceURL
+
+        guard isManagedIntakeSourceURL(sourceURL) else {
+            return
+        }
+
+        guard FileManager.default.fileExists(
+            atPath: sourceURL.standardizedFileURL.path
+        ) else {
+            updateTask(
+                at: reference
+            ) { task in
+                task.failure?.canRetry = false
+            }
+            return
+        }
+    }
+
     func isManagedIntakeSourceURL(
         _ url: URL
     ) -> Bool {
@@ -780,6 +916,21 @@ private extension BatchQueueStore {
             .standardizedFileURL
             .path
         )
+    }
+
+    func canRetryTaskAfterFailure(
+        sourceURL: URL
+    ) -> Bool {
+
+        if isManagedIntakeSourceURL(
+            sourceURL
+        ) {
+            return FileManager.default.fileExists(
+                atPath: sourceURL.standardizedFileURL.path
+            )
+        }
+
+        return true
     }
 
     func nextPendingTaskReference() -> TaskReference? {

@@ -49,6 +49,8 @@ final class ExternalPhotoIntakeCenter:
 
     func submit(
         urls: [URL],
+        importSummary:
+            ExternalPhotoImportSummary? = nil,
         source: BatchJobLaunchSource
     ) {
 
@@ -75,6 +77,8 @@ final class ExternalPhotoIntakeCenter:
             intakeStore.persistRequest(
                 urls: acceptedURLs,
                 source: source,
+                importSummary:
+                    importSummary,
                 configurationSnapshot:
                     defaultConfigurationSnapshot
             ) {
@@ -87,7 +91,9 @@ final class ExternalPhotoIntakeCenter:
                     launchSource: source,
                     urls: acceptedURLs,
                     configurationSnapshot:
-                        defaultConfigurationSnapshot
+                        defaultConfigurationSnapshot,
+                    importSummary:
+                        importSummary
                 )
             )
         }

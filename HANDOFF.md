@@ -8,6 +8,173 @@
 
 建议新的 AI 会话把它也作为第一批必读文件之一。
 
+## 2026-06-19 分享摘要已进一步贯穿到桌面端与主 app drain 校正
+
+这一轮继续围绕 share-intake 主链收口，但重点不再是 iPhone sheet 本身，而是让同一份“分享时发生了什么”的摘要在更多真实入口里保持一致。
+
+新增/调整：
+
+- `ExternalPhotoImportSummary` 现在除了会跟着 share extension 请求一起进入 `BatchJob`
+- 也会继续挂进：
+  - `ExternalIntakeSummary`
+  - macOS 主界面的 `记忆进度` 面板
+
+用户现在能看到的变化：
+
+- macOS 左侧 `记忆进度` 里，最近一次外部导入不再只写“来了几张”
+- 如果是分享入口，并且分享时有：
+  - 重复跳过
+  - 导入失败
+  - 选中数和真正入队数不一致
+  现在文案会直接说清楚
+- 也就是说，桌面端现在也能看到更像“处理回执”的信息，而不是只在 iPhone 后台状态里知道异常
+
+这一轮还顺手补了一个主 app 侧的摘要口径修正：
+
+- `PhotoMemoAppRuntime.flushExternalRequests()` 在 drain 共享请求时，会先重新检查真正仍然有效的文件 URL
+- 如果 share extension 当时写进收件箱的部分文件，到了主 app 真正接单时已经失效：
+  - 现在会把 `importSummary` 重新修正到真实可入队数量
+  - 避免后续通知 / 记忆进度把“已经失效、其实没入队”的图片继续算成成功入队
+
+注意：
+
+- 这里修过一次 double-count 细节，最终保留的口径是：
+  - 只把“原本标记为 imported，但主 app drain 时已经失效”的数量补进 `failedCount`
+  - 不会重复累计
+
+本轮验证：
+
+- `PhotoMemoiOS` 构建通过
+- `PhotoMemoShareExtension` 构建通过
+- `PhotoMemo` 构建通过
+
+## 2026-06-19 分享接收摘要已贯穿到通知与 iPhone 后台状态
+
+这一轮继续沿着 iPhone / share-intake / background queue 主链做，但重点不是再扩 ActivityKit，而是把“分享时已经发生的部分成功、跳过、失败”真正带进后续反馈链路。
+
+完成内容：
+
+- 新增共享摘要模型：
+  - `Source/PhotoMemo/PhotoMemo/App/ExternalPhotoIntakeRequest.swift`
+  - `ExternalPhotoImportSummary`
+- `ExternalPhotoIntakeRequest` 现在可携带：
+  - 成功入队数
+  - 重复跳过数
+  - 导入失败数
+- `PhotoMemoShareExtensionIntakeService` 在 share extension 侧会把这份摘要一起持久化进共享收件请求
+- `PhotoMemoAppRuntime` / `BatchQueueStore` 会继续把这份摘要挂到最终 `BatchJob`
+
+这带来的直接效果：
+
+- 后台任务的开始通知现在不再只说“接收了多少张”
+- 如果本次分享里有重复项被跳过、或有图片根本没能导入，现在通知里会明确说出来
+- iPhone 后台状态页新增了“本次接收结果”卡片，能看到：
+  - 分享选中
+  - 成功入队
+  - 重复跳过
+  - 导入失败
+
+这一轮还补了一刀取消保护：
+
+- `BatchQueueStore.swift` 在真正调用 `saveRenderedPhoto` 前又加了一次终态检查
+- 这样如果用户在“将要写入系统相册”前一刻取消，就不会再误把后续保存继续跑下去
+
+补充说明：
+
+- share extension 的 Data fallback 去重现在已经是基于内容 `SHA256`，不是旧的“大小 + 名称”近似判断
+- 这一轮没有做模拟器启动回归，因为当前机器上的 `CoreSimulatorService` 仍然不可用；但三条构建命令都重新通过了
+
+本轮验证：
+
+- `PhotoMemoiOS` 构建通过
+- `PhotoMemoShareExtension` 构建通过
+- `PhotoMemo` 构建通过
+
+## 2026-06-19 队列取消与分享去重再硬化
+
+这一小轮没有继续扩界面，而是优先补了三个更容易变成“偶发失灵”的边界。
+
+1. `BatchQueueStore` 取消边界补强
+
+- 文件：
+  - `Source/PhotoMemo/PhotoMemo/Services/BatchQueueStore.swift`
+- 修正点：
+  - 如果用户在任务处理中途取消，当前活跃 task 不再继续把后续流程一路跑到底
+  - 现在在 `importPhoto` 返回后、`exportCard` 返回后，都会重新检查 task 是否已经进入终态
+  - 如果取消导致处理中抛错，也不再把已取消任务错误地改写成 `failed`
+- 结果：
+  - 降低“明明取消了，结果还继续保存进系统相册”这类错误行为的风险
+
+2. 失败项重试语义更准确
+
+- 同样在 `BatchQueueStore.swift`
+- 修正点：
+  - managed intake 源文件如果仍然存在，失败项现在保留重试资格
+  - 只有真正找不到受管源文件时，才把 `canRetry` 压成 `false`
+- 结果：
+  - 更符合之前已经确定的方向：
+    - PhotoMemo 自己复制进 `ExternalIntake` 的文件可以临时保留
+    - 单张失败不应该轻易丢掉重试机会
+
+3. Share Extension 的 Data fallback 去重更稳
+
+- 文件：
+  - `Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift`
+- 修正点：
+  - 之前 Data fallback 的去重 key 近似于 `data.count + suggestedName`
+  - 这会让“不同图片刚好大小相同、名字也接近”的情况有误判概率
+  - 现在改成基于 `SHA256` 的内容哈希去重
+- 结果：
+  - 多图分享时，误把不同图片当成重复项跳过的风险更低
+
+顺手补的一点：
+
+- `PhotoMemoiOSLiveActivityDriverService.swift` 现在会在 activity 被结束/失效后更完整地同步 `lastAppliedPayloads`
+- 这属于小型状态收口，主要是避免重复应用同一终态 payload
+
+本轮验证：
+
+- `PhotoMemoiOS` 构建通过
+- `PhotoMemoShareExtension` 构建通过
+- `PhotoMemo` 构建通过
+
+## 2026-06-19 Live Activity widget extension 已接通
+
+这一小轮把上一轮还没收口的 ActivityKit / widget 侧工程接线真正补完了。
+
+完成内容：
+
+- 新增真实 widget extension 入口：
+  - `Source/PhotoMemo/PhotoMemoWidgetExtension/PhotoMemoWidgetExtensionBundle.swift`
+- 新增 extension plist：
+  - `Source/PhotoMemo/PhotoMemoWidgetExtension-Info.plist`
+- `PhotoMemoLiveActivityPresentation.swift` 继续作为共享的 Live Activity 展示定义，被 widget extension 直接编译使用
+- `PhotoMemoiOS` 现在会同时嵌入：
+  - `PhotoMemoShareExtension.appex`
+  - `PhotoMemoWidgetExtension.appex`
+
+这轮顺手解决的关键工程坑：
+
+- 之前 share extension 嵌入失败的核心原因，基本确认是 `ShareExtension-Info.plist` 缺少基础 bundle 键，导致嵌入校验时 bundle identifier 被视为 `(null)`
+- widget extension 第一版又踩到 `Info.plist` 同时被“处理”和“Copy Bundle Resources”双重产出
+- 处理方式是把 widget extension 的 plist 挪到同步组目录外，改成：
+  - `Source/PhotoMemo/PhotoMemoWidgetExtension-Info.plist`
+
+本轮验证：
+
+- `PhotoMemoiOS` 构建通过
+- `PhotoMemoShareExtension` 构建通过
+- `PhotoMemo` 构建通过
+- 额外验证了 `PhotoMemoiOS.app/PlugIns` 里已经存在：
+  - `PhotoMemoShareExtension.appex`
+  - `PhotoMemoWidgetExtension.appex`
+
+当前真实结论：
+
+- iPhone 线不再只是“app 可编译 + 分享扩展可编译”
+- 现在已经进入“app + share extension + Live Activity widget extension 可一起构建并嵌入”的阶段
+- 后续更值得优先做运行时与设备侧验证，而不是继续卡在 `xcodeproj` 嵌入层
+
 ## 项目根路径
 
 - 实际项目路径：`/Users/rui/Desktop/PhotoMemo`

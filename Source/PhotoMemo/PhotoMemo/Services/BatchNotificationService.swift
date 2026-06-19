@@ -252,20 +252,31 @@ private extension BatchNotificationService {
         let summary =
             "已接收 \(job.totalTaskCount) 张照片，会按当前配置在后台自动处理。"
 
+        let intakeWarningSummary =
+            intakeWarningSummary(
+                for: job
+            )
+
+        let enrichedSummary =
+            intakeWarningSummary
+            .map {
+                "\(summary)\($0)"
+            } ?? summary
+
         if !templateName.isEmpty,
            !anchorName.isEmpty {
-            return "\(summary) 模板：\(templateName)，时间点：\(anchorName)。"
+            return "\(enrichedSummary) 模板：\(templateName)，时间点：\(anchorName)。"
         }
 
         if !templateName.isEmpty {
-            return "\(summary) 模板：\(templateName)。"
+            return "\(enrichedSummary) 模板：\(templateName)。"
         }
 
         if !anchorName.isEmpty {
-            return "\(summary) 时间点：\(anchorName)。"
+            return "\(enrichedSummary) 时间点：\(anchorName)。"
         }
 
-        return summary
+        return enrichedSummary
     }
 
     func finishedTitle(
@@ -322,17 +333,48 @@ private extension BatchNotificationService {
             >= 0.8 {
 
             if !albumName.isEmpty {
-                return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已存入“\(albumName)”。"
+                return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已存入“\(albumName)”，可回到 PhotoMemo 重试失败项。"
             }
 
-            return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已写入系统图库。"
+            return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已写入系统图库，可回到 PhotoMemo 重试失败项。"
         }
 
         if !albumName.isEmpty {
-            return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已存入“\(albumName)”。"
+            return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已存入“\(albumName)”，可回到 PhotoMemo 重试失败项。"
         }
 
-        return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已写入系统图库。"
+        return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已写入系统图库，可回到 PhotoMemo 重试失败项。"
+    }
+
+    func intakeWarningSummary(
+        for job: BatchJob
+    ) -> String? {
+
+        guard let intakeSummary =
+            job.intakeSummary,
+              intakeSummary.hasWarnings else {
+            return nil
+        }
+
+        var parts: [String] = []
+
+        if intakeSummary.skippedCount > 0 {
+            parts.append(
+                "另有 \(intakeSummary.skippedCount) 张重复跳过"
+            )
+        }
+
+        if intakeSummary.failedCount > 0 {
+            parts.append(
+                "\(intakeSummary.failedCount) 张未能导入"
+            )
+        }
+
+        guard !parts.isEmpty else {
+            return nil
+        }
+
+        return " 本次分享中，\(parts.joined(separator: "，"))。"
     }
 
     func progressMessage(
