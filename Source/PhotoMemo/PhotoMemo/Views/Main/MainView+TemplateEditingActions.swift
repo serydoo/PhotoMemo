@@ -107,13 +107,13 @@ extension MainView {
     ) {
 
         if let descriptor =
-            MainTemplateEditorDisplayEngine
+            EditorProjectionEngine
             .descriptor(
                 forToken: token
             ) {
 
             let label =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .displayLabel(
                     for: descriptor
                 )
@@ -135,7 +135,7 @@ extension MainView {
 
         } else {
             let displayState =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .displayState(
                     from: token
                 )
@@ -168,7 +168,7 @@ extension MainView {
             )
 
         let currentSelection =
-            MainTemplateEditorDisplayEngine
+            EditorProjectionEngine
             .adjustedEditingRange(
                 editorSession.selections[slot]
                 ?? NSRange(
@@ -187,7 +187,7 @@ extension MainView {
             )
 
         let replacementState =
-            MainTemplateEditorDisplayEngine
+            EditorProjectionEngine
             .replacementResult(
                 for: currentDisplayText,
                 moduleSpans:
@@ -211,7 +211,7 @@ extension MainView {
         applyTemplateEditorContentChange(
             displayText: replacementState.text,
             selection:
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     nextSelection,
                     moduleSpans:

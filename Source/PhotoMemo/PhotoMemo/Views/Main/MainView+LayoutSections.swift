@@ -498,7 +498,7 @@ extension MainView {
                     for: slot
                 ),
             placeholder:
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .displayState(
                     from: slot.placeholder
                 ).text,

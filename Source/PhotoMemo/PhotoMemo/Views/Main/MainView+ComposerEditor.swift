@@ -320,14 +320,14 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
             }
 
             let sanitizedModuleSpans =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .sanitizedModuleSpans(
                     parent.moduleSpans,
                     in: textView.string
                 )
 
             let adjustedSelection =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     textView.selectedRange(),
                     moduleSpans:
@@ -365,7 +365,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
             }
 
             let adjustedSelection =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     textView.selectedRange(),
                     moduleSpans:
@@ -396,7 +396,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
             }
 
             let adjustedRange =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedReplacementRange(
                     affectedCharRange,
                     replacementText:
@@ -412,7 +412,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
                 replacementString ?? ""
 
             let replacementState =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .replacementResult(
                     for: textView.string,
                     moduleSpans:
@@ -432,7 +432,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
             )
 
             let nextSelection =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     NSRange(
                         location:
@@ -484,7 +484,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
             textView.typingAttributes =
                 baseTypingAttributes
             textView.setSelectedRange(
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     currentSelection,
                     moduleSpans:
@@ -507,7 +507,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
                     attributes: baseTypingAttributes
                 )
 
-            for span in MainTemplateEditorDisplayEngine
+            for span in EditorProjectionEngine
                 .sanitizedModuleSpans(
                     moduleSpans,
                     in: text
@@ -546,7 +546,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
             }
 
             let safeRange =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     parent.selection,
                     moduleSpans:
@@ -714,7 +714,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
             }
 
             let adjustedRange =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedReplacementRange(
                     range,
                     replacementText: text,
@@ -726,7 +726,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
             isApplyingProgrammaticUpdate = true
 
             let replacementState =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .replacementResult(
                     for: textView.text,
                     moduleSpans:
@@ -746,7 +746,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
                 )
 
             let nextSelection =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     NSRange(
                         location:
@@ -784,14 +784,14 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
             }
 
             let sanitizedModuleSpans =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .sanitizedModuleSpans(
                     parent.moduleSpans,
                     in: textView.text
                 )
 
             let adjustedSelection =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     textView.selectedRange,
                     moduleSpans:
@@ -825,7 +825,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
             }
 
             let adjustedSelection =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     textView.selectedRange,
                     moduleSpans:
@@ -866,7 +866,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
             textView.typingAttributes =
                 baseTypingAttributes
             textView.selectedRange =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     currentSelection,
                     moduleSpans:
@@ -888,7 +888,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
                     attributes: baseTypingAttributes
                 )
 
-            for span in MainTemplateEditorDisplayEngine
+            for span in EditorProjectionEngine
                 .sanitizedModuleSpans(
                     moduleSpans,
                     in: text
@@ -927,7 +927,7 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
             }
 
             let safeRange =
-                MainTemplateEditorDisplayEngine
+                EditorProjectionEngine
                 .adjustedSelectionRange(
                     parent.selection,
                     moduleSpans:

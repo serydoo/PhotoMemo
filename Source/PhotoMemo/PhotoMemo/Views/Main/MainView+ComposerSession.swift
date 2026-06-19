@@ -27,7 +27,7 @@ extension MainView {
     ) -> String {
 
         editorSession.displayTexts[slot]
-        ?? MainTemplateEditorDisplayEngine
+        ?? EditorProjectionEngine
         .displayState(
             from: templateValue(for: slot)
         ).text
@@ -38,7 +38,7 @@ extension MainView {
     ) -> [TemplateEditorModuleSpan] {
 
         editorSession.moduleSpansBySlot[slot]
-        ?? MainTemplateEditorDisplayEngine
+        ?? EditorProjectionEngine
         .displayState(
             from: templateValue(for: slot)
         ).moduleSpans
@@ -59,7 +59,7 @@ extension MainView {
     ) {
 
         editorSession.moduleSpansBySlot[slot] =
-            MainTemplateEditorDisplayEngine
+            EditorProjectionEngine
             .sanitizedModuleSpans(
                 moduleSpans,
                 in: templateEditorDisplayText(
@@ -79,14 +79,15 @@ extension MainView {
             displayText
 
         editorSession.moduleSpansBySlot[slot] =
-            MainTemplateEditorDisplayEngine
+            EditorProjectionEngine
             .sanitizedModuleSpans(
                 moduleSpans,
                 in: displayText
             )
 
         editorSession.selections[slot] =
-            clampedSelection(
+            EditorProjectionEngine
+            .normalizedSelectionRange(
                 selection,
                 in: displayText
             )
@@ -160,7 +161,8 @@ extension MainView {
             },
             set: { newValue in
                 editorSession.selections[slot] =
-                    clampedSelection(
+                    EditorProjectionEngine
+                    .normalizedSelectionRange(
                         newValue,
                         in: templateEditorDisplayText(
                             for: slot
@@ -175,37 +177,11 @@ extension MainView {
         moduleSpans: [TemplateEditorModuleSpan]
     ) -> String {
 
-        MainTemplateEditorDisplayEngine
+        EditorProjectionEngine
             .rawTemplateValue(
                 from: displayText,
                 moduleSpans: moduleSpans
             )
-    }
-
-    func clampedSelection(
-        _ selection: NSRange,
-        in text: String
-    ) -> NSRange {
-
-        let length =
-            (text as NSString).length
-
-        let clampedLocation =
-            min(
-                max(selection.location, 0),
-                length
-            )
-
-        let clampedLength =
-            min(
-                max(selection.length, 0),
-                length - clampedLocation
-            )
-
-        return NSRange(
-            location: clampedLocation,
-            length: clampedLength
-        )
     }
 
     func configureInitialState() {
@@ -291,39 +267,22 @@ extension MainView {
             let rawValue =
                 templateValue(for: slot)
 
-            let editorDisplayState =
-                MainTemplateEditorDisplayEngine
-                .displayState(
-                    from: rawValue
+            let projectionState =
+                EditorProjectionEngine
+                .synchronizedState(
+                    from: rawValue,
+                    selection:
+                        editorSession.selections[slot],
+                    resetSelectionToEnd:
+                        resetTransientState
                 )
 
             editorSession.displayTexts[slot] =
-                editorDisplayState.text
+                projectionState.text
             editorSession.moduleSpansBySlot[slot] =
-                editorDisplayState.moduleSpans
-
-            let displayLength =
-                (
-                    editorDisplayState.text
-                    as NSString
-                ).length
-
-            if resetTransientState
-                || editorSession.selections[slot]
-                == nil {
-                editorSession.selections[slot] =
-                    NSRange(
-                        location: displayLength,
-                        length: 0
-                    )
-            } else if let selection =
-                editorSession.selections[slot] {
-                editorSession.selections[slot] =
-                    clampedSelection(
-                        selection,
-                        in: editorDisplayState.text
-                    )
-            }
+                projectionState.moduleSpans
+            editorSession.selections[slot] =
+                projectionState.selection
         }
     }
 }
