@@ -111,16 +111,6 @@ struct MainAnchorSectionView: View {
     @Binding
     var selectedAnchorID: Anchor.ID?
 
-    let anchorPhotoSummary: String
-
-    let selectedAnchorDateText: String?
-
-    let previewSummaryText: String?
-
-    let quickFacts: [MainAnchorQuickFact]
-
-    let emptyStateText: String
-
     let onPresentAnchorManager: () -> Void
 
     var body: some View {
@@ -129,13 +119,6 @@ struct MainAnchorSectionView: View {
             alignment: .leading,
             spacing: 14
         ) {
-
-            MainDismissibleGuideCard(
-                storageKey:
-                    "photomemo.guide.anchorSection.dismissed",
-                title: "时间点说明",
-                message: "时间点决定 PhotoMemo 该算年岁、纪念时长、倒计时还是第几天。选中不同时间点后，右侧预览和右下智能结果会一起刷新。"
-            )
 
             HStack(spacing: 10) {
                 Picker(
@@ -163,66 +146,6 @@ struct MainAnchorSectionView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-            }
-
-            MinimalInsetCard {
-                LabeledContent("照片时间") {
-                    Text(anchorPhotoSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
-                }
-
-                if let selectedAnchorDateText {
-
-                    Divider()
-
-                    LabeledContent("基准时间") {
-                        Text(selectedAnchorDateText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let previewSummaryText {
-
-                        Divider()
-
-                        VStack(
-                            alignment: .leading,
-                            spacing: 8
-                        ) {
-
-                            Text(previewSummaryText)
-                                .font(.subheadline.weight(.medium))
-
-                            ScrollView(
-                                .horizontal,
-                                showsIndicators: false
-                            ) {
-
-                                HStack(spacing: 8) {
-
-                                    ForEach(quickFacts) { fact in
-
-                                        MainAnchorFactPillView(
-                                            title: fact.label,
-                                            value: fact.value
-                                        )
-                                    }
-                                }
-                                .padding(.vertical, 1)
-                            }
-                        }
-                    }
-
-                } else {
-
-                    Divider()
-
-                    Text(emptyStateText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
         }
         .frame(

@@ -65,6 +65,10 @@ extension PermissionState {
 final class PermissionCenter:
     ObservableObject {
 
+    private let defaults =
+        PhotoMemoSharedContainer
+        .sharedUserDefaults
+
     private enum Keys {
 
         static let didPresentPrimer =
@@ -90,7 +94,7 @@ final class PermissionCenter:
     var shouldPresentPrimer: Bool {
 
         let didPresent =
-            UserDefaults.standard.bool(
+            defaults.bool(
                 forKey: Keys.didPresentPrimer
             )
 
@@ -104,7 +108,7 @@ final class PermissionCenter:
 
     func markPrimerPresented() {
 
-        UserDefaults.standard.set(
+        defaults.set(
             true,
             forKey: Keys.didPresentPrimer
         )
@@ -228,6 +232,8 @@ final class PermissionCenter:
         }
 
         NSWorkspace.shared.open(url)
+#elseif canImport(UIKit) && PHOTOMEMO_SHARE_EXTENSION
+        return
 #elseif canImport(UIKit)
         guard let url =
             URL(string: UIApplication.openSettingsURLString)

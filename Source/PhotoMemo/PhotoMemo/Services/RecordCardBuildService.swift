@@ -89,16 +89,6 @@ private extension RecordCardBuildService {
         from configuration: BatchConfigurationSnapshot
     ) -> String {
 
-        let trimmed =
-            configuration.titleText
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        if !trimmed.isEmpty {
-            return trimmed
-        }
-
         return configuration.anchor?.title ?? ""
     }
 
@@ -106,10 +96,7 @@ private extension RecordCardBuildService {
         from configuration: BatchConfigurationSnapshot
     ) -> String {
 
-        configuration.storyText
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
+        ""
     }
 
     func resolvedPhotoDescription(

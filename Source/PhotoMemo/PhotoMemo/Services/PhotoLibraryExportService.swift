@@ -10,7 +10,9 @@ struct PhotoLibrarySaveResult: Hashable {
 
 struct PhotoAlbumOption: Identifiable, Hashable {
 
-    static let automaticIdentifier = "__photomemo_auto__"
+    static let automaticIdentifier =
+        PhotoMemoAlbumSelection
+        .automaticIdentifier
 
     let id: String
 

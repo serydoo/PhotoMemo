@@ -171,6 +171,11 @@ extension MainView {
                     "图片已经写入系统图库“\(albumName)”中，拍摄时间与原图元数据会尽量保持一致。"
             )
 
+            presentSaveFeedback(
+                title: "已存入“\(albumName)”",
+                message: "新图已经写回系统图库，预览正确的话可以继续处理下一张。"
+            )
+
             await reloadAlbums(
                 presentAlerts: false
             )

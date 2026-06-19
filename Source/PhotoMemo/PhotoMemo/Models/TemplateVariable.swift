@@ -75,6 +75,12 @@ extension TemplateVariable {
             token: "{{lens}}"
         ),
 
+        TemplateVariable(
+            category: .recognized,
+            title: "参数摘要",
+            token: "{{camera_summary}}"
+        ),
+
         // MARK: - Camera
 
         TemplateVariable(

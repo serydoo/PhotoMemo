@@ -7,14 +7,6 @@ extension MainView {
     ) {
 
         selectedPhoto = photo
-
-        if titleText.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        ).isEmpty {
-            titleText =
-                selectedAnchor?.title
-                ?? "PhotoMemo"
-        }
     }
 
     func syncSelectedAnchor(

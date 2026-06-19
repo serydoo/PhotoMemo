@@ -2,12 +2,7 @@ import SwiftUI
 
 struct MainTemplateSectionView: View {
 
-    @Binding
-    var selectedPreset: TemplatePreset
-
     let resolvedTemplateDisplayName: String
-
-    let currentPresetDisplayName: String
 
     let currentPresetDefaultOutput: String
 
@@ -29,26 +24,12 @@ struct MainTemplateSectionView: View {
                 spacing: 10
             ) {
 
-                Picker(
-                    "模板",
-                    selection: $selectedPreset
-                ) {
-
-                    ForEach(
-                        TemplatePreset.allCases,
-                        id: \.self
-                    ) { preset in
-
-                        Text(preset.displayName)
-                            .tag(preset)
-                    }
-                }
-                .pickerStyle(.menu)
-                .controlSize(.small)
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .leading
-                )
+                Text("模板 1")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
+                    )
 
                 Button(action: onPresentTemplateRename) {
                     Label(
@@ -69,7 +50,7 @@ struct MainTemplateSectionView: View {
                 Divider()
 
                 LabeledContent("预设骨架") {
-                    Text(currentPresetDisplayName)
+                    Text("模板 1")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -107,12 +88,6 @@ struct MainTemplateSectionView: View {
 struct MainCustomContentSectionView: View {
 
     @Binding
-    var titleText: String
-
-    @Binding
-    var storyText: String
-
-    @Binding
     var shouldWritePhotoDescription: Bool
 
     @Binding
@@ -131,55 +106,25 @@ struct MainCustomContentSectionView: View {
                 storageKey:
                     "photomemo.guide.supplementalContent.dismissed",
                 title: "补充信息说明",
-                message: "这里主要补标题、记忆文案，以及是否使用单独的图片说明内容。更完整的解释已经放进右侧操作指南里，熟悉后可以直接关闭这条提示。"
+                message: "这里现在只保留一条补充说明输入框。填写后会优先写入这段内容；留空时会回退到右下区域最终结果。更完整的说明已经放进右侧操作指南里，熟悉后可以直接关闭这条提示。"
             )
 
             MinimalInsetCard {
-
-                Text("内容")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-
                 TextField(
-                    "标题",
-                    text: $titleText
-                )
-                .textFieldStyle(.roundedBorder)
-
-                TextField(
-                    "记忆文案",
-                    text: $storyText,
+                    "例如：这是这张图想额外补进去的说明",
+                    text: $photoDescriptionOverride,
                     axis: .vertical
                 )
                 .lineLimit(3...5)
                 .textFieldStyle(.roundedBorder)
-
-                Divider()
-
-                Toggle(
-                    "使用单独批量说明内容",
-                    isOn: $shouldWritePhotoDescription
-                )
-
-                if shouldWritePhotoDescription {
-
-                    Divider()
-
-                    Text("勾选后，图片说明会优先写入这里的自定义内容；如果这里留空，会回退到右下区域的完整结果。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    TextField(
-                        "例如：这是这次批量统一写入图片内的说明",
-                        text: $photoDescriptionOverride,
-                        axis: .vertical
-                    )
-                    .lineLimit(2...4)
-                    .textFieldStyle(.roundedBorder)
+                .onChange(
+                    of: photoDescriptionOverride
+                ) { _, newValue in
+                    shouldWritePhotoDescription =
+                        !newValue.trimmingCharacters(
+                            in: .whitespacesAndNewlines
+                        ).isEmpty
                 }
-
-                Divider()
 
                 VStack(
                     alignment: .leading,
@@ -213,14 +158,10 @@ struct MainCustomContentSectionView: View {
 
         if shouldWritePhotoDescription,
            !trimmedOverride.isEmpty {
-            return "当前会批量写入：\(trimmedOverride)"
+            return "当前会写入这段说明：\(trimmedOverride)"
         }
 
-        if shouldWritePhotoDescription {
-            return "当前未填写单独批量说明，将回退到右下区域最终内容。\(defaultPhotoDescriptionHint)"
-        }
-
-        return "未勾选单独批量说明时，会直接写入右下区域最终内容。\(defaultPhotoDescriptionHint)"
+        return "当前留空时，会回退到右下区域最终内容。\(defaultPhotoDescriptionHint)"
     }
 }
 

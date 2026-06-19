@@ -101,6 +101,43 @@ final class BatchNotificationService:
         )
     }
 
+    func notifyJobProgress(
+        _ job: BatchJob,
+        stage: String
+    ) async -> Bool {
+
+        guard shouldNotify(
+            for: job.launchSource
+        ) else {
+            return false
+        }
+
+        guard await ensureAuthorization() else {
+            return false
+        }
+
+        let content =
+            UNMutableNotificationContent()
+
+        content.title =
+            "PhotoMemo 正在后台处理"
+        content.body =
+            progressMessage(
+                for: job,
+                stage: stage
+            )
+        content.sound = nil
+
+        return await schedule(
+            content: content,
+            identifier:
+                notificationIdentifier(
+                    for: job,
+                    suffix: "progress.\(stage)"
+                )
+        )
+    }
+
     nonisolated
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -213,7 +250,7 @@ private extension BatchNotificationService {
             ) ?? ""
 
         let summary =
-            "已接收 \(job.totalTaskCount) 张照片，会按当前模板在后台自动处理。"
+            "已接收 \(job.totalTaskCount) 张照片，会按当前配置在后台自动处理。"
 
         if !templateName.isEmpty,
            !anchorName.isEmpty {
@@ -242,6 +279,12 @@ private extension BatchNotificationService {
 
         if completedCount == 0 {
             return "PhotoMemo 处理失败"
+        }
+
+        if Double(completedCount)
+            / Double(max(1, completedCount + failedCount))
+            >= 0.8 {
+            return "PhotoMemo 基本处理完成"
         }
 
         return "PhotoMemo 已完成部分任务"
@@ -274,10 +317,71 @@ private extension BatchNotificationService {
             return "\(totalCount) 张照片暂未处理成功，可以回到 PhotoMemo 查看失败原因并重试。"
         }
 
+        if Double(completedCount)
+            / Double(max(1, totalCount))
+            >= 0.8 {
+
+            if !albumName.isEmpty {
+                return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已存入“\(albumName)”。"
+            }
+
+            return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已写入系统图库。"
+        }
+
         if !albumName.isEmpty {
             return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已存入“\(albumName)”。"
         }
 
         return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已写入系统图库。"
+    }
+
+    func progressMessage(
+        for job: BatchJob,
+        stage: String
+    ) -> String {
+
+        let completedCount =
+            job.completedTaskCount
+        let failedCount =
+            job.failedTaskCount
+        let totalCount =
+            job.totalTaskCount
+        let runningCount =
+            job.runningTaskCount
+
+        let stageTitle: String
+
+        switch stage {
+
+        case "imported":
+            stageTitle = "已开始读取原图和 EXIF"
+
+        case "rendering":
+            stageTitle = "正在生成记忆卡片图片"
+
+        case "saving":
+            stageTitle = "正在写入系统相册"
+
+        default:
+            stageTitle = "正在后台处理"
+        }
+
+        var summary =
+            "\(totalCount) 张照片\(stageTitle)。"
+
+        if completedCount > 0
+            || failedCount > 0 {
+            summary += " 已完成 \(completedCount) 张"
+
+            if failedCount > 0 {
+                summary += "，失败 \(failedCount) 张"
+            }
+
+            summary += "。"
+        } else if runningCount > 0 {
+            summary += " 当前还有 \(runningCount) 张在队列中。"
+        }
+
+        return summary
     }
 }

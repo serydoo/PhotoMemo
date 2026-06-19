@@ -2,37 +2,6 @@ import Foundation
 import UniformTypeIdentifiers
 import Combine
 
-struct ExternalPhotoIntakeRequest:
-    Identifiable,
-    Hashable {
-
-    let id: UUID
-
-    let launchSource: BatchJobLaunchSource
-
-    let urls: [URL]
-
-    let configurationSnapshot:
-        BatchConfigurationSnapshot
-
-    let receivedAt: Date
-
-    init(
-        id: UUID = UUID(),
-        launchSource: BatchJobLaunchSource,
-        urls: [URL],
-        configurationSnapshot: BatchConfigurationSnapshot,
-        receivedAt: Date = Date()
-    ) {
-        self.id = id
-        self.launchSource = launchSource
-        self.urls = urls
-        self.configurationSnapshot =
-            configurationSnapshot
-        self.receivedAt = receivedAt
-    }
-}
-
 @MainActor
 final class ExternalPhotoIntakeCenter:
     ObservableObject {
@@ -49,6 +18,9 @@ final class ExternalPhotoIntakeCenter:
     private var pendingRequests:
         [ExternalPhotoIntakeRequest] = []
 
+    private let intakeStore:
+        ExternalPhotoIntakeStore
+
     private let supportedTypes:
         [UTType] = [
             .jpeg,
@@ -59,6 +31,9 @@ final class ExternalPhotoIntakeCenter:
         ]
 
     private init() {
+
+        self.intakeStore =
+            .shared
 
         self.defaultConfigurationSnapshot =
             SettingsService()
@@ -81,26 +56,68 @@ final class ExternalPhotoIntakeCenter:
             urls
             .map(normalizedFileURL(for:))
             .filter(isSupportedImageURL)
+            .reduce(into: [URL]()) {
+                partialResult,
+                url in
+
+                if !partialResult.contains(
+                    url.standardizedFileURL
+                ) {
+                    partialResult.append(url)
+                }
+            }
 
         guard !acceptedURLs.isEmpty else {
             return
         }
 
-        pendingRequests.append(
-            ExternalPhotoIntakeRequest(
-                launchSource: source,
+        if let persistedRequest =
+            intakeStore.persistRequest(
                 urls: acceptedURLs,
+                source: source,
                 configurationSnapshot:
                     defaultConfigurationSnapshot
+            ) {
+            pendingRequests.append(
+                persistedRequest
             )
-        )
+        } else {
+            pendingRequests.append(
+                ExternalPhotoIntakeRequest(
+                    launchSource: source,
+                    urls: acceptedURLs,
+                    configurationSnapshot:
+                        defaultConfigurationSnapshot
+                )
+            )
+        }
 
         revision = UUID()
     }
 
     func drainPendingRequests() -> [ExternalPhotoIntakeRequest] {
 
-        let requests = pendingRequests
+        let persistedRequests =
+            intakeStore.drainRequests()
+
+        var requests = pendingRequests
+
+        if !persistedRequests.isEmpty {
+            let pendingIDs =
+                Set(
+                    requests.map(\.id)
+                )
+
+            requests.append(
+                contentsOf:
+                    persistedRequests.filter {
+                        !pendingIDs.contains(
+                            $0.id
+                        )
+                    }
+            )
+        }
+
         pendingRequests.removeAll()
         return requests
     }

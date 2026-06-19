@@ -49,7 +49,7 @@ extension Template {
         rightTopArea: TemplateArea(
             name: "Right Top",
             items: [
-                .deviceCameraLine
+                .cameraSummary
             ]
         ),
         rightBottomArea: TemplateArea(

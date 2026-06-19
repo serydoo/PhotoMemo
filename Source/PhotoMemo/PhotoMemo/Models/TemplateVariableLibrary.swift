@@ -22,9 +22,39 @@ struct TemplateVariableLibrary {
 
     static var recognized: [TemplateVariable] {
 
-        variables(
-            in: .recognized
-        )
+        let allRecognized =
+            variables(
+                in: .recognized
+            )
+
+        let prioritizedTokens = [
+            "{{camera_summary}}",
+            "{{model}}",
+            "{{lens}}",
+            "{{capture_date_display}}",
+            "{{focal_len_in_35mm_film}}",
+            "{{aperture}}",
+            "{{shutter}}",
+            "{{iso}}",
+            "{{location}}"
+        ]
+
+        let prioritizedVariables =
+            prioritizedTokens.compactMap { token in
+                allRecognized.first {
+                    $0.token == token
+                }
+            }
+
+        let remainingVariables =
+            allRecognized.filter { variable in
+                !prioritizedTokens.contains(
+                    variable.token
+                )
+            }
+
+        return prioritizedVariables
+            + remainingVariables
     }
 
     static var intelligent: [TemplateVariable] {

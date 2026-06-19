@@ -51,7 +51,7 @@ fileprivate enum MainOperationGuideCategory:
             return "管理三套本地配置，切换、重命名和保存当前方案。"
 
         case .editing:
-            return "处理四个自定义区域，以及标题、记忆文案和批量说明。"
+            return "处理四个自定义区域，以及补充信息与模块插入。"
 
         case .smartModules:
             return "理解时间点、智能模块和时间结果的组合方式。"
@@ -161,7 +161,7 @@ enum MainOperationGuideTopic:
             return "四个自定义区域"
 
         case .supplementalContent:
-            return "补充信息与批量说明"
+            return "补充信息输入"
 
         case .smartModules:
             return "时间点与智能模块"
@@ -185,7 +185,7 @@ enum MainOperationGuideTopic:
             return "确保插入内容始终进入明确选中的区域，不走隐式兜底。"
 
         case .supplementalContent:
-            return "管理标题、记忆文案，以及图片说明是否使用单独批量内容。"
+            return "管理补充信息输入框，以及图片说明回退逻辑。"
 
         case .smartModules:
             return "把 EXIF 拍摄时间和锚点时间转换成可组合的时间结果。"
@@ -233,7 +233,7 @@ enum MainOperationGuideTopic:
             return "四个自定义区域是 PhotoMemo 最核心的组合层。无论输入自定义文字还是插入 EXIF、智能模块，都必须先明确选中区域，再按光标位置组合内容。"
 
         case .supplementalContent:
-            return "补充信息区负责额外语义，而不是替代模板。标题和记忆文案帮助卡片更完整；批量说明勾选后，会优先把单独录入的内容写入图片说明，不勾选时会回退到右下区域最终生成的完整内容。"
+            return "补充信息区现在只保留一条自定义输入框。填写后会优先写入这段内容；留空时会自动回退到右下区域最终生成的完整内容。"
 
         case .smartModules:
             return "智能模块只输出时间结果本身，例如年岁、纪念时长、已过天数、倒计时和里程碑，不会自动帮你写整句。最终句子由你把模块和文字自由组合。"
@@ -260,8 +260,8 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "建议顺序",
                     items: [
-                        "先选模板，再设置时间点，然后导入一张真实照片做校准。",
-                        "确认右下智能结果和 EXIF 信息正常后，再补标题、说明和输出相册。",
+                        "模板区固定沿用当前的模板 1 骨架，再设置时间点，然后导入一张真实照片做校准。",
+                        "确认右下智能结果和 EXIF 信息正常后，再补说明和输出相册。",
                         "最后把满意的一套方案保存到某个配置槽位，给后续外部导入和后台处理复用。"
                     ]
                 )
@@ -274,14 +274,14 @@ enum MainOperationGuideTopic:
                     items: [
                         "顶部三张配置卡片对应三套本地方案，始终只有一套高亮生效。",
                         "切换后左侧字段和右侧预览会同步刷新，方便你直接对照差异。",
-                        "未单独保存过的槽位会先使用各自默认骨架：模板 1、模板 2、模板 3。"
+                        "未单独保存过的槽位会先使用同一套模板 1 默认骨架，避免不同样式混入当前主流程。"
                     ]
                 ),
                 MainOperationGuideSection(
                     title: "命名与保存",
                     items: [
                         "“重命名当前配置”只会修改槽位名称，帮助你用“宝宝成长”“旅行纪念”等方式管理方案，不会改模板名称。",
-                        "“保存到当前配置”会把当前模板、时间点、Logo 标识、补充信息和相册去向整体写回当前槽位。",
+                        "“保存到当前配置”会把当前模板 1 校准结果、时间点、Logo 标识、补充信息和相册去向整体写回当前槽位。",
                         "“恢复当前默认”只会清空该槽位保存的配置快照，槽位名称仍可保留。"
                     ]
                 )
@@ -294,7 +294,8 @@ enum MainOperationGuideTopic:
                     items: [
                         "先选中左上、右上、左下或右下某个区域，再插入 EXIF、智能模块或自定义文字。",
                         "系统不会再偷偷把内容插到右下区域，所有插入都以当前明确选中的区域为准。",
-                        "选中区域后可以直接输入文字；点击上方模块按钮时，模块会按当前光标位置插入。"
+                        "选中区域后可以直接输入文字；点击上方模块按钮时，模块会按当前光标位置插入。",
+                        "识别数据里的“参数摘要”可以随时再次插回右上或任意自定义区域，不需要依赖默认模板内容保留。"
                     ]
                 ),
                 MainOperationGuideSection(
@@ -303,7 +304,7 @@ enum MainOperationGuideTopic:
                         "每个区域都可以独立编辑，适合把标题、拍摄参数、时间表达和记忆句子自由混排。",
                         "模块插入后会显示成人类可读的标签文本，方便你继续在前后补自定义短语。",
                         "如果想删除某个模块或一段文字，直接把光标放到附近，用正常文本编辑方式处理即可。",
-                        "切换模板或恢复模板默认字段后，编辑态会同步刷新，避免旧状态残留。"
+                        "切换配置槽位、保存当前配置或恢复模板默认字段后，编辑态会同步刷新，避免旧状态残留。"
                     ]
                 )
             ]
@@ -311,19 +312,11 @@ enum MainOperationGuideTopic:
         case .supplementalContent:
             return [
                 MainOperationGuideSection(
-                    title: "内容定位",
+                    title: "输入逻辑",
                     items: [
-                        "标题适合写卡片主题，例如“第一次海边日落”。",
-                        "记忆文案适合补充一段简短上下文，例如“出门前还一直担心会下雨”。",
-                        "这些内容属于补充信息，不会替代右下智能模块的真实时间结果。"
-                    ]
-                ),
-                MainOperationGuideSection(
-                    title: "批量说明勾选",
-                    items: [
-                        "勾选“使用单独批量说明内容”后，图片说明会优先写入你单独输入的内容。",
-                        "如果勾选后内容留空，系统会自动回退到右下区域最终生成的完整结果。",
-                        "如果不勾选，系统会直接把右下区域当前组合出来的完整内容作为图片说明写入。"
+                        "补充信息区现在只保留一个输入框，用来写这张图或这批图想额外补进去的说明。",
+                        "只要你填了内容，图片说明就会优先写入这段自定义文本。",
+                        "如果输入框留空，系统会自动回退到右下区域当前组合出来的完整结果。"
                     ]
                 )
             ]
@@ -334,7 +327,7 @@ enum MainOperationGuideTopic:
                     title: "时间点作用",
                     items: [
                         "时间点决定系统是在算年岁、纪念时长、已过多久，还是未来倒计时。",
-                        "照片导入后会优先用 EXIF 拍摄时间参与计算，因此导入真实照片比空状态更接近最终效果。",
+                        "照片导入后会自动用 EXIF 拍摄时间参与计算，因此导入真实照片比空状态更接近最终效果。",
                         "当用户未满 1 岁时，年龄结果不会再显示“0岁8个月”这类不自然写法。"
                     ]
                 ),
@@ -361,7 +354,7 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "使用建议",
                     items: [
-                        "保存前先确认当前模板、时间点和右侧预览已经是最终结果。",
+                        "保存前先确认当前配置、时间点和右侧预览已经是最终结果。",
                         "PhotoMemo 会生成一张新图，而不是修改原图，所以原照片仍会留在系统图库里。",
                         "如果之后你还想换输出去向，直接切换当前配置槽位或重新选择目标相册即可。"
                     ]
@@ -792,6 +785,16 @@ struct MainOperationGuideSheetView: View {
 
     var body: some View {
 
+        groupBody
+    }
+}
+
+private extension MainOperationGuideSheetView {
+
+    @ViewBuilder
+    var groupBody: some View {
+
+#if os(macOS)
         NavigationSplitView {
             List(selection: $selectedTopic) {
                 ForEach(
@@ -843,6 +846,50 @@ struct MainOperationGuideSheetView: View {
             minWidth: 920,
             minHeight: 620
         )
+#else
+        NavigationStack {
+            List {
+                ForEach(
+                    MainOperationGuideCategory.allCases
+                ) { category in
+
+                    Section {
+                        ForEach(category.topics) { topic in
+
+                            NavigationLink {
+                                MainOperationGuideDetailView(
+                                    topic: topic
+                                )
+                            } label: {
+                                MainOperationGuideSidebarRow(
+                                    topic: topic
+                                )
+                            }
+                        }
+
+                    } header: {
+                        Label(
+                            category.title,
+                            systemImage:
+                                category.iconName
+                        )
+                    } footer: {
+                        Text(category.summary)
+                    }
+                }
+            }
+            .navigationTitle("帮助中心")
+            .toolbar {
+                ToolbarItem(
+                    placement: .topBarTrailing
+                ) {
+                    Button("关闭") {
+                        onDismiss()
+                    }
+                }
+            }
+        }
+#endif
     }
 }
 

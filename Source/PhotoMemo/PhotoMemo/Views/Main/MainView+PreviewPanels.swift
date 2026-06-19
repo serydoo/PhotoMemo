@@ -58,7 +58,7 @@ private struct MainPreviewHeaderView: View {
                 Text("实时预览")
                     .font(.title3.weight(.semibold))
 
-                Text("按当前模板、时间点与 EXIF 数据即时生成")
+                Text("按当前配置、时间点与 EXIF 数据即时生成")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -128,7 +128,7 @@ private struct MainPreviewSummaryView: View {
             Text("Live Context")
                 .font(.headline)
 
-            Text("Template: \(templateName)")
+            Text("当前配置内容：\(templateName)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

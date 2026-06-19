@@ -385,3 +385,42 @@ Verification:
 1. keep shrinking `LayoutSections` only when the code is obviously derived state or action routing
 2. tighten access control on any remaining same-file-only helper methods after verifying there is no cross-file call site
 3. run manual regression on caret routing, anchor switching, workspace-slot switching, and album save feedback
+
+## Share-Extension Hardening And Target Slimming
+
+The optimization focus later shifted from `MainView` decomposition toward iOS share-intake robustness and compile-surface discipline.
+
+What changed:
+
+- added app-group-backed shared intake persistence and shared configuration loading
+- hardened share intake for:
+  - partial success
+  - duplicate URL deduplication
+  - missing-file filtering before queue handoff
+  - managed temporary-file cleanup on persistence failure
+- refused the tempting `UIImage -> JPEG` fallback to avoid silent EXIF loss or binary mutation before PhotoMemo starts real processing
+- extracted `ExternalPhotoIntakeRequest` into its own shared file so the request model no longer lives inside the main-app intake center
+- introduced a synchronized-group exception set for `PhotoMemoShareExtension` and removed a large amount of app-only UI/service surface from that target
+
+Why this was worth doing:
+
+- the share extension is now much easier to reason about as its own entry surface
+- target slimming reduces accidental coupling to the macOS calibration center
+- future iOS/share regressions should be easier to isolate because the extension now compiles a much smaller shared core
+
+Measured result:
+
+- `PhotoMemoShareExtension.SwiftFileList` is now roughly `19` lines
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoShareExtensionDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Newest next three targets:
+
+1. manually validate system share with `1张 / 多张 / 部分失效 / 重复来源`
+2. continue shrinking share-extension resources only where the dependency edge is clearly unnecessary
+3. tighten the completion/failure feedback story for novice users after real share-flow validation

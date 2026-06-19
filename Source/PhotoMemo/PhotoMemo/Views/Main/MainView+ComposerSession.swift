@@ -210,6 +210,8 @@ extension MainView {
 
     func configureInitialState() {
 
+        normalizeSelectedTemplateIfNeeded()
+
         if selectedAnchorID == nil {
             let persistedAnchorID =
                 UUID(uuidString: settings.selectedAnchorIDString)
@@ -225,14 +227,6 @@ extension MainView {
             }
         }
 
-        if titleText.isEmpty {
-            titleText = settings.draftTitleText
-        }
-
-        if storyText.isEmpty {
-            storyText = settings.draftStoryText
-        }
-
         if selectedAlbumIdentifier
             == PhotoAlbumOption.automaticIdentifier,
            !settings.selectedAlbumIdentifier.isEmpty {
@@ -243,6 +237,27 @@ extension MainView {
         syncComposerItemsFromTemplate(
             resetTransientState: true
         )
+    }
+
+    func normalizeSelectedTemplateIfNeeded() {
+
+        guard let selectedTemplate =
+            settings.selectedTemplate
+        else {
+            return
+        }
+
+        let normalizedTemplate =
+            normalizedPrimaryTemplate(
+                selectedTemplate
+            )
+
+        guard normalizedTemplate != selectedTemplate else {
+            return
+        }
+
+        settings.selectedTemplate = normalizedTemplate
+        settings.saveTemplate()
     }
 
     func migrateLegacyConfigurationIntoActiveSlotIfNeeded() {

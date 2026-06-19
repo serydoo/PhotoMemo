@@ -24,17 +24,15 @@ struct MainView: View {
     var selectedAnchorID: Anchor.ID?
 
     @State
-    var titleText = ""
-
-    @State
-    var storyText = ""
-
-    @State
     var presentationState =
         MainPresentationState()
 
     @State
     var alertState = MainAlertState()
+
+    @State
+    var saveFeedbackState =
+        MainSaveFeedbackState()
 
     @State
     var availableAlbums: [PhotoAlbumOption] = []

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-19
+
+### Added
+- Added a real `PhotoMemoiOS` target plus a buildable `PhotoMemoShareExtension` target.
+- Added app-group-backed shared helpers for external intake persistence, shared defaults, and lightweight batch-configuration snapshot loading.
+- Added a shared `ExternalPhotoIntakeRequest` model so the intake request schema is no longer tied to the main-app intake center file.
+
+### Changed
+- Continued shrinking `MainView` into a thin coordinator and moved more UI-heavy responsibilities into `MainView+*.swift` files.
+- Refined the permission and background-processing surface so granted permissions stop occupying unnecessary sidebar space and failure summaries better describe partial-success batches.
+- Changed share intake to support partial success, deduplicate repeated URLs, and filter stale/missing files before queue handoff.
+- Tightened `PhotoMemoShareExtension` target membership so it now compiles against a much smaller shared core instead of dragging in the full main UI and unrelated app services.
+- Updated share-extension feedback wording so partial-success messages only show non-zero skipped/failed counts.
+
+### Notes
+- The share-extension fallback path deliberately avoids `UIImage -> JPEG` re-encoding to reduce EXIF-loss risk before PhotoMemo starts real processing.
+- Current iOS foundation is now target-ready and buildable, but still requires real share-sheet/manual workflow validation before calling the mobile flow polished.
+
 ## 2026-06-17
 
 ### Added

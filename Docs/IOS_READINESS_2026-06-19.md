@@ -305,3 +305,33 @@ But before claiming “随时开发 iOS 版本”, we should honestly say:
 - the foundation exists
 - the first sprint should be platform enablement
 - the biggest remaining work is target setup plus mobile interaction adaptation
+
+## 2026-06-19 Evening Update
+
+Since the original readiness note, the repository has moved one real step forward on the iOS path:
+
+- `PhotoMemoiOS` target is now present and buildable
+- `PhotoMemoShareExtension` target is now present and buildable
+- share-intake persistence now uses a shared app-group container
+- share-extension configuration loading is already narrowed to a lightweight shared snapshot reader
+- the share-extension compile surface has now been reduced to a small shared core instead of compiling the full main UI and app shell
+
+Current practical meaning:
+
+- the repo is no longer just “architecturally capable of future iOS work”
+- it already contains:
+  - a buildable iOS app target
+  - a buildable share extension
+  - a shared intake/storage/config foundation for “从系统分享进入 PhotoMemo”
+
+What is still not done:
+
+- real device/share-sheet manual validation
+- iPhone-first compact-width product flow
+- final background-processing UX around notifications/progress/completion
+- confidence testing around metadata retention for every real-world share source
+
+So the newest honest conclusion is:
+
+- **PhotoMemo is now iOS-enabled at the target/foundation level**
+- **PhotoMemo is not yet iPhone-finished at the workflow/polish level**

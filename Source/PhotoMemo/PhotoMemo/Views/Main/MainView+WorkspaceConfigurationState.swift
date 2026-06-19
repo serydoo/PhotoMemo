@@ -7,8 +7,6 @@ extension MainView {
 
         settings.buildBatchConfigurationSnapshot(
             selectedAnchorID: selectedAnchorID,
-            draftTitleText: titleText,
-            draftStoryText: storyText,
             selectedAlbumIdentifier:
                 selectedAlbumIdentifier
         )
@@ -28,8 +26,6 @@ extension MainView {
         settings.selectedAnchorIDString =
             selectedAnchorID?.uuidString
             ?? ""
-        settings.draftTitleText = titleText
-        settings.draftStoryText = storyText
         settings.selectedAlbumIdentifier =
             settings.normalizedAlbumIdentifier(
                 selectedAlbumIdentifier
@@ -43,8 +39,6 @@ extension MainView {
 
         persistEditorDraftState(
             selectedAnchorID: selectedAnchorID,
-            draftTitleText: titleText,
-            draftStoryText: storyText,
             selectedAlbumIdentifier:
                 selectedAlbumIdentifier
         )
@@ -121,16 +115,14 @@ extension MainView {
         BatchConfigurationSnapshot(
             template:
                 templatePresetEngine.build(
-                    preset: slotID.defaultPreset
+                    preset: .template1
                 )
                 .normalizedForEditing,
             badge: nil,
             anchor: nil,
             shouldWritePhotoDescription: false,
             photoDescriptionOverride: "",
-            selectedAlbumIdentifier: "",
-            titleText: "",
-            storyText: ""
+            selectedAlbumIdentifier: ""
         )
     }
 
@@ -139,7 +131,9 @@ extension MainView {
     ) {
 
         settings.selectedTemplate =
-            snapshot.template.normalizedForEditing
+            normalizedPrimaryTemplate(
+                snapshot.template
+            )
         settings.selectedBadge =
             snapshot.badge ?? Badge.none
         settings.shouldWritePhotoDescription =
@@ -161,11 +155,6 @@ extension MainView {
             snapshot.anchor?.id.uuidString
             ?? ""
 
-        titleText = snapshot.titleText
-        storyText = snapshot.storyText
-        settings.draftTitleText = snapshot.titleText
-        settings.draftStoryText = snapshot.storyText
-
         let normalizedAlbumIdentifier =
             snapshot.selectedAlbumIdentifier
             .isEmpty
@@ -186,15 +175,11 @@ extension MainView {
 
     func persistEditorDraftState(
         selectedAnchorID: UUID? = nil,
-        draftTitleText: String? = nil,
-        draftStoryText: String? = nil,
         selectedAlbumIdentifier: String? = nil
     ) {
 
         settings.scheduleEditorStateSave(
             selectedAnchorID: selectedAnchorID,
-            draftTitleText: draftTitleText,
-            draftStoryText: draftStoryText,
             selectedAlbumIdentifier:
                 selectedAlbumIdentifier
         )

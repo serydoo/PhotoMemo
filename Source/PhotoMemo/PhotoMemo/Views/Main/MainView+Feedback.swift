@@ -11,6 +11,16 @@ extension MainView {
         alertState.message = message
         alertState.isPresented = true
     }
+
+    func presentSaveFeedback(
+        title: String,
+        message: String
+    ) {
+
+        saveFeedbackState.title = title
+        saveFeedbackState.message = message
+        saveFeedbackState.isPresented = true
+    }
 }
 
 #Preview {

@@ -13,7 +13,15 @@ struct MainOutputSection: View {
 
     let canExportCurrentCard: Bool
 
+    let isCompactLayout: Bool
+
     let saveCurrentCardToAlbum: () -> Void
+
+    let saveFeedbackTitle: String?
+
+    let saveFeedbackMessage: String?
+
+    let showsSaveFeedback: Bool
 
     var body: some View {
 
@@ -52,8 +60,16 @@ struct MainOutputSection: View {
             MinimalInsetCard {
                 LabeledContent("写入位置") {
                     Text(selectedAlbumSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(
+                            isCompactLayout
+                            ? .subheadline.weight(.medium)
+                            : .caption
+                        )
+                        .foregroundStyle(
+                            isCompactLayout
+                            ? .primary
+                            : .secondary
+                        )
                 }
 
                 Divider()
@@ -66,18 +82,65 @@ struct MainOutputSection: View {
                 }
             }
 
-            Button(
-                isSavingToAlbum
-                    ? "正在存入系统相册..."
-                    : "存入系统相册",
-                action: saveCurrentCardToAlbum
-            )
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .disabled(
-                !canExportCurrentCard
-                || isSavingToAlbum
-            )
+            VStack(
+                alignment: .leading,
+                spacing: 8
+            ) {
+
+                Button(
+                    isSavingToAlbum
+                        ? "正在存入系统相册..."
+                        : "保存新图到“\(selectedAlbumSummary)”",
+                    action: saveCurrentCardToAlbum
+                )
+                .buttonStyle(.borderedProminent)
+                .controlSize(
+                    isCompactLayout
+                    ? .regular
+                    : .small
+                )
+                .frame(maxWidth: .infinity)
+                .disabled(
+                    !canExportCurrentCard
+                    || isSavingToAlbum
+                )
+
+                if isCompactLayout {
+                    Text("iPhone 上建议先确认上方预览正确，再直接保存到当前相册。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+            }
+
+            if isCompactLayout,
+               showsSaveFeedback,
+               let saveFeedbackTitle,
+               let saveFeedbackMessage {
+
+                MinimalInsetCard {
+                    Label(
+                        saveFeedbackTitle,
+                        systemImage: "checkmark.circle.fill"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(
+                        MinimalPalette.accent
+                    )
+
+                    Text(saveFeedbackMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+                .transition(.opacity)
+            }
         }
         .frame(
             maxWidth: .infinity,

@@ -47,36 +47,25 @@ extension MainView {
             return "当前生效：\(slot.displayTitleWithReference)。切换到其他配置后，左侧模板、时间点、Logo 标识、补充信息和输出规则会整体刷新。"
         }
 
-        return "当前生效：\(slot.displayTitleWithReference)。这套配置还未单独保存，暂时使用\(slot.defaultPreset.displayName)默认骨架。"
+        return "当前生效：\(slot.displayTitleWithReference)。这套配置还未单独保存，暂时使用当前固定模板骨架。"
     }
 
     var activeTemplate: Template {
 
-        settings.selectedTemplate
-        ?? .template1
+        normalizedPrimaryTemplate(
+            settings.selectedTemplate
+            ?? .template1
+        )
     }
 
     var currentPreset: TemplatePreset {
 
-        activeTemplate.preset
+        .template1
     }
 
     var currentPresetDefaultOutput: String {
 
-        switch currentPreset {
-
-        case .template1:
-            return "今天 + 年岁"
-
-        case .template2:
-            return "已经 + 纪念时长"
-
-        case .template3:
-            return "倒计时"
-
-        case .immersWhite:
-            return "记忆摘要"
-        }
+        "今天 + 年岁"
     }
 
     var selectedAnchor: Anchor? {
@@ -97,31 +86,6 @@ extension MainView {
             photoDate:
                 selectedPhoto?.metadata.captureDate
                 ?? Date()
-        )
-    }
-
-    var photoTimeDescription: String {
-
-        guard let captureDate =
-            selectedPhoto?.metadata.captureDate
-        else {
-            return "导入照片后，系统会用照片 EXIF 拍摄时间与锚点时间做差值计算，可生成年岁、纪念时长、已过天数、未来倒计时，以及第几天、周数、月龄等时间结果。"
-        }
-
-        return "当前照片 EXIF 时间：\(captureDate.formatted(date: .numeric, time: .standard))"
-    }
-
-    var anchorPhotoSummary: String {
-
-        guard let captureDate =
-            selectedPhoto?.metadata.captureDate
-        else {
-            return "导入照片后会自动读取 EXIF 拍摄时间"
-        }
-
-        return captureDate.formatted(
-            date: .abbreviated,
-            time: .shortened
         )
     }
 
@@ -176,7 +140,7 @@ extension MainView {
                 return "未自定义时，Immers 白边会自动使用经典 Apple 小标识，并贴近右侧信息区显示。"
             }
 
-            return "当前模板会保留标识区域留白，适合更极简的版式。"
+            return "当前配置会保留标识区域留白，适合更极简的版式。"
         }
 
         if badge.isSystemDefault {
@@ -267,28 +231,6 @@ extension MainView {
         }
     }
 
-    var selectedTemplatePreset: Binding<TemplatePreset> {
-
-        Binding(
-            get: {
-
-                currentPreset
-            },
-            set: { preset in
-
-                settings.selectedTemplate =
-                    templatePresetEngine.build(
-                        preset: preset
-                    )
-
-                syncComposerItemsFromTemplate(
-                    resetTransientState: true
-                )
-                settings.saveTemplate()
-            }
-        )
-    }
-
     var resolvedTemplateDisplayName: String {
 
         let trimmed =
@@ -302,5 +244,14 @@ extension MainView {
         }
 
         return currentPreset.displayName
+    }
+
+    func normalizedPrimaryTemplate(
+        _ template: Template
+    ) -> Template {
+
+        var normalized = template
+        normalized.preset = .template1
+        return normalized.normalizedForEditing
     }
 }

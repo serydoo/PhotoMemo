@@ -79,16 +79,6 @@ extension MainView {
             handleSelectedAnchorChange(newValue)
         }
         .onChange(
-            of: titleText
-        ) { _, newValue in
-            handleTitleTextChange(newValue)
-        }
-        .onChange(
-            of: storyText
-        ) { _, newValue in
-            handleStoryTextChange(newValue)
-        }
-        .onChange(
             of: selectedAlbumIdentifier
         ) { _, newValue in
             handleSelectedAlbumIdentifierChange(
@@ -109,6 +99,23 @@ extension MainView {
             of: settings.photoDescriptionOverride
         ) { _, _ in
             handlePhotoDescriptionSettingsChange()
+        }
+        .onChange(
+            of: saveFeedbackState.isPresented
+        ) { _, isPresented in
+            guard isPresented else {
+                return
+            }
+
+            Task { @MainActor in
+                try? await Task.sleep(
+                    for: .seconds(2.8)
+                )
+
+                if saveFeedbackState.isPresented {
+                    saveFeedbackState.isPresented = false
+                }
+            }
         }
         .background(mainAlert)
     }
@@ -204,26 +211,6 @@ extension MainView {
 
         persistEditorDraftState(
             selectedAnchorID: newValue
-        )
-        syncBatchQueueDefaultConfiguration()
-    }
-
-    func handleTitleTextChange(
-        _ newValue: String
-    ) {
-
-        persistEditorDraftState(
-            draftTitleText: newValue
-        )
-        syncBatchQueueDefaultConfiguration()
-    }
-
-    func handleStoryTextChange(
-        _ newValue: String
-    ) {
-
-        persistEditorDraftState(
-            draftStoryText: newValue
         )
         syncBatchQueueDefaultConfiguration()
     }

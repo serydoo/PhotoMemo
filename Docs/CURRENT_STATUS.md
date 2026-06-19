@@ -102,7 +102,7 @@ Completed structural extractions now cover:
 - inline custom-region editor
 - variable library panels
 - field editor wrappers
-- memory / output / permission panels
+- output / permission panels
 
 This means future MainView work should prioritize:
 
@@ -238,6 +238,89 @@ Behavior expectations for this slice:
 - when the caret is immediately next to a module, delete/backspace should remove the whole module display label in one action
 - display-only labels must still map back to the original raw template tokens before preview/render/export
 
+### 13. Share-intake persistence and fallback hardening advanced again
+
+The latest iOS-readiness slice focused on making the external intake path safer for novice users without changing the main calibration UI.
+
+Completed in this round:
+
+- added a shared album-selection helper:
+  - `Source/PhotoMemo/PhotoMemo/App/PhotoMemoAlbumSelection.swift`
+- removed the share-extension snapshot path's dependence on `PhotoAlbumOption` constants from the photo-library export layer
+- strengthened `ExternalPhotoIntakeStore` so persistence failure now cleans up managed inbox copies instead of leaving orphaned temporary files behind
+- deduplicated repeated URLs before persisting or queueing external-intake requests
+- `PhotoMemoAppRuntime.flushExternalRequests()` now filters out missing source files before enqueuing, so stale requests degrade into smaller valid batches instead of failing later at import time
+- `PhotoMemoShareExtensionIntakeService` now:
+  - accepts partial success instead of treating one provider failure as a whole-share failure
+  - reports imported / skipped / failed counts back to the share UI
+  - tries a safer fallback path using file URLs or raw image data when direct file representation is unavailable
+  - does **not** fall back to `UIImage -> JPEG` rewriting, to avoid silently stripping EXIF or changing the source photo bits during intake
+
+Why this matters:
+
+- it stays aligned with the "ExternalIntake is pure temporary storage" decision
+- it reduces invisible failure modes before the real import/render/export pipeline starts
+- it keeps metadata-retention priorities ahead of convenience fallbacks
+
+Verification for this round:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoShareExtensionDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed:
+  - only the existing Xcode destination-selection warning on macOS build
+- not yet manually verified:
+  - real Photos share-sheet input that provides only `loadItem` data and not file representation
+  - multi-photo share where one or more items disappear before the host app flushes the request
+  - user-facing wording and timing of the share-extension success/partial-success message on device
+
+### 14. Share-extension compile surface was reduced to a small shared core
+
+The latest architecture slice focused on trimming `PhotoMemoShareExtension` so it only compiles what the share-intake pipeline actually needs.
+
+Completed in this round:
+
+- added a synchronized-group target-exception set in:
+  - `Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj`
+- excluded clearly app-only files from the share-extension target, including:
+  - main app shells
+  - `Views/*`
+  - renderers
+  - queue / export / permission services
+  - unused engines and helper extensions
+- extracted `ExternalPhotoIntakeRequest` into its own shared file:
+  - `Source/PhotoMemo/PhotoMemo/App/ExternalPhotoIntakeRequest.swift`
+- this removes the previous coupling where `ExternalPhotoIntakeStore` depended on `ExternalPhotoIntakeCenter.swift` just to see the request model
+- refined the share-extension success message so partial-success feedback only shows the non-zero skipped / failed counts
+
+Current result:
+
+- the share-extension target now compiles against a much smaller shared core
+- the generated `PhotoMemoShareExtension.SwiftFileList` is now `19` lines, down from the previous much broader compile surface that still included:
+  - `MainView`
+  - preview/template/anchor views
+  - app entry shells
+  - queue/export/permission services
+
+Why this matters:
+
+- iOS share flow is now less coupled to the macOS calibration UI
+- future extension-specific bugs become easier to isolate
+- future share-flow testing is less likely to be blocked by unrelated UI/service regressions
+
+Verification for this round:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoShareExtensionDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed:
+  - only the existing Xcode destination-selection warning on macOS build
+- not yet manually verified:
+  - real share-sheet behavior after the new target slimming on device
+  - whether any third-party share source relies on a file path or raw data shape not yet seen in manual testing
+
 ## Behavior Rules Preserved During Refactor
 
 These behaviors were intentionally preserved and should not be reverted:
@@ -357,6 +440,117 @@ MainView re-review result for this follow-up:
   - composer session state
   - workspace configuration lifecycle
   - export/save actions
+
+## 2026-06-19 External Intake Foundation Follow-Up
+
+The latest infrastructure slice now also does the following:
+
+- adds a shared app-container helper:
+  - `Source/PhotoMemo/PhotoMemo/App/PhotoMemoSharedContainer.swift`
+- adds a persisted intake inbox:
+  - `Source/PhotoMemo/PhotoMemo/App/ExternalPhotoIntakeStore.swift`
+- updates `ExternalPhotoIntakeCenter` so external image requests are no longer in-memory only
+- updates settings, permission-primer state, and batch-queue persistence to read/write through a shared defaults entry point
+- updates app runtime activation flow so persisted intake requests are automatically flushed on launch/activation without adding any progress UI back into the main screen
+
+Behavior expectations for this slice:
+
+- external intake requests should survive app relaunch instead of being lost with process memory
+- the default batch configuration snapshot used for background intake should stay aligned with the current saved workspace configuration
+- the main UI should remain a calibration center only; no queue/progress panel should reappear
+
+## 2026-06-19 External Intake Cleanup Follow-Up
+
+The latest follow-up now also does the following:
+
+- teaches `ExternalPhotoIntakeStore` to clean up only the managed source files that PhotoMemo copied into the shared `ExternalIntake` inbox
+- wires that cleanup into safe terminal paths:
+  - after a task completes successfully
+  - when a queued/running job is explicitly cancelled
+
+Behavior expectations for this slice:
+
+- shared intake files should no longer accumulate forever after successful background processing
+- failed tasks should still retain their managed source files so retry remains possible
+- original user-selected files outside the managed intake inbox must never be deleted by this cleanup path
+
+## 2026-06-19 External Intake Orphan Cleanup Follow-Up
+
+The latest follow-up now also does the following:
+
+- exposes the currently referenced managed source URLs from `BatchQueueStore`
+- runs an orphaned managed-intake cleanup scan during app-side external-intake refresh
+- removes inbox child files/directories that are no longer referenced by any pending request or persisted batch task
+
+Behavior expectations for this slice:
+
+- a previously interrupted app session should not leave unmanaged `ExternalIntake` directories accumulating forever
+- queued, running, or failed-for-retry managed sources must remain intact while still referenced by queue state
+
+## 2026-06-19 Share Extension Skeleton Follow-Up
+
+The latest follow-up now also does the following:
+
+- adds a minimal iOS share-extension intake service that writes incoming shared images into the existing shared `ExternalIntake` inbox
+- adds a minimal share-extension view controller and extension plist/entitlement files
+- wires a real `PhotoMemoShareExtension` target into the Xcode project
+- keeps the main iOS app entry isolated behind a compilation condition so the extension target can compile cleanly without conflicting `@main` app entrypoints
+
+Behavior expectations for this slice:
+
+- the repository now contains a real compilable share-extension target rather than only “future-ready” architecture
+- shared images can be persisted into the same intake pipeline foundation already used by the app runtime
+- the main calibration-center UI remains unchanged; this slice is project/runtime groundwork only
+
+## 2026-06-19 Strict Temporary Intake Follow-Up
+
+The latest follow-up now also does the following:
+
+- tightens the shared `ExternalIntake` copies into a strict temporary-file policy
+- cleans managed intake source files on all terminal outcomes, including failed tasks
+- marks failures that have lost their managed temporary source as non-retryable
+- trims persisted terminal job history before saving queue state
+
+Behavior expectations for this slice:
+
+- managed intake files should not linger as a long-term cache after success, cancellation, or failure
+- retry should remain available only for failures whose source is still genuinely available
+- queue history should stop growing without bound across long-term usage
+
+## 2026-06-19 Partial Failure Semantics Follow-Up
+
+The latest follow-up now also does the following:
+
+- refines batch-result semantics so small failure counts are treated as exceptions instead of making the whole batch feel like a total failure
+- updates failure summaries and completion notifications to prefer “mostly completed, with exceptions” language when most photos succeeded
+- hides retry actions for failures that no longer have a real recoverable source under the strict temporary-file policy
+
+Behavior expectations for this slice:
+
+- when a large batch finishes with only one or a few failures, users should still feel that the batch fundamentally completed
+- failure handling remains explicit, but it no longer overstates the impact of isolated exceptions
+
+## 2026-06-19 Share Extension Warning Cleanup
+
+The latest follow-up now also does the following:
+
+- moves the share-extension plist outside the synchronized `PhotoMemo/` group root
+- points `PhotoMemoShareExtension` at the new external plist path
+- removes the previous share-extension `Info.plist` bundle-resource warning during build verification
+
+## 2026-06-19 Share Extension Slimming Follow-Up
+
+The latest follow-up now also does the following:
+
+- extracts a lightweight shared batch-configuration snapshot reader:
+  - `Source/PhotoMemo/PhotoMemo/App/SharedBatchConfigurationSnapshotService.swift`
+- moves the share-extension intake flow away from the full `SettingsService` dependency
+- keeps the extension reading only the minimum persisted configuration inputs it needs to enqueue shared photos consistently
+
+Behavior expectations for this slice:
+
+- the share extension should now rely on a smaller, clearer configuration boundary
+- future target slimming can focus on removing additional unnecessary app-only compile dependencies without changing the user-visible flow
 
 ## 2026-06-19 Refactor Completion
 

@@ -30,7 +30,7 @@ struct MainMemoryProgressPanel: View {
                 storageKey:
                     "photomemo.guide.memoryProgress.dismissed",
                 title: "记忆进度说明",
-                message: "这里会累计 PhotoMemo 的处理进度、默认配置去向和最近的后台结果。如果你已经熟悉这块用途，可以直接关闭，保留更干净的主界面。"
+                message: "这里会累计 PhotoMemo 的处理进度、默认配置去向和最近的后台结果。如果你已经熟悉这块用途，可以直接关闭，完整说明会继续保留在右侧操作指南里。"
             )
 
             MinimalInsetCard {
@@ -138,7 +138,11 @@ struct MainMemoryProgressPanel: View {
                                 spacing: 8
                             ) {
 
-                                Text("最近有 \(latestFailureSummary.failedTaskCount) 张图片在“\(latestFailureSummary.jobTitle)”里处理失败。")
+                                Text(
+                                    failureSummaryHeadline(
+                                        latestFailureSummary
+                                    )
+                                )
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -157,14 +161,21 @@ struct MainMemoryProgressPanel: View {
 
                                 HStack(spacing: 10) {
 
-                                    Button("重试失败项") {
-                                        retryFailedTasks(
-                                            latestFailureSummary
-                                            .jobID
-                                        )
+                                    if latestFailureSummary
+                                        .hasRetryableFailures {
+                                        Button("重试失败项") {
+                                            retryFailedTasks(
+                                                latestFailureSummary
+                                                .jobID
+                                            )
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .controlSize(.small)
+                                    } else {
+                                        Text("该失败项当前不可重试")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
                                     }
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
 
                                     Text("最近更新：\(latestFailureSummary.updatedAt.formatted(date: .abbreviated, time: .shortened))")
                                         .font(.caption)
@@ -360,6 +371,20 @@ struct MainMemoryProgressPanel: View {
             : ""
 
         return "《\(record.fileName)》在“\(record.jobTitle)”的\(record.failure.phaseTitle)阶段失败\(retrySuffix)。"
+    }
+
+    private func failureSummaryHeadline(
+        _ summary: BatchFailureSummary
+    ) -> String {
+
+        if summary.completedTaskCount > 0,
+           Double(summary.completedTaskCount)
+            / Double(max(1, summary.totalTaskCount))
+            >= 0.8 {
+            return "“\(summary.jobTitle)”这批里大部分图片已经处理完成，另有 \(summary.failedTaskCount) 张作为例外未处理。"
+        }
+
+        return "最近有 \(summary.failedTaskCount) 张图片在“\(summary.jobTitle)”里处理失败。"
     }
 
     @ViewBuilder

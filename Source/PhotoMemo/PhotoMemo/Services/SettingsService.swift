@@ -41,10 +41,10 @@ enum WorkspaceConfigurationSlotID:
             return .template1
 
         case .slot2:
-            return .template2
+            return .template1
 
         case .slot3:
-            return .template3
+            return .template1
         }
     }
 }
@@ -172,6 +172,9 @@ final class SettingsService: ObservableObject {
     private var photoDescriptionSaveTask:
         Task<Void, Never>?
 
+    private let defaults:
+        UserDefaults
+
     private enum Keys {
 
         static let anchors = "photomemo.anchors"
@@ -188,12 +191,6 @@ final class SettingsService: ObservableObject {
 
         static let selectedAnchorID =
             "photomemo.selectedAnchorID"
-
-        static let draftTitleText =
-            "photomemo.draftTitleText"
-
-        static let draftStoryText =
-            "photomemo.draftStoryText"
 
         static let selectedAlbumIdentifier =
             "photomemo.selectedAlbumIdentifier"
@@ -217,10 +214,6 @@ final class SettingsService: ObservableObject {
 
     @Published var selectedAnchorIDString = ""
 
-    @Published var draftTitleText = ""
-
-    @Published var draftStoryText = ""
-
     @Published var selectedAlbumIdentifier = ""
 
     @Published
@@ -233,6 +226,10 @@ final class SettingsService: ObservableObject {
             WorkspaceConfigurationSlot.defaultSlots
 
     init() {
+
+        self.defaults =
+            PhotoMemoSharedContainer
+            .sharedUserDefaults
 
         loadConfigurationSlots()
 
@@ -261,7 +258,7 @@ final class SettingsService: ObservableObject {
             return
         }
 
-        UserDefaults.standard.set(
+        defaults.set(
             data,
             forKey: Keys.anchors
         )
@@ -270,7 +267,7 @@ final class SettingsService: ObservableObject {
     func saveTemplate() {
 
         guard let selectedTemplate else {
-            UserDefaults.standard.removeObject(
+            defaults.removeObject(
                 forKey: Keys.selectedTemplate
             )
             return
@@ -280,7 +277,7 @@ final class SettingsService: ObservableObject {
             return
         }
 
-        UserDefaults.standard.set(
+        defaults.set(
             data,
             forKey: Keys.selectedTemplate
         )
@@ -306,7 +303,7 @@ final class SettingsService: ObservableObject {
     func saveBadge() {
 
         guard let selectedBadge else {
-            UserDefaults.standard.removeObject(
+            defaults.removeObject(
                 forKey: Keys.selectedBadge
             )
             return
@@ -316,7 +313,7 @@ final class SettingsService: ObservableObject {
             return
         }
 
-        UserDefaults.standard.set(
+        defaults.set(
             data,
             forKey: Keys.selectedBadge
         )
@@ -324,12 +321,12 @@ final class SettingsService: ObservableObject {
 
     func savePhotoDescriptionSettings() {
 
-        UserDefaults.standard.set(
+        defaults.set(
             shouldWritePhotoDescription,
             forKey: Keys.shouldWritePhotoDescription
         )
 
-        UserDefaults.standard.set(
+        defaults.set(
             photoDescriptionOverride,
             forKey: Keys.photoDescriptionOverride
         )
@@ -364,8 +361,6 @@ final class SettingsService: ObservableObject {
 
     func saveEditorState(
         selectedAnchorID: UUID? = nil,
-        draftTitleText: String? = nil,
-        draftStoryText: String? = nil,
         selectedAlbumIdentifier: String? = nil
     ) {
 
@@ -374,35 +369,17 @@ final class SettingsService: ObservableObject {
                 selectedAnchorID.uuidString
         }
 
-        if let draftTitleText {
-            self.draftTitleText = draftTitleText
-        }
-
-        if let draftStoryText {
-            self.draftStoryText = draftStoryText
-        }
-
         if let selectedAlbumIdentifier {
             self.selectedAlbumIdentifier =
                 selectedAlbumIdentifier
         }
 
-        UserDefaults.standard.set(
+        defaults.set(
             selectedAnchorIDString,
             forKey: Keys.selectedAnchorID
         )
 
-        UserDefaults.standard.set(
-            self.draftTitleText,
-            forKey: Keys.draftTitleText
-        )
-
-        UserDefaults.standard.set(
-            self.draftStoryText,
-            forKey: Keys.draftStoryText
-        )
-
-        UserDefaults.standard.set(
+        defaults.set(
             self.selectedAlbumIdentifier,
             forKey: Keys.selectedAlbumIdentifier
         )
@@ -419,12 +396,12 @@ final class SettingsService: ObservableObject {
             return
         }
 
-        UserDefaults.standard.set(
+        defaults.set(
             activeConfigurationSlotID.rawValue,
             forKey: Keys.activeConfigurationSlotID
         )
 
-        UserDefaults.standard.set(
+        defaults.set(
             slotsData,
             forKey: Keys.configurationSlots
         )
@@ -483,22 +460,12 @@ final class SettingsService: ObservableObject {
 
     func scheduleEditorStateSave(
         selectedAnchorID: UUID? = nil,
-        draftTitleText: String? = nil,
-        draftStoryText: String? = nil,
         selectedAlbumIdentifier: String? = nil
     ) {
 
         if let selectedAnchorID {
             self.selectedAnchorIDString =
                 selectedAnchorID.uuidString
-        }
-
-        if let draftTitleText {
-            self.draftTitleText = draftTitleText
-        }
-
-        if let draftStoryText {
-            self.draftStoryText = draftStoryText
         }
 
         if let selectedAlbumIdentifier {
@@ -524,7 +491,7 @@ final class SettingsService: ObservableObject {
     private func loadAnchors() {
 
         guard
-            let data = UserDefaults.standard.data(
+            let data = defaults.data(
                 forKey: Keys.anchors
             )
         else {
@@ -541,7 +508,7 @@ final class SettingsService: ObservableObject {
     private func loadTemplate() {
 
         guard
-            let data = UserDefaults.standard.data(
+            let data = defaults.data(
                 forKey: Keys.selectedTemplate
             )
         else {
@@ -571,7 +538,7 @@ final class SettingsService: ObservableObject {
     private func loadBadge() {
 
         guard
-            let data = UserDefaults.standard.data(
+            let data = defaults.data(
                 forKey: Keys.selectedBadge
             )
         else {
@@ -587,18 +554,18 @@ final class SettingsService: ObservableObject {
 
     private func loadPhotoDescriptionSettings() {
 
-        if UserDefaults.standard.object(
+        if defaults.object(
             forKey: Keys.shouldWritePhotoDescription
         ) != nil {
 
             shouldWritePhotoDescription =
-                UserDefaults.standard.bool(
+                defaults.bool(
                     forKey: Keys.shouldWritePhotoDescription
                 )
         }
 
         photoDescriptionOverride =
-            UserDefaults.standard.string(
+            defaults.string(
                 forKey: Keys.photoDescriptionOverride
             ) ?? ""
     }
@@ -606,22 +573,12 @@ final class SettingsService: ObservableObject {
     private func loadEditorState() {
 
         selectedAnchorIDString =
-            UserDefaults.standard.string(
+            defaults.string(
                 forKey: Keys.selectedAnchorID
             ) ?? ""
 
-        draftTitleText =
-            UserDefaults.standard.string(
-                forKey: Keys.draftTitleText
-            ) ?? ""
-
-        draftStoryText =
-            UserDefaults.standard.string(
-                forKey: Keys.draftStoryText
-            ) ?? ""
-
         selectedAlbumIdentifier =
-            UserDefaults.standard.string(
+            defaults.string(
                 forKey: Keys.selectedAlbumIdentifier
             ) ?? ""
     }
@@ -629,7 +586,7 @@ final class SettingsService: ObservableObject {
     private func loadConfigurationSlots() {
 
         if let activeSlotRawValue =
-            UserDefaults.standard.string(
+            defaults.string(
                 forKey: Keys.activeConfigurationSlotID
             ),
            let activeSlotID =
@@ -642,7 +599,7 @@ final class SettingsService: ObservableObject {
 
         guard
             let slotsData =
-                UserDefaults.standard.data(
+                defaults.data(
                     forKey: Keys.configurationSlots
                 ),
             let decodedSlots =
@@ -691,22 +648,12 @@ extension SettingsService {
 
     func buildBatchConfigurationSnapshot(
         selectedAnchorID: UUID? = nil,
-        draftTitleText: String? = nil,
-        draftStoryText: String? = nil,
         selectedAlbumIdentifier: String? = nil
     ) -> BatchConfigurationSnapshot {
 
         let resolvedAnchorIdentifier =
             selectedAnchorID?.uuidString
             ?? selectedAnchorIDString
-
-        let resolvedTitleText =
-            draftTitleText
-            ?? self.draftTitleText
-
-        let resolvedStoryText =
-            draftStoryText
-            ?? self.draftStoryText
 
         let resolvedAlbumIdentifier =
             normalizedAlbumIdentifier(
@@ -730,9 +677,7 @@ extension SettingsService {
             photoDescriptionOverride:
                 photoDescriptionOverride,
             selectedAlbumIdentifier:
-                resolvedAlbumIdentifier,
-            titleText: resolvedTitleText,
-            storyText: resolvedStoryText
+                resolvedAlbumIdentifier
         )
     }
 
@@ -747,12 +692,7 @@ extension SettingsService {
         _ identifier: String
     ) -> String {
 
-        if identifier.isEmpty
-            || identifier
-            == PhotoAlbumOption.automaticIdentifier {
-            return ""
-        }
-
-        return identifier
+        PhotoMemoAlbumSelection
+            .normalizedIdentifier(identifier)
     }
 }

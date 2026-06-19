@@ -2,18 +2,14 @@ import SwiftUI
 #if os(macOS)
 import AppKit
 #endif
-import Combine
 
+#if os(macOS)
 @main
 struct PhotoMemoApp: App {
 
     @StateObject
-    private var batchQueueStore =
-        BatchQueueStore()
-
-    @StateObject
-    private var externalIntakeCenter =
-        ExternalPhotoIntakeCenter.shared
+    private var runtime =
+        PhotoMemoAppRuntime()
 
 #if os(macOS)
     @NSApplicationDelegateAdaptor(
@@ -36,85 +32,10 @@ struct PhotoMemoApp: App {
 
         WindowGroup {
 
-            MainView()
-                .environmentObject(
-                    batchQueueStore
-                )
-                .preferredColorScheme(.light)
-                .onOpenURL { url in
-                    handleExternalURLs(
-                        [url],
-                        source: .fileOpen
-                    )
-                }
-                .onReceive(
-                    externalIntakeCenter.$revision
-                ) { _ in
-                    flushExternalRequests()
-                }
-                .task {
-                    flushExternalRequests()
-                }
-        }
-    }
-}
-
-private extension PhotoMemoApp {
-
-    func handleExternalURLs(
-        _ urls: [URL],
-        source: BatchJobLaunchSource
-    ) {
-
-        ExternalPhotoIntakeCenter
-            .shared
-            .submit(
-                urls: urls,
-                source: source
-            )
-    }
-
-    func flushExternalRequests() {
-
-        let requests =
-            externalIntakeCenter
-            .drainPendingRequests()
-
-        guard !requests.isEmpty else {
-            return
-        }
-
-        for request in requests {
-            _ = batchQueueStore.enqueue(
-                payloads: request.urls.map {
-                    BatchTaskIntakePayload(
-                        sourceURL: $0
-                    )
-                },
-                configuration:
-                    request.configurationSnapshot,
-                launchSource:
-                    request.launchSource,
-                title:
-                    resolvedRequestTitle(
-                        for: request
-                    )
+            PhotoMemoRootSceneView(
+                runtime: runtime
             )
         }
     }
-
-    func resolvedRequestTitle(
-        for request: ExternalPhotoIntakeRequest
-    ) -> String {
-
-        let formatter =
-            DateFormatter()
-
-        formatter.locale =
-            Locale(identifier: "zh_CN")
-        formatter.dateFormat =
-            "yyyy.MM.dd HH:mm"
-
-        return "外部图片处理 \(formatter.string(from: request.receivedAt)) · \(request.urls.count)张"
-    }
 }
+#endif

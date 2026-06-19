@@ -126,9 +126,6 @@ struct MainTemplateFieldEditorView: View {
                     onActivateEditingSlot()
                 }
 
-                Text("直接输入短语；点击上方 EXIF 或智能模块后，会按当前光标位置插入。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .contentShape(Rectangle())
@@ -408,10 +405,6 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
                         parent.moduleSpans,
                     in: textView.string
                 )
-
-            guard adjustedRange != affectedCharRange else {
-                return true
-            }
 
             isApplyingProgrammaticUpdate = true
 
@@ -729,10 +722,6 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
                         parent.moduleSpans,
                     in: textView.text
                 )
-
-            guard adjustedRange != range else {
-                return true
-            }
 
             isApplyingProgrammaticUpdate = true
 

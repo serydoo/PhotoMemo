@@ -17,19 +17,7 @@ extension MainView {
 #else
         NavigationStack {
 
-            ScrollView {
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 24
-                ) {
-
-                    detailContent
-
-                    editorContent
-                }
-                .padding(20)
-            }
+            compactContent
             .navigationTitle("PhotoMemo")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -39,6 +27,174 @@ extension MainView {
 
 // MARK: - Sidebar
 extension MainView {
+
+    @ViewBuilder
+    var compactContent: some View {
+
+        ScrollView {
+
+            VStack(
+                alignment: .leading,
+                spacing: 18
+            ) {
+
+                compactHeroHeader
+
+                compactTabPicker
+
+                if presentationState.compactTab
+                    == .preview {
+
+                    compactPreviewContent
+
+                } else {
+
+                    compactEditorContent
+                }
+            }
+            .padding(16)
+        }
+    }
+
+    var compactHeroHeader: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 10
+        ) {
+
+            Text("PhotoMemo")
+                .font(.system(
+                    size: 28,
+                    weight: .semibold
+                ))
+
+            Text("iPhone 上优先先看预览，再逐项校准内容。")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            heroPanel
+        }
+    }
+
+    var compactTabPicker: some View {
+
+        Picker(
+            "主界面模式",
+            selection:
+                $presentationState.compactTab
+        ) {
+
+            Text("预览")
+                .tag(
+                    MainPresentationState
+                    .CompactTab.preview
+                )
+
+            Text("编辑")
+                .tag(
+                    MainPresentationState
+                    .CompactTab.editor
+                )
+        }
+        .pickerStyle(.segmented)
+    }
+
+    @ViewBuilder
+    var compactPreviewContent: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 18
+        ) {
+
+            workspaceConfigurationPanel
+
+            GroupBox("照片") {
+                photoSection
+            }
+            .groupBoxStyle(
+                MinimalCardGroupBoxStyle()
+            )
+
+            detailContent
+
+            GroupBox("输出") {
+                MainOutputSection(
+                    selectedAlbumIdentifier:
+                        $selectedAlbumIdentifier,
+                    availableAlbums: availableAlbums,
+                    selectedAlbumSummary:
+                        selectedAlbumSummary,
+                    isSavingToAlbum:
+                        isSavingToAlbum,
+                    canExportCurrentCard:
+                        canExportCurrentCard,
+                    isCompactLayout: true,
+                    saveCurrentCardToAlbum:
+                        saveCurrentCardToAlbumAction,
+                    saveFeedbackTitle:
+                        saveFeedbackState.title,
+                    saveFeedbackMessage:
+                        saveFeedbackState.message,
+                    showsSaveFeedback:
+                        saveFeedbackState.isPresented
+                )
+            }
+            .groupBoxStyle(
+                MinimalCardGroupBoxStyle()
+            )
+        }
+    }
+
+    @ViewBuilder
+    var compactEditorContent: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 20
+        ) {
+
+            workspaceConfigurationPanel
+
+            if shouldShowPermissionSection {
+                GroupBox("本地权限") {
+                    permissionSection
+                }
+            }
+
+            GroupBox("照片") {
+                photoSection
+            }
+
+            GroupBox("模板") {
+                templateSection
+            }
+
+            GroupBox("时间锚点") {
+                anchorSection
+            }
+
+            GroupBox("个性化区域") {
+                fieldEditorSection
+            }
+
+            GroupBox("补充信息") {
+                customContentSection
+            }
+
+            GroupBox("Logo 标识") {
+                badgeSection
+            }
+
+            GroupBox("输出") {
+                outputSection
+            }
+        }
+        .groupBoxStyle(
+            MinimalCardGroupBoxStyle()
+        )
+    }
 
     var editorContent: some View {
 
@@ -58,8 +214,6 @@ extension MainView {
                 .foregroundStyle(.secondary)
 
             heroPanel
-
-            memoryProgressPanel
 
             if shouldShowPermissionSection {
                 GroupBox("本地权限") {
@@ -135,11 +289,8 @@ extension MainView {
 
     var templateSection: some View {
         MainTemplateSectionView(
-            selectedPreset: selectedTemplatePreset,
             resolvedTemplateDisplayName:
                 resolvedTemplateDisplayName,
-            currentPresetDisplayName:
-                currentPreset.displayName,
             currentPresetDefaultOutput:
                 currentPresetDefaultOutput,
             currentPresetSummary:
@@ -157,16 +308,6 @@ extension MainView {
         MainAnchorSectionView(
             anchors: settings.anchors,
             selectedAnchorID: $selectedAnchorID,
-            anchorPhotoSummary: anchorPhotoSummary,
-            selectedAnchorDateText:
-                selectedAnchor.map {
-                    anchorDateText($0)
-                },
-            previewSummaryText:
-                anchorPreviewResult?.summaryText,
-            quickFacts: anchorQuickFactItems,
-            emptyStateText:
-                "选择一个时间点后，系统会按照片 EXIF 拍摄时间自动计算年岁、纪念时长、已过天数、未来倒计时，以及第几天、周数、月龄等时间结果模块。",
             onPresentAnchorManager: {
                 presentAnchorManager()
             }
@@ -179,6 +320,13 @@ extension MainView {
             alignment: .leading,
             spacing: 18
         ) {
+
+            MainDismissibleGuideCard(
+                storageKey:
+                    "photomemo.guide.composer.dismissed",
+                title: "个性化区域说明",
+                message: "先点选左上、右上、左下或右下任意一个区域，再直接输入短语；如果想补右上常用内容，优先用下方识别数据里的参数摘要、型号、镜头和完整时间。熟悉后可以关闭这条提示，完整说明会继续保留在右侧操作指南里。"
+            )
 
             variableLibraryPanel(
                 title: "识别数据",
@@ -211,8 +359,6 @@ extension MainView {
 
     var customContentSection: some View {
         MainCustomContentSectionView(
-            titleText: $titleText,
-            storyText: $storyText,
             shouldWritePhotoDescription:
                 $settings.shouldWritePhotoDescription,
             photoDescriptionOverride:
@@ -245,8 +391,12 @@ extension MainView {
             isSavingToAlbum: isSavingToAlbum,
             canExportCurrentCard:
                 canExportCurrentCard,
+            isCompactLayout: false,
             saveCurrentCardToAlbum:
-                saveCurrentCardToAlbumAction
+                saveCurrentCardToAlbumAction,
+            saveFeedbackTitle: nil,
+            saveFeedbackMessage: nil,
+            showsSaveFeedback: false
         )
     }
 
@@ -299,33 +449,6 @@ extension MainView {
         !permissionCenter.photoLibraryState.isGranted
             || !permissionCenter.notificationState
             .isGranted
-    }
-
-    var memoryProgressPanel: some View {
-        MainMemoryProgressPanel(
-            snapshot: batchQueueStore.usageSnapshot,
-            defaultConfigurationSnapshot:
-                batchQueueStore
-                .defaultConfigurationSnapshot,
-            availableAlbums: availableAlbums,
-            latestExternalIntakeSummary:
-                batchQueueStore
-                .latestExternalIntakeSummary,
-            latestFailureSummary:
-                batchQueueStore
-                .latestFailureSummary,
-            recentFailureRecords:
-                Array(
-                    batchQueueStore
-                    .recentFailureRecords
-                    .prefix(3)
-                ),
-            retryFailedTasks: { jobID in
-                batchQueueStore.retryFailedTasks(
-                    in: jobID
-                )
-            }
-        )
     }
 
     var permissionSetupSheet: some View {

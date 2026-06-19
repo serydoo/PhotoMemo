@@ -125,10 +125,6 @@ struct BatchConfigurationSnapshot:
 
     var selectedAlbumIdentifier: String
 
-    var titleText: String
-
-    var storyText: String
-
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
@@ -137,9 +133,7 @@ struct BatchConfigurationSnapshot:
         anchor: Anchor?,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
-        selectedAlbumIdentifier: String,
-        titleText: String,
-        storyText: String
+        selectedAlbumIdentifier: String
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -152,8 +146,6 @@ struct BatchConfigurationSnapshot:
             photoDescriptionOverride
         self.selectedAlbumIdentifier =
             selectedAlbumIdentifier
-        self.titleText = titleText
-        self.storyText = storyText
     }
 }
 
@@ -186,15 +178,19 @@ struct BatchTaskFailure:
 
     var message: String
 
+    var canRetry: Bool
+
     var timestamp: Date
 
     init(
         phase: BatchTaskPhase,
         message: String,
+        canRetry: Bool = true,
         timestamp: Date = Date()
     ) {
         self.phase = phase
         self.message = message
+        self.canRetry = canRetry
         self.timestamp = timestamp
     }
 }
@@ -358,6 +354,8 @@ struct BatchJob:
 
     var startNotificationSentAt: Date?
 
+    var lastProgressNotificationStage: String?
+
     var finalNotificationSentAt: Date?
 
     init(
@@ -371,6 +369,7 @@ struct BatchJob:
         tasks: [BatchTask],
         policy: BatchPipelinePolicy = .init(),
         startNotificationSentAt: Date? = nil,
+        lastProgressNotificationStage: String? = nil,
         finalNotificationSentAt: Date? = nil
     ) {
         self.id = id
@@ -384,6 +383,8 @@ struct BatchJob:
         self.policy = policy
         self.startNotificationSentAt =
             startNotificationSentAt
+        self.lastProgressNotificationStage =
+            lastProgressNotificationStage
         self.finalNotificationSentAt =
             finalNotificationSentAt
     }
@@ -424,6 +425,36 @@ extension BatchJob {
                 $0.timestamp < $1.timestamp
             }
     }
+
+    var hasRetryableFailures: Bool {
+
+        tasks.contains {
+            $0.phase == .failed
+            && ($0.failure?.canRetry ?? true)
+        }
+    }
+
+    var exceptionTaskCount: Int {
+
+        failedTaskCount
+    }
+
+    var completionRatio: Double {
+
+        guard totalTaskCount > 0 else {
+            return 0
+        }
+
+        return Double(completedTaskCount)
+            / Double(totalTaskCount)
+    }
+
+    var isMostlyCompletedWithExceptions: Bool {
+
+        completedTaskCount > 0
+        && failedTaskCount > 0
+        && completionRatio >= 0.8
+    }
 }
 
 struct BatchUsageLeaderboardEntry: Hashable {
@@ -457,6 +488,12 @@ struct BatchFailureSummary: Hashable {
     let jobTitle: String
 
     let failedTaskCount: Int
+
+    let completedTaskCount: Int
+
+    let totalTaskCount: Int
+
+    let hasRetryableFailures: Bool
 
     let latestFailure: BatchTaskFailure
 

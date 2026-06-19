@@ -20,6 +20,9 @@ final class BatchQueueStore: ObservableObject {
     private let storageKey =
         "photomemo.batchQueue.jobs"
 
+    private let defaults:
+        UserDefaults
+
     private let settingsService:
         SettingsService
 
@@ -29,16 +32,27 @@ final class BatchQueueStore: ObservableObject {
     private let notificationService:
         BatchNotificationService
 
+    private let externalIntakeStore:
+        ExternalPhotoIntakeStore
+
+    private let maxRetainedTerminalJobs =
+        120
+
     private var processingTask:
         Task<Void, Never>?
 
     init() {
+        self.defaults =
+            PhotoMemoSharedContainer
+            .sharedUserDefaults
         self.settingsService =
             SettingsService()
         self.coordinator =
             BatchProcessingCoordinator()
         self.notificationService =
             BatchNotificationService()
+        self.externalIntakeStore =
+            .shared
         self.defaultConfigurationSnapshot =
             settingsService
             .buildBatchConfigurationSnapshot()
@@ -127,9 +141,11 @@ final class BatchQueueStore: ObservableObject {
         }
 
         var job = jobs[jobIndex]
+        var didQueueRetry = false
 
         for index in job.tasks.indices {
-            guard job.tasks[index].phase == .failed else {
+            guard job.tasks[index].phase == .failed,
+                  job.tasks[index].failure?.canRetry ?? true else {
                 continue
             }
 
@@ -140,6 +156,11 @@ final class BatchQueueStore: ObservableObject {
             job.tasks[index].savedAssetIdentifier = nil
             job.tasks[index].progress = BatchTaskProgress()
             job.tasks[index].retryCount += 1
+            didQueueRetry = true
+        }
+
+        guard didQueueRetry else {
+            return
         }
 
         job.updatedAt = Date()
@@ -171,12 +192,19 @@ final class BatchQueueStore: ObservableObject {
                 continue
             }
 
+            let sourceURL =
+                job.tasks[index].sourceURL
+
             job.tasks[index].phase = .cancelled
             job.tasks[index].progress =
                 BatchTaskProgress(
                     currentUnit: 1,
                     totalUnits: 1,
                     statusMessage: "已取消"
+                )
+            externalIntakeStore
+                .cleanupManagedSourceIfNeeded(
+                    at: sourceURL
                 )
         }
 
@@ -335,6 +363,12 @@ final class BatchQueueStore: ObservableObject {
                     jobTitle: job.title,
                     failedTaskCount:
                         job.failedTaskCount,
+                    completedTaskCount:
+                        job.completedTaskCount,
+                    totalTaskCount:
+                        job.totalTaskCount,
+                    hasRetryableFailures:
+                        job.hasRetryableFailures,
                     latestFailure:
                         latestFailure,
                     updatedAt: job.updatedAt
@@ -421,9 +455,27 @@ final class BatchQueueStore: ObservableObject {
             }
     }
 
+    var referencedManagedSourceURLs:
+        Set<URL> {
+
+        Set(
+            jobs
+                .flatMap(\.tasks)
+                .map(\.sourceURL)
+                .map {
+                    $0.standardizedFileURL
+                }
+        )
+    }
+
     func retryLatestFailedTasks() {
 
         guard let latestFailureSummary else {
+            return
+        }
+
+        guard latestFailureSummary
+            .hasRetryableFailures else {
             return
         }
 
@@ -518,6 +570,11 @@ private extension BatchQueueStore {
                 )
             }
 
+            await deliverProgressNotificationIfNeeded(
+                for: jobs[reference.jobIndex].id,
+                stage: "imported"
+            )
+
             let configuration =
                 jobs[reference.jobIndex]
                 .configuration
@@ -552,6 +609,11 @@ private extension BatchQueueStore {
                 )
             }
 
+            await deliverProgressNotificationIfNeeded(
+                for: jobs[reference.jobIndex].id,
+                stage: "rendering"
+            )
+
             let exportedFileURL =
                 try coordinator.exportCard(
                     photo: importedPhoto,
@@ -574,6 +636,11 @@ private extension BatchQueueStore {
                         "正在写入系统图库"
                 )
             }
+
+            await deliverProgressNotificationIfNeeded(
+                for: jobs[reference.jobIndex].id,
+                stage: "saving"
+            )
 
             let saveResult =
                 try await coordinator
@@ -606,6 +673,10 @@ private extension BatchQueueStore {
                 )
             }
 
+            cleanupManagedTaskSourceIfNeeded(
+                at: reference
+            )
+
             persistJobs()
             await deliverFinalNotificationIfNeeded(
                 for: jobs[reference.jobIndex].id
@@ -631,7 +702,11 @@ private extension BatchQueueStore {
                     message:
                         (error as? LocalizedError)?
                         .errorDescription
-                        ?? error.localizedDescription
+                        ?? error.localizedDescription,
+                    canRetry:
+                        !isManagedIntakeSourceURL(
+                            task.sourceURL
+                        )
                 )
                 task.progress = BatchTaskProgress(
                     currentUnit: 0,
@@ -639,6 +714,10 @@ private extension BatchQueueStore {
                     statusMessage: "处理失败"
                 )
             }
+
+            cleanupManagedTaskSourceIfNeeded(
+                at: reference
+            )
 
             lastErrorMessage =
                 (error as? LocalizedError)?
@@ -669,6 +748,38 @@ private extension BatchQueueStore {
         )
         jobs[reference.jobIndex] = job
         persistJobs()
+    }
+
+    func cleanupManagedTaskSourceIfNeeded(
+        at reference: TaskReference
+    ) {
+
+        guard jobs.indices.contains(reference.jobIndex),
+              jobs[reference.jobIndex].tasks.indices.contains(reference.taskIndex) else {
+            return
+        }
+
+        let sourceURL =
+            jobs[reference.jobIndex]
+            .tasks[reference.taskIndex]
+            .sourceURL
+
+        externalIntakeStore
+            .cleanupManagedSourceIfNeeded(
+                at: sourceURL
+            )
+    }
+
+    func isManagedIntakeSourceURL(
+        _ url: URL
+    ) -> Bool {
+
+        url.standardizedFileURL.path.hasPrefix(
+            PhotoMemoSharedContainer
+            .externalIntakeDirectoryURL
+            .standardizedFileURL
+            .path
+        )
     }
 
     func nextPendingTaskReference() -> TaskReference? {
@@ -850,6 +961,42 @@ private extension BatchQueueStore {
         persistJobs()
     }
 
+    func deliverProgressNotificationIfNeeded(
+        for jobID: UUID,
+        stage: String
+    ) async {
+
+        guard let jobIndex =
+            jobs.firstIndex(
+                where: { $0.id == jobID }
+            ) else {
+            return
+        }
+
+        let job = jobs[jobIndex]
+
+        guard job.lastProgressNotificationStage
+            != stage else {
+            return
+        }
+
+        let didSend =
+            await notificationService
+            .notifyJobProgress(
+                job,
+                stage: stage
+            )
+
+        guard didSend else {
+            return
+        }
+
+        jobs[jobIndex]
+            .lastProgressNotificationStage =
+            stage
+        persistJobs()
+    }
+
     func shouldSendFinalNotification(
         for job: BatchJob
     ) -> Bool {
@@ -909,7 +1056,7 @@ private extension BatchQueueStore {
     func loadPersistedJobs() {
 
         guard
-            let data = UserDefaults.standard.data(
+            let data = defaults.data(
                 forKey: storageKey
             ),
             let decodedJobs =
@@ -926,6 +1073,8 @@ private extension BatchQueueStore {
 
     func persistJobs() {
 
+        trimTerminalJobHistoryIfNeeded()
+
         guard let data =
             try? JSONEncoder().encode(
                 jobs
@@ -933,9 +1082,42 @@ private extension BatchQueueStore {
             return
         }
 
-        UserDefaults.standard.set(
+        defaults.set(
             data,
             forKey: storageKey
         )
+    }
+
+    func trimTerminalJobHistoryIfNeeded() {
+
+        var retainedTerminalCount = 0
+
+        jobs = jobs.filter { job in
+
+            let isTerminal =
+                job.tasks.allSatisfy {
+                    $0.phase.isTerminal
+                }
+
+            guard isTerminal else {
+                return true
+            }
+
+            retainedTerminalCount += 1
+
+            if retainedTerminalCount
+                <= maxRetainedTerminalJobs {
+                return true
+            }
+
+            for task in job.tasks {
+                externalIntakeStore
+                    .cleanupManagedSourceIfNeeded(
+                        at: task.sourceURL
+                    )
+            }
+
+            return false
+        }
     }
 }

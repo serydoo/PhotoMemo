@@ -36,16 +36,16 @@ extension TemplatePreset {
         switch self {
 
         case .template1:
-            return "成长纪念：左上标题、左下记录时间、右上设备摘要、右下默认展示“今天{{anchor_age_text}}”。"
+            return "当前固定骨架：左上主题区、左下记录时间、右上参数摘要、右下默认展示“今天 + 年岁”。"
 
         case .template2:
-            return "纪念时长：保留完整拍摄信息，右下默认展示“已经{{anchor_duration_text}}”，适合恋爱、结婚、搬家等场景。"
+            return "已归并到当前模板 1 主流程。"
 
         case .template3:
-            return "未来倒计时：左下改为紧凑日期，右上保留机型与镜头，右下默认展示“{{anchor_countdown_text}}”。"
+            return "已归并到当前模板 1 主流程。"
 
         case .immersWhite:
-            return "Immers 风格：只借用更沉浸的白色底栏排版，默认内容继续沿用 PhotoMemo 的标题、记录时间、设备摘要和记忆摘要。"
+            return "当前主界面已固定沿用模板 1，不再暴露其他预设切换入口。"
         }
     }
 
