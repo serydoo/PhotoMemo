@@ -44,7 +44,7 @@ struct MainStatusPillView: View {
     }
 }
 
-struct MainPreviewHeaderView: View {
+private struct MainPreviewHeaderView: View {
 
     var body: some View {
 
@@ -68,7 +68,7 @@ struct MainPreviewHeaderView: View {
     }
 }
 
-struct MainPreviewCanvasView: View {
+private struct MainPreviewCanvasView: View {
 
     let previewImage: Image
 
@@ -112,7 +112,7 @@ struct MainPreviewCanvasView: View {
     }
 }
 
-struct MainPreviewSummaryView: View {
+private struct MainPreviewSummaryView: View {
 
     let templateName: String
 

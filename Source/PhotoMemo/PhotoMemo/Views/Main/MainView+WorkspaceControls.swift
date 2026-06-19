@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum MainOperationGuideCategory:
+fileprivate enum MainOperationGuideCategory:
     String,
     CaseIterable,
     Identifiable {
@@ -19,7 +19,7 @@ enum MainOperationGuideCategory:
         rawValue
     }
 
-    var title: String {
+    fileprivate var title: String {
 
         switch self {
 
@@ -40,7 +40,7 @@ enum MainOperationGuideCategory:
         }
     }
 
-    var summary: String {
+    fileprivate var summary: String {
 
         switch self {
 
@@ -61,7 +61,7 @@ enum MainOperationGuideCategory:
         }
     }
 
-    var iconName: String {
+    fileprivate var iconName: String {
 
         switch self {
 
@@ -82,7 +82,7 @@ enum MainOperationGuideCategory:
         }
     }
 
-    var topics: [MainOperationGuideTopic] {
+    fileprivate var topics: [MainOperationGuideTopic] {
 
         MainOperationGuideTopic.allCases.filter {
             $0.category == self
@@ -90,7 +90,7 @@ enum MainOperationGuideCategory:
     }
 }
 
-struct MainOperationGuideSection:
+fileprivate struct MainOperationGuideSection:
     Identifiable,
     Hashable {
 
@@ -125,7 +125,7 @@ enum MainOperationGuideTopic:
         rawValue
     }
 
-    var category: MainOperationGuideCategory {
+    fileprivate var category: MainOperationGuideCategory {
 
         switch self {
 
@@ -147,7 +147,7 @@ enum MainOperationGuideTopic:
         }
     }
 
-    var title: String {
+    fileprivate var title: String {
 
         switch self {
 
@@ -171,7 +171,7 @@ enum MainOperationGuideTopic:
         }
     }
 
-    var summary: String {
+    fileprivate var summary: String {
 
         switch self {
 
@@ -195,7 +195,7 @@ enum MainOperationGuideTopic:
         }
     }
 
-    var iconName: String {
+    fileprivate var iconName: String {
 
         switch self {
 
@@ -219,7 +219,7 @@ enum MainOperationGuideTopic:
         }
     }
 
-    var introduction: String {
+    fileprivate var introduction: String {
 
         switch self {
 
@@ -230,7 +230,7 @@ enum MainOperationGuideTopic:
             return "三套配置槽位一次只生效一套。切换配置时，模板、Logo 标识、时间点、补充信息和相册去向会一起刷新；保存时会把当前编辑状态整体写回当前高亮的槽位。"
 
         case .composer:
-            return "四个自定义区域是 PhotoMemo 最核心的组合层。无论插入 EXIF、智能模块还是手动文字，都必须先明确选中区域，再进行插入和排序。"
+            return "四个自定义区域是 PhotoMemo 最核心的组合层。无论输入自定义文字还是插入 EXIF、智能模块，都必须先明确选中区域，再按光标位置组合内容。"
 
         case .supplementalContent:
             return "补充信息区负责额外语义，而不是替代模板。标题和记忆文案帮助卡片更完整；批量说明勾选后，会优先把单独录入的内容写入图片说明，不勾选时会回退到右下区域最终生成的完整内容。"
@@ -243,7 +243,7 @@ enum MainOperationGuideTopic:
         }
     }
 
-    var sections: [MainOperationGuideSection] {
+    fileprivate var sections: [MainOperationGuideSection] {
 
         switch self {
 
@@ -294,14 +294,15 @@ enum MainOperationGuideTopic:
                     items: [
                         "先选中左上、右上、左下或右下某个区域，再插入 EXIF、智能模块或自定义文字。",
                         "系统不会再偷偷把内容插到右下区域，所有插入都以当前明确选中的区域为准。",
-                        "如果想插入纯文字，可先打开“添加文字”再把内容加入当前区域。"
+                        "选中区域后可以直接输入文字；点击上方模块按钮时，模块会按当前光标位置插入。"
                     ]
                 ),
                 MainOperationGuideSection(
-                    title: "编辑与排序",
+                    title: "编辑方式",
                     items: [
-                        "每个区域都可以独立编辑，适合把标题、拍摄参数、时间表达和记忆句子拆开放置。",
-                        "拖拽排序只影响当前区域内部的模块顺序，不会跨区域移动。",
+                        "每个区域都可以独立编辑，适合把标题、拍摄参数、时间表达和记忆句子自由混排。",
+                        "模块插入后会显示成人类可读的标签文本，方便你继续在前后补自定义短语。",
+                        "如果想删除某个模块或一段文字，直接把光标放到附近，用正常文本编辑方式处理即可。",
                         "切换模板或恢复模板默认字段后，编辑态会同步刷新，避免旧状态残留。"
                     ]
                 )
@@ -340,9 +341,9 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "常用智能结果",
                     items: [
-                        "{{anchor_age_text}} 适合成长记录中的年岁表达。",
-                        "{{anchor_duration_text}}、{{anchor_elapsed_text}} 适合纪念日和已过多久场景。",
-                        "{{anchor_countdown_text}}、{{anchor_day_index_text}}、{{anchor_milestone_text}} 适合目标倒计时、阶段第几天和节点表达。"
+                        "年岁适合成长记录中的年龄表达。",
+                        "纪念时长、已过天数适合纪念日和已经过去多久的场景。",
+                        "倒计时、第几天、里程碑适合目标倒计时、阶段记录和关键节点表达。"
                     ]
                 )
             ]
@@ -629,9 +630,7 @@ private struct MainWorkspaceConfigurationSlotButton: View {
                     .lineLimit(1)
 
                 Text(
-                    slot.isCustomized
-                    ? "切换到这套已保存配置"
-                    : "未保存时使用\(slot.defaultPreset.displayName)默认骨架"
+                    slotDescription
                 )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -668,6 +667,19 @@ private struct MainWorkspaceConfigurationSlotButton: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var slotDescription: String {
+
+        if isActive {
+            return slot.isCustomized
+                ? "当前生效配置"
+                : "当前使用\(slot.defaultPreset.displayName)默认骨架"
+        }
+
+        return slot.isCustomized
+            ? "切换到这套已保存配置"
+            : "未保存时使用\(slot.defaultPreset.displayName)默认骨架"
     }
 }
 

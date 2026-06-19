@@ -22,6 +22,13 @@ struct MainOutputSection: View {
             spacing: 14
         ) {
 
+            MainDismissibleGuideCard(
+                storageKey:
+                    "photomemo.guide.output.dismissed",
+                title: "输出说明",
+                message: "输出区现在只保留目标相册选择和保存动作。更完整的元数据保留与相册写回说明已经整理进右侧操作指南，确认后可以关闭这条提示。"
+            )
+
             Picker(
                 "系统相册",
                 selection: $selectedAlbumIdentifier
@@ -51,12 +58,12 @@ struct MainOutputSection: View {
 
                 Divider()
 
-                Text(
-                    "处理后的图片会直接写入系统图库；不选现有相册时，会自动创建或复用 PhotoMemo 相册。PhotoMemo 会继续按当前链路尽量复刻原图 EXIF、拍摄时间与可保留元数据，并把新图写入你指定的相册。"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                LabeledContent("保存策略") {
+                    Text("新图写回系统图库，尽量保留原图元数据")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
             }
 
             Button(

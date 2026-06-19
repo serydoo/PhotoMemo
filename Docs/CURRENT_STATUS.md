@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
 
 ## Current Stage
 
@@ -52,11 +52,11 @@ Recent extracted files:
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+OutputSection.swift`
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+Permissions.swift`
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerEditor.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerWidgets.swift`
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerPanels.swift`
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+TemplatePanels.swift`
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+SetupPanels.swift`
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+PreviewPanels.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+StateModels.swift`
 
 MainView line-count trend observed in this refactor stream:
 
@@ -68,11 +68,24 @@ MainView line-count trend observed in this refactor stream:
 - `4314`
 - `4164`
 - `3974`
+- `3648`
+- `3496`
+- `2905`
+- `2842`
+- `1186`
+- `467`
+- `300`
+- `228`
+- `112`
+- `72`
 
 Current result:
 
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now acting more like a coordinator
+- its remaining coordinator state is now partially grouped through `MainPresentationState`, `MainAlertState`, and `MainEditorSessionState`
 - template setup, logo setup, photo import summary, anchor setup, live preview shell, and multiple editor/panel regions have been extracted
+- composer session state, workspace configuration lifecycle, and export/save actions have now also been split into dedicated `MainView+*.swift` files
+- dead block-style composer helpers and their unused widget file have now been removed instead of being kept as stale compatibility code
 - some dead UI helpers were removed after extraction to prevent stale code from remaining in `MainView`
 
 ### 3. Template-calibration UI structure is more stable
@@ -86,8 +99,7 @@ Completed structural extractions now cover:
 - photo section
 - anchor section
 - preview/detail display shell
-- composer entry panel
-- literal composer sheet
+- inline custom-region editor
 - variable library panels
 - field editor wrappers
 - memory / output / permission panels
@@ -96,6 +108,7 @@ This means future MainView work should prioritize:
 
 - any lingering state-heavy editing helpers that still live inline
 - any remaining preview-adjacent helper logic that is still coupled to coordinator code
+- any permission/scene lifecycle actions that still sit beside unrelated coordinator code
 
 ### 4. Immers-style white border direction has already been integrated
 
@@ -166,6 +179,65 @@ The latest cleanup pass now also does the following:
 - the help center no longer keeps a separate permission topic after the permission flow is already understood
 - the output area now focuses on album selection plus save-to-library, without the extra metadata-validation buttons
 
+### 9. Dead validation UI paths were cleaned out of MainView
+
+The latest internal cleanup pass now also removes:
+
+- the no-longer-reachable metadata-validation sheet flow from `MainView`
+- the old metadata debug view file that was only serving that removed flow
+- the collapsed-permission-summary branch that no longer matters now that the whole permission block hides after authorization
+
+This keeps the UI simplification aligned with the actual coordinator code instead of only hiding old actions visually.
+
+### 10. Custom-region editing moved closer to visual module composition
+
+The latest refinement slice now also does the following:
+
+- the extra top control/help block under `个性化区域` is gone from the left side
+- the old inline raw-token editing path was removed from `MainView`
+- manual text is now added and edited as its own literal chip inside the same single-line module flow
+- `识别数据` and `智能数据` keep acting as direct insert buttons into the explicitly selected region
+- user-facing help copy in the editor/help center no longer leans on raw `{{token}}` syntax
+- the `补充信息` and `输出` section explanations now use dismissible guide cards, with the fuller explanation still preserved in the right-side help center
+
+Behavior expectations for this slice:
+
+- tapping a region still defines the only valid insertion target
+- inserted EXIF / smart modules should remain human-readable instead of exposing raw tokens
+- users should be able to keep composing around modules without switching to a separate text-entry sheet
+- the template section should show human-readable default-output summaries instead of raw template tokens
+
+### 11. Custom-region editing now favors cursor-based inline composition
+
+The latest follow-up slice now also does the following:
+
+- the four custom regions no longer require a separate “添加文字 / 编辑文字” action
+- users can click directly into a region and type their own short phrase inline
+- EXIF and smart-module buttons now insert into the current text cursor position instead of inserting as separate manual-text chips
+- inserted modules are shown as human-readable inline labels such as `〔年岁〕`, so the editor no longer exposes raw `{{token}}` syntax during normal editing
+- the right-side help-center wording for the custom-region topic now reflects the new cursor-first editing model
+
+Behavior expectations for this slice:
+
+- clicking a region should place or restore the caret inside that region
+- clicking a module button should insert that module exactly at the current caret or selected text range
+- users should be able to continue typing before or after an inserted module without opening any extra sheet
+- the underlying template still persists real raw tokens, so preview/render/export behavior should remain on the existing pipeline
+
+### 12. Inline module visuals were restored closer to block-style editing
+
+The latest follow-up slice now also does the following:
+
+- inline module labels inside the four custom regions are rendered with block-like highlighted styling instead of appearing as plain text only
+- deletion near a module now expands to the full inline module label, so backspace/delete behaves closer to removing one whole block
+- editor-side display mapping now also covers common composite tokens such as `camera_summary`, avoiding mixed output like one readable label plus one raw token
+
+Behavior expectations for this slice:
+
+- a module inserted at the caret should look visually distinct from ordinary typed text
+- when the caret is immediately next to a module, delete/backspace should remove the whole module display label in one action
+- display-only labels must still map back to the original raw template tokens before preview/render/export
+
 ## Behavior Rules Preserved During Refactor
 
 These behaviors were intentionally preserved and should not be reverted:
@@ -192,13 +264,11 @@ Status:
 
 ## Current Technical Debt
 
-### Still large
+### Coordinator shell is now thin, but needs semantic cleanup
 
-`Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is improved but still too large for long-term comfort.
+`Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now down to about `72` lines, which is a strong coordinator-shell result.
 
-### Coordinator-adjacent editing helpers still need decomposition
-
-The preview/detail display shell has now been extracted, but `MainView` still contains a large amount of editing, routing, and synchronization helper logic that should keep moving toward clearer coordinator-only responsibilities.
+The remaining debt is no longer raw file size. It is now about whether the remaining state is grouped at the right boundary and whether access control / ownership are as clear as the new structure suggests.
 
 ### Multi-config and in-app guidance still need a dedicated design slice
 
@@ -218,8 +288,8 @@ Builds are passing, but some refactor rounds were verified mainly by compilation
 
 ### Near-term
 
-1. Continue extracting or simplifying the remaining inline editing/state helpers from `MainView`
-2. Keep `MainView` focused on state, bindings, and action routing only
+1. Tighten access control now that the `MainView` coordinator shell has settled
+2. Revisit badge / output / workspace bindings and move any obviously local binding logic beside the related panels
 3. Run a deliberate manual check for:
    - template switching
    - template rename
@@ -256,3 +326,165 @@ Then inspect:
 - `git status`
 - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift`
 - the newest `MainView+*.swift` extraction files
+
+## 2026-06-19 Follow-Up
+
+This round added a dedicated inline-composer display engine:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerDisplayEngine.swift`
+
+Purpose:
+
+- stop treating every visible `〔...〕` label as a real token
+- track real inserted modules by span instead of regex-only text matching
+- keep module-aware selection/deletion behavior aligned across macOS and UIKit
+
+Related notes kept for the next session:
+
+- optimization log:
+  - `Docs/OPTIMIZATION_LOG_2026-06-19.md`
+- competitor and product-direction notes:
+  - `Docs/COMPETITOR_NOTES_2026-06-19.md`
+- iOS readiness audit:
+  - `Docs/IOS_READINESS_2026-06-19.md`
+- manual regression checklist:
+  - `Docs/MANUAL_REGRESSION_CHECKLIST_2026-06-19.md`
+
+MainView re-review result for this follow-up:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now around `3621` lines
+- the next most valuable extractions are:
+  - composer session state
+  - workspace configuration lifecycle
+  - export/save actions
+
+## 2026-06-19 Refactor Completion
+
+This follow-up successfully landed the three extractions that were queued in the previous note:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerSession.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+WorkspaceConfigurationState.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ExportActions.swift`
+
+What moved out of `MainView.swift`:
+
+- editor display text / selection / module-span session state
+- workspace-slot save, switch, restore-default, and snapshot application flow
+- photo-library permission prompt, album reload, and save-to-library actions
+
+Updated structure result:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now around `2905` lines
+- build succeeds again after removing the leftover duplicate legacy method definition
+- the coordinator file is now meaningfully less responsible for low-level editing and save-flow mechanics
+
+One more safe follow-up extraction has already landed after that:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+PermissionLifecycle.swift`
+
+That file now owns:
+
+- first-appearance permission refresh
+- active-scene permission refresh
+- primer-sheet permission request flow
+- notification permission request feedback
+
+Latest line-count result after this extra slice:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now around `2842` lines
+
+This workstream then continued with a more aggressive but still behavior-preserving cleanup:
+
+- removed the no-longer-used block-style composer item state, chip widgets, literal-composer sheet, and scrubber helpers
+- extracted `MainView+DerivedState.swift`
+- extracted `MainView+CoordinatorSupport.swift`
+- extracted `MainView+TemplateEditingActions.swift`
+
+Latest line-count result after that cleanup:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now around `1186` lines
+
+The refactor then continued with two more coordinator-focused extractions:
+
+- extracted `MainView+PresentationState.swift`
+- extracted `MainView+LayoutSections.swift`
+
+That moved:
+
+- rename-sheet / help-center sheet presentation and local draft state
+- sidebar/detail assembly and section-level view composition
+
+Latest line-count result after that follow-up:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now around `467` lines
+
+One final light cleanup also landed immediately after:
+
+- extracted `MainView+UIPrimitives.swift`
+
+That moved:
+
+- `MainFieldSlot`
+- palette and card/chip style primitives
+- small shared layout wrappers used by the main editor flow
+
+Latest line-count result after this step:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now around `300` lines
+
+The coordinator shell then kept shrinking in two small, safe follow-ups:
+
+- extracted `MainView+ModalAndLifecycle.swift`
+- extracted `MainView+Feedback.swift`
+
+That moved:
+
+- anchor sheet / rename sheet / help sheet / alert wiring
+- onAppear / onChange lifecycle routing
+- alert presentation helper and local preview stub
+
+Latest line-count trend after these last follow-ups:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now around `228` lines
+- then around `112` lines
+- and after grouping the remaining editor session state, around `72` lines
+
+Verification for this completion slice:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed:
+  - only the existing Xcode destination-selection warning
+- not yet manually verified:
+  - permission primer -> authorize -> album refresh flow
+  - switching workspace slots while custom-region editor caret is active
+  - save-to-library success and failure alerts against a real photo
+
+One more light state-ownership follow-up has now landed:
+
+- added `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+StateModels.swift`
+- grouped the remaining editor-session fields into `MainEditorSessionState`
+- moved `focusedField`, display texts, selections, and module spans under that single coordinator-facing state model
+
+Latest result after this follow-up:
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` is now about `72` lines
+- the coordinator shell now mostly declares service/state ownership and forwards `body` to `mainScene`
+- the earlier `MainPresentationState` / `MainAlertState` grouping is now joined by `MainEditorSessionState`, which makes the remaining state easier to reason about without changing editor behavior
+
+Verification for this extra slice:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed:
+  - only the existing Xcode destination-selection warning
+- not yet manually verified:
+  - workspace-slot switching while editor caret is active
+  - live caret preservation while repeatedly inserting EXIF / smart modules
+  - save-to-library success and failure alerts against a real photo
+
+Next three most valuable areas after this slice:
+
+1. selective access-control tightening after the refactor settles
+2. badge/output/workspace bindings that can move beside their related panels
+3. manual regression coverage for caret routing, slot switching, and export feedback now that the coordinator shell is structurally stable

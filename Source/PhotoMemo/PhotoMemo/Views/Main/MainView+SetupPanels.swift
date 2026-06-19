@@ -34,7 +34,7 @@ struct MainPhotoSectionView<Importer: View>: View {
     }
 }
 
-struct MainPhotoMetadataSummaryView: View {
+private struct MainPhotoMetadataSummaryView: View {
 
     let deviceModel: String
 
@@ -71,7 +71,7 @@ struct MainAnchorQuickFact: Identifiable, Hashable {
     }
 }
 
-struct MainAnchorFactPillView: View {
+private struct MainAnchorFactPillView: View {
 
     let title: String
 
@@ -108,7 +108,8 @@ struct MainAnchorSectionView: View {
 
     let anchors: [Anchor]
 
-    let selectedAnchorID: Binding<Anchor.ID?>
+    @Binding
+    var selectedAnchorID: Anchor.ID?
 
     let anchorPhotoSummary: String
 
@@ -139,7 +140,7 @@ struct MainAnchorSectionView: View {
             HStack(spacing: 10) {
                 Picker(
                     "选择时间点",
-                    selection: selectedAnchorID
+                    selection: $selectedAnchorID
                 ) {
 
                     Text("未选择")

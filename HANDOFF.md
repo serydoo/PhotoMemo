@@ -91,7 +91,7 @@ PhotoMemo 是一个 **local-first 的 macOS 原生照片信息纪念卡生成器
 
 ## 当前最大技术债
 
-`Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` 仍然过大，目前约 `3974` 行，虽然已经显著下降，但仍承担了太多职责：
+`Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift` 已经明显瘦身，目前约 `72` 行，基本就是 coordinator state shell。
 
 - 模板编辑
 - 焦点/插入路由
@@ -107,13 +107,25 @@ PhotoMemo 是一个 **local-first 的 macOS 原生照片信息纪念卡生成器
 - `MainView+OutputSection.swift`
 - `MainView+Permissions.swift`
 - `MainView+ComposerEditor.swift`
-- `MainView+ComposerWidgets.swift`
 - `MainView+ComposerPanels.swift`
+- `MainView+ComposerSession.swift`
 - `MainView+TemplatePanels.swift`
 - `MainView+SetupPanels.swift`
 - `MainView+PreviewPanels.swift`
+- `MainView+PermissionLifecycle.swift`
+- `MainView+WorkspaceConfigurationState.swift`
+- `MainView+ExportActions.swift`
+- `MainView+DerivedState.swift`
+- `MainView+CoordinatorSupport.swift`
+- `MainView+TemplateEditingActions.swift`
+- `MainView+PresentationState.swift`
+- `MainView+StateModels.swift`
+- `MainView+LayoutSections.swift`
+- `MainView+UIPrimitives.swift`
+- `MainView+ModalAndLifecycle.swift`
+- `MainView+Feedback.swift`
 
-这轮已经把 preview/detail 的显示壳层抽出，下一阶段应继续清理剩余的编辑态、插入路由和同步 helper，优先往 coordinator 方向收束，但不要破坏当前真实链路。
+这轮已经把 preview/detail 的显示壳层，以及 editor session / workspace configuration / export-save / permission lifecycle / derived state / template editing actions 都抽出去了。随后又把剩余 editor session 状态做了轻量分组，当前下一阶段更适合继续清理访问级别、少量 panel binding，以及补一轮手动回归，而不是为了拆而拆。
 
 最近还补了三项当前体验修正：
 
@@ -146,12 +158,61 @@ PhotoMemo 是一个 **local-first 的 macOS 原生照片信息纪念卡生成器
 - `个性化区域` 的说明不再是写死文本，而是可关闭提示卡
 - `补充信息` 已真正收成单卡，不再上下两块
 - 帮助中心不再单独保留权限主题，改成只保留与当前主流程更相关的主题
+- `MainView` 里原来那条已经没有界面入口的元数据验证调试支线也已经删掉
+
+随后又完成了一轮更实质的 coordinator 收口：
+
+- `MainView+ComposerSession.swift` 现在承接四个区域编辑器的 display text / selection / module span 会话态
+- `MainView+WorkspaceConfigurationState.swift` 承接三个配置槽位的保存、切换、恢复默认和快照应用
+- `MainView+ExportActions.swift` 承接相册权限申请、相册刷新、导出并写入系统图库
+- `MainView+PermissionLifecycle.swift` 又继续承接了权限首启、scene active 刷新和通知权限反馈
+- `MainView+DerivedState.swift` 承接预览、锚点、模板摘要等派生展示态
+- `MainView+CoordinatorSupport.swift` 承接 anchor / preview 尺寸这类轻量 coordinator helper
+- `MainView+TemplateEditingActions.swift` 承接模板值更新、模块插入和当前编辑区域路由
+- `MainView+PresentationState.swift` 承接 rename / guide 相关 sheet 与本地 draft 状态
+- `MainView+LayoutSections.swift` 承接 sidebar / detail 与各 section 的视图拼装
+- `MainView+UIPrimitives.swift` 承接 `MainFieldSlot` 与主界面共用样式基元
+- `MainView+ModalAndLifecycle.swift` 承接 body 外层 sheet / alert / 生命周期接线
+- `MainView+Feedback.swift` 承接 alert helper 与 preview stub
+- 同时已经把旧的 block-style composer widget / scrubber / literal-composer sheet 遗留清掉
+- `MainView.swift` 当前大约回落到 `72` 行
+- 这一轮 refactor 收口后，本地 `xcodebuild` 已重新通过
+
+随后又补了一刀轻量 state grouping：
+
+- `MainView+StateModels.swift` 现在统一承接 `MainAlertState`、`MainPresentationState`、`MainEditorSessionState`
+- `MainEditorSessionState` 收起了 `focusedField`
+- `MainEditorSessionState` 收起了四个区域的 display text / selection / module spans 会话态
+- 这一步没有改插入逻辑、光标路由、模板同步或导出行为，只是把剩余 coordinator 状态按语义重新归位
+
+这条线又继续推进了一小步，当前最新共识是：
+
+- `个性化区域` 左侧不再保留顶部“额外控制/说明块”，界面只保留四个真实区域和插入按钮
+- 自定义文字不再走原来的 raw token / inline editor 路径，而是作为和 EXIF、智能模块并列的单独文字 chip 进入区域内容流
+- 再次点击已选中的文字 chip，可以直接回到文字编辑 sheet 修改当前这段文字
+- `识别数据`、`智能数据` 继续保持按钮式插入，不把 `{{anchor_duration_text}}` 这类 token 直接暴露给普通编辑流程
+- `补充信息` 和 `输出` 顶部说明都已经改成可关闭提示卡，完整说明继续放在右侧帮助中心
+- 模板区里给用户看的“默认右下”文案已经改成更口语化的人类可读摘要，而不是 raw token
+
+不过这条线又被用户继续纠偏了，当前最新真实方向应以这版为准：
+
+- 四个自定义区域优先走“直接点进去输入”的内联编辑，而不是把用户短语拆成单独文字模块
+- 点击上方 EXIF / 智能模块按钮时，要按当前光标位置插入到对应区域
+- 正常编辑时不再把 raw `{{token}}` 暴露出来，而是显示成更人类可读的内联标签文本
+- 如果后续继续打磨这一块，优先验证“光标位置是否准确保留”和“模块插入后前后继续输入是否顺手”，而不是先回到块状拖拽编辑
+
+这条线随后又补了一步，当前最新交互目标还包括：
+
+- 虽然底层已经回到光标式内联编辑，但模块在编辑区里的视觉表现要尽量接近“独立小方块”
+- 光标贴着模块时，按删除应优先整块删除，而不是拆字符
+- 编辑器显示映射不能只覆盖基础 token，像 `camera_summary` 这类模板里常用的组合 token 也必须转成可读标签，避免出现“半中文标签、半 raw token”的混合显示
 
 如果后续继续这条线，优先检查：
 
 - 切换配置后左侧字段和右侧预览是否同步刷新
 - 未保存槽位是否正确回退到默认模板骨架
 - 当前活动配置是否始终和 batch queue 默认配置快照保持一致
+- 光标停在模块前后时，连续插入/删除是否仍然保持预期
 
 ## 建议优先阅读的文件
 
@@ -215,8 +276,8 @@ xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcod
 ## 当前最值得继续推进的方向
 
 - 继续拆分 `MainView.swift`
-- 优先收束剩余 inline 编辑态 / 路由 helper
-- 继续收束四个区域的编辑状态
+- 优先收口访问级别与 ownership 表达
+- 继续整理 badge / output / workspace 这类局部 binding
 - 保证预览与最终导出一致
 - 继续增强元数据保留策略
 - 为未来 iOS 迁移减少 macOS 特有耦合
@@ -238,6 +299,8 @@ xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcod
   - Live Context 与实时预览是否仍按当前模板刷新
   - `immersWhite` 默认 logo 回退
   - 预览与导出一致性
+  - workspace slot 切换时的 caret 保留
+  - 连续插入 EXIF / 智能模块时的光标路由
 
 ## Git 与同步说明
 
@@ -250,3 +313,59 @@ xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcod
 
 不要把 PhotoMemo 当成“加边框工具”继续堆功能。  
 它现在的真正方向是：**以模板、EXIF、时间锚点和后台处理为核心的本地照片记忆生成系统。**
+
+## 2026-06-19 本轮补充
+
+这一轮又继续往“稳住四个自定义区域的编辑模型”推进了一步，新增了：
+
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerDisplayEngine.swift`
+
+这次的关键调整不是视觉，而是编辑语义：
+
+- 不再把所有长得像 `〔...〕` 的可见文字都当成真实模块
+- 只把真正插入或从模板同步出来的模块，记录为带范围信息的 module spans
+- macOS 与 UIKit 两条编辑路径都改为共享这一套范围语义
+- 删除或替换跨过模块时，不再只误伤模块本体而丢掉外围普通文本
+
+这意味着后续如果继续打磨这块，优先方向不该再回到 raw token 暴露，而是继续围绕：
+
+- caret 是否稳定
+- 选择替换是否自然
+- 模块插入与整块删除是否顺手
+
+本轮额外记录文件：
+
+- `Docs/OPTIMIZATION_LOG_2026-06-19.md`
+- `Docs/COMPETITOR_NOTES_2026-06-19.md`
+- `Docs/IOS_READINESS_2026-06-19.md`
+- `Docs/MANUAL_REGRESSION_CHECKLIST_2026-06-19.md`
+
+其中第一份记录了：
+
+- 这次真正改了什么
+- 为什么值得
+- `MainView.swift` 下一轮最值得继续拆的三个区块
+
+如果下一位 Codex 继续往下做，当前最值得继续清理的 3 块已经更新为：
+
+- 访问级别收口
+- badge / output / workspace 相关 binding
+- 手动回归光标 / 槽位切换 / 保存反馈这三条高风险交互
+
+第二份记录了：
+
+- 2026-06-19 基于官网信息整理的相邻竞品/参考产品
+- 各自最值得借鉴的亮点
+- 对 PhotoMemo 后续产品提升最有价值的方向判断
+
+第三份记录了：
+
+- 当前仓库距离 iOS 开发的真实准备度
+- 已具备的跨平台基础
+- 当前主要 blockers 和最短启动路径
+
+第四份记录了：
+
+- 当前重构阶段最值得优先手动回归的链路
+- 光标 / 模块插入 / 时间点 / 配置槽位 / 相册保存的检查步骤
+- 每一步的预期结果与高风险回归信号

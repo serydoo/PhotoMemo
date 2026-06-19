@@ -2,7 +2,8 @@ import SwiftUI
 
 struct MainTemplateSectionView: View {
 
-    let selectedPreset: Binding<TemplatePreset>
+    @Binding
+    var selectedPreset: TemplatePreset
 
     let resolvedTemplateDisplayName: String
 
@@ -30,7 +31,7 @@ struct MainTemplateSectionView: View {
 
                 Picker(
                     "模板",
-                    selection: selectedPreset
+                    selection: $selectedPreset
                 ) {
 
                     ForEach(
@@ -121,72 +122,79 @@ struct MainCustomContentSectionView: View {
 
     var body: some View {
 
-        MinimalInsetCard {
-            Text("这里负责标题、记忆文案，以及是否使用单独批量说明内容。若不单独填写批量说明，系统会自动回退到右下区域最终生成的完整内容。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(
+            alignment: .leading,
+            spacing: 12
+        ) {
 
-            Divider()
-
-            Text("内容")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-
-            TextField(
-                "标题",
-                text: $titleText
-            )
-            .textFieldStyle(.roundedBorder)
-
-            TextField(
-                "记忆文案",
-                text: $storyText,
-                axis: .vertical
-            )
-            .lineLimit(3...5)
-            .textFieldStyle(.roundedBorder)
-
-            Divider()
-
-            Toggle(
-                "使用单独批量说明内容",
-                isOn: $shouldWritePhotoDescription
+            MainDismissibleGuideCard(
+                storageKey:
+                    "photomemo.guide.supplementalContent.dismissed",
+                title: "补充信息说明",
+                message: "这里主要补标题、记忆文案，以及是否使用单独的图片说明内容。更完整的解释已经放进右侧操作指南里，熟悉后可以直接关闭这条提示。"
             )
 
-            if shouldWritePhotoDescription {
+            MinimalInsetCard {
 
-                Divider()
-
-                Text("勾选后，图片说明会优先写入这里的自定义内容；如果这里留空，会回退到右下区域的完整结果。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                TextField(
-                    "例如：这是这次批量统一写入图片内的说明",
-                    text: $photoDescriptionOverride,
-                    axis: .vertical
-                )
-                .lineLimit(2...4)
-                .textFieldStyle(.roundedBorder)
-            }
-
-            Divider()
-
-            VStack(
-                alignment: .leading,
-                spacing: 4
-            ) {
-
-                Text("图片说明写入预览")
+                Text("内容")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                Text(descriptionPreviewText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                TextField(
+                    "标题",
+                    text: $titleText
+                )
+                .textFieldStyle(.roundedBorder)
+
+                TextField(
+                    "记忆文案",
+                    text: $storyText,
+                    axis: .vertical
+                )
+                .lineLimit(3...5)
+                .textFieldStyle(.roundedBorder)
+
+                Divider()
+
+                Toggle(
+                    "使用单独批量说明内容",
+                    isOn: $shouldWritePhotoDescription
+                )
+
+                if shouldWritePhotoDescription {
+
+                    Divider()
+
+                    Text("勾选后，图片说明会优先写入这里的自定义内容；如果这里留空，会回退到右下区域的完整结果。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    TextField(
+                        "例如：这是这次批量统一写入图片内的说明",
+                        text: $photoDescriptionOverride,
+                        axis: .vertical
+                    )
+                    .lineLimit(2...4)
+                    .textFieldStyle(.roundedBorder)
+                }
+
+                Divider()
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 4
+                ) {
+
+                    Text("图片说明写入预览")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+
+                    Text(descriptionPreviewText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .frame(
@@ -220,7 +228,8 @@ struct MainBadgeSectionView<Preview: View>: View {
 
     let badgeNames: [String]
 
-    let selectedBadgeName: Binding<String>
+    @Binding
+    var selectedBadgeName: String
 
     let selectedBadgeTitle: String
 
@@ -238,7 +247,7 @@ struct MainBadgeSectionView<Preview: View>: View {
 
             Picker(
                 "Logo 标识",
-                selection: selectedBadgeName
+                selection: $selectedBadgeName
             ) {
 
                 ForEach(
