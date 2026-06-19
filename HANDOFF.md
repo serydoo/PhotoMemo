@@ -1,5 +1,54 @@
 # PhotoMemo Handoff
 
+## 2026-06-20 BatchQueueStore 已拆为 4 个聚焦组件
+
+- 已完成 `Review-002`：
+  - `BatchQueueStore` 保留为公开 façade 与 `ObservableObject` 状态拥有者
+  - 内部职责已拆到：
+    - `BatchQueueExecution`
+    - `BatchQueuePersistence`
+    - `BatchQueueHistory`
+    - `BatchQueueNotifications`
+- 本轮明确保持不变：
+  - UI / 渲染 / 导出行为
+  - 队列执行顺序
+  - 重试与取消语义
+  - `UserDefaults` key 与持久化格式
+  - 启动恢复语义
+  - 通知发送与 sentAt / stage 回写时机
+- 这次没有引入额外 `QueueState` 层，也没有为了行数再继续拆更多人工抽象层。
+- `PhotoMemoShareExtension` 当前通过 `#if !PHOTOMEMO_SHARE_EXTENSION` 编译边界避免把 app-side queue façade / notification wiring 拉进 extension target；后续不要误把这些 guard 删除。
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 仍未做的验证：
+  - 真机/手动回归 `retry`
+  - 真机/手动回归 `cancel`
+  - 真机/手动回归启动恢复后的继续处理
+- 下一步更适合做：
+  - 对 `BatchQueueStore` 子系统补最小可行的回归测试
+  - 再考虑更高层的架构工作，不要在这轮拆分后立刻继续改 batch 语义
+
+## 2026-06-20 BatchConfigurationSnapshot 单一来源已收口
+
+- 已新增 `BatchConfigurationSnapshotProvider`，作为批处理默认快照与共享配置装配的单一来源。
+- `SettingsService.buildBatchConfigurationSnapshot()` 已改为委托给该 provider，不再自己重复拼装默认模板 / 徽标 / 锚点 / 相册标识。
+- `SharedBatchConfigurationSnapshotService.loadSnapshot()` 已改为直接复用同一 provider，Share Extension 与主 app 不再各自维护一套装配逻辑。
+- 保持不变：
+  - `UserDefaults` keys
+  - 序列化格式
+  - 默认值
+  - UI、渲染、导出、通知与队列行为
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 后续合适的下一步：
+  - 继续拆 `BatchQueueStore`
+  - 再收束 `MainView` 的 workspace/export 协调逻辑
+  - 暂时不要回退这次 provider 收口，避免再次出现快照装配漂移
+
 这份文件用于帮助新的 Codex 会话快速接手当前项目，避免只依赖历史聊天上下文。
 
 现在仓库根目录还新增了一份更偏“持续接力开发手册”的文档：

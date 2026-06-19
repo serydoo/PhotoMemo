@@ -175,6 +175,9 @@ final class SettingsService: ObservableObject {
     private let defaults:
         UserDefaults
 
+    private let snapshotProvider:
+        BatchConfigurationSnapshotProvider
+
     private enum Keys {
 
         static let anchors = "photomemo.anchors"
@@ -230,6 +233,10 @@ final class SettingsService: ObservableObject {
         self.defaults =
             PhotoMemoSharedContainer
             .sharedUserDefaults
+        self.snapshotProvider =
+            BatchConfigurationSnapshotProvider(
+                defaults: self.defaults
+            )
 
         loadConfigurationSlots()
 
@@ -651,33 +658,23 @@ extension SettingsService {
         selectedAlbumIdentifier: String? = nil
     ) -> BatchConfigurationSnapshot {
 
-        let resolvedAnchorIdentifier =
+        let resolvedSelectedAnchorIDString =
             selectedAnchorID?.uuidString
             ?? selectedAnchorIDString
 
-        let resolvedAlbumIdentifier =
-            normalizedAlbumIdentifier(
-                selectedAlbumIdentifier
-                ?? self.selectedAlbumIdentifier
-            )
-
-        return BatchConfigurationSnapshot(
-            template:
-                (selectedTemplate ?? .template1)
-                .normalizedForEditing,
-            badge:
-                selectedBadge?.type == BadgeType.none
-                ? nil
-                : selectedBadge,
-            anchor: resolvedAnchor(
-                for: resolvedAnchorIdentifier
-            ),
+        return snapshotProvider.makeSnapshot(
+            template: selectedTemplate,
+            badge: selectedBadge,
+            anchors: anchors,
+            selectedAnchorIDString:
+                resolvedSelectedAnchorIDString,
             shouldWritePhotoDescription:
                 shouldWritePhotoDescription,
             photoDescriptionOverride:
                 photoDescriptionOverride,
             selectedAlbumIdentifier:
-                resolvedAlbumIdentifier
+                selectedAlbumIdentifier
+                ?? self.selectedAlbumIdentifier
         )
     }
 
@@ -692,7 +689,7 @@ extension SettingsService {
         _ identifier: String
     ) -> String {
 
-        PhotoMemoAlbumSelection
-            .normalizedIdentifier(identifier)
+        snapshotProvider
+            .normalizedAlbumIdentifier(identifier)
     }
 }
