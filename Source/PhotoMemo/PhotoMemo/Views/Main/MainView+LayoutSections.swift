@@ -40,17 +40,7 @@ extension MainView {
 
                 compactHeroHeader
 
-                compactTabPicker
-
-                if presentationState.compactTab
-                    == .preview {
-
-                    compactPreviewContent
-
-                } else {
-
-                    compactEditorContent
-                }
+                compactConfigurationContent
             }
             .padding(16)
         }
@@ -69,176 +59,101 @@ extension MainView {
                     weight: .semibold
                 ))
 
-            Text("iPhone 上优先先看预览，再逐项校准内容。")
+            Text("一次设定，自然分享，永久记录。")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
 
-    var compactTabPicker: some View {
-
-        Picker(
-            "主界面模式",
-            selection:
-                $presentationState.compactTab
-        ) {
-
-            Text("预览")
-                .tag(
-                    MainPresentationState
-                    .CompactTab.preview
-                )
-
-            Text("编辑")
-                .tag(
-                    MainPresentationState
-                    .CompactTab.editor
-                )
-        }
-        .pickerStyle(.segmented)
-    }
-
     @ViewBuilder
-    var compactPreviewContent: some View {
+    var compactConfigurationContent: some View {
 
         VStack(
             alignment: .leading,
             spacing: 18
         ) {
 
-            GroupBox("照片") {
-                photoSection
+            GroupBox("我的记录") {
+                personalProfileSection
             }
             .groupBoxStyle(
                 MinimalCardGroupBoxStyle()
             )
 
-            workspaceConfigurationPanel
+            GroupBox("默认风格") {
+                styleSection
+            }
+            .groupBoxStyle(
+                MinimalCardGroupBoxStyle()
+            )
 
-            detailContent
+            GroupBox("输出设置") {
+                compactOutputSection
+            }
+            .groupBoxStyle(
+                MinimalCardGroupBoxStyle()
+            )
 
-            GroupBox("输出") {
-                MainOutputSection(
-                    selectedAlbumIdentifier:
-                        $selectedAlbumIdentifier,
-                    availableAlbums: availableAlbums,
-                    selectedAlbumSummary:
-                        selectedAlbumSummary,
-                    isSavingToAlbum:
-                        isSavingToAlbum,
-                    canExportCurrentCard:
-                        canExportCurrentCard,
-                    isCompactLayout: true,
-                    saveCurrentCardToAlbum:
-                        saveCurrentCardToAlbumAction,
-                    saveFeedbackTitle:
-                        saveFeedbackState.title,
-                    saveFeedbackMessage:
-                        saveFeedbackState.message,
-                    showsSaveFeedback:
-                        saveFeedbackState.isPresented
-                )
+            GroupBox("设置") {
+                settingsSection
+            }
+            .groupBoxStyle(
+                MinimalCardGroupBoxStyle()
+            )
+
+            GroupBox("关于") {
+                aboutSection
             }
             .groupBoxStyle(
                 MinimalCardGroupBoxStyle()
             )
         }
-    }
-
-    @ViewBuilder
-    var compactEditorContent: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 20
-        ) {
-
-            if shouldShowPermissionSection {
-                GroupBox("本地权限") {
-                    permissionSection
-                }
-            }
-
-            workspaceConfigurationPanel
-
-            GroupBox("时间锚点") {
-                anchorSection
-            }
-
-            GroupBox("个性化区域") {
-                fieldEditorSection
-            }
-
-            GroupBox("补充信息") {
-                customContentSection
-            }
-
-            GroupBox("Logo 标识") {
-                badgeSection
-            }
-        }
-        .groupBoxStyle(
-            MinimalCardGroupBoxStyle()
-        )
-    }
-
-    var editorContent: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 20
-        ) {
-
-            Text("PhotoMemo")
-                .font(.system(
-                    size: 32,
-                    weight: .semibold
-                ))
-
-            Text("本地照片记忆生成")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            if shouldShowPermissionSection {
-                GroupBox("本地权限") {
-                    permissionSection
-                }
-            }
-
-            workspaceConfigurationPanel
-
-            GroupBox("时间锚点") {
-                anchorSection
-            }
-
-            GroupBox("个性化区域") {
-                fieldEditorSection
-            }
-
-            GroupBox("补充信息") {
-                customContentSection
-            }
-
-            GroupBox("Logo 标识") {
-                badgeSection
-            }
-
-            GroupBox("输出") {
-                outputSection
-            }
-
-            Spacer(minLength: 0)
-        }
-        .groupBoxStyle(
-            MinimalCardGroupBoxStyle()
-        )
     }
 
     var sidebar: some View {
 
         ScrollView {
 
-            editorContent
+            VStack(
+                alignment: .leading,
+                spacing: 20
+            ) {
+
+                Text("PhotoMemo")
+                    .font(.system(
+                        size: 32,
+                        weight: .semibold
+                    ))
+
+                Text("把宝宝照片变成值得长期保存的成长记录。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                GroupBox("我的记录") {
+                    personalProfileSection
+                }
+
+                GroupBox("默认风格") {
+                    styleSection
+                }
+
+                GroupBox("输出设置") {
+                    outputSection
+                }
+
+                GroupBox("设置") {
+                    settingsSection
+                }
+
+                GroupBox("关于") {
+                    aboutSection
+                }
+
+                Spacer(minLength: 0)
+            }
+            .groupBoxStyle(
+                MinimalCardGroupBoxStyle()
+            )
         }
         .padding(24)
         .frame(
@@ -250,6 +165,19 @@ extension MainView {
 }
 
 extension MainView {
+
+    var personalProfileSection: some View {
+        MainPersonalProfileSectionView(
+            profile: personalProfileStore.profile,
+            saveDestinationSummary:
+                personalProfileDestinationSummary,
+            onUpdateProfile: { profile in
+                personalProfileStore.updateProfile(
+                    profile
+                )
+            }
+        )
+    }
 
     var photoSection: some View {
         MainPhotoSectionView(
@@ -280,6 +208,44 @@ extension MainView {
         )
     }
 
+    var styleSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
+
+            workspaceConfigurationPanel
+
+            templateSection
+
+#if !os(macOS)
+            previewSection
+#endif
+
+            DisclosureGroup("进一步调整") {
+                VStack(
+                    alignment: .leading,
+                    spacing: 18
+                ) {
+                    anchorSection
+
+                    fieldEditorSection
+
+                    customContentSection
+
+                    badgeSection
+                }
+                .padding(.top, 12)
+            }
+            .font(.subheadline.weight(.medium))
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
     var anchorSection: some View {
         MainAnchorSectionView(
             anchors: settings.anchors,
@@ -298,12 +264,12 @@ extension MainView {
         ) {
 
             variableLibraryPanel(
-                title: "识别数据",
+                title: "照片信息",
                 variables: TemplateVariableLibrary.recognized
             )
 
             variableLibraryPanel(
-                title: "智能数据",
+                title: "记忆信息",
                 variables: TemplateVariableLibrary.intelligent
             )
 
@@ -372,6 +338,29 @@ extension MainView {
         )
     }
 
+    var compactOutputSection: some View {
+        MainOutputSection(
+            selectedAlbumIdentifier:
+                $selectedAlbumIdentifier,
+            availableAlbums: availableAlbums,
+            selectedAlbumSummary:
+                selectedAlbumSummary,
+            isSavingToAlbum:
+                isSavingToAlbum,
+            canExportCurrentCard:
+                canExportCurrentCard,
+            isCompactLayout: true,
+            saveCurrentCardToAlbum:
+                saveCurrentCardToAlbumAction,
+            saveFeedbackTitle:
+                saveFeedbackState.title,
+            saveFeedbackMessage:
+                saveFeedbackState.message,
+            showsSaveFeedback:
+                saveFeedbackState.isPresented
+        )
+    }
+
     var heroPanel: some View {
 
         HStack(spacing: 10) {
@@ -382,7 +371,7 @@ extension MainView {
             )
 
             MainStatusPillView(
-                title: "时间点",
+                title: "记忆日期",
                 value:
                     selectedAnchor?.title
                     ?? "未设置"
@@ -421,6 +410,79 @@ extension MainView {
         !permissionCenter.photoLibraryState.isGranted
             || !permissionCenter.notificationState
             .isGranted
+    }
+
+    var settingsSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
+
+            if shouldShowPermissionSection {
+                permissionSection
+            } else {
+                MinimalInsetCard {
+                    LabeledContent("本地权限") {
+                        Text("已就绪")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Divider()
+
+                    Text("PhotoMemo 已具备读取照片、保存结果和发送本地提醒所需的权限。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+    }
+
+    var aboutSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 14
+        ) {
+            MinimalInsetCard {
+                VStack(
+                    alignment: .leading,
+                    spacing: 10
+                ) {
+                    Text("PhotoMemo 不是修图工具，而是围绕系统相册构建的记忆生成器。")
+                        .font(.body)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+
+                    Text("日常使用里，大多数时候你只需要在系统相册中分享照片给 PhotoMemo。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+            }
+
+            Button("打开使用帮助") {
+                presentOperationGuide(topic: .overview)
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
     }
 
     var permissionSetupSheet: some View {
@@ -514,19 +576,17 @@ extension MainView {
         ScrollView {
 
             VStack(
-                alignment: .center,
+                alignment: .leading,
                 spacing: 22
             ) {
 
-                workspaceConfigurationPanel
-                    .frame(
-                        maxWidth: 900,
-                        alignment: .leading
-                    )
-
-                detailContent
+                previewSection
             }
-                .padding()
+            .frame(
+                maxWidth: 900,
+                alignment: .leading
+            )
+            .padding()
         }
     }
 
@@ -566,6 +626,23 @@ extension MainView {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    var previewSection: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
+
+            photoSection
+
+            detailContent
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
     }
 
     @ViewBuilder

@@ -226,17 +226,50 @@ extension MainView {
         _ newValue: String
     ) {
 
+        let normalizedIdentifier =
+            settings.normalizedAlbumIdentifier(
+                newValue
+            )
+        let resolvedTitle =
+            resolvedAlbumTitle(
+                for: newValue
+            ) ?? ""
+
         persistEditorDraftState(
             selectedAlbumIdentifier:
-                settings.normalizedAlbumIdentifier(
-                    newValue
-                ),
+                normalizedIdentifier,
             selectedAlbumTitle:
-                resolvedAlbumTitle(
-                    for: newValue
-                ) ?? "",
+                resolvedTitle,
             immediately: true
         )
+
+        let destination:
+            PersonalProfileSaveDestination
+
+        if normalizedIdentifier
+            == PhotoMemoAlbumSelection
+            .systemLibraryIdentifier {
+            destination = .systemLibrary
+        } else if normalizedIdentifier.isEmpty
+            || normalizedIdentifier
+            == PhotoAlbumOption.automaticIdentifier {
+            destination = .photoMemoAlbum
+        } else {
+            destination = .selectedAlbum
+        }
+
+        personalProfileStore.updateSaveDestination(
+            defaultSaveDestination: destination,
+            selectedAlbumIdentifier:
+                destination == .selectedAlbum
+                ? normalizedIdentifier
+                : "",
+            selectedAlbumTitle:
+                destination == .selectedAlbum
+                ? resolvedTitle
+                : ""
+        )
+
         syncBatchQueueDefaultConfiguration()
     }
 

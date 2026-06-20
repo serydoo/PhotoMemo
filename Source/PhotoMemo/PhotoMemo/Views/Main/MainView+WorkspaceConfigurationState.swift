@@ -23,18 +23,6 @@ extension MainView {
 
     func saveCurrentConfiguration() {
 
-        settings.selectedAnchorIDString =
-            selectedAnchorID?.uuidString
-            ?? ""
-        settings.selectedAlbumIdentifier =
-            settings.normalizedAlbumIdentifier(
-                selectedAlbumIdentifier
-            )
-        settings.selectedAlbumTitle =
-            resolvedAlbumTitle(
-                for: selectedAlbumIdentifier
-            ) ?? ""
-
         settings.updateConfigurationSlot(
             settings.activeConfigurationSlotID,
             snapshot:
@@ -52,7 +40,7 @@ extension MainView {
 
         presentAlert(
             title: "风格已保存",
-            message: "当前内容已经保存到\(activeWorkspaceConfigurationSlot.displayTitleWithReference)，之后切换这套风格时会一起恢复时间点、标识、文案和输出规则。"
+            message: "当前内容已经保存到\(activeWorkspaceConfigurationSlot.displayTitleWithReference)，以后切换到这套风格时会一起恢复。"
         )
     }
 
@@ -69,6 +57,10 @@ extension MainView {
 
         settings.activeConfigurationSlotID = slotID
         settings.saveConfigurationSlots()
+        personalProfileStore
+            .updateDefaultStyleIdentifier(
+                slotID.rawValue
+            )
 
         let slot =
             settings.configurationSlot(for: slotID)
@@ -108,7 +100,7 @@ extension MainView {
 
         presentAlert(
             title: "已恢复默认",
-            message: "\(activeWorkspaceConfigurationSlot.displayTitleWithReference) 已恢复到默认风格内容。"
+            message: "\(activeWorkspaceConfigurationSlot.displayTitleWithReference) 已恢复为初始默认风格。"
         )
     }
 
@@ -123,10 +115,11 @@ extension MainView {
                 )
                 .normalizedForEditing,
             badge: nil,
-            anchor: nil,
+            anchor: selectedAnchor,
             shouldWritePhotoDescription: false,
             photoDescriptionOverride: "",
-            selectedAlbumIdentifier: ""
+            selectedAlbumIdentifier:
+                selectedAlbumIdentifier
         )
     }
 
@@ -145,36 +138,9 @@ extension MainView {
         settings.photoDescriptionOverride =
             snapshot.photoDescriptionOverride
 
-        if let anchor = snapshot.anchor,
-           !settings.anchors.contains(
-            where: { $0.id == anchor.id }
-           ) {
-            settings.anchors.append(anchor)
-            settings.saveAnchors()
-        }
-
-        selectedAnchorID =
-            snapshot.anchor?.id
-        settings.selectedAnchorIDString =
-            snapshot.anchor?.id.uuidString
-            ?? ""
-
-        let normalizedAlbumIdentifier =
-            snapshot.selectedAlbumIdentifier
-            .isEmpty
-            ? PhotoAlbumOption.automaticIdentifier
-            : snapshot.selectedAlbumIdentifier
-
-        selectedAlbumIdentifier =
-            normalizedAlbumIdentifier
-        settings.selectedAlbumIdentifier =
-            snapshot.selectedAlbumIdentifier
-        settings.selectedAlbumTitle =
-            resolvedAlbumTitle(
-                for: normalizedAlbumIdentifier
-            ) ?? ""
-
-        settings.saveAll()
+        settings.saveTemplate()
+        settings.saveBadge()
+        settings.savePhotoDescriptionSettings()
         syncComposerItemsFromTemplate(
             resetTransientState: true
         )

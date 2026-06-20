@@ -1,5 +1,6 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import UIKit
+import UniformTypeIdentifiers
 
 final class PhotoMemoShareExtensionViewController:
     UIViewController {
@@ -49,10 +50,16 @@ final class PhotoMemoShareExtensionViewController:
     private let sharedCountValueLabel =
         UILabel()
 
-    private let currentConfigurationValueLabel =
+    private let currentStyleValueLabel =
         UILabel()
 
     private let outputValueLabel =
+        UILabel()
+
+    private let previewImageView =
+        UIImageView()
+
+    private let previewCaptionLabel =
         UILabel()
 
     private let activityIndicator =
@@ -74,6 +81,9 @@ final class PhotoMemoShareExtensionViewController:
         [NSExtensionItem] = []
 
     private var sharedPhotoCount = 0
+
+    private var firstPreviewTask:
+        Task<Void, Never>?
 
     private var viewState: ViewState = .confirming
 
@@ -99,7 +109,13 @@ private extension PhotoMemoShareExtensionViewController {
         configureStatusLabels()
         configureFooterLabel()
         configurePrimaryButton()
+        configurePreviewViews()
 
+        let previewCard =
+            makeCardContainer(
+                contentView:
+                    makePreviewStack()
+            )
         let summaryCard =
             makeCardContainer(
                 contentView:
@@ -120,6 +136,9 @@ private extension PhotoMemoShareExtensionViewController {
         )
         contentStack.addArrangedSubview(
             subtitleLabel
+        )
+        contentStack.addArrangedSubview(
+            previewCard
         )
         contentStack.addArrangedSubview(
             summaryCard
@@ -239,6 +258,29 @@ private extension PhotoMemoShareExtensionViewController {
         statusMessageLabel.numberOfLines = 0
     }
 
+    func configurePreviewViews() {
+
+        previewImageView.translatesAutoresizingMaskIntoConstraints =
+            false
+        previewImageView.contentMode =
+            .scaleAspectFill
+        previewImageView.clipsToBounds = true
+        previewImageView.layer.cornerRadius = 16
+        previewImageView.layer.cornerCurve = .continuous
+        previewImageView.backgroundColor =
+            .tertiarySystemFill
+
+        previewCaptionLabel.font =
+            .preferredFont(
+                forTextStyle: .caption1
+            )
+        previewCaptionLabel.textColor =
+            .secondaryLabel
+        previewCaptionLabel.numberOfLines = 0
+        previewCaptionLabel.text =
+            "正在准备这次分享的预览。"
+    }
+
     func configureFooterLabel() {
 
         footerLabel.font =
@@ -267,6 +309,67 @@ private extension PhotoMemoShareExtensionViewController {
         )
     }
 
+    func makePreviewStack() -> UIStackView {
+
+        let stack =
+            UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints =
+            false
+        stack.axis = .vertical
+        stack.spacing = 12
+
+        let headerLabel =
+            UILabel()
+        headerLabel.font =
+            .preferredFont(
+                forTextStyle: .headline
+            )
+        headerLabel.text =
+            "这次会处理"
+
+        let imageContainer =
+            UIView()
+        imageContainer.translatesAutoresizingMaskIntoConstraints =
+            false
+        imageContainer.addSubview(
+            previewImageView
+        )
+
+        NSLayoutConstraint.activate([
+            previewImageView.topAnchor.constraint(
+                equalTo:
+                    imageContainer.topAnchor
+            ),
+            previewImageView.leadingAnchor.constraint(
+                equalTo:
+                    imageContainer.leadingAnchor
+            ),
+            previewImageView.trailingAnchor.constraint(
+                equalTo:
+                    imageContainer.trailingAnchor
+            ),
+            previewImageView.bottomAnchor.constraint(
+                equalTo:
+                    imageContainer.bottomAnchor
+            ),
+            previewImageView.heightAnchor.constraint(
+                equalToConstant: 180
+            )
+        ])
+
+        stack.addArrangedSubview(
+            headerLabel
+        )
+        stack.addArrangedSubview(
+            imageContainer
+        )
+        stack.addArrangedSubview(
+            previewCaptionLabel
+        )
+
+        return stack
+    }
+
     func makeSummaryStack() -> UIStackView {
 
         let stack =
@@ -283,7 +386,7 @@ private extension PhotoMemoShareExtensionViewController {
                 forTextStyle: .headline
             )
         headerLabel.text =
-            "这次会使用"
+            "这次会如何处理"
 
         stack.addArrangedSubview(
             headerLabel
@@ -297,9 +400,9 @@ private extension PhotoMemoShareExtensionViewController {
         )
         stack.addArrangedSubview(
             makeSummaryRow(
-                title: "当前风格",
+                title: "默认风格",
                 valueLabel:
-                    currentConfigurationValueLabel
+                    currentStyleValueLabel
             )
         )
         stack.addArrangedSubview(
@@ -436,6 +539,8 @@ private extension PhotoMemoShareExtensionViewController {
             sharedPhotoCount > 0
             ? "\(sharedPhotoCount) 张"
             : "未识别到可处理照片"
+
+        loadFirstPreviewIfNeeded()
     }
 
     @MainActor
@@ -448,8 +553,8 @@ private extension PhotoMemoShareExtensionViewController {
                 from: snapshot
             )
 
-        currentConfigurationValueLabel.text =
-            summary.configurationTitle
+        currentStyleValueLabel.text =
+            summary.styleTitle
         outputValueLabel.text =
             summary.outputTitle
     }
@@ -469,19 +574,19 @@ private extension PhotoMemoShareExtensionViewController {
 
         subtitleLabel.text =
             sharedPhotoCount > 0
-            ? "PhotoMemo 会按当前风格继续处理。确认后就会进入下一步。"
+            ? "确认后，PhotoMemo 会直接生成新的记忆照片并保存。"
             : "当前内容看起来不像可直接处理的原始照片。"
 
         if sharedPhotoCount > 0 {
             statusTitleLabel.text =
-                "继续后会发生什么"
+                "接下来会发生什么"
             statusMessageLabel.text =
-                "PhotoMemo 会先接收这次分享，再按当前风格继续处理，完成后写回系统相册。"
+                "PhotoMemo 会使用当前默认风格处理这次分享，并按现在的保存位置写回系统相册。"
             footerLabel.text =
-                "如果想更换风格，请先回到 PhotoMemo 主 App 调整，再重新分享。"
+                "如果想改默认风格或保存位置，请先回到 PhotoMemo 调整，再重新分享。"
             applyPrimaryButton(
                 title:
-                    "按当前风格继续"
+                    "开始生成"
             )
         } else {
             statusTitleLabel.text =
@@ -507,11 +612,11 @@ private extension PhotoMemoShareExtensionViewController {
         viewState = .processing
         activityIndicator.startAnimating()
         titleLabel.text =
-            "正在接收这次分享"
+            "正在生成"
         subtitleLabel.text =
-            "PhotoMemo 正在记录这次分享，并准备按当前风格继续处理。"
+            "PhotoMemo 正在处理这次分享。"
         statusTitleLabel.text =
-            "正在交给 PhotoMemo"
+            "正在保存到系统相册"
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
@@ -522,7 +627,7 @@ private extension PhotoMemoShareExtensionViewController {
         primaryButton.isEnabled =
             false
         primaryButton.configuration?.title =
-            "正在继续"
+            "处理中"
     }
 
     @MainActor
@@ -615,7 +720,7 @@ private extension PhotoMemoShareExtensionViewController {
                 message:
                     "PhotoMemo 没有收到这次分享的原始内容。",
                 suggestion:
-                    "请返回系统相册重新分享；如果重复出现，请打开 PhotoMemo 检查当前风格后再试。"
+                    "请返回系统相册重新分享；如果重复出现，请打开 PhotoMemo 检查默认风格后再试。"
             )
             return
         }
@@ -630,7 +735,7 @@ private extension PhotoMemoShareExtensionViewController {
                 )
 
             statusTitleLabel.text =
-                "已经交给 PhotoMemo"
+                "已经开始处理"
             statusMessageLabel.textColor =
                 .secondaryLabel
             statusMessageLabel.text =
@@ -638,7 +743,7 @@ private extension PhotoMemoShareExtensionViewController {
                     for: result
                 )
             footerLabel.text =
-                "当前分享页会关闭，PhotoMemo 会继续按当前风格处理这批照片。"
+                "当前分享页会关闭，PhotoMemo 会继续完成保存。"
             primaryButton.isEnabled =
                 false
             primaryButton.configuration?.title =
@@ -696,7 +801,7 @@ private extension PhotoMemoShareExtensionViewController {
                         .errorDescription
                         ?? "无法把内容交给 PhotoMemo。",
                     suggestion:
-                        "请先返回系统相册重新分享；如果仍失败，请打开 PhotoMemo 检查当前风格和系统相册权限。"
+                        "请先返回系统相册重新分享；如果仍失败，请打开 PhotoMemo 检查默认风格和系统相册权限。"
                 )
             }
         }
@@ -744,10 +849,106 @@ private extension PhotoMemoShareExtensionViewController {
                 )
             }
 
-            return "\(summaryParts.joined(separator: "，"))。后续处理完成后会写回系统相册。"
+            return "\(summaryParts.joined(separator: "，"))。处理完成后会写回系统相册。"
         }
 
-        return "已接收 \(result.requestedCount) 张。后续处理完成后会写回系统相册。"
+        return "已接收 \(result.requestedCount) 张。处理完成后会写回系统相册。"
+    }
+
+    func loadFirstPreviewIfNeeded() {
+
+        firstPreviewTask?.cancel()
+
+        guard
+            let provider =
+                supportedFirstProvider()
+        else {
+            previewCaptionLabel.text =
+                sharedPhotoCount > 0
+                ? "这次会按相同风格处理 \(sharedPhotoCount) 张照片。"
+                : "未识别到可处理照片。"
+            previewImageView.image = nil
+            return
+        }
+
+        firstPreviewTask = Task { @MainActor in
+            let image =
+                await loadPreviewImage(
+                    from: provider
+                )
+
+            guard !Task.isCancelled else {
+                return
+            }
+
+            previewImageView.image = image
+
+            if sharedPhotoCount > 1 {
+                previewCaptionLabel.text =
+                    "仅预览第一张，其余 \(sharedPhotoCount - 1) 张会使用相同风格处理。"
+            } else {
+                previewCaptionLabel.text =
+                    "将按当前默认风格处理这张照片。"
+            }
+        }
+    }
+
+    func supportedFirstProvider() -> NSItemProvider? {
+
+        inputItems
+            .flatMap { item in
+                item.attachments ?? []
+            }
+            .first {
+                $0.hasItemConformingToTypeIdentifier(
+                    UTType.image.identifier
+                )
+            }
+    }
+
+    func loadPreviewImage(
+        from provider: NSItemProvider
+    ) async -> UIImage? {
+
+        await withCheckedContinuation {
+            continuation in
+
+            provider.loadItem(
+                forTypeIdentifier:
+                    UTType.image.identifier,
+                options: nil
+            ) { item, _ in
+
+                if let url = item as? URL,
+                   let data =
+                    try? Data(contentsOf: url),
+                   let image = UIImage(data: data) {
+                    continuation.resume(
+                        returning: image
+                    )
+                    return
+                }
+
+                if let image = item as? UIImage {
+                    continuation.resume(
+                        returning: image
+                    )
+                    return
+                }
+
+                if let data = item as? Data,
+                   let image = UIImage(data: data) {
+                    continuation.resume(
+                        returning: image
+                    )
+                    return
+                }
+
+                continuation.resume(
+                    returning: nil
+                )
+            }
+        }
     }
 
     func detailedFailureMessage(

@@ -122,7 +122,7 @@ struct MainAnchorSectionView: View {
 
             HStack(spacing: 10) {
                 Picker(
-                    "选择时间点",
+                    "选择记忆日期",
                     selection: $selectedAnchorID
                 ) {
 
@@ -148,7 +148,7 @@ struct MainAnchorSectionView: View {
                 .controlSize(.small)
             }
 
-            Text("切换时间点后，预览会立即刷新。")
+            Text("切换记忆日期后，预览会立即刷新。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(

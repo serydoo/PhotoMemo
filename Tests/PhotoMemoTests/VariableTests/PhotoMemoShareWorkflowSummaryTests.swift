@@ -6,7 +6,7 @@ import Testing
 struct PhotoMemoShareWorkflowSummaryTests {
 
     @Test("Uses the template name when available")
-    func usesTemplateNameForConfigurationTitle() {
+    func usesTemplateNameForStyleTitle() {
 
         let builder =
             PhotoMemoShareWorkflowSummaryBuilder()
@@ -38,9 +38,9 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let summary =
             builder.build(from: snapshot)
 
-        #expect(summary.configurationTitle == "宝宝成长卡")
-        #expect(summary.anchorTitle == "不使用时间点")
-        #expect(summary.outputTitle == "自动存入 PhotoMemo")
+        #expect(summary.styleTitle == "宝宝成长卡")
+        #expect(summary.memoryDateTitle == nil)
+        #expect(summary.outputTitle == "PhotoMemo 相册")
     }
 
     @Test("Falls back to preset name when the template name is blank")
@@ -76,7 +76,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let summary =
             builder.build(from: snapshot)
 
-        #expect(summary.configurationTitle == "模板 1")
+        #expect(summary.styleTitle == "模板 1")
     }
 
     @Test("Formats countdown anchors and custom album output")
@@ -108,8 +108,8 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let summary =
             builder.build(from: snapshot)
 
-        #expect(summary.anchorTitle == "高考 · 倒计时")
-        #expect(summary.outputTitle == "存入“家庭相册”")
+        #expect(summary.memoryDateTitle == "高考 · 倒计时")
+        #expect(summary.outputTitle == "“家庭相册”相册")
     }
 
     @Test("Falls back to generic custom album wording when no album title is available")
@@ -131,7 +131,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let summary =
             builder.build(from: snapshot)
 
-        #expect(summary.outputTitle == "按当前选定相册保存")
+        #expect(summary.outputTitle == "当前选定相册")
     }
 
     @Test("Uses system library wording for the system destination sentinel")
@@ -155,6 +155,6 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let summary =
             builder.build(from: snapshot)
 
-        #expect(summary.outputTitle == "写入系统相册")
+        #expect(summary.outputTitle == "系统相册")
     }
 }

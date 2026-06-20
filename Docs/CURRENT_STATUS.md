@@ -21,6 +21,231 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
 
+## 1.18 Product convergence: Main App now matches the five-layer direction more closely, Share wording is quieter, and Profile/Style boundaries are tighter
+
+这一轮继续严格按 `North Star` 做减法，没有增加新功能，重点是把可见结构、用户语言和长期资料边界再往产品模型上收。
+
+本轮已落地：
+
+- Main App 顶层继续收口：
+  - iPhone 主界面现在更接近最终目标：
+    - `我的记录`
+    - `默认风格`
+    - `输出设置`
+    - `设置`
+    - `关于`
+  - `预览` 不再在 iPhone 顶层单独占一个主块
+  - 预览被下沉回 `默认风格` 内部，作为校准内容的一部分
+  - macOS 仍保留右侧 detail 预览，用作单张真实校准面
+
+- 用户可见术语继续去技术化：
+  - `识别数据` 改为 `照片信息`
+  - `智能数据` 改为 `记忆信息`
+  - 多处 `时间点` 改为 `记忆日期`
+  - Share 页 `当前设置` 改为 `这次会如何处理`
+  - Share 页 `当前风格` 改为 `默认风格`
+
+- Share Extension 又安静了一层：
+  - 确认页继续保持单页
+  - 现在更明确地只说：
+    - 分享了几张
+    - 默认风格
+    - 结果去向
+    - 接下来会发生什么
+  - 单张预览说明也更直接：
+    - `将按当前默认风格处理这张照片`
+  - 失败提示不再让用户理解“当前风格”这类过于编辑态的概念
+
+- `Personal Profile` 成为长期信息来源又前进了一步：
+  - `PersonalProfileStore` 现在可以单独更新：
+    - 默认风格
+    - 默认保存位置
+  - 主界面切换默认风格时，会同步回写 `Personal Profile`
+  - 主界面切换保存相册时，也会同步回写 `Personal Profile`
+  - 这意味着 Share 和 Main App 在默认风格/默认输出上的共同来源更加明确
+
+- `Style` 更接近 presentation-only：
+  - 保存当前风格时，不再先把当前相册和记忆日期当作风格持久化来源
+  - 应用某个风格快照时，也不再顺手改掉当前相册和当前记忆日期
+  - 现阶段风格恢复的核心重新聚焦到：
+    - 模板
+    - 标识
+    - 说明写入相关设置
+
+本轮验证：
+
+- 定向测试通过：
+  - `PersonalProfileStoreTests`
+  - `PhotoMemoShareWorkflowSummaryTests`
+- 全量测试通过：
+  - `PhotoMemoTests`
+- 这一轮我明确拿到了 `PhotoMemoTests` 的 `TEST SUCCEEDED`
+- `PhotoMemo` / `PhotoMemoiOS` / `PhotoMemoShareExtension`
+  - 构建命令已实际执行
+  - 当前会话未保留三个 scheme 各自完整、干净的成功尾行
+  - 但本轮涉及的主 app / share 文件已经被测试编译链真实编译覆盖
+
+这一轮仍保留的产品债务：
+
+1. `默认风格` 虽然已经更像设置层，但 `进一步调整` 里仍有不少低频项，后续依旧值得继续下沉。
+2. First Run 目前是更短的 5 步版本，符合“更安静”的方向，但与最新 North Star 的显式完成页仍有一点差异，需要继续做产品判断。
+3. Share confirmation page 现在更看得懂，但距离真正几乎无感的 `Share -> Generate -> Save -> Done` 体验还有最后一段真机手感打磨。
+
+## 1.17 Alpha convergence cleanup: Main App lost another layer of dashboard feeling, and First Run became shorter
+
+这一轮继续遵守 `complexity must go down every sprint` 这条规则，没有扩能力，只继续做减法。
+
+本轮已落地：
+
+- `Main App` 又收掉了一层重复表达：
+  - macOS 右侧详情区不再重复显示一份 `默认风格`
+  - 右侧重新回到更单纯的预览校准面
+- iPhone 主界面继续收短：
+  - 顶层不再默认并列 `关于`
+  - `设置` 只在权限还没准备好时才出现
+  - 默认主链现在更接近：
+    - 我的记录
+    - 默认风格
+    - 输出
+    - 预览
+- `默认风格` 默认展开层继续减法：
+  - 保留风格位切换和基础风格信息
+  - 时间点 / 个性化区域 / 补充信息 / Logo 标识 被后置到 `进一步调整`
+  - 这样首次进入时不会立刻看到整页低频项
+- `FirstRunWizardView` 继续缩短：
+  - 不再单独保留“完成页”
+  - 最后一步直接完成设置并进入主界面
+  - 当前首次流程收成：
+    - 欢迎
+    - 记录身份
+    - 宝宝昵称
+    - 出生日期
+    - 保存位置
+
+这一轮的产品含义：
+
+- Main App 更接近真正的配置中心，而不是一层层展开的调试台
+- First Run 更像一次性的系统设置，而不是“小向导 + 总结页”
+- 低频项目还在，但默认不再抢占主流程注意力
+
+这一轮仍保留的产品债务：
+
+1. `默认风格` 内部依然承载了较多低频项，只是先后置，还没有完全迁到真正的二级设置结构。
+2. `设置 / 关于` 还没有形成独立而稳定的入口层级；当前只是先从首页主舞台继续降权。
+3. Share Extension 仍然不是最终的“几乎无感”生成保存体验；这轮没有继续动 Share 主链。
+
+本轮验证：
+
+- 构建与测试正在执行：
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+  - `PhotoMemoTests`
+- 最终结果会同步记录到 `HANDOFF.md`
+
+## 1.16 Alpha product refinement: Main App is closer to a configuration center, Share is closer to a single-page confirmation flow
+
+这一轮没有继续扩能力，而是按 `PhotoMemo is a natural extension of Apple Photos` 这条方向，把主 App 和 Share Extension 再往“更少配置、更少技术词、更接近系统产品”推进了一步。
+
+本轮已落地：
+
+- Main App 开始更明显地从“工作台”收成“配置中心”：
+  - `MainView` 现在接入了 `PersonalProfileStore`
+  - 主界面新增并提前了 `我的记录`
+  - `我的记录` 直接承接长期资料：
+    - 记录身份
+    - 宝宝昵称
+    - 出生日期
+    - 默认风格摘要
+    - 默认保存位置摘要
+- iPhone 主界面不再强调原先的 `预览 / 编辑` 双模式切换，而是改成单页配置流：
+  - 我的记录
+  - 默认风格
+  - 照片
+  - 时间锚点
+  - 个性化区域
+  - 补充信息
+  - Logo 标识
+  - 输出
+  - 预览
+- 默认风格区域进一步去工具化：
+  - 头部直接显示当前生效模块
+  - 展开后显示更像设置列表的模块项
+  - 用户可见名称已从 `配置 1/2/3` 改为 `模块 1/2/3`
+  - 操作仍保留切换、重命名、保存当前风格、恢复默认，但提示语更像用户语言
+- 旧的“当前配置”式摘要继续降权：
+  - `workspaceConfigurationSummary` 已收成更轻的说明文案
+  - 风格保存和恢复提示不再重复强调一整串内部配置域
+
+首次启动体验也更贴近新的产品模型：
+
+- `FirstRunWizardView` 已从旧的 5 步配置导向，收成更接近长期使用模型的流程：
+  - 欢迎
+  - 记录身份
+  - 宝宝昵称
+  - 出生日期
+  - 默认时间锚点说明
+  - 保存位置
+  - 完成
+- 首次启动不再要求用户在一开始就理解多个风格位
+- 默认时间锚点页面明确告诉用户：
+  - 默认使用出生时间
+  - 年龄会自动计算
+
+Share Extension 继续从“技术交接面”往“确认一下就开始”的单页靠拢：
+
+- `PhotoMemoShareExtensionViewController` 现在会尝试显示第一张照片预览
+- 多张分享时只显示第一张，并提示：
+  - 其余照片会使用相同风格处理
+- 确认页继续去技术词：
+  - `当前设置`
+  - `开始生成`
+  - `处理完成后会写回系统相册`
+- `PhotoMemoShareWorkflowSummary` 的对外语言也更自然了：
+  - `styleTitle` 替代旧的 `configurationTitle`
+  - 输出去向统一成：
+    - `系统相册`
+    - `PhotoMemo 相册`
+    - `“家庭相册”相册`
+    - `当前选定相册`
+
+兼容层这一轮也补了一步：
+
+- `PersonalProfileStore` 新增了 `updateProfile(_:)`
+- 这让主界面中的 `我的记录` 能直接更新长期资料，同时继续复用现有兼容桥接：
+  - birthday anchor 同步
+  - 默认风格位同步
+  - 默认相册同步
+  - 旧设置桥接保持不变
+
+本轮验证：
+
+- 已通过：
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+  - `PhotoMemoTests`
+- 新旧测试继续通过，包含：
+  - `PhotoMemoShareWorkflowSummaryTests`
+  - `PersonalProfileStoreTests`
+  - metadata / memory / export / batch / editor projection 既有测试集合
+
+当前还留着的产品债务：
+
+1. Main App 还没有完全收成最终理想形态的 `我的记录 / 默认风格 / 输出设置 / 设置 / 关于` 五层结构。
+2. `时间锚点 / 个性化区域 / 补充信息 / Logo 标识` 仍然在首页主舞台上，虽然层级已变轻，但还没有真正下沉成二级配置。
+3. Share confirmation page 已经更容易看懂，但还没有做到真正的“几乎感觉不到存在”的自动生成保存体验。
+4. `MainView+PersonalProfile.swift` 目前通过编译条件避开 Share target，后续如果继续收 target 边界，最好再回头检查一次同步组覆盖范围。
+
+下一轮最值得继续的三件事：
+
+1. 继续给 Main App 做减法，把 `输出设置 / 设置 / 关于` 真正梳理成稳定层级。
+2. 把 Share confirmation page 继续向 `生成 -> 保存 -> 完成` 的更短主链推进。
+3. 做一轮真机 UX 回归，重点看：
+   - 首次启动是否足够像系统设置
+   - iPhone 主界面是否仍有“像工具”的感觉
+   - 分享确认页是否已经足够让第一次使用的人敢点 `开始生成`
+
 ## 1.15 Share intake diagnostics are now wired through the full confirmation pipeline
 
 PhotoMemo 的 Share Extension 这一轮没有改工作流本身，只强化了 intake 阶段的可观测性，目标是把“照片没有成功交给 PhotoMemo”从笼统报错升级成可定位的阶段性诊断。

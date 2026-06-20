@@ -4,6 +4,10 @@ import SwiftUI
 struct MainView: View {
 
     @EnvironmentObject
+    var personalProfileStore:
+        PersonalProfileStore
+
+    @EnvironmentObject
     var batchQueueStore:
         BatchQueueStore
 

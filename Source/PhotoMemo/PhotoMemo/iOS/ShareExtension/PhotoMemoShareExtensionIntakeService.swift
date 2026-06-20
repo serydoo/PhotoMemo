@@ -117,10 +117,10 @@ struct PhotoMemoShareExtensionError:
             return "请尽量从系统相册直接分享原始照片；如果来自其他 App，请确认分享的是原图而不是预览图。"
 
         case .allImportsFailed:
-            return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开 PhotoMemo 检查当前风格。"
+            return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开 PhotoMemo 检查默认风格。"
 
         case .persistFailed:
-            return "请先重试一次；如果重复出现，请打开 PhotoMemo 检查共享容器、当前风格和系统相册权限。"
+            return "请先重试一次；如果重复出现，请打开 PhotoMemo 检查共享容器、默认风格和系统相册权限。"
         }
     }
 

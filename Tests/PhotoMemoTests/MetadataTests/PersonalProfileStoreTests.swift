@@ -175,4 +175,89 @@ struct PersonalProfileStoreTests {
             forName: suiteName
         )
     }
+
+    @Test("Updating the profile store save destination persists selected album details")
+    @MainActor
+    func updatingProfileStoreSaveDestinationPersistsSelectedAlbumDetails() {
+
+        let suiteName =
+            "PhotoMemo.PersonalProfileStoreTests.\(UUID().uuidString)"
+
+        guard let defaults =
+            UserDefaults(suiteName: suiteName) else {
+            Issue.record("Unable to create isolated UserDefaults suite")
+            return
+        }
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let store =
+            PersonalProfileStore(defaults: defaults)
+
+        store.completeFirstRun(
+            with: PersonalProfile()
+        )
+
+        store.updateSaveDestination(
+            defaultSaveDestination: .selectedAlbum,
+            selectedAlbumIdentifier: "album-88",
+            selectedAlbumTitle: "成长记录"
+        )
+
+        let reloadedStore =
+            PersonalProfileStore(defaults: defaults)
+        let reloadedSettings =
+            SettingsService(defaults: defaults)
+
+        #expect(reloadedStore.profile.defaultSaveDestination == .selectedAlbum)
+        #expect(reloadedStore.profile.selectedAlbumIdentifier == "album-88")
+        #expect(reloadedStore.profile.selectedAlbumTitle == "成长记录")
+        #expect(reloadedSettings.selectedAlbumIdentifier == "album-88")
+        #expect(reloadedSettings.selectedAlbumTitle == "成长记录")
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
+
+    @Test("Updating the profile store default style persists the selected style slot")
+    @MainActor
+    func updatingProfileStoreDefaultStylePersistsSelectedStyleSlot() {
+
+        let suiteName =
+            "PhotoMemo.PersonalProfileStoreTests.\(UUID().uuidString)"
+
+        guard let defaults =
+            UserDefaults(suiteName: suiteName) else {
+            Issue.record("Unable to create isolated UserDefaults suite")
+            return
+        }
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let store =
+            PersonalProfileStore(defaults: defaults)
+
+        store.completeFirstRun(
+            with: PersonalProfile()
+        )
+
+        store.updateDefaultStyleIdentifier("slot3")
+
+        let reloadedStore =
+            PersonalProfileStore(defaults: defaults)
+        let reloadedSettings =
+            SettingsService(defaults: defaults)
+
+        #expect(reloadedStore.profile.defaultStyleIdentifier == "slot3")
+        #expect(reloadedSettings.activeConfigurationSlotID == .slot3)
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
 }

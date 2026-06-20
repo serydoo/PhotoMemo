@@ -58,7 +58,7 @@ private struct MainPreviewHeaderView: View {
                 Text("实时预览")
                     .font(.title3.weight(.semibold))
 
-                Text("按当前风格、时间点与照片信息即时生成")
+                Text("按当前风格、记忆日期与照片信息即时生成")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

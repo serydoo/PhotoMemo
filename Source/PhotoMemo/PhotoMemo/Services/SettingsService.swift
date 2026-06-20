@@ -23,13 +23,13 @@ enum WorkspaceConfigurationSlotID:
         switch self {
 
         case .slot1:
-            return "配置 1"
+            return "模块 1"
 
         case .slot2:
-            return "配置 2"
+            return "模块 2"
 
         case .slot3:
-            return "配置 3"
+            return "模块 3"
         }
     }
 

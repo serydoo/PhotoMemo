@@ -5,21 +5,19 @@ struct FirstRunWizardView: View {
 
     private enum Step: Int, CaseIterable {
 
+        case welcome
+
         case relationship
 
         case nickname
 
         case birthday
 
-        case style
-
         case destination
-
-        case completion
     }
 
     @State
-    private var step: Step = .relationship
+    private var step: Step = .welcome
 
     @State
     private var draftProfile: PersonalProfile
@@ -58,9 +56,7 @@ struct FirstRunWizardView: View {
                     alignment: .leading,
                     spacing: 24
                 ) {
-                    if step != .completion {
-                        heroHeader
-                    }
+                    heroHeader
 
                     GroupBox {
                         VStack(
@@ -115,13 +111,11 @@ private extension FirstRunWizardView {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MinimalPalette.accent)
 
-            if step != .completion {
-                ProgressView(
-                    value: Double(step.rawValue + 1),
-                    total: Double(Step.completion.rawValue)
-                )
-                .tint(MinimalPalette.accent)
-            }
+            ProgressView(
+                value: Double(step.rawValue + 1),
+                total: Double(Step.allCases.count)
+            )
+            .tint(MinimalPalette.accent)
         }
     }
 
@@ -129,6 +123,9 @@ private extension FirstRunWizardView {
     var stepBody: some View {
 
         switch step {
+
+        case .welcome:
+            welcomeStep
 
         case .relationship:
             relationshipStep
@@ -139,14 +136,33 @@ private extension FirstRunWizardView {
         case .birthday:
             birthdayStep
 
-        case .style:
-            styleStep
-
         case .destination:
             destinationStep
+        }
+    }
 
-        case .completion:
-            completionStep
+    var welcomeStep: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
+            Text("欢迎来到 PhotoMemo")
+                .font(.title3.weight(.semibold))
+
+            Text("把宝宝照片变成值得长期保存的成长记录。")
+                .font(.body)
+                .foregroundStyle(.secondary)
+
+            MinimalInsetCard {
+                Text("现在花 1 分钟完成设置，以后就可以一直在系统相册中直接分享使用。")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
+            }
         }
     }
 
@@ -243,28 +259,6 @@ private extension FirstRunWizardView {
         }
     }
 
-    var styleStep: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 16
-        ) {
-            Text("默认风格")
-                .font(.title3.weight(.semibold))
-
-            Text("先从一个推荐风格开始，以后可以再增加更多风格。")
-                .font(.body)
-                .foregroundStyle(.secondary)
-
-            selectionRow(
-                title: "宝宝成长（推荐）",
-                subtitle: "适合长期记录成长照片，默认直接使用。",
-                isSelected: true,
-                action: {}
-            )
-        }
-    }
-
     var destinationStep: some View {
 
         VStack(
@@ -277,6 +271,31 @@ private extension FirstRunWizardView {
             Text("以后处理完成后，会默认保存到这里。")
                 .font(.body)
                 .foregroundStyle(.secondary)
+
+            MinimalInsetCard {
+                Text("设置完成后，日常只需要在系统相册里分享照片到 PhotoMemo。")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
+
+                Divider()
+
+                summaryRow(
+                    title: "记录身份",
+                    value: draftProfile.resolvedRelationshipLabel
+                )
+                summaryRow(
+                    title: "宝宝昵称",
+                    value: normalizedNicknameSummary
+                )
+                summaryRow(
+                    title: "默认风格",
+                    value: PersonalProfile.recommendedStyleTitle
+                )
+            }
 
             selectionRow(
                 title: "系统相册",
@@ -306,43 +325,6 @@ private extension FirstRunWizardView {
         }
     }
 
-    var completionStep: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 16
-        ) {
-            Text("设置完成")
-                .font(.system(size: 32, weight: .bold))
-
-            Text("以后请直接在系统相册中分享照片到 PhotoMemo。")
-                .font(.body)
-                .foregroundStyle(.secondary)
-
-            MinimalInsetCard {
-                Text("已为你准备好默认设置")
-                    .font(.subheadline.weight(.semibold))
-
-                summaryRow(
-                    title: "记录身份",
-                    value: draftProfile.resolvedRelationshipLabel
-                )
-                summaryRow(
-                    title: "宝宝昵称",
-                    value: normalizedNicknameSummary
-                )
-                summaryRow(
-                    title: "默认风格",
-                    value: PersonalProfile.recommendedStyleTitle
-                )
-                summaryRow(
-                    title: "保存位置",
-                    value: destinationSummary
-                )
-            }
-        }
-    }
-
     var footerActions: some View {
 
         HStack(spacing: 12) {
@@ -364,54 +346,43 @@ private extension FirstRunWizardView {
     }
 
     var showsBackButton: Bool {
-        step != .relationship
+        step != .welcome
     }
 
     var stepTitle: String {
 
         switch step {
 
-        case .relationship:
+        case .welcome:
             return "1 / 5"
 
-        case .nickname:
+        case .relationship:
             return "2 / 5"
 
-        case .birthday:
+        case .nickname:
             return "3 / 5"
 
-        case .style:
+        case .birthday:
             return "4 / 5"
 
         case .destination:
             return "5 / 5"
-
-        case .completion:
-            return "设置完成"
         }
     }
 
     var progressTitle: String {
-
-        switch step {
-
-        case .completion:
-            return "设置已完成"
-
-        default:
-            return "首次设置"
-        }
+        "首次设置"
     }
 
     var primaryButtonTitle: String {
 
         switch step {
 
-        case .completion:
-            return "立即体验"
+        case .welcome:
+            return "继续"
 
         case .destination:
-            return "完成设置"
+            return "立即体验"
 
         default:
             return "继续"
@@ -421,6 +392,9 @@ private extension FirstRunWizardView {
     var canAdvance: Bool {
 
         switch step {
+
+        case .welcome:
+            return true
 
         case .relationship:
             if draftProfile.relationshipRole == .custom {
@@ -443,9 +417,7 @@ private extension FirstRunWizardView {
                 .isEmpty
 
         case .birthday,
-             .style,
-             .destination,
-             .completion:
+             .destination:
             return true
         }
     }
@@ -461,21 +433,6 @@ private extension FirstRunWizardView {
         return trimmed.isEmpty
             ? "未填写"
             : trimmed
-    }
-
-    var destinationSummary: String {
-
-        switch draftProfile.defaultSaveDestination {
-
-        case .systemLibrary:
-            return "系统相册"
-
-        case .photoMemoAlbum:
-            return "PhotoMemo 相册"
-
-        case .selectedAlbum:
-            return draftProfile.selectedAlbumTitle
-        }
     }
 
     func relationshipSubtitle(
@@ -599,15 +556,10 @@ private extension FirstRunWizardView {
         draftProfile.babyBirthday = birthday
         draftProfile.defaultStyleIdentifier = "slot1"
 
-        if step == .completion {
+        if step == .destination {
             onComplete(
                 draftProfile.normalized
             )
-            return
-        }
-
-        if step == .destination {
-            step = .completion
             return
         }
 

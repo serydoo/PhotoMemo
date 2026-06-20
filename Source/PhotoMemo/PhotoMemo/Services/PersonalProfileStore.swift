@@ -72,6 +72,53 @@ final class PersonalProfileStore:
             using: normalizedProfile
         )
     }
+
+    func updateProfile(
+        _ profile: PersonalProfile
+    ) {
+
+        let normalizedProfile =
+            profile.normalized
+
+        self.profile =
+            normalizedProfile
+        requiresFirstRun = false
+
+        persist(
+            profile: normalizedProfile,
+            isCompleted: true
+        )
+        applyCompatibilitySettings(
+            using: normalizedProfile
+        )
+    }
+
+    func updateDefaultStyleIdentifier(
+        _ identifier: String
+    ) {
+
+        var updatedProfile = profile
+        updatedProfile.defaultStyleIdentifier =
+            identifier
+        updateProfile(updatedProfile)
+    }
+
+    func updateSaveDestination(
+        defaultSaveDestination:
+            PersonalProfileSaveDestination,
+        selectedAlbumIdentifier: String,
+        selectedAlbumTitle: String
+    ) {
+
+        var updatedProfile = profile
+        updatedProfile.defaultSaveDestination =
+            defaultSaveDestination
+        updatedProfile.selectedAlbumIdentifier =
+            selectedAlbumIdentifier
+        updatedProfile.selectedAlbumTitle =
+            selectedAlbumTitle
+        updateProfile(updatedProfile)
+    }
 }
 
 private extension PersonalProfileStore {

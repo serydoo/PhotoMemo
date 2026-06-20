@@ -33,7 +33,7 @@ fileprivate enum MainOperationGuideCategory:
             return "风格与内容"
 
         case .smartModules:
-            return "智能与时间点"
+            return "记忆日期与智能结果"
 
         case .output:
             return "输出与相册"
@@ -45,7 +45,7 @@ fileprivate enum MainOperationGuideCategory:
         switch self {
 
         case .basics:
-            return "先理解 PhotoMemo 的主界面分工和校准逻辑。"
+            return "先理解 PhotoMemo 的主界面分工和日常使用方式。"
 
         case .workspace:
             return "管理三套本地风格，切换、命名和保存当前方案。"
@@ -54,7 +54,7 @@ fileprivate enum MainOperationGuideCategory:
             return "处理四个自定义区域，以及补充信息与模块插入。"
 
         case .smartModules:
-            return "理解时间点、智能模块和时间结果的组合方式。"
+            return "理解记忆日期、智能结果和时间表达的组合方式。"
 
         case .output:
             return "确认保存去向，并把处理后的新图写入目标相册。"
@@ -164,7 +164,7 @@ enum MainOperationGuideTopic:
             return "补充信息输入"
 
         case .smartModules:
-            return "时间点与智能模块"
+            return "记忆日期与智能结果"
 
         case .output:
             return "输出与相册保存"
@@ -188,7 +188,7 @@ enum MainOperationGuideTopic:
             return "管理补充信息输入框，以及图片说明回退逻辑。"
 
         case .smartModules:
-            return "把照片拍摄时间和时间点转换成可组合的时间结果。"
+            return "把照片拍摄时间和记忆日期转换成可组合的时间结果。"
 
         case .output:
             return "确认保存去向，并理解 PhotoMemo 的本地写回策略。"
@@ -224,10 +224,10 @@ enum MainOperationGuideTopic:
         switch self {
 
         case .overview:
-            return "PhotoMemo 的主界面不是批量工作台，而是单张照片的校准中心。左侧负责风格、时间点、自定义区域和输出规则，右侧负责实时预览、风格切换和帮助入口。"
+            return "PhotoMemo 的主界面不是批量工作台，而是日常分享前的准备中心。左侧负责默认风格、记忆日期、自定义区域和输出规则，右侧负责实时预览。"
 
         case .configurations:
-            return "三个风格位一次只会使用一个。切换时，Logo 标识、时间点、补充信息和相册去向会一起刷新；保存时会把当前编辑状态整体写回当前高亮的风格位。"
+            return "三个默认风格一次只会使用一个。切换时，排版、文案和底部展示会一起刷新；保存时会把当前风格内容整体写回当前选中的风格。"
 
         case .composer:
             return "四个自定义区域是 PhotoMemo 最核心的组合层。无论输入自定义文字还是插入照片信息、智能模块，都必须先明确选中区域，再按光标位置组合内容。"
@@ -236,7 +236,7 @@ enum MainOperationGuideTopic:
             return "补充信息区现在只保留一条自定义输入框。填写后会优先写入这段内容；留空时会自动回退到右下区域最终生成的完整内容。"
 
         case .smartModules:
-            return "智能模块只输出时间结果本身，例如年岁、纪念时长、已过天数、倒计时和里程碑，不会自动帮你写整句。最终句子由你把模块和文字自由组合。"
+            return "智能结果只输出时间结果本身，例如年岁、纪念时长、已过天数、倒计时和里程碑，不会自动帮你写整句。最终句子由你把模块和文字自由组合。"
 
         case .output:
             return "PhotoMemo 会生成一张新图，并按当前本地链路把它写回系统图库。输出区的重点是选对目标相册，并让处理后的图片继续保留尽可能完整的原图元数据。"
@@ -260,9 +260,9 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "建议顺序",
                     items: [
-                        "先确定当前风格和时间点，再导入一张真实照片做校准。",
+                        "先确定当前风格和记忆日期，再导入一张真实照片做校准。",
                         "确认右下智能结果和照片信息正常后，再补说明和输出相册。",
-                        "最后把满意的一套方案保存到某个风格位，给后续外部导入和后台处理复用。"
+                        "最后把满意的一套方案保存成默认风格，给后续分享复用。"
                     ]
                 )
             ]
@@ -272,7 +272,7 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "风格切换规则",
                     items: [
-                        "顶部三张风格卡片对应三套本地方案，始终只有一套高亮生效。",
+                        "这里保留三套默认风格，始终只有一套会在分享时生效。",
                         "切换后左侧字段和右侧预览会同步刷新，方便你直接对照差异。",
                         "未单独保存过的风格位会先使用默认风格内容，避免不同样式混入当前主流程。"
                     ]
@@ -281,8 +281,8 @@ enum MainOperationGuideTopic:
                     title: "命名与保存",
                     items: [
                         "“重命名当前风格”只会修改风格位名称，帮助你用“宝宝成长”“旅行纪念”等方式管理方案，不会改风格内容。",
-                        "“保存到当前风格”会把当前校准结果、时间点、Logo 标识、补充信息和相册去向整体写回当前风格位。",
-                        "“恢复当前默认”只会清空该风格位保存的内容，名称仍可保留。"
+                        "“保存为当前风格”会把当前排版、文案和展示结果写回当前风格。",
+                        "“恢复默认”会把这一套风格恢复成最初状态，名称仍可保留。"
                     ]
                 )
             ]
@@ -292,7 +292,7 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "插入原则",
                     items: [
-                        "先选中左上、右上、左下或右下某个区域，再插入照片信息、智能模块或自定义文字。",
+                        "先选中左上、右上、左下或右下某个区域，再插入照片信息、记忆信息或自定义文字。",
                         "系统不会再偷偷把内容插到右下区域，所有插入都以当前明确选中的区域为准。",
                         "选中区域后可以直接输入文字；点击上方模块按钮时，模块会按当前光标位置插入。",
                         "识别数据里的“参数摘要”可以随时再次插回右上或任意自定义区域，不需要依赖默认模板内容保留。"
@@ -326,7 +326,7 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "时间点作用",
                     items: [
-                        "时间点决定系统是在算年岁、纪念时长、已过多久，还是未来倒计时。",
+                        "记忆日期决定系统是在算年岁、纪念时长、已过多久，还是未来倒计时。",
                         "照片导入后会自动用拍摄时间参与计算，因此导入真实照片比空状态更接近最终效果。",
                         "当用户未满 1 岁时，年龄结果不会再显示“0岁8个月”这类不自然写法。"
                     ]
@@ -354,7 +354,7 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "使用建议",
                     items: [
-                        "保存前先确认当前风格、时间点和右侧预览已经是最终结果。",
+                        "保存前先确认当前风格、记忆日期和右侧预览已经是最终结果。",
                         "PhotoMemo 会生成一张新图，而不是修改原图，所以原照片仍会留在系统图库里。",
                         "如果之后你还想换输出去向，直接切换当前风格位或重新选择目标相册即可。"
                     ]
@@ -458,8 +458,6 @@ struct MainWorkspaceConfigurationPanelView: View {
 
     let activeSlotSummary: String
 
-    let activeSlotDisplayTitle: String
-
     let onSelectSlot:
         (WorkspaceConfigurationSlotID) -> Void
 
@@ -469,113 +467,117 @@ struct MainWorkspaceConfigurationPanelView: View {
 
     let onRestoreActiveSlotDefault: () -> Void
 
-    let onOpenGuideTopic:
-        (MainOperationGuideTopic) -> Void
+    @State
+    private var isExpanded = true
 
     var body: some View {
 
-        MinimalInsetCard {
+        VStack(
+            alignment: .leading,
+            spacing: 12
+        ) {
             header
 
-            VStack(spacing: 10) {
+            if isExpanded {
+                MinimalInsetCard {
+                    VStack(spacing: 10) {
 
-                ForEach(slots) { slot in
+                        ForEach(slots) { slot in
 
-                    MainWorkspaceConfigurationSlotButton(
-                        slot: slot,
-                        isActive:
-                            slot.id == activeSlotID,
-                        onSelect: {
-                            onSelectSlot(slot.id)
-                        },
-                        onRename: {
-                            if activeSlotID != slot.id {
-                                onSelectSlot(slot.id)
-                            }
-                            onRenameActiveSlot()
-                        },
-                        onSave: {
-                            if activeSlotID != slot.id {
-                                onSelectSlot(slot.id)
-                            }
-                            onSaveActiveSlot()
-                        },
-                        onRestoreDefault: {
-                            if activeSlotID != slot.id {
-                                onSelectSlot(slot.id)
-                            }
-                            onRestoreActiveSlotDefault()
+                            MainWorkspaceConfigurationSlotButton(
+                                slot: slot,
+                                isActive:
+                                    slot.id == activeSlotID,
+                                onSelect: {
+                                    onSelectSlot(slot.id)
+                                },
+                                onRename: {
+                                    if activeSlotID != slot.id {
+                                        onSelectSlot(slot.id)
+                                    }
+                                    onRenameActiveSlot()
+                                },
+                                onSave: {
+                                    if activeSlotID != slot.id {
+                                        onSelectSlot(slot.id)
+                                    }
+                                    onSaveActiveSlot()
+                                },
+                                onRestoreDefault: {
+                                    if activeSlotID != slot.id {
+                                        onSelectSlot(slot.id)
+                                    }
+                                    onRestoreActiveSlotDefault()
+                                }
+                            )
                         }
-                    )
+
+                        Text(activeSlotSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
+                            )
+                    }
                 }
             }
-
-            Text(activeSlotSummary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(
-                    horizontal: false,
-                    vertical: true
-                )
         }
     }
 
     private var header: some View {
 
-        HStack(
-            alignment: .center,
-            spacing: 12
+        VStack(
+            alignment: .leading,
+            spacing: 8
         ) {
-
-            VStack(
-                alignment: .leading,
-                spacing: 4
-            ) {
-
-                Text("默认风格")
-                    .font(.headline)
-
-                Text("点选任意风格后，当前内容会立刻生效并刷新预览。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
-            }
-
-            Spacer(minLength: 0)
-
-            Menu {
-
-                ForEach(
-                    MainOperationGuideCategory.allCases
-                ) { category in
-
-                    Menu {
-                        ForEach(category.topics) { topic in
-
-                            Button(topic.title) {
-                                onOpenGuideTopic(topic)
-                            }
-                        }
-
-                    } label: {
-                        Label(
-                            category.title,
-                            systemImage:
-                                category.iconName
-                        )
-                    }
+            Button {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    isExpanded.toggle()
                 }
             } label: {
-                Label(
-                    "帮助中心",
-                    systemImage: "books.vertical"
-                )
+                HStack(
+                    alignment: .center,
+                    spacing: 12
+                ) {
+                    VStack(
+                        alignment: .leading,
+                        spacing: 4
+                    ) {
+
+                        Text("默认风格")
+                            .font(.headline)
+
+                        Text("选中后会立即刷新预览，平时只需要保留最常用的一套。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
+                            )
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Text(
+                        slots.first(where: {
+                            $0.id == activeSlotID
+                        })?.displayTitle ?? "模块 1"
+                    )
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                    Image(
+                        systemName:
+                            isExpanded
+                            ? "chevron.up"
+                            : "chevron.down"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                }
             }
-            .menuStyle(.borderlessButton)
-            .controlSize(.small)
+            .buttonStyle(.plain)
         }
     }
 }
@@ -596,83 +598,86 @@ private struct MainWorkspaceConfigurationSlotButton: View {
 
     var body: some View {
 
-        HStack(
-            alignment: .center,
-            spacing: 12
+        VStack(
+            alignment: .leading,
+            spacing: 10
         ) {
-
             Button(action: onSelect) {
-                VStack(
-                    alignment: .leading,
-                    spacing: 6
+                HStack(
+                    alignment: .center,
+                    spacing: 12
                 ) {
+                    Image(
+                        systemName:
+                            isActive
+                            ? "checkmark.circle.fill"
+                            : "circle"
+                    )
+                    .font(.title3)
+                    .foregroundStyle(
+                        isActive
+                        ? MinimalPalette.accent
+                        : .secondary
+                    )
 
-                    HStack {
-                        Text(slot.displayTitle)
-                            .font(.subheadline.weight(.semibold))
-                            .lineLimit(1)
+                    VStack(
+                        alignment: .leading,
+                        spacing: 6
+                    ) {
 
-                        Spacer(minLength: 0)
+                        HStack {
+                            Text(slot.displayTitle)
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(1)
 
-                        Text(slot.statusText)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(
-                                isActive
-                                ? MinimalPalette.accent
-                                : .secondary
+                            Spacer(minLength: 0)
+
+                            Text(slot.statusText)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(
+                                    isActive
+                                    ? MinimalPalette.accent
+                                    : .secondary
+                                )
+                        }
+
+                        Text(slotSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
                             )
                     }
-
-                    Text(slot.resolvedDisplayName)
-                        .font(.caption.weight(.medium))
-                        .lineLimit(1)
-
-                    Text(
-                        slotDescription
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .leading
                     )
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
                 }
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .leading
-                )
             }
             .buttonStyle(.plain)
 
-            Menu("编辑") {
+            Menu {
                 Button("重命名") {
                     onRename()
                 }
 
-                Button("保存当前内容") {
+                Button("保存为当前风格") {
                     onSave()
                 }
 
                 Button("恢复默认") {
                     onRestoreDefault()
                 }
+
+            } label: {
+                Label(
+                    slotActionTitle,
+                    systemImage: "ellipsis.circle"
+                )
+                .font(.caption.weight(.medium))
             }
             .controlSize(.small)
-
-            Image(
-                systemName:
-                    isActive
-                    ? "checkmark.circle.fill"
-                    : "circle"
-            )
-            .font(.title3)
-            .foregroundStyle(
-                isActive
-                ? MinimalPalette.accent
-                : .secondary
-            )
-            .accessibilityLabel(
-                isActive
-                ? "当前生效"
-                : "未生效"
-            )
         }
         .padding(12)
         .background(
@@ -701,17 +706,23 @@ private struct MainWorkspaceConfigurationSlotButton: View {
         )
     }
 
-    private var slotDescription: String {
+    private var slotSummary: String {
 
         if isActive {
-            return slot.isCustomized
-                ? "当前使用中"
-                : "当前使用默认风格"
+            if slot.isCustomized {
+                return "正在使用这套风格，后续分享会默认沿用。"
+            }
+
+            return "这是当前默认风格，还没有单独保存过。"
         }
 
         return slot.isCustomized
-            ? "切换到这套已保存风格"
-            : "未保存时使用默认风格"
+            ? "切换后，会直接套用这套已保存内容。"
+            : "暂时为空，需要保存后才会变成独立风格。"
+    }
+
+    private var slotActionTitle: String {
+        isActive ? "管理当前风格" : "管理这个风格"
     }
 }
 

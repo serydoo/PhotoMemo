@@ -2,11 +2,11 @@ import Foundation
 
 struct PhotoMemoShareWorkflowSummary: Hashable {
 
-    let configurationTitle: String
-
-    let anchorTitle: String
+    let styleTitle: String
 
     let outputTitle: String
+
+    let memoryDateTitle: String?
 }
 
 struct PhotoMemoShareWorkflowSummaryBuilder {
@@ -28,17 +28,17 @@ struct PhotoMemoShareWorkflowSummaryBuilder {
     ) -> PhotoMemoShareWorkflowSummary {
 
         PhotoMemoShareWorkflowSummary(
-            configurationTitle:
+            styleTitle:
                 resolvedConfigurationTitle(
                     from: snapshot.template
-                ),
-            anchorTitle:
-                resolvedAnchorTitle(
-                    from: snapshot.anchor
                 ),
             outputTitle:
                 resolvedOutputTitle(
                     from: snapshot.selectedAlbumIdentifier
+                ),
+            memoryDateTitle:
+                resolvedMemoryDateTitle(
+                    from: snapshot.anchor
                 )
         )
     }
@@ -62,12 +62,12 @@ private extension PhotoMemoShareWorkflowSummaryBuilder {
         return trimmedName
     }
 
-    func resolvedAnchorTitle(
+    func resolvedMemoryDateTitle(
         from anchor: Anchor?
-    ) -> String {
+    ) -> String? {
 
         guard let anchor else {
-            return "不使用时间点"
+            return nil
         }
 
         let trimmedTitle =
@@ -94,11 +94,11 @@ private extension PhotoMemoShareWorkflowSummaryBuilder {
         if selectedAlbumIdentifier
             == PhotoMemoAlbumSelection
             .systemLibraryIdentifier {
-            return "写入系统相册"
+            return "系统相册"
         }
 
         if selectedAlbumIdentifier.isEmpty {
-            return "自动存入 PhotoMemo"
+            return "PhotoMemo 相册"
         }
 
         if let resolvedAlbumTitle =
@@ -109,9 +109,9 @@ private extension PhotoMemoShareWorkflowSummaryBuilder {
                 in: .whitespacesAndNewlines
             ),
            !resolvedAlbumTitle.isEmpty {
-            return "存入“\(resolvedAlbumTitle)”"
+            return "“\(resolvedAlbumTitle)”相册"
         }
 
-        return "按当前选定相册保存"
+        return "当前选定相册"
     }
 }

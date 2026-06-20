@@ -63,9 +63,6 @@ extension MainView {
                 settings.activeConfigurationSlotID,
             activeSlotSummary:
                 workspaceConfigurationSummary,
-            activeSlotDisplayTitle:
-                activeWorkspaceConfigurationSlot
-                .displayTitle,
             onSelectSlot: { slotID in
                 selectWorkspaceConfigurationSlot(
                     slotID
@@ -79,11 +76,6 @@ extension MainView {
             },
             onRestoreActiveSlotDefault: {
                 restoreActiveWorkspaceConfigurationToDefault()
-            },
-            onOpenGuideTopic: { topic in
-                presentOperationGuide(
-                    topic: topic
-                )
             }
         )
     }

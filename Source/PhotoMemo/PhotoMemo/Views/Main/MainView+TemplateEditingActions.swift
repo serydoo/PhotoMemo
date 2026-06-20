@@ -157,7 +157,7 @@ extension MainView {
         guard let slot = currentEditingSlot else {
             presentAlert(
                 title: "请先选择自定义区域",
-                message: "先点左上、右上、左下或右下任意一个区域，再插入照片信息、智能数据或自定义文字。"
+                message: "先点左上、右上、左下或右下任意一个区域，再插入照片信息、记忆信息或自定义文字。"
             )
             return
         }

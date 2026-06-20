@@ -28,6 +28,9 @@ struct PhotoMemoRootSceneView: View {
             } else {
                 MainView()
                     .environmentObject(
+                        personalProfileStore
+                    )
+                    .environmentObject(
                         runtime.batchQueueStore
                     )
             }

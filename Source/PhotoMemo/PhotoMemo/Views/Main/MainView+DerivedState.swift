@@ -39,15 +39,7 @@ extension MainView {
     }
 
     var workspaceConfigurationSummary: String {
-
-        let slot =
-            activeWorkspaceConfigurationSlot
-
-        if slot.isCustomized {
-            return "当前使用：\(slot.displayTitleWithReference)。切换后，左侧内容和右侧预览会一起刷新。"
-        }
-
-        return "当前使用：\(slot.displayTitleWithReference)。这套风格还没有单独保存。"
+        "切换风格后，预览会立即刷新。需要长期保留当前组合时，再把它保存到这个风格里。"
     }
 
     var activeTemplate: Template {
@@ -109,6 +101,32 @@ extension MainView {
         return resolvedAlbumTitle(
             for: selectedAlbumIdentifier
         ) ?? "当前相册"
+    }
+
+    var personalProfileDestinationSummary: String {
+
+        let profile =
+            personalProfileStore.profile
+
+        switch profile.defaultSaveDestination {
+
+        case .systemLibrary:
+            return "系统相册"
+
+        case .photoMemoAlbum:
+            return "PhotoMemo 相册"
+
+        case .selectedAlbum:
+            let title =
+                profile.selectedAlbumTitle
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+
+            return title.isEmpty
+                ? "已选相册"
+                : title
+        }
     }
 
     var anchorQuickFactItems:
@@ -205,7 +223,7 @@ extension MainView {
         if preview.isFutureRelative {
             return [
                 ("倒计时", preview.countdownText),
-                ("时间点", preview.secondaryText)
+                ("记忆日期", preview.secondaryText)
             ]
         }
 
