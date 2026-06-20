@@ -21,6 +21,26 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
 
+## 1.5 Product direction alignment documented
+
+PhotoMemo now has an explicit share-first product direction baseline in documentation.
+
+This round adds:
+
+- `Docs/ProductDirection.md`
+- `Docs/UX_PRINCIPLES.md`
+
+The direction is now stated clearly:
+
+- PhotoMemo is a memory generator built around Apple Photos, not a photo editor
+- the Share Extension is the primary workflow
+- the Main App is a configuration center
+- future UX decisions should reduce reading, scrolling, and duplicate information
+
+This round is documentation-only.
+
+No architecture, renderer, metadata, or workflow implementation changed in code.
+
 ## 1.4 v0.7.2 Alpha usability iteration started
 
 PhotoMemo has now begun the first real Alpha usability pass.

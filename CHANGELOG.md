@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.3 - 2026-06-20
+
+### Added
+- Added `Docs/ProductDirection.md` to formalize PhotoMemo's share-first product direction.
+- Added `Docs/UX_PRINCIPLES.md` as a long-term UX baseline for future product decisions.
+
+### Changed
+- Updated the README homepage positioning to: "PhotoMemo is a memory generator built around Apple Photos, not a photo editor."
+- Aligned repository-facing product language around a share-first workflow where the Main App is a configuration center and the Share Extension is the primary entry.
+
+### Notes
+- This release is documentation-only and does not change runtime behavior.
+
 ## v0.7.0 - 2026-06-20
 
 ### Added

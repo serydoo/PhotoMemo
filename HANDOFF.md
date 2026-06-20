@@ -1,5 +1,25 @@
 # PhotoMemo Handoff
 
+## 2026-06-20 v0.7.3 Product direction docs aligned
+
+- 本轮目标：
+  - 不改代码行为
+  - 只把产品方向正式写进仓库文档
+- 本轮新增文档：
+  - `Docs/ProductDirection.md`
+  - `Docs/UX_PRINCIPLES.md`
+- 本轮统一后的核心口径：
+  - PhotoMemo is a memory generator built around Apple Photos, not a photo editor.
+  - PhotoMemo 不是修图工具，而是围绕系统相册构建的记忆生成器。
+  - Share Extension 是主工作流
+  - Main App 是配置中心
+  - 未来 UX 以更少决策、更少滚动、更少阅读为优先
+- 本轮同步调整：
+  - `README.md` 首页定义已按新口径更新
+  - `Docs/CURRENT_STATUS.md` 已补充这次方向对齐记录
+- 本轮验证：
+  - 文档改动，无代码构建需求
+
 ## 2026-06-20 v0.7.2 Alpha 可用性迭代（第一轮）已落地
 
 - 本轮目标：
