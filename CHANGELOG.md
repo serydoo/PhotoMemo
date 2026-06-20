@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.4 - 2026-06-20
+
+### Added
+- Added `Docs/ShareExtensionReview.md` to evaluate the Share Extension as the primary product entry from a user perspective.
+- Added `Docs/DesignSystem.md` to establish baseline UI rules for spacing, radius, typography, colors, cards, and buttons.
+- Added `Docs/ProductBacklog.md` to structure future work into Now / Next / Later / Icebox.
+
+### Changed
+- Extended `Docs/ProductDirection.md` with an explicit product-polishing phase statement and links to the new supporting docs.
+
+### Notes
+- This release is documentation-only and does not change runtime behavior.
+
 ## v0.7.3 - 2026-06-20
 
 ### Added

@@ -93,6 +93,23 @@ The workflow should complete with as few decisions as possible.
 - keep preview tightly aligned with the real renderer/exporter
 - favor defaults over setup whenever possible
 
+## Product Polishing Phase
+
+PhotoMemo has now entered a product-polishing stage.
+
+From this point forward, iterative UX improvement should follow one sentence:
+
+Let users stay inside Apple Photos as much as possible, share to PhotoMemo only when needed, and receive a result worth keeping within seconds.
+
+This is the clearest product differentiator PhotoMemo has.
+
+## Supporting Documents
+
+- `Docs/UX_PRINCIPLES.md`
+- `Docs/DesignSystem.md`
+- `Docs/ProductBacklog.md`
+- `Docs/ShareExtensionReview.md`
+
 ## Product Boundary
 
 This direction update does not require:

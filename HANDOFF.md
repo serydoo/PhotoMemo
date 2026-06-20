@@ -1,5 +1,31 @@
 # PhotoMemo Handoff
 
+## 2026-06-20 v0.7.4 Product polishing docs established
+
+- 本轮目标：
+  - 不改代码
+  - 把 PhotoMemo 正式推进到“产品打磨期”的文档基线
+- 本轮新增文档：
+  - `Docs/ShareExtensionReview.md`
+  - `Docs/DesignSystem.md`
+  - `Docs/ProductBacklog.md`
+- 本轮关键结论：
+  - Share Extension 目前还是“技术交接面”，还不是完整的主产品体验
+  - Main App 继续朝配置中心收敛
+  - 之后所有 UI 需要开始遵守统一设计系统
+  - 新想法以后先进入 backlog，不直接打断当前开发节奏
+- Share Extension review 的核心判断：
+  - 第一次使用的人仍然会有一点迷路
+  - 当前成功态更像“已加入收件箱”，还不是“已完成生成并保存”
+  - 最值得推进的是：预览、当前配置、生成、保存这条最短主链
+- 本轮 backlog 分层：
+  - `Now`：Share-first 主链、Alpha 可用性、真实设备体验、预览/导出信任
+  - `Next`：Share Extension 内配置切换、保存反馈、术语统一、Design System 收敛
+  - `Later`：批量分享、Quick Actions、更多默认智能化
+  - `Icebox`：零配置智能模式、自动分类、模板生态扩张
+- 本轮验证：
+  - 文档改动，无代码构建需求
+
 ## 2026-06-20 v0.7.3 Product direction docs aligned
 
 - 本轮目标：

@@ -41,6 +41,30 @@ This round is documentation-only.
 
 No architecture, renderer, metadata, or workflow implementation changed in code.
 
+## 1.6 Product polishing docs established
+
+PhotoMemo now has the first product-polishing documentation layer beyond high-level direction.
+
+This round adds:
+
+- `Docs/ShareExtensionReview.md`
+- `Docs/DesignSystem.md`
+- `Docs/ProductBacklog.md`
+
+What this round establishes:
+
+- the Share Extension is now being reviewed as the real primary product surface
+- the repository now has a concrete UI consistency baseline
+- future ideas now have a backlog structure:
+  - Now
+  - Next
+  - Later
+  - Icebox
+
+This round is documentation-only.
+
+No runtime implementation changed.
+
 ## 1.4 v0.7.2 Alpha usability iteration started
 
 PhotoMemo has now begun the first real Alpha usability pass.
