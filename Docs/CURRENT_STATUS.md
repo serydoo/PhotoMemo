@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20
 
 ## Current Stage
 
@@ -20,6 +20,299 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
+
+## 1.4 v0.7.2 Alpha usability iteration started
+
+PhotoMemo has now begun the first real Alpha usability pass.
+
+This round intentionally avoids new features and architecture work.
+
+The focus is simplifying the main workspace so users think about photos first and configuration second.
+
+What changed in this round:
+
+- photo selection was moved nearer to the top of the workspace flow
+- `PhotoImporterView` now prefers Apple Photos picking first and keeps file import as a secondary path
+- the compact preview flow no longer renders the workspace configuration panel twice
+- the empty preview state inside scrolling containers no longer stretches into unnecessary blank space
+- workspace configuration now behaves more like a direct module list:
+  - tap to switch immediately
+  - inline edit menu for rename / save / restore
+  - no separate “current configuration” summary card
+- the template section now speaks in more user-facing language and emphasizes direct editing instead of internal preset concepts
+- the iOS composer now gives CJK input methods a more native path during text composition
+- anchor management and editing affordances are more explicit
+- manual export filename collisions now resolve with numbered suffixes instead of overwriting
+
+Verification for this round:
+
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+Still waiting for hands-on validation:
+
+- real-device `PhotosPicker` import feel
+- Chinese IME behavior in longer composer sessions
+- iPhone anchor editing flow
+
+## 1.3 v0.7.1 Fixture-backed export read-back landed
+
+PhotoMemo now has its first committed synthetic fixture binaries and real export read-back regression coverage.
+
+This round added:
+
+- `Tests/Fixtures/GenerateSyntheticFixtures.swift`
+- `Tests/Fixtures/Synthetic/`
+- `Tests/PhotoMemoTests/Support/SyntheticFixtureLibrary.swift`
+- `Tests/PhotoMemoTests/ExportTests/FixtureExportReadbackTests.swift`
+- `Tests/PhotoMemoTests/BatchTests/BatchFixtureCoverageTests.swift`
+
+Coverage added in this round:
+
+- JPEG fixture export -> read-back verification
+- HEIC fixture import plus normalized export verification
+- metadata-family assertions for:
+  - EXIF
+  - TIFF
+  - GPS
+  - orientation
+  - dimensions
+  - description fields
+- batch fixture coverage for:
+  - single-item enqueue
+  - multi-item enqueue
+  - cancellation cleanup
+  - retry eligibility
+
+One correctness fix also landed:
+
+- `RecordCardExportService` now writes output dimension metadata using the actual rendered `CGImage` size instead of the intended render target size
+- this removes a real off-by-one risk between top-level pixel dimensions and EXIF pixel dimensions
+
+Verification for this round:
+
+- `PhotoMemoTests` passed with 19 tests
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+## 1.2 v0.7.0 Memory Engine foundation landed
+
+PhotoMemo has now entered its first explicitly versioned product-evolution release.
+
+This round introduces the initial Memory Engine domain boundary without changing renderer, export, batch, or UI behavior.
+
+New foundation types:
+
+- `MemoryContext`
+- `MemoryCalculationResult`
+- `MemoryVariableProvider`
+
+New public variables:
+
+- `days_since`
+- `years_since`
+- `months_since`
+- `weeks_since`
+- `baby_age`
+- `memory_summary` now also flows through the Memory Engine boundary
+
+Key behavior choices:
+
+- metadata capture time remains the source of truth
+- existing anchor summaries remain preserved when already available
+- future-relative anchors never produce negative `*_since` values
+- baby-age formatting avoids awkward `0岁...` wording
+
+Docs added:
+
+- `Docs/MemoryEngine.md`
+- `Docs/ADR/ADR-006-MemoryEngineFoundation.md`
+
+Verification for this round:
+
+- `PhotoMemoTests` passed, including the dedicated `MemoryEngineTests` suite
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+Process note:
+
+- `v0.7.0` starts the repository's forward-looking version rhythm
+- older `Sprint-*` notes remain as historical engineering records, but future release-facing summaries should prefer semantic version labels
+
+## 1.1 Regression verification foundation landed
+
+Sprint-009 moves PhotoMemo into the first real engineering-confidence stage.
+
+This round added verification foundation docs:
+
+- `Docs/FixtureSpecification.md`
+- `Docs/RegressionMatrix.md`
+- `Docs/AcceptanceCriteria.md`
+- `Docs/CIReadiness.md`
+
+This round also added repository-level test/fixture structure:
+
+- `Tests/Fixtures/`
+- `Tests/PhotoMemoTests/`
+
+Important current decisions:
+
+- no copyrighted real photos are committed yet
+- fixture filenames and metadata requirements are now reserved through:
+  - `Tests/Fixtures/FixtureManifest.json`
+- the first automated layer is intentionally pure logic smoke coverage, not snapshot-heavy or Photos-integration-heavy testing
+
+`PhotoMemoTests` now exists as a real Xcode target and shared scheme.
+
+Current smoke coverage includes:
+
+- EXIF timezone parsing
+- GPS sign normalization
+- metadata-derived aspect ratio / megapixels / location display
+- `MetadataContext` capture-timezone date-field generation
+- `TemplateVariableEngine` token replacement
+- `RecordCardBuildService` description-writing switch behavior
+
+Build and test verification for this round:
+
+- `PhotoMemoTests` test passed
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+What still remains intentionally deferred:
+
+- committed real fixture binaries
+- renderer snapshot coverage
+- export-file binary diff tests
+- Photo Library integration automation
+- batch end-to-end fixture execution
+
+## 1.0 Output integrity verification sprint landed
+
+Sprint-008 focused on verification and product reliability, not feature expansion.
+
+This round added six dedicated docs:
+
+- `Docs/ExportMetadataAudit.md`
+- `Docs/ExportReadbackVerification.md`
+- `Docs/JPEG_HEIC_Compatibility.md`
+- `Docs/BatchExportReliability.md`
+- `Docs/LivePhotoAssessment.md`
+- `Docs/OutputIntegrityReport.md`
+
+What this round clarified:
+
+- PhotoMemo's export path is currently a pass-through-plus-patching metadata strategy:
+  - it starts from original `sourceProperties`
+  - rewrites final dimensions and orientation
+  - conditionally writes export description fields
+- output integrity is strongest today for:
+  - still-photo JPEG-first workflows
+  - deterministic batch export
+  - dimension/orientation normalization
+- output integrity is not yet fully guaranteed for:
+  - ICC / color-profile preservation
+  - explicit JPEG / HEIC parity
+  - Live Photo paired-resource support
+  - complete metadata round-trip validation for description/comment fields
+
+One correctness fix also landed in this sprint:
+
+- disabling `shouldWritePhotoDescription` now truly stops PhotoMemo from writing export description metadata
+- the corresponding UI preview text now matches that behavior
+
+Build verification for this round:
+
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+Architecture note:
+
+- no architecture redesign was introduced
+- no renderer redesign was introduced
+- no workspace/editor migration was performed
+
+## 0.8 Metadata audit and roadmap docs were added
+
+The latest non-code sprint produced a dedicated metadata review set:
+
+- `Docs/MetadataPipelineReview.md`
+- `Docs/VariableEngineRoadmap.md`
+- `Docs/MetadataTechnicalDebt.md`
+- `Docs/MetadataRoadmap.md`
+
+What this round clarified:
+
+- PhotoMemo already has one real metadata-read path:
+  - `PhotoMetadataReader -> PhotoMetadata -> MetadataContext / CardVariableProvider -> TemplateVariableEngine -> Renderer / Export`
+- the iOS share extension does not create a second EXIF pipeline:
+  - it persists files and configuration only
+  - real metadata reading still begins in the main app import path
+- the biggest current metadata gaps are:
+  - location enrichment is modeled but not populated
+  - variable catalog coverage lags behind runtime context coverage
+  - time/GPS normalization and metadata regression coverage should be hardened before expanding variable surface
+
+Recommended next metadata sprint from these docs:
+
+- `Sprint-007: Metadata Normalization And Catalog Alignment`
+
+## 0.9 Metadata normalization and catalog alignment landed
+
+Sprint-007 is now implemented without changing the architecture baseline.
+
+Core results:
+
+- `PhotoMetadata` now acts as the metadata normalization center
+- canonical metadata inventory now exists in code:
+  - `PhotoMetadata.canonicalInventory`
+- canonical runtime keys now exist in code:
+  - `MetadataContext.Key`
+- `PhotoMetadataReader` now normalizes:
+  - timezone suffix extraction
+  - GPS sign handling
+  - altitude reference
+- public variable catalog now exposes the previously missing high-value metadata fields:
+  - `location`
+  - `location_display`
+  - `latitude`
+  - `longitude`
+  - `altitude`
+  - `country`
+  - `province`
+  - `city`
+  - `district`
+  - `weekday`
+  - `capture_date_short`
+  - `capture_time_short`
+  - `capture_timezone`
+  - `orientation`
+  - `aspect_ratio`
+  - `megapixels`
+  - `lens_brand`
+  - `memory_summary`
+
+This round also added three new metadata docs:
+
+- `Docs/MetadataInventory.md`
+- `Docs/VariableCatalogAlignment.md`
+- `Docs/MetadataNormalizationPlan.md`
+
+Build verification for this round:
+
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+Architecture note:
+
+- no ADR update was required
+- no new architectural layer was introduced
 
 ## What Was Completed In This Round
 

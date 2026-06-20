@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.7.0 - 2026-06-20
+
+### Added
+- Added the first `MemoryEngine` foundation with `MemoryContext`, `MemoryCalculationResult`, and `MemoryVariableProvider`.
+- Added new public memory variables:
+  - `{{days_since}}`
+  - `{{years_since}}`
+  - `{{months_since}}`
+  - `{{weeks_since}}`
+  - `{{baby_age}}`
+- Added `Docs/MemoryEngine.md` and `ADR-006` to document the new domain boundary.
+- Added a dedicated `MemoryEngineTests` Swift Testing suite inside `PhotoMemoTests`.
+
+### Changed
+- Changed `CardVariableProvider` so memory-oriented values now flow through the shared Memory Engine boundary instead of ad-hoc inline fallback logic.
+- Kept `memory_summary` behavior aligned with existing story-first and anchor-summary-first semantics.
+- Started the repository's forward-looking version rhythm at `v0.7.0` for release-facing documentation.
+
+### Notes
+- This release intentionally does not change renderer, export, batch, or UI behavior.
+- `MemoryEngineTests` currently lives inside the existing `PhotoMemoTests` target to keep the scope conservative while still providing repeatable verification.
+
 ## 2026-06-19
 
 ### Added

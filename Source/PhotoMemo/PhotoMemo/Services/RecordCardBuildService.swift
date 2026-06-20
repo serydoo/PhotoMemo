@@ -104,6 +104,11 @@ private extension RecordCardBuildService {
         configuration: BatchConfigurationSnapshot
     ) -> String {
 
+        guard configuration.shouldWritePhotoDescription
+        else {
+            return ""
+        }
+
         let override =
             configuration.photoDescriptionOverride
             .trimmingCharacters(

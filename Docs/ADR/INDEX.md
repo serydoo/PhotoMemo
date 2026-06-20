@@ -1,0 +1,12 @@
+# ADR Index
+
+| ADR | Title | Status | Date | Summary |
+|---|---|---|---|---|
+| ADR-001 | Single Source of Truth for Batch Configuration | Accepted | 2026-06-20 | Batch configuration snapshots are constructed through one provider to avoid configuration drift. |
+| ADR-002 | BatchQueueStore as a Stable Public Facade | Accepted | 2026-06-20 | Batch queue internals may be decomposed, but the public queue entry point remains stable. |
+| ADR-003 | Incremental Workspace Session Migration | Accepted | 2026-06-20 | MainView workflow migration proceeds incrementally through workspace session types instead of a rewrite. |
+| ADR-004 | Template String as the Canonical Model | Accepted | 2026-06-20 | Template strings remain the canonical content model across editor, renderer, export, batch, and persistence. |
+| ADR-005 | Editor Projection Engine | Accepted | 2026-06-20 | Editor-only projection logic is isolated from MainView while remaining outside renderer, export, and batch boundaries. |
+| ADR-006 | Memory Engine Foundation | Accepted | 2026-06-20 | Memory-oriented variables are derived through a dedicated local-first domain layer between metadata inputs and the variable pipeline. |
+
+Future ADRs should be appended to this table.

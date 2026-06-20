@@ -2,6 +2,11 @@ import Foundation
 
 final class TemplateVariableEngine {
 
+    private static let tokenRegex =
+        try? NSRegularExpression(
+            pattern: #"\{\{([a-zA-Z0-9_\-]+)\}\}"#
+        )
+
     func render(
         _ template: String,
         context: MetadataContext
@@ -9,11 +14,7 @@ final class TemplateVariableEngine {
 
         var result = template
 
-        let pattern = #"\{\{([a-zA-Z0-9_\-]+)\}\}"#
-
-        guard let regex = try? NSRegularExpression(
-            pattern: pattern
-        ) else {
+        guard let regex = Self.tokenRegex else {
             return template
         }
 

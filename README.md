@@ -39,6 +39,8 @@ PhotoMemo 是一款面向家庭记录场景的 macOS 原生照片信息纪念卡
 
 PhotoMemo 想解决的不是“参数展示”本身，而是“照片记忆解释”。
 
+**照片记录的是瞬间，Memory Engine 记录的是时间。**
+
 例如一张拍摄于 `2025-06-01 18:25` 的照片，如果孩子出生于 `2024-05-20`，用户最终看到的，不应该只有相机参数，还应该包括：
 
 ```text
@@ -247,6 +249,17 @@ App 入口与外部接单：
 - 更完整的 Apple Photos / 分享入口
 - iOS 迁移准备
 - App Store 上线前整理
+
+## 版本节奏
+
+从 `v0.7.0` 开始，PhotoMemo 进入明确的版本化节奏，后续优先使用：
+
+- `v0.7.x` Memory Engine 持续完善
+- `v0.8.x` iOS Experience
+- `v0.9.x` Template Ecosystem
+- `v1.0.0` App Store readiness
+
+旧的内部 `Sprint-*` 记录会继续保留在历史文档里，但新的对外交付、CHANGELOG 和 Release 应以版本号为主。
 
 ## 未来路线
 

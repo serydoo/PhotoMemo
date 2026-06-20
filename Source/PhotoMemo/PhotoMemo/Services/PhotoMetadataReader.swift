@@ -11,6 +11,29 @@ import ImageIO
 
 final class PhotoMetadataReader {
 
+    private struct ParsedDateValue {
+
+        let date: Date
+
+        let timezoneOffsetSeconds: Int?
+    }
+
+    private static let dateFormatters:
+        [DateFormatter] = [
+            makeDateFormatter(
+                "yyyy:MM:dd HH:mm:ss"
+            ),
+            makeDateFormatter(
+                "yyyy-MM-dd HH:mm:ss"
+            ),
+            makeDateFormatter(
+                "yyyy-MM-dd'T'HH:mm:ssZ"
+            ),
+            makeDateFormatter(
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+            )
+        ]
+
     func properties(
         from url: URL
     ) -> [CFString: Any]? {
@@ -75,7 +98,7 @@ final class PhotoMetadataReader {
             into: &metadata
         )
 
-        return metadata
+        return metadata.normalized()
     }
 }
 
@@ -108,8 +131,10 @@ private extension PhotoMetadataReader {
             tiff[kCGImagePropertyTIFFDateTime]
             as? String {
 
-            metadata.captureDate =
-                parseDate(dateString)
+            applyParsedDate(
+                parseDate(dateString),
+                to: &metadata
+            )
         }
     }
 
@@ -193,10 +218,12 @@ private extension PhotoMetadataReader {
                 kCGImagePropertyExifDateTimeOriginal
             ] as? String {
 
-            metadata.captureDate =
+            applyParsedDate(
                 parseDate(
                     dateString
-                )
+                ),
+                to: &metadata
+            )
         }
     }
 
@@ -214,25 +241,56 @@ private extension PhotoMetadataReader {
             return
         }
 
-        metadata.latitude =
+        let latitude =
             gps[
                 kCGImagePropertyGPSLatitude
             ] as? Double
 
-        metadata.longitude =
+        let longitude =
             gps[
                 kCGImagePropertyGPSLongitude
             ] as? Double
 
-        metadata.altitude =
+        let altitude =
             gps[
                 kCGImagePropertyGPSAltitude
             ] as? Double
+
+        metadata.latitude =
+            signedCoordinate(
+                latitude,
+                reference:
+                    gps[
+                        kCGImagePropertyGPSLatitudeRef
+                    ] as? String,
+                negativeReferences:
+                    ["S"]
+            )
+
+        metadata.longitude =
+            signedCoordinate(
+                longitude,
+                reference:
+                    gps[
+                        kCGImagePropertyGPSLongitudeRef
+                    ] as? String,
+                negativeReferences:
+                    ["W"]
+            )
+
+        metadata.altitude =
+            signedAltitude(
+                altitude,
+                reference:
+                    gps[
+                        kCGImagePropertyGPSAltitudeRef
+                    ]
+            )
     }
 
-    func parseDate(
+    private func parseDate(
         _ value: String
-    ) -> Date? {
+    ) -> ParsedDateValue? {
 
         let trimmedValue =
             value.trimmingCharacters(
@@ -243,12 +301,21 @@ private extension PhotoMetadataReader {
             return nil
         }
 
-        for formatter in dateFormatters {
+        let timezoneOffsetSeconds =
+            timezoneOffsetSeconds(
+                from: trimmedValue
+            )
+
+        for formatter in Self.dateFormatters {
             if let date =
                 formatter.date(
                     from: trimmedValue
                 ) {
-                return date
+                return ParsedDateValue(
+                    date: date,
+                    timezoneOffsetSeconds:
+                        timezoneOffsetSeconds
+                )
             }
         }
 
@@ -274,25 +341,7 @@ private extension PhotoMetadataReader {
         )
     }
 
-    var dateFormatters: [DateFormatter] {
-
-        [
-            makeDateFormatter(
-                "yyyy:MM:dd HH:mm:ss"
-            ),
-            makeDateFormatter(
-                "yyyy-MM-dd HH:mm:ss"
-            ),
-            makeDateFormatter(
-                "yyyy-MM-dd'T'HH:mm:ssZ"
-            ),
-            makeDateFormatter(
-                "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-            )
-        ]
-    }
-
-    func makeDateFormatter(
+    static func makeDateFormatter(
         _ format: String
     ) -> DateFormatter {
 
@@ -303,5 +352,144 @@ private extension PhotoMetadataReader {
             Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = format
         return formatter
+    }
+
+    private func applyParsedDate(
+        _ parsedDate: ParsedDateValue?,
+        to metadata: inout PhotoMetadata
+    ) {
+
+        guard let parsedDate else {
+            return
+        }
+
+        metadata.captureDate =
+            parsedDate.date
+
+        if let timezoneOffsetSeconds =
+            parsedDate.timezoneOffsetSeconds {
+            metadata.captureTimezoneOffsetSeconds =
+                timezoneOffsetSeconds
+        }
+    }
+
+    private func timezoneOffsetSeconds(
+        from value: String
+    ) -> Int? {
+
+        let trimmedValue =
+            value.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if trimmedValue.hasSuffix("Z") {
+            return 0
+        }
+
+        guard
+            let range =
+                trimmedValue.range(
+                    of: #"([+-]\d{2}:?\d{2})$"#,
+                    options: .regularExpression
+                )
+        else {
+            return nil
+        }
+
+        let offsetString =
+            String(
+                trimmedValue[range]
+            )
+            .replacingOccurrences(
+                of: ":",
+                with: ""
+            )
+
+        guard offsetString.count == 5 else {
+            return nil
+        }
+
+        let signCharacter =
+            offsetString.prefix(1)
+
+        let hoursString =
+            String(
+                offsetString.dropFirst().prefix(2)
+            )
+
+        let minutesString =
+            String(
+                offsetString.suffix(2)
+            )
+
+        guard
+            let hours = Int(hoursString),
+            let minutes = Int(minutesString),
+            hours <= 18,
+            minutes < 60
+        else {
+            return nil
+        }
+
+        let absoluteValue =
+            (hours * 3600)
+            + (minutes * 60)
+
+        return signCharacter == "-"
+            ? -absoluteValue
+            : absoluteValue
+    }
+
+    private func signedCoordinate(
+        _ value: Double?,
+        reference: String?,
+        negativeReferences: Set<String>
+    ) -> Double? {
+
+        guard let value else {
+            return nil
+        }
+
+        guard
+            let reference =
+                reference?
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .uppercased(),
+            !reference.isEmpty
+        else {
+            return value
+        }
+
+        return negativeReferences.contains(
+            reference
+        )
+        ? -abs(value)
+        : abs(value)
+    }
+
+    private func signedAltitude(
+        _ value: Double?,
+        reference: Any?
+    ) -> Double? {
+
+        guard let value else {
+            return nil
+        }
+
+        if let reference = reference as? UInt8 {
+            return reference == 1
+                ? -abs(value)
+                : abs(value)
+        }
+
+        if let reference = reference as? Int {
+            return reference == 1
+                ? -abs(value)
+                : abs(value)
+        }
+
+        return value
     }
 }

@@ -140,13 +140,21 @@ struct MainAnchorSectionView: View {
 
                 Button(action: onPresentAnchorManager) {
                     Label(
-                        "设置时间点",
+                        "管理与编辑",
                         systemImage: "calendar.badge.plus"
                     )
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
             }
+
+            Text("需要新增、修改或删除时间点时，直接进入管理页处理；当前选择切换后，预览会立即重新计算智能时间结果。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
         }
         .frame(
             maxWidth: .infinity,

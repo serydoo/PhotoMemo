@@ -37,7 +37,10 @@ struct AnchorListView: View {
                     id: \.id
                 ) { anchor in
 
-                    HStack(spacing: 12) {
+                    VStack(
+                        alignment: .leading,
+                        spacing: 10
+                    ) {
 
                         Button {
 
@@ -45,51 +48,66 @@ struct AnchorListView: View {
 
                         } label: {
 
-                            VStack(
-                                alignment: .leading,
-                                spacing: 4
+                            HStack(
+                                alignment: .top,
+                                spacing: 12
                             ) {
 
-                                Text(anchor.title)
-                                    .font(.headline)
+                                VStack(
+                                    alignment: .leading,
+                                    spacing: 4
+                                ) {
 
-                                Text(
-                                    "\(anchor.type.displayName) · \(anchorModeText(for: anchor)) · \(anchor.date.formatted(date: .abbreviated, time: .shortened))"
+                                    Text(anchor.title)
+                                        .font(.headline)
+
+                                    Text(
+                                        "\(anchor.type.displayName) · \(anchorModeText(for: anchor)) · \(anchor.date.formatted(date: .abbreviated, time: .shortened))"
+                                    )
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                }
+                                .frame(
+                                    maxWidth: .infinity,
+                                    alignment: .leading
                                 )
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+
+                                Image(
+                                    systemName:
+                                        selectedAnchorID
+                                        == anchor.id
+                                        ? "checkmark.circle.fill"
+                                        : "circle"
+                                )
+                                .font(.title3)
+                                .foregroundStyle(
+                                    selectedAnchorID
+                                    == anchor.id
+                                    ? Color.accentColor
+                                    : .secondary
+                                )
                             }
-                            .frame(
-                                maxWidth: .infinity,
-                                alignment: .leading
-                            )
                         }
                         .buttonStyle(.plain)
 
-                        if selectedAnchorID == anchor.id {
+                        HStack(spacing: 10) {
+                            Button("编辑") {
+                                editingAnchor = anchor
+                                showEditor = true
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
 
-                            Image(
-                                systemName: "checkmark.circle.fill"
-                            )
-                            .foregroundStyle(
-                                Color.accentColor
-                            )
+                            if selectedAnchorID != anchor.id {
+                                Button("设为当前") {
+                                    selectedAnchorID = anchor.id
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
                         }
-
-                        Button {
-
-                            editingAnchor = anchor
-                            showEditor = true
-
-                        } label: {
-
-                            Image(
-                                systemName: "pencil"
-                            )
-                        }
-                        .buttonStyle(.borderless)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 6)
                 }
                 .onDelete(
                     perform: delete

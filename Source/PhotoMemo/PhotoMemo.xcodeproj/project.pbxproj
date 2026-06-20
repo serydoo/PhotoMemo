@@ -14,6 +14,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		F5B100013A9D000000A10001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B3DBA4F32FE1581100945016;
+			remoteInfo = PhotoMemo;
+		};
 		F4A1B2213A9C410100A10001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
@@ -47,6 +54,7 @@
 
 /* Begin PBXFileReference section */
 		B3DBA4F42FE1581100945016 /* PhotoMemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoMemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2013A9C410100A10001 /* PhotoMemoiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemoiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhotoMemoShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhotoMemoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -152,6 +160,11 @@
 			path = PhotoMemo;
 			sourceTree = "<group>";
 		};
+		F5B100033A9D000000A10001 /* PhotoMemoTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "../../Tests/PhotoMemoTests";
+			sourceTree = "<group>";
+		};
 		F4A1B2373A9C410100A10001 /* PhotoMemoWidgetExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PhotoMemoWidgetExtension;
@@ -161,6 +174,11 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		B3DBA4F12FE1581100945016 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		F5B100043A9D000000A10001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -187,6 +205,7 @@
 			isa = PBXGroup;
 			children = (
 				B3DBA4F62FE1581100945016 /* PhotoMemo */,
+				F5B100033A9D000000A10001 /* PhotoMemoTests */,
 				F4A1B2373A9C410100A10001 /* PhotoMemoWidgetExtension */,
 				B3DBA4F52FE1581100945016 /* Products */,
 			);
@@ -196,6 +215,7 @@
 			isa = PBXGroup;
 			children = (
 				B3DBA4F42FE1581100945016 /* PhotoMemo.app */,
+				F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */,
 				F4A1B2013A9C410100A10001 /* PhotoMemoiOS.app */,
 				F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */,
 				F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */,
@@ -223,6 +243,27 @@
 			productName = PhotoMemo;
 			productReference = B3DBA4F42FE1581100945016 /* PhotoMemo.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F5B1000A3A9D000000A10001 /* PhotoMemoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoTests" */;
+			buildPhases = (
+				F5B100053A9D000000A10001 /* Sources */,
+				F5B100043A9D000000A10001 /* Frameworks */,
+				F5B100063A9D000000A10001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F5B100093A9D000000A10001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F5B100033A9D000000A10001 /* PhotoMemoTests */,
+			);
+			name = PhotoMemoTests;
+			productName = PhotoMemoTests;
+			productReference = F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F4A1B2033A9C410100A10001 /* PhotoMemoiOS */ = {
 			isa = PBXNativeTarget;
@@ -296,6 +337,10 @@
 					B3DBA4F32FE1581100945016 = {
 						CreatedOnToolsVersion = 27.0;
 					};
+					F5B1000A3A9D000000A10001 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = B3DBA4F32FE1581100945016;
+					};
 					F4A1B2033A9C410100A10001 = {
 						CreatedOnToolsVersion = 27.0;
 					};
@@ -322,6 +367,7 @@
 			projectRoot = "";
 			targets = (
 				B3DBA4F32FE1581100945016 /* PhotoMemo */,
+				F5B1000A3A9D000000A10001 /* PhotoMemoTests */,
 				F4A1B2033A9C410100A10001 /* PhotoMemoiOS */,
 				F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */,
 				F4A1B23E3A9C410100A10001 /* PhotoMemoWidgetExtension */,
@@ -331,6 +377,11 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		B3DBA4F22FE1581100945016 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		F5B100063A9D000000A10001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -353,6 +404,11 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F5B100093A9D000000A10001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B3DBA4F32FE1581100945016 /* PhotoMemo */;
+			targetProxy = F5B100013A9D000000A10001 /* PBXContainerItemProxy */;
+		};
 		F4A1B2233A9C410100A10001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
@@ -367,6 +423,11 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		B3DBA4F02FE1581100945016 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		F5B100053A9D000000A10001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
@@ -578,6 +639,48 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F5B100073A9D000000A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PhotoMemo.app/Contents/MacOS/PhotoMemo";
+				TEST_TARGET_NAME = PhotoMemo;
+			};
+			name = Debug;
+		};
+		F5B100083A9D000000A10001 /* Release configuration for PBXNativeTarget "PhotoMemoTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PhotoMemo.app/Contents/MacOS/PhotoMemo";
+				TEST_TARGET_NAME = PhotoMemo;
 			};
 			name = Release;
 		};
@@ -799,6 +902,14 @@
 			buildConfigurations = (
 				B3DBA5002FE1581300945016 /* Debug configuration for PBXNativeTarget "PhotoMemo" */,
 				B3DBA5012FE1581300945016 /* Release configuration for PBXNativeTarget "PhotoMemo" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F5B100073A9D000000A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoTests" */,
+				F5B100083A9D000000A10001 /* Release configuration for PBXNativeTarget "PhotoMemoTests" */,
 			);
 			defaultConfigurationName = Release;
 		};

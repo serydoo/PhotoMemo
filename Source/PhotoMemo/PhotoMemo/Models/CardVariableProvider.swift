@@ -10,12 +10,12 @@ struct CardVariableProvider {
 
         context.set(
             card.title,
-            for: "title"
+            for: MetadataContext.Key.title
         )
 
         context.set(
             card.story,
-            for: "story"
+            for: MetadataContext.Key.story
         )
 
         if let anchor = card.anchorResult {
@@ -31,107 +31,107 @@ struct CardVariableProvider {
 
             context.set(
                 anchor.title,
-                for: "anchor_title"
+                for: MetadataContext.Key.anchorTitle
             )
 
             context.set(
                 anchor.primaryText,
-                for: "anchor_primary"
+                for: MetadataContext.Key.anchorPrimary
             )
 
             context.set(
                 anchor.secondaryText,
-                for: "anchor_secondary"
+                for: MetadataContext.Key.anchorSecondary
             )
 
             context.set(
                 anchor.summaryText,
-                for: "anchor_summary"
+                for: MetadataContext.Key.anchorSummary
             )
 
             context.set(
                 smartText,
-                for: "anchor_smart_text"
+                for: MetadataContext.Key.anchorSmartText
             )
 
             context.set(
                 anchor.countdownText,
-                for: "anchor_countdown_text"
+                for: MetadataContext.Key.anchorCountdownText
             )
 
             context.set(
                 anchor.ageText,
-                for: "anchor_age_text"
+                for: MetadataContext.Key.anchorAgeText
             )
 
             context.set(
                 anchor.durationText,
-                for: "anchor_duration_text"
+                for: MetadataContext.Key.anchorDurationText
             )
 
             context.set(
                 totalDaysText,
-                for: "anchor_total_days_text"
+                for: MetadataContext.Key.anchorTotalDaysText
             )
 
             context.set(
                 anchor.elapsedText,
-                for: "anchor_elapsed_text"
+                for: MetadataContext.Key.anchorElapsedText
             )
 
             context.set(
                 anchor.dayIndexText,
-                for: "anchor_day_index_text"
+                for: MetadataContext.Key.anchorDayIndexText
             )
 
             context.set(
                 anchor.weekText,
-                for: "anchor_week_text"
+                for: MetadataContext.Key.anchorWeekText
             )
 
             context.set(
                 anchor.monthAgeText,
-                for: "anchor_month_age_text"
+                for: MetadataContext.Key.anchorMonthAgeText
             )
 
             context.set(
                 anchor.milestoneText,
-                for: "anchor_milestone_text"
+                for: MetadataContext.Key.anchorMilestoneText
             )
 
             context.set(
                 anchor.years,
-                for: "anchor_years"
+                for: MetadataContext.Key.anchorYears
             )
 
             context.set(
                 anchor.months,
-                for: "anchor_months"
+                for: MetadataContext.Key.anchorMonths
             )
 
             context.set(
                 anchor.days,
-                for: "anchor_days"
+                for: MetadataContext.Key.anchorDays
             )
 
             context.set(
                 anchor.hours,
-                for: "anchor_hours"
+                for: MetadataContext.Key.anchorHours
             )
 
             context.set(
                 anchor.minutes,
-                for: "anchor_minutes"
+                for: MetadataContext.Key.anchorMinutes
             )
 
             context.set(
                 anchor.seconds,
-                for: "anchor_seconds"
+                for: MetadataContext.Key.anchorSeconds
             )
 
             context.set(
                 anchor.totalDays,
-                for: "anchor_total_days"
+                for: MetadataContext.Key.anchorTotalDays
             )
         }
 
@@ -139,7 +139,7 @@ struct CardVariableProvider {
 
             context.set(
                 card.tags.joined(separator: ", "),
-                for: "tags"
+                for: MetadataContext.Key.tags
             )
         }
 
@@ -147,29 +147,55 @@ struct CardVariableProvider {
 
             context.set(
                 badge.name,
-                for: "badge_name"
+                for: MetadataContext.Key.badgeName
             )
         }
 
+        let memoryValues =
+            memoryValues(from: card)
+
         context.set(
             captureDateDisplay(
-                from: card.metadata.captureDate
+                from: card.metadata
             ),
-            for: "capture_date_display"
+            for: MetadataContext.Key.captureDateDisplay
         )
 
         context.set(
             cameraSummary(
                 from: card.metadata
             ),
-            for: "camera_summary"
+            for: MetadataContext.Key.cameraSummary
         )
 
         context.set(
-            memorySummary(
-                from: card
-            ),
-            for: "memory_summary"
+            memoryValues.daysSince,
+            for: MetadataContext.Key.daysSince
+        )
+
+        context.set(
+            memoryValues.yearsSince,
+            for: MetadataContext.Key.yearsSince
+        )
+
+        context.set(
+            memoryValues.monthsSince,
+            for: MetadataContext.Key.monthsSince
+        )
+
+        context.set(
+            memoryValues.weeksSince,
+            for: MetadataContext.Key.weeksSince
+        )
+
+        context.set(
+            memoryValues.babyAge,
+            for: MetadataContext.Key.babyAge
+        )
+
+        context.set(
+            memoryValues.memorySummary,
+            for: MetadataContext.Key.memorySummary
         )
 
         return context
@@ -201,7 +227,7 @@ struct CardVariableProvider {
 
         let captureDate =
             captureDateDisplay(
-                from: card.metadata.captureDate
+                from: card.metadata
             )
 
         let camera =
@@ -235,17 +261,10 @@ struct CardVariableProvider {
 private extension CardVariableProvider {
 
     static func captureDateDisplay(
-        from date: Date?
+        from metadata: PhotoMetadata
     ) -> String {
 
-        guard let date else {
-            return ""
-        }
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy.MM.dd HH:mm:ss"
-        return formatter.string(from: date)
+        metadata.captureDateDisplayText
     }
 
     static func cameraSummary(
@@ -281,7 +300,11 @@ private extension CardVariableProvider {
         }
 
         if segments.isEmpty {
-            return metadata.deviceModel
+            return firstNonEmpty(
+                metadata.normalizedDeviceModel,
+                metadata.normalizedDeviceBrand,
+                metadata.normalizedLensModel
+            )
         }
 
         return segments.joined(separator: " ")
@@ -291,20 +314,8 @@ private extension CardVariableProvider {
         from card: RecordCard
     ) -> String {
 
-        let trimmedStory =
-            card.story.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        if !trimmedStory.isEmpty {
-            return trimmedStory
-        }
-
-        guard let anchor = card.anchorResult else {
-            return ""
-        }
-
-        return anchor.summaryText
+        memoryValues(from: card)
+            .memorySummary
     }
 
     static func smartAnchorText(
@@ -383,5 +394,19 @@ private extension CardVariableProvider {
     ) -> String {
 
         "\(result.totalDays)天"
+    }
+
+    static func memoryValues(
+        from card: RecordCard
+    ) -> MemoryCalculationResult {
+
+        MemoryVariableProvider().build(
+            from: MemoryContext(
+                metadata: card.metadata,
+                anchor: card.anchor,
+                anchorResult: card.anchorResult,
+                story: card.story
+            )
+        )
     }
 }

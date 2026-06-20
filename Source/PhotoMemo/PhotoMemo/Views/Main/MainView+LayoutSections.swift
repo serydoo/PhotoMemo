@@ -108,14 +108,14 @@ extension MainView {
             spacing: 18
         ) {
 
-            workspaceConfigurationPanel
-
             GroupBox("照片") {
                 photoSection
             }
             .groupBoxStyle(
                 MinimalCardGroupBoxStyle()
             )
+
+            workspaceConfigurationPanel
 
             detailContent
 
@@ -155,7 +155,9 @@ extension MainView {
             spacing: 20
         ) {
 
-            workspaceConfigurationPanel
+            GroupBox("照片") {
+                photoSection
+            }
 
             if shouldShowPermissionSection {
                 GroupBox("本地权限") {
@@ -163,9 +165,7 @@ extension MainView {
                 }
             }
 
-            GroupBox("照片") {
-                photoSection
-            }
+            workspaceConfigurationPanel
 
             GroupBox("模板") {
                 templateSection
@@ -213,6 +213,10 @@ extension MainView {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            GroupBox("照片") {
+                photoSection
+            }
+
             heroPanel
 
             if shouldShowPermissionSection {
@@ -221,9 +225,7 @@ extension MainView {
                 }
             }
 
-            GroupBox("照片") {
-                photoSection
-            }
+            workspaceConfigurationPanel
 
             GroupBox("模板") {
                 templateSection
@@ -291,8 +293,6 @@ extension MainView {
         MainTemplateSectionView(
             resolvedTemplateDisplayName:
                 resolvedTemplateDisplayName,
-            currentPresetDefaultOutput:
-                currentPresetDefaultOutput,
             currentPresetSummary:
                 currentPreset.summary,
             onPresentTemplateRename: {
@@ -534,7 +534,19 @@ extension MainView {
 
         ScrollView {
 
-            detailContent
+            VStack(
+                alignment: .center,
+                spacing: 22
+            ) {
+
+                workspaceConfigurationPanel
+                    .frame(
+                        maxWidth: 900,
+                        alignment: .leading
+                    )
+
+                detailContent
+            }
                 .padding()
         }
     }
@@ -546,12 +558,6 @@ extension MainView {
             alignment: .center,
             spacing: 22
         ) {
-
-            workspaceConfigurationPanel
-                .frame(
-                    maxWidth: 900,
-                    alignment: .leading
-                )
 
             if let selectedPhoto,
                let card = currentCard {
@@ -576,8 +582,7 @@ extension MainView {
                     systemImage: "photo"
                 )
                 .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity
+                    maxWidth: .infinity
                 )
             }
         }

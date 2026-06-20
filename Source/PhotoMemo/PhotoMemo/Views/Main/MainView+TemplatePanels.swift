@@ -4,8 +4,6 @@ struct MainTemplateSectionView: View {
 
     let resolvedTemplateDisplayName: String
 
-    let currentPresetDefaultOutput: String
-
     let currentPresetSummary: String
 
     let onPresentTemplateRename: () -> Void
@@ -19,63 +17,39 @@ struct MainTemplateSectionView: View {
             spacing: 14
         ) {
 
-            HStack(
-                alignment: .center,
-                spacing: 10
-            ) {
-
-                Text("模板 1")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-
-                Button(action: onPresentTemplateRename) {
-                    Label(
-                        "自定义名称",
-                        systemImage: "pencil"
-                    )
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-
             MinimalInsetCard {
-                LabeledContent("当前定位") {
+                LabeledContent("当前名称") {
                     Text(resolvedTemplateDisplayName)
                         .font(.subheadline.weight(.medium))
                 }
 
                 Divider()
 
-                LabeledContent("预设骨架") {
-                    Text("模板 1")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text("当前固定使用模板 1 的结构骨架，你只需要继续编辑下方个性化区域，不需要再处理多套模板类型。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Divider()
 
-                LabeledContent("默认右下") {
-                    Text(currentPresetDefaultOutput)
+                Text(currentPresetSummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
                         .fixedSize(horizontal: false, vertical: true)
-                }
             }
 
             HStack(spacing: 10) {
+                Button("修改名称") {
+                    onPresentTemplateRename()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
                 Button("恢复模板默认字段") {
                     onResetTemplateDefaults()
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-
-                Text(currentPresetSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .frame(
@@ -156,8 +130,11 @@ struct MainCustomContentSectionView: View {
                 in: .whitespacesAndNewlines
             )
 
-        if shouldWritePhotoDescription,
-           !trimmedOverride.isEmpty {
+        if !shouldWritePhotoDescription {
+            return "当前不会把补充说明写入导出图片的 metadata。"
+        }
+
+        if !trimmedOverride.isEmpty {
             return "当前会写入这段说明：\(trimmedOverride)"
         }
 

@@ -112,6 +112,9 @@ private extension RecordCardExportService {
         to saveURL: URL
     ) throws -> URL {
 
+        let resolvedSaveURL =
+            uniqueOutputURL(for: saveURL)
+
         let renderSize =
             outputPixelSize(
                 for: photo,
@@ -138,12 +141,17 @@ private extension RecordCardExportService {
             throw RecordCardExportError.renderFailed
         }
 
+        let actualRenderSize = CGSize(
+            width: cgImage.width,
+            height: cgImage.height
+        )
+
         let type =
-            outputType(for: saveURL)
+            outputType(for: resolvedSaveURL)
 
         guard let destination =
             CGImageDestinationCreateWithURL(
-                saveURL as CFURL,
+                resolvedSaveURL as CFURL,
                 type.identifier as CFString,
                 1,
                 nil
@@ -155,7 +163,7 @@ private extension RecordCardExportService {
         let properties =
             sanitizedMetadata(
                 from: photo.sourceProperties,
-                renderSize: renderSize,
+                renderSize: actualRenderSize,
                 outputType: type,
                 card: card
             )
@@ -171,11 +179,11 @@ private extension RecordCardExportService {
         }
 
         applyFileDates(
-            to: saveURL,
+            to: resolvedSaveURL,
             captureDate: photo.metadata.captureDate
         )
 
-        return saveURL
+        return resolvedSaveURL
     }
 
 #if os(macOS)
@@ -246,6 +254,46 @@ private extension RecordCardExportService {
         return folderURL.appendingPathComponent(
             "\(baseName)_PhotoMemo_\(timestamp).jpg"
         )
+    }
+
+    func uniqueOutputURL(
+        for url: URL
+    ) -> URL {
+
+        guard FileManager.default.fileExists(
+            atPath: url.path
+        ) else {
+            return url
+        }
+
+        let folderURL =
+            url.deletingLastPathComponent()
+        let baseName =
+            url.deletingPathExtension()
+            .lastPathComponent
+        let pathExtension =
+            url.pathExtension
+
+        var index = 1
+
+        while true {
+
+            let candidateURL =
+                folderURL.appendingPathComponent(
+                    "\(baseName) (\(index))"
+                )
+                .appendingPathExtension(
+                    pathExtension
+                )
+
+            if !FileManager.default.fileExists(
+                atPath: candidateURL.path
+            ) {
+                return candidateURL
+            }
+
+            index += 1
+        }
     }
 
     func outputType(

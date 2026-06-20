@@ -1,5 +1,378 @@
 # PhotoMemo Handoff
 
+## 2026-06-20 v0.7.2 Alpha 可用性迭代（第一轮）已落地
+
+- 本轮目标：
+  - 不加新功能
+  - 不动架构边界
+  - 只围绕 Alpha 阶段的真实上手体验收敛主界面
+- 本轮主界面改动：
+  - 照片导入区已前移到工作区更靠上的位置
+  - `PhotoImporterView` 现在优先提供系统 `PhotosPicker`
+  - 文件导入改为次级入口，保留给桌面素材与外部图片
+  - iPhone 预览流里原先重复出现的工作区配置卡片已移除
+  - 空照片态在滚动容器里不再强占整块高度，减少无意义留白
+- 本轮配置与模板交互收敛：
+  - 工作区配置区不再显示“当前配置”独立摘要卡
+  - 三个配置槽位改成更直接的模块列表样式
+  - 点选槽位会立即切换并刷新预览
+  - 每个槽位都提供内联“编辑”菜单，用于重命名、保存当前内容、恢复默认
+  - 模板区去掉更偏开发期的“预设骨架 / 默认右下”等表述
+  - 模板区现在更强调“当前名称 + 直接编辑下方内容”
+- 本轮可用性修正：
+  - iOS 自定义区域编辑器对 CJK 输入法改为优先走系统原生合成流程，降低中文输入被编辑投影层打断的概率
+  - 时间点管理按钮改为更明确的“管理与编辑”
+  - 时间点列表中的“编辑”入口已放大为明确按钮，并补充“设为当前”
+  - 手动导出文件如果遇到同名目标，现在会自动生成：
+    - `filename (1)`
+    - `filename (2)`
+    - `filename (3)`
+    避免直接覆盖
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+  - iOS 构建仍有既存警告：
+    - interface orientations
+    - launch configuration / launch storyboard
+- 本轮尚未手动验证：
+  - 真机上 `PhotosPicker` 导入一张系统照片后的完整 EXIF 读取体验
+  - 中文输入法在长段连续编辑、删除 chip、跨 chip 插入时的最终手感
+  - 时间点编辑页在 iPhone 上的最终触感
+- 下一轮最值得继续：
+  - 真机逐项复核 `PhotosPicker`、中文输入、时间点编辑
+  - 继续检查预览页纵向节奏和各卡片间距是否还能更紧凑
+  - 如果这轮手感稳定，再进入更细的 iPhone 主流程 polish
+
+## 2026-06-20 v0.7.1 Fixture-backed Export Read-back 已落地
+
+- 本轮目标：
+  - 不改架构
+  - 不改 renderer / workspace / batch 行为语义
+  - 让 Sprint-009 的 smoke foundation 真正进入 fixture-backed correctness 验证
+- 本轮新增测试与资产：
+  - `Tests/Fixtures/GenerateSyntheticFixtures.swift`
+  - `Tests/Fixtures/Synthetic/`
+  - `Tests/PhotoMemoTests/Support/SyntheticFixtureLibrary.swift`
+  - `Tests/PhotoMemoTests/ExportTests/FixtureExportReadbackTests.swift`
+  - `Tests/PhotoMemoTests/BatchTests/BatchFixtureCoverageTests.swift`
+- 当前已提交的 synthetic fixture 覆盖：
+  - `01_iPhone_JPEG.jpg`
+  - `02_iPhone_HEIC.heic`
+  - `05_GPS.jpg`
+  - `06_NoGPS.jpg`
+  - `07_Portrait.jpg`
+  - `08_Landscape.jpg`
+  - `10_LowMetadata.jpg`
+- 仍保留为 reserved-only：
+  - `03_Canon.CR3`
+  - `04_Nikon.JPG`
+  - `09_LivePhotoStill.heic`
+- 本轮自动化覆盖新增：
+  - JPEG fixture export -> read-back
+  - HEIC fixture import + export read-back
+  - EXIF / TIFF / GPS / orientation / dimensions / description families 的显式断言
+  - batch fixture enqueue / cancel / retry eligibility
+- 本轮修到的真实 correctness 问题：
+  - `RecordCardExportService` 之前用目标 render size 回写 metadata
+  - 在实际渲染位图尺寸与目标尺寸出现 1px 差异时，可能导致：
+    - 顶层 `PixelHeight`
+    - EXIF `PixelYDimension`
+    不一致
+  - 现在已改为以最终 `CGImage` 实际尺寸回写 metadata
+- 本轮当前验证状态：
+  - `PhotoMemoTests` 已通过，共 19 个 tests
+  - `PhotoMemo` build 已通过
+  - `PhotoMemoiOS` build 已通过
+  - `PhotoMemoShareExtension` build 已通过
+- 下一轮最值得做：
+  - renderer snapshot prep 继续往正式 snapshot 基线推进
+  - 再评估是否要加入 Photos save-back read automation
+  - 对 reserved 的 Nikon / Live Photo still fixtures 再补第二批 synthetic 或 licensed sample
+
+## 2026-06-20 v0.7.0 Memory Engine Foundation 已落地
+
+- 本轮目标：
+  - 不改 renderer / export / batch / UI 行为
+  - 引入真正的 Memory domain foundation
+  - 让记忆语义从“零散逻辑”进入可测试、可扩展的独立边界
+- 本轮新增架构文档：
+  - `Docs/ADR/ADR-006-MemoryEngineFoundation.md`
+  - `Docs/MemoryEngine.md`
+- 本轮新增实现：
+  - `Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryContext.swift`
+  - `Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryCalculationResult.swift`
+  - `Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryVariableProvider.swift`
+- 本轮接入点：
+  - `CardVariableProvider` 现在通过 Memory Engine 供给记忆变量
+  - `TemplateVariable` 现在公开：
+    - `{{days_since}}`
+    - `{{years_since}}`
+    - `{{months_since}}`
+    - `{{weeks_since}}`
+    - `{{baby_age}}`
+- 当前刻意保持不变：
+  - `AnchorEngine`
+  - Renderer
+  - Export
+  - Batch
+  - Share Extension 流程
+  - 现有 `memory_summary` 的 story-first / anchor-summary-first 语义
+- 本轮测试：
+  - 新增 `MemoryEngineTests` suite（当前放在 `PhotoMemoTests` target 内）
+  - 覆盖：
+    - 不满 1 岁年龄文案
+    - 闰年生日
+    - 时区边界
+    - 未来时间点 clamp
+    - `CardVariableProvider` 集成
+    - public variable catalog 暴露
+- 版本节奏：
+  - 从这一轮开始，面向 release / changelog / 外部总结时，优先使用版本号
+  - 当前版本基线记作：
+    - `v0.7.0`
+  - 旧的 `Sprint-*` 记录继续保留为内部开发历史，不要求回写改名
+- 本轮验证状态：
+  - `PhotoMemoTests` 已通过
+  - `PhotoMemo` build 已通过
+  - `PhotoMemoiOS` build 已通过
+  - `PhotoMemoShareExtension` build 已通过
+
+## 2026-06-20 Sprint-009 回归验证基础已落地
+
+- 本轮目标：
+  - 不改架构
+  - 不改 renderer / editor / workspace / batch 设计
+  - 建立可长期复用的 fixture / regression / test foundation
+- 本轮新增文档：
+  - `Docs/FixtureSpecification.md`
+  - `Docs/RegressionMatrix.md`
+  - `Docs/AcceptanceCriteria.md`
+  - `Docs/CIReadiness.md`
+- 本轮新增目录与基础资产：
+  - `Tests/Fixtures/README.md`
+  - `Tests/Fixtures/FixtureManifest.json`
+  - `Tests/PhotoMemoTests/`
+- fixture 侧当前共识：
+  - 现在先不提交真实照片二进制
+  - 先把保留文件名、元数据要求、命名规范、后续引入规则固定下来
+  - 预留的第一批 fixture 名称已覆盖：
+    - iPhone JPEG / HEIC
+    - 非 Apple 相机 JPEG
+    - GPS / No GPS
+    - Portrait / Landscape
+    - Live Photo still 边界样本
+    - Low metadata 样本
+- 本轮工程变化：
+  - `PhotoMemo.xcodeproj` 新增 `PhotoMemoTests` target
+  - 新增 shared scheme：
+    - `PhotoMemo.xcscheme`
+    - `PhotoMemoTests.xcscheme`
+  - 当前 `PhotoMemoTests` 依赖主 macOS app target，采用最小 unit-test bundle 形态
+- 本轮新增 smoke tests：
+  - `PhotoMetadataReaderTests`
+    - EXIF timezone 解析
+    - GPS ref 正负号归一化
+  - `PhotoMetadataNormalizationTests`
+    - aspect ratio / megapixels / location display
+    - 坐标回退文案
+  - `MetadataContextTests`
+    - capture timezone 驱动的日期组件生成
+  - `TemplateVariableEngineTests`
+    - token 替换与缺失 token 清空
+  - `RecordCardBuildServiceTests`
+    - 说明写入开关关闭时不再导出说明
+    - 开启时显式 override 生效
+- 本轮实际验证结果：
+  - `PhotoMemoTests` 测试通过，共 8 个 smoke tests
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 本轮过程中修掉的工程问题：
+  - 空目录占位文件最初都叫 `.gitkeep`，Xcode 会把它们当成资源复制进 test bundle，导致输出冲突
+  - 已改为唯一占位名：
+    - `.batch-tests.keep`
+    - `.export-tests.keep`
+    - `.renderer-tests.keep`
+  - 另外补了 `PhotoMemo.xcscheme`，避免新增 shared test scheme 后主 app scheme 在 `xcodebuild -list` 中消失
+- 当前真实边界：
+  - 已经有了第一层可持续回归验证能力
+  - 但还没有真实 fixture 二进制，所以这轮更偏“模型/服务逻辑 correctness 锁定”
+  - 还没有进入：
+    - renderer snapshot
+    - export binary diff
+    - Photos integration automation
+    - batch fixture E2E
+- 下一轮最值得做：
+  - 引入可合法提交的真实或合成 fixture 二进制
+  - 建立 `PhotoMetadataReader -> export -> read-back` 的 fixture 驱动测试
+  - 再评估是否要补 renderer snapshot 与导出文件 metadata 细粒度断言
+
+## 2026-06-20 Sprint-008 输出完整性核对已完成
+
+- 本轮目标：
+  - 不做架构重构
+  - 不改渲染设计
+  - 不改 editor / workspace
+  - 优先核对导出完整性、回读能力、批处理可靠性、Live Photo 边界
+- 本轮新增文档：
+  - `Docs/ExportMetadataAudit.md`
+  - `Docs/ExportReadbackVerification.md`
+  - `Docs/JPEG_HEIC_Compatibility.md`
+  - `Docs/BatchExportReliability.md`
+  - `Docs/LivePhotoAssessment.md`
+  - `Docs/OutputIntegrityReport.md`
+- 本轮确认的关键事实：
+  - `RecordCardExportService` 当前采用的是“原始 metadata 字典透传 + 少量显式修补”的导出策略
+  - 显式修改的主要字段包括：
+    - 输出宽高
+    - EXIF 像素尺寸
+    - 顶层 orientation = `1`
+    - `TIFF Software = PhotoMemo`
+    - 说明类字段（开启时）
+  - `PhotoLibraryExportService` 会把 `metadata.captureDate` 写到 `PHAssetCreationRequest.creationDate`
+  - 但 `PhotoMetadataReader` 当前只回读：
+    - width / height
+    - TIFF
+    - EXIF
+    - GPS
+    不会把 description/comment 再读回 `PhotoMetadata`
+  - batch 路径仍然是单一主链：
+    - import -> build -> render/export -> save to Photos
+    没有第二套批量专用导出器
+- 本轮确认并修掉的 correctness 问题：
+  - `shouldWritePhotoDescription` 之前没有真正阻止导出 metadata 写入说明文本
+  - 现在 `RecordCardBuildService` 已在该开关关闭时返回空的 export description
+  - `MainView+TemplatePanels.swift` 的说明写入预览文案也已同步修正
+- 本轮结论：
+  - 当前 PhotoMemo 对“静态照片、JPEG-first、写回系统图库”的可靠性已经比较不错
+  - 但以下边界仍应如实对待：
+    - ICC / 色彩配置文件目前没有显式校验
+    - HEIC 目前是可导出/可手动选择，但不是 batch 主验证路径
+    - Live Photo 目前只能按 still-image 心智理解，不能宣称支持成对资源保留
+    - 说明字段虽然现在能正确写入/关闭，但 app 自己还不能完整回读这些字段
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 下一轮最值得做：
+  - 建立小型导出 fixture 集，做真正的导出前后 metadata 对照
+  - 评估是否把 description/comment 纳入 `PhotoMetadataReader` 的回读范围
+  - 再决定是否要进入更细的 EXIF 保真验证或 Photos 写回回归测试
+
+## 2026-06-20 Sprint-007 元数据归一化与变量目录对齐已落地
+
+- 本轮目标：
+  - 不改架构
+  - 不改渲染/导出/批处理主链
+  - 只在现有 metadata pipeline 内提升 correctness、consistency、catalog alignment
+- 现在的关键事实：
+  - `PhotoMetadataReader` 仍然是唯一 EXIF/GPS 读取入口
+  - `PhotoMetadata.normalized()` 现在是 raw model 的统一归一化出口
+  - `MetadataContext.Key` 现在是 runtime key 的统一定义
+  - `PhotoMetadata.canonicalInventory` 现在是 metadata field inventory 的统一代码定义
+- 本轮新增/改善：
+  - 解析 capture-date 字符串中的 timezone suffix，保存到 `captureTimezoneOffsetSeconds`
+  - `MetadataContext.build(from:)` 在渲染日期组件时，若 metadata 自带 timezone，则按 capture timezone 计算年/月/日/时/分/秒/weekday
+  - GPS 现在会根据 `LatitudeRef` / `LongitudeRef` / `AltitudeRef` 处理正负号
+  - 新增并公开的 metadata-facing variables：
+    - `{{lens_brand}}`
+    - `{{location}}`
+    - `{{location_display}}`
+    - `{{country}}`
+    - `{{province}}`
+    - `{{city}}`
+    - `{{district}}`
+    - `{{latitude}}`
+    - `{{longitude}}`
+    - `{{altitude}}`
+    - `{{weekday}}`
+    - `{{capture_date_short}}`
+    - `{{capture_time_short}}`
+    - `{{capture_timezone}}`
+    - `{{orientation}}`
+    - `{{aspect_ratio}}`
+    - `{{megapixels}}`
+    - `{{memory_summary}}`
+  - `TemplateVariableLibrary.recognized` 的优先级也已按当前 PhotoMemo 使用价值重新排序
+  - `TemplateVariableEngine` 的 token regex 现在缓存，不再每次 render 重新编译
+- 有意保留为 internal-only 的 runtime keys：
+  - `badge_name`
+  - `anchor_hours`
+  - `anchor_minutes`
+  - `anchor_seconds`
+- 本轮文档：
+  - `Docs/MetadataInventory.md`
+  - `Docs/VariableCatalogAlignment.md`
+  - `Docs/MetadataNormalizationPlan.md`
+  - `Docs/CURRENT_STATUS.md`
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 没做的事：
+  - 没新建 test target
+  - 没做 reverse geocoding / location enrichment
+  - 没改 share extension 的 metadata ownership
+- 下一轮最值得做：
+  - 为 `PhotoMetadataReader -> MetadataContext -> TemplateVariableEngine` 补回归测试
+  - 再评估是否进入 `Sprint-008` 的 location enrichment / high-value variables
+
+## 2026-06-20 Composer projection 已抽成独立 EditorProjectionEngine
+
+- 已完成 `Sprint-005` 的保行为抽取：
+  - 新增 `Source/PhotoMemo/PhotoMemo/Views/Main/EditorProjectionEngine.swift`
+  - 删除旧的 `MainView+ComposerDisplayEngine.swift`
+- 当前共识：
+  - `String` 仍然是唯一真实来源
+  - 没有引入 `ComposerDocument`
+  - 没有引入 node tree / rich text / renderer-side projection
+- 新引擎当前承接的责任：
+  - raw template string -> display text
+  - module span 生成与清洗
+  - selection clamp
+  - caret / selection 调整
+  - chip 删除时 replacement range 调整
+  - projection state 同步
+- 已切换调用点：
+  - `MainView+ComposerSession.swift`
+  - `MainView+TemplateEditingActions.swift`
+  - `MainView+ComposerEditor.swift`
+  - `MainView+LayoutSections.swift`
+- 明确保持不变：
+  - `Template` 持久化格式
+  - `RecordCardBuildService`
+  - `TemplateVariableEngine`
+  - Renderer / Export / Batch / Workspace / Settings
+- 这轮目标不是改编辑模型，只是把 editor-specific projection 从 `MainView` 语义下抽离成独立引擎，方便后续继续做 composer 侧治理。
+
+## 2026-06-20 WorkspaceSession Phase A 已铺架构壳层
+
+- 已新增 4 个 workspace session 预备类型：
+  - `WorkspaceSessionController`
+  - `WorkspaceState`
+  - `WorkspaceAction`
+  - `WorkspaceEnvironment`
+- `MainView` 只做了最小接线：
+  - 新增 `workspaceSession` 持有者
+  - `onAppear` 时把当前 `MainView` 状态与依赖 seed 进 session
+- 这轮明确**没有**迁移：
+  - 导出逻辑
+  - 权限逻辑
+  - 生命周期逻辑
+  - 模板编辑逻辑
+  - batch / queue 逻辑
+- 当前真实状态：
+  - `WorkspaceSessionController.send(action:)` 只承接基础状态更新壳层
+  - 现有业务仍然全部走原来的 `MainView+*.swift` 实现
+  - 这是为下一轮“分阶段把现有 workflow 移进 session”做准备，不代表迁移已开始
+- 编译边界：
+  - 这些新类型同样通过 `#if !PHOTOMEMO_SHARE_EXTENSION` 避免被 Share Extension target 编译
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+
 ## 2026-06-20 BatchQueueStore 已拆为 4 个聚焦组件
 
 - 已完成 `Review-002`：

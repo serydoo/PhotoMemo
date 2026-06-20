@@ -17,6 +17,10 @@ struct MainView: View {
     var permissionCenter =
         PermissionCenter()
 
+    @StateObject
+    var workspaceSession =
+        WorkspaceSessionController()
+
     @State
     var selectedPhoto: SelectedPhoto?
 
@@ -65,6 +69,10 @@ struct MainView: View {
 
     var body: some View {
         mainScene
+            .onAppear(
+                perform:
+                    bootstrapWorkspaceSessionPhaseA
+            )
     }
 
 }

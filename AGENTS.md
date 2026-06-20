@@ -107,6 +107,18 @@ Installed skills available for this workflow:
 - `code-review-and-quality`
 - `frontend-ui-engineering`
 
+## Release Rhythm
+
+Starting from the Memory Engine phase, prefer versioned release labels in project-facing docs and changelogs.
+
+Examples:
+
+- `v0.7.0`
+- `v0.8.0`
+- `v0.9.0`
+
+Historical `Sprint-*` notes may remain in older handoff/status history, but new release-facing summaries should use version numbers when practical.
+
 ## Verification Rules
 
 For meaningful UI or architecture changes:

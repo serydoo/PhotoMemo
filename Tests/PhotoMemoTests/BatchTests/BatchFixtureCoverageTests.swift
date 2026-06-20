@@ -1,0 +1,371 @@
+import Foundation
+import Testing
+@testable import PhotoMemo
+
+@Suite("BatchFixtureCoverage", .serialized)
+struct BatchFixtureCoverageTests {
+
+    @MainActor
+    @Test("Builds single-item and multi-item fixture batches with stable task metadata")
+    func buildsSingleAndMultiItemFixtureBatches() throws {
+
+        let execution =
+            BatchQueueExecution(
+                externalIntakeStore:
+                    makeExternalIntakeStore()
+            )
+
+        let firstURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .portraitJPEG
+            )
+        let secondURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .landscapeJPEG
+            )
+
+        let single =
+            execution.enqueue(
+                payloads: [
+                    BatchTaskIntakePayload(
+                        sourceURL: firstURL
+                    )
+                ],
+                configuration:
+                    makeConfiguration(),
+                launchSource:
+                    .shareExtension
+            )
+
+        let multi =
+            execution.enqueue(
+                payloads: [
+                    BatchTaskIntakePayload(
+                        sourceURL: firstURL
+                    ),
+                    BatchTaskIntakePayload(
+                        sourceURL: secondURL
+                    )
+                ],
+                configuration:
+                    makeConfiguration(),
+                launchSource:
+                    .automation,
+                title: "Fixture Batch"
+            )
+
+        #expect(single?.totalTaskCount == 1)
+        #expect(
+            single?.tasks.first?.fileName
+            == firstURL.lastPathComponent
+        )
+        #expect(multi?.totalTaskCount == 2)
+        #expect(multi?.title == "Fixture Batch")
+        #expect(
+            multi?.tasks.map(\.fileName)
+            == [
+                firstURL.lastPathComponent,
+                secondURL.lastPathComponent
+            ]
+        )
+        #expect(multi?.launchSource == .automation)
+    }
+
+    @MainActor
+    @Test("Cancelling managed fixture batches cleans temporary copies and marks tasks cancelled")
+    func cancellingManagedFixtureBatchCleansTemporaryCopies() throws {
+
+        let context =
+            try makeManagedBatchContext(
+                fixtures: [
+                    .noGPSJPEG,
+                    .lowMetadataJPEG
+                ]
+            )
+
+        defer {
+            cleanup(
+                directoryURL:
+                    context.directoryURL,
+                defaultsSuiteName:
+                    context.defaultsSuiteName
+            )
+        }
+
+        let execution =
+            BatchQueueExecution(
+                externalIntakeStore:
+                    context.intakeStore
+            )
+
+        var jobs = [
+            BatchJob(
+                title: "Managed Fixtures",
+                state: .queued,
+                launchSource: .shareExtension,
+                configuration:
+                    makeConfiguration(),
+                tasks: [
+                    BatchTask(
+                        sourceURL:
+                            context.managedURLs[0]
+                    ),
+                    BatchTask(
+                        sourceURL:
+                            context.managedURLs[1],
+                        phase: .importing
+                    )
+                ]
+            )
+        ]
+
+        let didCancel =
+            execution.cancelJob(
+                in: &jobs,
+                jobID: jobs[0].id
+            )
+
+        #expect(didCancel)
+        #expect(jobs[0].state == .cancelled)
+        #expect(
+            jobs[0].tasks.allSatisfy {
+                $0.phase == .cancelled
+            }
+        )
+        #expect(
+            context.managedURLs.allSatisfy {
+                !FileManager.default
+                    .fileExists(
+                        atPath: $0.path
+                    )
+            }
+        )
+    }
+
+    @MainActor
+    @Test("Retry keeps non-retryable failures intact while requeueing eligible fixture tasks")
+    func retryKeepsNonRetryableFailuresIntact() throws {
+
+        let execution =
+            BatchQueueExecution(
+                externalIntakeStore:
+                    makeExternalIntakeStore()
+            )
+
+        let retryableURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .gpsJPEG
+            )
+        let permanentFailureURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .noGPSJPEG
+            )
+        let completedURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+
+        var jobs = [
+            BatchJob(
+                title: "Retry Fixtures",
+                state: .failed,
+                configuration:
+                    makeConfiguration(),
+                tasks: [
+                    BatchTask(
+                        sourceURL:
+                            retryableURL,
+                        phase: .failed,
+                        retryCount: 0,
+                        failure:
+                            BatchTaskFailure(
+                                phase: .exporting,
+                                message:
+                                    "Temporary write error",
+                                canRetry: true
+                            )
+                    ),
+                    BatchTask(
+                        sourceURL:
+                            permanentFailureURL,
+                        phase: .failed,
+                        retryCount: 0,
+                        failure:
+                            BatchTaskFailure(
+                                phase:
+                                    .savingToPhotoLibrary,
+                                message:
+                                    "Source missing",
+                                canRetry: false
+                            )
+                    ),
+                    BatchTask(
+                        sourceURL:
+                            completedURL,
+                        phase: .completed,
+                        retryCount: 0
+                    )
+                ]
+            )
+        ]
+
+        let didRetry =
+            execution.retryFailedTasks(
+                in: &jobs,
+                jobID: jobs[0].id
+            )
+
+        #expect(didRetry)
+        #expect(jobs[0].tasks[0].phase == .queued)
+        #expect(jobs[0].tasks[0].retryCount == 1)
+        #expect(jobs[0].tasks[0].failure == nil)
+        #expect(jobs[0].tasks[1].phase == .failed)
+        #expect(
+            jobs[0].tasks[1].failure?.canRetry
+            == false
+        )
+        #expect(jobs[0].tasks[2].phase == .completed)
+        #expect(jobs[0].state == .queued)
+    }
+}
+
+private extension BatchFixtureCoverageTests {
+
+    struct ManagedBatchContext {
+
+        let intakeStore:
+            ExternalPhotoIntakeStore
+
+        let directoryURL: URL
+
+        let defaultsSuiteName: String
+
+        let managedURLs: [URL]
+    }
+
+    func makeConfiguration()
+    -> BatchConfigurationSnapshot {
+
+        BatchConfigurationSnapshot(
+            template:
+                .template1
+                .normalizedForEditing,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription:
+                true,
+            photoDescriptionOverride:
+                "",
+            selectedAlbumIdentifier: ""
+        )
+    }
+
+    func makeExternalIntakeStore()
+    -> ExternalPhotoIntakeStore {
+
+        let suiteName =
+            "PhotoMemoTests.\(UUID().uuidString)"
+        let defaults =
+            UserDefaults(
+                suiteName: suiteName
+            ) ?? .standard
+        let directoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        return ExternalPhotoIntakeStore(
+            defaults: defaults,
+            intakeDirectoryURL: directoryURL
+        )
+    }
+
+    func makeManagedBatchContext(
+        fixtures: [SyntheticFixture]
+    ) throws -> ManagedBatchContext {
+
+        let suiteName =
+            "PhotoMemoTests.\(UUID().uuidString)"
+        let defaults =
+            UserDefaults(
+                suiteName: suiteName
+            ) ?? .standard
+        let directoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let intakeStore =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: directoryURL
+            )
+
+        let requestID = UUID()
+        let managedURLs = try fixtures
+            .enumerated()
+            .map { index, fixture in
+
+                let sourceURL =
+                    try SyntheticFixtureLibrary
+                    .fixtureURL(fixture)
+
+                guard let managedURL =
+                    intakeStore.createManagedCopy(
+                        from: sourceURL,
+                        requestID: requestID,
+                        index: index
+                    )
+                else {
+                    throw BatchFixtureCoverageError
+                        .managedCopyCreationFailed(
+                            sourceURL
+                        )
+                }
+
+                return managedURL
+            }
+
+        return ManagedBatchContext(
+            intakeStore: intakeStore,
+            directoryURL: directoryURL,
+            defaultsSuiteName: suiteName,
+            managedURLs: managedURLs
+        )
+    }
+
+    func cleanup(
+        directoryURL: URL,
+        defaultsSuiteName: String
+    ) {
+
+        try? FileManager.default.removeItem(
+            at: directoryURL
+        )
+        UserDefaults(
+            suiteName: defaultsSuiteName
+        )?.removePersistentDomain(
+            forName: defaultsSuiteName
+        )
+    }
+}
+
+private enum BatchFixtureCoverageError:
+    LocalizedError {
+
+    case managedCopyCreationFailed(URL)
+
+    var errorDescription: String? {
+
+        switch self {
+
+        case let .managedCopyCreationFailed(url):
+            return "Failed to create managed copy for \(url.lastPathComponent)."
+        }
+    }
+}

@@ -713,6 +713,14 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
                 return true
             }
 
+            if shouldUseNativeIMEHandling(
+                for: textView,
+                range: range,
+                replacementText: text
+            ) {
+                return true
+            }
+
             let adjustedRange =
                 EditorProjectionEngine
                 .adjustedReplacementRange(
@@ -783,6 +791,15 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
                 return
             }
 
+            if textView.markedTextRange != nil {
+                parent.onContentChange(
+                    textView.text,
+                    textView.selectedRange,
+                    parent.moduleSpans
+                )
+                return
+            }
+
             let sanitizedModuleSpans =
                 EditorProjectionEngine
                 .sanitizedModuleSpans(
@@ -821,6 +838,12 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
         ) {
 
             guard !isApplyingProgrammaticUpdate else {
+                return
+            }
+
+            if textView.markedTextRange != nil {
+                parent.selection =
+                    textView.selectedRange
                 return
             }
 
@@ -875,6 +898,41 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
                 )
 
             isApplyingProgrammaticUpdate = false
+        }
+
+        func shouldUseNativeIMEHandling(
+            for textView: UITextView,
+            range: NSRange,
+            replacementText text: String
+        ) -> Bool {
+
+            if textView.markedTextRange != nil {
+                return true
+            }
+
+            guard
+                let primaryLanguage =
+                    textView.textInputMode?
+                    .primaryLanguage
+            else {
+                return false
+            }
+
+            let usesCJKKeyboard =
+                primaryLanguage.hasPrefix("zh")
+                || primaryLanguage.hasPrefix("ja")
+                || primaryLanguage.hasPrefix("ko")
+
+            guard usesCJKKeyboard else {
+                return false
+            }
+
+            if text == "\n" {
+                return false
+            }
+
+            return !text.isEmpty
+                && range.length == 0
         }
 
         func styledAttributedString(

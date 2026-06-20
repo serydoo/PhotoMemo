@@ -28,15 +28,42 @@ struct TemplateVariableLibrary {
             )
 
         let prioritizedTokens = [
-            "{{camera_summary}}",
-            "{{model}}",
-            "{{lens}}",
-            "{{capture_date_display}}",
-            "{{focal_len_in_35mm_film}}",
-            "{{aperture}}",
-            "{{shutter}}",
-            "{{iso}}",
-            "{{location}}"
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.cameraSummary
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.model
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.lens
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.locationDisplay
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.captureDateDisplay
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.captureDateShort
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.captureTimeShort
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.focalLength35mm
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.aperture
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.shutter
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.iso
+            ),
+            TemplateVariable.allToken(
+                for: MetadataContext.Key.location
+            )
         ]
 
         let prioritizedVariables =

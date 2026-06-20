@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "status": "synthetic-binaries-committed",
+  "generator": "Tests/Fixtures/GenerateSyntheticFixtures.swift",
+  "binaryDirectory": "Tests/Fixtures/Synthetic",
+  "fixtures": [
+    {
+      "fileName": "01_iPhone_JPEG.jpg",
+      "kind": "jpeg",
+      "availability": "committed-synthetic-binary",
+      "requiredCharacteristics": [
+        "apple-still-photo",
+        "capture-date",
+        "tiff-make-model",
+        "camera-metadata"
+      ]
+    },
+    {
+      "fileName": "02_iPhone_HEIC.heic",
+      "kind": "heic",
+      "availability": "committed-synthetic-binary",
+      "requiredCharacteristics": [
+        "apple-still-photo",
+        "capture-date",
+        "tiff-make-model",
+        "camera-metadata"
+      ]
+    },
+    {
+      "fileName": "03_Canon.CR3",
+      "kind": "raw-placeholder",
+      "availability": "reserved-only",
+      "requiredCharacteristics": [
+        "future-raw-policy"
+      ]
+    },
+    {
+      "fileName": "04_Nikon.JPG",
+      "kind": "jpeg",
+      "availability": "reserved-only",
+      "requiredCharacteristics": [
+        "non-apple-camera",
+        "capture-date",
+        "camera-metadata"
+      ]
+    },
+    {
+      "fileName": "05_GPS.jpg",
+      "kind": "jpeg",
+      "availability": "committed-synthetic-binary",
+      "requiredCharacteristics": [
+        "gps-latitude",
+        "gps-longitude",
+        "optional-altitude"
+      ]
+    },
+    {
+      "fileName": "06_NoGPS.jpg",
+      "kind": "jpeg",
+      "availability": "committed-synthetic-binary",
+      "requiredCharacteristics": [
+        "no-gps",
+        "graceful-degradation"
+      ]
+    },
+    {
+      "fileName": "07_Portrait.jpg",
+      "kind": "jpeg",
+      "availability": "committed-synthetic-binary",
+      "requiredCharacteristics": [
+        "portrait-dimensions"
+      ]
+    },
+    {
+      "fileName": "08_Landscape.jpg",
+      "kind": "jpeg",
+      "availability": "committed-synthetic-binary",
+      "requiredCharacteristics": [
+        "landscape-dimensions"
+      ]
+    },
+    {
+      "fileName": "09_LivePhotoStill.heic",
+      "kind": "heic-still",
+      "availability": "reserved-only",
+      "requiredCharacteristics": [
+        "live-photo-still-resource",
+        "boundary-verification-only"
+      ]
+    },
+    {
+      "fileName": "10_LowMetadata.jpg",
+      "kind": "jpeg",
+      "availability": "committed-synthetic-binary",
+      "requiredCharacteristics": [
+        "minimal-metadata",
+        "graceful-degradation"
+      ]
+    }
+  ]
+}

@@ -475,63 +475,9 @@ struct MainWorkspaceConfigurationPanelView: View {
     var body: some View {
 
         MinimalInsetCard {
-            HStack(
-                alignment: .center,
-                spacing: 12
-            ) {
+            header
 
-                VStack(
-                    alignment: .leading,
-                    spacing: 4
-                ) {
-
-                    Text("配置工作区")
-                        .font(.headline)
-
-                    Text("右侧负责切换当前生效的整套本地配置，并统一管理保存、命名和帮助入口。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(
-                            horizontal: false,
-                            vertical: true
-                        )
-                }
-
-                Spacer(minLength: 0)
-
-                Menu {
-
-                    ForEach(
-                        MainOperationGuideCategory.allCases
-                    ) { category in
-
-                        Menu {
-                            ForEach(category.topics) { topic in
-
-                                Button(topic.title) {
-                                    onOpenGuideTopic(topic)
-                                }
-                            }
-
-                        } label: {
-                            Label(
-                                category.title,
-                                systemImage:
-                                    category.iconName
-                            )
-                        }
-                    }
-                } label: {
-                    Label(
-                        "帮助中心",
-                        systemImage: "books.vertical"
-                    )
-                }
-                .menuStyle(.borderlessButton)
-                .controlSize(.small)
-            }
-
-            HStack(spacing: 10) {
+            VStack(spacing: 10) {
 
                 ForEach(slots) { slot in
 
@@ -541,20 +487,55 @@ struct MainWorkspaceConfigurationPanelView: View {
                             slot.id == activeSlotID,
                         onSelect: {
                             onSelectSlot(slot.id)
+                        },
+                        onRename: {
+                            if activeSlotID != slot.id {
+                                onSelectSlot(slot.id)
+                            }
+                            onRenameActiveSlot()
+                        },
+                        onSave: {
+                            if activeSlotID != slot.id {
+                                onSelectSlot(slot.id)
+                            }
+                            onSaveActiveSlot()
+                        },
+                        onRestoreDefault: {
+                            if activeSlotID != slot.id {
+                                onSelectSlot(slot.id)
+                            }
+                            onRestoreActiveSlotDefault()
                         }
                     )
                 }
             }
 
-            MinimalInsetCard {
-                LabeledContent("当前配置") {
-                    Text(activeSlotDisplayTitle)
-                        .font(.subheadline.weight(.semibold))
-                }
+            Text(activeSlotSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
+        }
+    }
 
-                Divider()
+    private var header: some View {
 
-                Text(activeSlotSummary)
+        HStack(
+            alignment: .center,
+            spacing: 12
+        ) {
+
+            VStack(
+                alignment: .leading,
+                spacing: 4
+            ) {
+
+                Text("配置工作区")
+                    .font(.headline)
+
+                Text("点选任意模块后，整套本地配置会立刻生效并刷新预览。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(
@@ -563,25 +544,38 @@ struct MainWorkspaceConfigurationPanelView: View {
                     )
             }
 
-            HStack(spacing: 10) {
-                Button("重命名当前配置") {
-                    onRenameActiveSlot()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            Spacer(minLength: 0)
 
-                Button("保存到当前配置") {
-                    onSaveActiveSlot()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+            Menu {
 
-                Button("恢复当前默认") {
-                    onRestoreActiveSlotDefault()
+                ForEach(
+                    MainOperationGuideCategory.allCases
+                ) { category in
+
+                    Menu {
+                        ForEach(category.topics) { topic in
+
+                            Button(topic.title) {
+                                onOpenGuideTopic(topic)
+                            }
+                        }
+
+                    } label: {
+                        Label(
+                            category.title,
+                            systemImage:
+                                category.iconName
+                        )
+                    }
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            } label: {
+                Label(
+                    "帮助中心",
+                    systemImage: "books.vertical"
+                )
             }
+            .menuStyle(.borderlessButton)
+            .controlSize(.small)
         }
     }
 }
@@ -594,72 +588,117 @@ private struct MainWorkspaceConfigurationSlotButton: View {
 
     let onSelect: () -> Void
 
+    let onRename: () -> Void
+
+    let onSave: () -> Void
+
+    let onRestoreDefault: () -> Void
+
     var body: some View {
 
-        Button(action: onSelect) {
-            VStack(
-                alignment: .leading,
-                spacing: 6
-            ) {
+        HStack(
+            alignment: .center,
+            spacing: 12
+        ) {
 
-                HStack {
-                    Text(slot.displayTitle)
-                        .font(.subheadline.weight(.semibold))
+            Button(action: onSelect) {
+                VStack(
+                    alignment: .leading,
+                    spacing: 6
+                ) {
+
+                    HStack {
+                        Text(slot.displayTitle)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+
+                        Text(slot.statusText)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(
+                                isActive
+                                ? MinimalPalette.accent
+                                : .secondary
+                            )
+                    }
+
+                    Text(slot.resolvedDisplayName)
+                        .font(.caption.weight(.medium))
                         .lineLimit(1)
 
-                    Spacer(minLength: 0)
+                    Text(
+                        slotDescription
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                }
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+            }
+            .buttonStyle(.plain)
 
-                    Text(slot.statusText)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(
-                            isActive
-                            ? MinimalPalette.accent
-                            : .secondary
-                        )
+            Menu("编辑") {
+                Button("重命名") {
+                    onRename()
                 }
 
-                Text(slot.resolvedDisplayName)
-                    .font(.caption.weight(.medium))
-                    .lineLimit(1)
+                Button("保存当前内容") {
+                    onSave()
+                }
 
-                Text(
-                    slotDescription
-                )
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+                Button("恢复默认") {
+                    onRestoreDefault()
+                }
             }
-            .frame(
-                maxWidth: .infinity,
-                alignment: .leading
-            )
-            .padding(12)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .fill(
+            .controlSize(.small)
+
+            Image(
+                systemName:
                     isActive
-                    ? MinimalPalette.accent
-                        .opacity(0.12)
-                    : Color.white.opacity(0.72)
-                )
+                    ? "checkmark.circle.fill"
+                    : "circle"
             )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .stroke(
-                    isActive
-                    ? MinimalPalette.accent
-                        .opacity(0.4)
-                    : MinimalPalette.border
-                )
+            .font(.title3)
+            .foregroundStyle(
+                isActive
+                ? MinimalPalette.accent
+                : .secondary
+            )
+            .accessibilityLabel(
+                isActive
+                ? "当前生效"
+                : "未生效"
             )
         }
-        .buttonStyle(.plain)
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .fill(
+                isActive
+                ? MinimalPalette.accent
+                    .opacity(0.12)
+                : Color.white.opacity(0.72)
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .stroke(
+                isActive
+                ? MinimalPalette.accent
+                    .opacity(0.4)
+                : MinimalPalette.border
+            )
+        )
     }
 
     private var slotDescription: String {
