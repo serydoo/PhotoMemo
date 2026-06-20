@@ -100,7 +100,7 @@ struct MainTemplateFieldEditorView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
                 }
-                .frame(minHeight: 58)
+                .frame(minHeight: 50)
                 .overlay(
                     RoundedRectangle(
                         cornerRadius: 18,
@@ -231,7 +231,7 @@ private struct MacInlineTemplateTextEditor: NSViewRepresentable {
         textView.drawsBackground = false
         textView.textContainerInset = NSSize(
             width: 0,
-            height: 8
+            height: 6
         )
         textView.font = .systemFont(ofSize: 14)
         textView.textColor = NSColor.labelColor
@@ -633,9 +633,9 @@ private struct UIKitInlineTemplateTextEditor: UIViewRepresentable {
         textView.backgroundColor = .clear
         textView.textColor = .label
         textView.textContainerInset = UIEdgeInsets(
-            top: 8,
+            top: 6,
             left: 0,
-            bottom: 8,
+            bottom: 6,
             right: 0
         )
         textView.textContainer.lineFragmentPadding = 0

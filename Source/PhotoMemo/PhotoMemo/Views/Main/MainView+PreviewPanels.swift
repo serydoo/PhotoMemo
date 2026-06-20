@@ -58,7 +58,7 @@ private struct MainPreviewHeaderView: View {
                 Text("实时预览")
                     .font(.title3.weight(.semibold))
 
-                Text("按当前配置、时间点与 EXIF 数据即时生成")
+                Text("按当前风格、时间点与照片信息即时生成")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -112,59 +112,6 @@ private struct MainPreviewCanvasView: View {
     }
 }
 
-private struct MainPreviewSummaryView: View {
-
-    let templateName: String
-
-    let anchorSummaryText: String?
-
-    var body: some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 8
-        ) {
-
-            Text("Live Context")
-                .font(.headline)
-
-            Text("当前配置内容：\(templateName)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if let anchorSummaryText {
-
-                Text(anchorSummaryText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(18)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .fill(
-                MinimalPalette.surface
-            )
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .stroke(
-                MinimalPalette.border
-            )
-        )
-        .frame(
-            maxWidth: 900,
-            alignment: .leading
-        )
-    }
-}
-
 struct MainPreviewDetailView: View {
 
     let previewImage: Image
@@ -191,13 +138,6 @@ struct MainPreviewDetailView: View {
                     previewImage: previewImage,
                     card: card,
                     previewWidth: previewWidth
-                )
-
-                MainPreviewSummaryView(
-                    templateName: card.template.name,
-                    anchorSummaryText:
-                        card.anchorResult?
-                        .summaryText
                 )
             }
             .frame(

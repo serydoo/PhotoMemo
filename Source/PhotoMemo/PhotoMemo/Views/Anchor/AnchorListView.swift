@@ -97,14 +97,6 @@ struct AnchorListView: View {
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
-
-                            if selectedAnchorID != anchor.id {
-                                Button("设为当前") {
-                                    selectedAnchorID = anchor.id
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                            }
                         }
                     }
                     .padding(.vertical, 6)
@@ -157,10 +149,18 @@ struct AnchorListView: View {
                     upsert(anchor)
                 }
             }
+#if os(iOS)
+            .presentationDetents([
+                .medium,
+                .large
+            ])
+            .presentationDragIndicator(.visible)
+#else
             .frame(
                 minWidth: 420,
                 minHeight: 280
             )
+#endif
         }
     }
 

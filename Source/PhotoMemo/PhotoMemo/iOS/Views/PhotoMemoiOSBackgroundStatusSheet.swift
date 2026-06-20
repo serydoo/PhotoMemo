@@ -83,29 +83,10 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                     snapshot
                 )
 
-                statusCounts(
-                    snapshot
-                )
-
                 if let job = currentJob {
                     processingFocusCard(
                         snapshot,
                         job: job
-                    )
-
-                    if let intakeSummary =
-                        job.intakeSummary {
-                        intakeSummaryCard(
-                            intakeSummary
-                        )
-                    }
-
-                    currentConfigurationCard(
-                        for: job
-                    )
-
-                    currentJobTimelineCard(
-                        for: job
                     )
                 }
 
@@ -127,12 +108,6 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                         latestFailureSummary
                     )
                 }
-
-                if !batchQueueStore
-                    .recentFailureRecords
-                    .isEmpty {
-                    recentFailuresCard
-                }
             }
             .padding(20)
         }
@@ -145,7 +120,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
             systemImage:
                 "square.stack.3d.down.forward",
             description: Text(
-                "这里不会打断主界面的模板校准，只在你需要时查看分享接入、后台处理和失败重试。"
+                "这里只保留当前处理、失败重试和最近一次失败。"
             )
         )
     }

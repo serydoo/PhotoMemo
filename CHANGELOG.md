@@ -1,5 +1,24 @@
 # Changelog
 
+## Alpha 0.8 - 2026-06-20
+
+### Added
+- Added `Docs/ProductScore.md` to score the current product simplicity level and list the top remaining simplification opportunities.
+- Added share-intake diagnostics across the Share Extension confirmation pipeline so failures now preserve stage-level context and low-level `NSError` details.
+- Added focused regression coverage for nested intake error summaries and managed-copy diagnostic failures.
+
+### Changed
+- Removed multiple instructional cards from the Main App default flow so the configuration center feels less like a tutorial.
+- Simplified Anchor management by removing the duplicated `设为当前` action and trimming editor-only educational copy.
+- Reduced permission and output wording to short just-in-time explanations.
+- Reduced the iPhone background-status sheet to current task, retry failed, and latest failure.
+- Renamed more visible product language from configuration/workspace/template wording toward style-first language.
+- Updated Share Extension wording so it now refers to the current style instead of the current configuration.
+- Updated Share Extension failure handling to surface the failing intake stage and preserve copy/persist/serialization diagnostics instead of collapsing everything into one generic import error.
+
+### Notes
+- This release intentionally does not change architecture, renderer behavior, export behavior, metadata logic, or batch semantics.
+
 ## Alpha 0.7 - 2026-06-20
 
 ### Added

@@ -8,6 +8,15 @@ final class RecordCardBuildService {
     private let templateVariableEngine =
         TemplateVariableEngine()
 
+    private let defaults: UserDefaults
+
+    init(
+        defaults: UserDefaults =
+            PhotoMemoSharedContainer.sharedUserDefaults
+    ) {
+        self.defaults = defaults
+    }
+
     func buildCard(
         from selectedPhoto: SelectedPhoto,
         configuration: BatchConfigurationSnapshot
@@ -69,7 +78,7 @@ private extension RecordCardBuildService {
         return RecordCard(
             template: configuration.template,
             metadata: selectedPhoto.metadata,
-            context: MetadataContext.build(
+            context: buildContext(
                 from: selectedPhoto.metadata
             ),
             anchor: configuration.anchor,
@@ -103,19 +112,14 @@ private extension RecordCardBuildService {
         from card: RecordCard,
         configuration: BatchConfigurationSnapshot
     ) -> String {
-
-        guard configuration.shouldWritePhotoDescription
-        else {
-            return ""
-        }
-
         let override =
             configuration.photoDescriptionOverride
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
 
-        if !override.isEmpty {
+        if configuration.shouldWritePhotoDescription,
+           !override.isEmpty {
             return override
         }
 
@@ -142,5 +146,50 @@ private extension RecordCardBuildService {
 
         template.rightBottomArea.items.first?.value
         ?? ""
+    }
+
+    func buildContext(
+        from metadata: PhotoMetadata
+    ) -> MetadataContext {
+
+        var context =
+            MetadataContext.build(
+                from: metadata
+            )
+
+        if let relationshipLabel =
+            loadPersonalRelationshipLabel() {
+            context.set(
+                relationshipLabel,
+                for: MetadataContext.Key.relationshipLabel
+            )
+        }
+
+        return context
+    }
+
+    func loadPersonalRelationshipLabel() -> String? {
+
+        guard
+            let data = defaults.data(
+                forKey: "photomemo.personalProfile"
+            ),
+            let profile =
+                try? JSONDecoder().decode(
+                    PersonalProfile.self,
+                    from: data
+                )
+        else {
+            return nil
+        }
+
+        let label =
+            profile.normalized
+            .resolvedRelationshipLabel
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return label.isEmpty ? nil : label
     }
 }

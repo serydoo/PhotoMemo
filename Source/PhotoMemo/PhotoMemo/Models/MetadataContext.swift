@@ -80,6 +80,9 @@ struct MetadataContext: Hashable, Codable {
 
         static let title = "title"
 
+        static let relationshipLabel =
+            "relationship_label"
+
         static let story = "story"
 
         static let tags = "tags"

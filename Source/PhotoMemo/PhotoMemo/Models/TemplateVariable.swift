@@ -93,6 +93,11 @@ extension TemplateVariable {
         ),
 
         user(
+            "记录者称呼",
+            key: MetadataContext.Key.relationshipLabel
+        ),
+
+        user(
             "故事",
             key: MetadataContext.Key.story
         ),
@@ -295,7 +300,7 @@ extension TemplateVariable {
         // MARK: - Anchor
 
         intelligent(
-            "时间点名称",
+            "主角称呼",
             key: MetadataContext.Key.anchorTitle
         ),
 

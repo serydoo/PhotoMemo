@@ -5,15 +5,33 @@ struct PhotoMemoRootSceneView: View {
     @Environment(\.scenePhase)
     private var scenePhase
 
+    @StateObject
+    private var personalProfileStore =
+        PersonalProfileStore()
+
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
     var body: some View {
 
-        MainView()
-            .environmentObject(
-                runtime.batchQueueStore
-            )
+        Group {
+            if personalProfileStore.requiresFirstRun {
+                FirstRunWizardView(
+                    initialProfile:
+                        personalProfileStore.profile
+                ) { profile in
+                    personalProfileStore
+                        .completeFirstRun(
+                            with: profile
+                        )
+                }
+            } else {
+                MainView()
+                    .environmentObject(
+                        runtime.batchQueueStore
+                    )
+            }
+        }
             .preferredColorScheme(.light)
             .onOpenURL { url in
                 runtime.handleExternalURLs(

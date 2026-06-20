@@ -151,10 +151,16 @@ extension TemplateItem {
         value: "{{year}}-{{month}}-{{day}} {{hour}}:{{minute}}"
     )
 
+    static let relationshipDeviceLine = TemplateItem(
+        type: .variable,
+        name: "Relationship Device Line",
+        value: "{{relationship_label}}手持{{model}}记录"
+    )
+
     static let captureDateLine = TemplateItem(
         type: .variable,
         name: "Capture Date Line",
-        value: "记录于{{capture_date_display}}"
+        value: "拍摄于{{capture_date_display}}"
     )
 
     static let captureDateCompact = TemplateItem(
@@ -327,6 +333,12 @@ extension TemplateItem {
         type: .variable,
         name: "成长纪念句",
         value: "今天{{anchor_age_text}}"
+    )
+
+    static let babyTodayAgeSentence = TemplateItem(
+        type: .variable,
+        name: "宝宝成长句",
+        value: "{{anchor_title}}今天{{anchor_age_text}}啦"
     )
 
     static let anchorDurationSentence = TemplateItem(

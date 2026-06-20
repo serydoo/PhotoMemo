@@ -23,4 +23,11 @@ Use one entry per issue.
 
 ## Active Bugs
 
-No entries yet.
+No new confirmed bugs in the Share Alpha-01 slice yet.
+
+Pending validation:
+
+- real-device share-sheet layout and button confidence
+- real-device wording clarity after tapping the primary action
+- whether removing guide cards makes the main configuration center feel clearer or too abrupt for first-time users
+- whether the reduced background-status sheet still covers the most important failure cases

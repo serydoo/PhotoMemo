@@ -29,7 +29,7 @@ extension TemplateArea {
     static let leftTop = TemplateArea(
         name: "Left Top",
         items: [
-            .title
+            .relationshipDeviceLine
         ]
     )
 

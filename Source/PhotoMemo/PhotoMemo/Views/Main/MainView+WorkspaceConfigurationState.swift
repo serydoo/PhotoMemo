@@ -30,6 +30,10 @@ extension MainView {
             settings.normalizedAlbumIdentifier(
                 selectedAlbumIdentifier
             )
+        settings.selectedAlbumTitle =
+            resolvedAlbumTitle(
+                for: selectedAlbumIdentifier
+            ) ?? ""
 
         settings.updateConfigurationSlot(
             settings.activeConfigurationSlotID,
@@ -47,8 +51,8 @@ extension MainView {
         syncBatchQueueDefaultConfiguration()
 
         presentAlert(
-            title: "配置已保存",
-            message: "当前内容已经保存到\(activeWorkspaceConfigurationSlot.displayTitleWithReference)，之后切换这套配置时会整体恢复模板、锚点、标识、文案和输出规则。"
+            title: "风格已保存",
+            message: "当前内容已经保存到\(activeWorkspaceConfigurationSlot.displayTitleWithReference)，之后切换这套风格时会一起恢复时间点、标识、文案和输出规则。"
         )
     }
 
@@ -104,7 +108,7 @@ extension MainView {
 
         presentAlert(
             title: "已恢复默认",
-            message: "\(activeWorkspaceConfigurationSlot.displayTitleWithReference) 已恢复到\(activeSlotID.defaultPreset.displayName)默认骨架。"
+            message: "\(activeWorkspaceConfigurationSlot.displayTitleWithReference) 已恢复到默认风格内容。"
         )
     }
 
@@ -165,6 +169,10 @@ extension MainView {
             normalizedAlbumIdentifier
         settings.selectedAlbumIdentifier =
             snapshot.selectedAlbumIdentifier
+        settings.selectedAlbumTitle =
+            resolvedAlbumTitle(
+                for: normalizedAlbumIdentifier
+            ) ?? ""
 
         settings.saveAll()
         syncComposerItemsFromTemplate(
@@ -175,13 +183,28 @@ extension MainView {
 
     func persistEditorDraftState(
         selectedAnchorID: UUID? = nil,
-        selectedAlbumIdentifier: String? = nil
+        selectedAlbumIdentifier: String? = nil,
+        selectedAlbumTitle: String? = nil,
+        immediately: Bool = false
     ) {
+
+        if immediately {
+            settings.saveEditorState(
+                selectedAnchorID: selectedAnchorID,
+                selectedAlbumIdentifier:
+                    selectedAlbumIdentifier,
+                selectedAlbumTitle:
+                    selectedAlbumTitle
+            )
+            return
+        }
 
         settings.scheduleEditorStateSave(
             selectedAnchorID: selectedAnchorID,
             selectedAlbumIdentifier:
-                selectedAlbumIdentifier
+                selectedAlbumIdentifier,
+            selectedAlbumTitle:
+                selectedAlbumTitle
         )
     }
 

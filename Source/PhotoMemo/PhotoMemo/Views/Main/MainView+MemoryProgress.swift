@@ -284,6 +284,13 @@ struct MainMemoryProgressPanel: View {
         let albumTitle: String
 
         if defaultConfigurationSnapshot
+            .selectedAlbumIdentifier
+            == PhotoMemoAlbumSelection
+            .systemLibraryIdentifier {
+
+            albumTitle = "系统相册"
+
+        } else if defaultConfigurationSnapshot
             .selectedAlbumIdentifier.isEmpty {
 
             albumTitle = "自动存入 PhotoMemo"

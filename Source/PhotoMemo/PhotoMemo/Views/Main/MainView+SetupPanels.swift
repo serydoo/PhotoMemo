@@ -148,7 +148,7 @@ struct MainAnchorSectionView: View {
                 .controlSize(.small)
             }
 
-            Text("需要新增、修改或删除时间点时，直接进入管理页处理；当前选择切换后，预览会立即重新计算智能时间结果。")
+            Text("切换时间点后，预览会立即刷新。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(

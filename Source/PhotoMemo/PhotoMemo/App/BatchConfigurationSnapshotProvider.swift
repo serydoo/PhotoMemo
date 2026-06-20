@@ -25,6 +25,9 @@ struct BatchConfigurationSnapshotProvider {
 
         static let selectedAlbumIdentifier =
             "photomemo.selectedAlbumIdentifier"
+
+        static let selectedAlbumTitle =
+            "photomemo.selectedAlbumTitle"
     }
 
     init(
@@ -107,6 +110,44 @@ struct BatchConfigurationSnapshotProvider {
 
         PhotoMemoAlbumSelection
             .normalizedIdentifier(identifier)
+    }
+
+    func resolvedAlbumTitle(
+        for identifier: String
+    ) -> String? {
+
+        let normalizedIdentifier =
+            normalizedAlbumIdentifier(identifier)
+
+        guard
+            !normalizedIdentifier.isEmpty,
+            normalizedIdentifier
+                == normalizedAlbumIdentifier(
+                    defaults.string(
+                        forKey: Keys.selectedAlbumIdentifier
+                    ) ?? ""
+                )
+        else {
+            return nil
+        }
+
+        if normalizedIdentifier
+            == PhotoMemoAlbumSelection
+            .systemLibraryIdentifier {
+            return "系统相册"
+        }
+
+        let trimmedTitle =
+            defaults.string(
+                forKey: Keys.selectedAlbumTitle
+            )?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        return trimmedTitle.isEmpty
+            ? nil
+            : trimmedTitle
     }
 }
 

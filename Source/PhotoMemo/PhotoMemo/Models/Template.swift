@@ -55,7 +55,7 @@ extension Template {
         rightBottomArea: TemplateArea(
             name: "Right Bottom",
             items: [
-                .anchorAgeSentence
+                .babyTodayAgeSentence
             ]
         ),
         badgeArea: .badge
@@ -151,7 +151,7 @@ extension Template {
             normalizedItems(
                 from: normalized.badgeArea.items
             )
-        return normalized
+        return normalized.migratedForCurrentDefaults
     }
 
     private func normalizedItems(
@@ -159,6 +159,45 @@ extension Template {
     ) -> [TemplateItem] {
 
         items.first.map { [$0] } ?? []
+    }
+
+    private var migratedForCurrentDefaults: Template {
+
+        var migrated = self
+
+        func migrateArea(
+            _ area: inout TemplateArea,
+            from oldValue: String,
+            to newItem: TemplateItem
+        ) {
+
+            guard let currentValue =
+                area.items.first?.value,
+                currentValue == oldValue
+            else {
+                return
+            }
+
+            area.items = [newItem]
+        }
+
+        migrateArea(
+            &migrated.leftTopArea,
+            from: "{{title}}",
+            to: .relationshipDeviceLine
+        )
+        migrateArea(
+            &migrated.leftBottomArea,
+            from: "记录于{{capture_date_display}}",
+            to: .captureDateLine
+        )
+        migrateArea(
+            &migrated.rightBottomArea,
+            from: "今天{{anchor_age_text}}",
+            to: .babyTodayAgeSentence
+        )
+
+        return migrated
     }
 }
 

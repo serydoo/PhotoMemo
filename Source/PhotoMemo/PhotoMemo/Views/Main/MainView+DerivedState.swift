@@ -44,10 +44,10 @@ extension MainView {
             activeWorkspaceConfigurationSlot
 
         if slot.isCustomized {
-            return "当前生效：\(slot.displayTitleWithReference)。切换到其他配置后，左侧模板、时间点、Logo 标识、补充信息和输出规则会整体刷新。"
+            return "当前使用：\(slot.displayTitleWithReference)。切换后，左侧内容和右侧预览会一起刷新。"
         }
 
-        return "当前生效：\(slot.displayTitleWithReference)。这套配置还未单独保存，暂时使用当前固定模板骨架。"
+        return "当前使用：\(slot.displayTitleWithReference)。这套风格还没有单独保存。"
     }
 
     var activeTemplate: Template {
@@ -65,7 +65,7 @@ extension MainView {
 
     var currentPresetDefaultOutput: String {
 
-        "今天 + 年岁"
+        "主角称呼 + 今天 + 年岁"
     }
 
     var selectedAnchor: Anchor? {
@@ -100,9 +100,15 @@ extension MainView {
             return "自动存入 PhotoMemo"
         }
 
-        return availableAlbums.first {
-            $0.id == selectedAlbumIdentifier
-        }?.title ?? "当前相册"
+        if selectedAlbumIdentifier
+            == PhotoMemoAlbumSelection
+            .systemLibraryIdentifier {
+            return "系统相册"
+        }
+
+        return resolvedAlbumTitle(
+            for: selectedAlbumIdentifier
+        ) ?? "当前相册"
     }
 
     var anchorQuickFactItems:
@@ -140,7 +146,7 @@ extension MainView {
                 return "未自定义时，Immers 白边会自动使用经典 Apple 小标识，并贴近右侧信息区显示。"
             }
 
-            return "当前配置会保留标识区域留白，适合更极简的版式。"
+            return "当前风格会保留标识区域留白，适合更极简的版式。"
         }
 
         if badge.isSystemDefault {
@@ -253,5 +259,50 @@ extension MainView {
         var normalized = template
         normalized.preset = .template1
         return normalized.normalizedForEditing
+    }
+
+    func resolvedAlbumTitle(
+        for identifier: String
+    ) -> String? {
+
+        let normalizedIdentifier =
+            settings.normalizedAlbumIdentifier(
+                identifier
+            )
+
+        guard !normalizedIdentifier.isEmpty else {
+            return nil
+        }
+
+        if normalizedIdentifier
+            == PhotoMemoAlbumSelection
+            .systemLibraryIdentifier {
+            return "系统相册"
+        }
+
+        if let availableAlbumTitle =
+            availableAlbums.first(where: {
+                $0.id == normalizedIdentifier
+            })?.title
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ),
+           !availableAlbumTitle.isEmpty {
+            return availableAlbumTitle
+        }
+
+        let persistedAlbumTitle =
+            settings.selectedAlbumTitle
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if settings.normalizedSelectedAlbumIdentifier
+            == normalizedIdentifier,
+           !persistedAlbumTitle.isEmpty {
+            return persistedAlbumTitle
+        }
+
+        return nil
     }
 }

@@ -30,57 +30,47 @@ struct MainOutputSection: View {
             spacing: 14
         ) {
 
-            MainDismissibleGuideCard(
-                storageKey:
-                    "photomemo.guide.output.dismissed",
-                title: "输出说明",
-                message: "输出区现在只保留目标相册选择和保存动作。更完整的元数据保留与相册写回说明已经整理进右侧操作指南，确认后可以关闭这条提示。"
-            )
-
-            Picker(
-                "系统相册",
-                selection: $selectedAlbumIdentifier
+            HStack(
+                alignment: .center,
+                spacing: 10
             ) {
+                Text("保存至")
+                    .font(.subheadline.weight(.medium))
 
-                Text("自动存入 PhotoMemo")
-                    .tag(
-                        PhotoAlbumOption
-                            .automaticIdentifier
-                    )
+                Picker(
+                    "系统相册",
+                    selection: $selectedAlbumIdentifier
+                ) {
 
-                ForEach(availableAlbums) { album in
-
-                    Text(album.title)
-                        .tag(album.id)
-                }
-            }
-            .pickerStyle(.menu)
-            .controlSize(.small)
-
-            MinimalInsetCard {
-                LabeledContent("写入位置") {
-                    Text(selectedAlbumSummary)
-                        .font(
-                            isCompactLayout
-                            ? .subheadline.weight(.medium)
-                            : .caption
+                    Text("系统相册")
+                        .tag(
+                            PhotoMemoAlbumSelection
+                                .systemLibraryIdentifier
                         )
-                        .foregroundStyle(
-                            isCompactLayout
-                            ? .primary
-                            : .secondary
+
+                    Text("PhotoMemo")
+                        .tag(
+                            PhotoAlbumOption
+                                .automaticIdentifier
                         )
-                }
 
-                Divider()
+                    ForEach(availableAlbums) { album in
 
-                LabeledContent("保存策略") {
-                    Text("新图写回系统图库，尽量保留原图元数据")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
+                        Text(album.title)
+                            .tag(album.id)
+                    }
                 }
+                .pickerStyle(.menu)
+                .controlSize(.small)
             }
+
+            Text("如果不指定相册，会默认保存到 PhotoMemo 相册。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
 
             VStack(
                 alignment: .leading,
@@ -90,7 +80,7 @@ struct MainOutputSection: View {
                 Button(
                     isSavingToAlbum
                         ? "正在存入系统相册..."
-                        : "保存新图到“\(selectedAlbumSummary)”",
+                        : saveButtonTitle,
                     action: saveCurrentCardToAlbum
                 )
                 .buttonStyle(.borderedProminent)
@@ -104,16 +94,6 @@ struct MainOutputSection: View {
                     !canExportCurrentCard
                     || isSavingToAlbum
                 )
-
-                if isCompactLayout {
-                    Text("iPhone 上建议先确认上方预览正确，再直接保存到当前相册。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(
-                            horizontal: false,
-                            vertical: true
-                        )
-                }
             }
 
             if isCompactLayout,
@@ -146,5 +126,21 @@ struct MainOutputSection: View {
             maxWidth: .infinity,
             alignment: .leading
         )
+    }
+
+    private var saveButtonTitle: String {
+
+        if selectedAlbumIdentifier
+            == PhotoMemoAlbumSelection
+            .systemLibraryIdentifier {
+            return "保存到系统相册"
+        }
+
+        if selectedAlbumIdentifier
+            == PhotoAlbumOption.automaticIdentifier {
+            return "保存到 PhotoMemo 相册"
+        }
+
+        return "保存到“\(selectedAlbumSummary)”"
     }
 }

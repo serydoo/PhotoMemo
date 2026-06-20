@@ -3,8 +3,20 @@ import Foundation
 
 struct PhotoMemoShareExtensionImportResult {
 
+    let itemProviderCount: Int
+
+    let supportedProviderCount: Int
+
+    let requestedCount: Int
+
     let summary:
         ExternalPhotoImportSummary
+
+    let failureStage:
+        PhotoMemoShareIntakeFailureStage?
+
+    let failureContext:
+        PhotoMemoShareIntakeFailureContext?
 
     var importedCount: Int {
         summary.importedCount

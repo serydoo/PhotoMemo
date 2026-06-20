@@ -6,7 +6,7 @@ Last updated: 2026-06-20
 
 PhotoMemo is currently in a combined refinement stage:
 
-- Product-wise, it is still a **local-first template calibration center**
+- Product-wise, it is moving from a **template calibration center** toward a **workflow preparation app built on Personal Profile + Style + Share-first Workflow**
 - Engineering-wise, it is moving from a large prototype-style `MainView` toward a more maintainable coordinator structure
 - Capability-wise, the project has already crossed the MVP foundation line:
   - real EXIF import
@@ -20,6 +20,457 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
+
+## 1.15 Share intake diagnostics are now wired through the full confirmation pipeline
+
+PhotoMemo 的 Share Extension 这一轮没有改工作流本身，只强化了 intake 阶段的可观测性，目标是把“照片没有成功交给 PhotoMemo”从笼统报错升级成可定位的阶段性诊断。
+
+本轮已落地：
+
+- 新增共享诊断基础：
+  - `PhotoMemoShareIntakeFailureStage`
+  - `PhotoMemoShareIntakeNSErrorSummary`
+  - `PhotoMemoShareIntakeFailureContext`
+  - `PhotoMemoShareIntakeOperationSeed`
+- `ExternalPhotoIntakeStore` 现在保留详细 copy / persist / serialization 失败上下文
+- `PhotoMemoShareExtensionImportResult` 现在会携带：
+  - `itemProviderCount`
+  - `supportedProviderCount`
+  - `failureStage`
+  - `failureContext`
+- `PhotoMemoShareExtensionIntakeService` 现在会对以下步骤逐一打点：
+  - extension 收到多少个 item providers
+  - 支持的 provider 数量
+  - 选中的 UTType 与 provider 注册类型
+  - `loadFileRepresentation` 开始 / 返回 URL / 失败
+  - `loadItem` fallback 开始 / 返回 URL 或 Data / 失败
+  - temporary copy 结果
+  - shared container 目标路径
+  - request 持久化结果
+  - final import result 摘要
+- `PhotoMemoShareExtensionViewController` 失败态现在会追加简短诊断：
+  - 失败阶段
+  - `NSError domain / code`
+
+本轮验证：
+
+- 新增 `PhotoMemoShareIntakeDiagnosticsTests` 通过
+- 新增 `ExternalPhotoIntakeStoreDiagnosticsTests` 通过
+- `PhotoMemoTests` 定向测试通过
+- `PhotoMemoiOS` build 通过
+  - 该次编译已包含 `PhotoMemoShareExtension` target
+
+这代表什么：
+
+- 从你下一次真机重试开始，如果 share 再失败，我们应该能立刻知道它卡在：
+  - `load`
+  - `copy`
+  - `persist`
+  - `serialization`
+  - `completion`
+- 并且能同时拿到对应的底层 `NSError.localizedDescription / domain / code / underlyingError`
+
+还没完成的部分：
+
+- 还没有基于新的诊断结果去真正修复 intake 根因
+- 还需要你下一次在真机上重试一次，确认失败页是否已经从纯泛化文案升级成带阶段的错误
+- 如果新的失败截图出现，我们就可以直接按阶段下刀，不需要再盲查整个 Share 流程
+
+## 1.14 默认个性化文案与导出命名规则已收口一轮
+
+PhotoMemo 在这一轮继续沿着 `Personal Profile + 默认风格` 的方向，把模板 1 的默认语言再向真实家庭记录语境推进了一步。
+
+这一轮的目标仍然是：
+
+- 不改渲染结构
+- 不改导出流程
+- 不改 Share 工作流
+- 只收口默认模板语义、导出命名和变量注入
+
+本轮已经落地：
+
+- 新增 `relationship_label` 元数据键，用于把首次引导里的记录者身份注入运行时上下文
+- 模板 1 左上默认语义改成：
+  - `{{relationship_label}}手持{{model}}记录`
+- 模板 1 右下默认语义改成：
+  - `{{anchor_title}}今天{{anchor_age_text}}啦`
+- `记录于{{capture_date_display}}` 默认文案改成：
+  - `拍摄于{{capture_date_display}}`
+- 模板归一化时会兼容迁移旧默认内容，避免已有模板直接失真
+- 导出文件名现在默认沿用原图名称：
+  - `IMG_1234.jpg`
+  - `IMG_1234 (1).jpg`
+  - `IMG_1234 (2).jpg`
+
+本轮代码上的关键补充：
+
+- `RecordCardBuildService` 现在会读取共享 `PersonalProfile`，把记录者称呼注入 `MetadataContext`
+- `TemplateVariable` 新增公开变量：
+  - `记录者称呼`
+- 时间点标题的公开展示名进一步收口为：
+  - `主角称呼`
+
+本轮新增或补强验证：
+
+- `RecordCardBuildServiceTests` 通过
+- `EditorProjectionEngineTests` 通过
+- `PhotoMemo` macOS build 通过
+- `PhotoMemoiOS` build 通过
+  - 该次编译已包含 iOS App、Share Extension、Widget Extension 依赖图
+
+本轮仍需继续人工核查：
+
+- 自定义区域中 EXIF 参数摘要模块的重新插入与删除边界
+- 个别文本异常拼接，例如：
+  - `途途1岁24天）〕啦`
+- 右下区域在真实中文输入与多模块混排下的最终显示稳定性
+- 你后续准备发送的分享失败提示图，还没有进入本轮分析
+
+额外说明：
+
+- 本轮尝试过独立 `PhotoMemoShareExtension` scheme 编译，但该 scheme 在当前工程里仍会拉起完整 iOS 依赖图，且命令被人为中断，没有保留单独的成功结论
+- 但 `PhotoMemoiOS` 的完整成功编译已经覆盖到 Share Extension target 的真实编译路径，所以当前可以把 iOS/Share 视为可编译状态
+- 你提供的样图里：
+  - `/Users/rui/Downloads/IMG_5667.jpg`
+  - `/Users/rui/Downloads/IMG_5668.JPEG`
+  已可用于继续对齐文案观感
+  - `/Users/rui/Downloads/IMG_9565.HEIC`
+  本轮读取时本地未找到文件
+
+## 1.13 First Run Wizard foundation landed
+
+PhotoMemo now has its first implemented `Personal Profile + First Run` product slice in code.
+
+This round stays compatibility-first:
+
+- no renderer behavior change
+- no export content change
+- no template data-model redesign
+- no share workflow redesign
+- existing `SettingsService` and `UserDefaults` keys remain readable
+
+What landed in code:
+
+- additive `PersonalProfile` model
+- additive `PersonalProfileStore`
+- one-time `FirstRunWizardView`
+- root-scene gating so first launch enters the setup flow before `MainView`
+- compatibility backfill from existing birthday anchor / selected album / active style slot
+- compatibility write-back into the current settings pipeline when first run completes
+
+Current wizard shape:
+
+1. who is recording
+2. baby nickname
+3. birthday
+4. default style
+5. save destination
+
+What is user-visible now:
+
+- first launch is no longer a raw settings surface
+- users get a simpler setup path with human language
+- `时间锚点` is not exposed in first run
+- default style is presented as `宝宝成长（推荐）`
+- save destination can now distinguish:
+  - `系统相册`
+  - `PhotoMemo 相册`
+- the onboarding copy and hierarchy were further tightened toward a more Apple-like first-device setup feel:
+  - welcome copy now emphasizes `只需要花 1 分钟完成设置`
+  - step labels are simplified to `1 / 5 ... 5 / 5`
+  - the setup summary is quieter and less dashboard-like
+
+Important compatibility note:
+
+- `系统相册` default save is now wired through runtime save behavior and summary wording
+- `PhotoMemo 相册` remains the automatic-album default
+- this round does not yet add a post-onboarding `Personal Profile` editing page
+- this round does not yet migrate the Main App information architecture to `Profile / Styles / Settings / About`
+
+Files added in this round:
+
+- `Source/PhotoMemo/PhotoMemo/Models/PersonalProfile.swift`
+- `Source/PhotoMemo/PhotoMemo/Services/PersonalProfileStore.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/FirstRun/FirstRunWizardView.swift`
+- `Tests/PhotoMemoTests/MetadataTests/PersonalProfileStoreTests.swift`
+
+Files updated in this round:
+
+- `Source/PhotoMemo/PhotoMemo/App/PhotoMemoRootSceneView.swift`
+- `Source/PhotoMemo/PhotoMemo/App/BatchConfigurationSnapshotProvider.swift`
+- `Source/PhotoMemo/PhotoMemo/App/PhotoMemoShareWorkflowSummary.swift`
+- `Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+DerivedState.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ExportActions.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+MemoryProgress.swift`
+- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+OutputSection.swift`
+- `Tests/PhotoMemoTests/VariableTests/PhotoMemoShareWorkflowSummaryTests.swift`
+
+Verification for this round:
+
+- `PhotoMemoTests` passed
+- focused `PersonalProfileStoreTests` and `PhotoMemoShareWorkflowSummaryTests` passed after the final target-boundary fix
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+Still not manually verified:
+
+- the feel of the new first-run flow on real iPhone hardware
+- whether the five-step flow is short enough for a genuine first-time user
+- whether `系统相册` vs `PhotoMemo 相册` wording feels natural inside the existing Main App output panel
+- whether users miss a direct post-onboarding place to edit Personal Profile
+
+## 1.12 v1.0 product model foundation defined
+
+PhotoMemo now has a formal product model document:
+
+- `Docs/ProductModel.md`
+
+This round is documentation-only.
+
+It does not change architecture, renderer behavior, export behavior, share behavior, or persistence behavior in code.
+
+What is newly defined:
+
+- Personal Profile is now the owner of:
+  - relationship
+  - baby nickname
+  - birthday
+  - default album
+  - default style
+- Style is now the owner of:
+  - layout
+  - variables
+  - visual arrangement
+  - renderer-facing behavior
+- Workflow is now the owner of:
+  - share execution
+  - generate/save flow
+  - runtime progress and result state
+
+What this changes at the product level:
+
+- the Main App is no longer best understood as a general configuration dashboard
+- it is becoming a workflow-preparation app
+- the Share Extension is no longer just a technical intake surface
+- it is the future primary execution surface
+- First Run is now the preferred place for identity and default-output setup
+
+Main App information architecture target is now:
+
+- Personal Profile
+- Styles
+- Settings
+- About
+
+This round also aligns the repository slogan around:
+
+- Configure once. Remember forever.
+- 一次设定，永久记录。
+
+Docs added or updated in this round:
+
+- `Docs/ProductModel.md`
+- `Docs/ProductDirection.md`
+- `Docs/ProductBacklog.md`
+- `Docs/CURRENT_STATUS.md`
+- `HANDOFF.md`
+- `README.md`
+
+Recommended next implementation sequence:
+
+1. add Personal Profile as additive data
+2. backfill from current settings
+3. introduce one-time First Run
+4. move visible IA toward Profile / Styles / Settings / About
+5. make Share read Profile + default Style automatically
+
+ADR status:
+
+- no ADR update in this round
+- reason: product model was defined, but no implemented architecture boundary changed yet
+
+## 1.11 Alpha 0.8 product simplification slice landed
+
+PhotoMemo has now shipped the first code-level UI reduction slice that follows `Docs/ProductAudit.md`.
+
+This round does not change architecture, renderer behavior, metadata logic, batch semantics, or export behavior.
+
+What changed in the Main App:
+
+- removed several dismissible guide cards from the default editing flow
+- reduced explanatory copy in:
+  - custom-region editing
+  - supplemental content
+  - output
+  - anchor editing
+  - permissions
+- reduced the anchor list by removing the duplicated `设为当前` action
+- removed the compact/header hero pills from the main editor path
+- changed more visible language from:
+  - configuration/workspace/template
+  - toward:
+  - style / current style / default style
+
+What changed in iPhone/supporting UI:
+
+- background status now keeps only:
+  - current task
+  - retry failed
+  - latest failure
+- the rest of the background dashboard-style detail is no longer shown in the default sheet
+
+What changed in Share wording:
+
+- `当前配置` now reads as `当前风格`
+- confirmation, processing, retry, and follow-up wording are less technical
+
+Docs added or updated in this round:
+
+- `Docs/ProductScore.md`
+- `Docs/ProductDirection.md`
+- `Docs/ProductBacklog.md`
+- `Docs/Alpha/BugList.md`
+- `Docs/Alpha/UXNotes.md`
+
+Verification for this round:
+
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+- `PhotoMemoTests` passed
+
+Still not manually verified:
+
+- real-device reaction to the lighter Main App with fewer guide cards
+- whether first-time users miss any removed helper copy
+- whether the reduced background-status sheet still feels sufficient in failure scenarios
+- whether `当前风格` reads naturally enough in the real share sheet
+
+## 1.10 Product audit completed
+
+PhotoMemo now has its first repository-level UI product audit:
+
+- `Docs/ProductAudit.md`
+
+This round is documentation-only.
+
+It does not modify architecture, renderer behavior, metadata logic, or workflow code.
+
+What this audit adds:
+
+- a page-by-page review of every current visible product surface
+- a UI-element audit asking:
+  - does the user need this
+  - can it be removed
+  - can it become automatic
+  - can it move into settings
+- a stronger product principle now written into `Docs/ProductDirection.md`:
+  - The best PhotoMemo experience is the one users barely notice.
+
+Highest-confidence conclusions from the audit:
+
+- the Main App still explains itself too much
+- the Share Extension should keep shrinking toward near-invisible execution
+- help, troubleshooting, and low-frequency configuration actions should continue moving away from the main daily surface
+- background status should keep losing prominence
+
+## 1.8 Zero-Friction share baseline landed
+
+PhotoMemo now has an explicit Zero-Friction share workflow baseline in both docs and the first runtime surface.
+
+This round adds:
+
+- `Docs/ShareZeroFrictionWorkflow.md`
+- `Source/PhotoMemo/PhotoMemo/App/PhotoMemoShareWorkflowSummary.swift`
+- `Tests/PhotoMemoTests/VariableTests/PhotoMemoShareWorkflowSummaryTests.swift`
+
+What changed in product direction:
+
+- default share no longer assumes in-flow configuration
+- the Main App stays the configuration center
+- the Share Extension now explicitly prefers:
+  - use current configuration automatically
+  - continue processing
+  - write back to Photos
+- advanced settings are now documented as future-optional rather than part of the default path
+
+What changed in the current Share Extension slice:
+
+- the extension no longer speaks like a technical handoff screen first
+- it now shows a calmer automatic-processing surface
+- it passively summarizes:
+  - current configuration
+  - current time point usage
+  - output mode
+- success wording now confirms receipt and continued automatic processing instead of only saying the photo entered an inbox
+
+What intentionally did not change:
+
+- intake persistence architecture
+- render behavior
+- export behavior
+- batch semantics
+- save-back pipeline ownership
+- share preview / confirmation flow
+
+Verification for this round:
+
+- `PhotoMemoTests` passed
+- `PhotoMemoShareExtension` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemo` build passed
+
+Still not manually verified:
+
+- real-device share-sheet appearance on smaller iPhones
+- whether the new share surface feels appropriately brief before auto-closing
+- real-user understanding of the new wording in first-time use
+
+## 1.9 Share Alpha-01 single-page confirmation landed
+
+PhotoMemo has now taken the first Alpha usability slice on the Share Extension itself.
+
+This round keeps the existing intake-backed architecture, but changes the extension from an automatic handoff surface into a clearer single-page confirmation surface.
+
+What changed in this round:
+
+- the Share Extension no longer starts immediately on open
+- it now shows:
+  - shared photo count
+  - current configuration name
+  - output destination summary
+- the primary action is now an explicit confirmation button instead of an invisible auto-continue step
+- success wording no longer says only “joined the inbox”
+- failure states now provide retry-oriented, user-facing suggestions
+
+Files touched in the core slice:
+
+- `Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift`
+- `Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift`
+- `Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionImportResult.swift`
+
+What intentionally did not change:
+
+- no share preview yet
+- no in-extension generate/save loop yet
+- no batch-share expansion
+- no smart configuration selection
+- no multi-page wizard
+
+Verification for this round:
+
+- `PhotoMemoTests` passed
+- `PhotoMemoShareExtension` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemo` build passed
+
+Not yet verified:
+
+- real-device share-sheet layout and tap confidence
+- whether the confirmation wording feels short enough in actual Photos sharing
+- whether users still expect immediate completion instead of “continue processing”
 
 ## 1.7 Alpha 0.7 validation mode started
 

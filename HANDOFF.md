@@ -1,5 +1,524 @@
 # PhotoMemo Handoff
 
+## 2026-06-20 Share Extension intake diagnostics 已接通
+
+- 本轮目标：
+  - 不修分享失败根因
+  - 只把 Share confirmation -> intake 这一段的诊断能力补齐
+  - 下次真机失败时直接知道卡在哪一层
+- 本轮核心新增：
+  - `Source/PhotoMemo/PhotoMemo/App/PhotoMemoShareIntakeDiagnostics.swift`
+  - Share intake 统一失败阶段：
+    - `load`
+    - `copy`
+    - `persist`
+    - `serialization`
+    - `completion`
+  - 统一 `NSError` 摘要：
+    - `localizedDescription`
+    - `domain`
+    - `code`
+    - `underlyingError`
+- 本轮主要代码变化：
+  - `ExternalPhotoIntakeStore`
+    - 新增 detailed copy / persist 结果
+    - 不再只返回 `nil`
+    - 现在能给出 shared container 目标路径和失败上下文
+  - `PhotoMemoShareExtensionImportResult`
+    - 新增 provider 总数 / supported 数 / failure stage / failure context
+  - `PhotoMemoShareExtensionIntakeService`
+    - 现在会记录：
+      - extension 收到的 item providers 数量
+      - supported provider 数量
+      - 选中的 `UTType.image` 与 provider 的首选图片类型
+      - `loadFileRepresentation` 起止与返回 URL
+      - `loadItem` fallback 起止与返回 URL/Data
+      - temporary copy 结果
+      - shared container destination
+      - persist request 结果
+      - final import result 值
+  - `PhotoMemoShareExtensionViewController`
+    - 失败页现在会带上简短诊断摘要：
+      - `失败阶段`
+      - `NSError domain / code`
+- 本轮新增测试：
+  - `Tests/PhotoMemoTests/BatchTests/PhotoMemoShareIntakeDiagnosticsTests.swift`
+  - `Tests/PhotoMemoTests/BatchTests/ExternalPhotoIntakeStoreDiagnosticsTests.swift`
+- 本轮验证：
+  - 定向 `PhotoMemoShareIntakeDiagnosticsTests` 通过
+  - 定向 `ExternalPhotoIntakeStoreDiagnosticsTests` 通过
+  - `PhotoMemoiOS` build 通过
+    - 编译链已经覆盖 `PhotoMemoShareExtension`
+- 当前对你提供的两张截图的判断：
+  - 分享确认页本身是正常的
+  - 旧问题还没算解决，因为失败页仍然还是泛化高层文案
+  - 本轮完成后，下一次同样失败时，理论上应该能直接看到：
+    - `失败阶段：copy`
+    - 或 `失败阶段：persist`
+    - 并带 `NSError domain / code`
+- 下一轮最值得继续：
+  1. 让你在真机上重新走一遍：
+     - 系统相册 -> 分享 -> PhotoMemo -> 按当前风格继续
+  2. 拿新的失败截图或系统日志
+  3. 按已经暴露出来的具体阶段直接修根因，不再泛查
+  4. 如果卡在 shared container copy，再重点核对 security-scoped URL / provider payload 类型
+  5. 如果卡在 persist，再重点核对 request 序列化和共享容器写入
+  6. 如果已经成功进入 `persist`，再看是不是后续 render/save 才失败
+
+## 2026-06-20 默认个性化文案、关系称呼注入与原名导出已落地
+
+- 本轮目标：
+  - 继续顺着 `Personal Profile + 默认风格` 收口模板 1 的默认语言
+  - 让记录者身份真正进入最终成片文案
+  - 导出文件名恢复原图命名，不再追加 `_PhotoMemo`
+- 本轮实际改动：
+  - 新增 `MetadataContext.Key.relationshipLabel`
+  - 新增公开模板变量：
+    - `记录者称呼`
+  - 公开变量里原 `时间点名称` 已收口成：
+    - `主角称呼`
+  - 模板默认值更新为：
+    - 左上：`{{relationship_label}}手持{{model}}记录`
+    - 左下：`拍摄于{{capture_date_display}}`
+    - 右下：`{{anchor_title}}今天{{anchor_age_text}}啦`
+  - `Template.normalizedForEditing` 现在会兼容迁移旧默认文案：
+    - `{{title}}` -> 新左上默认句式
+    - `记录于...` -> `拍摄于...`
+    - `今天{{anchor_age_text}}` -> `{{anchor_title}}今天{{anchor_age_text}}啦`
+- 本轮运行时补充：
+  - `RecordCardBuildService` 现在会从共享 `UserDefaults` 中读取 `photomemo.personalProfile`
+  - 若存在有效 `PersonalProfile`，会把 `resolvedRelationshipLabel` 注入 `MetadataContext`
+  - 这样默认左上角已经可以直接得到：
+    - `他爹手持iPhone 15 Pro记录`
+    - `爸爸手持Canon记录`
+- 本轮导出命名变化：
+  - 默认导出名改为沿用原图名
+  - 重名时按复制规则递增：
+    - `IMG_1234.jpg`
+    - `IMG_1234 (1).jpg`
+    - `IMG_1234 (2).jpg`
+- 本轮新增测试：
+  - `Tests/PhotoMemoTests/VariableTests/EditorProjectionEngineTests.swift`
+    - 覆盖文字 + 模块 chip 的 round-trip
+    - 覆盖前置文字删除后，后续 chip 不应损坏
+  - `Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift`
+    - 覆盖 Personal Profile 记录者称呼注入
+    - 覆盖默认成片语义与原名导出递增规则
+- 本轮验证结果：
+  - 定向 `RecordCardBuildServiceTests` 通过
+  - 定向 `EditorProjectionEngineTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+    - 此次成功编译已包含 Share Extension / Widget Extension 依赖
+- 本轮需要诚实保留的边界：
+  - 独立 `PhotoMemoShareExtension` scheme 单跑时，当前工程仍会拉起完整 iOS 依赖图
+  - 那条命令为了节省时间被中断，没有单独保留 `BUILD SUCCEEDED`
+  - 但共享文件已经在 `PhotoMemoiOS` 全量编译里真实通过
+- 本轮还没完全收口的问题：
+  - EXIF 参数摘要模块重新插入和删除边界，仍要继续盯
+  - 用户提到的异常拼接：
+    - `途途1岁24天）〕啦`
+    - 还没有拿到稳定复现场景
+  - 分享失败提示图还没收到，本轮未分析
+  - `/Users/rui/Downloads/IMG_9565.HEIC` 本轮读取时本地未找到，需要你后续再补
+- 下一轮最值得继续：
+  1. 先复现并修正右下区域异常拼接
+  2. 把 EXIF 参数摘要模块做成更稳定的可重插入 chip
+  3. 拿到分享失败提示图后，直接排查 Share 保存失败链路
+
+## 2026-06-20 First Run Wizard 与 Personal Profile 基础切片已落地
+
+- 本轮目标：
+  - 不做大规模架构迁移
+  - 直接落一个真实可用的 `Personal Profile + First Run Wizard` 最小代码切片
+  - 保持现有渲染、导出、Share 主链不变
+- 本轮新增代码：
+  - `Source/PhotoMemo/PhotoMemo/Models/PersonalProfile.swift`
+  - `Source/PhotoMemo/PhotoMemo/Services/PersonalProfileStore.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/FirstRun/FirstRunWizardView.swift`
+  - `Tests/PhotoMemoTests/MetadataTests/PersonalProfileStoreTests.swift`
+- 本轮接入方式：
+  - `PhotoMemoRootSceneView` 现在会先判断 `requiresFirstRun`
+  - 未完成首次初始化时，先进入 5 步向导
+  - 完成后再进入现有 `MainView`
+- 向导当前 5 步：
+  1. 这是为谁记录
+  2. 宝宝叫什么
+  3. 出生日期
+  4. 默认风格
+  5. 保存位置
+- 本轮在 UI 表达上又进一步收紧了一次：
+  - 欢迎语改成更像系统首次设置的语气
+  - 步骤标签收口成 `1 / 5` 这种更轻的表达
+  - 完成页保留，但不再像信息面板，更接近安静的收尾确认
+- 本轮兼容策略：
+  - `PersonalProfileStore` 会从现有 `SettingsService` 回填：
+    - 生日 anchor
+    - 当前样式槽位
+    - 当前默认相册
+  - 完成向导后，再把结果写回现有 settings 路径
+  - 这样旧的 `UserDefaults`、Share、导出、Batch 都不用迁移
+- 本轮顺手补齐：
+  - 默认保存位置现在支持明确区分：
+    - `系统相册`
+    - `PhotoMemo 相册`
+  - Share 摘要、主界面输出摘要、保存反馈文案都已同步识别 `系统相册`
+- 本轮 target 边界修正：
+  - 由于工程会把新文件自动带进 extension target
+  - `PersonalProfileStore.swift`
+  - `FirstRunWizardView.swift`
+  - 已用 `#if !PHOTOMEMO_SHARE_EXTENSION` 收口，避免污染 Share Extension 编译边界
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - 定向 `PersonalProfileStoreTests` / `PhotoMemoShareWorkflowSummaryTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 本轮还没做：
+  - `Personal Profile` 的独立编辑入口
+  - Main App IA 真正改成：
+    - Personal Profile
+    - Styles
+    - Settings
+    - About
+  - 首次完成后的“设置完成页”之外的后续信息架构收口
+  - 真机手感验证
+- 下一轮最值得继续：
+  1. 给 `Personal Profile` 一个正式入口，而不是只存在于 First Run
+  2. 开始把主界面上属于“人”的设置从 style/configuration 里继续剥离
+  3. 让 Share 更明确读取 `Profile + Default Style`，继续向真正的 share-first 靠拢
+
+## 2026-06-20 v1.0 产品模型基线已定义
+
+- 本轮目标：
+  - 不做大 UI 改造
+  - 先定义 PhotoMemo 的长期产品模型
+  - 把未来所有功能都收敛到 `Personal Profile -> Style -> Workflow`
+- 本轮新增文档：
+  - `Docs/ProductModel.md`
+- 本轮同步更新：
+  - `Docs/ProductDirection.md`
+  - `Docs/ProductBacklog.md`
+  - `Docs/CURRENT_STATUS.md`
+  - `README.md`
+- 本轮核心结论：
+  - Main App 不是日常处理面，而是工作流准备面
+  - Share Extension 不是技术交接面，而是未来主执行面
+  - `Personal Profile` 负责：
+    - relationship
+    - baby nickname
+    - birthday
+    - default album
+    - default style
+  - `Style` 负责：
+    - layout
+    - variables
+    - visual arrangement
+    - bottom-card composition
+    - renderer-facing behavior
+  - `Workflow` 负责：
+    - Apple Photos -> Share -> Generate -> Save
+    - 运行时处理状态
+    - 结果写回
+- 本轮对当前仓库边界的判断：
+  - `selectedTemplate` / `selectedBadge` / `configurationSlots` 已经接近 Style
+  - `selectedAlbumIdentifier` / `selectedAlbumTitle` 应迁到 Personal Profile
+  - 当前 `anchors` / `selectedAnchorID` 仍混合了身份信息与执行语义，后续应拆成：
+    - profile-owned birthday / memory dates
+    - style or workflow-owned reference choice
+  - Share Extension 后续应只读取：
+    - Personal Profile
+    - default Style
+- 本轮产品术语方向：
+  - `Configuration` -> `Style`
+  - `Configuration Slot` -> `Saved Style`
+  - `Anchor` -> `Birthday` / `Memory Date`
+  - 继续减少 `workspace / snapshot / batch` 这类实现词汇的外显
+- 推荐实现顺序：
+  1. 新增 `PersonalProfile` 数据模型
+  2. 从现有 settings 做兼容性回填
+  3. 上一次性 First Run
+  4. 主界面 IA 收口到：
+     - Personal Profile
+     - Styles
+     - Settings
+     - About
+  5. Share 默认直接执行 `Profile + Style -> Generate -> Save`
+- 兼容性结论：
+  - 本轮不需要破坏现有 `UserDefaults`
+  - 不需要迁移 renderer / export / metadata pipeline
+  - 不需要更新 ADR，因为还没有进入已实现的架构边界调整
+- 本轮验证：
+  - 文档改动，无需构建
+- 下一轮最值得继续：
+  - 开始设计 `PersonalProfile` 的最小可落地数据结构
+  - 评估如何从当前 `SettingsService` 无损回填
+  - 再进入 First Run 的最小实现切片
+
+## 2026-06-20 首次权限窗与预览/补充信息收口
+
+- 本轮目标：
+  - 优化首次权限引导弹窗的视觉表现
+  - 继续收紧 iPhone 预览/编辑页里的低价值入口
+  - 恢复补充信息勾选逻辑
+  - 修正补充信息中文导出时的 EXIF `UserComment` 稳定性
+- 本轮主界面与 iPhone 变化：
+  - `MainPermissionSetupSheet` 改成更接近系统卡片式的居中权限引导，不再左右拉满
+  - iOS 预览导入区移除了 `从文件导入`，只保留系统照片选择
+  - 预览侧 `Live Context` 模块已移除，页面更紧凑
+  - 输出区改成更直接的 `保存至` + 相册选择表达，并补充：
+    - 未指定时默认保存到 `PhotoMemo` 相册
+  - 原先的 `写入位置 ...` 说明块已删除
+  - 编辑页移除了 `风格` 分组，继续把主界面收敛成配置中心
+  - 四个个性化区域输入高度继续压缩，和模块插入态更接近
+  - `补充信息` 恢复为：
+    - 勾选时输入自定义补充内容
+    - 不勾选时自动回退到右下区域最终生成内容
+  - 自定义补充输入框聚焦时会主动清掉其他编辑焦点，减少光标跳去别的窗口的问题
+- 本轮导出稳定性修正：
+  - `RecordCardBuildService` 已按最新产品语义保留：
+    - 自定义补充关闭时，导出说明回退到右下区域完整结果
+    - 自定义补充开启且有内容时，优先写入用户自定义内容
+  - `RecordCardExportService` 新增 JPEG EXIF `UserComment` 的 Unicode patch：
+    - 修正 `ImageIO` 直接写中文时出现截断/空字符异常的问题
+    - 现在 fixture 回归里的中文说明写入已经恢复稳定
+- 涉及文件：
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/PhotoImporterView.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+PreviewPanels.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+OutputSection.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+Permissions.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+LayoutSections.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+TemplatePanels.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerEditor.swift`
+  - `Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift`
+  - `Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift`
+  - `Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift`
+  - `Tests/PhotoMemoTests/ExportTests/FixtureExportReadbackTests.swift`
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 本轮仍未人工验证：
+  - 真机上首次权限弹窗的新视觉比例和手感
+  - iPhone 上补充信息勾选开关切换时，输入焦点是否已经完全稳定
+  - 真实保存到系统相册后，外部查看工具对中文 `UserComment` 的兼容表现
+  - 预览页新的 `保存至` 文案在 17 Pro Max 上的排版读感
+
+## 2026-06-20 相册入口去重与 Share 相册去向同步修正
+
+- 本轮目标：
+  - iPhone 主界面只保留预览页里的相册写入入口
+  - 修正 Share 确认页没有读取到最新目标相册的问题
+- 本轮修正：
+  - iPhone 紧凑布局下，`编辑` 页不再重复显示 `输出` 卡片
+  - 主 App 现在会把当前选中的相册标识和相册名称一起立即写入共享 `UserDefaults`
+  - Share 确认页的 `结果去向` 会优先显示真实相册名，例如 `存入“家庭相册”`
+  - 相册列表刷新后，也会把当前选中相册的最新标题重新同步回共享配置
+- 新增测试：
+  - `PhotoMemoShareWorkflowSummaryTests`
+    - 覆盖自定义相册名称展示与 generic fallback
+  - `SettingsServiceTests`
+    - 覆盖相册标识与相册名称的持久化
+- 涉及文件：
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+LayoutSections.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ModalAndLifecycle.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+WorkspaceConfigurationState.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+DerivedState.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ExportActions.swift`
+  - `Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift`
+  - `Source/PhotoMemo/PhotoMemo/App/BatchConfigurationSnapshotProvider.swift`
+  - `Source/PhotoMemo/PhotoMemo/App/SharedBatchConfigurationSnapshotService.swift`
+  - `Source/PhotoMemo/PhotoMemo/App/PhotoMemoShareWorkflowSummary.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift`
+  - `Tests/PhotoMemoTests/MetadataTests/SettingsServiceTests.swift`
+  - `Tests/PhotoMemoTests/VariableTests/PhotoMemoShareWorkflowSummaryTests.swift`
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+- 本轮仍未人工验证：
+  - 真机上重新选择目标相册后，立即从系统相册分享，确认页是否稳定显示最新相册名
+  - 真实分享链路里写回目标相册是否已完全消除之前那次报错
+
+## 2026-06-20 iPhone 全屏与时间点 sheet 修正
+
+- 本轮目标：
+  - 检查 iPhone 17 Pro Max 上主界面上下黑边
+  - 核对时间锚点界面的时间设定入口
+- 本轮修正：
+  - `PhotoMemoiOS` target 已补齐：
+    - `LaunchScreen`
+    - iPhone / iPad 支持方向键
+  - 已确认 `PhotoMemoiOS.app` 包内存在：
+    - `LaunchScreen.storyboardc`
+  - 时间点管理和时间点编辑 sheet 现在在 iPhone 上不再沿用 macOS 的固定最小尺寸
+  - 时间选择文案从 `锚点时间` 调整为更明确的 `设定时间`
+  - iPhone 上时间选择器改为更接近按钮入口的 compact 样式
+- 涉及文件：
+  - `Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj`
+  - `Source/PhotoMemo/PhotoMemo/iOS/App/LaunchScreen.storyboard`
+  - `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ModalAndLifecycle.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Anchor/AnchorListView.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Anchor/AnchorEditorView.swift`
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+  - `PhotoMemoTests` 通过
+- 本轮仍未完成：
+  - 还没有直接看到你真机 17 Pro Max 上修正后的实际画面
+  - 如果你重装后仍有黑边，就需要继续排查是否是设备安装态或系统兼容模式缓存问题
+
+## 2026-06-20 Alpha 0.8 产品减法切片已落地
+
+- 本轮目标：
+  - 不加新功能
+  - 不改架构
+  - 只做默认流程减法、术语收口和界面降噪
+- 本轮新增：
+  - `Docs/ProductScore.md`
+- 本轮主界面变化：
+  - 去掉了默认编辑流里的多张说明卡片：
+    - 个性化区域说明
+    - 补充信息说明
+    - 输出说明
+    - 智能模块说明
+  - Anchor 列表移除了重复的 `设为当前`
+  - Anchor 编辑页只保留核心输入，不再堆长段教学文字
+  - 权限区文案改成更短的“为什么需要权限”
+  - 默认主界面不再强调顶部 hero pills
+- 本轮术语收口：
+  - `配置工作区` -> `默认风格`
+  - `当前配置` -> `当前风格`
+  - 多处 `模板` 可见文案 -> `风格`
+  - 多处 `EXIF` 可见文案 -> `照片信息 / 拍摄时间`
+- iPhone / Share 变化：
+  - 后台状态页只保留：
+    - 当前处理
+    - 失败重试
+    - 最近失败
+  - Share 页与相关失败提示改成 `当前风格` 语言，不再强调技术配置感
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+  - `PhotoMemoTests` 通过
+- 本轮还没手动验证：
+  - 真机上主界面减掉说明卡后，第一次使用是否仍足够敢点
+  - 真机 share sheet 中 `当前风格` 的读感
+  - 精简后的后台状态页是否覆盖了最关键异常场景
+- 下一轮最值得继续：
+  - 继续沿 Share-first 主链推进
+  - 优先补单张预览 / 生成保存反馈闭环
+  - 继续把低频说明和管理动作从默认路径拿走
+
+## 2026-06-20 Product audit completed
+
+- 本轮目标：
+  - 不改代码
+  - 只做产品审查
+  - 回答每个可见页面里的 UI 元素是否真的有必要继续留在主流程里
+- 本轮新增：
+  - `Docs/ProductAudit.md`
+- 本轮同步更新：
+  - `Docs/ProductDirection.md`
+- 新写入的核心产品原则：
+  - `The best PhotoMemo experience is the one users barely notice.`
+  - `PhotoMemo 最好的体验，是用户几乎感觉不到它的存在。`
+- 这轮审查后的高确定性结论：
+  - 主 App 仍然有过多解释性 UI
+  - Share Extension 还应继续朝“几乎无感”的执行流收缩
+  - 帮助中心、重命名、Logo、自定义说明、后台状态等低频内容应继续下沉
+  - 时间点编辑页和后台状态页里仍有一批可以直接删减的说明与次级动作
+- 本轮验证：
+  - 文档改动，无需构建
+- 下一轮最适合承接：
+  - 按 `Docs/ProductAudit.md` 的高确定性结论，挑一个最小 UI 切片继续减法
+  - 优先从主界面解释性卡片、Anchor list 重复动作、Share 页过长说明做起
+
+## 2026-06-20 Alpha 0.7 Share Alpha-01 单页确认面已落地
+
+- 本轮目标：
+  - 只做 Share Alpha-01
+  - 解决“看得懂、敢点、知道结果”
+  - 不进入完整生成保存
+- 本轮核心变化：
+  - `PhotoMemoShareExtensionViewController` 不再一打开就自动继续
+  - 现在会先展示：
+    - 分享了几张图
+    - 当前配置名称
+    - 结果去向
+  - 主按钮改成明确确认动作：
+    - `按当前配置继续`
+  - 成功文案不再是“已加入收件箱”
+  - 失败态现在会给出更可执行的重试建议
+- 这轮刻意没做：
+  - 单张预览
+  - 生成 -> 保存闭环
+  - 批量 share
+  - 自动配置识别
+  - 多页面 wizard
+- 当前真实边界：
+  - 这还是 share -> intake -> app-side continue 的链路
+  - 只是入口产品表达已经从“技术交接面”变成“单页确认面”
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemoShareExtension` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemo` build 通过
+- 本轮文档同步：
+  - `Docs/Alpha/BugList.md`
+  - `Docs/Alpha/UXNotes.md`
+  - `Docs/CURRENT_STATUS.md`
+- 下一轮最值得继续：
+  - Share 单张预览
+  - 然后才进入单张图 happy path 的最短主链雏形
+  - 继续避免过早扩到批量/智能识别/复杂恢复
+
+## 2026-06-20 Alpha 0.7 zero-friction share baseline landed
+
+- 本轮目标：
+  - 先重设计 Share-first 主链
+  - 不直接做“大确认页”
+  - 让默认分享路径尽量零摩擦
+- 本轮新增：
+  - `Docs/ShareZeroFrictionWorkflow.md`
+  - `Source/PhotoMemo/PhotoMemo/App/PhotoMemoShareWorkflowSummary.swift`
+  - `Tests/PhotoMemoTests/VariableTests/PhotoMemoShareWorkflowSummaryTests.swift`
+- 产品层共识已进一步收口：
+  - 默认路径是：
+    - `Share -> PhotoMemo -> 使用当前配置 -> 继续处理 -> 写回系统相册`
+  - 配置属于主 App，不属于日常分享时刻
+  - 高级设置以后可以有，但不能打断默认路径
+- Share Extension 本轮已做的最小实现切片：
+  - 从“正在交给 PhotoMemo 处理”改成更接近自动处理入口的表达
+  - 被动展示：
+    - 当前配置
+    - 当前时间点
+    - 当前输出方式
+  - 成功文案不再只强调“进入收件箱”，而是强调：
+    - 已接收
+    - 会按当前配置继续处理
+- 这轮刻意没做：
+  - 预览页
+  - 配置切换
+  - 高级设置展开
+  - 真正的 extension 内生成并保存
+- 当前真实边界：
+  - 这还是 intake-backed 的分享主链，不是假装已经完成了全部处理
+  - 但产品表述和默认心智已经从“技术交接面”转向“自动处理入口”
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemoShareExtension` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemo` build 通过
+- 下一轮最值得继续：
+  - 真机检查 share sheet 的实际停留时长和读感
+  - 决定下一步是先做轻量预览，还是先增强完成反馈
+  - 继续坚持“高级设置不打断默认路径”
+
 ## 2026-06-20 Alpha 0.7 validation rhythm established
 
 - 本轮目标：

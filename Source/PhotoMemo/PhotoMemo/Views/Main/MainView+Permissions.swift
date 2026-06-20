@@ -27,7 +27,7 @@ struct MainPermissionSection: View {
                     icon: "photo.on.rectangle.angled",
                     state: photoLibraryState,
                     description:
-                        "用于读取你选择的照片，并把处理后的新图直接写回系统图库。",
+                        "用于读取照片，并把生成的新图写回系统图库。",
                     requestAction:
                         requestPhotoLibraryPermission,
                     openSettingsAction:
@@ -41,7 +41,7 @@ struct MainPermissionSection: View {
                     icon: "bell.badge",
                     state: notificationState,
                     description:
-                        "用于在后台处理开始、完成或失败时给你明确反馈。",
+                        "用于在后台处理完成或失败时提醒你。",
                     requestAction:
                         requestNotificationPermission,
                     openSettingsAction:
@@ -49,9 +49,7 @@ struct MainPermissionSection: View {
                 )
             }
 
-            Text(
-                "PhotoMemo 完全本地运行，不依赖联网；这里只会请求相册与通知两项必要能力。"
-            )
+            Text("PhotoMemo 只会请求完成这条流程所需的本地权限。")
             .font(.caption)
             .foregroundStyle(.secondary)
         }
@@ -145,7 +143,7 @@ struct MainPermissionSection: View {
             }
 
             if state == .denied {
-                Text("macOS 拒绝后不会再次自动弹出相册授权框，请到系统设置里重新开启 PhotoMemo 的相册权限。")
+                Text("如果已拒绝，请到系统设置里重新开启 PhotoMemo 的权限。")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -162,61 +160,85 @@ struct MainPermissionSetupSheet: View {
 
     var body: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 18
-        ) {
-
-            Text("启用本地权限")
-                .font(.system(
-                    size: 26,
-                    weight: .semibold
-                ))
-
-            Text("PhotoMemo 完全本地运行，不需要联网。为了读取照片 EXIF、把处理后的图片存回系统图库，以及在后台任务完成时提醒你，需要先允许相册和通知权限。")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            MinimalInsetCard {
-                permissionPrimerLine(
-                    icon: "photo.on.rectangle.angled",
-                    title: "系统相册",
-                    description:
-                        "用于读取你挑选的照片，并把处理结果写回图库或指定相册。"
-                )
-
-                Divider()
-
-                permissionPrimerLine(
-                    icon: "bell.badge",
-                    title: "系统通知",
-                    description:
-                        "用于在后台处理开始、完成或失败时提醒你。"
-                )
-            }
-
-            HStack(spacing: 10) {
-                Button("稍后再说") {
-                    dismiss()
-                }
-                .buttonStyle(.bordered)
-
-                Button("现在授权") {
-                    requestInitialPermissions()
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding(.top, 4)
-        }
-        .padding(24)
-        .frame(
-            minWidth: 460,
-            idealWidth: 520
-        )
-        .background(
+        ZStack {
             MinimalPalette.background
-        )
+                .ignoresSafeArea()
+
+            VStack {
+                VStack(
+                    alignment: .leading,
+                    spacing: 18
+                ) {
+
+                    Text("启用本地权限")
+                        .font(.system(
+                            size: 26,
+                            weight: .semibold
+                        ))
+
+                    Text("为了读取照片、保存结果和在处理完成时提醒你，PhotoMemo 需要相册与通知权限。")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    MinimalInsetCard {
+                        permissionPrimerLine(
+                            icon: "photo.on.rectangle.angled",
+                            title: "系统相册",
+                            description:
+                                "用于读取照片，并把处理结果写回图库。"
+                        )
+
+                        Divider()
+
+                        permissionPrimerLine(
+                            icon: "bell.badge",
+                            title: "系统通知",
+                            description:
+                                "用于在处理完成或失败时提醒你。"
+                        )
+                    }
+
+                    HStack(spacing: 10) {
+                        Button("稍后再说") {
+                            dismiss()
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button("现在授权") {
+                            requestInitialPermissions()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(24)
+                .frame(maxWidth: 420, alignment: .leading)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 28,
+                        style: .continuous
+                    )
+                    .fill(MinimalPalette.surface)
+                )
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: 28,
+                        style: .continuous
+                    )
+                    .stroke(
+                        MinimalPalette.border
+                    )
+                )
+                .shadow(
+                    color: .black.opacity(0.06),
+                    radius: 20,
+                    y: 8
+                )
+                .padding(.horizontal, 20)
+                .padding(.vertical, 24)
+            }
+        }
     }
 
     @ViewBuilder

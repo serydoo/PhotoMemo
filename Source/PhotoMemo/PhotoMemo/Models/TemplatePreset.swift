@@ -36,7 +36,7 @@ extension TemplatePreset {
         switch self {
 
         case .template1:
-            return "当前固定骨架：左上主题区、左下记录时间、右上参数摘要、右下默认展示“今天 + 年岁”。"
+            return "当前固定骨架：左上默认记录者 + 设备，左下拍摄时间，右上参数摘要，右下默认展示主角称呼 + 今天 + 年岁。"
 
         case .template2:
             return "已归并到当前模板 1 主流程。"

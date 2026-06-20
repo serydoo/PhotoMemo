@@ -72,8 +72,6 @@ extension MainView {
             Text("iPhone 上优先先看预览，再逐项校准内容。")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-
-            heroPanel
         }
     }
 
@@ -155,10 +153,6 @@ extension MainView {
             spacing: 20
         ) {
 
-            GroupBox("照片") {
-                photoSection
-            }
-
             if shouldShowPermissionSection {
                 GroupBox("本地权限") {
                     permissionSection
@@ -166,10 +160,6 @@ extension MainView {
             }
 
             workspaceConfigurationPanel
-
-            GroupBox("模板") {
-                templateSection
-            }
 
             GroupBox("时间锚点") {
                 anchorSection
@@ -185,10 +175,6 @@ extension MainView {
 
             GroupBox("Logo 标识") {
                 badgeSection
-            }
-
-            GroupBox("输出") {
-                outputSection
             }
         }
         .groupBoxStyle(
@@ -209,15 +195,9 @@ extension MainView {
                     weight: .semibold
                 ))
 
-            Text("本地 EXIF 卡片生成")
+            Text("本地照片记忆生成")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-
-            GroupBox("照片") {
-                photoSection
-            }
-
-            heroPanel
 
             if shouldShowPermissionSection {
                 GroupBox("本地权限") {
@@ -226,10 +206,6 @@ extension MainView {
             }
 
             workspaceConfigurationPanel
-
-            GroupBox("模板") {
-                templateSection
-            }
 
             GroupBox("时间锚点") {
                 anchorSection
@@ -321,13 +297,6 @@ extension MainView {
             spacing: 18
         ) {
 
-            MainDismissibleGuideCard(
-                storageKey:
-                    "photomemo.guide.composer.dismissed",
-                title: "个性化区域说明",
-                message: "先点选左上、右上、左下或右下任意一个区域，再直接输入短语；如果想补右上常用内容，优先用下方识别数据里的参数摘要、型号、镜头和完整时间。熟悉后可以关闭这条提示，完整说明会继续保留在右侧操作指南里。"
-            )
-
             variableLibraryPanel(
                 title: "识别数据",
                 variables: TemplateVariableLibrary.recognized
@@ -364,7 +333,10 @@ extension MainView {
             photoDescriptionOverride:
                 $settings.photoDescriptionOverride,
             defaultPhotoDescriptionHint:
-                defaultPhotoDescriptionHint
+                defaultPhotoDescriptionHint,
+            onBeginCustomDescriptionEditing: {
+                editorSession.focusedField = nil
+            }
         )
     }
 
@@ -405,7 +377,7 @@ extension MainView {
         HStack(spacing: 10) {
 
             MainStatusPillView(
-                title: "模板",
+                title: "风格",
                 value: resolvedTemplateDisplayName
             )
 
@@ -460,6 +432,13 @@ extension MainView {
             requestInitialPermissions:
                 requestInitialPermissionsAction
         )
+#if os(iOS)
+        .presentationDetents([
+            .medium,
+            .large
+        ])
+        .presentationDragIndicator(.visible)
+#endif
     }
 
     @ViewBuilder

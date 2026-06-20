@@ -27,10 +27,10 @@ fileprivate enum MainOperationGuideCategory:
             return "开始使用"
 
         case .workspace:
-            return "配置工作区"
+            return "默认风格"
 
         case .editing:
-            return "模板与内容"
+            return "风格与内容"
 
         case .smartModules:
             return "智能与时间点"
@@ -48,7 +48,7 @@ fileprivate enum MainOperationGuideCategory:
             return "先理解 PhotoMemo 的主界面分工和校准逻辑。"
 
         case .workspace:
-            return "管理三套本地配置，切换、重命名和保存当前方案。"
+            return "管理三套本地风格，切换、命名和保存当前方案。"
 
         case .editing:
             return "处理四个自定义区域，以及补充信息与模块插入。"
@@ -155,7 +155,7 @@ enum MainOperationGuideTopic:
             return "主界面总览"
 
         case .configurations:
-            return "三套配置槽位"
+            return "三个风格位"
 
         case .composer:
             return "四个自定义区域"
@@ -176,10 +176,10 @@ enum MainOperationGuideTopic:
         switch self {
 
         case .overview:
-            return "理解左侧编辑、右侧预览和底层真实渲染链路之间的关系。"
+            return "理解左侧编辑和右侧预览之间的关系。"
 
         case .configurations:
-            return "切换、保存和命名三套本地方案，让整套模板参数一起刷新。"
+            return "切换、保存和命名三套本地风格，让整套内容一起刷新。"
 
         case .composer:
             return "确保插入内容始终进入明确选中的区域，不走隐式兜底。"
@@ -188,7 +188,7 @@ enum MainOperationGuideTopic:
             return "管理补充信息输入框，以及图片说明回退逻辑。"
 
         case .smartModules:
-            return "把 EXIF 拍摄时间和锚点时间转换成可组合的时间结果。"
+            return "把照片拍摄时间和时间点转换成可组合的时间结果。"
 
         case .output:
             return "确认保存去向，并理解 PhotoMemo 的本地写回策略。"
@@ -224,13 +224,13 @@ enum MainOperationGuideTopic:
         switch self {
 
         case .overview:
-            return "PhotoMemo 的主界面不是批量工作台，而是单张照片的模板校准中心。左侧负责模板、时间点、自定义区域和输出规则，右侧负责实时预览、配置切换和帮助入口。所有调整都应继续绑定真实的导入、渲染、导出链路。"
+            return "PhotoMemo 的主界面不是批量工作台，而是单张照片的校准中心。左侧负责风格、时间点、自定义区域和输出规则，右侧负责实时预览、风格切换和帮助入口。"
 
         case .configurations:
-            return "三套配置槽位一次只生效一套。切换配置时，模板、Logo 标识、时间点、补充信息和相册去向会一起刷新；保存时会把当前编辑状态整体写回当前高亮的槽位。"
+            return "三个风格位一次只会使用一个。切换时，Logo 标识、时间点、补充信息和相册去向会一起刷新；保存时会把当前编辑状态整体写回当前高亮的风格位。"
 
         case .composer:
-            return "四个自定义区域是 PhotoMemo 最核心的组合层。无论输入自定义文字还是插入 EXIF、智能模块，都必须先明确选中区域，再按光标位置组合内容。"
+            return "四个自定义区域是 PhotoMemo 最核心的组合层。无论输入自定义文字还是插入照片信息、智能模块，都必须先明确选中区域，再按光标位置组合内容。"
 
         case .supplementalContent:
             return "补充信息区现在只保留一条自定义输入框。填写后会优先写入这段内容；留空时会自动回退到右下区域最终生成的完整内容。"
@@ -252,17 +252,17 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "界面分工",
                     items: [
-                        "左侧负责模板、时间点、Logo 标识、补充信息、自定义区域和输出规则的编辑。",
-                        "右侧负责实时预览、三套配置切换和帮助中心入口，用来对照校准结果。",
+                        "左侧负责风格、时间点、Logo 标识、补充信息、自定义区域和输出规则的编辑。",
+                        "右侧负责实时预览、三个风格位切换和帮助中心入口，用来对照结果。",
                         "主界面只保留一张校准照片，避免把界面做成批量工作台。"
                     ]
                 ),
                 MainOperationGuideSection(
                     title: "建议顺序",
                     items: [
-                        "模板区固定沿用当前的模板 1 骨架，再设置时间点，然后导入一张真实照片做校准。",
-                        "确认右下智能结果和 EXIF 信息正常后，再补说明和输出相册。",
-                        "最后把满意的一套方案保存到某个配置槽位，给后续外部导入和后台处理复用。"
+                        "先确定当前风格和时间点，再导入一张真实照片做校准。",
+                        "确认右下智能结果和照片信息正常后，再补说明和输出相册。",
+                        "最后把满意的一套方案保存到某个风格位，给后续外部导入和后台处理复用。"
                     ]
                 )
             ]
@@ -270,19 +270,19 @@ enum MainOperationGuideTopic:
         case .configurations:
             return [
                 MainOperationGuideSection(
-                    title: "配置切换规则",
+                    title: "风格切换规则",
                     items: [
-                        "顶部三张配置卡片对应三套本地方案，始终只有一套高亮生效。",
+                        "顶部三张风格卡片对应三套本地方案，始终只有一套高亮生效。",
                         "切换后左侧字段和右侧预览会同步刷新，方便你直接对照差异。",
-                        "未单独保存过的槽位会先使用同一套模板 1 默认骨架，避免不同样式混入当前主流程。"
+                        "未单独保存过的风格位会先使用默认风格内容，避免不同样式混入当前主流程。"
                     ]
                 ),
                 MainOperationGuideSection(
                     title: "命名与保存",
                     items: [
-                        "“重命名当前配置”只会修改槽位名称，帮助你用“宝宝成长”“旅行纪念”等方式管理方案，不会改模板名称。",
-                        "“保存到当前配置”会把当前模板 1 校准结果、时间点、Logo 标识、补充信息和相册去向整体写回当前槽位。",
-                        "“恢复当前默认”只会清空该槽位保存的配置快照，槽位名称仍可保留。"
+                        "“重命名当前风格”只会修改风格位名称，帮助你用“宝宝成长”“旅行纪念”等方式管理方案，不会改风格内容。",
+                        "“保存到当前风格”会把当前校准结果、时间点、Logo 标识、补充信息和相册去向整体写回当前风格位。",
+                        "“恢复当前默认”只会清空该风格位保存的内容，名称仍可保留。"
                     ]
                 )
             ]
@@ -292,7 +292,7 @@ enum MainOperationGuideTopic:
                 MainOperationGuideSection(
                     title: "插入原则",
                     items: [
-                        "先选中左上、右上、左下或右下某个区域，再插入 EXIF、智能模块或自定义文字。",
+                        "先选中左上、右上、左下或右下某个区域，再插入照片信息、智能模块或自定义文字。",
                         "系统不会再偷偷把内容插到右下区域，所有插入都以当前明确选中的区域为准。",
                         "选中区域后可以直接输入文字；点击上方模块按钮时，模块会按当前光标位置插入。",
                         "识别数据里的“参数摘要”可以随时再次插回右上或任意自定义区域，不需要依赖默认模板内容保留。"
@@ -304,7 +304,7 @@ enum MainOperationGuideTopic:
                         "每个区域都可以独立编辑，适合把标题、拍摄参数、时间表达和记忆句子自由混排。",
                         "模块插入后会显示成人类可读的标签文本，方便你继续在前后补自定义短语。",
                         "如果想删除某个模块或一段文字，直接把光标放到附近，用正常文本编辑方式处理即可。",
-                        "切换配置槽位、保存当前配置或恢复模板默认字段后，编辑态会同步刷新，避免旧状态残留。"
+                        "切换风格位、保存当前风格或恢复默认内容后，编辑态会同步刷新，避免旧状态残留。"
                     ]
                 )
             ]
@@ -327,7 +327,7 @@ enum MainOperationGuideTopic:
                     title: "时间点作用",
                     items: [
                         "时间点决定系统是在算年岁、纪念时长、已过多久，还是未来倒计时。",
-                        "照片导入后会自动用 EXIF 拍摄时间参与计算，因此导入真实照片比空状态更接近最终效果。",
+                        "照片导入后会自动用拍摄时间参与计算，因此导入真实照片比空状态更接近最终效果。",
                         "当用户未满 1 岁时，年龄结果不会再显示“0岁8个月”这类不自然写法。"
                     ]
                 ),
@@ -348,15 +348,15 @@ enum MainOperationGuideTopic:
                     items: [
                         "输出区只保留一个目标相册选择入口，处理完成后会把新图直接写回你选中的系统相册。",
                         "如果不手动指定现有相册，系统会自动创建或复用 PhotoMemo 相册。",
-                        "PhotoMemo 的目标是继续复刻原图 EXIF、拍摄时间与可保留元数据，同时生成一张新的成品图。"
+                        "PhotoMemo 的目标是在生成一张新图的同时，尽量保留原图拍摄时间与可保留信息。"
                     ]
                 ),
                 MainOperationGuideSection(
                     title: "使用建议",
                     items: [
-                        "保存前先确认当前配置、时间点和右侧预览已经是最终结果。",
+                        "保存前先确认当前风格、时间点和右侧预览已经是最终结果。",
                         "PhotoMemo 会生成一张新图，而不是修改原图，所以原照片仍会留在系统图库里。",
-                        "如果之后你还想换输出去向，直接切换当前配置槽位或重新选择目标相册即可。"
+                        "如果之后你还想换输出去向，直接切换当前风格位或重新选择目标相册即可。"
                     ]
                 )
             ]
@@ -532,10 +532,10 @@ struct MainWorkspaceConfigurationPanelView: View {
                 spacing: 4
             ) {
 
-                Text("配置工作区")
+                Text("默认风格")
                     .font(.headline)
 
-                Text("点选任意模块后，整套本地配置会立刻生效并刷新预览。")
+                Text("点选任意风格后，当前内容会立刻生效并刷新预览。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(
@@ -705,13 +705,13 @@ private struct MainWorkspaceConfigurationSlotButton: View {
 
         if isActive {
             return slot.isCustomized
-                ? "当前生效配置"
-                : "当前使用\(slot.defaultPreset.displayName)默认骨架"
+                ? "当前使用中"
+                : "当前使用默认风格"
         }
 
         return slot.isCustomized
-            ? "切换到这套已保存配置"
-            : "未保存时使用\(slot.defaultPreset.displayName)默认骨架"
+            ? "切换到这套已保存风格"
+            : "未保存时使用默认风格"
     }
 }
 
@@ -737,7 +737,7 @@ struct MainWorkspaceConfigurationRenameSheetView:
                 spacing: 16
             ) {
 
-                Text("为当前配置槽位设置一个更好记的名称，方便区分成长记录、旅行纪念或节日模板等不同方案。")
+                Text("为当前风格位设置一个更好记的名称，方便区分成长记录、旅行纪念或节日方案。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(
@@ -765,7 +765,7 @@ struct MainWorkspaceConfigurationRenameSheetView:
                 )
                 .textFieldStyle(.roundedBorder)
 
-                Text("留空后保存，会恢复成默认名称 \(slotReferenceTitle)。这里只改配置槽位名称，不会修改模板名称。")
+                Text("留空后保存，会恢复成默认名称 \(slotReferenceTitle)。这里只改风格位名称。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(
@@ -776,7 +776,7 @@ struct MainWorkspaceConfigurationRenameSheetView:
                 Spacer(minLength: 0)
             }
             .padding(24)
-            .navigationTitle("重命名配置")
+            .navigationTitle("重命名风格")
             .toolbar {
                 ToolbarItem(
                     placement: .cancellationAction

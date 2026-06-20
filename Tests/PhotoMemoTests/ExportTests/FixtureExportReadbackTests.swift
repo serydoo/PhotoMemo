@@ -252,6 +252,8 @@ struct FixtureExportReadbackTests {
             exportedProperties[
                 kCGImagePropertyIPTCDictionary
             ] as? [CFString: Any] ?? [:]
+        let expectedExportDescription =
+            card.exportDescriptionOverride ?? ""
 
         #expect(readback.captureDate == nil)
         #expect(readback.captureTimezoneOffsetSeconds == nil)
@@ -264,22 +266,46 @@ struct FixtureExportReadbackTests {
         #expect(
             stringValue(
                 exif["UserComment" as CFString]
-            ) == nil
+            ) != "Should stay absent"
         )
         #expect(
             stringValue(
                 tiff[
                     kCGImagePropertyTIFFImageDescription
                 ]
-            ) == nil
+            ) != "Should stay absent"
         )
         #expect(
             stringValue(
                 iptc[
                     kCGImagePropertyIPTCCaptionAbstract
                 ]
-            ) == nil
+            ) != "Should stay absent"
         )
+
+        if expectedExportDescription.isEmpty {
+            return
+        } else {
+            #expect(
+                stringValue(
+                    exif["UserComment" as CFString]
+                ) == expectedExportDescription
+            )
+            #expect(
+                stringValue(
+                    tiff[
+                        kCGImagePropertyTIFFImageDescription
+                    ]
+                ) == expectedExportDescription
+            )
+            #expect(
+                stringValue(
+                    iptc[
+                        kCGImagePropertyIPTCCaptionAbstract
+                    ]
+                ) == expectedExportDescription
+            )
+        }
     }
 
     @MainActor

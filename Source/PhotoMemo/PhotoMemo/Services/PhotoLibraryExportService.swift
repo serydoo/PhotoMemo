@@ -177,7 +177,8 @@ final class PhotoLibraryExportService {
             placeholderIdentifier =
                 placeholder.localIdentifier
 
-            if let albumChangeRequest =
+            if let album,
+               let albumChangeRequest =
                 PHAssetCollectionChangeRequest(
                     for: album
                 ) {
@@ -194,8 +195,8 @@ final class PhotoLibraryExportService {
 
         return PhotoLibrarySaveResult(
             albumTitle:
-                album.localizedTitle
-                ?? defaultAlbumTitle,
+                album?.localizedTitle
+                ?? "",
             assetLocalIdentifier:
                 placeholderIdentifier ?? ""
         )
@@ -265,12 +266,24 @@ private extension PhotoLibraryExportService {
 
     func resolvedAlbum(
         _ localIdentifier: String?
-    ) async throws -> PHAssetCollection {
+    ) async throws -> PHAssetCollection? {
 
-        if let localIdentifier,
+        let normalizedIdentifier =
+            PhotoMemoAlbumSelection
+            .normalizedIdentifier(
+                localIdentifier ?? ""
+            )
+
+        if normalizedIdentifier
+            == PhotoMemoAlbumSelection
+            .systemLibraryIdentifier {
+            return nil
+        }
+
+        if !normalizedIdentifier.isEmpty,
            let existingAlbum =
             fetchAlbum(
-                with: localIdentifier
+                with: normalizedIdentifier
             ) {
 
             return existingAlbum

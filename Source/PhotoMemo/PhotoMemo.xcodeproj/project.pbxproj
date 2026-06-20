@@ -63,6 +63,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F4A1B2443A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemo" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"iOS/App/LaunchScreen.storyboard",
+			);
+			target = B3DBA4F32FE1581100945016 /* PhotoMemo */;
+		};
 		F4A1B2113A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemoShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -117,6 +124,7 @@
 				"Views/Template/TemplateEditorView.swift",
 				"Views/Template/TemplateVariablePickerView.swift",
 				"iOS/App/PhotoMemoiOSApp.swift",
+				"iOS/App/LaunchScreen.storyboard",
 				"iOS/Views/PhotoMemoiOSHomeView.swift",
 				"Models/AnchorResult.swift",
 				"Models/CardTextBlock.swift",
@@ -155,6 +163,7 @@
 		B3DBA4F62FE1581100945016 /* PhotoMemo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				F4A1B2443A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemo" target */,
 				F4A1B2113A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemoShareExtension" target */,
 			);
 			path = PhotoMemo;
@@ -694,10 +703,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -729,10 +741,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

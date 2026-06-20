@@ -91,6 +91,9 @@ extension MainView {
 
             if selectedAlbumIdentifier
                 != PhotoAlbumOption.automaticIdentifier,
+               selectedAlbumIdentifier
+                != PhotoMemoAlbumSelection
+                .systemLibraryIdentifier,
                !availableAlbums.contains(
                 where: {
                     $0.id == selectedAlbumIdentifier
@@ -101,6 +104,18 @@ extension MainView {
                     PhotoAlbumOption
                     .automaticIdentifier
             }
+
+            persistEditorDraftState(
+                selectedAlbumIdentifier:
+                    settings.normalizedAlbumIdentifier(
+                        selectedAlbumIdentifier
+                    ),
+                selectedAlbumTitle:
+                    resolvedAlbumTitle(
+                        for: selectedAlbumIdentifier
+                    ) ?? "",
+                immediately: true
+            )
 
         } catch {
 
@@ -168,11 +183,24 @@ extension MainView {
             presentAlert(
                 title: "已存入系统相册",
                 message:
-                    "图片已经写入系统图库“\(albumName)”中，拍摄时间与原图元数据会尽量保持一致。"
+                    albumName
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                    .isEmpty
+                    ? "图片已经写入系统图库，拍摄时间与原图元数据会尽量保持一致。"
+                    : "图片已经写入系统图库“\(albumName)”中，拍摄时间与原图元数据会尽量保持一致。"
             )
 
             presentSaveFeedback(
-                title: "已存入“\(albumName)”",
+                title:
+                    albumName
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                    .isEmpty
+                    ? "已写入系统图库"
+                    : "已存入“\(albumName)”",
                 message: "新图已经写回系统图库，预览正确的话可以继续处理下一张。"
             )
 

@@ -198,6 +198,9 @@ final class SettingsService: ObservableObject {
         static let selectedAlbumIdentifier =
             "photomemo.selectedAlbumIdentifier"
 
+        static let selectedAlbumTitle =
+            "photomemo.selectedAlbumTitle"
+
         static let activeConfigurationSlotID =
             "photomemo.activeConfigurationSlotID"
 
@@ -219,6 +222,8 @@ final class SettingsService: ObservableObject {
 
     @Published var selectedAlbumIdentifier = ""
 
+    @Published var selectedAlbumTitle = ""
+
     @Published
     var activeConfigurationSlotID:
         WorkspaceConfigurationSlotID = .slot1
@@ -233,6 +238,37 @@ final class SettingsService: ObservableObject {
         self.defaults =
             PhotoMemoSharedContainer
             .sharedUserDefaults
+        self.snapshotProvider =
+            BatchConfigurationSnapshotProvider(
+                defaults: self.defaults
+            )
+
+        loadConfigurationSlots()
+
+        loadAnchors()
+
+        loadTemplate()
+
+        loadBadge()
+
+        loadPhotoDescriptionSettings()
+
+        loadEditorState()
+
+        if selectedTemplate == nil {
+            selectedTemplate = .template1
+        }
+
+        if selectedBadge == nil {
+            selectedBadge = Badge.none
+        }
+    }
+
+    init(
+        defaults: UserDefaults
+    ) {
+
+        self.defaults = defaults
         self.snapshotProvider =
             BatchConfigurationSnapshotProvider(
                 defaults: self.defaults
@@ -368,7 +404,8 @@ final class SettingsService: ObservableObject {
 
     func saveEditorState(
         selectedAnchorID: UUID? = nil,
-        selectedAlbumIdentifier: String? = nil
+        selectedAlbumIdentifier: String? = nil,
+        selectedAlbumTitle: String? = nil
     ) {
 
         if let selectedAnchorID {
@@ -381,6 +418,11 @@ final class SettingsService: ObservableObject {
                 selectedAlbumIdentifier
         }
 
+        if let selectedAlbumTitle {
+            self.selectedAlbumTitle =
+                selectedAlbumTitle
+        }
+
         defaults.set(
             selectedAnchorIDString,
             forKey: Keys.selectedAnchorID
@@ -389,6 +431,11 @@ final class SettingsService: ObservableObject {
         defaults.set(
             self.selectedAlbumIdentifier,
             forKey: Keys.selectedAlbumIdentifier
+        )
+
+        defaults.set(
+            self.selectedAlbumTitle,
+            forKey: Keys.selectedAlbumTitle
         )
     }
 
@@ -467,7 +514,8 @@ final class SettingsService: ObservableObject {
 
     func scheduleEditorStateSave(
         selectedAnchorID: UUID? = nil,
-        selectedAlbumIdentifier: String? = nil
+        selectedAlbumIdentifier: String? = nil,
+        selectedAlbumTitle: String? = nil
     ) {
 
         if let selectedAnchorID {
@@ -478,6 +526,11 @@ final class SettingsService: ObservableObject {
         if let selectedAlbumIdentifier {
             self.selectedAlbumIdentifier =
                 selectedAlbumIdentifier
+        }
+
+        if let selectedAlbumTitle {
+            self.selectedAlbumTitle =
+                selectedAlbumTitle
         }
 
         editorStateSaveTask?.cancel()
@@ -587,6 +640,11 @@ final class SettingsService: ObservableObject {
         selectedAlbumIdentifier =
             defaults.string(
                 forKey: Keys.selectedAlbumIdentifier
+            ) ?? ""
+
+        selectedAlbumTitle =
+            defaults.string(
+                forKey: Keys.selectedAlbumTitle
             ) ?? ""
     }
 

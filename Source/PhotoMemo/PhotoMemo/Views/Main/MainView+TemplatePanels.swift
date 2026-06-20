@@ -18,17 +18,10 @@ struct MainTemplateSectionView: View {
         ) {
 
             MinimalInsetCard {
-                LabeledContent("当前名称") {
+                LabeledContent("当前风格") {
                     Text(resolvedTemplateDisplayName)
                         .font(.subheadline.weight(.medium))
                 }
-
-                Divider()
-
-                Text("当前固定使用模板 1 的结构骨架，你只需要继续编辑下方个性化区域，不需要再处理多套模板类型。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
 
                 Divider()
 
@@ -39,13 +32,13 @@ struct MainTemplateSectionView: View {
             }
 
             HStack(spacing: 10) {
-                Button("修改名称") {
+                Button("修改风格名") {
                     onPresentTemplateRename()
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
 
-                Button("恢复模板默认字段") {
+                Button("恢复默认内容") {
                     onResetTemplateDefaults()
                 }
                 .buttonStyle(.bordered)
@@ -69,6 +62,11 @@ struct MainCustomContentSectionView: View {
 
     let defaultPhotoDescriptionHint: String
 
+    let onBeginCustomDescriptionEditing: () -> Void
+
+    @FocusState
+    private var isCustomDescriptionFocused: Bool
+
     var body: some View {
 
         VStack(
@@ -76,28 +74,43 @@ struct MainCustomContentSectionView: View {
             spacing: 12
         ) {
 
-            MainDismissibleGuideCard(
-                storageKey:
-                    "photomemo.guide.supplementalContent.dismissed",
-                title: "补充信息说明",
-                message: "这里现在只保留一条补充说明输入框。填写后会优先写入这段内容；留空时会回退到右下区域最终结果。更完整的说明已经放进右侧操作指南里，熟悉后可以直接关闭这条提示。"
-            )
-
             MinimalInsetCard {
+                Toggle(
+                    "使用自定义补充信息",
+                    isOn: $shouldWritePhotoDescription
+                )
+                .font(.subheadline.weight(.medium))
+                .onChange(
+                    of: shouldWritePhotoDescription
+                ) { _, isEnabled in
+                    if isEnabled {
+                        onBeginCustomDescriptionEditing()
+                        isCustomDescriptionFocused = true
+                    } else {
+                        isCustomDescriptionFocused = false
+                    }
+                }
+
                 TextField(
                     "例如：这是这张图想额外补进去的说明",
                     text: $photoDescriptionOverride,
                     axis: .vertical
                 )
-                .lineLimit(3...5)
+                .lineLimit(2...4)
                 .textFieldStyle(.roundedBorder)
+                .disabled(!shouldWritePhotoDescription)
+                .focused($isCustomDescriptionFocused)
+                .opacity(
+                    shouldWritePhotoDescription
+                    ? 1
+                    : 0.56
+                )
                 .onChange(
-                    of: photoDescriptionOverride
-                ) { _, newValue in
-                    shouldWritePhotoDescription =
-                        !newValue.trimmingCharacters(
-                            in: .whitespacesAndNewlines
-                        ).isEmpty
+                    of: isCustomDescriptionFocused
+                ) { _, isFocused in
+                    if isFocused {
+                        onBeginCustomDescriptionEditing()
+                    }
                 }
 
                 VStack(
@@ -105,7 +118,7 @@ struct MainCustomContentSectionView: View {
                     spacing: 4
                 ) {
 
-                    Text("图片说明写入预览")
+                    Text("当前写入结果")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
 
@@ -131,14 +144,14 @@ struct MainCustomContentSectionView: View {
             )
 
         if !shouldWritePhotoDescription {
-            return "当前不会把补充说明写入导出图片的 metadata。"
+            return "当前会自动写入右下区域最终生成的完整内容。"
         }
 
         if !trimmedOverride.isEmpty {
             return "当前会写入这段说明：\(trimmedOverride)"
         }
 
-        return "当前留空时，会回退到右下区域最终内容。\(defaultPhotoDescriptionHint)"
+        return "已开启自定义补充信息；如果暂时留空，会先回退到右下区域当前结果。\(defaultPhotoDescriptionHint)"
     }
 }
 
@@ -232,7 +245,7 @@ struct MainTemplateRenameSheetView: View {
                 spacing: 16
             ) {
 
-                Text("为当前模板设置一个更贴近你使用场景的名字。")
+                Text("为当前风格设置一个更贴近使用场景的名字。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
@@ -261,7 +274,7 @@ struct MainTemplateRenameSheetView: View {
                 Spacer(minLength: 0)
             }
             .padding(20)
-            .navigationTitle("模板名称")
+            .navigationTitle("风格名称")
             .toolbar {
                 ToolbarItem(
                     placement: .cancellationAction

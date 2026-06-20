@@ -133,10 +133,17 @@ extension MainView {
                 settings.saveAnchors()
             }
         }
+#if os(iOS)
+        .presentationDetents([
+            .large
+        ])
+        .presentationDragIndicator(.visible)
+#else
         .frame(
             minWidth: 520,
             minHeight: 420
         )
+#endif
     }
 
     @ViewBuilder
@@ -220,7 +227,15 @@ extension MainView {
     ) {
 
         persistEditorDraftState(
-            selectedAlbumIdentifier: newValue
+            selectedAlbumIdentifier:
+                settings.normalizedAlbumIdentifier(
+                    newValue
+                ),
+            selectedAlbumTitle:
+                resolvedAlbumTitle(
+                    for: newValue
+                ) ?? "",
+            immediately: true
         )
         syncBatchQueueDefaultConfiguration()
     }

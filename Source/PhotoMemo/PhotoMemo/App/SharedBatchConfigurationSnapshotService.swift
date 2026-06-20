@@ -20,4 +20,13 @@ struct SharedBatchConfigurationSnapshotService {
 
         snapshotProvider.loadSnapshot()
     }
+
+    func resolvedAlbumTitle(
+        for identifier: String
+    ) -> String? {
+
+        snapshotProvider.resolvedAlbumTitle(
+            for: identifier
+        )
+    }
 }

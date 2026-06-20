@@ -41,6 +41,15 @@ struct PhotoImporterView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
 
+#if os(iOS)
+                Text("直接从系统照片中选一张做校准，后续分享和保存会更顺手。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
+#else
                 Button {
 
                     showImporter = true
@@ -63,6 +72,7 @@ struct PhotoImporterView: View {
                         horizontal: false,
                         vertical: true
                     )
+#endif
             }
 
             if let errorMessage {
@@ -72,6 +82,7 @@ struct PhotoImporterView: View {
                     .font(.caption)
             }
         }
+#if !os(iOS)
         .fileImporter(
             isPresented: $showImporter,
             allowedContentTypes:
@@ -81,6 +92,7 @@ struct PhotoImporterView: View {
 
             handle(result)
         }
+#endif
         .onChange(
             of: selectedPhotoItem
         ) { _, newValue in

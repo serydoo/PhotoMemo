@@ -33,7 +33,7 @@ enum MainFieldSlot: String, CaseIterable, Hashable {
         switch self {
 
         case .leftTop:
-            return "例如：他爹手持机型记录"
+            return "例如：他爹手持型号记录"
 
         case .rightTop:
             return "例如：35mm焦距 光圈 快门 ISO"
@@ -42,7 +42,7 @@ enum MainFieldSlot: String, CaseIterable, Hashable {
             return "例如：记录于完整时间"
 
         case .rightBottom:
-            return "例如：途途到今天 年岁 / 距离高考 倒计时"
+            return "例如：途途今天年岁啦"
         }
     }
 }

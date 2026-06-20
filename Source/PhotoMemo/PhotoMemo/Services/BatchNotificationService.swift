@@ -250,7 +250,7 @@ private extension BatchNotificationService {
             ) ?? ""
 
         let summary =
-            "已接收 \(job.totalTaskCount) 张照片，会按当前配置在后台自动处理。"
+            "已接收 \(job.totalTaskCount) 张照片，会按当前风格在后台自动处理。"
 
         let intakeWarningSummary =
             intakeWarningSummary(
@@ -265,7 +265,7 @@ private extension BatchNotificationService {
 
         if !templateName.isEmpty,
            !anchorName.isEmpty {
-            return "\(enrichedSummary) 模板：\(templateName)，时间点：\(anchorName)。"
+            return "\(enrichedSummary) 风格：\(templateName)，时间点：\(anchorName)。"
         }
 
         if !templateName.isEmpty {

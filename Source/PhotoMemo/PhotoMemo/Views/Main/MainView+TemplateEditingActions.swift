@@ -58,7 +58,7 @@ extension MainView {
         case .leftTop:
             update(
                 &template.leftTopArea.items,
-                fallback: .title,
+                fallback: .relationshipDeviceLine,
                 value: value
             )
 
@@ -79,7 +79,7 @@ extension MainView {
         case .rightBottom:
             update(
                 &template.rightBottomArea.items,
-                fallback: .anchorSmartText,
+                fallback: .babyTodayAgeSentence,
                 value: value
             )
         }
@@ -157,7 +157,7 @@ extension MainView {
         guard let slot = currentEditingSlot else {
             presentAlert(
                 title: "请先选择自定义区域",
-                message: "先点左上、右上、左下或右下任意一个区域，再插入 EXIF、智能数据或自定义文字。"
+                message: "先点左上、右上、左下或右下任意一个区域，再插入照片信息、智能数据或自定义文字。"
             )
             return
         }
