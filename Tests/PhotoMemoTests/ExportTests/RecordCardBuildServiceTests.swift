@@ -286,4 +286,30 @@ struct RecordCardBuildServiceTests {
             == "PhotoMemoNamingFixture (1).jpg"
         )
     }
+
+    @MainActor
+    @Test("Uses exported file name as the photo-library original filename")
+    func usesExportedFileNameAsPhotoLibraryOriginalFilename() {
+
+        let service =
+            PhotoLibraryExportService()
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/IMG_1234.jpg")
+            ) == "IMG_1234.jpg"
+        )
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/IMG_1234 (1).jpg")
+            ) == "IMG_1234 (1).jpg"
+        )
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/ ")
+            ) == "PhotoMemo.jpg"
+        )
+    }
 }

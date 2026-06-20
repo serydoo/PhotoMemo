@@ -161,6 +161,10 @@ final class PhotoLibraryExportService {
                 PHAssetResourceCreationOptions()
 
             resourceOptions.shouldMoveFile = false
+            resourceOptions.originalFilename =
+                self.assetOriginalFilename(
+                    for: fileURL
+                )
 
             assetRequest.addResource(
                 with: .photo,
@@ -200,6 +204,23 @@ final class PhotoLibraryExportService {
             assetLocalIdentifier:
                 placeholderIdentifier ?? ""
         )
+    }
+
+    func assetOriginalFilename(
+        for fileURL: URL
+    ) -> String {
+
+        let fileName =
+            fileURL.lastPathComponent
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !fileName.isEmpty else {
+            return "PhotoMemo.jpg"
+        }
+
+        return fileName
     }
 
     func readMetadata(

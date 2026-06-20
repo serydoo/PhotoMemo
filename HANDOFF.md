@@ -1,5 +1,50 @@
 # PhotoMemo Handoff
 
+## 2026-06-21 Photo Library 原名回写修复、白栏颜色与分隔线微调
+
+- 本轮确认并修复了一个真实的 Photo Library 命名问题：
+  - 本地导出文件名原本已经符合系统复制规则：
+    - `原文件名.jpg`
+    - `原文件名 (1).jpg`
+    - `原文件名 (2).jpg`
+  - 但写回系统相册后，资产原始文件名没有沿用导出文件名，导致测试结果出现：
+    - `Photo Library.JPG`
+    - `Photo Library 2.JPG`
+- 当前修复位置：
+  - `Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift`
+  - 在 `saveImageResult(...)` 里补充：
+    - `PHAssetResourceCreationOptions.originalFilename`
+  - 新增：
+    - `assetOriginalFilename(for:)`
+  - 当前逻辑：
+    - 默认使用导出文件的 `lastPathComponent`
+    - 自动保留 ` (1)` / ` (2)` 这种系统复制后缀
+    - 仅在文件名为空时回退到 `PhotoMemo.jpg`
+- 本轮测试补强：
+  - `Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift`
+  - 新增覆盖：
+    - `usesExportedFileNameAsPhotoLibraryOriginalFilename()`
+- 本轮渲染微调：
+  - `ClassicWhiteRenderer.swift`
+  - 继续按你提供的样图靠拢，只做小幅视觉回收：
+    - 白栏底色改成偏暖的 `#F4F4F2`
+    - 顶部主文字改深
+    - 参数与次级文字颜色重新贴近样图层次
+    - 分隔线改成更浅的显式灰色，并从 `1px` 提到 `2px`
+    - `badge -> divider -> right text` 间距再收一轮
+    - badge 与 divider 高度做了轻微缩短
+- 本轮验证：
+  - 定向测试通过：
+    - `PhotoMemoTests/RecordCardBuildServiceTests`
+  - 构建通过：
+    - `PhotoMemo`
+    - `PhotoMemoiOS`
+    - `PhotoMemoShareExtension`
+- 当前仍需人工核查：
+  1. 真机系统相册写回后，文件名是否已经稳定沿用原图名与复制后缀
+  2. 当前白栏暖灰底与分隔线粗细，是否已经更接近你提供的成品样图
+  3. 顶层文字与次级文字的层级是否还需要继续按样图做最后一轮微调
+
 ## 2026-06-21 导出命名规则确认、Immers 样图校准一轮、徽标资源补充
 
 - 本轮确认：

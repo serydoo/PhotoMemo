@@ -21,6 +21,49 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
 
+## 1.19 Photo Library original-filename preservation is now explicitly wired, and renderer calibration moved one step closer to the sample output
+
+这一轮继续遵守“小切片、先把真实链路修准”的方向，没有扩新能力，只修正真实导出回写行为并对样图视觉再靠近一步。
+
+本轮已落地：
+
+- Photo Library 写回命名补上了明确的原始文件名传递：
+  - `PhotoLibraryExportService.saveImageResult(...)` 现在会设置：
+    - `PHAssetResourceCreationOptions.originalFilename`
+  - 值直接来自当前导出文件名
+  - 这意味着如果导出结果已经是：
+    - `IMG_1234.jpg`
+    - `IMG_1234 (1).jpg`
+    - `IMG_1234 (2).jpg`
+    写回系统相册时也会尽量沿用同样的文件名语义
+- 新增了一个小而明确的回归保护：
+  - `usesExportedFileNameAsPhotoLibraryOriginalFilename()`
+  - 这条测试锁住了：
+    - 正常文件名
+    - 带复制后缀文件名
+    - 空白文件名回退
+- `ClassicWhiteRenderer` 又做了一轮只影响展示细节的轻微参数回收：
+  - 白栏背景改成更接近样图的暖灰白
+  - 主文字、参数文字、次级文字层次更清楚
+  - 分隔线颜色由透明黑改成显式浅灰
+  - 分隔线宽度从 `1` 调整到 `2`
+  - 中部徽标与右侧文案的几何节奏继续向样图贴近
+
+本轮验证：
+
+- 定向测试通过：
+  - `PhotoMemoTests/RecordCardBuildServiceTests`
+- 构建通过：
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+
+这一轮仍保留的人工验证债务：
+
+1. 需要真机再次验证写回系统相册后的真实命名是否已经不再退化成 `Photo Library.*`
+2. 白栏底色、分隔线粗细与中部几何关系仍要继续以你给的成品样图为准
+3. 这一轮没有继续动更大的排版结构，只做了安全的小幅视觉回收
+
 ## 1.18 Product convergence: Main App now matches the five-layer direction more closely, Share wording is quieter, and Profile/Style boundaries are tighter
 
 这一轮继续严格按 `North Star` 做减法，没有增加新功能，重点是把可见结构、用户语言和长期资料边界再往产品模型上收。
