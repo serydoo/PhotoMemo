@@ -21,6 +21,36 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
 
+## 1.7 Alpha 0.7 validation mode started
+
+PhotoMemo has now entered a real product-validation phase.
+
+This stage is intentionally different from the earlier architecture and feature-building rounds.
+
+The current priority is:
+
+- run the real product in normal life
+- find friction through repeated use
+- fix one issue at a time
+- keep `main` usable
+
+This round adds:
+
+- `Docs/Alpha/Alpha01.md`
+- `Docs/Alpha/BugList.md`
+- `Docs/Alpha/UXNotes.md`
+- `Docs/Alpha/KnownIssues.md`
+
+The current milestone language should now prefer:
+
+- `Alpha 0.7`
+
+over open-ended sprint naming for this validation stage.
+
+This round is documentation-only.
+
+No runtime implementation changed.
+
 ## 1.5 Product direction alignment documented
 
 PhotoMemo now has an explicit share-first product direction baseline in documentation.

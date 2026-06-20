@@ -1,5 +1,17 @@
 # Changelog
 
+## Alpha 0.7 - 2026-06-20
+
+### Added
+- Added `Docs/Alpha/Alpha01.md` to define the real-world validation rhythm for the current stage.
+- Added `Docs/Alpha/BugList.md`, `Docs/Alpha/UXNotes.md`, and `Docs/Alpha/KnownIssues.md` for lightweight product validation tracking.
+
+### Changed
+- Shifted repository-facing milestone wording for the current stage toward `Alpha 0.7` instead of continuing open-ended sprint naming.
+
+### Notes
+- This update is documentation-only and sets the operating model for the next round of real-device product validation.
+
 ## v0.7.4 - 2026-06-20
 
 ### Added

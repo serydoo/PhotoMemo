@@ -1,5 +1,39 @@
 # PhotoMemo Handoff
 
+## 2026-06-20 Alpha 0.7 validation rhythm established
+
+- 本轮目标：
+  - 不继续扩展功能
+  - 把 PhotoMemo 正式切到“真实产品验证”节奏
+- 本轮新增文档：
+  - `Docs/Alpha/Alpha01.md`
+  - `Docs/Alpha/BugList.md`
+  - `Docs/Alpha/UXNotes.md`
+  - `Docs/Alpha/KnownIssues.md`
+- 本轮统一后的开发模式：
+  - 发现一个体验问题
+  - 判断是不是产品问题
+  - 修一个小点
+  - Build
+  - 真机验证
+  - Commit
+- 当前建议的验证重点：
+  - Share Extension：宝宝照 / 风景 / 夜景 / HEIC / JPEG / Live Photo
+  - Main App：配置保存、配置切换、时间锚点、Memory、模板编辑
+  - Export：连续导出 20-50 张，观察文件名、EXIF、保存与相册显示
+- 当前明确暂停的方向：
+  - 大规模 UI 重构
+  - 新 Memory 功能
+  - 新 Renderer
+  - 新 Batch
+  - 新 Metadata
+- 版本语言：
+  - 当前阶段建议叫 `Alpha 0.7`
+  - 目标只有一句话：
+    - 每天都愿意用，而不是每天都在开发
+- 本轮验证：
+  - 文档改动，无代码构建需求
+
 ## 2026-06-20 v0.7.4 Product polishing docs established
 
 - 本轮目标：
