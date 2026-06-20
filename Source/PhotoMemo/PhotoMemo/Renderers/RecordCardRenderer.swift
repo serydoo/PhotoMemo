@@ -21,6 +21,10 @@ struct RecordCardRenderer: View {
         let alignment: HorizontalAlignment
 
         let textAlignment: TextAlignment
+
+        let frameAlignment: Alignment
+
+        let minimumScaleFactor: CGFloat
     }
 
     let image: Image
@@ -150,7 +154,7 @@ struct RecordCardRenderer: View {
         layout: ClassicWhiteRenderer.Layout
     ) -> some View {
 
-        pinnedBlockColumn(
+        leadingBlockColumn(
             topBlocks: leftTopBlocks,
             bottomBlocks: leftBottomBlocks,
             topStyle: BlockStyle(
@@ -164,8 +168,13 @@ struct RecordCardRenderer: View {
                 tracking: layout.titleTracking,
                 lineLimit: 2,
                 lineSpacing: height * 0.01,
-                alignment: .center,
-                textAlignment: .center
+                alignment: .leading,
+                textAlignment: .leading,
+                frameAlignment: .leading,
+                minimumScaleFactor:
+                    orientation == .portrait
+                    ? 0.58
+                    : 0.7
             ),
             bottomStyle: BlockStyle(
                 fontSize: max(
@@ -178,14 +187,19 @@ struct RecordCardRenderer: View {
                 tracking: layout.secondaryTracking,
                 lineLimit: 2,
                 lineSpacing: height * 0.008,
-                alignment: .center,
-                textAlignment: .center
+                alignment: .leading,
+                textAlignment: .leading,
+                frameAlignment: .leading,
+                minimumScaleFactor:
+                    orientation == .portrait
+                    ? 0.68
+                    : 0.7
             ),
             spacing: height * layout.groupSpacingRatio
         )
         .frame(
             width: width * layout.leftColumnWidthRatio,
-            alignment: .center
+            alignment: .leading
         )
     }
 
@@ -197,7 +211,7 @@ struct RecordCardRenderer: View {
 
         HStack(
             alignment: .center,
-            spacing: width * layout.trailingClusterSpacingRatio
+            spacing: 0
         ) {
 
             BadgeRenderer(
@@ -215,6 +229,14 @@ struct RecordCardRenderer: View {
                     width: ClassicWhiteRenderer.dividerWidth,
                     height: height * layout.dividerHeightRatio
                 )
+                .padding(
+                    .leading,
+                    width * layout.badgeToDividerSpacingRatio
+                )
+                .padding(
+                    .trailing,
+                    width * layout.dividerToContentSpacingRatio
+                )
 
             rightArea(
                 width: width,
@@ -230,7 +252,7 @@ struct RecordCardRenderer: View {
         layout: ClassicWhiteRenderer.Layout
     ) -> some View {
 
-        pinnedBlockColumn(
+        leadingBlockColumn(
             topBlocks: rightTopBlocks,
             bottomBlocks: rightBottomBlocks,
             topStyle: BlockStyle(
@@ -244,28 +266,38 @@ struct RecordCardRenderer: View {
                 tracking: layout.metadataTracking,
                 lineLimit: 2,
                 lineSpacing: height * 0.006,
-                alignment: .center,
-                textAlignment: .center
+                alignment: .leading,
+                textAlignment: .leading,
+                frameAlignment: .leading,
+                minimumScaleFactor:
+                    orientation == .portrait
+                    ? 0.68
+                    : 0.7
             ),
             bottomStyle: BlockStyle(
                 fontSize: max(
                     13,
                     height * layout.secondaryFontRatio
                 ),
-                weight: .medium,
+                weight: .regular,
                 design: .rounded,
                 color: ClassicWhiteRenderer.secondaryTextColor,
                 tracking: layout.secondaryTracking,
                 lineLimit: 2,
                 lineSpacing: height * 0.01,
-                alignment: .center,
-                textAlignment: .center
+                alignment: .leading,
+                textAlignment: .leading,
+                frameAlignment: .leading,
+                minimumScaleFactor:
+                    orientation == .portrait
+                    ? 0.68
+                    : 0.7
             ),
             spacing: height * layout.groupSpacingRatio
         )
         .frame(
             width: width * layout.rightColumnWidthRatio,
-            alignment: .center
+            alignment: .leading
         )
     }
 
@@ -327,7 +359,46 @@ struct RecordCardRenderer: View {
     }
 
     @ViewBuilder
-    private func pinnedBlockColumn(
+    private func leadingBlockColumn(
+        topBlocks: [CardTextBlock],
+        bottomBlocks: [CardTextBlock],
+        topStyle: BlockStyle,
+        bottomStyle: BlockStyle,
+        spacing: CGFloat
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 0
+        ) {
+
+            blockGroup(
+                topBlocks,
+                style: topStyle
+            )
+
+            Spacer(
+                minLength:
+                    topBlocks.isEmpty || bottomBlocks.isEmpty
+                    ? 0
+                    : spacing
+            )
+
+            blockGroup(
+                bottomBlocks,
+                style: bottomStyle
+            )
+        }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .leading
+        )
+    }
+
+    // Rollback anchor: this was the centered layout behavior used before
+    // the 2026-06-20 reference-photo typography adjustment.
+    private func legacyCenteredBlockColumn(
         topBlocks: [CardTextBlock],
         bottomBlocks: [CardTextBlock],
         topStyle: BlockStyle,
@@ -385,7 +456,10 @@ struct RecordCardRenderer: View {
                     )
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(
+                maxWidth: .infinity,
+                alignment: style.frameAlignment
+            )
         }
     }
 
@@ -408,8 +482,13 @@ struct RecordCardRenderer: View {
             .lineSpacing(style.lineSpacing)
             .foregroundStyle(style.color)
             .lineLimit(style.lineLimit)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(
+                style.minimumScaleFactor
+            )
             .multilineTextAlignment(style.textAlignment)
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(
+                maxWidth: .infinity,
+                alignment: style.frameAlignment
+            )
     }
 }

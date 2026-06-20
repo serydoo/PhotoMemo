@@ -659,12 +659,21 @@ extension MainView {
             )
 
             if let selectedBadge = settings.selectedBadge,
-               selectedBadge.type != .none,
-               let symbol = selectedBadge.systemSymbol {
+               selectedBadge.type != .none {
 
-                Image(systemName: symbol)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(MinimalPalette.accent)
+                if let imageName = selectedBadge.imageName {
+
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(8)
+
+                } else if let symbol = selectedBadge.systemSymbol {
+
+                    Image(systemName: symbol)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(MinimalPalette.accent)
+                }
 
             } else {
 

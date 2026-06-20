@@ -10,6 +10,34 @@ import Foundation
 
 struct BadgeLibrary {
 
+    static let love = Badge(
+        name: "喜爱",
+        type: .png,
+        imageName: "badge-love",
+        isSystemDefault: true
+    )
+
+    static let weddingBlessing = Badge(
+        name: "囍",
+        type: .png,
+        imageName: "badge-wedding",
+        isSystemDefault: true
+    )
+
+    static let birthBlessing = Badge(
+        name: "新生",
+        type: .png,
+        imageName: "badge-birth",
+        isSystemDefault: true
+    )
+
+    static let fuBlessing = Badge(
+        name: "福",
+        type: .png,
+        imageName: "badge-fu",
+        isSystemDefault: true
+    )
+
     static let wedding = Badge(
         name: "Wedding",
         type: .systemSymbol,
@@ -43,6 +71,10 @@ struct BadgeLibrary {
         [
             .none,
             .appleClassic,
+            love,
+            weddingBlessing,
+            birthBlessing,
+            fuBlessing,
             .family,
             .travel,
             .memory,

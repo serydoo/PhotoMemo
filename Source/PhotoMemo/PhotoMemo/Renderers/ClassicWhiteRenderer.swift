@@ -17,7 +17,9 @@ enum ClassicWhiteRenderer {
 
         let interItemSpacingRatio: CGFloat
 
-        let trailingClusterSpacingRatio: CGFloat
+        let badgeToDividerSpacingRatio: CGFloat
+
+        let dividerToContentSpacingRatio: CGFloat
 
         let leftColumnWidthRatio: CGFloat
 
@@ -88,42 +90,44 @@ enum ClassicWhiteRenderer {
         case .landscape:
 
             return Layout(
-                borderToImageHeightRatio: 1021 / 4536,
-                horizontalPaddingRatio: 0.031,
-                verticalPaddingRatio: 0.19,
-                interItemSpacingRatio: 0.024,
-                trailingClusterSpacingRatio: 0.017,
-                leftColumnWidthRatio: 0.39,
-                rightColumnWidthRatio: 0.33,
-                badgeSizeRatio: 0.43,
-                dividerHeightRatio: 0.48,
-                titleFontRatio: 0.235,
-                secondaryFontRatio: 0.148,
-                metadataFontRatio: 0.182,
-                groupSpacingRatio: 0.068,
-                titleTracking: -0.2,
-                metadataTracking: 0.35,
+                borderToImageHeightRatio: 557 / 5000,
+                horizontalPaddingRatio: 0.034,
+                verticalPaddingRatio: 0.13,
+                interItemSpacingRatio: 0.022,
+                badgeToDividerSpacingRatio: 0.008,
+                dividerToContentSpacingRatio: 0.018,
+                leftColumnWidthRatio: 0.40,
+                rightColumnWidthRatio: 0.32,
+                badgeSizeRatio: 0.31,
+                dividerHeightRatio: 0.45,
+                titleFontRatio: 0.165,
+                secondaryFontRatio: 0.078,
+                metadataFontRatio: 0.165,
+                groupSpacingRatio: 0.055,
+                titleTracking: -0.08,
+                metadataTracking: -0.04,
                 secondaryTracking: 0
             )
 
         case .portrait:
 
             return Layout(
-                borderToImageHeightRatio: 753 / 8064,
-                horizontalPaddingRatio: 0.04,
-                verticalPaddingRatio: 0.19,
-                interItemSpacingRatio: 0.031,
-                trailingClusterSpacingRatio: 0.021,
-                leftColumnWidthRatio: 0.35,
-                rightColumnWidthRatio: 0.42,
-                badgeSizeRatio: 0.46,
-                dividerHeightRatio: 0.5,
-                titleFontRatio: 0.24,
-                secondaryFontRatio: 0.15,
-                metadataFontRatio: 0.19,
-                groupSpacingRatio: 0.072,
-                titleTracking: -0.15,
-                metadataTracking: 0.28,
+                borderToImageHeightRatio: 235 / 8582,
+                horizontalPaddingRatio: 0.045,
+                verticalPaddingRatio: 0.135,
+                interItemSpacingRatio: 0.024,
+                badgeToDividerSpacingRatio: 0.008,
+                dividerToContentSpacingRatio: 0.018,
+                leftColumnWidthRatio: 0.44,
+                rightColumnWidthRatio: 0.38,
+                badgeSizeRatio: 0.36,
+                dividerHeightRatio: 0.50,
+                titleFontRatio: 0.14,
+                secondaryFontRatio: 0.072,
+                metadataFontRatio: 0.14,
+                groupSpacingRatio: 0.05,
+                titleTracking: 0,
+                metadataTracking: 0,
                 secondaryTracking: 0
             )
         }

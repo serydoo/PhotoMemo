@@ -440,7 +440,8 @@ private extension PhotoMemoShareExtensionIntakeService {
 
     struct FileRepresentationLoadResult {
 
-        let url: URL?
+        let importRecord:
+            ManagedImportRecord?
 
         let failureContext:
             PhotoMemoShareIntakeFailureContext?
@@ -502,60 +503,18 @@ private extension PhotoMemoShareExtensionIntakeService {
         )
 
         let fileLoadResult =
-            await loadFileURL(
+            await loadFileRepresentationResult(
                 from: provider,
+                requestID: requestID,
+                index: index,
                 diagnosticsSeed:
                     diagnosticsSeed
             )
 
-        if let fileURL =
-            fileLoadResult.url {
-            let copyResult =
-                intakeStore
-                .createManagedCopyDetailed(
-                    from: fileURL,
-                    requestID: requestID,
-                    index: index,
-                    diagnosticsSeed:
-                        diagnosticsSeed
-                )
-
-            PhotoMemoShareIntakeLog.notice(
-                "Provider[\(index)] temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
-            )
-
-            guard let managedURL =
-                copyResult.managedURL
-            else {
-                return .failed(
-                    copyResult.failureContext
-                    ?? diagnosticsSeed
-                    .failureContext(
-                        stage: .copy,
-                        operation:
-                            "createManagedCopy.missingManagedURL",
-                        returnedURL:
-                            fileURL,
-                        temporaryCopyResult:
-                            copyResult
-                            .temporaryCopyResult
-                            ?? "missing-managed-url",
-                        sharedContainerDestination:
-                            copyResult
-                            .sharedContainerDestination,
-                        error:
-                            PhotoMemoShareIntakeDiagnosticError
-                            .make(
-                                description:
-                                    "Share intake did not produce a managed copy URL.",
-                                code: 1005
-                            )
-                    )
-                )
-            }
-
+        if let importRecord =
+            fileLoadResult.importRecord {
             let sourceKey =
-                fileURL.standardizedFileURL.path
+                importRecord.dedupeKey
 
             guard
                 seenSourceKeys.insert(sourceKey)
@@ -563,18 +522,13 @@ private extension PhotoMemoShareExtensionIntakeService {
             else {
                 intakeStore
                     .cleanupManagedSourceIfNeeded(
-                        at: managedURL
+                        at: importRecord.managedURL
                     )
                 return .skippedDuplicate
             }
 
             return .imported(
-                ManagedImportRecord(
-                    managedURL:
-                        managedURL,
-                    dedupeKey:
-                        sourceKey
-                )
+                importRecord
             )
         }
 
@@ -643,8 +597,10 @@ private extension PhotoMemoShareExtensionIntakeService {
         )
     }
 
-    func loadFileURL(
+    func loadFileRepresentationResult(
         from provider: NSItemProvider,
+        requestID: UUID,
+        index: Int,
         diagnosticsSeed:
             PhotoMemoShareIntakeOperationSeed
     ) async -> FileRepresentationLoadResult {
@@ -665,7 +621,7 @@ private extension PhotoMemoShareExtensionIntakeService {
             provider.loadFileRepresentation(
                 forTypeIdentifier:
                     UTType.image.identifier
-            ) { url, error in
+            ) { [intakeStore] url, error in
 
                 if let error {
                     let wrappedError =
@@ -695,7 +651,7 @@ private extension PhotoMemoShareExtensionIntakeService {
                     continuation.resume(
                         returning:
                             FileRepresentationLoadResult(
-                                url: nil,
+                                importRecord: nil,
                                 failureContext:
                                     failureContext
                             )
@@ -726,7 +682,7 @@ private extension PhotoMemoShareExtensionIntakeService {
                     continuation.resume(
                         returning:
                             FileRepresentationLoadResult(
-                                url: nil,
+                                importRecord: nil,
                                 failureContext:
                                     failureContext
                             )
@@ -738,10 +694,69 @@ private extension PhotoMemoShareExtensionIntakeService {
                     "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returnedURL=\(url.standardizedFileURL.path)"
                 )
 
+                let copyResult =
+                    intakeStore
+                    .createManagedCopyDetailed(
+                        from: url,
+                        requestID: requestID,
+                        index: index,
+                        diagnosticsSeed:
+                            diagnosticsSeed
+                    )
+
+                PhotoMemoShareIntakeLog.notice(
+                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
+                )
+
+                guard let managedURL =
+                    copyResult.managedURL
+                else {
+                    continuation.resume(
+                        returning:
+                            FileRepresentationLoadResult(
+                                importRecord: nil,
+                                failureContext:
+                                    copyResult
+                                    .failureContext
+                                    ?? diagnosticsSeed
+                                    .failureContext(
+                                        stage: .copy,
+                                        operation:
+                                            "loadFileRepresentation.copyURL.missingManagedURL",
+                                        returnedURL:
+                                            url,
+                                        temporaryCopyResult:
+                                            copyResult
+                                            .temporaryCopyResult
+                                            ?? "missing-managed-url",
+                                        sharedContainerDestination:
+                                            copyResult
+                                            .sharedContainerDestination,
+                                        error:
+                                            PhotoMemoShareIntakeDiagnosticError
+                                            .make(
+                                                description:
+                                                    "File representation copy did not produce a managed URL.",
+                                                code: 3007
+                                            )
+                                    )
+                            )
+                    )
+                    return
+                }
+
                 continuation.resume(
                     returning:
                         FileRepresentationLoadResult(
-                            url: url,
+                            importRecord:
+                                ManagedImportRecord(
+                                    managedURL:
+                                        managedURL,
+                                    dedupeKey:
+                                        url
+                                        .standardizedFileURL
+                                        .path
+                                ),
                             failureContext: nil
                         )
                 )

@@ -1,5 +1,62 @@
 # PhotoMemo Handoff
 
+## 2026-06-21 导出命名规则确认、Immers 样图校准一轮、徽标资源补充
+
+- 本轮确认：
+  - 导出图片命名规则当前已经是系统复制文件风格：
+    - `原文件名.jpg`
+    - `原文件名 (1).jpg`
+    - `原文件名 (2).jpg`
+  - 当前实现位置：
+    - `Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift`
+  - 当前命名测试也已锁住：
+    - `Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift`
+  - 本轮没有再改命名逻辑，因为代码与测试已经符合要求，不再追加 `_PhotoMemo`
+
+- 本轮补充：
+  - 新增 4 个内置喜庆徽标资源：
+    - `喜爱`
+    - `囍`
+    - `新生`
+    - `福`
+  - 相关文件：
+    - `Source/PhotoMemo/PhotoMemo/Assets.xcassets/badge-love.imageset`
+    - `Source/PhotoMemo/PhotoMemo/Assets.xcassets/badge-wedding.imageset`
+    - `Source/PhotoMemo/PhotoMemo/Assets.xcassets/badge-birth.imageset`
+    - `Source/PhotoMemo/PhotoMemo/Assets.xcassets/badge-fu.imageset`
+  - 徽标库与选择器已同步接入：
+    - `BadgeLibrary.swift`
+    - `BadgeRenderer.swift`
+    - `BadgePickerView.swift`
+    - `MainView+LayoutSections.swift`
+
+- 本轮渲染校准：
+  - 已结合你提供的成品样图和 Immers `areas_light` 官方公开样片，对 `ClassicWhiteRenderer` 做了一轮更接近样图的参数回收
+  - 重点只动：
+    - 白栏高度比例
+    - 左右区宽度
+    - 上下两层字号比例
+    - `badge -> divider -> right text` 间距关系
+  - 当前改动文件：
+    - `Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteRenderer.swift`
+    - `Source/PhotoMemo/PhotoMemo/Renderers/RecordCardRenderer.swift`
+  - 这一轮还不是最终锁死版本，后续仍需要继续按真机成片对着样图微调
+
+- Share intake：
+  - `PhotoMemoShareExtensionIntakeService.swift` 继续保留并补强了 intake 诊断与失败阶段暴露
+  - `ExternalPhotoIntakeStoreDiagnosticsTests.swift` 已同步覆盖相关诊断路径
+
+- 本轮验证：
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoTests` 定向 `RecordCardBuildServiceTests` 通过
+    - 已明确验证命名规则测试：
+      - `keepsOriginalBaseFilenameAndAppendsCopySuffixesForRepeatedExports()`
+
+- 当前仍需继续人工核查：
+  1. 真机导出结果与参考样图的底栏节奏是否已经足够接近
+  2. Share Extension 真机分享失败是否已因前一轮 intake 修复而消失
+  3. 新增徽标在横图、竖图和不同白栏高度下的视觉平衡
+
 ## 2026-06-20 Product Convergence 一轮完整收口
 
 - 本轮目标：

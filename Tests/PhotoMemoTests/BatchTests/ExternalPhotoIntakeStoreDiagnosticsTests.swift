@@ -68,4 +68,79 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
             forName: suiteName
         )
     }
+
+    @Test("Detailed managed copy succeeds for readable local files")
+    func createsManagedCopyForReadableLocalFiles() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.LocalFile.\(UUID().uuidString)"
+
+        guard let defaults =
+            UserDefaults(suiteName: suiteName) else {
+            Issue.record("Unable to create isolated UserDefaults suite")
+            return
+        }
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let rootDirectoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        let sourceURL =
+            rootDirectoryURL
+            .appendingPathComponent("source.heic")
+
+        try FileManager.default.createDirectory(
+            at: rootDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        try Data([1, 2, 3, 4]).write(
+            to: sourceURL
+        )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: rootDirectoryURL
+                    .appendingPathComponent(
+                        "Intake",
+                        isDirectory: true
+                    )
+            )
+
+        let result =
+            store.createManagedCopyDetailed(
+                from: sourceURL,
+                requestID: UUID(),
+                index: 0
+            )
+
+        let managedURL =
+            try #require(result.managedURL)
+
+        #expect(result.failureContext == nil)
+        #expect(
+            FileManager.default.fileExists(
+                atPath: managedURL.path
+            )
+        )
+        #expect(
+            try Data(contentsOf: managedURL)
+            == Data([1, 2, 3, 4])
+        )
+
+        try? FileManager.default.removeItem(
+            at: rootDirectoryURL
+        )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
 }

@@ -70,6 +70,10 @@ struct BadgeRenderer {
         for badge: Badge
     ) -> Image? {
 
+        if let imageName = badge.imageName {
+            return Image(imageName)
+        }
+
         if let imagePath = badge.imagePath,
            let image = PlatformImage.loadPhotoMemoImage(
                 contentsOfFile: imagePath

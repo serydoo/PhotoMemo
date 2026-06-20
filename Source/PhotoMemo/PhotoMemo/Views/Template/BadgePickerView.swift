@@ -87,9 +87,15 @@ struct BadgePickerView: View {
              .customUpload,
              .svg:
 
-            Image(
-                systemName: "photo"
-            )
+            if let imageName = badge.imageName {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Image(
+                    systemName: "photo"
+                )
+            }
         }
     }
 }
