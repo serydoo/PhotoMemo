@@ -3,6 +3,68 @@
 Compact AI summary for this round:
 
 - `Docs/AI_HANDOFF_2026-06-21.md`
+- `Docs/AI_HANDOFF_2026-06-22.md`
+
+## 2026-06-22 Immers White 双行文字簇收口
+
+- 这一轮继续只收渲染层，没有碰：
+  - Metadata Pipeline
+  - Memory Engine
+  - Share Intake
+  - Export 命名
+- 目标很明确：
+  - 不再让白栏里的上下两层文字被 `Spacer` 撑成上下分离
+  - 改成更接近目标样图的“垂直居中双行簇”
+
+- 本轮代码收口：
+  - `Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift`
+    - `pinnedColumn(...)`
+      - 去掉上下分离式 `Spacer`
+      - 改为固定间距 + 整组居中
+    - landscape 参数调整：
+      - `title / metadata font ratio: 0.235 -> 0.218`
+      - `bottom font ratio: 0.138 -> 0.132`
+      - `group spacing ratio: 0.078 -> 0.112`
+    - portrait 参数调整：
+      - `title / metadata font ratio: 0.24 -> 0.225`
+      - `bottom font ratio: 0.15 -> 0.142`
+      - `group spacing ratio: 0.08 -> 0.098`
+    - divider 强化：
+      - `width: 1 -> 2`
+      - 颜色改成更接近 `#D8D8D8`
+    - 新增显式缩放阈值：
+      - `primaryMinimumScaleFactor = 0.94`
+      - `secondaryMinimumScaleFactor = 0.88`
+    - 顶层主文字不再使用旧的 `0.72` 激进缩放
+  - `Tests/PhotoMemoTests/RendererTests/ImmersWhiteRendererLayoutTests.swift`
+    - 新增对 landscape / portrait 紧凑文字簇的参数回归保护
+    - 新增对 divider width 与 minimumScaleFactor 的回归保护
+
+- 本轮验证结果：
+  - 通过了语法级 Swift parse：
+    - `ImmersWhiteRenderer.swift`
+    - `ImmersWhiteRendererLayoutTests.swift`
+  - 后续进一步确认到机器上存在可用完整工具链：
+    - `/Users/rui/Downloads/Xcode-beta.app/Contents/Developer`
+  - `PhotoMemoiOS` 真机构建通过：
+    - `xcodebuild -scheme PhotoMemoiOS -destination 'generic/platform=iOS' -allowProvisioningUpdates build`
+  - 成品已安装到设备：
+    - `iPhone7`
+    - `00008150-000A043136A1401C`
+  - 已成功拉起：
+    - `com.serydoo.PhotoMemo.iOS`
+
+- 当前真实状态更新为：
+  - 代码改动已落地
+  - 语法检查通过
+  - iPhone 包已完成签名构建、安装、启动
+
+- 本轮仍未完全收口的验证：
+  1. `PhotoMemoTests` 还没有在当前 beta/macOS 路径下完成
+  2. `PhotoMemo` macOS target 在当前 Xcode beta 下暴露出已有 `MainView` / `MainView+WorkspaceControls` 编译问题：
+     - SwiftUI macro plugin response error
+     - `isExpanded.toggle()` 的 immutable self 报错
+  3. 这些问题不是这轮 `ImmersWhiteRenderer` 调整引入的，但会影响后续完整桌面编译链验证
 
 ## 2026-06-21 Classic White 人工视觉对照 + snapshot 回归链闭环
 

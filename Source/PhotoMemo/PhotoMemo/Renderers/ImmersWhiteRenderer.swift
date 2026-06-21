@@ -196,9 +196,17 @@ enum ImmersWhiteRenderer {
         )
 
     static let dividerColor =
-        Color.black.opacity(0.10)
+        Color(
+            red: 216 / 255,
+            green: 216 / 255,
+            blue: 216 / 255
+        )
 
-    static let dividerWidth: CGFloat = 1
+    static let dividerWidth: CGFloat = 2
+
+    static let primaryMinimumScaleFactor: CGFloat = 0.94
+
+    static let secondaryMinimumScaleFactor: CGFloat = 0.88
 
     static func orientation(
         for metadata: PhotoMetadata
@@ -233,13 +241,13 @@ enum ImmersWhiteRenderer {
                 logoSlotWidthRatio: 0.076,
                 logoSizeRatio: 0.34,
                 dividerHeightRatio: 0.50,
-                titleFontRatio: 0.235,
-                metadataFontRatio: 0.235,
-                bottomFontRatio: 0.138,
+                titleFontRatio: 0.218,
+                metadataFontRatio: 0.218,
+                bottomFontRatio: 0.132,
                 titleLineSpacingRatio: 0.012,
                 metadataLineSpacingRatio: 0.012,
                 bottomLineSpacingRatio: 0.008,
-                groupSpacingRatio: 0.078,
+                groupSpacingRatio: 0.112,
                 titleTracking: -0.18,
                 metadataTracking: -0.18,
                 bottomTracking: 0,
@@ -260,13 +268,13 @@ enum ImmersWhiteRenderer {
                 logoSlotWidthRatio: 0.10,
                 logoSizeRatio: 0.42,
                 dividerHeightRatio: 0.54,
-                titleFontRatio: 0.24,
-                metadataFontRatio: 0.24,
-                bottomFontRatio: 0.15,
+                titleFontRatio: 0.225,
+                metadataFontRatio: 0.225,
+                bottomFontRatio: 0.142,
                 titleLineSpacingRatio: 0.011,
                 metadataLineSpacingRatio: 0.011,
                 bottomLineSpacingRatio: 0.008,
-                groupSpacingRatio: 0.08,
+                groupSpacingRatio: 0.098,
                 titleTracking: -0.12,
                 metadataTracking: -0.12,
                 bottomTracking: 0,
@@ -326,6 +334,8 @@ struct ImmersWhiteCardRenderer: View {
         let lineSpacing: CGFloat
 
         let lineLimit: Int
+
+        let minimumScaleFactor: CGFloat
 
         let alignment: HorizontalAlignment
 
@@ -451,6 +461,9 @@ struct ImmersWhiteCardRenderer: View {
                     height
                     * layout.titleLineSpacingRatio,
                 lineLimit: 1,
+                minimumScaleFactor:
+                    ImmersWhiteRenderer
+                    .primaryMinimumScaleFactor,
                 alignment: .leading,
                 textAlignment: .leading
             ),
@@ -469,6 +482,9 @@ struct ImmersWhiteCardRenderer: View {
                     height
                     * layout.bottomLineSpacingRatio,
                 lineLimit: 1,
+                minimumScaleFactor:
+                    ImmersWhiteRenderer
+                    .secondaryMinimumScaleFactor,
                 alignment: .leading,
                 textAlignment: .leading
             ),
@@ -615,6 +631,9 @@ struct ImmersWhiteCardRenderer: View {
                     height
                     * layout.metadataLineSpacingRatio,
                 lineLimit: 1,
+                minimumScaleFactor:
+                    ImmersWhiteRenderer
+                    .primaryMinimumScaleFactor,
                 alignment:
                     horizontalAlignment,
                 textAlignment:
@@ -635,6 +654,9 @@ struct ImmersWhiteCardRenderer: View {
                     height
                     * layout.bottomLineSpacingRatio,
                 lineLimit: 2,
+                minimumScaleFactor:
+                    ImmersWhiteRenderer
+                    .secondaryMinimumScaleFactor,
                 alignment:
                     horizontalAlignment,
                 textAlignment:
@@ -655,26 +677,28 @@ struct ImmersWhiteCardRenderer: View {
         spacing: CGFloat
     ) -> some View {
 
+        let hasTop =
+            !topValue.isEmpty
+        let hasBottom =
+            !bottomValue.isEmpty
+        let clusterSpacing =
+            hasTop && hasBottom
+            ? spacing
+            : 0
+
         VStack(
             alignment: topStyle.alignment,
-            spacing: 0
+            spacing: clusterSpacing
         ) {
 
-            if !topValue.isEmpty {
+            if hasTop {
                 styledText(
                     topValue,
                     style: topStyle
                 )
             }
 
-            Spacer(
-                minLength:
-                    topValue.isEmpty || bottomValue.isEmpty
-                    ? 0
-                    : spacing
-            )
-
-            if !bottomValue.isEmpty {
+            if hasBottom {
                 styledText(
                     bottomValue,
                     style: bottomStyle
@@ -707,7 +731,9 @@ struct ImmersWhiteCardRenderer: View {
             .foregroundStyle(style.color)
             .lineLimit(style.lineLimit)
             .allowsTightening(true)
-            .minimumScaleFactor(0.72)
+            .minimumScaleFactor(
+                style.minimumScaleFactor
+            )
             .multilineTextAlignment(
                 style.textAlignment
             )

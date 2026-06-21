@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-21
+Last updated: 2026-06-22
 
 ## Current Stage
 
@@ -20,6 +20,76 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
+
+## 1.30 Immers White now uses a centered two-line text cluster instead of a stretched top-bottom split
+
+This slice stays tightly scoped to the Immers-inspired renderer.
+
+It does not change:
+
+- metadata pipeline behavior
+- memory engine behavior
+- share intake behavior
+- export naming behavior
+
+What landed:
+
+- `Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift`
+  - the left and right text regions no longer use a `Spacer` to push the top row upward and the bottom row downward
+  - both sides now render as a vertically centered two-line cluster
+  - landscape typography was tightened toward the target samples:
+    - top font ratio `0.235 -> 0.218`
+    - bottom font ratio `0.138 -> 0.132`
+    - cluster gap ratio `0.078 -> 0.112`
+  - portrait typography was tightened in the same direction:
+    - top font ratio `0.24 -> 0.225`
+    - bottom font ratio `0.15 -> 0.142`
+    - cluster gap ratio `0.08 -> 0.098`
+  - the divider is now more explicit:
+    - width `1 -> 2`
+    - color moved from translucent black toward `#D8D8D8`
+  - primary text no longer allows the previous aggressive shrink:
+    - minimum scale factor is now explicitly near-full-size for top rows
+- `Tests/PhotoMemoTests/RendererTests/ImmersWhiteRendererLayoutTests.swift`
+  - now locks the tighter landscape and portrait cluster expectations
+  - now locks the stronger divider width and the new minimum scale factors
+
+Why this matters:
+
+- the current PhotoMemo output had the correct white-bar height, but the internal composition was still off
+- the biggest visible mismatch versus the user-provided target samples was that the top row sat too high, the bottom row sat too low, and the inter-row gap was too large
+- this slice directly addresses that geometry instead of only nudging font sizes
+
+Verification for this slice:
+
+- syntax-level Swift parsing passed for:
+  - `ImmersWhiteRenderer.swift`
+  - `ImmersWhiteRendererLayoutTests.swift`
+- after locating the real toolchain under:
+  - `/Users/rui/Downloads/Xcode-beta.app/Contents/Developer`
+  the iOS build path was verified with full `xcodebuild`
+- the Xcode app was then normalized into the standard location:
+  - `/Applications/Xcode.app`
+- current default developer path now resolves to:
+  - `/Applications/Xcode.app/Contents/Developer`
+- `PhotoMemoiOS` build succeeded with:
+  - `-destination 'generic/platform=iOS'`
+  - `-allowProvisioningUpdates`
+- the resulting iPhone app was installed onto:
+  - `iPhone7` (`00008150-000A043136A1401C`)
+- the installed app was also launched successfully on-device:
+  - `com.serydoo.PhotoMemo.iOS`
+- compatibility note:
+  - `PhotoMemoShareExtension` and `PhotoMemoWidgetExtension` were both compiled as dependencies of the successful `PhotoMemoiOS` build
+- not fully green yet:
+  - a standalone `PhotoMemo` macOS build under the current Xcode beta toolchain failed in existing `MainView` / `MainView+WorkspaceControls` code, with SwiftUI macro/plugin-response errors unrelated to the Immers renderer slice
+  - `PhotoMemoTests` were not completed in this session because the current beta/macOS toolchain path is still noisy for test execution
+
+Immediate next step:
+
+1. visually review the freshly installed iPhone build against the target samples
+2. separately stabilize the current macOS build path under the active Xcode beta
+3. rerun `PhotoMemoTests`, especially `ImmersWhiteRendererLayoutTests`, once the macOS toolchain path is stable
 
 ## 1.29 Classic White now has manual visual references and snapshot-grade regression checks
 
