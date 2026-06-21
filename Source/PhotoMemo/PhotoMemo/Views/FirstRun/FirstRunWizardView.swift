@@ -47,39 +47,27 @@ struct FirstRunWizardView: View {
 
     var body: some View {
 
-        ZStack {
-            MinimalPalette.background
-                .ignoresSafeArea()
-
-            ScrollView {
-                VStack(
-                    alignment: .leading,
-                    spacing: 24
-                ) {
+        NavigationStack {
+            Form {
+                Section {
                     heroHeader
+                }
 
-                    GroupBox {
-                        VStack(
-                            alignment: .leading,
-                            spacing: 18
-                        ) {
-                            stepProgress
-                            stepBody
-                        }
-                    } label: {
-                        Text(stepTitle)
-                    }
-                    .groupBoxStyle(
-                        MinimalCardGroupBoxStyle()
-                    )
+                Section(stepTitle) {
+                    stepProgress
+                    stepBody
+                }
 
+                Section {
                     footerActions
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 28)
-                .frame(maxWidth: 640)
-                .frame(maxWidth: .infinity)
             }
+            .formStyle(.grouped)
+            .navigationTitle("PhotoMemo")
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
+            .animation(.default, value: step)
         }
     }
 }
@@ -88,34 +76,33 @@ private extension FirstRunWizardView {
 
     var heroHeader: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 8
-        ) {
+        VStack(alignment: .leading) {
             Text("欢迎使用 PhotoMemo")
-                .font(.system(size: 32, weight: .bold))
+                .font(.title)
+                .fontWeight(.semibold)
 
             Text("我们只需要花 1 分钟完成设置，以后就可以一直使用。")
-                .font(.title3.weight(.medium))
+                .font(.body)
                 .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
         }
     }
 
     var stepProgress: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 10
-        ) {
+        VStack(alignment: .leading) {
             Text(progressTitle)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(MinimalPalette.accent)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
             ProgressView(
                 value: Double(step.rawValue + 1),
                 total: Double(Step.allCases.count)
             )
-            .tint(MinimalPalette.accent)
+            .tint(.accentColor)
         }
     }
 
@@ -143,59 +130,55 @@ private extension FirstRunWizardView {
 
     var welcomeStep: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 16
-        ) {
+        VStack(alignment: .leading) {
             Text("欢迎来到 PhotoMemo")
-                .font(.title3.weight(.semibold))
+                .font(.headline)
 
             Text("把宝宝照片变成值得长期保存的成长记录。")
                 .font(.body)
                 .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
 
-            MinimalInsetCard {
-                Text("现在花 1 分钟完成设置，以后就可以一直在系统相册中直接分享使用。")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
-            }
+            Text("现在完成一次设定，以后就可以在系统相册中直接分享使用。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
         }
     }
 
     var relationshipStep: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 16
-        ) {
+        VStack(alignment: .leading) {
             Text("这是为谁记录？")
-                .font(.title3.weight(.semibold))
+                .font(.headline)
 
             Text("以后 PhotoMemo 会用这个称呼来生成记忆内容。")
                 .font(.body)
                 .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
 
-            ForEach(
-                PersonalRelationshipRole.allCases,
-                id: \.self
-            ) { role in
-                selectionRow(
-                    title: role.title,
-                    subtitle: relationshipSubtitle(
-                        for: role
-                    ),
-                    isSelected:
-                        draftProfile.relationshipRole
-                        == role
-                ) {
-                    draftProfile.relationshipRole =
-                        role
+            Picker(
+                "你的身份",
+                selection: $draftProfile.relationshipRole
+            ) {
+                ForEach(
+                    PersonalRelationshipRole.allCases,
+                    id: \.self
+                ) { role in
+                    Text(role.title)
+                        .tag(role)
                 }
             }
+            .pickerStyle(.inline)
 
             if draftProfile.relationshipRole == .custom {
                 TextField(
@@ -211,16 +194,17 @@ private extension FirstRunWizardView {
 
     var nicknameStep: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 16
-        ) {
+        VStack(alignment: .leading) {
             Text("宝宝叫什么？")
-                .font(.title3.weight(.semibold))
+                .font(.headline)
 
             Text("以后会直接使用这个昵称，不再反复询问。")
                 .font(.body)
                 .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
 
             TextField(
                 "宝宝昵称",
@@ -228,26 +212,25 @@ private extension FirstRunWizardView {
             )
             .textFieldStyle(.roundedBorder)
 
-            MinimalInsetCard {
-                Text("例如：小满、可乐、糖糖")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
+            Text("例如：小满、可乐、糖糖")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 
     var birthdayStep: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 16
-        ) {
+        VStack(alignment: .leading) {
             Text("出生日期")
-                .font(.title3.weight(.semibold))
+                .font(.headline)
 
             Text("PhotoMemo 将自动计算每张照片拍摄时的年龄。")
                 .font(.body)
                 .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
 
             DatePicker(
                 "出生日期",
@@ -261,76 +244,67 @@ private extension FirstRunWizardView {
 
     var destinationStep: some View {
 
-        VStack(
-            alignment: .leading,
-            spacing: 16
-        ) {
+        VStack(alignment: .leading) {
             Text("保存位置")
-                .font(.title3.weight(.semibold))
+                .font(.headline)
 
             Text("以后处理完成后，会默认保存到这里。")
                 .font(.body)
                 .foregroundStyle(.secondary)
-
-            MinimalInsetCard {
-                Text("设置完成后，日常只需要在系统相册里分享照片到 PhotoMemo。")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
-
-                Divider()
-
-                summaryRow(
-                    title: "记录身份",
-                    value: draftProfile.resolvedRelationshipLabel
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
                 )
-                summaryRow(
-                    title: "宝宝昵称",
-                    value: normalizedNicknameSummary
-                )
-                summaryRow(
-                    title: "默认风格",
-                    value: PersonalProfile.recommendedStyleTitle
-                )
-            }
 
-            selectionRow(
-                title: "系统相册",
-                subtitle: "直接写回系统图库，不额外放进某个相册。",
-                isSelected:
-                    draftProfile.defaultSaveDestination
-                    == .systemLibrary
+            Picker(
+                "默认保存位置",
+                selection: $draftProfile.defaultSaveDestination
             ) {
-                draftProfile.defaultSaveDestination =
-                    .systemLibrary
-                draftProfile.selectedAlbumIdentifier = ""
-                draftProfile.selectedAlbumTitle = ""
+                Text("系统相册")
+                    .tag(PersonalProfileSaveDestination.systemLibrary)
+                Text("PhotoMemo 相册（推荐）")
+                    .tag(PersonalProfileSaveDestination.photoMemoAlbum)
+            }
+            .pickerStyle(.inline)
+            .onChange(
+                of: draftProfile.defaultSaveDestination
+            ) { _, _ in
+                clearSelectedAlbum()
             }
 
-            selectionRow(
-                title: "PhotoMemo 相册（推荐）",
-                subtitle: "自动创建或复用 PhotoMemo 相册，方便集中查看生成结果。",
-                isSelected:
-                    draftProfile.defaultSaveDestination
-                    == .photoMemoAlbum
-            ) {
-                draftProfile.defaultSaveDestination =
-                    .photoMemoAlbum
-                draftProfile.selectedAlbumIdentifier = ""
-                draftProfile.selectedAlbumTitle = ""
-            }
+            LabeledContent(
+                "记录身份",
+                value: draftProfile.resolvedRelationshipLabel
+            )
+
+            LabeledContent(
+                "宝宝昵称",
+                value: normalizedNicknameSummary
+            )
+
+            LabeledContent(
+                "默认风格",
+                value: PersonalProfile.recommendedStyleTitle
+            )
+
+            Text("设置完成后，日常只需要在系统相册里分享照片到 PhotoMemo。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
         }
     }
 
     var footerActions: some View {
 
-        HStack(spacing: 12) {
+        HStack {
             if showsBackButton {
                 Button("上一步") {
-                    moveBackward()
+                    withAnimation {
+                        moveBackward()
+                    }
                 }
                 .buttonStyle(.bordered)
             }
@@ -338,7 +312,9 @@ private extension FirstRunWizardView {
             Spacer(minLength: 0)
 
             Button(primaryButtonTitle) {
-                advance()
+                withAnimation {
+                    advance()
+                }
             }
             .buttonStyle(.borderedProminent)
             .disabled(!canAdvance)
@@ -455,91 +431,6 @@ private extension FirstRunWizardView {
         }
     }
 
-    func selectionRow(
-        title: String,
-        subtitle: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-
-        Button(action: action) {
-            HStack(
-                alignment: .top,
-                spacing: 14
-            ) {
-                Image(
-                    systemName:
-                        isSelected
-                        ? "checkmark.circle.fill"
-                        : "circle"
-                )
-                .font(.title3)
-                .foregroundStyle(
-                    isSelected
-                    ? MinimalPalette.accent
-                    : .secondary
-                )
-
-                VStack(
-                    alignment: .leading,
-                    spacing: 6
-                ) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.leading)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .fill(Color.white)
-            )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .stroke(
-                    isSelected
-                    ? MinimalPalette.accent.opacity(0.38)
-                    : MinimalPalette.border,
-                    lineWidth: isSelected ? 1.5 : 1
-                )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    func summaryRow(
-        title: String,
-        value: String
-    ) -> some View {
-
-        VStack(
-            alignment: .leading,
-            spacing: 4
-        ) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.body)
-                .foregroundStyle(.primary)
-        }
-    }
-
     func moveBackward() {
 
         guard let previousStep =
@@ -570,6 +461,11 @@ private extension FirstRunWizardView {
         }
 
         step = nextStep
+    }
+
+    func clearSelectedAlbum() {
+        draftProfile.selectedAlbumIdentifier = ""
+        draftProfile.selectedAlbumTitle = ""
     }
 }
 #endif

@@ -1,6 +1,9 @@
 import SwiftUI
 import ImageIO
 import UniformTypeIdentifiers
+#if canImport(Photos)
+import Photos
+#endif
 #if os(macOS)
 import AppKit
 #endif
@@ -231,8 +234,9 @@ private extension RecordCardExportService {
     ) -> String {
 
         let baseName =
-            photo.sourceURL.deletingPathExtension()
-            .lastPathComponent
+            resolvedOutputBaseName(
+                for: photo
+            )
 
         return baseName + ".jpg"
     }
@@ -243,16 +247,126 @@ private extension RecordCardExportService {
     ) -> URL {
 
         let baseName =
-            photo.sourceURL
-            .deletingPathExtension()
-            .lastPathComponent
+            resolvedOutputBaseName(
+                for: photo
+            )
 
         return uniqueOutputURL(
             for: folderURL.appendingPathComponent(
                 baseName
             )
             .appendingPathExtension("jpg")
-        )
+            )
+    }
+
+    func resolvedOutputBaseName(
+        for photo: SelectedPhoto
+    ) -> String {
+
+        PhotoFileNameResolver
+            .outputBaseName(
+                preferredOriginalFileName:
+                    photo.sourceInfo
+                    .originalFileName,
+                assetOriginalFileName:
+                    originalPhotoLibraryFileName(
+                        for:
+                            photo
+                            .sourceInfo
+                            .assetLocalIdentifier
+                    ),
+                captureDate:
+                    photo.metadata.captureDate,
+                timeZone:
+                    photo.metadata
+                    .captureTimeZone,
+                fallbackBaseName:
+                    sourceURLFallbackBaseName(
+                        for: photo
+                    )
+            )
+    }
+
+    func sourceURLFallbackBaseName(
+        for photo: SelectedPhoto
+    ) -> String {
+
+        let fileName =
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                photo.sourceURL
+                .lastPathComponent
+            )
+
+        let baseName =
+            fileName.map {
+                URL(fileURLWithPath: $0)
+                    .deletingPathExtension()
+                    .lastPathComponent
+            }?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return baseName?.isEmpty == false
+            ? baseName ?? "PhotoMemo"
+            : "PhotoMemo"
+    }
+
+    func originalPhotoLibraryFileName(
+        for assetLocalIdentifier: String?
+    ) -> String? {
+
+#if canImport(Photos)
+        guard
+            let assetLocalIdentifier,
+            !assetLocalIdentifier
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty
+        else {
+            return nil
+        }
+
+        let assets =
+            PHAsset.fetchAssets(
+                withLocalIdentifiers: [
+                    assetLocalIdentifier
+                ],
+                options: nil
+            )
+
+        guard let asset = assets.firstObject else {
+            return nil
+        }
+
+        let resources =
+            PHAssetResource.assetResources(
+                for: asset
+            )
+
+        let preferredFileName =
+            resources.first {
+                switch $0.type {
+                case .photo,
+                     .fullSizePhoto,
+                     .alternatePhoto:
+                    return true
+
+                default:
+                    return false
+                }
+            }?.originalFilename
+            ?? resources.first?.originalFilename
+
+        return PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                preferredFileName
+            )
+#else
+        return nil
+#endif
     }
 
     func uniqueOutputURL(
@@ -310,7 +424,7 @@ private extension RecordCardExportService {
         template: Template
     ) -> CGSize {
 
-        if template.preset == .immersWhite {
+        if template.preset.renderLayout == .immersWhite {
 
             return ImmersWhiteRenderer
                 .outputPixelSize(
@@ -320,35 +434,12 @@ private extension RecordCardExportService {
                 )
         }
 
-        let width =
-            CGFloat(
-                photo.metadata.imageWidth
-                ?? Int(photo.image.photoMemoSize.width)
+        return ClassicWhiteRenderer
+            .outputPixelSize(
+                for: photo.metadata,
+                fallbackSize:
+                    photo.image.photoMemoSize
             )
-
-        let imageHeight =
-            CGFloat(
-                photo.metadata.imageHeight
-                ?? Int(photo.image.photoMemoSize.height)
-            )
-
-        let orientation:
-            ClassicWhiteRenderer.CardOrientation =
-            width >= imageHeight
-            ? .landscape
-            : .portrait
-
-        let layout =
-            ClassicWhiteRenderer.layout(
-                for: orientation
-            )
-
-        return CGSize(
-            width: width,
-            height:
-                imageHeight
-                * (1 + layout.borderToImageHeightRatio)
-        )
     }
 
     func sanitizedMetadata(

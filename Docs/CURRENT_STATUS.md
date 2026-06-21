@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 
 ## Current Stage
 
@@ -20,6 +20,481 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
+
+## 1.29 Classic White now has manual visual references and snapshot-grade regression checks
+
+This slice stays renderer-only.
+
+It does not change:
+
+- metadata pipeline behavior
+- memory engine behavior
+- batch behavior
+- share product flow
+
+What landed:
+
+- committed manual reference PNGs under:
+  - `Tests/Fixtures/RendererSnapshots/ClassicWhite/full-card/`
+- new snapshot support:
+  - `ClassicWhiteSnapshotSupport`
+  - deterministic synthetic scenarios for:
+    - `landscape_standard`
+    - `landscape_long_exif`
+    - `portrait_standard`
+    - `portrait_long_memory`
+- new snapshot regression suite:
+  - `ClassicWhiteSnapshotTests`
+- new workflow doc:
+  - `Docs/ClassicWhiteVisualQA.md`
+
+Why this matters:
+
+- Classic White is no longer protected only by theme constants and width math
+- the project now has a small but real visual baseline for the full rendered card
+- future typography, spacing, divider, or truncation drift can be caught before it reaches device testing
+
+Snapshot policy:
+
+- reference images are synthetic and deterministic
+- record mode is explicit via `.record-mode`
+- reference refresh uses exported Xcode test attachments
+- normal comparison allows only a tiny tolerance for attachment-refresh color drift:
+  - `maxChannelDelta <= 1`
+  - differing pixels below `0.05%`
+
+Verification for this slice:
+
+- targeted snapshot tests passed:
+  - `ClassicWhiteSnapshotTests`
+- `PhotoMemoTests` full suite passed
+- builds passed:
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+- device install passed:
+  - `iPhone7` (`iPhone 17 Pro Max`)
+- device launch passed:
+  - `com.serydoo.PhotoMemo.iOS`
+
+## 1.28 Classic White now has second-layer regression guards for routing and grid math
+
+This slice continues the Classic White renderer-only hardening work.
+
+It still does not change:
+
+- metadata pipeline behavior
+- memory engine behavior
+- batch behavior
+- share product flow
+
+What landed:
+
+- `RecordCardRenderer`
+  - now exposes an explicit `destination(for:)` helper
+  - the view body routes through that helper instead of hiding the preset switch inline
+- `ClassicWhiteCardRenderer`
+  - now exposes `layoutMetrics(forTotalWidth:)`
+  - the live layout uses the same computed metrics that tests can assert against
+- new renderer regression tests:
+  - `RecordCardRendererRoutingTests`
+  - `ClassicWhiteCardRendererLayoutTests`
+
+Why this matters:
+
+- Classic White routing is now locked at the renderer boundary instead of only indirectly through preset tests
+- the fixed `40 / 20 / 40` grid is now covered as real width math, not just as theme constants
+- future refactors are less likely to silently break module widths or route the wrong preset into the wrong renderer
+
+Verification for this slice:
+
+- tests passed:
+  - `PhotoMemoTests`
+- targeted renderer tests passed:
+  - `RecordCardRendererRoutingTests`
+  - `ClassicWhiteCardRendererLayoutTests`
+  - `ClassicWhiteRendererThemeTests`
+- builds passed:
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+
+## 1.27 Classic White now uses a fixed render design system
+
+This slice is renderer-only.
+
+It does not change:
+
+- metadata pipeline behavior
+- memory engine behavior
+- batch behavior
+- share product flow
+
+What landed:
+
+- `RenderTheme.swift`
+  - introduces shared render-theme tokens for:
+    - bottom bar
+    - colors
+    - grid
+    - typography
+    - spacing
+    - divider
+    - center module
+- `ClassicWhiteRenderer`
+  - no longer uses ratio-based border math
+  - now exposes a fixed-height export sizing rule:
+    - `imageHeight + 260`
+- `ClassicWhiteCardRenderer`
+  - extracts Classic White out of `RecordCardRenderer`
+  - now renders with an explicit:
+    - left module
+    - center module
+    - right module
+  - uses fixed text sizes and truncation instead of scaling
+- `RecordCardRenderer`
+  - is back to being a layout router only
+- `RecordCardExportService`
+  - now reads Classic White export size from the renderer instead of old border ratios
+- `Docs/RENDER_SPEC.md`
+  - is now aligned with the new design-system values
+
+Why this matters:
+
+- Classic White now behaves like an information-card system instead of a proportional border experiment
+- preview and export sizing are easier to reason about
+- future themes can reuse the same theme-driven structure instead of adding more magic numbers inside the renderer
+
+Verification for this slice:
+
+- tests passed:
+  - `PhotoMemoTests`
+- targeted theme tests passed:
+  - `ClassicWhiteRendererThemeTests`
+- builds passed:
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+- compatibility note:
+  - `ClassicWhite` files are now explicitly excluded at compile time from the share-extension target path via `PHOTOMEMO_SHARE_EXTENSION`, so renderer refactors do not leak into the lightweight intake target
+
+## 1.26 Immers right-column alignment and placeholder naming fallback are now tightened
+
+This slice keeps the scope narrow and user-facing.
+
+What landed:
+
+- `ImmersWhiteRenderer`
+  - keeps the right column explicitly left aligned
+  - now uses separate spacing for:
+    - logo -> divider
+    - divider -> right text
+  - gives the right column more usable width in both portrait and landscape
+  - enables text tightening so long EXIF lines are less likely to look visibly smaller than the left title line
+- `PhotoFileNameResolver`
+  - now treats `PhotoMemo Import` placeholder variants as non-canonical names, alongside `Photo Library`
+  - now exposes:
+    - `outputBaseName(...)`
+    - `timestampFallbackBaseName(...)`
+- `RecordCardExportService`
+  - export naming priority is now:
+    1. real imported original file name
+    2. photo-library original file name resolved again from `assetLocalIdentifier`
+    3. deterministic capture-date fallback:
+       - `IMG_yyyyMMdd_HHmmss`
+  - copy suffix behavior remains:
+    - `name.jpg`
+    - `name (1).jpg`
+    - `name (2).jpg`
+
+Why this matters:
+
+- the right-side two-block area is now visually more anchored to the logo/divider cluster instead of drifting rightward
+- `PhotoMemo Import` should no longer survive into final exported names when there is either a real original file name or at least a capture date available
+- this improves the two most visible quality issues from the latest real-device review without touching renderer architecture, memory logic, or metadata boundaries
+
+Verification for this slice:
+
+- targeted tests passed:
+  - `PhotoFileNameResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `ExternalPhotoIntakeStoreDiagnosticsTests`
+  - `ImmersWhiteRendererLayoutTests`
+- builds passed:
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+- device install passed:
+  - app reinstalled onto iPhone `00008150-000A043136A1401C`
+- device launch was not verified automatically:
+  - launch request was denied because the phone was locked at the time
+
+## 1.25 Share success feedback is intentionally count-only again
+
+This round does not expand capability.
+
+It simplifies the Share completion language back to the quieter product decision:
+
+- do not surface file names after Share finishes
+- do not imply that a shown file name proves save-back succeeded
+- keep success feedback focused on how many photos PhotoMemo accepted
+
+What landed:
+
+- `PhotoMemoShareExtensionViewController`
+  - success wording remains count-based only
+- `PhotoMemoShareExtensionImportResult`
+  - no longer carries UI-only imported file name feedback
+- `PhotoMemoShareWorkflowSummaryTests`
+  - filename-oriented success formatter tests were removed
+
+Why this matters:
+
+- for multi-photo shares, one displayed file name does not help users identify which photo failed later
+- the real success criterion is still whether a new generated photo appears in the library beside the original
+- Share feedback stays simpler and more Apple-like while the intake and save-back pipeline continues to be debugged separately
+
+Verification for this slice:
+
+- `PhotoMemoTests` passed
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+## 1.24 Share success feedback now surfaces original file names when available
+
+This slice was later superseded by 1.25 after product review simplified Share completion feedback back to count-only wording.
+
+This round keeps the scope narrow and user-visible.
+
+What landed:
+
+- `PhotoMemoShareProcessingFeedbackFormatter`
+  - formats share success feedback from counts plus imported original file names
+- `PhotoMemoShareExtensionImportResult`
+  - now carries `importedFileNames`
+- `PhotoMemoShareExtensionIntakeService`
+  - now forwards imported original file names into the result object
+- `PhotoMemoShareExtensionViewController`
+  - now uses the formatter for the success status message
+
+User-facing effect:
+
+- single-photo share success can now say:
+  - `已接收《IMG_9558.HEIC》。处理完成后会写回系统相册。`
+- partial success can now keep counts while still showing one concrete example file name
+
+Why this matters:
+
+- provenance is no longer only a hidden implementation detail
+- users get clearer confirmation that the photo they intended to share was the one PhotoMemo actually received
+- this builds toward calmer, more trustworthy share feedback without exposing technical pipeline terms
+
+Verification for this slice:
+
+- `PhotoMemoTests` passed
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+## 1.23 Share and external intake provenance now survives into batch tasks and imported photos
+
+This round extends the prior `PhotoSourceInfo` slice across the intake pipeline instead of stopping at `SelectedPhoto`.
+
+What landed:
+
+- `ExternalPhotoIntakeItem`
+  - managed URL
+  - original file name
+  - source identifier
+  - content type identifier
+- `ExternalPhotoIntakeRequest`
+  - now optionally persists structured intake items
+  - now exposes `intakePayloads`
+- `BatchTaskIntakePayload`
+  - now carries `fileName`
+  - `sourceIdentifier`
+  - `contentTypeIdentifier`
+- `BatchTask`
+  - now preserves the same provenance fields
+- `BatchProcessingCoordinator`
+  - now rebuilds `PhotoSourceInfo` from batch task provenance before import
+- `PhotoMemoShareExtensionIntakeService`
+  - now persists structured intake items instead of only raw managed URLs
+- `PhotoMemoAppRuntime`
+  - now enqueues batch tasks from structured intake payloads
+
+Why this matters:
+
+- share-first intake no longer falls back to temporary managed-copy naming in the batch layer
+- background status and later imports can keep showing the original shared file name
+- batch import can now rehydrate `SelectedPhoto.sourceInfo` from request/task provenance instead of reconstructing everything from the managed file path
+
+What is still not finished:
+
+- provenance is not yet promoted into every user-visible diagnostic surface
+- non-share external URL intake still only preserves a lighter provenance set than the ideal long-term model
+- canonical provenance is now cleaner across selected photo, request, payload, and task, but the save-back side still only consumes the parts needed today
+
+Verification for this slice:
+
+- `PhotoMemoTests` passed
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+## 1.22 Import source facts now have a lightweight canonical home inside `SelectedPhoto`
+
+This round continues the workflow-consolidation checklist with a small code slice instead of a broad refactor.
+
+What landed:
+
+- `SelectedPhoto` now carries a dedicated `PhotoSourceInfo`
+- `PhotoSourceInfo` currently preserves:
+  - `originalFileName`
+  - `assetLocalIdentifier`
+  - `contentTypeIdentifier`
+- `PhotoImportService` now writes that source info during imports
+- `PhotoImporterView` now forwards the Photos asset identifier when available
+- `RecordCardExportService` now prefers the imported original file name when generating export file names
+
+Why this matters:
+
+- original import facts are no longer represented only indirectly through `sourceURL`
+- export naming is less dependent on temporary-path details
+- future work on asset provenance can build on a real typed surface instead of more ad hoc URL parsing
+
+Scope discipline for this slice:
+
+- no new architecture layer
+- no ADR change
+- no renderer behavior change beyond export naming input
+- no batch/share rewrite
+
+What is still not finished:
+
+- share intake still does not preserve every provenance field end to end
+- source provenance is now cleaner, but not yet fully unified across all batch/request models
+- `PhotoMetadata` remains the canonical photo-fact model, while `PhotoSourceInfo` is currently the lightweight canonical import-provenance model for selected photos
+
+Verification for this slice:
+
+- `PhotoMemoTests` passed
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+## 1.21 Main workflow consolidation is now explicitly documented as the current development standard
+
+This round does not add features and does not introduce a new architecture layer.
+
+Instead, it absorbs the worthwhile parts of `PhotoMemo v0.4 Main Workflow Consolidation` into project standards:
+
+- PhotoMemo now has one explicit internal workflow:
+  - `Import -> Metadata -> Memory -> Renderer -> Export -> Share`
+- A new workflow standard document now records:
+  - stage ownership
+  - accepted boundaries
+  - near-term consolidation focus
+  - explicit non-goals
+- A new workflow checklist now turns that direction into small follow-up items instead of a risky rewrite
+
+The main judgment from this round:
+
+- worth absorbing now:
+  - one canonical workflow standard
+  - clearer stage ownership
+  - keeping renderer as the final visual layer instead of the product center
+  - preserving Template/Style vs Renderer separation
+  - continuing to tighten metadata-origin consistency
+- not worth doing now:
+  - broad architecture refactors
+  - a new abstract workflow framework
+  - codebase-wide structural reorganization
+  - forcing all daily execution into Share before the current path is stable
+
+New docs:
+
+- `Docs/MainWorkflowConsolidation.md`
+- `Docs/MainWorkflowChecklist.md`
+
+This round keeps the existing ADR set unchanged.
+
+Reason:
+
+- the workflow rule is a clarification and execution standard within already accepted boundaries
+- it does not replace the canonical template string model
+- it does not alter the Memory Engine boundary
+- it does not redefine renderer/export/batch responsibilities
+
+Build verification for this slice is recorded after the compilation step in `HANDOFF.md`.
+
+This round's build verification:
+
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+Tests were not rerun for this slice because the new work is documentation-only.
+
+## 1.20 Share wake-up, original-filename import preservation, and default renderer routing now align with the current product direction
+
+这一轮没有扩能力，重点是把三个已经影响真实体验的问题收口：
+
+- 主程序从 `PhotosPicker` 导入同名照片时，不再因为临时目录冲突把原始文件名污染成 `(... 1)`
+- Share confirmation 成功后，不再只是“写进共享收件箱然后静默关闭”，而是会主动尝试唤起主 App 刷新 intake
+- 当前默认风格 `template1` 不再走 `ClassicWhiteRenderer`，而是统一切到更接近目标样图的 `ImmersWhite` 渲染路径
+
+本轮已落地：
+
+- `PhotoImportService`
+  - 每次数据导入改成独立 UUID 临时子目录
+  - 子目录内保留原始文件名
+  - 显式传入的扩展名大小写继续保留
+  - `Photo Library` 占位名继续回退到 `PhotoMemo Import.jpg`
+- `PhotoMemoDeepLink`
+  - 新增 `photomemo://share`
+  - `PhotoMemoRootSceneView` 现在会识别这个 deep link 并执行 `runtime.refreshExternalIntakeState()`
+- `PhotoMemoShareExtensionViewController`
+  - share intake 成功后现在会先尝试唤起主 App，再关闭当前分享页
+- 渲染路径统一：
+  - 新增 `TemplatePreset.renderLayout`
+  - `template1` 现在改走 `ImmersWhite`
+  - `RecordCardRenderer` 预览路径与 `RecordCardExportService` 导出尺寸路径已经统一使用这套判定
+- `ImmersWhiteRenderer`
+  - 底栏背景改成偏暖白 `#F4F4F2`
+
+本轮新增回归保护：
+
+- `PhotoImportServiceTests`
+  - 显式文件名保留
+  - `Photo Library` 占位名回退
+  - 重复导入同名照片时仍保持原始文件名
+- `TemplatePresetRenderLayoutTests`
+  - 锁定当前默认风格 renderer 路由
+- `PhotoMemoDeepLinkTests`
+  - 锁定 share deep link 解析
+
+本轮验证：
+
+- 定向测试通过：
+  - `PhotoImportServiceTests`
+  - `ExternalPhotoIntakeStoreDiagnosticsTests`
+  - `TemplatePresetRenderLayoutTests`
+  - `PhotoMemoDeepLinkTests`
+- 全量测试通过：
+  - `PhotoMemoTests`
+- 构建通过：
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+
+这一轮仍需继续真机验证的部分：
+
+1. `photomemo://share` 在系统分享后的真实唤起是否稳定
+2. Share 触发后的生成与保存反馈是否已经足够清楚
+3. 当前默认成片是否已经明显接近目标 Immers 样图
+4. 写回系统相册后的最终文件名是否已经完全摆脱 `Photo Library.*`
 
 ## 1.19 Photo Library original-filename preservation is now explicitly wired, and renderer calibration moved one step closer to the sample output
 

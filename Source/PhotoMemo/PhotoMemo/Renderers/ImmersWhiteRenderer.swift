@@ -2,6 +2,11 @@ import SwiftUI
 
 enum ImmersWhiteRenderer {
 
+    enum ColumnAlignment: Equatable {
+        case leading
+        case trailing
+    }
+
     enum CardOrientation {
         case landscape
         case portrait
@@ -15,7 +20,9 @@ enum ImmersWhiteRenderer {
 
         let verticalPaddingRatio: CGFloat
 
-        let trailingClusterSpacingRatio: CGFloat
+        let logoToDividerSpacingRatio: CGFloat
+
+        let dividerToTextSpacingRatio: CGFloat
 
         let leftColumnWidthRatio: CGFloat
 
@@ -46,6 +53,9 @@ enum ImmersWhiteRenderer {
         let metadataTracking: CGFloat
 
         let bottomTracking: CGFloat
+
+        let rightColumnAlignment:
+            ColumnAlignment
 
         func finalAspectRatio(
             imageAspectRatio: CGFloat
@@ -162,7 +172,11 @@ enum ImmersWhiteRenderer {
     }
 
     static let infoBarColor =
-        Color.white
+        Color(
+            red: 244 / 255,
+            green: 244 / 255,
+            blue: 242 / 255
+        )
 
     static let primaryTextColor =
         Color.black.opacity(0.92)
@@ -212,22 +226,25 @@ enum ImmersWhiteRenderer {
                 borderToImageHeightRatio: 1021 / 4536,
                 horizontalPaddingRatio: 0.033,
                 verticalPaddingRatio: 0.19,
-                trailingClusterSpacingRatio: 0.014,
-                leftColumnWidthRatio: 0.43,
-                rightColumnWidthRatio: 0.33,
+                logoToDividerSpacingRatio: 0.012,
+                dividerToTextSpacingRatio: 0.008,
+                leftColumnWidthRatio: 0.42,
+                rightColumnWidthRatio: 0.35,
                 logoSlotWidthRatio: 0.076,
                 logoSizeRatio: 0.34,
                 dividerHeightRatio: 0.50,
                 titleFontRatio: 0.235,
-                metadataFontRatio: 0.171,
+                metadataFontRatio: 0.235,
                 bottomFontRatio: 0.138,
                 titleLineSpacingRatio: 0.012,
-                metadataLineSpacingRatio: 0.008,
+                metadataLineSpacingRatio: 0.012,
                 bottomLineSpacingRatio: 0.008,
                 groupSpacingRatio: 0.078,
                 titleTracking: -0.18,
-                metadataTracking: 0.08,
-                bottomTracking: 0
+                metadataTracking: -0.18,
+                bottomTracking: 0,
+                rightColumnAlignment:
+                    .leading
             )
 
         case .portrait:
@@ -236,22 +253,25 @@ enum ImmersWhiteRenderer {
                 borderToImageHeightRatio: 753 / 8064,
                 horizontalPaddingRatio: 0.041,
                 verticalPaddingRatio: 0.2,
-                trailingClusterSpacingRatio: 0.02,
-                leftColumnWidthRatio: 0.45,
-                rightColumnWidthRatio: 0.31,
+                logoToDividerSpacingRatio: 0.015,
+                dividerToTextSpacingRatio: 0.007,
+                leftColumnWidthRatio: 0.43,
+                rightColumnWidthRatio: 0.35,
                 logoSlotWidthRatio: 0.10,
                 logoSizeRatio: 0.42,
                 dividerHeightRatio: 0.54,
                 titleFontRatio: 0.24,
-                metadataFontRatio: 0.19,
+                metadataFontRatio: 0.24,
                 bottomFontRatio: 0.15,
                 titleLineSpacingRatio: 0.011,
-                metadataLineSpacingRatio: 0.008,
+                metadataLineSpacingRatio: 0.011,
                 bottomLineSpacingRatio: 0.008,
                 groupSpacingRatio: 0.08,
                 titleTracking: -0.12,
-                metadataTracking: 0.12,
-                bottomTracking: 0
+                metadataTracking: -0.12,
+                bottomTracking: 0,
+                rightColumnAlignment:
+                    .leading
             )
         }
     }
@@ -473,9 +493,7 @@ struct ImmersWhiteCardRenderer: View {
 
         HStack(
             alignment: .center,
-            spacing:
-                width
-                * layout.trailingClusterSpacingRatio
+            spacing: 0
         ) {
 
             if showsLogo {
@@ -491,7 +509,12 @@ struct ImmersWhiteCardRenderer: View {
                         * layout.logoSlotWidthRatio,
                     alignment: .trailing
                 )
-                
+                .padding(
+                    .trailing,
+                    width
+                    * layout.logoToDividerSpacingRatio
+                )
+
                 Rectangle()
                     .fill(
                         ImmersWhiteRenderer.dividerColor
@@ -504,6 +527,11 @@ struct ImmersWhiteCardRenderer: View {
                             height
                             * layout.dividerHeightRatio
                     )
+                    .padding(
+                        .trailing,
+                        width
+                        * layout.dividerToTextSpacingRatio
+                    )
             }
 
             rightArea(
@@ -515,7 +543,10 @@ struct ImmersWhiteCardRenderer: View {
                 width:
                     width
                     * layout.rightColumnWidthRatio,
-                alignment: .trailing
+                alignment:
+                    layout.rightColumnAlignment == .leading
+                    ? .leading
+                    : .trailing
             )
         }
     }
@@ -554,7 +585,19 @@ struct ImmersWhiteCardRenderer: View {
         layout: ImmersWhiteRenderer.Layout
     ) -> some View {
 
-        pinnedColumn(
+        let horizontalAlignment:
+            HorizontalAlignment =
+            layout.rightColumnAlignment == .leading
+            ? .leading
+            : .trailing
+
+        let textAlignment:
+            TextAlignment =
+            layout.rightColumnAlignment == .leading
+            ? .leading
+            : .trailing
+
+        return pinnedColumn(
             topValue: frameInput.slot1,
             bottomValue: frameInput.slot3,
             topStyle: BlockStyle(
@@ -562,7 +605,7 @@ struct ImmersWhiteCardRenderer: View {
                     15,
                     height * layout.metadataFontRatio
                 ),
-                weight: .semibold,
+                weight: .bold,
                 design: .default,
                 color: ImmersWhiteRenderer
                     .primaryTextColor,
@@ -572,8 +615,10 @@ struct ImmersWhiteCardRenderer: View {
                     height
                     * layout.metadataLineSpacingRatio,
                 lineLimit: 1,
-                alignment: .trailing,
-                textAlignment: .trailing
+                alignment:
+                    horizontalAlignment,
+                textAlignment:
+                    textAlignment
             ),
             bottomStyle: BlockStyle(
                 fontSize: max(
@@ -590,8 +635,10 @@ struct ImmersWhiteCardRenderer: View {
                     height
                     * layout.bottomLineSpacingRatio,
                 lineLimit: 2,
-                alignment: .trailing,
-                textAlignment: .trailing
+                alignment:
+                    horizontalAlignment,
+                textAlignment:
+                    textAlignment
             ),
             spacing:
                 height
@@ -659,6 +706,7 @@ struct ImmersWhiteCardRenderer: View {
             .lineSpacing(style.lineSpacing)
             .foregroundStyle(style.color)
             .lineLimit(style.lineLimit)
+            .allowsTightening(true)
             .minimumScaleFactor(0.72)
             .multilineTextAlignment(
                 style.textAlignment

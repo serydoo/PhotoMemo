@@ -250,15 +250,24 @@ struct BatchTaskIntakePayload:
 
     var sourceIdentifier: String?
 
+    var fileName: String?
+
+    var contentTypeIdentifier: String?
+
     var requestedAt: Date
 
     init(
         sourceURL: URL,
         sourceIdentifier: String? = nil,
+        fileName: String? = nil,
+        contentTypeIdentifier: String? = nil,
         requestedAt: Date = Date()
     ) {
         self.sourceURL = sourceURL
         self.sourceIdentifier = sourceIdentifier
+        self.fileName = fileName
+        self.contentTypeIdentifier =
+            contentTypeIdentifier
         self.requestedAt = requestedAt
     }
 }
@@ -342,6 +351,10 @@ struct BatchTask:
 
     let fileName: String
 
+    let sourceIdentifier: String?
+
+    let contentTypeIdentifier: String?
+
     let createdAt: Date
 
     var phase: BatchTaskPhase
@@ -364,6 +377,8 @@ struct BatchTask:
         id: UUID = UUID(),
         sourceURL: URL,
         fileName: String? = nil,
+        sourceIdentifier: String? = nil,
+        contentTypeIdentifier: String? = nil,
         createdAt: Date = Date(),
         phase: BatchTaskPhase = .queued,
         captureDate: Date? = nil,
@@ -378,6 +393,10 @@ struct BatchTask:
         self.sourceURL = sourceURL
         self.fileName =
             fileName ?? sourceURL.lastPathComponent
+        self.sourceIdentifier =
+            sourceIdentifier
+        self.contentTypeIdentifier =
+            contentTypeIdentifier
         self.createdAt = createdAt
         self.phase = phase
         self.captureDate = captureDate

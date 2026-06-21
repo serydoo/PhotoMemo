@@ -288,6 +288,163 @@ struct RecordCardBuildServiceTests {
     }
 
     @MainActor
+    @Test("Export naming prefers the imported original file name over the temporary source URL")
+    func exportNamingPrefersImportedOriginalFileName() throws {
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/ManagedShareCopy.jpg"),
+            image: NSImage(size: NSSize(width: 32, height: 32)),
+            metadata: PhotoMetadata(
+                captureDate: Date(),
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 32,
+                imageHeight: 32
+            ),
+            sourceInfo: PhotoSourceInfo(
+                originalFileName: "IMG_7581.HEIC",
+                assetLocalIdentifier: "asset-7581",
+                contentTypeIdentifier: "public.heic"
+            )
+        )
+
+        let card = RecordCardBuildService().buildCard(
+            from: photo,
+            configuration: BatchConfigurationSnapshot(
+                template: .template1.normalizedForEditing,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        )
+
+        let exportFolder =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoExports",
+                isDirectory: true
+            )
+
+        let expectedURL =
+            exportFolder.appendingPathComponent(
+                "IMG_7581.jpg"
+            )
+
+        try? FileManager.default.removeItem(at: expectedURL)
+
+        defer {
+            try? FileManager.default.removeItem(at: expectedURL)
+        }
+
+        let exportedURL =
+            try RecordCardExportService()
+            .exportToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        #expect(
+            exportedURL.lastPathComponent
+            == "IMG_7581.jpg"
+        )
+    }
+
+    @MainActor
+    @Test("Export naming falls back from placeholder names to a capture-date filename")
+    func exportNamingFallsBackFromPlaceholderNamesToCaptureDateFilename() throws {
+
+        var calendar =
+            Calendar(identifier: .gregorian)
+        calendar.timeZone =
+            try #require(
+                TimeZone(
+                    secondsFromGMT:
+                        8 * 60 * 60
+                )
+            )
+
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 20,
+                        hour: 9,
+                        minute: 8,
+                        second: 19
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/PhotoMemo Import.JPG"),
+            image: NSImage(size: NSSize(width: 32, height: 32)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                captureTimezoneOffsetSeconds:
+                    8 * 60 * 60,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 32,
+                imageHeight: 32
+            ),
+            sourceInfo: PhotoSourceInfo(
+                originalFileName:
+                    "PhotoMemo Import.JPG"
+            )
+        )
+
+        let card = RecordCardBuildService().buildCard(
+            from: photo,
+            configuration: BatchConfigurationSnapshot(
+                template: .template1.normalizedForEditing,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        )
+
+        let exportFolder =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoExports",
+                isDirectory: true
+            )
+
+        let expectedURL =
+            exportFolder.appendingPathComponent(
+                "IMG_20260620_090819.jpg"
+            )
+
+        try? FileManager.default.removeItem(
+            at: expectedURL
+        )
+
+        defer {
+            try? FileManager.default.removeItem(
+                at: expectedURL
+            )
+        }
+
+        let exportedURL =
+            try RecordCardExportService()
+            .exportToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        #expect(
+            exportedURL.lastPathComponent
+            == "IMG_20260620_090819.jpg"
+        )
+    }
+
+    @MainActor
     @Test("Uses exported file name as the photo-library original filename")
     func usesExportedFileNameAsPhotoLibraryOriginalFilename() {
 

@@ -207,7 +207,8 @@ final class PhotoMemoShareExtensionIntakeService {
         }
 
         let requestID = UUID()
-        var managedURLs: [URL] = []
+        var managedItems:
+            [ExternalPhotoIntakeItem] = []
         var seenSourceKeys = Set<String>()
         var skippedCount = 0
         var failedCount = 0
@@ -235,9 +236,8 @@ final class PhotoMemoShareExtensionIntakeService {
             switch outcome {
 
             case .imported(let importRecord):
-                managedURLs.append(
-                    importRecord
-                    .managedURL
+                managedItems.append(
+                    importRecord.item
                 )
 
             case .skippedDuplicate:
@@ -258,14 +258,14 @@ final class PhotoMemoShareExtensionIntakeService {
         let importSummary =
             ExternalPhotoImportSummary(
                 importedCount:
-                    managedURLs.count,
+                    managedItems.count,
                 skippedCount:
                     skippedCount,
                 failedCount:
                     failedCount
             )
 
-        guard !managedURLs.isEmpty else {
+        guard !managedItems.isEmpty else {
             let result =
                 PhotoMemoShareExtensionImportResult(
                     itemProviderCount:
@@ -311,7 +311,10 @@ final class PhotoMemoShareExtensionIntakeService {
             intakeStore
             .persistManagedRequestDetailed(
                 id: requestID,
-                urls: managedURLs,
+                urls: managedItems.map(
+                    \.managedURL
+                ),
+                items: managedItems,
                 source: .shareExtension,
                 importSummary:
                     importSummary,
@@ -325,7 +328,7 @@ final class PhotoMemoShareExtensionIntakeService {
         guard let request =
             persistResult.request
         else {
-            managedURLs.forEach {
+            managedItems.map(\.managedURL).forEach {
                 intakeStore
                     .cleanupManagedSourceIfNeeded(
                         at: $0
@@ -433,9 +436,14 @@ private extension PhotoMemoShareExtensionIntakeService {
 
     struct ManagedImportRecord {
 
-        let managedURL: URL
+        let item:
+            ExternalPhotoIntakeItem
 
         let dedupeKey: String
+
+        var managedURL: URL {
+            item.managedURL
+        }
     }
 
     struct FileRepresentationLoadResult {
@@ -609,6 +617,9 @@ private extension PhotoMemoShareExtensionIntakeService {
             "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation start for \(UTType.image.identifier)"
         )
 
+        let suggestedName =
+            provider.suggestedName
+
         return await withCheckedContinuation {
             (
                 continuation:
@@ -694,12 +705,21 @@ private extension PhotoMemoShareExtensionIntakeService {
                     "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returnedURL=\(url.standardizedFileURL.path)"
                 )
 
+                let originalFileName =
+                    Self.resolvedOriginalFileName(
+                        preferredName:
+                            suggestedName,
+                        sourceURL: url
+                    )
+
                 let copyResult =
                     intakeStore
                     .createManagedCopyDetailed(
                         from: url,
                         requestID: requestID,
                         index: index,
+                        preferredOriginalFileName:
+                            originalFileName,
                         diagnosticsSeed:
                             diagnosticsSeed
                     )
@@ -750,8 +770,16 @@ private extension PhotoMemoShareExtensionIntakeService {
                         FileRepresentationLoadResult(
                             importRecord:
                                 ManagedImportRecord(
-                                    managedURL:
-                                        managedURL,
+                                    item:
+                                        ExternalPhotoIntakeItem(
+                                            managedURL:
+                                                managedURL,
+                                            originalFileName:
+                                                originalFileName,
+                                            contentTypeIdentifier:
+                                                diagnosticsSeed
+                                                .preferredRegisteredTypeIdentifier
+                                        ),
                                     dedupeKey:
                                         url
                                         .standardizedFileURL
@@ -842,12 +870,22 @@ private extension PhotoMemoShareExtensionIntakeService {
                         "Provider[\(index)] loadItem returnedURL=\(normalizedURL.path)"
                     )
 
+                    let originalFileName =
+                        Self.resolvedOriginalFileName(
+                            preferredName:
+                                suggestedName,
+                            sourceURL:
+                                normalizedURL
+                        )
+
                     let copyResult =
                         intakeStore
                         .createManagedCopyDetailed(
                             from: normalizedURL,
                             requestID: requestID,
                             index: index,
+                            preferredOriginalFileName:
+                                originalFileName,
                             diagnosticsSeed:
                                 diagnosticsSeed
                         )
@@ -895,8 +933,16 @@ private extension PhotoMemoShareExtensionIntakeService {
                         returning:
                             .imported(
                                 ManagedImportRecord(
-                                    managedURL:
-                                        managedURL,
+                                    item:
+                                        ExternalPhotoIntakeItem(
+                                            managedURL:
+                                                managedURL,
+                                            originalFileName:
+                                                originalFileName,
+                                            contentTypeIdentifier:
+                                                diagnosticsSeed
+                                                .preferredRegisteredTypeIdentifier
+                                        ),
                                     dedupeKey:
                                         "url:\(normalizedURL.path)"
                                 )
@@ -965,8 +1011,19 @@ private extension PhotoMemoShareExtensionIntakeService {
                         returning:
                             .imported(
                                 ManagedImportRecord(
-                                    managedURL:
-                                        managedURL,
+                                    item:
+                                        ExternalPhotoIntakeItem(
+                                            managedURL:
+                                                managedURL,
+                                            originalFileName:
+                                                Self.resolvedOriginalFileName(
+                                                    preferredName:
+                                                        suggestedName
+                                                ),
+                                            contentTypeIdentifier:
+                                                diagnosticsSeed
+                                                .preferredRegisteredTypeIdentifier
+                                        ),
                                     dedupeKey:
                                         Self
                                         .dedupeKey(
@@ -1036,6 +1093,23 @@ private extension PhotoMemoShareExtensionIntakeService {
                 type.conforms(to: .image)
             }?
             .identifier
+    }
+
+    nonisolated static
+    func resolvedOriginalFileName(
+        preferredName: String?,
+        sourceURL: URL? = nil
+    ) -> String? {
+
+        PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                preferredName
+            )
+            ?? PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                sourceURL?
+                .lastPathComponent
+            )
     }
 
     func logFailureContext(

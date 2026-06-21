@@ -93,19 +93,21 @@ final class PhotoMemoAppRuntime:
         }
 
         for request in requests {
-            let validURLs =
-                request.urls.filter {
-                    isValidRequestSourceURL($0)
+            let validPayloads =
+                request.intakePayloads.filter {
+                    isValidRequestSourceURL(
+                        $0.sourceURL
+                    )
                 }
 
             let intakeSummary =
                 resolvedIntakeSummary(
                     for: request,
                     validURLCount:
-                        validURLs.count
+                        validPayloads.count
                 )
 
-            guard !validURLs.isEmpty else {
+            guard !validPayloads.isEmpty else {
                 request.urls.forEach {
                     externalIntakeStore
                         .cleanupManagedSourceIfNeeded(
@@ -116,11 +118,7 @@ final class PhotoMemoAppRuntime:
             }
 
             _ = batchQueueStore.enqueue(
-                payloads: validURLs.map {
-                    BatchTaskIntakePayload(
-                        sourceURL: $0
-                    )
-                },
+                payloads: validPayloads,
                 configuration:
                     request.configurationSnapshot,
                 launchSource:
@@ -132,7 +130,7 @@ final class PhotoMemoAppRuntime:
                         receivedAt:
                             request.receivedAt,
                         taskCount:
-                            validURLs.count
+                            validPayloads.count
                     )
                     )
         }

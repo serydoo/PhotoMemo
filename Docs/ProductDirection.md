@@ -44,6 +44,35 @@ The long-term promise is:
 - let PhotoMemo generate and save quietly
 - return to life instead of returning to settings
 
+## Internal Workflow Standard
+
+PhotoMemo is now also defined by one internal product workflow:
+
+Import
+
+-> Metadata
+
+-> Memory
+
+-> Renderer
+
+-> Export
+
+-> Share
+
+This is an engineering and product-alignment rule, not a user-facing concept.
+
+It keeps responsibilities clear:
+
+- Import brings photos in and preserves source facts
+- Metadata exposes canonical photo facts
+- Memory derives meaning
+- Renderer produces pixels
+- Export writes results
+- Share executes the lightweight user flow
+
+Renderer quality matters, but renderer is not the product center.
+
 ## Primary Product Entry
 
 Old mindset:
@@ -184,6 +213,8 @@ This is the clearest product differentiator PhotoMemo has.
 
 - `Docs/UX_PRINCIPLES.md`
 - `Docs/DesignSystem.md`
+- `Docs/MainWorkflowConsolidation.md`
+- `Docs/MainWorkflowChecklist.md`
 - `Docs/ProductBacklog.md`
 - `Docs/ProductScore.md`
 - `Docs/ShareExtensionReview.md`

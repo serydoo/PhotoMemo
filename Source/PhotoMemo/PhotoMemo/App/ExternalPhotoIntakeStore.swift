@@ -50,9 +50,17 @@ final class ExternalPhotoIntakeStore {
             return nil
         }
 
+        let managedItems =
+            managedURLs.map {
+                ExternalPhotoIntakeItem(
+                    managedURL: $0
+                )
+            }
+
         return persistManagedRequest(
             id: requestID,
             urls: managedURLs,
+            items: managedItems,
             source: source,
             importSummary:
                 importSummary,
@@ -64,6 +72,7 @@ final class ExternalPhotoIntakeStore {
     func persistManagedRequest(
         id: UUID = UUID(),
         urls: [URL],
+        items: [ExternalPhotoIntakeItem]? = nil,
         source: BatchJobLaunchSource,
         importSummary:
             ExternalPhotoImportSummary? = nil,
@@ -74,6 +83,7 @@ final class ExternalPhotoIntakeStore {
         persistManagedRequestDetailed(
             id: id,
             urls: urls,
+            items: items,
             source: source,
             importSummary:
                 importSummary,
@@ -129,13 +139,16 @@ final class ExternalPhotoIntakeStore {
     func createManagedCopy(
         from url: URL,
         requestID: UUID,
-        index: Int
+        index: Int,
+        preferredOriginalFileName: String? = nil
     ) -> URL? {
 
         createManagedCopyDetailed(
             from: url,
             requestID: requestID,
-            index: index
+            index: index,
+            preferredOriginalFileName:
+                preferredOriginalFileName
         ).managedURL
     }
 
@@ -162,6 +175,7 @@ final class ExternalPhotoIntakeStore {
         from url: URL,
         requestID: UUID,
         index: Int,
+        preferredOriginalFileName: String? = nil,
         diagnosticsSeed:
             PhotoMemoShareIntakeOperationSeed = .init()
     ) -> PhotoMemoShareIntakeManagedCopyResult {
@@ -264,12 +278,22 @@ final class ExternalPhotoIntakeStore {
         }
 
         let destinationURL =
-            requestDirectoryURL
-            .appendingPathComponent(
-                managedFileName(
-                    for: normalizedURL,
-                    index: index
-                )
+            uniqueManagedDestinationURL(
+                in: requestDirectoryURL,
+                preferredBaseName:
+                    preferredManagedBaseName(
+                        preferredOriginalFileName:
+                            preferredOriginalFileName,
+                        fallbackURL:
+                            normalizedURL
+                    ),
+                preferredFileExtension:
+                    preferredManagedFileExtension(
+                        preferredOriginalFileName:
+                            preferredOriginalFileName,
+                        fallbackURL:
+                            normalizedURL
+                    )
             )
 
         let accessGranted =
@@ -408,15 +432,12 @@ final class ExternalPhotoIntakeStore {
         }
 
         let destinationURL =
-            requestDirectoryURL
-            .appendingPathComponent(
-                managedFileName(
-                    preferredBaseName:
-                        preferredBaseName,
-                    preferredFileExtension:
-                        preferredFileExtension,
-                    index: index
-                )
+            uniqueManagedDestinationURL(
+                in: requestDirectoryURL,
+                preferredBaseName:
+                    preferredBaseName,
+                preferredFileExtension:
+                    preferredFileExtension
             )
 
         do {
@@ -473,6 +494,7 @@ final class ExternalPhotoIntakeStore {
     func persistManagedRequestDetailed(
         id: UUID = UUID(),
         urls: [URL],
+        items: [ExternalPhotoIntakeItem]? = nil,
         source: BatchJobLaunchSource,
         importSummary:
             ExternalPhotoImportSummary? = nil,
@@ -485,6 +507,12 @@ final class ExternalPhotoIntakeStore {
         let normalizedURLs =
             uniqueStandardizedURLs(
                 from: urls
+            )
+
+        let normalizedItems =
+            normalizedIntakeItems(
+                items,
+                matching: normalizedURLs
             )
 
         guard !normalizedURLs.isEmpty else {
@@ -518,6 +546,7 @@ final class ExternalPhotoIntakeStore {
                 id: id,
                 launchSource: source,
                 urls: normalizedURLs,
+                items: normalizedItems,
                 configurationSnapshot:
                     configurationSnapshot,
                 importSummary:
@@ -834,12 +863,15 @@ private extension ExternalPhotoIntakeStore {
         }
 
         let destinationURL =
-            requestDirectoryURL
-            .appendingPathComponent(
-                managedFileName(
-                    for: normalizedURL,
-                    index: index
-                )
+            uniqueManagedDestinationURL(
+                in: requestDirectoryURL,
+                preferredBaseName:
+                    normalizedURL
+                    .deletingPathExtension()
+                    .lastPathComponent,
+                preferredFileExtension:
+                    normalizedURL
+                    .pathExtension
             )
 
         let accessGranted =
@@ -872,6 +904,37 @@ private extension ExternalPhotoIntakeStore {
         } catch {
             return nil
         }
+    }
+
+    func normalizedIntakeItems(
+        _ items: [ExternalPhotoIntakeItem]?,
+        matching normalizedURLs: [URL]
+    ) -> [ExternalPhotoIntakeItem]? {
+
+        guard let items,
+              !items.isEmpty else {
+            return nil
+        }
+
+        let allowedPaths =
+            Set(
+                normalizedURLs.map(\.path)
+            )
+
+        let filteredItems =
+            items.filter {
+                allowedPaths.contains(
+                    $0.managedURL
+                    .standardizedFileURL
+                    .path
+                )
+            }
+
+        guard !filteredItems.isEmpty else {
+            return nil
+        }
+
+        return filteredItems
     }
 
     func isManagedIntakeURL(
@@ -922,38 +985,11 @@ private extension ExternalPhotoIntakeStore {
         }
     }
 
-    func managedFileName(
-        for url: URL,
-        index: Int
-    ) -> String {
-
-        let baseName =
-            url.deletingPathExtension()
-            .lastPathComponent
-            .replacingOccurrences(
-                of: "/",
-                with: "-"
-            )
-            .replacingOccurrences(
-                of: ":",
-                with: "-"
-            )
-
-        let fileExtension =
-            url.pathExtension
-
-        if fileExtension.isEmpty {
-            return "\(index)-\(baseName)"
-        }
-
-        return "\(index)-\(baseName).\(fileExtension)"
-    }
-
-    func managedFileName(
+    func uniqueManagedDestinationURL(
+        in directoryURL: URL,
         preferredBaseName: String?,
-        preferredFileExtension: String?,
-        index: Int
-    ) -> String {
+        preferredFileExtension: String?
+    ) -> URL {
 
         let sanitizedBaseName =
             preferredBaseName?
@@ -979,17 +1015,127 @@ private extension ExternalPhotoIntakeStore {
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
+
+        var candidateURL =
+            managedDestinationURL(
+                in: directoryURL,
+                baseName: baseName,
+                fileExtension: fileExtension
+            )
+
+        var copyIndex = 1
+
+        while FileManager.default.fileExists(
+            atPath: candidateURL.path
+        ) {
+
+            candidateURL =
+                managedDestinationURL(
+                    in: directoryURL,
+                    baseName:
+                        "\(baseName) (\(copyIndex))",
+                    fileExtension:
+                        fileExtension
+                )
+            copyIndex += 1
+        }
+
+        return candidateURL
+    }
+
+    func managedDestinationURL(
+        in directoryURL: URL,
+        baseName: String,
+        fileExtension: String?
+    ) -> URL {
+
+        let sanitizedFileExtension =
+            fileExtension?
             .replacingOccurrences(
                 of: ".",
                 with: ""
             )
-            .lowercased()
-            ?? ""
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
 
-        if fileExtension.isEmpty {
-            return "\(index)-\(baseName)"
+        if let sanitizedFileExtension,
+           !sanitizedFileExtension.isEmpty {
+            return directoryURL
+                .appendingPathComponent(
+                    baseName
+                )
+                .appendingPathExtension(
+                    sanitizedFileExtension
+                )
         }
 
-        return "\(index)-\(baseName).\(fileExtension)"
+        return directoryURL
+            .appendingPathComponent(
+                baseName
+            )
+    }
+
+    func preferredManagedBaseName(
+        preferredOriginalFileName: String?,
+        fallbackURL: URL
+    ) -> String {
+
+        let resolvedFileName =
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                preferredOriginalFileName
+            )
+            ?? PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                fallbackURL.lastPathComponent
+            )
+            ?? fallbackURL.lastPathComponent
+
+        let baseName =
+            URL(fileURLWithPath: resolvedFileName)
+            .deletingPathExtension()
+            .lastPathComponent
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return baseName.isEmpty
+            ? "shared-image"
+            : baseName
+    }
+
+    func preferredManagedFileExtension(
+        preferredOriginalFileName: String?,
+        fallbackURL: URL
+    ) -> String? {
+
+        if let resolvedFileName =
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                preferredOriginalFileName
+            ) {
+
+            let preferredExtension =
+                URL(fileURLWithPath: resolvedFileName)
+                .pathExtension
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+
+            if !preferredExtension.isEmpty {
+                return preferredExtension
+            }
+        }
+
+        let fallbackExtension =
+            fallbackURL.pathExtension
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return fallbackExtension.isEmpty
+            ? nil
+            : fallbackExtension
     }
 }

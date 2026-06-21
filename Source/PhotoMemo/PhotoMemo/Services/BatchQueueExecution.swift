@@ -47,6 +47,11 @@ final class BatchQueueExecution {
         let tasks = payloads.map {
             BatchTask(
                 sourceURL: $0.sourceURL,
+                fileName: $0.fileName,
+                sourceIdentifier:
+                    $0.sourceIdentifier,
+                contentTypeIdentifier:
+                    $0.contentTypeIdentifier,
                 createdAt: $0.requestedAt
             )
         }

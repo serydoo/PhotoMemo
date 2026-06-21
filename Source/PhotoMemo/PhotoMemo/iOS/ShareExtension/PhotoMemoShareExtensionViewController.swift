@@ -743,7 +743,7 @@ private extension PhotoMemoShareExtensionViewController {
                     for: result
                 )
             footerLabel.text =
-                "当前分享页会关闭，PhotoMemo 会继续完成保存。"
+                "接下来会回到 PhotoMemo，继续完成生成和保存。"
             primaryButton.isEnabled =
                 false
             primaryButton.configuration?.title =
@@ -758,6 +758,8 @@ private extension PhotoMemoShareExtensionViewController {
             PhotoMemoShareIntakeLog.notice(
                 "Share extension completion request will be sent."
             )
+
+            await requestMainAppRefresh()
 
             extensionContext?
                 .completeRequest(
@@ -853,6 +855,41 @@ private extension PhotoMemoShareExtensionViewController {
         }
 
         return "已接收 \(result.requestedCount) 张。处理完成后会写回系统相册。"
+    }
+
+    func requestMainAppRefresh() async {
+
+        let deepLinkURL =
+            PhotoMemoDeepLink.share.url
+
+        let opened =
+            await withCheckedContinuation {
+                (
+                    continuation:
+                        CheckedContinuation<Bool, Never>
+                ) in
+
+                guard
+                    let extensionContext
+                else {
+                    continuation.resume(
+                        returning: false
+                    )
+                    return
+                }
+
+                extensionContext.open(
+                    deepLinkURL
+                ) { success in
+                    continuation.resume(
+                        returning: success
+                    )
+                }
+            }
+
+        PhotoMemoShareIntakeLog.notice(
+            "Requested main-app refresh via deep link. success=\(opened)"
+        )
     }
 
     func loadFirstPreviewIfNeeded() {

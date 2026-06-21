@@ -143,4 +143,276 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
             forName: suiteName
         )
     }
+
+    @Test("Managed copy preserves the original file name and appends copy suffixes")
+    func preservesOriginalManagedCopyFileNameAndCopySuffixes() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.CopySuffix.\(UUID().uuidString)"
+
+        guard let defaults =
+            UserDefaults(suiteName: suiteName) else {
+            Issue.record("Unable to create isolated UserDefaults suite")
+            return
+        }
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let rootDirectoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        let sourceDirectoryURL =
+            rootDirectoryURL
+            .appendingPathComponent(
+                "Source",
+                isDirectory: true
+            )
+
+        try FileManager.default.createDirectory(
+            at: sourceDirectoryURL,
+            withIntermediateDirectories: true
+        )
+
+        let sourceURL =
+            sourceDirectoryURL
+            .appendingPathComponent(
+                "IMG_7065.JPEG"
+            )
+
+        try Data([9, 8, 7, 6]).write(
+            to: sourceURL
+        )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL:
+                    rootDirectoryURL
+                    .appendingPathComponent(
+                        "Intake",
+                        isDirectory: true
+                    )
+            )
+
+        let requestID = UUID()
+
+        let firstResult =
+            store.createManagedCopyDetailed(
+                from: sourceURL,
+                requestID: requestID,
+                index: 0
+            )
+
+        let secondResult =
+            store.createManagedCopyDetailed(
+                fromData: Data([1, 2, 3]),
+                requestID: requestID,
+                index: 1,
+                preferredFileExtension:
+                    "JPEG",
+                preferredBaseName:
+                    "IMG_7065"
+            )
+
+        let firstManagedURL =
+            try #require(firstResult.managedURL)
+        let secondManagedURL =
+            try #require(secondResult.managedURL)
+
+        #expect(
+            firstManagedURL.lastPathComponent
+            == "IMG_7065.JPEG"
+        )
+        #expect(
+            secondManagedURL.lastPathComponent
+            == "IMG_7065 (1).JPEG"
+        )
+
+        try? FileManager.default.removeItem(
+            at: rootDirectoryURL
+        )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
+
+    @Test("Managed copy prefers the original shared file name over a temporary provider file name")
+    func prefersOriginalSharedFileNameOverTemporaryProviderFileName() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.PreferredOriginalName.\(UUID().uuidString)"
+
+        guard let defaults =
+            UserDefaults(suiteName: suiteName) else {
+            Issue.record("Unable to create isolated UserDefaults suite")
+            return
+        }
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let rootDirectoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        let sourceDirectoryURL =
+            rootDirectoryURL
+            .appendingPathComponent(
+                "Source",
+                isDirectory: true
+            )
+
+        try FileManager.default.createDirectory(
+            at: sourceDirectoryURL,
+            withIntermediateDirectories: true
+        )
+
+        let sourceURL =
+            sourceDirectoryURL
+            .appendingPathComponent(
+                "share-provider-temp-file"
+            )
+
+        try Data([4, 5, 6, 7]).write(
+            to: sourceURL
+        )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL:
+                    rootDirectoryURL
+                    .appendingPathComponent(
+                        "Intake",
+                        isDirectory: true
+                    )
+            )
+
+        let result =
+            store.createManagedCopyDetailed(
+                from: sourceURL,
+                requestID: UUID(),
+                index: 0,
+                preferredOriginalFileName:
+                    "IMG_9558.HEIC"
+            )
+
+        let managedURL =
+            try #require(result.managedURL)
+
+        #expect(
+            managedURL.lastPathComponent
+            == "IMG_9558.HEIC"
+        )
+
+        try? FileManager.default.removeItem(
+            at: rootDirectoryURL
+        )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
+
+    @Test("Persisted intake requests retain structured item provenance")
+    func persistedIntakeRequestsRetainStructuredItemProvenance() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.PersistItems.\(UUID().uuidString)"
+
+        guard let defaults =
+            UserDefaults(suiteName: suiteName) else {
+            Issue.record("Unable to create isolated UserDefaults suite")
+            return
+        }
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let directoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        try FileManager.default.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true
+        )
+
+        let managedURL =
+            directoryURL
+            .appendingPathComponent(
+                "IMG_9558.HEIC"
+            )
+
+        try Data([4, 5, 6]).write(
+            to: managedURL
+        )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: directoryURL
+            )
+
+        let result =
+            store.persistManagedRequestDetailed(
+                urls: [managedURL],
+                items: [
+                    ExternalPhotoIntakeItem(
+                        managedURL: managedURL,
+                        originalFileName: "IMG_9558.HEIC",
+                        sourceIdentifier: "asset-local-9558",
+                        contentTypeIdentifier: "public.heic"
+                    )
+                ],
+                source: .shareExtension,
+                configurationSnapshot:
+                    BatchConfigurationSnapshot(
+                        template: .template1.normalizedForEditing,
+                        badge: nil,
+                        anchor: nil,
+                        shouldWritePhotoDescription: false,
+                        photoDescriptionOverride: "",
+                        selectedAlbumIdentifier: ""
+                    )
+            )
+
+        let request =
+            try #require(result.request)
+        let intakeItem =
+            try #require(request.items?.first)
+        let payload =
+            try #require(request.intakePayloads.first)
+
+        #expect(result.failureContext == nil)
+        #expect(intakeItem.originalFileName == "IMG_9558.HEIC")
+        #expect(intakeItem.sourceIdentifier == "asset-local-9558")
+        #expect(intakeItem.contentTypeIdentifier == "public.heic")
+        #expect(payload.fileName == "IMG_9558.HEIC")
+        #expect(payload.sourceIdentifier == "asset-local-9558")
+        #expect(payload.contentTypeIdentifier == "public.heic")
+
+        try? FileManager.default.removeItem(
+            at: directoryURL
+        )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
 }

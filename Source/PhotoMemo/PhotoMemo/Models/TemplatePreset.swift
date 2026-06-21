@@ -11,7 +11,28 @@ enum TemplatePreset: String, Codable, CaseIterable {
     case immersWhite
 }
 
+enum TemplateRenderLayout: Equatable {
+
+    case classicWhite
+
+    case immersWhite
+}
+
 extension TemplatePreset {
+
+    var renderLayout: TemplateRenderLayout {
+
+        switch self {
+
+        case .template1,
+             .immersWhite:
+            return .immersWhite
+
+        case .template2,
+             .template3:
+            return .classicWhite
+        }
+    }
 
     var displayName: String {
 

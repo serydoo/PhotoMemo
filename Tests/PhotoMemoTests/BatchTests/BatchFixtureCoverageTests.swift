@@ -72,6 +72,64 @@ struct BatchFixtureCoverageTests {
     }
 
     @MainActor
+    @Test("Payload provenance overrides temporary URL naming and survives into imported photos")
+    func payloadProvenanceOverridesTemporaryURLNamingAndSurvivesIntoImportedPhotos() async throws {
+
+        let execution =
+            BatchQueueExecution(
+                externalIntakeStore:
+                    makeExternalIntakeStore()
+            )
+
+        let fixtureURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+
+        let job =
+            execution.enqueue(
+                payloads: [
+                    BatchTaskIntakePayload(
+                        sourceURL: fixtureURL,
+                        sourceIdentifier: "asset-local-6001",
+                        fileName: "IMG_6001.HEIC",
+                        contentTypeIdentifier: "public.heic"
+                    )
+                ],
+                configuration:
+                    makeConfiguration(),
+                launchSource:
+                    .shareExtension
+            )
+
+        let task =
+            try #require(job?.tasks.first)
+
+        #expect(task.fileName == "IMG_6001.HEIC")
+        #expect(task.sourceIdentifier == "asset-local-6001")
+        #expect(task.contentTypeIdentifier == "public.heic")
+
+        let importedPhoto =
+            try await BatchProcessingCoordinator()
+            .importPhoto(
+                for: task
+            )
+
+        #expect(
+            importedPhoto.sourceInfo.originalFileName
+            == "IMG_6001.HEIC"
+        )
+        #expect(
+            importedPhoto.sourceInfo.assetLocalIdentifier
+            == "asset-local-6001"
+        )
+        #expect(
+            importedPhoto.sourceInfo.contentTypeIdentifier
+            == "public.heic"
+        )
+    }
+
+    @MainActor
     @Test("Cancelling managed fixture batches cleans temporary copies and marks tasks cancelled")
     func cancellingManagedFixtureBatchCleansTemporaryCopies() throws {
 

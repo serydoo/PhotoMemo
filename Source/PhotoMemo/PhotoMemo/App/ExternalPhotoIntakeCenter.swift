@@ -90,6 +90,12 @@ final class ExternalPhotoIntakeCenter:
                 ExternalPhotoIntakeRequest(
                     launchSource: source,
                     urls: acceptedURLs,
+                    items:
+                        acceptedURLs.map {
+                            ExternalPhotoIntakeItem(
+                                managedURL: $0
+                            )
+                        },
                     configurationSnapshot:
                         defaultConfigurationSnapshot,
                     importSummary:

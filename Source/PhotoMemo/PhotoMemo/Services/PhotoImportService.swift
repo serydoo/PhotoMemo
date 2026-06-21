@@ -23,15 +23,22 @@ final class PhotoImportService {
 
     private let metadataReader = PhotoMetadataReader()
 
-    func importPhoto(from url: URL) async throws -> SelectedPhoto {
+    func importPhoto(
+        from url: URL,
+        sourceInfo: PhotoSourceInfo? = nil
+    ) async throws -> SelectedPhoto {
 
-        try importPhotoSync(from: url)
+        try importPhotoSync(
+            from: url,
+            sourceInfo: sourceInfo
+        )
     }
 
     func importPhoto(
         from data: Data,
         suggestedFileName: String?,
-        contentType: UTType?
+        contentType: UTType?,
+        assetLocalIdentifier: String? = nil
     ) async throws -> SelectedPhoto {
 
         let temporaryURL =
@@ -47,8 +54,17 @@ final class PhotoImportService {
                 options: .atomic
             )
 
+            let sourceInfo =
+                resolvedSourceInfo(
+                    fileURL: temporaryURL,
+                    contentType: contentType,
+                    assetLocalIdentifier:
+                        assetLocalIdentifier
+                )
+
             return try importPhotoSync(
-                from: temporaryURL
+                from: temporaryURL,
+                sourceInfo: sourceInfo
             )
 
         } catch {
@@ -62,7 +78,8 @@ final class PhotoImportService {
     }
 
     func importPhotoOffMainThread(
-        from url: URL
+        from url: URL,
+        sourceInfo: PhotoSourceInfo? = nil
     ) async throws -> SelectedPhoto {
 
         try await withCheckedThrowingContinuation {
@@ -76,7 +93,8 @@ final class PhotoImportService {
 
                     let photo =
                         try self.importPhotoSync(
-                            from: url
+                            from: url,
+                            sourceInfo: sourceInfo
                         )
 
                     continuation.resume(
@@ -94,7 +112,8 @@ final class PhotoImportService {
     }
 
     private func importPhotoSync(
-        from url: URL
+        from url: URL,
+        sourceInfo: PhotoSourceInfo? = nil
     ) throws -> SelectedPhoto {
 
         let accessGranted = url.startAccessingSecurityScopedResource()
@@ -124,7 +143,14 @@ final class PhotoImportService {
             sourceURL: url,
             sourceProperties: sourceProperties,
             image: image,
-            metadata: metadata
+            metadata: metadata,
+            sourceInfo:
+                sourceInfo
+                ?? resolvedSourceInfo(
+                    fileURL: url,
+                    contentType: nil,
+                    assetLocalIdentifier: nil
+                )
         )
     }
 
@@ -158,10 +184,29 @@ final class PhotoImportService {
         contentType: UTType?
     ) throws -> URL {
 
-        let folderURL =
+        let rootFolderURL =
             FileManager.default.temporaryDirectory
             .appendingPathComponent(
                 "PhotoMemoPickerImports",
+                isDirectory: true
+            )
+
+        do {
+
+            try FileManager.default.createDirectory(
+                at: rootFolderURL,
+                withIntermediateDirectories: true
+            )
+
+        } catch {
+
+            throw PhotoImportError
+                .temporaryImportPreparationFailed
+        }
+
+        let folderURL =
+            rootFolderURL.appendingPathComponent(
+                UUID().uuidString,
                 isDirectory: true
             )
 
@@ -202,19 +247,16 @@ final class PhotoImportService {
 
         let fallback = "PhotoMemo Import"
 
-        guard
-            let suggestedFileName,
-            !suggestedFileName
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                )
-                .isEmpty
+        guard let sanitizedFileName =
+            sanitizedSuggestedFileName(
+                suggestedFileName
+            )
         else {
             return fallback
         }
 
         let baseName =
-            URL(fileURLWithPath: suggestedFileName)
+            URL(fileURLWithPath: sanitizedFileName)
             .deletingPathExtension()
             .lastPathComponent
             .trimmingCharacters(
@@ -224,6 +266,15 @@ final class PhotoImportService {
         return baseName.isEmpty
             ? fallback
             : baseName
+    }
+
+    func sanitizedSuggestedFileName(
+        _ suggestedFileName: String?
+    ) -> String? {
+        PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                suggestedFileName
+            )
     }
 
     private func preferredImportExtension(
@@ -236,7 +287,6 @@ final class PhotoImportService {
             let extensionCandidate =
                 URL(fileURLWithPath: suggestedFileName)
                 .pathExtension
-                .lowercased()
 
             if !extensionCandidate.isEmpty {
                 return extensionCandidate
@@ -247,10 +297,25 @@ final class PhotoImportService {
            let preferredFilenameExtension =
             contentType.preferredFilenameExtension {
 
-            return preferredFilenameExtension
+            return normalizedImportExtension(
+                preferredFilenameExtension
+            )
         }
 
         return "jpg"
+    }
+
+    private func normalizedImportExtension(
+        _ fileExtension: String
+    ) -> String {
+
+        switch fileExtension.lowercased() {
+        case "jpeg":
+            return "jpg"
+
+        default:
+            return fileExtension.lowercased()
+        }
     }
 
     private func uniqueImportURL(
@@ -289,5 +354,26 @@ final class PhotoImportService {
         }
 
         return candidateURL
+    }
+
+    private func resolvedSourceInfo(
+        fileURL: URL,
+        contentType: UTType?,
+        assetLocalIdentifier: String?
+    ) -> PhotoSourceInfo {
+
+        PhotoSourceInfo(
+            originalFileName:
+                fileURL.lastPathComponent,
+            assetLocalIdentifier:
+                assetLocalIdentifier,
+            contentTypeIdentifier:
+                contentType?.identifier
+                ?? UTType(
+                    filenameExtension:
+                        fileURL.pathExtension
+                        .lowercased()
+                )?.identifier
+        )
     }
 }

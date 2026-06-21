@@ -37,6 +37,18 @@ struct PhotoMemoRootSceneView: View {
         }
             .preferredColorScheme(.light)
             .onOpenURL { url in
+                if let deepLink =
+                    PhotoMemoDeepLink(
+                        url: url
+                    ) {
+                    switch deepLink {
+                    case .share:
+                        runtime
+                            .refreshExternalIntakeState()
+                    }
+                    return
+                }
+
                 runtime.handleExternalURLs(
                     [url],
                     source: .fileOpen

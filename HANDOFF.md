@@ -1,5 +1,653 @@
 # PhotoMemo Handoff
 
+Compact AI summary for this round:
+
+- `Docs/AI_HANDOFF_2026-06-21.md`
+
+## 2026-06-21 Classic White 人工视觉对照 + snapshot 回归链闭环
+
+- 这一轮继续只收 `Classic White`，没有碰：
+  - Metadata Pipeline
+  - Memory Engine
+  - Batch / Share 业务逻辑
+- 目标不是继续调样式，而是把 `Classic White` 的视觉结果正式纳入可重复验证。
+
+- 本轮新增内容：
+  - `Tests/Fixtures/RendererSnapshots/ClassicWhite/full-card/`
+    - 已提交 4 张人工视觉基准图：
+      - `landscape_standard`
+      - `landscape_long_exif`
+      - `portrait_standard`
+      - `portrait_long_memory`
+  - `Tests/PhotoMemoTests/Support/ClassicWhiteSnapshotSupport.swift`
+    - 提供 deterministic synthetic scenario
+    - 支持：
+      - record mode
+      - reference compare
+      - mismatch artifact 输出
+      - test attachment 导出
+  - `Tests/PhotoMemoTests/RendererTests/ClassicWhiteSnapshotTests.swift`
+    - 为四个 full-card 场景提供 snapshot 级回归保护
+  - `Docs/ClassicWhiteVisualQA.md`
+    - 记录人工目视检查项
+    - 记录基准图刷新流程
+
+- 这轮里一个关键结论：
+  - Xcode 测试附件导出的 PNG 与渲染原图之间，会存在极轻微色差
+  - 当前观测值是：
+    - `maxChannelDelta = 1`
+    - 差异像素占比远低于 `0.05%`
+  - 因此 snapshot compare 现在采用：
+    - 先严格比较
+    - 若只有极小 attachment-refresh 色差，则允许通过
+  - 这不会放过真正的布局回归，因为：
+    - divider
+    - padding
+    - font tier
+    - truncation
+    - module width
+    这些变化都会远超这个容差
+
+- 本轮验证：
+  - `ClassicWhiteSnapshotTests` 正常模式通过
+  - 录制模式也已验证可工作：
+    - `.record-mode`
+    - `xcresulttool export attachments`
+    - 替换 reference PNG
+    - 再回到正常模式复验
+  - `PhotoMemoTests` 全量通过
+  - 构建通过：
+    - `PhotoMemo`
+    - `PhotoMemoiOS`
+    - `PhotoMemoShareExtension`
+  - 真机安装并启动通过：
+    - 设备：`iPhone7`
+    - 型号：`iPhone 17 Pro Max`
+    - bundle id：`com.serydoo.PhotoMemo.iOS`
+
+- 当前意义：
+  - Classic White 现在同时具备：
+    - theme 常量保护
+    - grid 数学保护
+    - renderer 路由保护
+    - full-card snapshot 保护
+  - 后续再做字体、间距、分隔符等微调时，已经不是“靠眼睛记”，而是有稳定回归链可依赖
+
+## 2026-06-21 Classic White 第二层回归保护
+
+- 这一轮继续只收 `Classic White`，没有碰：
+  - Metadata Pipeline
+  - Memory Engine
+  - Batch / Share 业务逻辑
+- 目标不是继续改视觉，而是把已经落地的设计系统再锁紧一层，减少后续 refactor 误伤。
+
+- 本轮新增两个可测试支点：
+  - `RecordCardRenderer.destination(for:)`
+    - 让 preset -> renderer 的路由成为显式边界
+    - 不再只靠 `body` 内部 switch 隐式表达
+  - `ClassicWhiteCardRenderer.layoutMetrics(forTotalWidth:)`
+    - 把固定底栏布局里的几何结果抽成可测试度量
+    - 当前锁定的是：
+      - content width
+      - left / center / right module width
+      - fixed content height
+
+- 本轮新增回归保护：
+  - `Tests/PhotoMemoTests/RendererTests/RecordCardRendererRoutingTests.swift`
+    - 锁定：
+      - `template2 / template3 -> classicWhite`
+      - `template1 / immersWhite -> immersWhite`
+  - `Tests/PhotoMemoTests/RendererTests/ClassicWhiteCardRendererLayoutTests.swift`
+    - 锁定：
+      - `960pt` 总宽时，固定 `40 / 20 / 40` 会得到：
+        - `320 / 160 / 320`
+      - 当容器比水平 padding 更窄时，不会出现负宽度
+
+- 这一轮的意义：
+  - 之前已有：
+    - 主题常量保护
+    - 导出尺寸保护
+  - 现在又补上：
+    - renderer 路由保护
+    - 固定 grid 宽度计算保护
+  - Classic White 设计系统已经不只是“值固定”，而是“值如何落到真实布局里”也能被回归测试覆盖。
+
+- 本轮验证：
+  - 定向测试通过：
+    - `RecordCardRendererRoutingTests`
+    - `ClassicWhiteCardRendererLayoutTests`
+  - `PhotoMemoTests` 全量通过
+  - 构建通过：
+    - `PhotoMemo`
+    - `PhotoMemoiOS`
+    - `PhotoMemoShareExtension`
+
+- 当前仍保留的边界：
+  - 还没有做真实视觉 snapshot / pixel comparison
+  - 还没有把 line-box / baseline 对齐进一步抽成单独可测模型
+  - 但 preset 路由和固定 grid 已经有第二层保护，后续继续整理 render theme 时会更安全
+
+## 2026-06-21 Classic White Render Design System
+
+- 这一轮严格只动 `Classic White` 渲染层，没有碰：
+  - Metadata Pipeline
+  - Memory Engine
+  - Batch / Share 业务逻辑
+- 目标是把旧的比例驱动白边实现，收成一套固定主题的 Information Card Renderer。
+
+- 本轮新增主题层：
+  - `Source/PhotoMemo/PhotoMemo/Renderers/RenderTheme.swift`
+  - 当前已落地：
+    - bottom height: `260`
+    - background: `#F4F3F3`
+    - grid: `40 / 20 / 40`
+    - primary text: `28pt`
+    - secondary text: `18pt`
+    - horizontal padding: `80`
+    - top padding: `54`
+    - bottom padding: `42`
+    - divider: `2 x 110`
+
+- 本轮结构收口：
+  - `ClassicWhiteRenderer`
+    - 不再保留旧的 orientation ratio layout 结构
+    - 现在只负责：
+      - `theme`
+      - `outputPixelSize(...)`
+  - `ClassicWhiteCardRenderer`
+    - 新增独立文件
+    - 按：
+      - left module
+      - center module
+      - right module
+      的方式排列
+    - 固定字号，不再 `minimumScaleFactor`
+    - 长内容改为 truncation，优先保布局稳定
+  - `RecordCardRenderer`
+    - 现在只保留 preset -> renderer 路由
+  - `RecordCardExportService`
+    - Classic White 导出尺寸现在是固定规则：
+      - `imageHeight + 260`
+
+- 本轮新增回归保护：
+  - `Tests/PhotoMemoTests/RendererTests/ClassicWhiteRendererThemeTests.swift`
+  - 锁定：
+    - 主题常量
+    - 固定底栏高度
+    - 固定导出尺寸
+    - fallback size 行为
+
+- 本轮还额外修了一处 target 边界问题：
+  - `PhotoMemoiOS` 构建时会顺带编译 `PhotoMemoShareExtension`
+  - share extension 当前不携带完整 renderer 依赖
+  - 因此给：
+    - `ClassicWhiteRenderer.swift`
+    - `ClassicWhiteCardRenderer.swift`
+    加了 `#if !PHOTOMEMO_SHARE_EXTENSION`
+  - 这样新渲染文件不会误泄漏到轻量 share target
+
+- 文档同步：
+  - `Docs/RENDER_SPEC.md`
+    - 已更新为新的 Classic White 设计系统规范
+  - `Docs/CURRENT_STATUS.md`
+    - 已增加这一轮状态记录
+
+- 本轮验证：
+  - `PhotoMemoTests` 全量通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+
+- 当前已知边界：
+  - 这一轮没有做真实视觉截图回归
+  - 还没有为 Classic White 建立 snapshot / pixel comparison
+  - 但结构、主题常量和导出尺寸已经进入可测试状态
+
+## 2026-06-21 Immers 右侧列收紧、占位命名兜底、真机重装
+
+- 这一轮继续只做小切片，没有扩功能，也没有改架构边界。
+- 当前聚焦的是两个用户直接能看到的问题：
+  - `ImmersWhiteRenderer` 右侧上下两块内容要更明确地左对齐，并更贴近 logo / 分隔线
+  - 导出命名不应继续把 `PhotoMemo Import` 当成真实原始文件名
+
+- 本轮视觉收口：
+  - `ImmersWhiteRenderer`
+    - 右侧列继续保持 `leading` 对齐
+    - 新增独立的：
+      - `logoToDividerSpacingRatio`
+      - `dividerToTextSpacingRatio`
+    - 当前规则变成：
+      - logo 到分隔线略保留呼吸
+      - 分隔线到右侧文字更紧
+    - portrait / landscape 都给右侧列增加了可用宽度
+    - `styledText` 开启 `allowsTightening(true)`，减轻右上参数行被动缩小
+
+- 本轮命名收口：
+  - `PhotoFileNameResolver`
+    - 现在会把以下都视为占位名，而不再当成真实原图名：
+      - `Photo Library`
+      - `Photo Library 2`
+      - `PhotoMemo Import`
+      - `PhotoMemo Import (1)`
+    - 新增：
+      - `outputBaseName(...)`
+      - `timestampFallbackBaseName(...)`
+  - `RecordCardExportService`
+    - 导出文件名现在优先级变成：
+      1. 已知真实原图名
+      2. 通过 `assetLocalIdentifier` 再向系统相册回查原图名
+      3. 如果仍然只有占位名，则退到稳定的拍摄时间命名：
+         - `IMG_yyyyMMdd_HHmmss`
+    - 复制后缀规则继续保留：
+      - `xxx.jpg`
+      - `xxx (1).jpg`
+      - `xxx (2).jpg`
+
+- 本轮新增回归保护：
+  - `PhotoFileNameResolverTests`
+    - 锁定 `PhotoMemo Import` 占位名不会被当成真实原图名
+    - 锁定拍摄时间回退命名
+  - `RecordCardBuildServiceTests`
+    - 锁定 placeholder source name 会导出成 `IMG_yyyyMMdd_HHmmss.jpg`
+  - `ImmersWhiteRendererLayoutTests`
+    - 锁定右侧列继续左对齐
+    - 锁定分隔线到右文案的间距小于 logo 到分隔线
+
+- 本轮验证：
+  - 定向测试通过：
+    - `PhotoFileNameResolverTests`
+    - `RecordCardBuildServiceTests`
+    - `ExternalPhotoIntakeStoreDiagnosticsTests`
+    - `ImmersWhiteRendererLayoutTests`
+  - 构建通过：
+    - `PhotoMemo`
+    - `PhotoMemoiOS`
+    - `PhotoMemoShareExtension`
+  - 真机安装：
+    - 已重新安装到设备 `00008150-000A043136A1401C`
+  - 真机启动：
+    - 安装成功
+    - 自动启动被系统拒绝，原因是设备当时处于锁定状态
+
+## 2026-06-21 First Run 向导按系统 Form 风格收口
+
+- 这一轮根据 HIG 方向做了一个小范围 UI 提升，没有扩功能，也没有改架构边界。
+- 本轮只把首次启动向导从自定义卡片堆叠，收回到更接近系统设置流程的 SwiftUI 结构：
+  - `NavigationStack`
+  - `Form`
+  - `Section`
+  - `Picker`
+  - `TextField`
+  - `DatePicker`
+  - `LabeledContent`
+- 首启流程仍然保持原来的 5 步：
+  - 欢迎
+  - 身份
+  - 宝宝昵称
+  - 出生日期
+  - 保存位置
+- UI 规则同步：
+  - 使用标准字体层级，例如 `.title`、`.headline`、`.body`、`.footnote`
+  - 使用 `.accentColor`、`.primary`、`.secondary` 等系统语义样式
+  - 去掉首启向导里的固定宽度和自定义白卡片依赖
+  - 步骤切换保留系统默认动画
+- 编译收口：
+  - 修复了前一轮未完成命名收口中残留的重复语法片段
+  - `PhotoFileNameResolver` 标记为 `nonisolated static`，方便 Share / Batch 等非 UI 回调安全复用
+  - Share intake 的原始文件名解析改为静态纯函数调用，避免隐式捕获 `self`
+- 本轮验证：
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoFileNameResolverTests` 通过
+- 尚未做：
+  - 没有继续重构 Main App 全部页面
+  - 没有改 Renderer / Export / Metadata / Memory
+  - 没有重新安装到真机
+
+## 2026-06-21 Share 成功反馈回退为纯计数文案
+
+- 这一轮没有扩 intake 能力，也没有继续增加新反馈元素。
+- 只把刚加上的“成功后显示文件名”撤回，改回更安静的产品表达。
+
+- 当前用户可见变化：
+  - 单张成功：
+    - 不再显示具体文件名
+    - 统一回到计数型提示
+  - 多张成功：
+    - 仍然只显示接收数量
+    - 如果有部分跳过/失败，继续显示计数，不暴露某一个文件名示例
+
+- 这样处理的原因：
+  - 对多图分享来说，显示一个文件名并不能帮助用户定位到底哪张后续没保存成功
+  - 用户真正判断成功与否的方式，仍然是系统相册里原图旁边是否出现了新的生成结果
+  - Share 完成页应该尽量安静，只确认“PhotoMemo 已经接住了多少张”
+
+- 本轮代码收口：
+  - `PhotoMemoShareExtensionViewController`
+    - 成功文案恢复为纯计数
+  - `PhotoMemoShareExtensionImportResult`
+    - 不再承载成功反馈用的 file name 列表
+  - `PhotoMemoShareExtensionIntakeService`
+    - 去掉只服务于成功提示的 file name 回传
+  - `PhotoMemoShareWorkflowSummaryTests`
+    - 去掉文件名成功文案 formatter 回归测试
+
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+
+## 2026-06-21 Share 成功反馈开始显示原始文件名
+
+- 这条尝试后来已被上面的“纯计数文案”收回，保留这里只作为当天迭代历史。
+
+- 这一轮继续保持“小而完整”的节奏，没有继续扩 provenance 模型本身，而是把已经打通的来源信息真正用到用户可见反馈里。
+
+- 本轮新增：
+  - `PhotoMemoShareProcessingFeedbackFormatter`
+
+- 本轮实现范围：
+  - `PhotoMemoShareExtensionImportResult`
+    - 新增 `importedFileNames`
+  - `PhotoMemoShareExtensionIntakeService`
+    - 返回结果时，把 imported original file names 一起带回
+  - `PhotoMemoShareExtensionViewController`
+    - 成功状态文案不再只显示张数
+    - 现在会优先显示原始文件名
+  - `PhotoMemoShareWorkflowSummaryTests`
+    - 新增 share success feedback formatter 回归测试
+
+- 当前用户可见变化：
+  - 单张成功时：
+    - `已接收《IMG_9558.HEIC》。处理完成后会写回系统相册。`
+  - 部分成功时：
+    - 仍保留总数表达
+    - 但会补一个具体文件名示例
+
+- 这一轮的产品价值：
+  - provenance 不再只是埋在模型里
+  - 用户更容易确认“刚刚分享的那张照片”确实已经被 PhotoMemo 接住了
+  - 反馈仍然保持安静，没有暴露技术词
+
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+
+- 当前仍保留的下一步：
+  1. 是否把 file name 也用于 share 失败反馈
+  2. 是否在确认页单张预览文案里显示具体文件名
+  3. 是否把 provenance 进一步接入后续 save-back 成功提示或历史记录摘要
+
+## 2026-06-21 share/request/task provenance 继续收口
+
+- 这一轮是在上一刀 `PhotoSourceInfo` 的基础上继续往前推，但仍然保持小切片：
+  - 不扩功能
+  - 不改 renderer
+  - 不改 memory
+  - 只把 provenance 从 `SelectedPhoto` 继续接到 intake / request / task
+
+- 本轮新增：
+  - `ExternalPhotoIntakeItem`
+
+- 本轮核心变化：
+  - `ExternalPhotoIntakeRequest`
+    - 现在除了 `urls` 之外，还可以持久化结构化 `items`
+    - 新增 `intakePayloads`
+  - `BatchTaskIntakePayload`
+    - 现在会带：
+      - `fileName`
+      - `sourceIdentifier`
+      - `contentTypeIdentifier`
+  - `BatchTask`
+    - 现在也继续保留这些字段
+  - `PhotoMemoAppRuntime`
+    - flush external requests 时，不再只用 URL 重建 payload
+    - 现在会优先消费结构化 intake payload
+  - `BatchProcessingCoordinator`
+    - 批量导入时会把 task provenance 重新组装成 `PhotoSourceInfo`
+  - `PhotoMemoShareExtensionIntakeService`
+    - share intake 成功后，不再只持久化 managed URLs
+    - 现在会一起持久化对应的结构化 intake items
+
+- 这一轮真正解决的问题：
+  - share 进来的文件名，不会在 request / task 这层又退化成 managed copy 名称推断
+  - batch 状态、后续导入、导出命名，现在可以沿着同一条 provenance 线继续往下传
+  - `share -> intake request -> batch task -> import -> export`
+    这条链现在已经有了连续的结构化来源信息
+
+- 新增回归保护：
+  - `ExternalPhotoIntakeStoreDiagnosticsTests`
+    - 锁定 structured intake item 持久化
+  - `BatchFixtureCoverageTests`
+    - 锁定 payload provenance 会覆盖 temporary URL naming
+    - 锁定 batch import 后 `SelectedPhoto.sourceInfo` 仍然保留这些字段
+
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+
+- 当前仍保留的下一步：
+  1. 是否把 provenance 进一步用于 share 失败反馈或调试 UI
+  2. 是否给 non-share external intake 也补更完整的 source identifier 策略
+  3. 是否继续把最终 save-back 的读回验证也接入这条 provenance 线
+
+## 2026-06-21 导入来源信息切片落地
+
+- 本轮沿着 `MainWorkflowChecklist` 继续往下做了一刀真正有代码价值的收口：
+  - 不做大重构
+  - 先把“导入来源事实”从零散 URL 语义里抽成一份轻量结构
+
+- 本轮新增：
+  - `PhotoSourceInfo`
+
+- 当前挂载位置：
+  - `SelectedPhoto.sourceInfo`
+
+- 当前已经保留的来源字段：
+  - `originalFileName`
+  - `assetLocalIdentifier`
+  - `contentTypeIdentifier`
+
+- 本轮实现范围：
+  - `SelectedPhoto`
+    - 增加 `sourceInfo`
+  - `PhotoImportService`
+    - 数据导入时写入来源信息
+    - URL 导入时补全基础来源信息
+  - `PhotoImporterView`
+    - 从 `PhotosPickerItem.itemIdentifier` 继续传递 asset identifier
+  - `RecordCardExportService`
+    - 导出文件命名优先使用 `sourceInfo.originalFileName`
+    - 不再只依赖 `sourceURL.lastPathComponent`
+
+- 这一轮解决的核心问题：
+  - 原始文件名、资源标识、类型标识不再只是“散落在线索里”
+  - 至少在 `SelectedPhoto` 生命周期内，来源事实现在有一份明确、可测试、可继续扩展的结构化承载点
+  - 导出命名不再直接绑定临时源路径语义
+
+- 这一轮刻意没有做的事情：
+  - 不把 import provenance 强行塞进 `PhotoMetadata`
+  - 不动 share intake 存储模型
+  - 不做跨系统的大范围 rename
+
+- 新增回归保护：
+  - `PhotoImportServiceTests`
+    - 锁定 `sourceInfo.originalFileName`
+    - 锁定 `sourceInfo.contentTypeIdentifier`
+    - 锁定 `sourceInfo.assetLocalIdentifier`
+  - `RecordCardBuildServiceTests`
+    - 锁定导出命名优先使用 imported original file name
+
+- 本轮验证：
+  - `PhotoMemoTests` 通过
+  - `PhotoMemo` build 通过
+  - `PhotoMemoiOS` build 通过
+  - `PhotoMemoShareExtension` build 通过
+
+- 当前仍保留的下一步：
+  1. share intake / external intake request 是否也需要带结构化 provenance
+  2. batch task 层是否要显式消费 `originalFileName` 而不只是 `sourceURL`
+  3. 是否要把 provenance 的展示和诊断进一步接到用户可见反馈里
+
+## 2026-06-21 主链路收口标准与开发清单落地
+
+- 本轮没有扩功能，也没有做新的架构抽象。
+- 重点是把 `PhotoMemo v0.4 Main Workflow Consolidation` 里真正值得吸收的部分，落成项目内部标准与执行清单。
+
+- 本轮新增文档：
+  - `Docs/MainWorkflowConsolidation.md`
+  - `Docs/MainWorkflowChecklist.md`
+
+- 当前明确吸收的方向：
+  - 建立唯一内部主链路：
+    - `Import -> Metadata -> Memory -> Renderer -> Export -> Share`
+  - 明确六个阶段的职责边界：
+    - Import 负责接入与保留来源事实
+    - Metadata 负责规范化后的照片事实
+    - Memory 负责时间与记忆语义
+    - Renderer 负责最终视觉输出
+    - Export 负责结果写出与保存
+    - Share 负责轻量分享流程
+  - 明确：
+    - Renderer 很重要，但不再被当作产品中心
+    - Template / Style 与 Renderer 继续解耦
+    - Share-first 继续推进，但不做高风险的“一步到位重写”
+
+- 当前明确不做的内容：
+  - 不新增抽象 `PhotoWorkflow` 框架
+  - 不做大规模目录重组
+  - 不做全仓库 rename sweep
+  - 不强行要求当前所有执行立即迁移到 Share Extension 内
+
+- 这一轮最关键的工程判断：
+  - 当前代码里，真正还需要继续收口的，不是再加一层架构，而是：
+    1. import 来源事实的一致性
+       - original filename
+       - asset identifier
+       - source type / UTI
+    2. share happy path 的稳定性
+    3. renderer 不再承载业务语义漂移
+
+- 文档同步：
+  - `README.md`
+  - `Docs/ProductDirection.md`
+  - `Docs/CURRENT_STATUS.md`
+  - `HANDOFF.md`
+  - 现在已经统一到同一套说法：
+    - `Import -> Metadata -> Memory -> Renderer -> Export -> Share`
+
+Build verification for this slice:
+
+- `PhotoMemo` build passed
+- `PhotoMemoiOS` build passed
+- `PhotoMemoShareExtension` build passed
+
+本轮没有改 Swift 源码，所以没有重复跑 `PhotoMemoTests`。
+
+## 2026-06-21 Share 唤起闭环、原名导入收口、默认渲染切到 Immers White
+
+- 本轮先把“文件名被临时导入路径污染”这条链彻底收口：
+  - `PhotoImportService`
+    - `PhotosPicker` 的临时导入现在改成：
+      - 共享根目录
+      - 每次导入一个独立 UUID 子目录
+      - 子目录内保留原始文件名
+    - 这样连续两次导入同名照片时，不会再把 `SelectedPhoto.sourceURL` 变成：
+      - `IMG_7065 (1).JPEG`
+  - 同时保留了你要的扩展名观感：
+    - 显式给定 `IMG_9558.HEIC`
+    - 现在会继续保留 `.HEIC`
+  - `Photo Library` 这个占位名仍会回退到：
+    - `PhotoMemo Import.jpg`
+- 本轮补充了主程序导入命名的回归保护：
+  - `Tests/PhotoMemoTests/ExportTests/PhotoImportServiceTests.swift`
+  - 新增覆盖：
+    - 显式文件名保留
+    - `Photo Library` 占位名回退
+    - 重复导入同名照片时，文件名仍保持原样
+
+- Share Extension 这一轮不做大流程改造，只补最小闭环：
+  - 新增：
+    - `Source/PhotoMemo/PhotoMemo/App/PhotoMemoDeepLink.swift`
+  - `PhotoMemoiOS` 新增 URL scheme：
+    - `photomemo://share`
+  - `PhotoMemoRootSceneView`
+    - 现在会识别 `photomemo://share`
+    - 收到后直接执行：
+      - `runtime.refreshExternalIntakeState()`
+  - `PhotoMemoShareExtensionViewController`
+    - share intake 成功后会先尝试：
+      - `extensionContext.open(photomemo://share)`
+    - 再关闭分享页
+  - 这样当前行为从：
+    - “写进共享收件箱后直接关闭，主 App 不一定立刻处理”
+    变成：
+    - “写进共享收件箱后主动唤起主 App 刷新 intake，并继续生成/保存”
+  - 这一轮仍然不是“完全在扩展里渲染保存”，但已经把当前真实断点补上了
+
+- 默认渲染路径也收了一刀：
+  - 之前当前主链默认还是：
+    - `template1 -> ClassicWhiteRenderer`
+  - 这正是你说“成片和目标样图差距很大”的核心原因之一
+  - 现在新增统一渲染布局判定：
+    - `TemplatePreset.renderLayout`
+  - 当前映射：
+    - `template1` -> `immersWhite`
+    - `immersWhite` -> `immersWhite`
+    - `template2 / template3` -> `classicWhite`
+  - `RecordCardRenderer`
+    - 预览已改用这套统一映射
+  - `RecordCardExportService.outputPixelSize(...)`
+    - 导出尺寸也改用同一映射
+  - 这样至少保证：
+    - 预览路径
+    - 导出路径
+    - 白栏比例
+    - Immers 风格几何
+    已经走到同一个分支
+
+- Immers 风格本轮只做了一处非常保守的样图贴近：
+  - `ImmersWhiteRenderer.infoBarColor`
+    - 从纯白改成偏暖白：
+      - `#F4F4F2`
+  - 这一轮没有继续大动：
+    - 字号
+    - 分隔线宽度
+    - 徽标几何
+  - 因为先把“走错 renderer”这个更大的问题纠正掉更重要
+
+- 本轮新增测试：
+  - `Tests/PhotoMemoTests/RendererTests/TemplatePresetRenderLayoutTests.swift`
+  - `Tests/PhotoMemoTests/BatchTests/PhotoMemoDeepLinkTests.swift`
+
+- 本轮验证结果：
+  - 定向测试通过：
+    - `PhotoImportServiceTests`
+    - `ExternalPhotoIntakeStoreDiagnosticsTests`
+    - `TemplatePresetRenderLayoutTests`
+    - `PhotoMemoDeepLinkTests`
+  - 全量测试通过：
+    - `PhotoMemoTests`
+  - 构建通过：
+    - `PhotoMemo`
+    - `PhotoMemoiOS`
+    - `PhotoMemoShareExtension`
+
+- 本轮仍需你真机继续确认的重点：
+  1. 系统相册分享后，是否会真正自动切回 PhotoMemo 并开始处理
+  2. 处理完成后，是否已经不再出现：
+     - `Photo Library.JPG`
+     - `Photo Library (1).JPG`
+  3. 当前默认成片在横图 / 竖图下，是否已经明显更接近你持续提供的 Immers 样图
+  4. Share 页在某些来源 App 中，`extensionContext.open(...)` 是否会被系统限制；如果被限制，下一轮需要进一步决定是：
+     - 做更明确的“返回 PhotoMemo 完成保存”反馈
+     - 还是继续推进扩展内单张 happy-path 处理
+
 ## 2026-06-21 Photo Library 原名回写修复、白栏颜色与分隔线微调
 
 - 本轮确认并修复了一个真实的 Photo Library 命名问题：

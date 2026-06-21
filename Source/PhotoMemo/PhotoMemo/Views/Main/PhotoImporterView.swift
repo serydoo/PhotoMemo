@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Photos
 import UniformTypeIdentifiers
 
 struct PhotoImporterView: View {
@@ -152,15 +153,19 @@ private extension PhotoImporterView {
             }
 
             let suggestedFileName =
-                item.itemIdentifier
-                ?? "Photo Library"
+                resolvedSuggestedFileName(
+                    for: item,
+                    contentType: contentType
+                )
 
             let photo =
                 try await importService.importPhoto(
                     from: data,
                     suggestedFileName:
                         suggestedFileName,
-                    contentType: contentType
+                    contentType: contentType,
+                    assetLocalIdentifier:
+                        item.itemIdentifier
                 )
 
             await MainActor.run {
@@ -237,6 +242,85 @@ private extension PhotoImporterView {
             errorMessage =
                 error.localizedDescription
         }
+    }
+
+    func resolvedSuggestedFileName(
+        for item: PhotosPickerItem,
+        contentType: UTType?
+    ) -> String? {
+
+        if let itemIdentifier =
+            item.itemIdentifier,
+           let originalPhotoLibraryFileName =
+            originalPhotoLibraryFileName(
+                for: itemIdentifier
+            ) {
+            return originalPhotoLibraryFileName
+        }
+
+        if let itemIdentifier =
+            item.itemIdentifier,
+           let sanitizedIdentifier =
+            importService
+            .sanitizedSuggestedFileName(
+                itemIdentifier
+            ),
+           sanitizedIdentifier.contains(".") {
+            return sanitizedIdentifier
+        }
+
+        guard let fileExtension =
+            contentType?
+            .preferredFilenameExtension else {
+            return nil
+        }
+
+        return "PhotoMemo Import.\(fileExtension)"
+    }
+
+    func originalPhotoLibraryFileName(
+        for itemIdentifier: String
+    ) -> String? {
+
+        let assets =
+            PHAsset.fetchAssets(
+                withLocalIdentifiers: [
+                    itemIdentifier
+                ],
+                options: nil
+            )
+
+        guard let asset =
+            assets.firstObject else {
+            return nil
+        }
+
+        let resources =
+            PHAssetResource.assetResources(
+                for: asset
+            )
+
+        let preferredResource =
+            resources.first {
+                switch $0.type {
+                case .photo,
+                     .fullSizePhoto,
+                     .alternatePhoto:
+                    return true
+
+                default:
+                    return false
+                }
+            }
+
+        let fileName =
+            preferredResource?.originalFilename
+            ?? resources.first?.originalFilename
+
+        return importService
+            .sanitizedSuggestedFileName(
+                fileName
+            )
     }
 }
 

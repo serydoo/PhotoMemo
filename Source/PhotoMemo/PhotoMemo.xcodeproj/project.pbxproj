@@ -703,6 +703,15 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleURLTypes = (
+					{
+						CFBundleTypeRole = Editor;
+						CFBundleURLName = com.serydoo.PhotoMemo.iOS;
+						CFBundleURLSchemes = (
+							photomemo,
+						);
+					},
+				);
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
@@ -741,6 +750,15 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleURLTypes = (
+					{
+						CFBundleTypeRole = Editor;
+						CFBundleURLName = com.serydoo.PhotoMemo.iOS;
+						CFBundleURLSchemes = (
+							photomemo,
+						);
+					},
+				);
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;

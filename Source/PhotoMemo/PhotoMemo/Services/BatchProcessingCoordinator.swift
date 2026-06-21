@@ -32,7 +32,16 @@ final class BatchProcessingCoordinator {
 
         try await importService
             .importPhotoOffMainThread(
-                from: task.sourceURL
+                from: task.sourceURL,
+                sourceInfo:
+                    PhotoSourceInfo(
+                        originalFileName:
+                            task.fileName,
+                        assetLocalIdentifier:
+                            task.sourceIdentifier,
+                        contentTypeIdentifier:
+                            task.contentTypeIdentifier
+                    )
             )
     }
 
