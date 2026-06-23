@@ -1,10 +1,213 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## Current Stage
 
-PhotoMemo is currently in a combined refinement stage:
+PhotoMemo is now in V2.1 Memory Engine documentation synchronization.
+
+Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+
+PM-003 Phase 1 is frozen.
+
+The current repository slice is:
+
+```text
+IA-001 Interaction Architecture
+```
+
+The current target is a local-first Memory Presentation Engine:
+
+`Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export`
+
+Product principle:
+
+- Photos have timestamps.
+- Memories have positions.
+- Memory Engine calculates Life Position.
+- Presentation Engine expresses meaning.
+- Layout Engine presents meaning.
+- Renderer draws.
+
+The highest-priority entry documents are:
+
+- `PROJECT_CONSTITUTION.md`
+- `Docs/MASTER_PLAN.md`
+- `PROJECT_RESET.md`
+- `RepositoryAudit.md`
+- `Research/README.md`
+
+Memory Engine is now a first-class architecture module. Renderer is no longer allowed to be the source of layout truth. Future layout work must be researched, specified, measured, and owned by a Layout Engine before renderer implementation.
+
+## 2026-06-23 IA-001 Interaction Architecture Frozen
+
+This slice is repository documentation refactor only.
+
+No runtime code was changed.
+
+No SwiftUI, Renderer, Engine, Metadata, Export, Database, or pipeline code was modified.
+
+What changed:
+
+- updated `PROJECT_CONSTITUTION.md`
+- updated `Docs/MASTER_PLAN.md`
+- updated `PROJECT_PHILOSOPHY.md`
+- updated `AI_CONTEXT.md`
+- updated `Docs/CURRENT_STATUS.md`
+- updated `Docs/DOCUMENT_INDEX.md`
+- added IA-001 documentation files under `Docs/Interaction`, `Docs/Behavior`, `Docs/Guidelines`, `Docs/Configuration`, `Docs/Product`, and `Docs/PDR`
+- added `Docs/DESIGN_DECISIONS.md`
+- added `Docs/FROZEN_REGISTRY.md`
+
+IA-001 status:
+
+```text
+Frozen
+```
+
+Frozen interaction rules now recorded in the repository:
+
+- PhotoMemo is a local-first Memory Capability inside Apple workflows
+- PhotoMemo does not manage photos and only owns Memory Workflow
+- the Main App is a permanent Configuration Center
+- the primary path is `Apple Photos -> Share -> PhotoMemo -> Memory Workflow -> Done`
+- the happy path follows Zero Interaction
+- the default computing posture is Quiet Computing
+- completion should return users to Photos instead of drawing them into the Main App
+- progress language is human, gentle, calm, and non-technical
+- percentage-based progress language is prohibited
+- PhotoMemo should automatically recover tasks when possible
+- PhotoMemo should automatically follow Apple device constraints
+- storage should be estimated before processing begins
+- completed results should remain near the source photo and also join the PhotoMemo output album
+- original photos never change
+- metadata remains preserved, with canvas size as the only allowed output change
+- naming should follow Apple conventions such as `IMG_1234 (1)`
+- PhotoMemo trusts Apple Photos and does not rebuild library, timeline, map, people, search, or sync systems
+- product personality is calm, quiet, respectful, invisible, and trustworthy
+- all configuration belongs to `System Defaults -> User Preferences -> Advanced`
+- anti-goals now explicitly prohibit PhotoMemo-owned gallery, timeline, map, people, search, browser, editor, dashboard, workspace, and task center
+
+Verification for this slice:
+
+- repository entry documents and overlapping interaction docs were reviewed before editing
+- IA-001 frozen decisions were synchronized into dedicated repository documents
+- no runtime implementation was introduced
+
+## 2026-06-23 PM-003 Architecture Frozen
+
+This slice is documentation synchronization only.
+
+No runtime code was changed.
+
+No Swift files were modified.
+
+No UI, Renderer, Layout, Export, or Engine implementation work was started.
+
+What changed:
+
+- added `Docs/PM-003_Content_Layout_System.md` as the single source of truth for PM-003
+- updated `PROJECT_PHILOSOPHY.md`
+- updated `AI_CONTEXT.md`
+- updated `Docs/CURRENT_STATUS.md`
+
+PM-003 status:
+
+```text
+Architecture Frozen
+```
+
+Frozen items:
+
+- Semantic Slot Principle
+- Recorder
+- Capture Summary
+- Timeline
+- Time Anchor
+- Life Anchor
+- Expression Grammar
+- Typography Strategy
+
+All items above are now:
+
+```text
+Frozen
+```
+
+Frozen PM-003 decisions now recorded in the repository:
+
+- Slot means semantic role, not layout position
+- Slot A = Recorder
+- Slot B = Capture Summary
+- Slot C = Timeline
+- Slot D = Time Anchor
+- Slot C default expression = `记录于｜日期｜时间`
+- Timeline Action default = `记录于`
+- seconds do not display
+- Slot D does not show metadata and only shows Life Anchor Expression
+- Life Anchor is defined as a Life Event, not a raw Date
+- Life Anchor V1 supports 3 user-defined anchors
+- V1 active fields are `name`, `date`, `description`
+- `category` and `enabled` remain reserved
+- Time Anchor supports both past and future through one Time Anchor Engine
+- Slot D grammar is `Subject -> Anchor Prompt -> Anchor Result -> Anchor Suffix`
+- Expression and Engine remain fully decoupled
+- Variable categories are reorganized by semantic ownership
+- typography is frozen at the semantic-strategy level, not at layout-measurement level
+
+Why this matters:
+
+- PhotoMemo no longer frames the content system as EXIF presentation
+- PM-003 now defines the memory expression contract before future layout work
+- future Layout Engine work can consume semantic slot definitions instead of ad hoc renderer-era assumptions
+
+Verification for this slice:
+
+- repository documentation was reviewed against current V2 reset documents
+- PM-003 frozen rules were synchronized into the designated source files
+- no runtime implementation was introduced
+
+## 2026-06-22 Memory Presentation philosophy
+
+This slice upgraded the highest-level product definition.
+
+What changed:
+
+- PhotoMemo is now defined as a Memory Presentation Engine, not only a Photo Presentation Engine
+- added `PROJECT_PHILOSOPHY.md`
+- added `PROJECT_DIRECTION.md`
+- added `Docs/03_Research/MemoryPhilosophy.md`
+- updated `Docs/ARCHITECTURE.md` with the V2 engine chain
+- clarified Life Position and Memory Timeline as core product concepts
+- preserved the boundary that Memory Engine calculates relationships but does not write stories
+
+No runtime code was changed.
+
+Documentation migration is explicitly paused until research specifications stabilize. Old documents remain reference material, not current marching orders.
+
+## 2026-06-22 Project Constitution and research docs
+
+This slice continued the V2 reset without touching runtime code.
+
+What changed:
+
+- added `PROJECT_CONSTITUTION.md` as the highest-level repository instruction
+- clarified that current work is Research Phase, not Development Phase
+- clarified that old `Docs/` migration should wait until research specifications stabilize
+- added required research documents:
+  - `Research/ReverseEngineeringRoadmap.md`
+  - `Research/CanvasSpecification.md`
+  - `Research/PanelSpecification.md`
+  - `Research/AdaptiveRules.md`
+  - `Research/MeasurementMethodology.md`
+- updated `RepositoryAudit.md` with duplicated, outdated, and conflicting document groups
+- updated project entry files so future sessions read `PROJECT_CONSTITUTION.md` before `Docs/MASTER_PLAN.md`
+
+No build was run for this slice because it changes only documentation and research structure.
+
+## Previous V1 State
+
+Before the V2 reset, PhotoMemo was in a combined refinement stage:
 
 - Product-wise, it is moving from a **template calibration center** toward a **workflow preparation app built on Personal Profile + Style + Share-first Workflow**
 - Engineering-wise, it is moving from a large prototype-style `MainView` toward a more maintainable coordinator structure
@@ -20,6 +223,27 @@ According to `Docs/DEVELOPMENT_PLAN.md`, the project is between:
 
 - Phase 2: Template Calibration Center
 - Phase 5: Render Fidelity And Metadata Hardening
+
+## 2026-06-22 Repository orientation cleanup
+
+This housekeeping slice verified the repository connection and refreshed the file/document map before the next implementation session.
+
+Confirmed:
+
+- `origin` points to `git@github.com:serydoo/PhotoMemo.git`
+- the local branch is `main` tracking `origin/main`
+- the working tree was clean before this documentation-only cleanup
+
+What changed:
+
+- added `Docs/DOCUMENT_INDEX.md`
+  - separates startup references, current product direction, architecture/workflow docs, renderer/template docs, metadata/export docs, MainView refactor notes, QA docs, and historical notes
+  - records the precedence order to use when documents disagree
+- refreshed `Docs/PROJECT_STRUCTURE.md`
+  - updates the source tree map to include current app, iOS, share-extension, MemoryEngine, renderer, service, and test structure
+  - records the current `MainView` decomposition pattern so future sessions do not assume the old large-file structure
+
+No build was run for this slice because it only changes documentation.
 
 ## 1.30 Immers White now uses a centered two-line text cluster instead of a stretched top-bottom split
 

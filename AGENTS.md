@@ -2,9 +2,33 @@
 
 This file defines the long-term working rules for AI agents and future coding sessions in the PhotoMemo repository.
 
+## Highest Priority: PhotoMemo V2 Reset
+
+Before any modification, read:
+
+1. `PROJECT_CONSTITUTION.md`
+2. `Docs/MASTER_PLAN.md`
+3. `PROJECT_RESET.md`
+4. `RepositoryAudit.md`
+5. `Research/README.md`
+
+PhotoMemo is now in Research Phase.
+
+Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+
+Do not immediately migrate old documents. Build the new research documentation first; migrate old documents only after research specifications stabilize.
+
+The V2 target is a local-first Memory Presentation Engine:
+
+`Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export`
+
+Renderer must not own layout decisions. New layout work must follow:
+
+`Research -> Specification -> Layout Engine -> Renderer -> Validation -> Release`
+
 ## Project Identity
 
-PhotoMemo is a **local-first macOS-native photo memory card generator**.
+PhotoMemo is a **local-first Memory Presentation Engine**.
 
 It is not:
 
@@ -12,10 +36,14 @@ It is not:
 - a general image editor
 - a template marketplace
 - a batch-first dashboard UI
+- a watermark clone app
 
 It is:
 
-- a template calibration center
+- a research-first memory presentation system
+- a memory timeline system
+- a metadata-driven presentation engine
+- a layout-specification project
 - a real EXIF + anchor driven rendering tool
 - a system that generates a new image while preserving the original photo
 
@@ -23,12 +51,17 @@ It is:
 
 At the start of any new session:
 
-1. Read `README.md`
-2. Read `AI_CONTEXT.md`
-3. Read `HANDOFF.md`
-4. Read `AGENTS.md`
-5. Read `Docs/CURRENT_STATUS.md`
-6. Check `git status`
+1. Read `PROJECT_CONSTITUTION.md`
+2. Read `Docs/MASTER_PLAN.md`
+3. Read `PROJECT_RESET.md`
+4. Read `RepositoryAudit.md`
+5. Read `Research/README.md`
+6. Read `README.md`
+7. Read `AI_CONTEXT.md`
+8. Read `HANDOFF.md`
+9. Read `AGENTS.md`
+10. Read `Docs/CURRENT_STATUS.md`
+11. Check `git status`
 
 If the task touches the main editor flow, inspect:
 
@@ -43,6 +76,11 @@ Always preserve these rules:
 - Do not upload photos
 - Do not modify the original photo
 - Generate a new output image instead
+- Do not commit private research photos or private datasets
+- Do not imitate screenshots; extract reusable measurable specifications
+- Do not add layout constants directly inside renderers
+- Keep Memory Engine as the owner of Life Position calculations
+- Keep Layout Engine as the only future source of layout truth
 - The main UI is a template calibration center, not a future batch workbench
 - Do not expand feature surface faster than the real import-render-export pipeline can support
 - Preview fidelity must stay tied to the real renderer/exporter

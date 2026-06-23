@@ -1,5 +1,37 @@
 # PhotoMemo
 
+## PhotoMemo V2 Reset
+
+PhotoMemo has entered Research Phase.
+
+Feature development, renderer polishing, and UI expansion are paused while the project is repositioned as a local-first Memory Presentation Engine.
+
+Start here:
+
+1. `PROJECT_CONSTITUTION.md`
+2. `Docs/MASTER_PLAN.md`
+3. `PROJECT_RESET.md`
+4. `RepositoryAudit.md`
+5. `Research/README.md`
+
+V2 target flow:
+
+```text
+Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export
+```
+
+PhotoMemo does not only present photographs. It presents memories.
+
+Every photo has objective information such as EXIF, capture time, camera, lens, and GPS. These answer when, where, and how.
+
+Every memory has emotional information such as Life Anchor, relationship, family, child, travel, parents, pets, and anniversaries. These answer what this moment means.
+
+PhotoMemo preserves both.
+
+Renderer is no longer the source of layout truth. Layout decisions must be researched, specified, measured, and owned by the future Layout Engine.
+
+Old documents remain reference material for now. Do not migrate them until the research specifications stabilize.
+
 ## PhotoMemo Design Mission
 
 Configure once. Remember forever.
@@ -60,6 +92,12 @@ PhotoMemo 不是修图工具，而是围绕系统相册构建的记忆生成器�
 PhotoMemo 想解决的不是“参数展示”本身，而是“照片记忆解释”。
 
 **照片记录的是瞬间，Memory Engine 记录的是时间。**
+
+In V2 language:
+
+**Photos have timestamps. Memories have positions.**
+
+PhotoMemo gives each meaningful photo a Life Position inside one or more life timelines.
 
 例如一张拍摄于 `2025-06-01 18:25` 的照片，如果孩子出生于 `2024-05-20`，用户最终看到的，不应该只有相机参数，还应该包括：
 

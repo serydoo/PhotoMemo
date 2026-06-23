@@ -5,6 +5,278 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-23 PM-003 冻结 + IA-001 Interaction Architecture 文档归档
+
+- 本轮严格只做 repository documentation refactor，没有改：
+  - Swift
+  - SwiftUI
+  - Renderer
+  - Engine
+  - Metadata
+  - Export
+  - Database
+  - Pipeline
+
+- 本轮先完成了 PM-003 第一阶段冻结同步：
+  - 新增 `Docs/PM-003_Content_Layout_System.md`
+  - 冻结：
+    - Semantic Slot Principle
+    - Slot A = Recorder
+    - Slot B = Capture Summary
+    - Slot C = Timeline
+    - Slot D = Time Anchor
+    - Life Anchor = Life Event
+    - Slot D Grammar
+    - Expression / Engine 解耦
+    - Variable 分类
+    - Typography Strategy（语义层）
+
+- 本轮随后进入 IA-001 Interaction Architecture：
+  - `PhotoMemo` 正式定义为：
+    - Apple 生态内的 `Local First Memory Capability`
+  - 同步北极星：
+    - 不改变用户管理照片的方式
+    - 只改变用户理解照片的方式
+
+- 本轮新增 IA-001 文档群：
+  - `Docs/Interaction/IA-001_Interaction_Architecture.md`
+  - `Docs/Behavior/BEHAVIOR_SPECIFICATION.md`
+  - `Docs/Guidelines/LANGUAGE_SYSTEM.md`
+  - `Docs/Guidelines/PRODUCT_PERSONALITY.md`
+  - `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md`
+  - `Docs/Configuration/CONFIGURATION_MODEL.md`
+  - `Docs/Product/ANTI_GOALS.md`
+  - `Docs/DESIGN_DECISIONS.md`
+  - `Docs/FROZEN_REGISTRY.md`
+  - `Docs/PDR/PDR-003_Interaction_Architecture.md`
+
+- 本轮新增永久理念文档：
+  - `LIFE_TIMELINE_PHILOSOPHY.md`
+    - 记录“PhotoMemo 不只是帮助用户回忆过去，更帮助用户连接过去、现在与未来……”
+
+- 本轮同步更新顶层事实文档：
+  - `PROJECT_CONSTITUTION.md`
+  - `Docs/MASTER_PLAN.md`
+  - `PROJECT_PHILOSOPHY.md`
+  - `AI_CONTEXT.md`
+  - `Docs/CURRENT_STATUS.md`
+  - `Docs/DOCUMENT_INDEX.md`
+  - `CHANGELOG.md`
+
+- IA-001 当前冻结内容：
+  - Main App = Configuration Center
+  - Primary Entry = `Apple Photos -> Share -> PhotoMemo -> Memory Workflow -> Done`
+  - Zero Interaction
+  - Quiet Computing
+  - Back To Photos
+  - Task Recovery
+  - Device Adaptive
+  - Storage Verification
+  - Library Consistency
+  - Original Never Changes
+  - Metadata Preservation
+  - Apple Naming
+  - Apple Trust
+  - Product Personality
+  - Language System
+  - Configuration Layer
+  - Product Boundary
+  - Anti Goals
+
+- 本轮还新增长期规则到 `Docs/MASTER_PLAN.md`：
+  - 以后任何新功能必须经过：
+    1. `PDR`
+    2. `Repository Refactor`
+    3. `Architecture Review`
+    4. `Implementation`
+    5. `Review & Freeze`
+
+- 验证：
+  - 已确认本轮无 `.swift`、`.plist`、`project.pbxproj` 实现层文件改动
+  - 本轮适合直接作为文档归档同步到 GitHub
+
+## 2026-06-22 Memory Presentation Engine 哲学升级
+
+- 用户明确最高产品定义再次升级：
+  - 不再只叫 `Photo Presentation Engine`
+  - 更准确是 `Memory Presentation Engine`
+  - 因为 PhotoMemo 不只是 present photographs，而是 present memories
+
+- 本轮新增：
+  - `PROJECT_PHILOSOPHY.md`
+  - `PROJECT_DIRECTION.md`
+  - `Docs/03_Research/MemoryPhilosophy.md`
+  - `Docs/ARCHITECTURE.md`
+
+- 核心哲学：
+  - Photos have timestamps.
+  - Memories have positions.
+  - EXIF answers when / where / how.
+  - Memory Engine answers what this moment means.
+  - PhotoMemo preserves both objective metadata and emotional Life Position.
+
+- 新增概念：
+  - Life Position
+  - Memory Timeline
+  - one photo may belong to multiple timelines simultaneously
+
+- 职责边界：
+  - Memory Engine only calculates relationships
+  - Presentation Engine expresses relationships
+  - Layout Engine decides how meaning is presented
+  - Renderer simply draws
+
+- 本轮同步：
+  - `PROJECT_CONSTITUTION.md`
+  - `Docs/MASTER_PLAN.md`
+  - `README.md`
+  - `PROJECT_RESET.md`
+  - `RepositoryAudit.md`
+  - `AI.md`
+  - `AI_CONTEXT.md`
+  - `AGENTS.md`
+  - `Docs/CURRENT_STATUS.md`
+  - `Docs/DOCUMENT_INDEX.md`
+  - `Docs/02_Architecture/README.md`
+  - `Docs/03_Research/README.md`
+
+- 未做：
+  - 没有改 runtime code
+  - 没有改 Renderer
+  - 没有改 UI
+
+## 2026-06-22 Project Constitution + Research Methodology
+
+- 用户提供第二份 V2 宪章指令，明确：
+  - V2 Reset 已完成
+  - 当前阶段是 Research Phase，不是 Development Phase
+  - 不继续功能开发
+  - 不继续 Renderer 打磨
+  - 不继续 UI 调整
+  - 当前工作只做 Reverse Engineering / Research
+  - 旧文档暂时不要立即迁移，等 Research Specification 稳定后再迁移，避免重复移动
+
+- 本轮新增最高优先级入口：
+  - `PROJECT_CONSTITUTION.md`
+    - 现在优先级高于 `Docs/MASTER_PLAN.md`
+    - 明确项目 mission、first principles、philosophy、immediate task、documentation strategy、research system、measurement rules
+
+- 本轮补齐 Research 体系缺口：
+  - `Research/ReverseEngineeringRoadmap.md`
+  - `Research/CanvasSpecification.md`
+  - `Research/PanelSpecification.md`
+  - `Research/AdaptiveRules.md`
+  - `Research/MeasurementMethodology.md`
+
+- 本轮同步更新：
+  - `Docs/MASTER_PLAN.md`
+  - `PROJECT_RESET.md`
+  - `RepositoryAudit.md`
+  - `Research/README.md`
+  - `Research/ResearchHistory.md`
+  - `README.md`
+  - `AI.md`
+  - `AI_CONTEXT.md`
+  - `AGENTS.md`
+  - `Docs/DOCUMENT_INDEX.md`
+  - `Docs/CURRENT_STATUS.md`
+
+- `RepositoryAudit.md` 现在记录了：
+  - product direction 文档重叠组
+  - MainView refactor 文档重叠组
+  - metadata/export 文档重叠组
+  - session history 文档重叠组
+  - V1 文档与 V2 宪章之间的关键冲突
+
+- 重要边界：
+  - 没有移动旧 `Docs/` 文件
+  - 没有修改 runtime code
+  - 没有改 Renderer / UI / Export / Metadata
+
+下一轮最值得做：
+
+1. 根据 `Research/MeasurementMethodology.md` 开始第一份真实 reverse-engineering 记录模板
+2. 扩写 `Research/LayoutSpecification.md`，但仍不要写 LayoutEngine 代码
+3. 等 Layout / Canvas / Panel 规格稳定后，再考虑旧 Docs 迁移
+
+## 2026-06-22 PhotoMemo V2 Project Reset 落地
+
+- 用户提供了新的最高优先级重置指令：
+  - 停止功能开发
+  - 停止 Renderer 继续打磨
+  - 停止 UI 扩展
+  - PhotoMemo 进入 Research Phase
+  - 项目目标从 Photo Watermark App 转向 local-first Photo Presentation Engine
+
+- 新的 V2 主链路：
+  - `Photo -> Metadata Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export`
+
+- 本轮落地的永久入口：
+  - `Docs/MASTER_PLAN.md`
+    - V2 单一入口
+    - 记录 vision、phase、roadmap、architecture、next step、forbidden actions
+  - `PROJECT_RESET.md`
+    - 记录为什么暂停开发、为什么开始 reverse engineering、为什么引入 Layout Engine、为什么进入 Repository V2
+  - `RepositoryAudit.md`
+    - 输出仓库审计：
+      - Architecture
+      - Documentation
+      - Renderer
+      - Workflow
+      - Repository Health
+      - Open Source Readiness
+  - `Research/`
+    - 建立研究骨架：
+      - `ReverseEngineering.md`
+      - `LayoutSpecification.md`
+      - `TypographySpecification.md`
+      - `ColorSpecification.md`
+      - `BrandAnchorSpecification.md`
+      - `MetadataSlotSpecification.md`
+      - `AdaptiveLayout.md`
+      - `OpticalLayout.md`
+      - `ResearchHistory.md`
+
+- 本轮同步的入口文件：
+  - `README.md`
+  - `AI.md`
+  - `AI_CONTEXT.md`
+  - `AGENTS.md`
+  - `Docs/CURRENT_STATUS.md`
+  - `Docs/DOCUMENT_INDEX.md`
+  - `Docs/PROJECT_STRUCTURE.md`
+
+- 本轮建立的非破坏性目标结构骨架：
+  - `App/`
+  - `DesignSystem/`
+  - `LayoutEngine/`
+  - `Renderer/`
+  - `Examples/`
+  - `Screenshots/`
+  - `Docs/01_Product/`
+  - `Docs/02_Architecture/`
+  - `Docs/03_Research/`
+  - `Docs/04_DesignSystem/`
+  - `Docs/05_Renderer/`
+  - `Docs/06_Development/`
+  - `Docs/07_Releases/`
+
+- 重要边界：
+  - 本轮没有移动旧源码
+  - 本轮没有删除旧文档
+  - 本轮没有继续改 Renderer / UI / Export / Metadata 逻辑
+  - 大规模文档迁移与源码结构迁移留给后续单独切片
+
+- 验证：
+  - `git diff --check` 通过
+  - 未运行 Xcode build，因为本轮是文档与目录骨架重置，不改运行时代码
+
+下一轮最值得做：
+
+1. 先把旧 `Docs/` 文档迁移到 `Docs/01_Product` 到 `Docs/07_Releases`，每次迁移一组，并维护 redirect/index
+2. 起草第一版 `Research/LayoutSpecification.md`
+3. 起草 Layout Engine 数据契约，暂时不要改 renderer
+
 ## 2026-06-22 Immers White 双行文字簇收口
 
 - 这一轮继续只收渲染层，没有碰：

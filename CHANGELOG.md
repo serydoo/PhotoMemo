@@ -1,5 +1,85 @@
 # Changelog
 
+## PhotoMemo IA-001 Interaction Architecture - 2026-06-23
+
+### Added
+- Added `Docs/Interaction/IA-001_Interaction_Architecture.md`.
+- Added `Docs/Behavior/BEHAVIOR_SPECIFICATION.md`.
+- Added `Docs/Guidelines/LANGUAGE_SYSTEM.md`.
+- Added `Docs/Guidelines/PRODUCT_PERSONALITY.md`.
+- Added `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md`.
+- Added `Docs/Configuration/CONFIGURATION_MODEL.md`.
+- Added `Docs/Product/ANTI_GOALS.md`.
+- Added `Docs/DESIGN_DECISIONS.md`.
+- Added `Docs/FROZEN_REGISTRY.md`.
+- Added `Docs/PDR/PDR-003_Interaction_Architecture.md`.
+- Added `LIFE_TIMELINE_PHILOSOPHY.md`.
+
+### Changed
+- Updated `PROJECT_CONSTITUTION.md`, `Docs/MASTER_PLAN.md`, `PROJECT_PHILOSOPHY.md`, `AI_CONTEXT.md`, `Docs/CURRENT_STATUS.md`, and `Docs/DOCUMENT_INDEX.md` to reflect IA-001 as the current frozen documentation slice.
+- Formalized PhotoMemo as a local-first Memory Capability inside Apple Photos workflows instead of a standalone photo-management product.
+- Frozen the Configuration Center role, share-first primary entry path, Zero Interaction, Quiet Computing, Back To Photos, behavior principles, language system, and anti-goals.
+- Added a permanent five-step feature workflow in `Docs/MASTER_PLAN.md`: PDR -> Repository Refactor -> Architecture Review -> Implementation -> Review & Freeze.
+
+### Notes
+- This update is documentation-only and does not change runtime behavior.
+- No Swift, renderer, metadata, export, database, or pipeline implementation files were changed.
+
+## PhotoMemo Memory Presentation Philosophy - 2026-06-22
+
+### Added
+- Added `PROJECT_PHILOSOPHY.md`.
+- Added `PROJECT_DIRECTION.md`.
+- Added `Docs/03_Research/MemoryPhilosophy.md`.
+- Added V2 architecture documentation in `Docs/ARCHITECTURE.md`.
+
+### Changed
+- Reframed PhotoMemo as a local-first, privacy-first Memory Presentation Engine.
+- Added Life Position and Memory Timeline as core product concepts.
+- Updated architecture language to include Memory Engine between Metadata Engine and Presentation Engine.
+
+### Notes
+- Memory Engine calculates relationships but does not write stories.
+- Presentation Engine expresses relationships.
+- Layout Engine presents meaning.
+- Renderer draws.
+- Runtime code remains untouched.
+
+## PhotoMemo V2 Constitution - 2026-06-22
+
+### Added
+- Added `PROJECT_CONSTITUTION.md` as the highest-level repository instruction.
+- Added research-system documents for reverse-engineering roadmap, canvas specification, panel specification, adaptive rules, and measurement methodology.
+
+### Changed
+- Updated AI and project entry files so `PROJECT_CONSTITUTION.md` is read before `Docs/MASTER_PLAN.md`.
+- Updated `RepositoryAudit.md` with duplicated, outdated, and conflicting document groups.
+- Clarified that old documentation should not be migrated until research specifications stabilize.
+
+### Notes
+- Runtime code remains untouched.
+- Renderer remains frozen.
+- UI work remains paused.
+
+## PhotoMemo V2 Reset - 2026-06-22
+
+### Added
+- Added `Docs/MASTER_PLAN.md` as the single V2 project entry.
+- Added `PROJECT_RESET.md` to preserve the permanent reset memory.
+- Added `RepositoryAudit.md` with architecture, documentation, renderer, workflow, repository-health, and open-source readiness findings.
+- Added the `Research/` system and initial specification stubs.
+- Added non-destructive V2 target-structure folders for App, DesignSystem, LayoutEngine, Renderer, Examples, and Screenshots.
+- Added `Docs/01_Product` through `Docs/07_Releases` buckets for the future documentation refactor.
+
+### Changed
+- Updated `README.md`, `AI.md`, `AI_CONTEXT.md`, `AGENTS.md`, `Docs/CURRENT_STATUS.md`, `Docs/DOCUMENT_INDEX.md`, and `Docs/PROJECT_STRUCTURE.md` to prioritize the V2 Research Phase.
+
+### Notes
+- Feature development is paused.
+- Renderer polishing is paused.
+- UI expansion is paused.
+- This reset is documentation and repository-structure only; runtime code was not changed.
+
 ## Alpha 0.8 - 2026-06-20
 
 ### Added

@@ -1,8 +1,103 @@
 # PhotoMemo AI Context
 
+## V2 Reset
+
+PhotoMemo is now in documentation-first architecture synchronization.
+
+Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+
+PM-003 Phase 1 is frozen.
+
+The current repository slice is:
+
+```text
+IA-001 Interaction Architecture
+```
+
+The new target is a local-first Memory Presentation Engine:
+
+```text
+Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export
+```
+
+Read these first:
+
+1. `PROJECT_CONSTITUTION.md`
+2. `Docs/MASTER_PLAN.md`
+3. `PROJECT_RESET.md`
+4. `RepositoryAudit.md`
+5. `Research/README.md`
+
+Renderer must not own layout decisions. New layout work must move through research, specification, Layout Engine, renderer, validation, and release.
+
+Old documentation should not be migrated immediately. Build the new research documentation first, then migrate old docs after research specifications stabilize.
+
+## IA-001 Frozen State
+
+IA-001 is now frozen at the repository-documentation level.
+
+Primary references:
+
+- `Docs/Interaction/IA-001_Interaction_Architecture.md`
+- `Docs/PDR/PDR-003_Interaction_Architecture.md`
+- `Docs/Behavior/BEHAVIOR_SPECIFICATION.md`
+- `Docs/Guidelines/LANGUAGE_SYSTEM.md`
+- `Docs/Guidelines/PRODUCT_PERSONALITY.md`
+- `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md`
+- `Docs/Configuration/CONFIGURATION_MODEL.md`
+- `Docs/Product/ANTI_GOALS.md`
+- `Docs/DESIGN_DECISIONS.md`
+- `Docs/FROZEN_REGISTRY.md`
+
+## PM-003 Frozen State
+
+PM-003 is now in:
+
+```text
+Architecture Frozen
+```
+
+The single source of truth is:
+
+- `Docs/PM-003_Content_Layout_System.md`
+
+Frozen decisions:
+
+- Slot always means semantic role, not layout position
+- Slot A = Recorder
+- Slot B = Capture Summary
+- Slot C = Timeline
+- Slot D = Time Anchor
+- Slot D never displays raw metadata blocks
+- Timeline default expression is `记录于｜日期｜时间`
+- Timeline Action default is `记录于`
+- seconds do not display
+
+Life Anchor rules:
+
+- Life Anchor is a Life Event, not a raw date
+- V1 supports 3 user-defined Life Anchors
+- V1 fields in use are `name`, `date`, `description`
+- `category` and `enabled` remain reserved
+
+Time Anchor rules:
+
+- PhotoMemo does not directly display time
+- PhotoMemo displays the distance between a person and an important life event
+- past and future are unified by Time Anchor Engine
+
+Expression rules:
+
+- Subject -> Anchor Prompt -> Anchor Result -> Anchor Suffix
+- Subject, Anchor Prompt, and Anchor Suffix are editable expression parts
+- Anchor Result is engine-calculated and not editable
+- Expression and Engine must remain fully decoupled
+
 ## Product Position
 
-PhotoMemo is a local-first memory card generator.
+PhotoMemo V1 is a local-first memory card generator. PhotoMemo V2 repositions the project as a local-first Memory Presentation Engine.
+
+Photos have timestamps. Memories have positions.
 
 It is not:
 
@@ -16,12 +111,24 @@ It is:
 - a metadata and memory overlay tool
 - a background photo-processing pipeline that writes finished images back to the system photo library
 
+PhotoMemo is not an EXIF viewer.
+
+PhotoMemo is a memory expression system.
+
+PhotoMemo is not a standalone photo product.
+
+PhotoMemo is a Memory Capability inside Apple Photos workflows.
+
 ## Current Product Shape
 
 - The foreground app is mainly for configuring templates, anchors, badges, album destination, and description-writing rules
+- The Main App is permanently a Configuration Center
 - The main UI should keep one preview image as the calibration surface
+- The primary entry path is Apple Photos -> Share -> PhotoMemo -> Memory Workflow -> Done
 - Real day-to-day usage should move toward external intake such as open-with, share, or similar background entry points
 - The app should generate a new image and preserve original photo usability in the library as much as the platform allows
+- PM-003 freezes semantic content ownership before any future UI or layout implementation
+- PhotoMemo should return users back to Photos instead of pulling them into the Main App
 
 ## Core User Flow
 
@@ -34,6 +141,13 @@ It is:
 7. Process in background
 8. Save finished images into the system library and target album
 
+Default interaction posture:
+
+- Zero Interaction on the happy path
+- Quiet Computing by default
+- no developer language in user-facing progress
+- no percentage-based progress language
+
 ## Current Technical State
 
 - SwiftUI macOS app
@@ -42,13 +156,22 @@ It is:
 - Smart time-anchor tokens are wired into real EXIF-based calculations
 - Background batch queue exists for external intake and photo-library output
 - Batch notifications now exist for queued and completed background jobs
+- PM-003 Phase 1 documentation now freezes semantic slots, Life Anchor V1, and Time Anchor grammar
+- IA-001 documentation now freezes interaction architecture, behavior rules, and language tone
 
 ## Near-Term Priorities
 
-1. keep the permission flow explicit and stable
-2. harden external intake and background processing
-3. ensure preview, render, export, and metadata retention stay aligned
-4. simplify UI interactions without breaking future iOS migration
+1. preserve Memory Engine and Time Anchor architecture boundaries
+2. keep the Main App as a Configuration Center rather than a daily workflow surface
+3. harden external intake and background processing
+4. ensure preview, render, export, and metadata retention stay aligned
+
+Current documentation priority inside V2.1:
+
+1. preserve Memory Engine and Time Anchor architecture boundaries
+2. freeze semantic slot and grammar decisions before layout work
+3. freeze interaction architecture and behavior language before UI implementation
+4. keep renderer, UI, export, and runtime implementation paused for IA-001 documentation work
 
 ## Product Guardrails
 
@@ -57,3 +180,7 @@ It is:
 - no network dependency for core processing
 - no irreversible mutation of the original image
 - no feature expansion that outruns the real end-to-end pipeline
+- no sentence assembly inside calculation engines
+- no semantic slots defined as raw layout coordinates
+- no user-facing developer terms such as renderer or metadata pipeline
+- no separate PhotoMemo-owned gallery, map, people, search, dashboard, workspace, or task center
