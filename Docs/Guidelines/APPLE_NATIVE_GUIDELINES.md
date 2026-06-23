@@ -39,3 +39,16 @@ This principle comes from long-term real use of Apple Photos as the primary life
 ## Back To Photos Principle
 
 After finishing work, PhotoMemo should return users to Apple Photos by default.
+
+## Review Checklist
+
+Every future feature must answer:
+
+- Does it add a new page?
+- Does it add a new button?
+- Does it increase learning cost?
+- Does it pull the user away from Apple Photos?
+- Does it repeat a capability Apple already has?
+- Would Apple itself likely design it this way?
+
+Only when all of these checks pass should the feature move toward implementation.

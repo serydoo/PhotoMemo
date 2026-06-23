@@ -343,3 +343,129 @@ Future feature proposals should be rejected when they cross the Apple Photos bou
 Status:
 
 Frozen
+
+## Decision 20
+
+Decision:
+
+Apple Photos and PhotoMemo have an explicit product-boundary split.
+
+Reason:
+
+The repository needs one stable statement of ownership for Apple Photos versus PhotoMemo.
+
+Impact:
+
+Future product work must check whether a capability belongs to Apple Photos or to PhotoMemo before entering implementation.
+
+Status:
+
+Frozen
+
+## Decision 21
+
+Decision:
+
+Every Memory Workflow freezes a Configuration Snapshot at start, and the running task becomes read-only.
+
+Reason:
+
+Users need predictable behavior during processing, even if preferences change afterward.
+
+Impact:
+
+Configuration changes made during a task may only affect the next task.
+
+Status:
+
+Frozen
+
+## Decision 22
+
+Decision:
+
+Behavior is documented through a state machine, not through UI flow definitions.
+
+Reason:
+
+Interaction architecture should preserve product behavior independently from any one interface implementation.
+
+Impact:
+
+Future reviews should discuss `Idle -> Share -> Preparing -> Processing -> Completed -> Reading` and recovery/preparation branches as behavior architecture.
+
+Status:
+
+Frozen
+
+## Decision 23
+
+Decision:
+
+Smart Batch Recommendation replaces fixed maximum, limit, or threshold language.
+
+Reason:
+
+PhotoMemo should recommend the best experience without turning guidance into a rigid product restriction.
+
+Impact:
+
+Batch guidance must be phrased as recommendation based on device performance, photo count, and runtime conditions.
+
+Status:
+
+Frozen
+
+## Decision 24
+
+Decision:
+
+Every future feature must pass the Apple review checklist before implementation.
+
+Reason:
+
+The product needs one repeatable pre-implementation filter for native fit, complexity, and duplication risk.
+
+Impact:
+
+New work should not proceed unless it passes the page, button, learning-cost, Apple-Photos, duplication, and Apple-likeness checks.
+
+Status:
+
+Frozen
+
+## Decision 25
+
+Decision:
+
+The Never Break List is a permanent top-level review gate.
+
+Reason:
+
+Some principles are too fundamental to be rediscovered separately in each feature review.
+
+Impact:
+
+Every implementation and every review must check `Docs/NEVER_BREAK.md` first.
+
+Status:
+
+Frozen
+
+## Decision 26
+
+Decision:
+
+PhotoMemo exists to help people read their memories, not just store their photos.
+
+Reason:
+
+The repository needs one stable mission statement that explains why the product exists.
+
+Impact:
+
+Future product work should reinforce memory reading rather than drift toward generic photo storage or management.
+
+Status:
+
+Frozen

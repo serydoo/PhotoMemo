@@ -57,6 +57,24 @@ PhotoMemo 更适合处理一段值得回味的记录。
 以获得更快、更专注的体验。
 ```
 
+This is language guidance.
+
+It is not a hard limit.
+
+## Smart Batch Recommendation
+
+PhotoMemo does not limit the user by a fixed maximum, limit, or threshold.
+
+Instead, PhotoMemo should recommend the best experience according to:
+
+- device performance
+- photo count
+- runtime conditions
+
+The product should recommend.
+
+It should not forbid.
+
 ## Prohibited Language
 
 Do not expose:

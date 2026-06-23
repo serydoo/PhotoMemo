@@ -53,6 +53,7 @@ Use these when deciding what to build next:
 - `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md` - Apple-native product guidelines
 - `Docs/Configuration/CONFIGURATION_MODEL.md` - configuration layer model
 - `Docs/Product/ANTI_GOALS.md` - explicit anti-goals
+- `Docs/NEVER_BREAK.md` - permanent review gate
 - `PROJECT_PHILOSOPHY.md` - Memory Presentation Engine philosophy
 - `PROJECT_DIRECTION.md` - current V2 direction
 
@@ -61,6 +62,7 @@ Use these when deciding what to build next:
 Use these when changing boundaries, ownership, or shared flows:
 
 - `Docs/ARCHITECTURE.md` - architecture overview
+- `Docs/PDR/PDR_INDEX.md` - product design review index
 - `Docs/PDR/PDR-003_Interaction_Architecture.md` - interaction architecture PDR
 - `Docs/Behavior/BEHAVIOR_SPECIFICATION.md` - frozen behavior and data rules
 - `Docs/DESIGN_DECISIONS.md` - current design decision registry
@@ -122,6 +124,7 @@ Use these when preparing verification or release-quality checks:
 - `Docs/MANUAL_REGRESSION_CHECKLIST_2026-06-19.md`
 - `Docs/CIReadiness.md`
 - `Docs/FixtureSpecification.md`
+- `Docs/NEVER_BREAK.md`
 - `Docs/Alpha/Alpha01.md`
 - `Docs/Alpha/BugList.md`
 - `Docs/Alpha/KnownIssues.md`

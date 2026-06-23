@@ -5,6 +5,68 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-23 IA-001A Behavior / Boundary / Mission 补齐
+
+- 本轮继续保持文档切片，没有改：
+  - Swift
+  - SwiftUI
+  - Renderer
+  - Engine
+  - Metadata
+  - Export
+  - Database
+  - Pipeline
+
+- 本轮补齐的核心不是新设计，而是把第一轮 IA-001 冻结结果继续补成完整 repository product definition。
+
+- 本轮新增：
+  - `Docs/NEVER_BREAK.md`
+  - `Docs/PDR/PDR_INDEX.md`
+
+- 本轮完善：
+  - `PROJECT_PHILOSOPHY.md`
+    - 新增 Product Boundary 表格
+    - 明确 Apple Photos / PhotoMemo 责任边界
+  - `Docs/Behavior/BEHAVIOR_SPECIFICATION.md`
+    - 新增 Behavior State Machine
+    - 新增 Configuration Snapshot Principle
+  - `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md`
+    - 新增 Apple Review Checklist
+  - `Docs/Guidelines/LANGUAGE_SYSTEM.md`
+    - 正式明确 Soft Limit Language 是语言而不是限制
+    - 新增 Smart Batch Recommendation
+  - `Docs/Interaction/IA-001_Interaction_Architecture.md`
+    - 新增 Smart Batch Recommendation
+  - `PROJECT_CONSTITUTION.md`
+    - 补齐 Apple Trust Design Rationale
+    - 明确来自长期管理超过 11 万张生活照片的真实使用经验
+  - `README.md`
+    - 新增 Repository Mission：
+      - `PhotoMemo exists to help people read their memories, not just store their photos.`
+      - `PhotoMemo 存在的意义，不是帮助人们保存照片，而是帮助人们阅读回忆。`
+  - `Docs/FROZEN_REGISTRY.md`
+    - 登记本轮新增冻结项
+  - `Docs/DESIGN_DECISIONS.md`
+    - 补登记 Product Boundary / Configuration Snapshot / State Machine / Smart Batch / Apple Review / Never Break / Repository Mission
+  - `Docs/DOCUMENT_INDEX.md`
+    - 收录 `NEVER_BREAK` 与 `PDR_INDEX`
+
+- 本轮 IA-001A 冻结补齐项：
+  - Product Boundary
+  - Behavior State Machine
+  - Configuration Snapshot
+  - Apple Review Checklist
+  - Smart Batch Recommendation
+  - Soft Limit Language clarification
+  - Apple Trust Design Rationale
+  - Never Break List
+  - PDR Index
+  - Repository Mission
+
+- 验证：
+  - 已确认仍然没有实现层文件改动
+  - 本轮输出适合继续作为文档冻结的一部分进入后续 Product Design Review 之前的仓库事实层
+
 ## 2026-06-23 PM-003 冻结 + IA-001 Interaction Architecture 文档归档
 
 - 本轮严格只做 repository documentation refactor，没有改：

@@ -39,6 +39,40 @@ The highest-priority entry documents are:
 
 Memory Engine is now a first-class architecture module. Renderer is no longer allowed to be the source of layout truth. Future layout work must be researched, specified, measured, and owned by a Layout Engine before renderer implementation.
 
+## 2026-06-23 IA-001A Interaction Architecture Completion
+
+This slice continues the repository documentation refactor only.
+
+No runtime code was changed.
+
+No business logic was modified.
+
+What changed:
+
+- added Product Boundary into `PROJECT_PHILOSOPHY.md`
+- expanded `Docs/Behavior/BEHAVIOR_SPECIFICATION.md` with a Behavior State Machine and Configuration Snapshot Principle
+- expanded `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md` with an implementation review checklist
+- expanded `Docs/Guidelines/LANGUAGE_SYSTEM.md` with Smart Batch Recommendation clarification
+- expanded `Docs/Interaction/IA-001_Interaction_Architecture.md` with Smart Batch Recommendation
+- added `Docs/NEVER_BREAK.md`
+- added `Docs/PDR/PDR_INDEX.md`
+- updated `PROJECT_CONSTITUTION.md` with the Apple Trust rationale
+- updated `README.md` with the repository mission
+- updated `AI_CONTEXT.md` and `Docs/FROZEN_REGISTRY.md`
+
+Completion items now recorded:
+
+- Product Boundary
+- Behavior State Machine
+- Configuration Snapshot
+- Apple Review Checklist
+- Smart Batch Recommendation
+- Soft Limit Language clarification
+- Apple Trust Design Rationale
+- Never Break List
+- PDR Index
+- Repository Mission
+
 ## 2026-06-23 IA-001 Interaction Architecture Frozen
 
 This slice is repository documentation refactor only.

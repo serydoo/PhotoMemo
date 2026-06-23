@@ -124,6 +124,32 @@ Layout Engine becomes the center.
 - No Magic Numbers
 - Every Layout Decision Must Be Measurable
 
+## Apple Trust Principle
+
+PhotoMemo trusts Apple.
+
+Not because it is Apple as a brand.
+
+But because Apple Photos has already proven its maturity and reliability in real large-scale photo management.
+
+PhotoMemo does not rebuild those systems.
+
+PhotoMemo focuses on:
+
+```text
+Memory Capability
+```
+
+This principle comes from long-term real use.
+
+The developer has used Apple Photos to manage more than 110,000 life photos over time.
+
+Therefore:
+
+```text
+PhotoMemo fully trusts Apple Photos.
+```
+
 ## Immediate Task
 
 Development remains paused.

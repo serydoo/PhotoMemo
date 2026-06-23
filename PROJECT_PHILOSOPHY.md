@@ -229,6 +229,30 @@ The best default experience is Zero Interaction:
 
 PhotoMemo should finish in the background and communicate with gentle, human language instead of technical vocabulary.
 
+## Product Boundary
+
+| System | Responsibility |
+| --- | --- |
+| Apple Photos | Photo Storage |
+| Apple Photos | Albums |
+| Apple Photos | Timeline |
+| Apple Photos | People |
+| Apple Photos | Maps |
+| Apple Photos | Search |
+| Apple Photos | Reading |
+| Apple Photos | iCloud |
+| PhotoMemo | Metadata |
+| PhotoMemo | Memory Workflow |
+| PhotoMemo | Memory Expression |
+| PhotoMemo | Memory Reading |
+| PhotoMemo | Time Anchor |
+| PhotoMemo | Life Anchor |
+| PhotoMemo | Memory Generation |
+
+PhotoMemo never rebuilds capabilities that Apple Photos already owns.
+
+PhotoMemo stays focused on Memory Capability.
+
 ## Long-Term Vision
 
 PhotoMemo is not building a better watermark tool.

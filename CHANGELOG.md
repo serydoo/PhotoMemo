@@ -1,5 +1,24 @@
 # Changelog
 
+## PhotoMemo IA-001A Repository Product Definition Completion - 2026-06-23
+
+### Added
+- Added `Docs/NEVER_BREAK.md`.
+- Added `Docs/PDR/PDR_INDEX.md`.
+
+### Changed
+- Added Product Boundary to `PROJECT_PHILOSOPHY.md`.
+- Expanded `Docs/Behavior/BEHAVIOR_SPECIFICATION.md` with a Behavior State Machine and Configuration Snapshot Principle.
+- Expanded `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md` with an Apple review checklist.
+- Expanded `Docs/Guidelines/LANGUAGE_SYSTEM.md` and `Docs/Interaction/IA-001_Interaction_Architecture.md` with Smart Batch Recommendation and clarified that Soft Limit Language is guidance rather than a hard limit.
+- Expanded `PROJECT_CONSTITUTION.md` with the Apple Trust design rationale.
+- Added the repository mission to `README.md`.
+- Updated `Docs/FROZEN_REGISTRY.md`, `Docs/DESIGN_DECISIONS.md`, `AI_CONTEXT.md`, `Docs/CURRENT_STATUS.md`, and `Docs/DOCUMENT_INDEX.md` to register the completed IA-001A assets.
+
+### Notes
+- This update is documentation-only and does not change runtime behavior.
+- No Swift, renderer, metadata, export, database, or pipeline implementation files were changed.
+
 ## PhotoMemo IA-001 Interaction Architecture - 2026-06-23
 
 ### Added

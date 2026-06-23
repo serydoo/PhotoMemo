@@ -43,7 +43,9 @@ Primary sources:
 - `Docs/Configuration/CONFIGURATION_MODEL.md`
 - `Docs/Product/ANTI_GOALS.md`
 - `Docs/DESIGN_DECISIONS.md`
+- `Docs/NEVER_BREAK.md`
 - `Docs/PDR/PDR-003_Interaction_Architecture.md`
+- `Docs/PDR/PDR_INDEX.md`
 
 Frozen areas:
 
@@ -55,9 +57,12 @@ Frozen areas:
 - Quiet Computing Principle
 - Back To Photos Principle
 - Progress Experience
+- Smart Batch Recommendation
 - Task Recovery Principle
 - Device Adaptive Principle
 - Storage Verification Principle
+- Behavior State Machine
+- Configuration Snapshot Principle
 - Library Consistency Principle
 - Original Never Changes Principle
 - Metadata Preservation Principle
@@ -68,3 +73,5 @@ Frozen areas:
 - Configuration Layer
 - Product Boundary
 - Anti Goals
+- Never Break List
+- PDR Index

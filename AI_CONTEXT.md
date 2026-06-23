@@ -40,6 +40,7 @@ Primary references:
 
 - `Docs/Interaction/IA-001_Interaction_Architecture.md`
 - `Docs/PDR/PDR-003_Interaction_Architecture.md`
+- `Docs/PDR/PDR_INDEX.md`
 - `Docs/Behavior/BEHAVIOR_SPECIFICATION.md`
 - `Docs/Guidelines/LANGUAGE_SYSTEM.md`
 - `Docs/Guidelines/PRODUCT_PERSONALITY.md`
@@ -47,6 +48,7 @@ Primary references:
 - `Docs/Configuration/CONFIGURATION_MODEL.md`
 - `Docs/Product/ANTI_GOALS.md`
 - `Docs/DESIGN_DECISIONS.md`
+- `Docs/NEVER_BREAK.md`
 - `Docs/FROZEN_REGISTRY.md`
 
 ## PM-003 Frozen State
@@ -129,6 +131,7 @@ PhotoMemo is a Memory Capability inside Apple Photos workflows.
 - The app should generate a new image and preserve original photo usability in the library as much as the platform allows
 - PM-003 freezes semantic content ownership before any future UI or layout implementation
 - PhotoMemo should return users back to Photos instead of pulling them into the Main App
+- Apple Photos and PhotoMemo now have an explicit product-boundary split
 
 ## Core User Flow
 
@@ -147,6 +150,8 @@ Default interaction posture:
 - Quiet Computing by default
 - no developer language in user-facing progress
 - no percentage-based progress language
+- configuration is frozen per task through a Configuration Snapshot
+- Smart Batch Recommendation guides users without imposing a hard limit
 
 ## Current Technical State
 
@@ -184,3 +189,4 @@ Current documentation priority inside V2.1:
 - no semantic slots defined as raw layout coordinates
 - no user-facing developer terms such as renderer or metadata pipeline
 - no separate PhotoMemo-owned gallery, map, people, search, dashboard, workspace, or task center
+- never break the permanent rules recorded in `Docs/NEVER_BREAK.md`

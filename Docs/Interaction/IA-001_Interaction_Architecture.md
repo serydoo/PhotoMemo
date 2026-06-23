@@ -142,6 +142,30 @@ Prohibited in user-facing progress:
 - `Metadata Pipeline`
 - any development terminology
 
+## Smart Batch Recommendation
+
+PhotoMemo should not frame batching through fixed words such as:
+
+- Maximum
+- Limit
+- Threshold
+
+PhotoMemo should instead use:
+
+```text
+Smart Batch Recommendation
+```
+
+The system should recommend the best experience based on:
+
+- device performance
+- photo count
+- runtime conditions
+
+PhotoMemo does not forbid the user.
+
+PhotoMemo recommends the best experience.
+
 ## Product Boundary
 
 Apple Photos owns:

@@ -1,5 +1,110 @@
 # PhotoMemo
 
+## Project Mission
+
+PhotoMemo exists to help people read their memories, not just store their photos.
+
+PhotoMemo 存在的意义，
+
+不是帮助人们保存照片，
+
+而是帮助人们阅读回忆。
+
+## Project Manifesto
+
+Photos preserve moments.
+
+PhotoMemo reveals their meaning.
+
+照片记录瞬间。
+
+PhotoMemo 赋予意义。
+
+## Mission Explanation
+
+Apple Photos is already a mature photo management system.
+
+PhotoMemo does not try to replace Apple Photos.
+
+PhotoMemo respects the photo-management experience that Apple Photos already provides.
+
+PhotoMemo does not change how people manage their photos.
+
+Instead, on top of Apple Photos, PhotoMemo helps people read photos again, understand photos again, and express the important moments of life again.
+
+PhotoMemo is not a new photo-management system.
+
+PhotoMemo is a Local First Memory Capability inside the Apple ecosystem.
+
+## Apple Trust
+
+PhotoMemo 永远相信 Apple。
+
+不是因为 Apple。
+
+而是因为：
+
+Apple Photos 已经在真实的大规模照片管理中，
+
+证明了自己的成熟与可靠。
+
+PhotoMemo 不重复建设：
+
+- 图库
+- 时间轴
+- 地图
+- 人物
+- 搜索
+- 同步
+- 回忆
+
+PhotoMemo 将全部精力投入：
+
+- Memory Workflow
+- Memory Expression
+- Memory Reading
+
+## Developer Rationale
+
+This design comes from long-term real use.
+
+The developer has used Apple Photos to manage more than 110,000 life photos over time.
+
+Because of that experience, the product makes one clear choice:
+
+PhotoMemo fully trusts Apple Photos.
+
+PhotoMemo does not recreate a second photo system.
+
+Instead, on top of Apple Photos, it builds a more human-centered Memory Experience.
+
+## Repository Vision
+
+The final goal of PhotoMemo is not merely to build an excellent app.
+
+It is to build a Memory System that can naturally merge into the Apple ecosystem.
+
+Users should not need to learn PhotoMemo.
+
+Users may even forget PhotoMemo.
+
+But because of PhotoMemo, they can read again the meaningful moments of life that are worth returning to.
+
+## Repository Requirement
+
+Mission is the highest-level description of this repository.
+
+All future:
+
+- Architecture
+- Interaction
+- Workflow
+- Behavior
+- Configuration
+- Implementation
+
+must follow Mission.
+
 ## PhotoMemo V2 Reset
 
 PhotoMemo has entered Research Phase.

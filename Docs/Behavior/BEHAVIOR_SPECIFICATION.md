@@ -8,6 +8,57 @@ Last updated: 2026-06-23
 Frozen
 ```
 
+## Behavior State Machine
+
+The default behavior flow is:
+
+```text
+Idle
+-> Share
+-> Preparing
+-> Processing
+-> Completed
+-> Reading
+```
+
+Preparation includes:
+
+```text
+Preparing
+-> Storage Verification
+-> Continue
+```
+
+Recovery includes:
+
+```text
+Interrupt
+-> Auto Recovery
+-> Continue
+```
+
+This state machine describes behavior.
+
+It does not describe UI.
+
+## Configuration Snapshot Principle
+
+Every time a Memory Workflow starts, PhotoMemo freezes a:
+
+```text
+Configuration Snapshot
+```
+
+The entire running task becomes:
+
+```text
+Read Only
+```
+
+Any configuration change made during processing only affects the next task.
+
+It must not affect the current task.
+
 ## Task Recovery Principle
 
 All tasks should recover automatically by default.
