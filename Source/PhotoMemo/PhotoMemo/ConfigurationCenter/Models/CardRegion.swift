@@ -53,11 +53,11 @@ extension CardRegion {
         case .slotA:
             return "Recorder"
         case .slotB:
-            return "Capture Summary"
-        case .slotC:
             return "Timeline"
+        case .slotC:
+            return "Location"
         case .slotD:
-            return "Time Anchor"
+            return "Memory"
         }
     }
 

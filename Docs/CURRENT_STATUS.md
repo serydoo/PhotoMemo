@@ -123,6 +123,27 @@ UI polish in this slice:
 - reduced default region boundary contrast
 - kept hover, selection, Object Inspector routing, and Region Strip behavior unchanged
 
+## 2026-06-24 Bottom Card Slot Preview Local Revision
+
+This slice keeps Library and Object Inspector unchanged.
+
+Only the center `InteractiveMemoryCard` presentation was revised.
+
+What changed:
+
+- changed Memory Card Preview from a tall card into a horizontal bottom-card information window
+- modeled the four slot areas after the existing output-card structure:
+  - Slot A: Recorder
+  - Slot B: Timeline
+  - Slot C: Location / photo facts
+  - Slot D: Memory
+- kept the center Apple decoration region clickable through `CardRegion.icon`
+- preserved Region Strip selection
+- preserved `CardRegion -> Object Inspector` routing
+- updated `CardRegion` semantic labels so Slot B is Timeline, Slot C is Location, and Slot D is Memory
+
+No Renderer, Metadata, Export, Share Extension, Photo Library behavior, or real Memory Engine runtime behavior was changed.
+
 ## 2026-06-24 IA-002C UI Polish Foundation
 
 This slice responds to the first visible PhotoMemo V3 review.

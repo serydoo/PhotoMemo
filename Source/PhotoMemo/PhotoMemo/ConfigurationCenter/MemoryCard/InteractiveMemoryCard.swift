@@ -20,15 +20,12 @@ struct InteractiveMemoryCard: View {
     }
 
     private var cardSurface: some View {
-        VStack(spacing: 0) {
-            decorationPanel
-            slotPanel
-        }
-        .frame(width: 430, height: 610)
+        bottomCardPreview
+            .frame(width: 560, height: 205)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.black.opacity(0.035), lineWidth: 1)
         )
         .shadow(
@@ -46,128 +43,107 @@ struct InteractiveMemoryCard: View {
         )
     }
 
-    private var decorationPanel: some View {
-        VStack(spacing: 18) {
-            cardRegionButton(
-                .badge,
-                accessibilityValue: selectedBadgeTitle
-            ) {
-                VStack(spacing: 8) {
-                    Image(systemName: selectedBadgeName)
-                        .font(.system(size: 22, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(.secondary)
+    private var bottomCardPreview: some View {
+        HStack(spacing: 0) {
+            leftSlotColumn
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text(selectedBadgeTitle)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
+            decorationDivider
 
+            rightSlotColumn
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 34)
+        .padding(.vertical, 26)
+    }
+
+    private var leftSlotColumn: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            textRegion(
+                .slotA,
+                primary: "\(subjectName)手持iPhone 17 Pro Max拍摄",
+                secondary: nil,
+                style: .headline
+            )
+
+            textRegion(
+                .slotB,
+                primary: "2026.05.24 14:33:13记录",
+                secondary: nil,
+                style: .secondary
+            )
+        }
+    }
+
+    private var rightSlotColumn: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            textRegion(
+                .slotC,
+                primary: "20mm f/1.9 1/117s ISO80",
+                secondary: "河南 · 商丘",
+                style: .headline
+            )
+
+            textRegion(
+                .slotD,
+                primary: memoryExpression,
+                secondary: nil,
+                style: .memory
+            )
+        }
+    }
+
+    private var decorationDivider: some View {
+        HStack(spacing: 16) {
             cardRegionButton(
                 .icon,
                 accessibilityValue: selectedIconTitle
             ) {
-                VStack(spacing: 8) {
-                    Image(systemName: selectedIconName)
-                        .font(.system(size: 44, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(Color.primary)
-
-                    Text(subjectName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Image(systemName: "apple.logo")
+                    .font(.system(size: 42, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.secondary)
+                    .frame(width: 58, height: 72)
             }
+
+            Rectangle()
+                .fill(Color.black.opacity(0.10))
+                .frame(width: 1, height: 76)
         }
-        .frame(maxWidth: .infinity, minHeight: 210)
-        .padding(.top, 24)
-        .padding(.bottom, 20)
+        .padding(.horizontal, 24)
     }
 
-    private var slotPanel: some View {
-        VStack(spacing: 0) {
-            horizontalRegionSeparator
-
-            slotRegion(
-                .slotA,
-                role: "Recorder",
-                value: "Shot on iPhone 17 Pro Max",
-                prominence: .secondary
-            )
-
-            horizontalRegionSeparator
-
-            slotRegion(
-                .slotB,
-                role: "Timeline",
-                value: "2026.06.18",
-                prominence: .secondary
-            )
-
-            horizontalRegionSeparator
-
-            HStack(spacing: 0) {
-                slotRegion(
-                    .slotC,
-                    role: "Location",
-                    value: "河南 · 商丘",
-                    prominence: .compact
-                )
-
-                verticalRegionSeparator
-
-                slotRegion(
-                    .slotD,
-                    role: "Memory",
-                    value: memoryExpression,
-                    prominence: .primary
-                )
-            }
-            .frame(minHeight: 132)
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color.white)
-    }
-
-    private var horizontalRegionSeparator: some View {
-        Rectangle()
-            .fill(Color.black.opacity(0.045))
-            .frame(height: 1)
-    }
-
-    private var verticalRegionSeparator: some View {
-        Rectangle()
-            .fill(Color.black.opacity(0.045))
-            .frame(width: 1)
-    }
-
-    private func slotRegion(
+    private func textRegion(
         _ region: CardRegion,
-        role: String,
-        value: String,
-        prominence: SlotProminence
+        primary: String,
+        secondary: String?,
+        style: BottomCardTextStyle
     ) -> some View {
         cardRegionButton(
             region,
-            accessibilityValue: "\(role), \(value)"
+            accessibilityValue: secondary.map {
+                "\(primary), \($0)"
+            } ?? primary
         ) {
-            VStack(spacing: prominence == .primary ? 8 : 5) {
-                Text(value)
-                    .font(prominence.valueFont)
-                    .foregroundStyle(Color.primary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(prominence.lineLimit)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(primary)
+                    .font(style.primaryFont)
+                    .foregroundStyle(style.primaryColor)
+                    .lineLimit(style.primaryLineLimit)
+                    .minimumScaleFactor(0.74)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(role)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
+                if let secondary {
+                    Text(secondary)
+                        .font(style.secondaryFont)
+                        .foregroundStyle(Color.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
             }
-            .frame(maxWidth: .infinity, minHeight: prominence.minimumHeight)
-            .padding(.horizontal, prominence.horizontalPadding)
-            .padding(.vertical, prominence.verticalPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
         }
     }
 
@@ -198,7 +174,7 @@ struct InteractiveMemoryCard: View {
             )
         }
         .padding(4)
-        .frame(width: 430)
+        .frame(width: 560)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
@@ -333,62 +309,49 @@ struct InteractiveMemoryCard: View {
     }
 }
 
-private enum SlotProminence {
-    case primary
+private enum BottomCardTextStyle {
+    case headline
     case secondary
-    case compact
+    case memory
 
-    var valueFont: Font {
+    var primaryFont: Font {
         switch self {
-        case .primary:
-            return .headline.weight(.semibold)
+        case .headline:
+            return .system(size: 20, weight: .bold)
         case .secondary:
-            return .subheadline.weight(.semibold)
-        case .compact:
-            return .subheadline.weight(.medium)
+            return .system(size: 16, weight: .medium)
+        case .memory:
+            return .system(size: 16, weight: .semibold)
         }
     }
 
-    var minimumHeight: CGFloat {
+    var secondaryFont: Font {
         switch self {
-        case .primary:
-            return 124
-        case .secondary:
-            return 92
-        case .compact:
-            return 124
-        }
-    }
-
-    var horizontalPadding: CGFloat {
-        switch self {
-        case .primary:
-            return 18
-        case .secondary:
-            return 30
-        case .compact:
-            return 14
-        }
-    }
-
-    var verticalPadding: CGFloat {
-        switch self {
-        case .primary:
-            return 16
-        case .secondary:
-            return 14
-        case .compact:
-            return 14
-        }
-    }
-
-    var lineLimit: Int {
-        switch self {
-        case .primary:
-            return 3
+        case .headline:
+            return .system(size: 15, weight: .medium)
         case .secondary,
-             .compact:
+             .memory:
+            return .system(size: 14, weight: .regular)
+        }
+    }
+
+    var primaryColor: Color {
+        switch self {
+        case .headline:
+            return Color.primary
+        case .secondary,
+             .memory:
+            return Color.secondary
+        }
+    }
+
+    var primaryLineLimit: Int {
+        switch self {
+        case .headline:
             return 2
+        case .secondary,
+             .memory:
+            return 3
         }
     }
 }
