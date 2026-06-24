@@ -72,11 +72,27 @@ All data is only an object's properties.
 Everything starts from the Memory Card.
 ```
 
+```text
+Configuration Center previews the real Memory Card, not an abstract layout.
+```
+
+```text
+Preview is the Renderer before Rendering.
+```
+
 The Memory Card is not a photo preview.
+
+The center surface is Memory Card Preview.
 
 The Memory Card is the Configuration Center's primary object.
 
 All Configuration Center interaction should revolve around the Memory Card.
+
+The center preview should show the same Bottom Card structure the future Renderer will produce, not a schematic grid of editable modules.
+
+The Configuration Center must not preview a photo area plus a bottom card. Photos belong to Apple Photos. PhotoMemo owns the Memory Card.
+
+Preview should not feel like an editor by default. It should look like an already-generated Memory Card; hover, selection, and Region Strip reveal editability only when needed.
 
 ## Configuration Center Layout
 
@@ -119,18 +135,45 @@ The Memory Card is not:
 
 - a photo
 - an example image
-- a Renderer preview
 - a background image surface
+- a Renderer debugging surface
 
 The Memory Card only displays content created by PhotoMemo.
 
 The default card model is Bottom Card.
+
+The frozen Bottom Card structure is:
+
+```text
+Decoration
+-> Slot A
+-> Slot B
+-> Slot C + Slot D
+```
+
+Decoration includes Icon and Badge.
+
+The four editable slots are:
+
+- Slot A: Recorder
+- Slot B: Timeline
+- Slot C: Location
+- Slot D: Memory Expression
 
 The Memory Card carries three responsibilities:
 
 - Preview
 - Navigation
 - Selection
+
+The Region Strip below the card is a secondary selection surface for the same four slots:
+
+```text
+Recorder
+Timeline
+Location
+Memory
+```
 
 ## CardRegion
 
@@ -306,38 +349,55 @@ Future Configuration Center pages must reuse the design system.
 
 Do not repeatedly reimplement the same UI patterns.
 
-## Next Sprint
-
-The next Configuration Experience sprint is:
+## IA-002 Freeze
 
 ```text
-IA-002C Object Inspector
+IA-002 Configuration Center Architecture
 ```
 
-Goal:
+Status:
 
+```text
+Frozen
+```
+
+Frozen IA-002 architecture includes:
+
+- Configuration Center
+- Library
+- Interactive Memory Card
 - Object Inspector
-- Inspector Sections
-- Empty State
-- Inspector Animation
-- Library Style
-- Memory Card true layout
+- CardRegion
+- InspectorProvider
+- TokenLibrary
+- MemoryBlock
+- DecorationAsset
+- Configuration Snapshot
 
-Still use mock data.
+Future work may polish visual execution, but must not overturn this architecture.
 
-Do not connect:
+## Next Stage
 
-- Renderer
-- Metadata
-- Export
-- Memory Engine runtime
-- PersonalProfile Adapter
-
-After Object Inspector stabilizes, the following sprint should be:
+The next implementation track is:
 
 ```text
-IA-002D MemorySubject Adapter
+IA-003 Memory Engine Integration
 ```
+
+Approved sequence:
+
+```text
+IA-003A MemorySubject Adapter
+-> IA-003B Configuration Snapshot
+-> IA-003C Memory Block Resolver
+-> IA-003D CaptureTimeResolver
+-> IA-003E Interactive Memory Card connects real data
+-> IA-003F Renderer
+```
+
+IA-003A may bridge the existing personal/profile layer into `MemorySubject`.
+
+Do not connect Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work until the approved IA-003 slice reaches that boundary.
 
 ## Repository Sources
 

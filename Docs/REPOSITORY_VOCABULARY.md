@@ -41,6 +41,7 @@ Use these terms in current source-of-truth documents:
 - Library
 - Memory Object Library
 - Interactive Memory Card
+- Memory Card Preview
 - Object Inspector
 - Memory Workflow
 - Memory Subject
@@ -87,7 +88,8 @@ Use these replacements in active repository language:
 | Main App | Configuration Center |
 | Slot Editor | Slot Configuration |
 | Template, when describing user configuration | Preset |
-| Preview, when describing user calibration | Configuration Preview |
+| Preview, when describing the center Memory Card surface | Memory Card Preview |
+| Preview, when describing user calibration broadly | Configuration Preview |
 | Open App -> Import -> Configure -> Export | Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos |
 | Sidebar, when describing Configuration Center architecture | Library |
 | Inspector, when describing selected configuration objects | Object Inspector |

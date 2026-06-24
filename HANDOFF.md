@@ -5,6 +5,161 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-24 IA-002 Freeze / IA-003 Product Realization
+
+- 用户正式确认：
+
+```text
+IA-002 can end.
+Product Definition -> Product Realization.
+```
+
+- IA-002 Architecture 冻结：
+  - Configuration Center
+  - Library
+  - Interactive Memory Card
+  - Object Inspector
+  - CardRegion
+  - InspectorProvider
+  - TokenLibrary
+  - MemoryBlock
+  - DecorationAsset
+  - Configuration Snapshot
+  - Region Strip
+- 以后 UI 可以 Polish，但不能推翻 IA-002 架构。
+- 五条 V3 设计基石登记为当前事实：
+  - Configuration Center edits Objects, not Data.
+  - Everything starts from the Memory Card.
+  - Configuration Center previews the real Memory Card, not an abstract layout.
+  - Capture-Time Principle.
+  - Memory Subject = Identity + MemoryBehavior.
+- 下一阶段：
+
+```text
+IA-003 Memory Engine Integration
+```
+
+- 目标：
+
+```text
+Photo
+-> EXIF
+-> Memory Subject
+-> Configuration Snapshot
+-> Memory Engine
+-> Memory Card
+-> Renderer
+```
+
+- 开发顺序：
+
+```text
+IA-003A MemorySubject Adapter
+-> IA-003B Configuration Snapshot
+-> IA-003C Memory Block Resolver
+-> IA-003D CaptureTimeResolver
+-> IA-003E Interactive Memory Card connects real data
+-> IA-003F Renderer
+```
+
+- 下一轮如果开始写代码，应从 IA-003A 开始。
+- IA-003A 只做 `PersonalProfile` / 现有身份配置到 `MemorySubject` 的 adapter 边界。
+- IA-003A 不应修改：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension
+  - Photo Library behavior
+  - Layout Engine
+
+## 2026-06-24 Memory Card Preview Polish Amendment
+
+- 新冻结原则：
+
+```text
+Preview is the Renderer before Rendering.
+```
+
+- 中文理解：
+  - Configuration Center 里的 Preview，本质上就是 Renderer 的实时映射。
+- 中间区域正式定义为：
+  - Memory Card Preview
+- 中间区域不再承载：
+  - Photo
+  - placeholder photo
+  - abstract editor layout
+  - visible configuration grid
+- 产品边界：
+  - Photos belong to Apple Photos.
+  - PhotoMemo owns the Memory Card.
+- Preview 默认应该像已经生成好的 Memory Card。
+- 只有 hover / selected / Region Strip 暗示可编辑性。
+- 本轮 UI polish：
+  - 去掉 `InteractiveMemoryCard` 的灰色背景
+  - 弱化卡片边框和阴影
+  - 去掉 slot 区域灰底
+  - 降低默认分隔线可见度
+  - 保留 Region Strip 与 Object Inspector 路由
+
+## 2026-06-24 IA-002C Real Bottom Card Preview Amendment
+
+- 本轮从 tag 回滚点继续：
+
+```text
+ia-002c-ui-polish-checkpoint
+0176b29 Checkpoint Configuration Center UI polish
+```
+
+- 本轮只重设计中间 `InteractiveMemoryCard`。
+- 保留现有：
+  - Library
+  - Object Inspector
+  - Inspector sections
+  - Token UI
+  - mock-only 边界
+- 严格没有接入：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension intake
+  - Photo Library
+  - Memory Engine runtime
+  - `PersonalProfile` adapter
+- 新冻结原则：
+
+```text
+Configuration Center previews the real Memory Card, not an abstract layout.
+```
+
+- 中间卡片改为真实 Bottom Card 结构：
+
+```text
+Decoration
+-> Slot A
+-> Slot B
+-> Slot C + Slot D
+```
+
+- Decoration 包含：
+  - Icon
+  - Badge
+- 四个可编辑 Slot：
+  - Slot A = Recorder
+  - Slot B = Timeline
+  - Slot C = Location
+  - Slot D = Memory Expression
+- Region Strip 已加入卡片下方：
+  - Recorder
+  - Timeline
+  - Location
+  - Memory
+- Region Strip 与真实卡片区域选择同一组 `CardRegion`。
+- 同步更新：
+  - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+  - `Docs/FROZEN_REGISTRY.md`
+  - `Docs/DESIGN_DECISIONS.md`
+  - `Docs/CURRENT_STATUS.md`
+
 ## 2026-06-24 IA-002C UI Polish Foundation
 
 - 本轮回应第一次 PhotoMemo V3 可视化 review。

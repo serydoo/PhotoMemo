@@ -2,16 +2,18 @@
 
 ## V2 Reset
 
-PhotoMemo is now in documentation-first architecture synchronization.
+PhotoMemo has completed the IA-002 Configuration Center architecture phase and is entering controlled Product Realization.
 
-Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+Unscoped feature development, renderer polishing, and UI architecture expansion remain paused.
 
 PM-003 Phase 1 is frozen.
 
-The current repository slice is:
+IA-002 is frozen.
+
+The current implementation track is:
 
 ```text
-IA-001 Interaction Architecture
+IA-003 Memory Engine Integration
 ```
 
 The new target is a local-first Memory Presentation Engine:
@@ -64,9 +66,14 @@ Frozen principles:
 - Configuration Center is the Memory Engine Configuration Center
 - Configuration Center edits Objects, not Data
 - Everything starts from the Memory Card
+- Configuration Center previews the real Memory Card, not an abstract layout
+- Preview is the Renderer before Rendering
 - Configuration Center layout is `Library -> Interactive Memory Card -> Object Inspector`
 - Library is the Memory Object Library
 - Memory Card is the primary object
+- Bottom Card structure is `Decoration -> Slot A -> Slot B -> Slot C + Slot D`
+- Region Strip is Memory Card Navigation for `Recorder / Timeline / Location / Memory`
+- Memory Card Preview is the center surface; photos belong to Apple Photos
 - Object Inspector replaces generic editor language
 - `CardRegion -> InspectorProvider -> Object Inspector`
 - `CardRegion` is frozen as `subject`, `icon`, `badge`, `slotA`, `slotB`, `slotC`, `slotD`
@@ -76,7 +83,38 @@ Frozen principles:
 - `DecorationAsset` unifies Icon, Badge, and future Decoration
 - ConfigurationSession remains lightweight
 - Memory Tokens use capture time, not export time
-- IA-002C Object Inspector comes before IA-002D MemorySubject Adapter
+- IA-002 is frozen; future UI work is polish, not architecture redesign
+
+## IA-003 Current Track
+
+IA-003 is Memory Engine Integration.
+
+Goal:
+
+```text
+Photo
+-> EXIF
+-> Memory Subject
+-> Configuration Snapshot
+-> Memory Engine
+-> Memory Card
+-> Renderer
+```
+
+Approved sequence:
+
+```text
+IA-003A MemorySubject Adapter
+-> IA-003B Configuration Snapshot
+-> IA-003C Memory Block Resolver
+-> IA-003D CaptureTimeResolver
+-> IA-003E Interactive Memory Card connects real data
+-> IA-003F Renderer
+```
+
+IA-003A may connect the existing personal/profile layer into `MemorySubject`.
+
+IA-003A must not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work.
 
 ## PM-003 Frozen State
 
@@ -216,17 +254,17 @@ Default interaction posture:
 
 ## Near-Term Priorities
 
-1. preserve Memory Engine and Time Anchor architecture boundaries
-2. keep the Configuration Center separate from the daily Apple Photos lifecycle
-3. harden external intake and background processing
-4. ensure Configuration Preview, render, export, and metadata retention stay aligned
+1. complete IA-003A MemorySubject Adapter
+2. preserve Memory Engine and Time Anchor architecture boundaries
+3. keep the Configuration Center separate from the daily Apple Photos lifecycle
+4. ensure Memory Card, Configuration Snapshot, render, export, and metadata retention stay aligned
 
-Current documentation priority inside V2.1:
+Current implementation priority inside V2.1:
 
-1. preserve Memory Engine and Time Anchor architecture boundaries
-2. freeze semantic slot and grammar decisions before layout work
-3. freeze interaction architecture and behavior language before UI implementation
-4. keep renderer, UI, export, and runtime implementation paused for IA-001 documentation work
+1. keep IA-002 architecture frozen
+2. connect real data only through the approved IA-003 sequence
+3. use `MemorySubject -> Configuration Snapshot -> Memory Engine` as the next integration path
+4. avoid Renderer, Metadata, Export, and Share Extension changes until their IA-003 slice is reached
 
 ## Product Guardrails
 

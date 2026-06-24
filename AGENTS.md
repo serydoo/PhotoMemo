@@ -12,9 +12,17 @@ Before any modification, read:
 4. `RepositoryAudit.md`
 5. `Research/README.md`
 
-PhotoMemo is now in Research Phase.
+PhotoMemo has completed IA-002 Configuration Center Architecture and is entering controlled Product Realization.
 
-Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+Unscoped feature development, renderer polishing, and UI architecture redesign remain paused.
+
+The approved implementation track is IA-003 Memory Engine Integration.
+
+IA-003 must proceed in this order:
+
+`IA-003A MemorySubject Adapter -> IA-003B Configuration Snapshot -> IA-003C Memory Block Resolver -> IA-003D CaptureTimeResolver -> IA-003E Interactive Memory Card connects real data -> IA-003F Renderer`
+
+Do not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work until the approved IA-003 slice reaches that boundary.
 
 Do not immediately migrate old documents. Build the new research documentation first; migrate old documents only after research specifications stabilize.
 
@@ -85,7 +93,9 @@ Always preserve these rules:
 - The Configuration Center is the Memory Engine Configuration Center
 - Configuration Center edits Objects, not Data
 - Everything starts from the Memory Card
+- Configuration Center previews the real Memory Card, not an abstract layout
 - The Configuration Center architecture is `Library -> Interactive Memory Card -> Object Inspector`
+- IA-002 Configuration Center Architecture is frozen; future UI work is polish, not architecture redesign
 - Do not expand feature surface faster than the real Apple Photos -> Share -> Processing -> Notification -> Apple Photos lifecycle can support
 - Configuration Preview fidelity must stay tied to the real renderer/exporter
 - User-facing configuration language should say Preset, not Template; the internal renderer/template model may keep `Template`

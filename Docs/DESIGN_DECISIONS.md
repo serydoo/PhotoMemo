@@ -595,3 +595,57 @@ Future Configuration UI should reuse shared design-system components rather than
 Status:
 
 Frozen
+
+## Decision 34
+
+Decision:
+
+Configuration Center previews the real Memory Card, not an abstract layout.
+
+Reason:
+
+The center surface should show the same Bottom Card structure that future rendered outputs will use, instead of showing a schematic set of editable boxes.
+
+Impact:
+
+Interactive Memory Card should preserve the real Bottom Card structure: Decoration, Slot A, Slot B, and Slot C plus Slot D. Region Strip may provide a secondary slot-selection path, but it must select the same `CardRegion` objects as the card itself.
+
+Status:
+
+Frozen
+
+## Decision 35
+
+Decision:
+
+IA-002 Configuration Center Architecture is complete and frozen. PhotoMemo now enters Product Realization through IA-003 Memory Engine Integration.
+
+Reason:
+
+The repository now has stable positions for Library, Memory Subject, Interactive Memory Card, Object Inspector, Configuration Snapshot, Memory Engine, Renderer, and Export. The next question is no longer what the product should be, but how each frozen concept becomes a real running pipeline.
+
+Impact:
+
+Future UI work is polish, not architecture redesign. IA-003 begins with `MemorySubject Adapter`, then proceeds through Configuration Snapshot, Memory Block Resolver, CaptureTimeResolver, Memory Card real-data connection, and Renderer. IA-003A must not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work.
+
+Status:
+
+Frozen
+
+## Decision 36
+
+Decision:
+
+Preview is the Renderer before Rendering.
+
+Reason:
+
+Configuration Center should preview the real Memory Card that PhotoMemo will generate, not a photo placeholder, an abstract editor layout, or a separate configuration-only composition. Photos belong to Apple Photos; PhotoMemo owns the Memory Card.
+
+Impact:
+
+The center surface is Memory Card Preview. It should default to looking like an already-generated Memory Card, with editability revealed only through hover, selection, and Region Strip navigation. Renderer layout changes and Memory Card Preview layout must stay aligned so configuration and final output do not drift into separate systems.
+
+Status:
+
+Frozen

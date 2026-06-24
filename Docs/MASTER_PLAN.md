@@ -1,6 +1,6 @@
 # PhotoMemo V2 Master Plan
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 Read `PROJECT_CONSTITUTION.md` before this file. The constitution is the highest-level repository instruction. This file remains the operational master plan.
 
@@ -16,16 +16,18 @@ PhotoMemo does not only present photographs. It presents memories.
 
 PhotoMemo V2.1 Memory Engine.
 
-Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+Product Definition is complete enough to enter Product Realization.
 
-Runtime implementation remains paused.
+Unscoped feature expansion, renderer polishing, and UI architecture redesign remain paused.
 
 PM-003 Content Layout System Phase 1 is frozen.
 
-The current repository synchronization slice is:
+IA-002 Configuration Center Architecture is frozen.
+
+The current implementation slice is:
 
 ```text
-IA-001 Interaction Architecture
+IA-003 Memory Engine Integration
 ```
 
 The latest frozen repository amendment is:
@@ -50,6 +52,7 @@ Build the V2.1 documentation and architecture foundation:
    - Export
 5. Keep Layout Specification waiting for reverse-engineering results.
 6. Synchronize frozen interaction architecture and behavior principles into repository documentation.
+7. Connect the first real PhotoMemo pipeline through the approved IA-003 sequence without reopening IA-002.
 
 ## Long-Term Development Rule
 
@@ -136,7 +139,7 @@ Scope:
 
 ### IA-001: Interaction Architecture
 
-Status: current documentation synchronization slice.
+Status: frozen.
 
 Scope:
 
@@ -148,7 +151,7 @@ Scope:
 
 ### RSR-001: Repository Simplification Review
 
-Status: current documentation synchronization slice.
+Status: frozen.
 
 Scope:
 
@@ -202,7 +205,60 @@ Library
 ```
 
 - freeze `CardRegion`, `InspectorProvider`, `TokenCategory`, `DecorationAsset`, `MemoryBehavior`, and Capture-Time Principle at the repository architecture level
-- establish IA-002C Object Inspector before IA-002D MemorySubject Adapter
+- freeze the IA-002 object architecture:
+  - Configuration Center
+  - Library
+  - Interactive Memory Card
+  - Object Inspector
+  - CardRegion
+  - InspectorProvider
+  - TokenLibrary
+  - MemoryBlock
+  - DecorationAsset
+  - Configuration Snapshot
+- freeze the principle:
+
+```text
+Configuration Center previews the real Memory Card, not an abstract layout.
+```
+
+- freeze Region Strip as Memory Card Navigation:
+
+```text
+Recorder
+Timeline
+Location
+Memory
+```
+
+### IA-003: Memory Engine Integration
+
+Status: current implementation track.
+
+Goal:
+
+Produce the first real PhotoMemo by connecting real photo facts, Memory Subject, Configuration Snapshot, Memory Engine output, Memory Card, and Renderer in controlled slices.
+
+Approved sequence:
+
+```text
+IA-003A MemorySubject Adapter
+-> IA-003B Configuration Snapshot
+-> IA-003C Memory Block Resolver
+-> IA-003D CaptureTimeResolver
+-> IA-003E Interactive Memory Card connects real data
+-> IA-003F Renderer
+```
+
+IA-003 must preserve:
+
+- local-first processing
+- Apple Photos lifecycle
+- Capture-Time Principle
+- Memory Subject = Identity + MemoryBehavior
+- Configuration Center edits Objects, not Data
+- Everything starts from the Memory Card
+- IA-002 architecture as frozen UI architecture
 
 ### V2.2: Layout Specification
 
@@ -355,16 +411,17 @@ Ownership:
 
 ## Next Step
 
-The next implementation slice should be documentation and architecture only:
+The next implementation slice is:
 
-1. Finish repository audit.
-2. Finish V2.1 Memory Engine architecture documentation.
-3. Synchronize IA-001 Interaction Architecture as frozen repository documentation.
-4. Identify old-document duplication and conflicts without moving files yet.
-5. Keep RSR-001 vocabulary and simplification rules synchronized across active source-of-truth docs.
-6. Wait for reverse-engineering results before expanding V2.2 Layout Specification.
+```text
+IA-003A MemorySubject Adapter
+```
 
-Do not migrate old documents, write renderer code, or adjust UI until the research specification is stable.
+IA-003A should bridge the existing personal/profile configuration into the new `MemorySubject` model.
+
+Do not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work in IA-003A.
+
+Do not migrate old documents until the research specifications stabilize.
 
 ## Document Index
 

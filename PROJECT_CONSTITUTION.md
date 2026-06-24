@@ -1,6 +1,6 @@
 # PhotoMemo V2 Project Constitution
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 This is the highest-level repository instruction for PhotoMemo V2.
 
@@ -24,20 +24,22 @@ These documents are the new project entry.
 Current repository phase:
 
 ```text
-Documentation Synchronization
+Product Realization Preparation
 ```
 
-The architecture remains documentation-first.
+The architecture remains repository-led and review-gated.
 
 PM-003 Phase 1 is frozen.
 
-The current documentation slice is:
+IA-002 Configuration Center Architecture is frozen.
+
+The current product-realization slice is:
 
 ```text
-RSR-001 Repository Simplification Review
+IA-003 Memory Engine Integration
 ```
 
-This is not runtime development.
+This is the first controlled return to real pipeline integration after Product Definition.
 
 The latest repository amendment is:
 
@@ -46,6 +48,8 @@ PDR-004 Configuration Center Architecture
 ```
 
 PDR-004 freezes the Configuration Center as object-centered architecture.
+
+The next implementation work must connect real data through the approved IA-003 sequence only. It must not reopen IA-002 architecture.
 
 ## Mission
 
@@ -110,6 +114,9 @@ Layout Engine becomes the center.
 - PhotoMemo should change how users understand photos.
 - Configuration Center edits Objects, not Data.
 - Everything starts from the Memory Card.
+- Configuration Center previews the real Memory Card, not an abstract layout.
+- Capture-Time Principle preserves memory truth from the photo's capture time.
+- Memory Subject equals Identity plus MemoryBehavior.
 - Apple Photos remains the trusted photo-management system.
 - Pictures are temporary.
 - Knowledge is permanent.
@@ -162,21 +169,33 @@ PhotoMemo fully trusts Apple Photos.
 
 ## Immediate Task
 
-Development remains paused.
+IA-002 is complete and frozen at the architecture level.
 
-Renderer remains frozen.
+The next approved implementation track is:
 
-Current work is repository simplification for frozen product language, interaction architecture, and Apple Photos lifecycle alignment.
+```text
+IA-003 Memory Engine Integration
+```
+
+IA-003 must proceed in small reviewed slices:
+
+```text
+IA-003A MemorySubject Adapter
+-> IA-003B Configuration Snapshot
+-> IA-003C Memory Block Resolver
+-> IA-003D CaptureTimeResolver
+-> IA-003E Interactive Memory Card connects real data
+-> IA-003F Renderer
+```
 
 Do not:
 
-- modify runtime code
-- optimize Renderer
-- adjust UI
-- modify Engine, Metadata, Export, or pipeline behavior
+- reopen IA-002 UI architecture
+- replace the Library -> Interactive Memory Card -> Object Inspector structure
+- modify Renderer, Metadata, Export, Share Extension, or Photo Library behavior before the approved IA-003 slice reaches that boundary
 - migrate old documents before research specifications stabilize
 
-Focus on repository documentation, product definition, and architecture alignment.
+Focus on turning frozen repository concepts into one real PhotoMemo pipeline while preserving local-first and Apple Photos lifecycle boundaries.
 
 ## Repository Simplification Principle
 

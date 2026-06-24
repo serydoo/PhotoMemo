@@ -119,9 +119,14 @@ Frozen areas:
 - Configuration Once, Benefit Forever
 - Configuration Center edits Objects, not Data
 - Everything starts from the Memory Card
+- Configuration Center previews the real Memory Card, not an abstract layout
+- Preview is the Renderer before Rendering
+- Memory Card Preview owns the center preview surface
 - NavigationSplitView layout
 - Library as Memory Object Library
 - Interactive Memory Card as Primary Object
+- Bottom Card structure: Decoration -> Slot A -> Slot B -> Slot C + Slot D
+- Region Strip as secondary slot selection surface
 - CardRegion frozen set
 - Object Inspector
 - InspectorProvider routing
@@ -133,4 +138,30 @@ Frozen areas:
 - lightweight ConfigurationSession
 - Capture-Time Principle
 - PhotoMemo Design System
-- IA-002C Object Inspector before IA-002D MemorySubject Adapter
+- IA-002 Configuration Center Architecture
+
+## IA-003
+
+Status:
+
+```text
+Current implementation track
+```
+
+Frozen entry condition:
+
+- IA-002 architecture must not be reopened.
+- IA-003 starts from `MemorySubject -> Configuration Snapshot -> Memory Engine`.
+- IA-003A is `MemorySubject Adapter`.
+- IA-003A must not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work.
+
+Approved sequence:
+
+```text
+IA-003A MemorySubject Adapter
+-> IA-003B Configuration Snapshot
+-> IA-003C Memory Block Resolver
+-> IA-003D CaptureTimeResolver
+-> IA-003E Interactive Memory Card connects real data
+-> IA-003F Renderer
+```

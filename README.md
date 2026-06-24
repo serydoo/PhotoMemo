@@ -59,6 +59,10 @@ Configuration Center edits Objects, not Data.
 
 Everything starts from the Memory Card.
 
+Preview is the Renderer before Rendering.
+
+The center surface is Memory Card Preview. Photos belong to Apple Photos; PhotoMemo owns the Memory Card.
+
 The Configuration Center is responsible for long-term setup:
 
 - Memory Profile
@@ -163,9 +167,15 @@ Renderer must not own layout decisions.
 
 ## Current Phase
 
-PhotoMemo is in Research Phase and repository documentation synchronization.
+PhotoMemo is entering Product Realization through IA-003 Memory Engine Integration.
 
-Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+Unscoped feature development, renderer polishing, and UI architecture redesign remain paused. IA-002 Configuration Center Architecture is frozen; IA-003 may connect real business data in reviewed slices.
+
+Current next slice:
+
+```text
+IA-003A MemorySubject Adapter
+```
 
 Start here:
 

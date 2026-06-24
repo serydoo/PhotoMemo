@@ -4,16 +4,18 @@ Last updated: 2026-06-24
 
 ## Current Stage
 
-PhotoMemo is now in V2.1 Memory Engine documentation synchronization and RSR-001 Repository Simplification.
+PhotoMemo is now in V2.1 Memory Engine Product Realization.
 
-Feature development is paused. Renderer polishing is paused. UI expansion is paused.
+Unscoped feature development, renderer polishing, and UI architecture redesign remain paused.
 
 PM-003 Phase 1 is frozen.
 
-The current repository slice is:
+IA-002 Configuration Center Architecture is frozen.
+
+The current implementation track is:
 
 ```text
-RSR-001 Repository Simplification Review
+IA-003 Memory Engine Integration
 ```
 
 The current target is a local-first Memory Presentation Engine:
@@ -41,6 +43,85 @@ The highest-priority entry documents are:
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
 
 Memory Engine is now a first-class architecture module. Renderer is no longer allowed to be the source of layout truth. Future layout work must be researched, specified, measured, and owned by a Layout Engine before renderer implementation.
+
+## 2026-06-24 IA-002 Frozen And IA-003 Product Realization
+
+IA-002 is now complete at the architecture level.
+
+Frozen IA-002 areas:
+
+- Configuration Center
+- Library
+- Interactive Memory Card
+- Object Inspector
+- CardRegion
+- InspectorProvider
+- TokenLibrary
+- MemoryBlock
+- DecorationAsset
+- Configuration Snapshot
+- Region Strip as Memory Card Navigation
+
+Frozen foundation principles:
+
+- Configuration Center edits Objects, not Data.
+- Everything starts from the Memory Card.
+- Configuration Center previews the real Memory Card, not an abstract layout.
+- Preview is the Renderer before Rendering.
+- Capture-Time Principle.
+- Memory Subject = Identity + MemoryBehavior.
+
+PhotoMemo now moves from:
+
+```text
+Product Definition
+-> Product Realization
+```
+
+Next implementation track:
+
+```text
+IA-003 Memory Engine Integration
+```
+
+Approved IA-003 order:
+
+```text
+IA-003A MemorySubject Adapter
+-> IA-003B Configuration Snapshot
+-> IA-003C Memory Block Resolver
+-> IA-003D CaptureTimeResolver
+-> IA-003E Interactive Memory Card connects real data
+-> IA-003F Renderer
+```
+
+IA-003A is the next allowed implementation slice. It should connect existing personal/profile configuration into `MemorySubject` and must not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work.
+
+## 2026-06-24 Memory Card Preview Polish Amendment
+
+The center surface is now defined as Memory Card Preview.
+
+Frozen principle:
+
+```text
+Preview is the Renderer before Rendering.
+```
+
+Meaning:
+
+- Photos belong to Apple Photos.
+- PhotoMemo owns the Memory Card.
+- The center area should not show a photo placeholder, abstract layout, or editor grid.
+- Memory Card Preview should look like an already-generated Memory Card.
+- Hover, selection, and Region Strip reveal editability only when needed.
+
+UI polish in this slice:
+
+- removed the gray center background from `InteractiveMemoryCard`
+- weakened the Memory Card border and shadow
+- removed the bottom-slot gray panel feel
+- reduced default region boundary contrast
+- kept hover, selection, Object Inspector routing, and Region Strip behavior unchanged
 
 ## 2026-06-24 IA-002C UI Polish Foundation
 
@@ -91,6 +172,58 @@ Manual verification note:
 
 - direct app execution from `/tmp/PhotoMemoDerivedData` launched, but Computer Use continued resolving the `PhotoMemo` app name to an older registered bundle path
 - LaunchServices inspection should be cleaned up before relying on Computer Use screenshots for PhotoMemo
+
+## 2026-06-24 IA-002C Real Bottom Card Preview Amendment
+
+This slice keeps the existing Library and Object Inspector design from the UI polish checkpoint.
+
+Only the center Interactive Memory Card was redesigned.
+
+No Renderer, Metadata, Export, Share Extension intake logic, Photo Library behavior, Memory Engine runtime behavior, or `PersonalProfile` adapter was changed.
+
+Rollback point before this slice:
+
+```text
+ia-002c-ui-polish-checkpoint
+0176b29 Checkpoint Configuration Center UI polish
+```
+
+What changed:
+
+- froze the principle:
+
+```text
+Configuration Center previews the real Memory Card, not an abstract layout.
+```
+
+- changed the center card into the real Bottom Card structure:
+
+```text
+Decoration
+-> Slot A
+-> Slot B
+-> Slot C + Slot D
+```
+
+- Decoration contains Icon and Badge
+- Slot A is Recorder
+- Slot B is Timeline
+- Slot C is Location
+- Slot D is Memory Expression
+- added Region Strip below the card:
+
+```text
+Recorder
+Timeline
+Location
+Memory
+```
+
+- Region Strip selects the same `CardRegion` values as clicking the real card regions
+- updated:
+  - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+  - `Docs/FROZEN_REGISTRY.md`
+  - `Docs/DESIGN_DECISIONS.md`
 
 ## 2026-06-24 Repository Amendment: Configuration Center Architecture Revision A
 
@@ -150,15 +283,15 @@ Library
   - `Docs/NEVER_BREAK.md`
   - `Docs/DOCUMENT_INDEX.md`
 
-Next sprint is now:
+Historical next sprint at the time was:
 
 ```text
 IA-002C Object Inspector
 ```
 
-IA-002C should still use mock data and must not connect Renderer, Metadata, Export, Memory Engine runtime, or PersonalProfile Adapter.
+This has since been superseded by the IA-002 freeze recorded above.
 
-After Object Inspector stabilizes, the following sprint should be:
+Historical follow-up at the time was:
 
 ```text
 IA-002D MemorySubject Adapter
