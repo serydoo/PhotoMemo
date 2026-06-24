@@ -15,9 +15,9 @@ struct DecorationLibraryGrid: View {
 
             LazyVGrid(
                 columns: [
-                    GridItem(.adaptive(minimum: 92), spacing: 10)
+                    GridItem(.adaptive(minimum: 92), spacing: 9)
                 ],
-                spacing: 10
+                spacing: 9
             ) {
                 ForEach(decorations) { decoration in
                     Button {
@@ -27,36 +27,46 @@ struct DecorationLibraryGrid: View {
                             Image(
                                 systemName:
                                     decoration.systemSymbolName
-	                            )
-	                            .font(.title2.weight(.semibold))
+                            )
+                            .font(.title2.weight(.semibold))
                                 .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(Color.accentColor)
 
                             Text(decoration.title)
                                 .font(.caption.weight(.medium))
                                 .lineLimit(1)
 
-                            Text(decoration.strategy.rawValue)
+                            Text(decoration.strategy.displayTitle)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
-	                        .frame(
-	                            maxWidth: .infinity,
-	                            minHeight: 82
-	                        )
-	                    }
-	                    .buttonStyle(.plain)
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: 82
+                        )
+                    }
+                    .buttonStyle(.plain)
                         .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.06))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.black.opacity(0.06))
-                        )
-	                }
-	            }
+                        .configurationPanelChrome()
+                }
+            }
+        }
+    }
+}
+
+private extension DecorationStrategy {
+
+    var displayTitle: String {
+        switch self {
+        case .autoMatch:
+            return "自动匹配"
+        case .fixed:
+            return "固定"
+        case .none:
+            return "无"
+        case .overrideCurrentExport:
+            return "覆盖当前输出"
         }
     }
 }

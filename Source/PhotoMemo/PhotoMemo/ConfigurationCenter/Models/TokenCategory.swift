@@ -19,11 +19,11 @@ enum TokenCategory:
     var displayTitle: String {
         switch self {
         case .memory:
-            return "Memory"
+            return "记忆"
         case .photo:
-            return "Photo"
+            return "照片信息"
         case .system:
-            return "System"
+            return "系统"
         }
     }
 

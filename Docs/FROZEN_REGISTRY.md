@@ -165,3 +165,28 @@ IA-003A MemorySubject Adapter
 -> IA-003E Interactive Memory Card connects real data
 -> IA-003F Renderer
 ```
+
+## PDR-005
+
+Status:
+
+```text
+Frozen
+```
+
+Primary source:
+
+- `Docs/PDR/PDR-005_Memory_Language_Layer.md`
+
+Frozen areas:
+
+- Memory Language Layer
+- MemoryBlock as content asset, not layout asset
+- Field-Based MemoryBlock
+- BlockField
+- BlockField Value Sources
+- Block Template
+- Subject + Action + Result as Preset Schema #001
+- Dynamic Block direction
+- Modules calculate field values
+- IA-003C Memory Block Resolver as first implementation point

@@ -17,11 +17,11 @@ extension DecorationKind {
     var displayTitle: String {
         switch self {
         case .icon:
-            return "Icon"
+            return "图标"
         case .badge:
-            return "Badge"
+            return "徽标"
         case .future:
-            return "Future"
+            return "未来装饰"
         }
     }
 }

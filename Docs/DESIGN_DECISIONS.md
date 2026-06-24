@@ -649,3 +649,21 @@ The center surface is Memory Card Preview. It should default to looking like an 
 Status:
 
 Frozen
+
+## Decision 37
+
+Decision:
+
+MemoryBlock is a field-based content asset, not a layout slot.
+
+Reason:
+
+PhotoMemo needs a Memory Language Layer that can express growth records, anniversaries, travel records, device records, family memories, and future dynamic memory types without forcing every block into the current four-slot layout or into a fixed Subject + Action + Result structure.
+
+Impact:
+
+The long-term MemoryBlock model is `templateID + fields`. `Subject + Action + Result` is frozen as Preset Schema #001, not as the core model. BlockField values may come from fixed text, token bindings, smart module bindings, or custom field bindings. IA-003A should remain MemorySubject Adapter work; the first implementation point for this decision is IA-003C Memory Block Resolver.
+
+Status:
+
+Frozen

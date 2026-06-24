@@ -6,32 +6,166 @@ struct InteractiveMemoryCard: View {
     @ObservedObject
     var session: ConfigurationSession
 
+    @State
+    private var isRenamingMemoryPreset = false
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: 20) {
+                configurationContext
                 cardSurface
                 regionStrip
+                configurationComponentDock
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 36)
-            .padding(.vertical, 34)
+            .padding(.horizontal, 40)
+            .padding(.vertical, 30)
         }
-        .background(Color.clear)
+        .background(ConfigurationUI.appBackground)
+    }
+
+    private var configurationContext: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 18) {
+                contextPresetControl
+
+                Divider()
+                    .frame(height: 34)
+
+                contextStatusItem(
+                    title: "时间锚点",
+                    value: session.currentTimeAnchorDescription,
+                    systemImage: "flag.fill"
+                )
+
+                Spacer(minLength: 0)
+            }
+
+            if isRenamingMemoryPreset {
+                TextField(
+                    "记忆预设名称",
+                    text: Binding(
+                        get: {
+                            session.currentMemoryPresetTitle
+                        },
+                        set: {
+                            session.updateSelectedMemoryPresetTitle($0)
+                        }
+                    )
+                )
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .configurationFieldChrome(isActive: true)
+                .transition(
+                    .opacity
+                        .combined(with: .move(edge: .top))
+                )
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .frame(width: 590, alignment: .leading)
+        .configurationPanelChrome()
+        .animation(
+            .easeInOut(duration: 0.16),
+            value: isRenamingMemoryPreset
+        )
+    }
+
+    private var contextPresetControl: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "rectangle.stack.fill")
+                .font(.caption.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("记忆预设")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                Picker(
+                    "记忆预设",
+                    selection: selectedMemoryPresetBinding
+                ) {
+                    ForEach(session.state.memoryPresets) { preset in
+                        Text(preset.title)
+                            .tag(preset.id)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .controlSize(.small)
+                .frame(width: 142, alignment: .leading)
+            }
+
+            Button {
+                isRenamingMemoryPreset.toggle()
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20, height: 20)
+            }
+            .buttonStyle(.plain)
+            .help("重命名记忆预设")
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("记忆预设")
+        .accessibilityValue(session.currentMemoryPresetTitle)
+    }
+
+    private func contextStatusItem(
+        title: String,
+        value: String,
+        systemImage: String
+    ) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.secondary)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+        }
     }
 
     private var cardSurface: some View {
         bottomCardPreview
-            .frame(width: 560, height: 205)
-        .background(Color.white)
+            .frame(width: 590, height: 220)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.white,
+                    ConfigurationUI.panelBackground
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.black.opacity(0.035), lineWidth: 1)
+                .stroke(ConfigurationUI.faintHairline, lineWidth: 1)
         )
         .shadow(
-            color: Color.black.opacity(0.045),
-            radius: 14,
-            y: 7
+            color: ConfigurationUI.cardShadow,
+            radius: 18,
+            y: 8
         )
         .animation(
             .easeInOut(duration: 0.16),
@@ -53,22 +187,22 @@ struct InteractiveMemoryCard: View {
             rightSlotColumn
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 34)
-        .padding(.vertical, 26)
+        .padding(.horizontal, 36)
+        .padding(.vertical, 28)
     }
 
     private var leftSlotColumn: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             textRegion(
                 .slotA,
-                primary: "\(subjectName)手持iPhone 17 Pro Max拍摄",
+                primary: previewText(for: .slotA),
                 secondary: nil,
                 style: .headline
             )
 
             textRegion(
                 .slotB,
-                primary: "2026.05.24 14:33:13记录",
+                primary: previewText(for: .slotB),
                 secondary: nil,
                 style: .secondary
             )
@@ -76,17 +210,17 @@ struct InteractiveMemoryCard: View {
     }
 
     private var rightSlotColumn: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             textRegion(
                 .slotC,
-                primary: "20mm f/1.9 1/117s ISO80",
-                secondary: "河南 · 商丘",
+                primary: previewText(for: .slotC),
+                secondary: nil,
                 style: .headline
             )
 
             textRegion(
                 .slotD,
-                primary: memoryExpression,
+                primary: previewText(for: .slotD),
                 secondary: nil,
                 style: .memory
             )
@@ -99,15 +233,15 @@ struct InteractiveMemoryCard: View {
                 .icon,
                 accessibilityValue: selectedIconTitle
             ) {
-                Image(systemName: "apple.logo")
-                    .font(.system(size: 42, weight: .semibold))
+                Image(systemName: selectedIconName)
+                    .font(.system(size: 36, weight: .semibold))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.secondary)
-                    .frame(width: 58, height: 72)
+                    .foregroundStyle(Color.secondary.opacity(0.78))
+                    .frame(width: 52, height: 68)
             }
 
             Rectangle()
-                .fill(Color.black.opacity(0.10))
+                .fill(ConfigurationUI.hairline)
                 .frame(width: 1, height: 76)
         }
         .padding(.horizontal, 24)
@@ -151,35 +285,35 @@ struct InteractiveMemoryCard: View {
         HStack(spacing: 0) {
             regionStripButton(
                 .slotA,
-                title: "Recorder",
+                title: "记录",
                 systemImage: "camera.fill"
             )
 
             regionStripButton(
                 .slotB,
-                title: "Timeline",
+                title: "时间线",
                 systemImage: "calendar"
             )
 
             regionStripButton(
                 .slotC,
-                title: "Location",
-                systemImage: "location.fill"
+                title: "上下文",
+                systemImage: "scope"
             )
 
             regionStripButton(
                 .slotD,
-                title: "Memory",
+                title: "记忆",
                 systemImage: "text.quote"
             )
         }
         .padding(4)
-        .frame(width: 560)
-        .background(Color.white)
+        .frame(width: 590)
+        .background(Color.white.opacity(0.86))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.black.opacity(0.08))
+                .stroke(ConfigurationUI.hairline)
         )
     }
 
@@ -193,7 +327,7 @@ struct InteractiveMemoryCard: View {
                 CardRegionBehavior(region: region)
             )
         } label: {
-            VStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Image(systemName: systemImage)
                     .font(.caption.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
@@ -207,12 +341,12 @@ struct InteractiveMemoryCard: View {
                 ? Color.accentColor
                 : Color.secondary
             )
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: 38)
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(
                         region == selectedRegion
-                        ? Color.accentColor.opacity(0.10)
+                        ? ConfigurationUI.selectedBackground
                         : Color.clear
                     )
             )
@@ -224,6 +358,215 @@ struct InteractiveMemoryCard: View {
         .accessibilityLabel(
             "\(title), \(region.semanticTitle)"
         )
+    }
+
+    private var configurationComponentDock: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                dockSection(
+                    title: "可插入模块",
+                    systemImage: "tag.fill"
+                ) {
+                    LazyVGrid(
+                        columns: [
+                            GridItem(
+                                .adaptive(minimum: 112),
+                                spacing: 7
+                            )
+                        ],
+                        alignment: .leading,
+                        spacing: 7
+                    ) {
+                        ForEach(CenterInsertableModule.allCases) { module in
+                            Button {
+                                session.appendPreviewModule(
+                                    title: module.title,
+                                    value: module.previewValue
+                                )
+                            } label: {
+                                centerModuleChip(module)
+                            }
+                            .buttonStyle(.plain)
+                            .help("插入到当前选中的\(selectedRegion.semanticTitle)区域")
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    dockSection(
+                        title: "当前输出",
+                        systemImage: "checkmark.seal"
+                    ) {
+                        Text(session.currentOutputPreview)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.primary)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.78)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                            .configurationPanelChrome()
+                    }
+
+                    dockSection(
+                        title: "输出",
+                        systemImage: "square.and.arrow.down"
+                    ) {
+                        outputSelection
+                    }
+                }
+                .frame(width: 220)
+            }
+
+            dockSection(
+                title: "配置说明",
+                systemImage: "questionmark.circle"
+            ) {
+                configurationGuide
+            }
+        }
+        .frame(width: 590, alignment: .leading)
+        .padding(12)
+        .background(Color.white.opacity(0.74))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
+    private func dockSection<Content: View>(
+        title: String,
+        systemImage: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 7) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16)
+
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+            }
+
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func centerModuleChip(
+        _ module: CenterInsertableModule
+    ) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: module.systemImage)
+                .font(.caption2.weight(.semibold))
+
+            Text(module.title)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(Color.accentColor)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.accentColor.opacity(0.085))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.accentColor.opacity(0.16))
+        )
+    }
+
+    private var outputSelection: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Picker(
+                "输出选择",
+                selection: outputOptionBinding
+            ) {
+                ForEach(ConfigurationOutputOption.allCases) { option in
+                    Text(option.title)
+                        .tag(option)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .controlSize(.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(session.selectedOutputOption.note)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .configurationPanelChrome()
+    }
+
+    private var configurationGuide: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                guideCard(
+                    title: "四个自定义区域",
+                    note: "插入内容进入当前选中的区域，不走隐式兜底。",
+                    systemImage: "rectangle.and.pencil.and.ellipsis"
+                )
+
+                guideCard(
+                    title: "记忆日期与智能结果",
+                    note: "时间锚点和照片时间会组合成可复用结果。",
+                    systemImage: "calendar.badge.clock"
+                )
+            }
+
+            HStack(spacing: 8) {
+                guideCard(
+                    title: "输出与相册保存",
+                    note: "默认生成处理过的新图片，原图保持不变。",
+                    systemImage: "square.and.arrow.down"
+                )
+
+                guideCard(
+                    title: "关于 PhotoMemo",
+                    note: "帮助用户阅读回忆，而不只是保存照片。",
+                    systemImage: "info.circle"
+                )
+            }
+        }
+    }
+
+    private func guideCard(
+        title: String,
+        note: String,
+        systemImage: String
+    ) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .configurationPanelChrome()
     }
 
     private func cardRegionButton<Content: View>(
@@ -270,14 +613,47 @@ struct InteractiveMemoryCard: View {
         session.state.hoveredRegion
     }
 
-    private var subjectName: String {
-        selectedSubject?.identity.displayName ?? "Memory Subject"
+    private var outputOptionBinding: Binding<ConfigurationOutputOption> {
+        Binding(
+            get: {
+                session.selectedOutputOption
+            },
+            set: {
+                session.selectedOutputOption = $0
+            }
+        )
     }
 
-    private var memoryExpression: String {
-        selectedSubject?
-            .behavior.memoryExpression.displayText
-        ?? "Memory expression"
+    private var selectedMemoryPresetBinding: Binding<MemoryPreset.ID> {
+        Binding(
+            get: {
+                session.state.selectedMemoryPreset?.id
+                ?? session.state.memoryPresets.first?.id
+                ?? UUID()
+            },
+            set: { presetID in
+                guard
+                    let preset =
+                        session.state.memoryPresets.first(
+                            where: { $0.id == presetID }
+                        )
+                else {
+                    return
+                }
+
+                session.selectMemoryPreset(preset)
+            }
+        )
+    }
+
+    private var subjectName: String {
+        selectedSubject?.identity.displayName ?? "记忆对象"
+    }
+
+    private func previewText(
+        for region: CardRegion
+    ) -> String {
+        session.previewText(for: region)
     }
 
     private var selectedIconName: String {
@@ -291,7 +667,7 @@ struct InteractiveMemoryCard: View {
         selectedSubject?
             .decorations
             .first(where: { $0.kind == .icon })?
-            .title ?? "Icon"
+            .title ?? "图标"
     }
 
     private var selectedBadgeName: String {
@@ -305,7 +681,75 @@ struct InteractiveMemoryCard: View {
         selectedSubject?
             .decorations
             .first(where: { $0.kind == .badge })?
-            .title ?? "Badge"
+            .title ?? "徽标"
+    }
+}
+
+private enum CenterInsertableModule:
+    String,
+    CaseIterable,
+    Identifiable {
+
+    case subjectNickname
+    case smartTime
+    case captureDate
+    case cameraModel
+    case captureSummary
+    case location
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .subjectNickname:
+            return "对象昵称"
+        case .smartTime:
+            return "智能时间"
+        case .captureDate:
+            return "拍摄日期"
+        case .cameraModel:
+            return "设备型号"
+        case .captureSummary:
+            return "参数概要"
+        case .location:
+            return "位置"
+        }
+    }
+
+    var previewValue: String {
+        switch self {
+        case .subjectNickname:
+            return "Tutu"
+        case .smartTime:
+            return "11个月28天"
+        case .captureDate:
+            return "2026.05.24"
+        case .cameraModel:
+            return "iPhone 17 Pro Max"
+        case .captureSummary:
+            return "20mm f/1.9 1/117s ISO80"
+        case .location:
+            return "河南 · 商丘"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .subjectNickname:
+            return "person.fill"
+        case .smartTime:
+            return "sparkles"
+        case .captureDate:
+            return "calendar"
+        case .cameraModel:
+            return "camera.fill"
+        case .captureSummary:
+            return "camera.metering.center.weighted"
+        case .location:
+            return "location.fill"
+        }
     }
 }
 
@@ -339,9 +783,10 @@ private enum BottomCardTextStyle {
         switch self {
         case .headline:
             return Color.primary
-        case .secondary,
-             .memory:
+        case .secondary:
             return Color.secondary
+        case .memory:
+            return Color.primary.opacity(0.82)
         }
     }
 
@@ -395,8 +840,8 @@ private struct CardRegionChrome: ViewModifier {
         case .slotA,
              .slotB,
              .slotC,
-             .slotD:
-            return 0
+            .slotD:
+            return 6
         default:
             return 8
         }
@@ -404,11 +849,11 @@ private struct CardRegionChrome: ViewModifier {
 
     private var backgroundColor: Color {
         if isSelected {
-            return Color.accentColor.opacity(0.065)
+            return ConfigurationUI.selectedBackground
         }
 
         if isHovered {
-            return Color.black.opacity(0.018)
+            return ConfigurationUI.hoverBackground
         }
 
         return Color.clear
@@ -416,11 +861,11 @@ private struct CardRegionChrome: ViewModifier {
 
     private var strokeColor: Color {
         if isSelected {
-            return Color.accentColor.opacity(0.28)
+            return Color.accentColor.opacity(0.30)
         }
 
         if isHovered {
-            return Color.black.opacity(0.11)
+            return ConfigurationUI.hairline
         }
 
         return Color.clear

@@ -144,6 +144,339 @@ What changed:
 
 No Renderer, Metadata, Export, Share Extension, Photo Library behavior, or real Memory Engine runtime behavior was changed.
 
+## 2026-06-24 PDR-005 Memory Language Layer
+
+This slice is a repository amendment only.
+
+No Swift, Renderer, Metadata, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed.
+
+New source of truth:
+
+- `Docs/PDR/PDR-005_Memory_Language_Layer.md`
+
+Frozen decisions:
+
+- MemoryBlock is a content asset, not a layout asset.
+- MemoryBlock must not be permanently shaped by Slot A / Slot B / Slot C / Slot D.
+- The long-term MemoryBlock model is field-based:
+
+```text
+MemoryBlock
+-> BlockField
+-> Value Source
+```
+
+- `Subject + Action + Result` is frozen as:
+
+```text
+Preset Schema #001
+Narrative Memory Block
+```
+
+- BlockField values may come from:
+  - Fixed Text
+  - Token Binding
+  - Smart Module Binding
+  - Custom Field Binding
+- Modules calculate field values; they do not define the whole MemoryBlock.
+- Block Templates define field schemas, not slot positions.
+- IA-003A remains MemorySubject Adapter.
+- The first implementation point for PDR-005 is IA-003C Memory Block Resolver.
+
+## 2026-06-24 Memory Block Inspector Prototype
+
+This slice implements the first mock-only Object Inspector structure for PDR-005.
+
+What changed:
+
+- Slot regions now use `MemoryBlockInspectorView` instead of the old generic expression editor.
+- The right Inspector now follows:
+
+```text
+Overview
+-> Memory Block Template
+-> Fields
+-> Value Binding
+-> Resolved Result
+-> Behavior
+```
+
+- Recorder, Timeline, Context, and Memory each have their own mock Block Template and editable fields.
+- Field values can be edited locally inside the Inspector.
+- Resolved Result updates inside the Inspector.
+- Slot C is now labeled Context because it owns photo context such as camera parameters and location.
+
+Still mock-only:
+
+- field edits do not yet write back into Memory Card Preview
+- no Renderer, Metadata, Export, Share Extension, Photo Library behavior, Layout Engine, or real Memory Engine runtime work was changed
+
+## 2026-06-24 Memory Block Custom Fields Module Insertion
+
+This slice refines the right Object Inspector for the four Memory Card regions.
+
+What changed:
+
+- added a `Custom Fields` section with `Add Field`
+- selecting a custom field makes it the insertion target
+- clicking a module chip inserts that module token into the selected custom field
+- if no custom field is selected, module insertion creates one automatically
+- added a unified module library below the four region inspectors:
+  - Photo Facts
+  - Memory
+  - System
+- Recorder, Timeline, Context, and Memory keep system-derived values read-only in the Inspector
+- Memory Subject values now map from the selected subject nickname / short name
+- custom fields can be reordered with lightweight up/down controls as the first placeholder for future drag sorting
+
+Still mock-only:
+
+- module chips expose normalized token names but do not yet call the real metadata pipeline
+- custom fields are local Inspector state and do not yet persist into Configuration Snapshot
+- no Renderer, Metadata, Export, Share Extension, Photo Library behavior, Layout Engine, or real Memory Engine runtime work was changed
+
+## 2026-06-24 Configuration Inspector Feedback Refinement
+
+This slice applies the first visual review feedback to the Configuration Center Inspector.
+
+What changed:
+
+- user-facing Configuration Center labels were localized to Chinese while Swift type names and internal tokens stayed unchanged
+- Memory Subject Inspector removed the visible Reference Date field
+- Definition and note fields now start as compact one-line vertical text fields and expand as needed
+- Custom Time editing now exposes an edit / complete button beside the time dropdown
+- Recorder no longer maps from Memory Subject and no longer generates photo-taking wording
+- Recorder now defaults to a single user-owned custom field
+- Context defaults to one read-only capture-parameters summary module
+- module insertion no longer exposes raw `{{token}}` strings in the editing UI
+- inserted modules now appear as light Apple-style token blocks
+- Custom Fields now support:
+  - selection
+  - confirmation state
+  - deletion
+  - clearer up/down ordering controls
+
+Still mock-only:
+
+- Custom Fields remain local Inspector state
+- module tokens keep internal identifiers for future resolver work, but no real metadata resolver is called
+- no Renderer, Metadata, Export, Share Extension, Photo Library behavior, Layout Engine, or real Memory Engine runtime work was changed
+
+## 2026-06-24 Live Preview And Smart Time Module Prototype
+
+This slice closes the first editing feedback loop between Object Inspector and Memory Card Preview.
+
+What changed:
+
+- added shared preview text state to `ConfigurationSession`
+- Memory Card Preview now reads region text from the shared session state
+- Recorder, Timeline, Context, and Memory edits can update the center preview immediately
+- default system modules can be deleted from the Inspector
+- deleting a default system module allows the region preview to become empty instead of falling back to the default
+- Custom Field edits now sync to the center preview while typing, inserting, confirming, deleting, or reordering
+- added a mock `智能时间结果` module
+- `智能时间结果` uses the selected Memory Subject time anchor and a mock capture date to produce a readable result such as `2岁1个月6天`
+- Memory Expression is now prepared for Block composition through user-owned custom fields plus insertable modules
+
+Still mock-only:
+
+- the mock capture date is fixed in Configuration Center UI code
+- the smart time calculation is a prototype for IA-003C Memory Block Resolver
+- no real EXIF, Metadata Pipeline, Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Configuration Inspector Inline Composition Refinement
+
+This slice applies the latest Configuration Center editing feedback.
+
+What changed:
+
+- added a live current-configuration context above the center Memory Card Preview
+- the context label follows the selected Memory Subject display name and selected custom time anchor
+- Memory Subject draft edits now update the Configuration Session live before the save button is pressed
+- blank-area taps in the active Inspector clear text-field focus
+- Custom Fields were simplified into user-owned content blocks:
+  - no separate field-name input
+  - one editable content container per block
+  - inserted modules appear as inline Apple-style chips inside the same container
+  - each inserted module chip can be removed individually
+  - custom content blocks can be reordered with visible up/down controls and drag/drop
+- Memory Card Preview continues to refresh while content is typed, modules are inserted or removed, and block order changes
+
+Still mock-only:
+
+- inline modules are local Configuration Center draft objects
+- drag/drop ordering is an Inspector prototype for later MemoryBlock resolver work
+- no real EXIF, Metadata Pipeline, Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Apple-Native Configuration Center Polish
+
+This slice refines the existing Configuration Center without changing IA-002 architecture.
+
+What changed:
+
+- introduced shared Configuration Center visual primitives for:
+  - app background
+  - panel background
+  - control background
+  - selected / hover states
+  - hairline borders
+  - field chrome
+- refined the three-column shell so the center and Inspector read as one macOS-style tool window
+- upgraded the Library sidebar with quieter selected rows, stronger hierarchy, and lighter bottom context
+- refined Memory Card Preview:
+  - current-configuration context is now a compact status panel
+  - card surface uses a softer white panel treatment
+  - Region Strip is lighter and more toolbar-like
+  - hover and selection styling now share the same visual system
+- refined Object Inspector:
+  - header now behaves like an object status row
+  - selected region uses a matching SF Symbol
+  - section spacing and panel styling are more restrained
+- refined Memory Block / Token editing:
+  - system rows, custom content blocks, and resolved preview now share panel styling
+  - inserted modules and library tokens use a lighter Apple-token style
+  - decoration library tiles now use the shared panel style
+
+Still mock-only:
+
+- this is UI polish only
+- no Renderer, Metadata Pipeline, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+- IA-002 `Library -> Interactive Memory Card -> Object Inspector` remains unchanged
+
+## 2026-06-24 Region Configuration Slots Refinement
+
+This slice continues Configuration Center UI refinement based on visual review feedback.
+
+What changed:
+
+- Memory Block Inspector now treats each card region as having three local configuration slots.
+- Each slot can be selected from the region configuration picker:
+  - Recorder: `配置 1：记录者信息`, `配置 2：自定义记录`, `配置 3：自定义记录`
+  - Timeline: `配置 1：拍摄时间`, `配置 2：日期`, `配置 3：自定义时间线`
+  - Context: `配置 1：拍摄参数概要`, `配置 2：位置`, `配置 3：自定义上下文`
+  - Memory: `配置 1：当天多大`, `配置 2：自定义记忆`, `配置 3：自定义记忆`
+- Recorder configuration 1 now includes a default device-model module:
+  - `拍摄设备型号`
+- Default system modules remain removable.
+- Custom content is now stored per local configuration slot, so switching configuration slots does not overwrite another slot's draft content.
+- The old default `动态字段` memory configuration was removed from the Memory region.
+- Secondary Inspector sections now collapse by default:
+  - Insert Module
+  - Current Output
+  - Behavior
+- Memory Card Preview is slightly larger and the center decoration is visually quieter.
+- Library row spacing was lightly compressed.
+
+Still mock-only:
+
+- region configuration slots are local Configuration Center draft state
+- save / rename controls are UI-level preparation for the future Configuration Snapshot flow
+- no Renderer, Metadata Pipeline, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Time Anchor Language Polish
+
+This slice refines the Configuration Center language around Memory Subject time anchors.
+
+What changed:
+
+- Center Memory Card context now shows:
+  - `时间锚点`
+  - the selected anchor description, such as `图图出生日期`
+- The center context deliberately does not mention capture time because real photo time is not connected in this UI slice.
+- The right Memory Subject Inspector now labels the former custom-time area as `时间锚点`.
+- The per-anchor note field is now presented as `锚点说明`.
+- `锚点说明` is used as the short text shown in the center context.
+- The Library sidebar now explains, in concise Apple-style language, that different memory objects can have different time anchors and different memory angles.
+- Mock anchor descriptions were shortened so they read as display strings rather than long notes.
+
+Still mock-only:
+
+- anchor descriptions remain Configuration Center draft data
+- no real capture-time, EXIF, Metadata Pipeline, Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Memory Preset Activation Prototype
+
+This slice introduces `记忆预设` as the active region-configuration combination in the Configuration Center.
+
+What changed:
+
+- Center Memory Card context now shows:
+  - `记忆预设`
+  - `时间锚点`
+- `记忆预设` has three mock options:
+  - `成长记录`
+  - `第一次旅行`
+  - `自定义预设`
+- Selecting a memory preset updates the active configuration for Recorder, Timeline, Context, and Memory.
+- The right Memory Block Inspector now reads and writes the selected region configuration through the current memory preset.
+- The active region configuration displays a light `当前记忆预设使用中` status chip.
+- Memory preset names can be renamed from the center context without opening a separate settings surface.
+
+Still mock-only:
+
+- memory presets remain Configuration Center draft state
+- preset switching uses mock region-template mappings
+- no real Configuration Snapshot, Renderer, Metadata Pipeline, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Center Component Dock Prototype
+
+This slice moves shared editing components from the bottom of the right Inspector into the center Memory Card area.
+
+What changed:
+
+- Center Memory Card area now includes a lower `Configuration Component Dock`.
+- The dock contains:
+  - insertable module chips
+  - current selected-region output
+  - output selection
+  - compact configuration / about guidance
+- Output selection defaults to:
+  - `处理过的图片`
+- The guidance style follows the previous iOS help-center language pattern:
+  - grouped title
+  - compact white explanation card
+  - short secondary description
+- The right Object Inspector no longer shows the old `插入模块`, `当前输出`, and `行为` tail sections for Memory Block regions.
+- Inserting a dock module appends its display value to the currently selected Memory Card region preview.
+
+Still mock-only:
+
+- dock module insertion currently updates the live Configuration Center preview only
+- output selection is UI state and does not call the export pipeline
+- no real Configuration Snapshot, Renderer, Metadata Pipeline, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Memory Subject Inspector Customization
+
+This slice opens the right-side Object Inspector customization surface for Memory Subject.
+
+What changed:
+
+- `MemorySubject` now carries:
+  - definition
+  - three mock custom time anchors
+  - per-anchor note
+- `MemorySubjectEditorView` now supports editing:
+  - display name
+  - short name
+  - relationship role
+  - relationship label
+  - subject definition
+  - reference date
+  - custom time anchor title
+  - custom time anchor date
+  - custom time anchor note
+- Time Window now uses a dropdown to choose among custom dates.
+- Edit mode unlocks the selected custom time anchor.
+- Save writes the edited subject back into `ConfigurationSession`.
+- Saving a selected time anchor maps it into:
+  - `behavior.primaryAnchor`
+  - `referenceDate`
+
+Still mock-only:
+
+- this does not yet persist to `PersonalProfileStore`
+- this does not yet connect to real Renderer, Metadata, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime
+
 ## 2026-06-24 IA-002C UI Polish Foundation
 
 This slice responds to the first visible PhotoMemo V3 review.

@@ -8,7 +8,7 @@ struct BadgeLibraryView: View {
 
     var body: some View {
         DecorationLibraryGrid(
-            title: "Badge Library",
+            title: "徽标库",
             decorations:
                 session.state.availableDecorations
                 .filter { $0.kind == .badge },

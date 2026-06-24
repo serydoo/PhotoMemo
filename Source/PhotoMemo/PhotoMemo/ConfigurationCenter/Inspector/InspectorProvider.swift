@@ -2,17 +2,25 @@
 import SwiftUI
 
 enum InspectorProvider:
-    String,
     Identifiable,
     Hashable {
 
     case subject
-    case expression
+    case memoryBlock
     case iconLibrary
     case badgeLibrary
 
     var id: String {
-        rawValue
+        switch self {
+        case .subject:
+            return "subject"
+        case .memoryBlock:
+            return "memoryBlock"
+        case .iconLibrary:
+            return "iconLibrary"
+        case .badgeLibrary:
+            return "badgeLibrary"
+        }
     }
 
     init(
@@ -29,7 +37,7 @@ enum InspectorProvider:
              .slotB,
              .slotC,
              .slotD:
-            self = .expression
+            self = .memoryBlock
         }
     }
 
@@ -40,8 +48,8 @@ enum InspectorProvider:
         switch self {
         case .subject:
             MemorySubjectEditorView(session: session)
-        case .expression:
-            ExpressionEditor(session: session)
+        case .memoryBlock:
+            MemoryBlockInspectorView(session: session)
         case .iconLibrary:
             IconLibraryView(session: session)
         case .badgeLibrary:

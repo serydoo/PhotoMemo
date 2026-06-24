@@ -18,13 +18,13 @@ extension MemoryBlockType {
     var displayTitle: String {
         switch self {
         case .text:
-            return "Text"
+            return "文本"
         case .memory:
-            return "Memory"
+            return "记忆"
         case .photo:
-            return "Photo"
+            return "照片信息"
         case .system:
-            return "System"
+            return "系统"
         }
     }
 }

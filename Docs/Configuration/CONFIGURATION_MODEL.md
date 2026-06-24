@@ -39,10 +39,31 @@ Users are editing durable objects:
 
 - Memory Subject
 - Memory Card
+- Memory Block Template
 - Decoration
 - Preset
 
 All data is only an object's properties.
+
+## Memory Language Layer
+
+The Configuration Center will eventually edit Memory Block Templates.
+
+Memory Block Templates define content field schemas, not visual slot positions.
+
+The long-term content model is field-based:
+
+```text
+MemoryBlock
+-> BlockField
+-> Value Source
+```
+
+`Subject + Action + Result` is a Preset Schema, not the core model.
+
+This principle is frozen in:
+
+- `Docs/PDR/PDR-005_Memory_Language_Layer.md`
 
 ## Configuration Center Layout
 

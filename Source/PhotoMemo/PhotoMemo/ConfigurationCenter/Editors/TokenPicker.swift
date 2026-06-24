@@ -65,18 +65,22 @@ private struct LibraryTokenChip: View {
             : Color.accentColor
         )
         .padding(.horizontal, 9)
-        .padding(.vertical, 5)
+        .padding(.vertical, 6)
         .background(
-            Capsule()
+            RoundedRectangle(cornerRadius: 6)
                 .fill(
                     block.isReserved
-                    ? Color.gray.opacity(0.08)
-                    : Color.accentColor.opacity(0.10)
+                    ? ConfigurationUI.controlBackground
+                    : Color.accentColor.opacity(0.085)
                 )
         )
         .overlay(
-            Capsule()
-                .stroke(Color.black.opacity(0.05))
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(
+                    block.isReserved
+                    ? ConfigurationUI.faintHairline
+                    : Color.accentColor.opacity(0.16)
+                )
         )
     }
 

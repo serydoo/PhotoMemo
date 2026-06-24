@@ -23,41 +23,48 @@ enum CardRegion:
 
 extension CardRegion {
 
+    static let memoryCardRegions: [CardRegion] = [
+        .slotA,
+        .slotB,
+        .slotC,
+        .slotD
+    ]
+
     var displayTitle: String {
         switch self {
         case .subject:
-            return "Subject"
+            return "记忆对象"
         case .slotA:
-            return "Slot A"
+            return "区域 A"
         case .slotB:
-            return "Slot B"
+            return "区域 B"
         case .slotC:
-            return "Slot C"
+            return "区域 C"
         case .slotD:
-            return "Slot D"
+            return "区域 D"
         case .icon:
-            return "Icon"
+            return "图标"
         case .badge:
-            return "Badge"
+            return "徽标"
         }
     }
 
     var semanticTitle: String {
         switch self {
         case .subject:
-            return "Memory Subject"
+            return "记忆对象"
         case .icon:
-            return "Icon Decoration"
+            return "图标装饰"
         case .badge:
-            return "Badge Decoration"
+            return "徽标装饰"
         case .slotA:
-            return "Recorder"
+            return "记录"
         case .slotB:
-            return "Timeline"
+            return "时间线"
         case .slotC:
-            return "Location"
+            return "上下文"
         case .slotD:
-            return "Memory"
+            return "记忆"
         }
     }
 

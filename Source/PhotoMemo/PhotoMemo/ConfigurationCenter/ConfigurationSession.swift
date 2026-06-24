@@ -9,6 +9,9 @@ final class ConfigurationSession:
     @Published
     var state: ConfigurationCenterState
 
+    @Published
+    var selectedOutputOption: ConfigurationOutputOption = .processedImage
+
     init(
         state: ConfigurationCenterState? = nil
     ) {
@@ -18,7 +21,28 @@ final class ConfigurationSession:
     func selectSubject(
         _ subject: MemorySubject
     ) {
+        let previousSubject = state.selectedSubject
+        let previousDefaultMemory =
+            Self.defaultPreviewText(
+                for: .slotD,
+                subject: previousSubject
+            )
+
         state.selectedSubjectID = subject.id
+        state.regionPreviewTexts[.subject] =
+            Self.defaultPreviewText(
+                for: .subject,
+                subject: subject
+            )
+
+        if state.regionPreviewTexts[.slotD] == nil
+            || state.regionPreviewTexts[.slotD] == previousDefaultMemory {
+            state.regionPreviewTexts[.slotD] =
+                Self.defaultPreviewText(
+                    for: .slotD,
+                    subject: subject
+                )
+        }
         selectRegion(.subject)
     }
 
@@ -50,6 +74,191 @@ final class ConfigurationSession:
     ) {
         state.selectedBlockID = block.id
         state.selectedRegion = .slotD
+    }
+
+    func updateSelectedSubject(
+        _ subject: MemorySubject
+    ) {
+        let previousSubject = state.selectedSubject
+        let previousDefaultMemory =
+            Self.defaultPreviewText(
+                for: .slotD,
+                subject: previousSubject
+            )
+
+        guard
+            let subjectIndex =
+                state.subjects.firstIndex(
+                    where: { $0.id == subject.id }
+                )
+        else {
+            return
+        }
+
+        state.subjects[subjectIndex] = subject
+        state.selectedSubjectID = subject.id
+        state.regionPreviewTexts[.subject] =
+            Self.defaultPreviewText(
+                for: .subject,
+                subject: subject
+            )
+
+        if state.regionPreviewTexts[.slotD] == nil
+            || state.regionPreviewTexts[.slotD] == previousDefaultMemory {
+            state.regionPreviewTexts[.slotD] =
+                Self.defaultPreviewText(
+                    for: .slotD,
+                    subject: subject
+                )
+        }
+    }
+
+    func updateRegionPreview(
+        region: CardRegion,
+        text: String
+    ) {
+        state.regionPreviewTexts[region] = text
+    }
+
+    func appendPreviewModule(
+        title: String,
+        value: String
+    ) {
+        let region = state.selectedRegion
+        guard CardRegion.memoryCardRegions.contains(region) else {
+            return
+        }
+
+        let current =
+            previewText(for: region)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let insertion =
+            value.trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
+            ? title
+            : value
+
+        let nextText =
+            current.isEmpty
+            ? insertion
+            : "\(current) \(insertion)"
+
+        updateRegionPreview(
+            region: region,
+            text: nextText
+        )
+    }
+
+    var currentOutputPreview: String {
+        previewText(
+            for: state.selectedRegion
+        )
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .isEmpty
+        ? "当前区域暂无输出"
+        : previewText(for: state.selectedRegion)
+    }
+
+    func selectMemoryPreset(
+        _ preset: MemoryPreset
+    ) {
+        state.selectedMemoryPresetID = preset.id
+        refreshPresetDrivenPreview()
+    }
+
+    func updateSelectedMemoryPresetTitle(
+        _ title: String
+    ) {
+        guard let presetIndex = selectedMemoryPresetIndex else {
+            return
+        }
+
+        let trimmed =
+            title.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        state.memoryPresets[presetIndex].title =
+            trimmed.isEmpty
+            ? "记忆预设"
+            : trimmed
+    }
+
+    func updateActiveTemplate(
+        for region: CardRegion,
+        templateID: String
+    ) {
+        guard let presetIndex = selectedMemoryPresetIndex else {
+            return
+        }
+
+        state.memoryPresets[presetIndex]
+            .regionTemplateIDs[region] = templateID
+    }
+
+    func activeTemplateID(
+        for region: CardRegion
+    ) -> String? {
+        state.selectedMemoryPreset?
+            .templateID(for: region)
+    }
+
+    var currentMemoryPresetTitle: String {
+        state.selectedMemoryPreset?.title ?? "记忆预设"
+    }
+
+    var currentMemoryPresetSummary: String {
+        state.selectedMemoryPreset?.summary ?? "当前区域组合"
+    }
+
+    var currentConfigurationLabel: String {
+        let subjectName =
+            state.selectedSubject?.identity.displayName
+            ?? "记忆对象"
+
+        let anchorName =
+            state.selectedSubject?.behavior.primaryAnchor
+            ?? "自定义时间"
+
+        return "\(subjectName) · \(anchorName)"
+    }
+
+    var currentTimeAnchorTitle: String {
+        state.selectedSubject?.behavior.primaryAnchor
+        ?? "时间锚点"
+    }
+
+    var currentTimeAnchorDescription: String {
+        guard let subject = state.selectedSubject else {
+            return "锚点说明"
+        }
+
+        let anchor =
+            subject.timeAnchors.first {
+                $0.title == subject.behavior.primaryAnchor
+            }
+            ?? subject.timeAnchors.first
+
+        if let note = anchor?.note,
+           !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return note
+        }
+
+        let subjectName =
+            subject.identity.shortName.isEmpty
+            ? subject.identity.displayName
+            : subject.identity.shortName
+
+        return "\(subjectName)\(anchor?.title ?? "时间锚点")"
+    }
+
+    func previewText(
+        for region: CardRegion
+    ) -> String {
+        state.regionPreviewTexts[region]
+        ?? Self.defaultPreviewText(
+            for: region,
+            subject: state.selectedSubject
+        )
     }
 
     func insertBlock(
@@ -137,6 +346,120 @@ final class ConfigurationSession:
             .append(decoration)
     }
 
+    private func refreshSubjectDrivenPreview() {
+        if state.regionPreviewTexts[.slotD] == nil {
+            state.regionPreviewTexts[.slotD] =
+                Self.defaultPreviewText(
+                    for: .slotD,
+                    subject: state.selectedSubject
+                )
+        }
+    }
+
+    private func refreshPresetDrivenPreview() {
+        for region in CardRegion.memoryCardRegions {
+            let templateID =
+                activeTemplateID(for: region)
+
+            state.regionPreviewTexts[region] =
+                Self.defaultPreviewText(
+                    for: region,
+                    templateID: templateID,
+                    subject: state.selectedSubject
+                )
+        }
+    }
+
+    static func defaultPreviewText(
+        for region: CardRegion,
+        subject: MemorySubject?
+    ) -> String {
+        defaultPreviewText(
+            for: region,
+            templateID: nil,
+            subject: subject
+        )
+    }
+
+    static func defaultPreviewText(
+        for region: CardRegion,
+        templateID: String?,
+        subject: MemorySubject?
+    ) -> String {
+        if let templateID,
+           let text =
+            defaultPreviewText(
+                forTemplateID: templateID,
+                subject: subject
+            ) {
+            return text
+        }
+
+        switch region {
+        case .slotA:
+            return "记录"
+        case .slotB:
+            return "2026.05.24 14:33:13"
+        case .slotC:
+            return "20mm f/1.9 1/117s ISO80"
+        case .slotD:
+            return subject?
+                .behavior.memoryExpression.displayText
+                ?? "记忆表达"
+        case .subject:
+            return subject?.identity.shortName
+            ?? subject?.identity.displayName
+            ?? "记忆对象"
+        case .icon:
+            return subject?
+                .decorations
+                .first(where: { $0.kind == .icon })?
+                .title ?? "图标"
+        case .badge:
+            return subject?
+                .decorations
+                .first(where: { $0.kind == .badge })?
+                .title ?? "徽标"
+        }
+    }
+
+    private static func defaultPreviewText(
+        forTemplateID templateID: String,
+        subject: MemorySubject?
+    ) -> String? {
+        let subjectName =
+            subject?.identity.shortName.isEmpty == false
+            ? subject?.identity.shortName
+            : subject?.identity.displayName
+
+        switch templateID {
+        case "recorder.configuration1":
+            return "记录 iPhone 17 Pro Max"
+        case "recorder.configuration2",
+             "recorder.configuration3":
+            return " "
+        case "timeline.configuration1":
+            return "2026.05.24 14:33:13"
+        case "timeline.configuration2":
+            return "2026.05.24"
+        case "timeline.configuration3":
+            return " "
+        case "context.configuration1":
+            return "20mm f/1.9 1/117s ISO80"
+        case "context.configuration2":
+            return "河南 · 商丘"
+        case "context.configuration3":
+            return " "
+        case "memory.configuration1":
+            return "\(subjectName ?? "图图") 当天 11个月28天"
+        case "memory.configuration2",
+             "memory.configuration3":
+            return " "
+        default:
+            return nil
+        }
+    }
+
     private var selectedSubjectIndex: Int? {
         guard let subject = state.selectedSubject else {
             return nil
@@ -146,6 +469,52 @@ final class ConfigurationSession:
             $0.id == subject.id
         }
     }
+
+    private var selectedMemoryPresetIndex: Int? {
+        guard let preset = state.selectedMemoryPreset else {
+            return nil
+        }
+
+        return state.memoryPresets.firstIndex {
+            $0.id == preset.id
+        }
+    }
+}
+
+enum ConfigurationOutputOption:
+    String,
+    CaseIterable,
+    Identifiable {
+
+    case processedImage
+    case targetAlbum
+    case localFolder
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .processedImage:
+            return "处理过的图片"
+        case .targetAlbum:
+            return "目标相册"
+        case .localFolder:
+            return "本地文件夹"
+        }
+    }
+
+    var note: String {
+        switch self {
+        case .processedImage:
+            return "生成新图片，不修改原始照片。"
+        case .targetAlbum:
+            return "后续写入指定 Apple Photos 相册。"
+        case .localFolder:
+            return "预留给本地文件输出流程。"
+        }
+    }
 }
 
 extension ConfigurationCenterState {
@@ -153,18 +522,18 @@ extension ConfigurationCenterState {
     static var mock: ConfigurationCenterState {
         let expression =
             MemoryExpression(
-                title: "Birthday Memory",
+                title: "生日记忆",
                 blocks: [
                     .text(""),
                     MemoryBlock(
                         type: .memory,
-                        title: "Nickname",
+                        title: "昵称",
                         value: "昵称"
                     ),
                     .text(" 今天 "),
                     MemoryBlock(
                         type: .memory,
-                        title: "Age",
+                        title: "年龄",
                         value: "年龄"
                     ),
                     .text(" 啦")
@@ -174,14 +543,14 @@ extension ConfigurationCenterState {
         let icon =
             DecorationAsset(
                 kind: .icon,
-                title: "Person",
+                title: "人物",
                 systemSymbolName: "person.fill"
             )
 
         let badge =
             DecorationAsset(
                 kind: .badge,
-                title: "Camera",
+                title: "相机",
                 systemSymbolName: "camera.fill"
             )
 
@@ -194,9 +563,10 @@ extension ConfigurationCenterState {
                     ),
                 relationship:
                     .init(
-                        role: "Family",
+                        role: "家庭",
                         label: "家人"
                     ),
+                definition: "家庭成长记录的主要记忆对象。",
                 referenceDate:
                     Calendar.current.date(
                         from:
@@ -206,9 +576,50 @@ extension ConfigurationCenterState {
                                 day: 18
                             )
                     ) ?? Date(),
+                timeAnchors: [
+                    MemorySubject.TimeAnchor(
+                        title: "生日",
+                        date:
+                            Calendar.current.date(
+                                from:
+                                    DateComponents(
+                                        year: 2024,
+                                        month: 4,
+                                        day: 18
+                                    )
+                            ) ?? Date(),
+                        note: "图图出生日期"
+                    ),
+                    MemorySubject.TimeAnchor(
+                        title: "第一次旅行",
+                        date:
+                            Calendar.current.date(
+                                from:
+                                    DateComponents(
+                                        year: 2025,
+                                        month: 10,
+                                        day: 2
+                                    )
+                            ) ?? Date(),
+                        note: "图图第一次旅行"
+                    ),
+                    MemorySubject.TimeAnchor(
+                        title: "入园",
+                        date:
+                            Calendar.current.date(
+                                from:
+                                    DateComponents(
+                                        year: 2027,
+                                        month: 9,
+                                        day: 1
+                                    )
+                            ) ?? Date(),
+                        note: "图图入园日期"
+                    )
+                ],
                 behavior:
                     MemoryBehavior(
-                        primaryAnchor: "Birthday",
+                        primaryAnchor: "生日",
                         iconStrategy: .autoMatch,
                         badgeStrategy: .fixed,
                         memoryExpression: expression
@@ -228,9 +639,10 @@ extension ConfigurationCenterState {
                     ),
                 relationship:
                     .init(
-                        role: "Travel",
+                        role: "旅行",
                         label: "旅行"
                     ),
+                definition: "一次值得反复回看的旅行记忆。",
                 referenceDate:
                     Calendar.current.date(
                         from:
@@ -240,24 +652,65 @@ extension ConfigurationCenterState {
                                 day: 29
                             )
                     ) ?? Date(),
+                timeAnchors: [
+                    MemorySubject.TimeAnchor(
+                        title: "出发",
+                        date:
+                            Calendar.current.date(
+                                from:
+                                    DateComponents(
+                                        year: 2025,
+                                        month: 3,
+                                        day: 29
+                                    )
+                            ) ?? Date(),
+                        note: "京都出发日期"
+                    ),
+                    MemorySubject.TimeAnchor(
+                        title: "抵达",
+                        date:
+                            Calendar.current.date(
+                                from:
+                                    DateComponents(
+                                        year: 2025,
+                                        month: 3,
+                                        day: 30
+                                    )
+                            ) ?? Date(),
+                        note: "京都抵达日期"
+                    ),
+                    MemorySubject.TimeAnchor(
+                        title: "回程",
+                        date:
+                            Calendar.current.date(
+                                from:
+                                    DateComponents(
+                                        year: 2025,
+                                        month: 4,
+                                        day: 5
+                                    )
+                            ) ?? Date(),
+                        note: "京都回程日期"
+                    )
+                ],
                 behavior:
                     MemoryBehavior(
-                        primaryAnchor: "First Visit",
+                        primaryAnchor: "初次到访",
                         iconStrategy: .fixed,
                         badgeStrategy: .autoMatch,
                         memoryExpression:
                             MemoryExpression(
-                                title: "Travel Memory",
+                                title: "旅行记忆",
                                 blocks: [
                                     MemoryBlock(
                                         type: .memory,
-                                        title: "Life Anchor",
-                                        value: "Life Anchor"
+                                        title: "生命时间",
+                                        value: "生命时间"
                                     ),
                                     .text(" · "),
                                     MemoryBlock(
                                         type: .photo,
-                                        title: "Capture Date",
+                                        title: "拍摄日期",
                                         value: "拍摄日期"
                                     )
                                 ]
@@ -266,7 +719,7 @@ extension ConfigurationCenterState {
                 decorations: [
                     DecorationAsset(
                         kind: .icon,
-                        title: "Location",
+                        title: "位置",
                         systemSymbolName: "location.fill"
                     )
                 ]
@@ -278,7 +731,7 @@ extension ConfigurationCenterState {
             DecorationAsset(
                 kind: .icon,
                 strategy: .fixed,
-                title: "Flag",
+                title: "标记",
                 systemSymbolName: "flag.fill"
             ),
             DecorationAsset(
@@ -290,10 +743,46 @@ extension ConfigurationCenterState {
             DecorationAsset(
                 kind: .future,
                 strategy: .none,
-                title: "Future Decoration",
+                title: "未来装饰",
                 systemSymbolName: "sparkles"
             )
         ]
+
+        let preset1 =
+            MemoryPreset(
+                title: "成长记录",
+                summary: "记录、时间线、上下文和记忆表达使用第一套配置。",
+                regionTemplateIDs: [
+                    .slotA: "recorder.configuration1",
+                    .slotB: "timeline.configuration1",
+                    .slotC: "context.configuration1",
+                    .slotD: "memory.configuration1"
+                ]
+            )
+
+        let preset2 =
+            MemoryPreset(
+                title: "第一次旅行",
+                summary: "更强调日期、地点和旅行记忆表达。",
+                regionTemplateIDs: [
+                    .slotA: "recorder.configuration2",
+                    .slotB: "timeline.configuration2",
+                    .slotC: "context.configuration2",
+                    .slotD: "memory.configuration2"
+                ]
+            )
+
+        let preset3 =
+            MemoryPreset(
+                title: "自定义预设",
+                summary: "预留给用户组合自己的区域配置。",
+                regionTemplateIDs: [
+                    .slotA: "recorder.configuration3",
+                    .slotB: "timeline.configuration3",
+                    .slotC: "context.configuration3",
+                    .slotD: "memory.configuration3"
+                ]
+            )
 
         return ConfigurationCenterState(
             subjects: [
@@ -301,10 +790,34 @@ extension ConfigurationCenterState {
                 travelSubject
             ],
             selectedSubjectID: subject.id,
+            memoryPresets: [
+                preset1,
+                preset2,
+                preset3
+            ],
+            selectedMemoryPresetID: preset1.id,
             cardSelection: .defaultSelection,
             selectedBlockID: nil,
             tokenLibrary: TokenLibrary(),
-            availableDecorations: decorations
+            availableDecorations: decorations,
+            regionPreviewTexts: [
+                .slotA: ConfigurationSession.defaultPreviewText(
+                    for: .slotA,
+                    subject: subject
+                ),
+                .slotB: ConfigurationSession.defaultPreviewText(
+                    for: .slotB,
+                    subject: subject
+                ),
+                .slotC: ConfigurationSession.defaultPreviewText(
+                    for: .slotC,
+                    subject: subject
+                ),
+                .slotD: ConfigurationSession.defaultPreviewText(
+                    for: .slotD,
+                    subject: subject
+                )
+            ]
         )
     }
 }

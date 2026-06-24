@@ -12,31 +12,36 @@ struct ConfigurationCenterView: View {
             MemorySubjectListView(
                 session: session
             )
-            .navigationTitle("Library")
+            .navigationTitle("资料库")
             .navigationSplitViewColumnWidth(
                 min: 240,
                 ideal: 280
             )
         } content: {
-            InteractiveMemoryCard(
-                session: session
-            )
-            .navigationTitle("Memory Card")
+            ZStack {
+                ConfigurationUI.appBackground
+                    .ignoresSafeArea()
+
+                InteractiveMemoryCard(
+                    session: session
+                )
+            }
+            .navigationTitle("记忆卡片")
             .navigationSplitViewColumnWidth(
-                min: 420,
-                ideal: 560
+                min: 560,
+                ideal: 640
             )
         } detail: {
             InspectorView(
                 session: session
             )
-            .navigationTitle("Inspector")
+            .navigationTitle("检查器")
             .navigationSplitViewColumnWidth(
                 min: 300,
                 ideal: 360
             )
         }
-        .background(Color.white)
+        .background(ConfigurationUI.appBackground)
     }
 }
 

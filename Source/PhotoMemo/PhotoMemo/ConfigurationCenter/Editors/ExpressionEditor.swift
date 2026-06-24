@@ -9,21 +9,21 @@ struct ExpressionEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             InspectorSectionView(
-                "Memory Expression",
+                "记忆表达",
                 systemImage: "text.quote"
             ) {
                 expressionPreview
             }
 
             InspectorSectionView(
-                "Properties",
+                "属性",
                 systemImage: "slider.horizontal.3"
             ) {
                 selectedBlockControls
             }
 
             InspectorSectionView(
-                "Token Library",
+                "模块库",
                 systemImage: "tag.fill"
             ) {
                 TokenPicker(session: session)
@@ -48,7 +48,8 @@ struct ExpressionEditor: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 4)
+        .padding(12)
+        .configurationPanelChrome()
     }
 
     @ViewBuilder
@@ -71,7 +72,7 @@ struct ExpressionEditor: View {
                 }
                 .buttonStyle(.borderless)
                 .disabled(blocks.first?.id == block.id)
-                .help("Move Up")
+                .help("上移")
 
                 Button {
                     session.moveBlock(block, direction: 1)
@@ -80,7 +81,7 @@ struct ExpressionEditor: View {
                 }
                 .buttonStyle(.borderless)
                 .disabled(blocks.last?.id == block.id)
-                .help("Move Down")
+                .help("下移")
 
                 Button(role: .destructive) {
                     session.removeBlock(block)
@@ -88,13 +89,16 @@ struct ExpressionEditor: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .help("Remove")
+                .help("删除")
             }
-            .padding(.vertical, 4)
+            .padding(10)
+            .configurationPanelChrome(isSelected: true)
         } else {
-            Text("Select a token in the expression.")
+            Text("请选择一个记忆模块。")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .padding(12)
+                .configurationPanelChrome()
         }
     }
 
@@ -171,15 +175,15 @@ struct AppleTokenView: View {
         if block.type == .text {
             Color.clear
         } else {
-            Capsule()
-                .fill(Color.accentColor.opacity(0.10))
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.accentColor.opacity(0.085))
         }
     }
 
     @ViewBuilder
     private var selectionStroke: some View {
         if isSelected, block.type != .text {
-            Capsule()
+            RoundedRectangle(cornerRadius: 6)
                 .stroke(Color.accentColor.opacity(0.55))
         }
     }

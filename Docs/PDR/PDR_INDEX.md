@@ -71,3 +71,27 @@ Repository Amendment Revision A
 Primary source:
 
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+
+## PDR-005
+
+Name:
+
+```text
+Memory Language Layer
+```
+
+Status:
+
+```text
+Frozen
+```
+
+Revision:
+
+```text
+Repository Amendment Revision A
+```
+
+Primary source:
+
+- `Docs/PDR/PDR-005_Memory_Language_Layer.md`

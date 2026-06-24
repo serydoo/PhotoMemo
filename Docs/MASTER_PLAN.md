@@ -231,6 +231,39 @@ Location
 Memory
 ```
 
+### PDR-005: Memory Language Layer
+
+Status: frozen.
+
+Scope:
+
+- define MemoryBlock as a content asset, not a layout asset
+- define the Memory Language Layer:
+
+```text
+MemoryBlock
+-> Block Template
+-> Block Field
+-> Value Binding
+```
+
+- freeze the long-term MemoryBlock direction as field-based:
+
+```text
+MemoryBlock {
+    templateID
+    fields: [BlockField]
+}
+```
+
+- freeze `Subject + Action + Result` as Preset Schema #001, not as the core model
+- define value sources:
+  - Fixed Text
+  - Token Binding
+  - Smart Module Binding
+  - Custom Field Binding
+- define IA-003C Memory Block Resolver as the first implementation point
+
 ### IA-003: Memory Engine Integration
 
 Status: current implementation track.
@@ -256,6 +289,7 @@ IA-003 must preserve:
 - Apple Photos lifecycle
 - Capture-Time Principle
 - Memory Subject = Identity + MemoryBehavior
+- MemoryBlock as field-based content asset
 - Configuration Center edits Objects, not Data
 - Everything starts from the Memory Card
 - IA-002 architecture as frozen UI architecture

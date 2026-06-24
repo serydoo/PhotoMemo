@@ -77,7 +77,7 @@ enum MemoryBlock:
     var title: String {
         switch self {
         case .textBlock:
-            return "Text"
+            return "文本"
         case .tokenBlock(let block):
             return block.title
         }

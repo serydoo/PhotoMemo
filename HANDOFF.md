@@ -5,6 +5,46 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-24 PDR-005 Memory Language Layer
+
+- 本轮是 Repository Amendment。
+- 没有修改：
+  - Swift
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension
+  - Photo Library behavior
+  - Layout Engine
+  - Memory Engine runtime
+- 新增：
+  - `Docs/PDR/PDR-005_Memory_Language_Layer.md`
+- PDR-005 冻结：
+  - MemoryBlock 是内容资产，不是布局资产
+  - Subject + Action + Result 是 `Preset Schema #001`，不是底层 Core Model
+  - 底层长期模型是 Field-Based MemoryBlock
+  - 概念形态：
+
+```text
+MemoryBlock
+-> BlockField
+-> Value Source
+```
+
+- Value Source 包括：
+  - Fixed Text
+  - Token Binding
+  - Smart Module Binding
+  - Custom Field Binding
+- Block Template 定义 field schema，不定义 slot position。
+- Module 负责计算 field value，不定义整个 MemoryBlock。
+- IA-003A 仍然是 MemorySubject Adapter。
+- PDR-005 的首个实现落点是：
+
+```text
+IA-003C Memory Block Resolver
+```
+
 ## 2026-06-24 IA-002 Freeze / IA-003 Product Realization
 
 - 用户正式确认：

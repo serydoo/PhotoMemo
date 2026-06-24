@@ -8,30 +8,45 @@ struct InspectorView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 24) {
                 inspectorHeader
-
-                Divider()
 
                 inspectorContent
             }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 24)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 22)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.gray.opacity(0.03))
+        .background(ConfigurationUI.appBackground)
     }
 
     private var inspectorHeader: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("Object Inspector")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.primary)
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: headerSymbol)
+                .font(.headline.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28, height: 28)
+                .background(
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.10))
+                )
 
-            Text("\(session.state.selectedRegion.displayTitle) · \(session.state.selectedRegion.semanticTitle)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("对象检查器")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+
+                Text("\(session.state.selectedRegion.displayTitle) · \(session.state.selectedRegion.semanticTitle)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .configurationPanelChrome(isSelected: true)
     }
 
     @ViewBuilder
@@ -56,6 +71,25 @@ struct InspectorView: View {
             region: session.state.selectedRegion
         )
         .inspectorProvider
+    }
+
+    private var headerSymbol: String {
+        switch session.state.selectedRegion {
+        case .subject:
+            return "person.fill"
+        case .icon:
+            return "person.crop.circle"
+        case .badge:
+            return "camera.fill"
+        case .slotA:
+            return "camera.fill"
+        case .slotB:
+            return "calendar"
+        case .slotC:
+            return "scope"
+        case .slotD:
+            return "text.quote"
+        }
     }
 }
 #endif

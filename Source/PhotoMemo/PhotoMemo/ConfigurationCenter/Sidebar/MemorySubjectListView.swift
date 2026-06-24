@@ -33,67 +33,83 @@ struct MemorySubjectListView: View {
             Section {
                 Button {
                 } label: {
-                    Label("New Subject", systemImage: "plus")
+                    Label("新建记忆对象", systemImage: "plus")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 5)
+                        .padding(.vertical, 7)
                 }
                 .buttonStyle(.plain)
             }
         }
         .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text("Memory Object Library")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.primary)
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("时间锚点")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.primary)
 
-                Text("Apple Photos remains the reading space.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text("不同记忆对象拥有不同锚点，也拥有不同的回忆角度。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Divider()
+                    .opacity(0.45)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("记忆对象资料库")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+
+                    Text("PhotoMemo 用锚点帮助你阅读回忆。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(.regularMaterial)
+            .padding(.vertical, 12)
+            .background(.thinMaterial)
         }
     }
 
     private var sidebarTitle: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Library")
-                .font(.title2.weight(.semibold))
+        VStack(alignment: .leading, spacing: 5) {
+            Text("资料库")
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(Color.primary)
 
-            Text("Memory Subjects")
+            Text("记忆对象")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 
     private var groupedSubjects: [MemorySubjectGroup] {
         let people =
             session.state.subjects
             .filter {
-                $0.relationship.role == "Family"
+                $0.relationship.role == "家庭"
             }
 
         let travel =
             session.state.subjects
             .filter {
-                $0.relationship.role == "Travel"
+                $0.relationship.role == "旅行"
             }
 
         return [
             MemorySubjectGroup(
-                title: "People",
+                title: "人物",
                 subjects: people
             ),
             MemorySubjectGroup(
-                title: "Travel",
+                title: "旅行",
                 subjects: travel
             )
         ]
@@ -130,7 +146,7 @@ private struct MemorySubjectRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(subject.identity.displayName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.primary)
 
                 Text(subject.relationship.label)
@@ -146,8 +162,17 @@ private struct MemorySubjectRow: View {
                     .foregroundStyle(Color.accentColor)
             }
         }
+        .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    isSelected
+                    ? ConfigurationUI.selectedBackground
+                    : Color.clear
+                )
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private var iconName: String {

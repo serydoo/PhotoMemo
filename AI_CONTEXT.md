@@ -116,6 +116,27 @@ IA-003A may connect the existing personal/profile layer into `MemorySubject`.
 
 IA-003A must not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work.
 
+## PDR-005 Frozen State
+
+PDR-005 freezes the Memory Language Layer.
+
+Primary reference:
+
+- `Docs/PDR/PDR-005_Memory_Language_Layer.md`
+
+Frozen principles:
+
+- MemoryBlock is a content asset, not a layout asset
+- Subject + Action + Result is Preset Schema #001, not the core model
+- the long-term MemoryBlock architecture is field-based
+- conceptual shape is `MemoryBlock { templateID, fields: [BlockField] }`
+- BlockField values may come from Fixed Text, Token Binding, Smart Module Binding, or Custom Field Binding
+- Block Templates define field schemas, not slot positions
+- modules calculate field values; they do not define the whole block
+- the first implementation point is IA-003C Memory Block Resolver
+
+IA-003A should prepare for this direction but must not expand into a full Memory Language Engine implementation.
+
 ## PM-003 Frozen State
 
 PM-003 is now in:

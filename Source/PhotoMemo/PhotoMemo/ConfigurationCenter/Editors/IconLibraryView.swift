@@ -8,7 +8,7 @@ struct IconLibraryView: View {
 
     var body: some View {
         DecorationLibraryGrid(
-            title: "Icon Library",
+            title: "图标库",
             decorations:
                 session.state.availableDecorations
                 .filter { $0.kind == .icon },

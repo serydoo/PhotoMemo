@@ -51,6 +51,10 @@ Use these terms in current source-of-truth documents:
 - Life Anchor
 - Behavior
 - MemoryBehavior
+- Memory Language Layer
+- Memory Block Template
+- BlockField
+- Value Binding
 - CardRegion
 - InspectorProvider
 - TokenCategory
