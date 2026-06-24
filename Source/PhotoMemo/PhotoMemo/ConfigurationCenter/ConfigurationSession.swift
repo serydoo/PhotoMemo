@@ -12,6 +12,18 @@ final class ConfigurationSession:
     @Published
     var selectedOutputOption: ConfigurationOutputOption = .processedImage
 
+    @Published
+    var selectedStorageOption: ConfigurationStorageOption = .appFolder
+
+    @Published
+    var usesCustomMemoryWriteText = false
+
+    @Published
+    var customMemoryWriteText = ""
+
+    @Published
+    var latestModuleInsertion: MemoryModuleInsertion?
+
     init(
         state: ConfigurationCenterState? = nil
     ) {
@@ -122,7 +134,9 @@ final class ConfigurationSession:
 
     func appendPreviewModule(
         title: String,
-        value: String
+        value: String,
+        systemImage: String = "tag.fill",
+        token: String? = nil
     ) {
         let region = state.selectedRegion
         guard CardRegion.memoryCardRegions.contains(region) else {
@@ -148,6 +162,15 @@ final class ConfigurationSession:
             region: region,
             text: nextText
         )
+
+        latestModuleInsertion =
+            MemoryModuleInsertion(
+                region: region,
+                title: title,
+                value: insertion,
+                systemImage: systemImage,
+                token: token ?? title
+            )
     }
 
     var currentOutputPreview: String {
@@ -158,6 +181,25 @@ final class ConfigurationSession:
         .isEmpty
         ? "当前区域暂无输出"
         : previewText(for: state.selectedRegion)
+    }
+
+    var resolvedMemoryWriteText: String {
+        let customText =
+            customMemoryWriteText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if usesCustomMemoryWriteText,
+           !customText.isEmpty {
+            return customText
+        }
+
+        let memoryText =
+            previewText(for: .slotD)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return memoryText.isEmpty
+        ? "当前记忆区域暂无内容"
+        : memoryText
     }
 
     func selectMemoryPreset(
@@ -481,14 +523,40 @@ final class ConfigurationSession:
     }
 }
 
+struct MemoryModuleInsertion:
+    Identifiable,
+    Hashable {
+
+    let id: UUID
+    let region: CardRegion
+    let title: String
+    let value: String
+    let systemImage: String
+    let token: String
+
+    init(
+        id: UUID = UUID(),
+        region: CardRegion,
+        title: String,
+        value: String,
+        systemImage: String,
+        token: String
+    ) {
+        self.id = id
+        self.region = region
+        self.title = title
+        self.value = value
+        self.systemImage = systemImage
+        self.token = token
+    }
+}
+
 enum ConfigurationOutputOption:
     String,
     CaseIterable,
     Identifiable {
 
     case processedImage
-    case targetAlbum
-    case localFolder
 
     var id: String {
         rawValue
@@ -498,10 +566,6 @@ enum ConfigurationOutputOption:
         switch self {
         case .processedImage:
             return "处理过的图片"
-        case .targetAlbum:
-            return "目标相册"
-        case .localFolder:
-            return "本地文件夹"
         }
     }
 
@@ -509,10 +573,47 @@ enum ConfigurationOutputOption:
         switch self {
         case .processedImage:
             return "生成新图片，不修改原始照片。"
+        }
+    }
+}
+
+enum ConfigurationStorageOption:
+    String,
+    CaseIterable,
+    Identifiable {
+
+    case appFolder
+    case existingFolder
+    case newFolder
+    case targetAlbum
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .appFolder:
+            return "PhotoMemo 文件夹"
+        case .existingFolder:
+            return "现有文件夹"
+        case .newFolder:
+            return "新建文件夹"
+        case .targetAlbum:
+            return "目标相册"
+        }
+    }
+
+    var note: String {
+        switch self {
+        case .appFolder:
+            return "未指定保存地点时，默认存入软件对应的 PhotoMemo 文件夹。"
+        case .existingFolder:
+            return "后续从已有文件夹中选择保存位置。"
+        case .newFolder:
+            return "后续新建文件夹并保存本次输出。"
         case .targetAlbum:
             return "后续写入指定 Apple Photos 相册。"
-        case .localFolder:
-            return "预留给本地文件输出流程。"
         }
     }
 }

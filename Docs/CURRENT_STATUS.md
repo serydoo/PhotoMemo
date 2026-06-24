@@ -427,23 +427,80 @@ What changed:
 - Center Memory Card area now includes a lower `Configuration Component Dock`.
 - The dock contains:
   - insertable module chips
-  - current selected-region output
+  - current configuration display for the selected region
   - output selection
   - compact configuration / about guidance
 - Output selection defaults to:
   - `处理过的图片`
+- Output storage now presents:
+  - `PhotoMemo 文件夹`
+  - `现有文件夹`
+  - `新建文件夹`
+  - `目标相册`
+- If no custom storage destination is selected, the UI describes the default PhotoMemo folder behavior.
 - The guidance style follows the previous iOS help-center language pattern:
   - grouped title
   - compact white explanation card
   - short secondary description
 - The right Object Inspector no longer shows the old `插入模块`, `当前输出`, and `行为` tail sections for Memory Block regions.
 - Inserting a dock module appends its display value to the currently selected Memory Card region preview.
+- Dock module insertion now also broadcasts the module to the right Inspector so the current custom content field shows the inserted module chip.
+- The insertable module list now includes a broader set of Apple photo / EXIF-facing fields and records that later ordering should be usage-frequency aware.
+- The insertable module list is now compact by default and can be expanded when users need the full EXIF-facing list.
+- Right-side custom content fields are now immediate-editing surfaces:
+  - the old per-field confirmation button was removed
+  - deleting a custom content field is now a larger action beside the editing field
+  - saving / confirmation responsibility stays at the upper configuration level
 
 Still mock-only:
 
 - dock module insertion currently updates the live Configuration Center preview only
 - output selection is UI state and does not call the export pipeline
 - no real Configuration Snapshot, Renderer, Metadata Pipeline, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Write Memory Caption Prototype
+
+This slice adds a mock-only `写入记忆` control to the center Configuration Component Dock.
+
+What changed:
+
+- Added a `写入记忆` panel above insertable modules.
+- The default write-memory text uses the generated Memory region output.
+- Users can enable `自定义写入内容` and enter their own memory description.
+- If custom writing is enabled but the custom field is empty, the UI falls back to the generated Memory region output.
+- The panel shows the actual text that would be written.
+- User-facing language avoids raw `Caption` terminology and presents this as memory writing for Apple Photos search and review.
+
+Still mock-only:
+
+- this does not write to Apple Photos yet
+- future implementation must verify whether Photos-visible captions can be written directly or whether EXIF/IPTC/XMP description fields are required
+- no real Configuration Snapshot, Renderer, Metadata Pipeline, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work was changed
+
+## 2026-06-24 Configuration Center Interaction Freeze
+
+This slice records the accepted Configuration Center baseline after the latest UI review.
+
+New reference:
+
+- `Docs/Configuration/CONFIGURATION_CENTER_INTERACTION_FREEZE.md`
+
+Frozen baseline:
+
+- Library -> Interactive Memory Card -> Object Inspector
+- Memory Preset
+- Time Anchor
+- Region Strip
+- Configuration Component Dock
+- Write Memory
+- Current Configuration Display
+- Output storage selection
+- immediate right-side custom content editing
+
+Still mock-only:
+
+- this freeze records the interaction baseline only
+- it does not connect Renderer, Metadata Pipeline, Export, Share Extension, Photo Library behavior, Layout Engine, or Memory Engine runtime work
 
 ## 2026-06-24 Memory Subject Inspector Customization
 

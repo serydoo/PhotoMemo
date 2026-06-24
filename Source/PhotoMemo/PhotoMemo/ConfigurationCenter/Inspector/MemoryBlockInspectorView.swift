@@ -81,6 +81,13 @@ struct MemoryBlockInspectorView: View {
             ensureTemplateSelection()
             ensureCustomFields()
         }
+        .onChange(of: session.latestModuleInsertion?.id) { _, _ in
+            guard let insertion = session.latestModuleInsertion else {
+                return
+            }
+
+            insertExternalModule(insertion)
+        }
         .onAppear {
             ensureTemplateSelection()
             ensureCustomFields()
@@ -360,31 +367,6 @@ struct MemoryBlockInspectorView: View {
             }
 
             customFieldContentEditor(for: field)
-
-            HStack(spacing: 8) {
-                Button {
-                    confirmCustomField(field.id)
-                } label: {
-                    Label(
-                        field.isConfirmed ? "已确认" : "确认",
-                        systemImage:
-                            field.isConfirmed
-                            ? "checkmark.circle.fill"
-                            : "checkmark.circle"
-                    )
-                }
-                .buttonStyle(.borderless)
-
-                Spacer()
-
-                Button(role: .destructive) {
-                    deleteCustomField(field.id)
-                } label: {
-                    Label("删除", systemImage: "trash")
-                }
-                .buttonStyle(.borderless)
-            }
-            .font(.caption.weight(.medium))
         }
         .padding(10)
         .configurationPanelChrome(
@@ -414,37 +396,67 @@ struct MemoryBlockInspectorView: View {
     private func customFieldContentEditor(
         for field: CustomBlockFieldDraft
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TextField(
-                "输入自定义内容，或从下方插入模块",
-                text: customFieldTextBinding(for: field),
-                axis: .vertical
-            )
-            .textFieldStyle(.plain)
-            .font(.subheadline)
-            .lineLimit(1...3)
-            .focused($focusedField, equals: .customField(field.id))
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
+                TextField(
+                    "输入自定义内容，或从下方插入模块",
+                    text: customFieldTextBinding(for: field),
+                    axis: .vertical
+                )
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .lineLimit(1...3)
+                .focused($focusedField, equals: .customField(field.id))
 
-            if !field.modules.isEmpty {
-                LazyVGrid(
-                    columns: [
-                        GridItem(.adaptive(minimum: 96), spacing: 6)
-                    ],
-                    alignment: .leading,
-                    spacing: 6
-                ) {
-                    ForEach(field.modules) { insertedModule in
-                        InsertedTokenChip(
-                            insertedModule: insertedModule
-                        ) {
-                            removeInsertedModule(
-                                insertedModule.id,
-                                from: field.id
-                            )
+                if !field.displayText.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("组合预览")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+
+                        if !field.text.isEmpty {
+                            Text(field.text)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(Color.primary.opacity(0.82))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        if !field.modules.isEmpty {
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.adaptive(minimum: 96), spacing: 6)
+                                ],
+                                alignment: .leading,
+                                spacing: 6
+                            ) {
+                                ForEach(field.modules) { insertedModule in
+                                    InsertedTokenChip(
+                                        insertedModule: insertedModule
+                                    ) {
+                                        removeInsertedModule(
+                                            insertedModule.id,
+                                            from: field.id
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
+                    .padding(8)
+                    .configurationPanelChrome()
                 }
             }
+
+            Button(role: .destructive) {
+                deleteCustomField(field.id)
+            } label: {
+                Image(systemName: "trash.fill")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.borderless)
+            .help("删除自定义内容")
         }
         .padding(10)
         .configurationFieldChrome(
@@ -684,7 +696,6 @@ struct MemoryBlockInspectorView: View {
         }
 
         fields[index].text = text
-        fields[index].isConfirmed = false
         customFields[selectedTemplateID] = fields
         selectedCustomFieldIDs[selectedTemplateID] = id
         syncRegionPreview()
@@ -709,7 +720,42 @@ struct MemoryBlockInspectorView: View {
         fields[index].modules.append(
             InsertedModuleDraft(module: module)
         )
-        fields[index].isConfirmed = false
+        customFields[selectedTemplateID] = fields
+        selectedCustomFieldIDs[selectedTemplateID] = fieldID
+        syncRegionPreview()
+    }
+
+    private func insertExternalModule(
+        _ insertion: MemoryModuleInsertion
+    ) {
+        guard insertion.region == selectedRegion else {
+            return
+        }
+
+        if selectedCustomFieldIDs[selectedTemplateID] == nil {
+            addCustomField()
+        }
+
+        guard let fieldID = selectedCustomFieldIDs[selectedTemplateID] else {
+            return
+        }
+
+        var fields = currentCustomFields
+        guard let index = fields.firstIndex(where: { $0.id == fieldID }) else {
+            return
+        }
+
+        let module =
+            InsertableModuleDraft(
+                title: insertion.title,
+                token: insertion.token,
+                systemImage: insertion.systemImage,
+                previewValue: insertion.value
+            )
+
+        fields[index].modules.append(
+            InsertedModuleDraft(module: module)
+        )
         customFields[selectedTemplateID] = fields
         selectedCustomFieldIDs[selectedTemplateID] = fieldID
         syncRegionPreview()
@@ -727,23 +773,8 @@ struct MemoryBlockInspectorView: View {
         fields[index].modules.removeAll {
             $0.id == moduleID
         }
-        fields[index].isConfirmed = false
         customFields[selectedTemplateID] = fields
         selectedCustomFieldIDs[selectedTemplateID] = fieldID
-        syncRegionPreview()
-    }
-
-    private func confirmCustomField(
-        _ id: UUID
-    ) {
-        var fields = currentCustomFields
-        guard let index = fields.firstIndex(where: { $0.id == id }) else {
-            return
-        }
-
-        fields[index].isConfirmed = true
-        customFields[selectedTemplateID] = fields
-        selectedCustomFieldIDs[selectedTemplateID] = id
         syncRegionPreview()
     }
 
@@ -1230,18 +1261,15 @@ private struct CustomBlockFieldDraft:
     let id: UUID
     var text: String
     var modules: [InsertedModuleDraft]
-    var isConfirmed: Bool
 
     init(
         id: UUID = UUID(),
         text: String,
-        modules: [InsertedModuleDraft] = [],
-        isConfirmed: Bool = false
+        modules: [InsertedModuleDraft] = []
     ) {
         self.id = id
         self.text = text
         self.modules = modules
-        self.isConfirmed = isConfirmed
     }
 
     var displayText: String {

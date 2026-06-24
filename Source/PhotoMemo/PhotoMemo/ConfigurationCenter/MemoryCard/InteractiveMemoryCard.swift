@@ -9,6 +9,9 @@ struct InteractiveMemoryCard: View {
     @State
     private var isRenamingMemoryPreset = false
 
+    @State
+    private var isModuleLibraryExpanded = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -363,48 +366,97 @@ struct InteractiveMemoryCard: View {
     private var configurationComponentDock: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
-                dockSection(
-                    title: "可插入模块",
-                    systemImage: "tag.fill"
-                ) {
-                    LazyVGrid(
-                        columns: [
-                            GridItem(
-                                .adaptive(minimum: 112),
-                                spacing: 7
-                            )
-                        ],
-                        alignment: .leading,
-                        spacing: 7
+                VStack(alignment: .leading, spacing: 12) {
+                    dockSection(
+                        title: "写入记忆",
+                        systemImage: "text.badge.checkmark"
                     ) {
-                        ForEach(CenterInsertableModule.allCases) { module in
+                        memoryWritePanel
+                    }
+
+                    dockSection(
+                        title: "可插入模块",
+                        systemImage: "tag.fill"
+                    ) {
+                        HStack(spacing: 8) {
+                            Text("常用模块优先显示")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            Spacer(minLength: 0)
+
                             Button {
-                                session.appendPreviewModule(
-                                    title: module.title,
-                                    value: module.previewValue
-                                )
+                                withAnimation(.easeInOut(duration: 0.16)) {
+                                    isModuleLibraryExpanded.toggle()
+                                }
                             } label: {
-                                centerModuleChip(module)
+                                Label(
+                                    isModuleLibraryExpanded ? "收起" : "展开",
+                                    systemImage:
+                                        isModuleLibraryExpanded
+                                        ? "chevron.up"
+                                        : "chevron.down"
+                                )
+                                .labelStyle(.titleAndIcon)
                             }
-                            .buttonStyle(.plain)
-                            .help("插入到当前选中的\(selectedRegion.semanticTitle)区域")
+                            .buttonStyle(.borderless)
+                            .font(.caption.weight(.semibold))
                         }
+
+                        LazyVGrid(
+                            columns: [
+                                GridItem(
+                                    .adaptive(minimum: 112),
+                                    spacing: 7
+                                )
+                            ],
+                            alignment: .leading,
+                            spacing: 7
+                        ) {
+                            ForEach(visibleInsertableModules) { module in
+                                Button {
+                                    session.appendPreviewModule(
+                                        title: module.title,
+                                        value: module.previewValue,
+                                        systemImage: module.systemImage,
+                                        token: module.token
+                                    )
+                                } label: {
+                                    centerModuleChip(module)
+                                }
+                                .buttonStyle(.plain)
+                                .help("插入到当前选中的\(selectedRegion.semanticTitle)区域")
+                            }
+                        }
+
+                        Text("照片信息模块包含常见 Apple 设备 EXIF 项；后续会根据用户使用频率自动靠前。")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(alignment: .leading, spacing: 12) {
                     dockSection(
-                        title: "当前输出",
+                        title: "当前配置展示",
                         systemImage: "checkmark.seal"
                     ) {
-                        Text(session.currentOutputPreview)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.primary)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.78)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(10)
-                            .configurationPanelChrome()
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(session.currentOutputPreview)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.primary)
+                                .lineLimit(3)
+                                .minimumScaleFactor(0.78)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Text("展示当前选中区域与当前记忆预设下的实时配置结果。")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(10)
+                        .configurationPanelChrome()
                     }
 
                     dockSection(
@@ -483,12 +535,30 @@ struct InteractiveMemoryCard: View {
     }
 
     private var outputSelection: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .top, spacing: 7) {
+                Image(systemName: "photo")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 14)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("输出结果")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    Text(session.selectedOutputOption.title)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.primary.opacity(0.84))
+                }
+            }
+
             Picker(
-                "输出选择",
-                selection: outputOptionBinding
+                "存放地点",
+                selection: storageOptionBinding
             ) {
-                ForEach(ConfigurationOutputOption.allCases) { option in
+                ForEach(ConfigurationStorageOption.allCases) { option in
                     Text(option.title)
                         .tag(option)
                 }
@@ -498,7 +568,25 @@ struct InteractiveMemoryCard: View {
             .controlSize(.small)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(session.selectedOutputOption.note)
+            HStack(alignment: .top, spacing: 7) {
+                Image(systemName: "folder")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 14)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("图片存放地点")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    Text(session.selectedStorageOption.title)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.primary.opacity(0.84))
+                }
+            }
+
+            Text(session.selectedStorageOption.note)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -537,6 +625,66 @@ struct InteractiveMemoryCard: View {
                 )
             }
         }
+    }
+
+    private var memoryWritePanel: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text("保存处理过的图片时，将这段文字写入相册说明，便于在 Apple Photos 中搜索和回看。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Toggle(
+                "自定义写入内容",
+                isOn: memoryWriteToggleBinding
+            )
+            .toggleStyle(.checkbox)
+            .font(.caption.weight(.semibold))
+
+            if session.usesCustomMemoryWriteText {
+                TextField(
+                    "输入要写入图库的记忆说明",
+                    text: memoryWriteTextBinding,
+                    axis: .vertical
+                )
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .lineLimit(1...3)
+                .configurationFieldChrome(isActive: true)
+                .transition(
+                    .opacity
+                        .combined(with: .move(edge: .top))
+                )
+            }
+
+            HStack(alignment: .top, spacing: 7) {
+                Image(systemName: "text.magnifyingglass")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 14)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("实际写入")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    Text(session.resolvedMemoryWriteText)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.primary.opacity(0.82))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(9)
+            .configurationPanelChrome()
+        }
+        .padding(10)
+        .configurationPanelChrome()
+        .animation(
+            .easeInOut(duration: 0.16),
+            value: session.usesCustomMemoryWriteText
+        )
     }
 
     private func guideCard(
@@ -609,17 +757,49 @@ struct InteractiveMemoryCard: View {
         session.state.selectedRegion
     }
 
+    private var visibleInsertableModules: [CenterInsertableModule] {
+        let modules = CenterInsertableModule.allCases
+
+        if isModuleLibraryExpanded {
+            return modules
+        }
+
+        return Array(modules.prefix(8))
+    }
+
     private var hoveredRegion: CardRegion? {
         session.state.hoveredRegion
     }
 
-    private var outputOptionBinding: Binding<ConfigurationOutputOption> {
+    private var storageOptionBinding: Binding<ConfigurationStorageOption> {
         Binding(
             get: {
-                session.selectedOutputOption
+                session.selectedStorageOption
             },
             set: {
-                session.selectedOutputOption = $0
+                session.selectedStorageOption = $0
+            }
+        )
+    }
+
+    private var memoryWriteToggleBinding: Binding<Bool> {
+        Binding(
+            get: {
+                session.usesCustomMemoryWriteText
+            },
+            set: {
+                session.usesCustomMemoryWriteText = $0
+            }
+        )
+    }
+
+    private var memoryWriteTextBinding: Binding<String> {
+        Binding(
+            get: {
+                session.customMemoryWriteText
+            },
+            set: {
+                session.customMemoryWriteText = $0
             }
         )
     }
@@ -693,9 +873,24 @@ private enum CenterInsertableModule:
     case subjectNickname
     case smartTime
     case captureDate
+    case captureTime
+    case cameraMaker
     case cameraModel
+    case lensModel
+    case focalLength
+    case aperture
+    case shutterSpeed
+    case iso
+    case exposureBias
+    case meteringMode
+    case flash
+    case whiteBalance
     case captureSummary
     case location
+    case altitude
+    case imageSize
+    case orientation
+    case fileFormat
 
     var id: String {
         rawValue
@@ -709,12 +904,42 @@ private enum CenterInsertableModule:
             return "智能时间"
         case .captureDate:
             return "拍摄日期"
+        case .captureTime:
+            return "拍摄时间"
+        case .cameraMaker:
+            return "设备厂商"
         case .cameraModel:
             return "设备型号"
+        case .lensModel:
+            return "镜头型号"
+        case .focalLength:
+            return "焦距"
+        case .aperture:
+            return "光圈"
+        case .shutterSpeed:
+            return "快门"
+        case .iso:
+            return "ISO"
+        case .exposureBias:
+            return "曝光补偿"
+        case .meteringMode:
+            return "测光模式"
+        case .flash:
+            return "闪光灯"
+        case .whiteBalance:
+            return "白平衡"
         case .captureSummary:
             return "参数概要"
         case .location:
             return "位置"
+        case .altitude:
+            return "海拔"
+        case .imageSize:
+            return "图片尺寸"
+        case .orientation:
+            return "方向"
+        case .fileFormat:
+            return "文件格式"
         }
     }
 
@@ -726,12 +951,42 @@ private enum CenterInsertableModule:
             return "11个月28天"
         case .captureDate:
             return "2026.05.24"
+        case .captureTime:
+            return "14:33:13"
+        case .cameraMaker:
+            return "Apple"
         case .cameraModel:
             return "iPhone 17 Pro Max"
+        case .lensModel:
+            return "iPhone Wide Camera"
+        case .focalLength:
+            return "20mm"
+        case .aperture:
+            return "f/1.9"
+        case .shutterSpeed:
+            return "1/117s"
+        case .iso:
+            return "ISO80"
+        case .exposureBias:
+            return "0 EV"
+        case .meteringMode:
+            return "Pattern"
+        case .flash:
+            return "未开启"
+        case .whiteBalance:
+            return "自动"
         case .captureSummary:
             return "20mm f/1.9 1/117s ISO80"
         case .location:
             return "河南 · 商丘"
+        case .altitude:
+            return "42m"
+        case .imageSize:
+            return "4032 × 3024"
+        case .orientation:
+            return "横向"
+        case .fileFormat:
+            return "HEIC"
         }
     }
 
@@ -743,12 +998,89 @@ private enum CenterInsertableModule:
             return "sparkles"
         case .captureDate:
             return "calendar"
+        case .captureTime:
+            return "clock"
+        case .cameraMaker:
+            return "apple.logo"
         case .cameraModel:
             return "camera.fill"
+        case .lensModel:
+            return "camera.macro"
+        case .focalLength:
+            return "scope"
+        case .aperture:
+            return "camera.aperture"
+        case .shutterSpeed:
+            return "timer"
+        case .iso:
+            return "dial.low"
+        case .exposureBias:
+            return "plusminus"
+        case .meteringMode:
+            return "camera.metering.center.weighted"
+        case .flash:
+            return "bolt.fill"
+        case .whiteBalance:
+            return "sun.max"
         case .captureSummary:
             return "camera.metering.center.weighted"
         case .location:
             return "location.fill"
+        case .altitude:
+            return "mountain.2.fill"
+        case .imageSize:
+            return "rectangle.inset.filled"
+        case .orientation:
+            return "rectangle.rotate"
+        case .fileFormat:
+            return "doc.fill"
+        }
+    }
+
+    var token: String {
+        switch self {
+        case .subjectNickname:
+            return "{{subject_nickname}}"
+        case .smartTime:
+            return "{{smart_time_result}}"
+        case .captureDate:
+            return "{{capture_date}}"
+        case .captureTime:
+            return "{{capture_time}}"
+        case .cameraMaker:
+            return "{{camera_make}}"
+        case .cameraModel:
+            return "{{camera_model}}"
+        case .lensModel:
+            return "{{lens_model}}"
+        case .focalLength:
+            return "{{focal_length}}"
+        case .aperture:
+            return "{{aperture}}"
+        case .shutterSpeed:
+            return "{{shutter_speed}}"
+        case .iso:
+            return "{{iso}}"
+        case .exposureBias:
+            return "{{exposure_bias}}"
+        case .meteringMode:
+            return "{{metering_mode}}"
+        case .flash:
+            return "{{flash}}"
+        case .whiteBalance:
+            return "{{white_balance}}"
+        case .captureSummary:
+            return "{{capture_parameters_summary}}"
+        case .location:
+            return "{{location}}"
+        case .altitude:
+            return "{{altitude}}"
+        case .imageSize:
+            return "{{image_size}}"
+        case .orientation:
+            return "{{orientation}}"
+        case .fileFormat:
+            return "{{file_format}}"
         }
     }
 }
