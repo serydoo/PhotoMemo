@@ -8,25 +8,27 @@ struct InspectorView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 28) {
                 inspectorHeader
 
                 Divider()
 
                 inspectorContent
             }
-            .padding(20)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.white)
+        .background(Color.gray.opacity(0.03))
     }
 
     private var inspectorHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(session.state.selectedRegion.displayTitle)
-                .font(.title3.weight(.semibold))
+        VStack(alignment: .leading, spacing: 5) {
+            Text("Object Inspector")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.primary)
 
-            Text(session.state.selectedRegion.semanticTitle)
+            Text("\(session.state.selectedRegion.displayTitle) · \(session.state.selectedRegion.semanticTitle)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

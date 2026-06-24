@@ -49,6 +49,16 @@ PhotoMemo only owns the memory capability that helps a meaningful photo reveal i
 
 PhotoMemo is a Configuration Center, not a daily workbench.
 
+The Configuration Center is the Memory Engine Configuration Center.
+
+Configuration Once.
+
+Benefit Forever.
+
+Configuration Center edits Objects, not Data.
+
+Everything starts from the Memory Card.
+
 The Configuration Center is responsible for long-term setup:
 
 - Memory Profile
@@ -58,6 +68,14 @@ The Configuration Center is responsible for long-term setup:
 - Album
 - Automation
 - Advanced settings
+
+Its frozen architecture is:
+
+```text
+Library
+-> Interactive Memory Card
+-> Object Inspector
+```
 
 Daily use should begin and end in Apple Photos.
 

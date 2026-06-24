@@ -38,8 +38,137 @@ The highest-priority entry documents are:
 - `Research/README.md`
 - `Docs/REPOSITORY_VOCABULARY.md`
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
 
 Memory Engine is now a first-class architecture module. Renderer is no longer allowed to be the source of layout truth. Future layout work must be researched, specified, measured, and owned by a Layout Engine before renderer implementation.
+
+## 2026-06-24 IA-002C UI Polish Foundation
+
+This slice responds to the first visible PhotoMemo V3 review.
+
+Scope stayed limited to Configuration Center mock UI polish.
+
+No Renderer, Metadata, Export, Share Extension intake logic, Photo Library behavior, Memory Engine runtime behavior, or `PersonalProfile` adapter was changed.
+
+What changed:
+
+- reworked `InteractiveMemoryCard` from a six-region grid into a true Bottom Card composition
+- kept all Memory Card interaction routed through `CardRegion`
+- made the Memory Card hierarchy favor:
+  - Icon
+  - Slot D
+  - Slot A
+  - Slot B
+  - Slot C
+- changed the center card from dashboard-like blocks toward a final-card preview surface
+- upgraded the sidebar into Library with grouped sections:
+  - People
+  - Travel
+  - New Subject
+- added `InspectorSectionView` and `InspectorPropertyRow` as first Configuration UI design-system primitives
+- changed Object Inspector spacing and heading hierarchy
+- changed Memory Subject editing into Overview and Behavior sections
+- changed Memory Expression editing into section-based Inspector UI
+- changed Apple Tokens from bordered buttons toward inline token chips
+- updated Token Library chips to use SF Symbol-backed capsule styling
+- changed mock decoration symbols toward consistent SF Symbols:
+  - `person.fill`
+  - `camera.fill`
+  - `location.fill`
+  - `flag.fill`
+  - `apple.logo`
+
+Verification:
+
+- passed macOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS simulator build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed Share Extension build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoShareExtensionDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Manual verification note:
+
+- direct app execution from `/tmp/PhotoMemoDerivedData` launched, but Computer Use continued resolving the `PhotoMemo` app name to an older registered bundle path
+- LaunchServices inspection should be cleaned up before relying on Computer Use screenshots for PhotoMemo
+
+## 2026-06-24 Repository Amendment: Configuration Center Architecture Revision A
+
+This slice is a repository amendment, not a development instruction.
+
+No runtime code was changed.
+
+No Swift, SwiftUI, Renderer, Metadata, Export, Share Extension, Photo Library, Memory Engine runtime, or adapter implementation work was introduced.
+
+What changed:
+
+- added `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+- froze Configuration Center as the Memory Engine Configuration Center
+- froze:
+
+```text
+Configuration Center edits Objects, not Data.
+```
+
+- froze:
+
+```text
+Everything starts from the Memory Card.
+```
+
+- froze the Configuration Center layout:
+
+```text
+Library
+-> Interactive Memory Card
+-> Object Inspector
+```
+
+- froze Library as Memory Object Library
+- froze Interactive Memory Card as the primary object
+- froze Object Inspector as the selected-object inspection surface
+- froze `CardRegion` as `subject`, `icon`, `badge`, `slotA`, `slotB`, `slotC`, `slotD`
+- froze `InspectorProvider` routing
+- froze `MemorySubject -> Identity + MemoryBehavior`
+- froze `MemoryExpression -> MemoryTextBlock + MemoryTokenBlock`
+- froze `TokenCategory` as Memory / Photo / System
+- froze `DecorationAsset` as the unified Icon / Badge / future Decoration abstraction
+- froze lightweight `ConfigurationSession`
+- froze Capture-Time Principle
+- established PhotoMemo Design System as a required future Configuration UI foundation
+- updated:
+  - `PROJECT_CONSTITUTION.md`
+  - `Docs/MASTER_PLAN.md`
+  - `README.md`
+  - `AI_CONTEXT.md`
+  - `AGENTS.md`
+  - `Docs/PDR/PDR_INDEX.md`
+  - `Docs/FROZEN_REGISTRY.md`
+  - `Docs/DESIGN_DECISIONS.md`
+  - `Docs/Configuration/CONFIGURATION_MODEL.md`
+  - `Docs/REPOSITORY_VOCABULARY.md`
+  - `Docs/NEVER_BREAK.md`
+  - `Docs/DOCUMENT_INDEX.md`
+
+Next sprint is now:
+
+```text
+IA-002C Object Inspector
+```
+
+IA-002C should still use mock data and must not connect Renderer, Metadata, Export, Memory Engine runtime, or PersonalProfile Adapter.
+
+After Object Inspector stabilizes, the following sprint should be:
+
+```text
+IA-002D MemorySubject Adapter
+```
+
+Verification:
+
+- repository amendment reviewed against current source-of-truth documents
+- `git diff --check` passed
+- no build was run because this slice is documentation-only
 
 ## 2026-06-24 Sprint IA-002B Interactive Memory Card
 

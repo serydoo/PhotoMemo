@@ -1,6 +1,6 @@
 # Never Break
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## Status
 
@@ -23,3 +23,6 @@ Any development and any review must check Never Break first.
 - Back To Photos
 - Memory First
 - Apple Trust
+- Configuration Center edits Objects, not Data
+- Everything starts from the Memory Card
+- Capture-Time Principle

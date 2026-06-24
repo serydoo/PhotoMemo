@@ -39,6 +39,14 @@ RSR-001 Repository Simplification Review
 
 This is not runtime development.
 
+The latest repository amendment is:
+
+```text
+PDR-004 Configuration Center Architecture
+```
+
+PDR-004 freezes the Configuration Center as object-centered architecture.
+
 ## Mission
 
 PhotoMemo is not a photo watermark application.
@@ -100,6 +108,8 @@ Layout Engine becomes the center.
 - Memory Engine calculates where that photo belongs inside a person's life.
 - PhotoMemo should not change how users manage photos.
 - PhotoMemo should change how users understand photos.
+- Configuration Center edits Objects, not Data.
+- Everything starts from the Memory Card.
 - Apple Photos remains the trusted photo-management system.
 - Pictures are temporary.
 - Knowledge is permanent.
@@ -216,6 +226,20 @@ The Configuration Center owns long-term configuration only:
 - Album
 - Automation
 - Advanced
+
+The Configuration Center is the Memory Engine Configuration Center.
+
+Its frozen architecture is:
+
+```text
+Library
+-> Interactive Memory Card
+-> Object Inspector
+```
+
+The Configuration Center edits Objects, not Data.
+
+Everything starts from the Memory Card.
 
 ## Repository Audit Phase
 

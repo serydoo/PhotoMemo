@@ -13,6 +13,7 @@ Read these before all other project documents:
 - `PROJECT_DIRECTION.md` - current product direction and version sequence
 - `Docs/MASTER_PLAN.md` - single V2 project entry
 - `Docs/Interaction/IA-001_Interaction_Architecture.md` - frozen interaction architecture
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - frozen Configuration Center object architecture
 - `Docs/REPOSITORY_VOCABULARY.md` - RSR-001 repository language rules
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - RSR-001 simplification audit and remaining recommendations
 - `PROJECT_RESET.md` - permanent memory for why V2 exists
@@ -36,6 +37,7 @@ Read these first at the start of a new session:
 - `AGENTS.md` - repository rules for agent sessions
 - `Docs/CURRENT_STATUS.md` - current state, latest slices, and next steps
 - `Docs/FROZEN_REGISTRY.md` - current frozen architecture and interaction registry
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - Configuration Center Architecture Revision A
 - `Docs/REPOSITORY_VOCABULARY.md` - current repository vocabulary
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - latest repository simplification report
 - `Docs/DEVELOPMENT_PLAN.md` - phase-level development plan
@@ -56,6 +58,7 @@ Use these when deciding what to build next:
 - `Docs/Guidelines/PRODUCT_PERSONALITY.md` - product personality
 - `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md` - Apple-native product guidelines
 - `Docs/Configuration/CONFIGURATION_MODEL.md` - configuration layer model
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - object-centered Configuration Center architecture
 - `Docs/Product/ANTI_GOALS.md` - explicit anti-goals
 - `Docs/REPOSITORY_VOCABULARY.md` - allowed and forbidden product vocabulary
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - simplification decisions and next cleanup targets
@@ -70,6 +73,7 @@ Use these when changing boundaries, ownership, or shared flows:
 - `Docs/ARCHITECTURE.md` - architecture overview
 - `Docs/PDR/PDR_INDEX.md` - product design review index
 - `Docs/PDR/PDR-003_Interaction_Architecture.md` - interaction architecture PDR
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - Configuration Center architecture PDR
 - `Docs/Behavior/BEHAVIOR_SPECIFICATION.md` - frozen behavior and data rules
 - `Docs/DESIGN_DECISIONS.md` - current design decision registry
 - `Docs/PROJECT_STRUCTURE.md` - current source tree map

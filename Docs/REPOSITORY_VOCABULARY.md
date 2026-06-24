@@ -38,15 +38,27 @@ Use these terms in current source-of-truth documents:
 
 - Configuration Center
 - Configuration Session
+- Library
+- Memory Object Library
+- Interactive Memory Card
+- Object Inspector
 - Memory Workflow
+- Memory Subject
+- Memory Card
 - Preset
 - Time Anchor
 - Life Anchor
 - Behavior
+- MemoryBehavior
+- CardRegion
+- InspectorProvider
+- TokenCategory
+- DecorationAsset
 - Apple Native
 - Apple Photos Lifecycle
 - Configuration Preview
 - Configuration Snapshot
+- PhotoMemo Design System
 
 ## Forbidden User-Workflow Terms
 
@@ -62,6 +74,7 @@ Do not use these as user-facing product concepts or daily workflow language:
 - Workspace Workflow
 - Workspace State
 - Import Flow
+- Logo, when used as an independent configuration object
 
 Historical documents may still contain these words when they describe past implementation work. New active documents should avoid them unless they are explicitly discussing stale terminology.
 
@@ -76,6 +89,9 @@ Use these replacements in active repository language:
 | Template, when describing user configuration | Preset |
 | Preview, when describing user calibration | Configuration Preview |
 | Open App -> Import -> Configure -> Export | Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos |
+| Sidebar, when describing Configuration Center architecture | Library |
+| Inspector, when describing selected configuration objects | Object Inspector |
+| Logo, when describing configurable decoration objects | DecorationAsset |
 
 Renderer-internal `Template` remains allowed because the current implementation model still uses `Template` as an internal content model.
 
@@ -100,6 +116,11 @@ It is not:
 - a dashboard
 - a task center
 - a temporary session surface
+- a generic Settings page
+
+The Configuration Center edits Objects, not Data.
+
+Everything starts from the Memory Card.
 
 ## Apple Photos Lifecycle
 

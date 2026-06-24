@@ -1,6 +1,6 @@
 # Configuration Model
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## Status
 
@@ -14,9 +14,51 @@ PhotoMemo's foreground product surface is permanently the Configuration Center.
 
 It owns long-term setup.
 
+It is the Memory Engine Configuration Center.
+
 It is not the normal daily workflow entry.
 
 It is not a workspace, dashboard, task center, or temporary session surface.
+
+It is not a generic Settings page.
+
+Its responsibility is to define long-term objects.
+
+```text
+Configuration Once.
+Benefit Forever.
+```
+
+## Object Editing Principle
+
+The Configuration Center edits Objects, not Data.
+
+Users are not primarily editing isolated strings, dates, or configuration fields.
+
+Users are editing durable objects:
+
+- Memory Subject
+- Memory Card
+- Decoration
+- Preset
+
+All data is only an object's properties.
+
+## Configuration Center Layout
+
+The Configuration Center uses:
+
+```text
+Library
+-> Interactive Memory Card
+-> Object Inspector
+```
+
+The Library owns long-term Memory Object selection.
+
+The Interactive Memory Card is the primary object.
+
+The Object Inspector shows and edits the currently selected object.
 
 ## Configuration Layer
 

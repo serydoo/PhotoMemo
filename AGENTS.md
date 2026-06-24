@@ -82,6 +82,10 @@ Always preserve these rules:
 - Keep Memory Engine as the owner of Life Position calculations
 - Keep Layout Engine as the only future source of layout truth
 - The main UI is a Configuration Center, not a future batch workbench
+- The Configuration Center is the Memory Engine Configuration Center
+- Configuration Center edits Objects, not Data
+- Everything starts from the Memory Card
+- The Configuration Center architecture is `Library -> Interactive Memory Card -> Object Inspector`
 - Do not expand feature surface faster than the real Apple Photos -> Share -> Processing -> Notification -> Apple Photos lifecycle can support
 - Configuration Preview fidelity must stay tied to the real renderer/exporter
 - User-facing configuration language should say Preset, not Template; the internal renderer/template model may keep `Template`
@@ -95,6 +99,9 @@ Allowed user-facing repository terms:
 
 - Configuration Center
 - Configuration Session
+- Library
+- Interactive Memory Card
+- Object Inspector
 - Memory Workflow
 - Preset
 - Time Anchor

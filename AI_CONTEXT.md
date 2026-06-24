@@ -51,6 +51,33 @@ Primary references:
 - `Docs/NEVER_BREAK.md`
 - `Docs/FROZEN_REGISTRY.md`
 
+## PDR-004 Frozen State
+
+PDR-004 is now frozen at the repository-architecture level.
+
+Primary reference:
+
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+
+Frozen principles:
+
+- Configuration Center is the Memory Engine Configuration Center
+- Configuration Center edits Objects, not Data
+- Everything starts from the Memory Card
+- Configuration Center layout is `Library -> Interactive Memory Card -> Object Inspector`
+- Library is the Memory Object Library
+- Memory Card is the primary object
+- Object Inspector replaces generic editor language
+- `CardRegion -> InspectorProvider -> Object Inspector`
+- `CardRegion` is frozen as `subject`, `icon`, `badge`, `slotA`, `slotB`, `slotC`, `slotD`
+- `MemorySubject -> Identity + MemoryBehavior`
+- `MemoryExpression -> MemoryTextBlock + MemoryTokenBlock`
+- `TokenCategory` is Memory / Photo / System
+- `DecorationAsset` unifies Icon, Badge, and future Decoration
+- ConfigurationSession remains lightweight
+- Memory Tokens use capture time, not export time
+- IA-002C Object Inspector comes before IA-002D MemorySubject Adapter
+
 ## PM-003 Frozen State
 
 PM-003 is now in:
@@ -124,6 +151,9 @@ PhotoMemo is a Memory Capability inside Apple Photos workflows.
 ## Current Product Shape
 
 - The foreground app is the Configuration Center for Memory Profile, Life Anchor, Preset, Output, Album, Automation, and Advanced settings
+- The Configuration Center edits Objects, not Data
+- Everything starts from the Memory Card
+- The Configuration Center architecture is `Library -> Interactive Memory Card -> Object Inspector`
 - The Configuration Center is not the daily workflow surface
 - The main UI should keep one Configuration Preview image as the calibration surface
 - The primary entry path is Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos

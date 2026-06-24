@@ -7,79 +7,112 @@ struct ExpressionEditor: View {
     var session: ConfigurationSession
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            expressionBlocks
+        VStack(alignment: .leading, spacing: 30) {
+            InspectorSectionView(
+                "Memory Expression",
+                systemImage: "text.quote"
+            ) {
+                expressionPreview
+            }
 
-            TokenPicker(session: session)
+            InspectorSectionView(
+                "Properties",
+                systemImage: "slider.horizontal.3"
+            ) {
+                selectedBlockControls
+            }
+
+            InspectorSectionView(
+                "Token Library",
+                systemImage: "tag.fill"
+            ) {
+                TokenPicker(session: session)
+            }
         }
     }
 
-    private var expressionBlocks: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Apple Tokens")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
+    private var expressionPreview: some View {
+        HStack(spacing: 6) {
             ForEach(blocks) { block in
-                HStack(spacing: 8) {
-                    Button {
-                        session.selectBlock(block)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(
-                                systemName:
-                                    symbolName(for: block)
-                            )
-                            .frame(width: 18)
-
-                            Text(block.value)
-                                .frame(
-                                    maxWidth: .infinity,
-                                    alignment: .leading
-                                )
-                        }
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        session.moveBlock(block, direction: -1)
-                    } label: {
-                        Image(systemName: "chevron.up")
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(blocks.first?.id == block.id)
-
-                    Button {
-                        session.moveBlock(block, direction: 1)
-                    } label: {
-                        Image(systemName: "chevron.down")
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(blocks.last?.id == block.id)
-
-                    Button(role: .destructive) {
-                        session.removeBlock(block)
-                    } label: {
-                        Image(systemName: "trash")
-                    }
-                    .buttonStyle(.borderless)
+                Button {
+                    session.selectBlock(block)
+                } label: {
+                    AppleTokenView(
+                        block: block,
+                        isSelected:
+                            block.id
+                            == session.state.selectedBlockID
+                    )
                 }
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(
-                            block.id == session.state.selectedBlockID
-                            ? Color.accentColor.opacity(0.10)
-                            : Color.gray.opacity(0.06)
-                        )
-                )
+                .buttonStyle(.plain)
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var selectedBlockControls: some View {
+        if let block = selectedBlock {
+            HStack(spacing: 10) {
+                Label(
+                    block.title,
+                    systemImage: symbolName(for: block)
+                )
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.primary)
+
+                Spacer(minLength: 0)
+
+                Button {
+                    session.moveBlock(block, direction: -1)
+                } label: {
+                    Image(systemName: "chevron.up")
+                }
+                .buttonStyle(.borderless)
+                .disabled(blocks.first?.id == block.id)
+                .help("Move Up")
+
+                Button {
+                    session.moveBlock(block, direction: 1)
+                } label: {
+                    Image(systemName: "chevron.down")
+                }
+                .buttonStyle(.borderless)
+                .disabled(blocks.last?.id == block.id)
+                .help("Move Down")
+
+                Button(role: .destructive) {
+                    session.removeBlock(block)
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .help("Remove")
+            }
+            .padding(.vertical, 4)
+        } else {
+            Text("Select a token in the expression.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 
     private var blocks: [MemoryBlock] {
         session.state.selectedSubject?
             .behavior.memoryExpression.blocks ?? []
+    }
+
+    private var selectedBlock: MemoryBlock? {
+        guard let selectedBlockID =
+                session.state.selectedBlockID
+        else {
+            return nil
+        }
+
+        return blocks.first {
+            $0.id == selectedBlockID
+        }
     }
 
     private func symbolName(
@@ -89,11 +122,65 @@ struct ExpressionEditor: View {
         case .text:
             return "textformat"
         case .memory:
-            return "heart.text.square"
+            return "person.fill"
         case .photo:
-            return "camera"
+            return "camera.fill"
         case .system:
-            return "lock"
+            return "lock.fill"
+        }
+    }
+}
+
+struct AppleTokenView: View {
+
+    let block: MemoryBlock
+    let isSelected: Bool
+
+    var body: some View {
+        Text(block.value)
+            .font(font)
+            .foregroundStyle(foregroundStyle)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .background(background)
+            .overlay(selectionStroke)
+    }
+
+    private var font: Font {
+        block.type == .text
+        ? .subheadline
+        : .caption.weight(.semibold)
+    }
+
+    private var foregroundStyle: Color {
+        block.type == .text
+        ? Color.primary
+        : Color.accentColor
+    }
+
+    private var horizontalPadding: CGFloat {
+        block.type == .text ? 0 : 9
+    }
+
+    private var verticalPadding: CGFloat {
+        block.type == .text ? 0 : 5
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if block.type == .text {
+            Color.clear
+        } else {
+            Capsule()
+                .fill(Color.accentColor.opacity(0.10))
+        }
+    }
+
+    @ViewBuilder
+    private var selectionStroke: some View {
+        if isSelected, block.type != .text {
+            Capsule()
+                .stroke(Color.accentColor.opacity(0.55))
         }
     }
 }

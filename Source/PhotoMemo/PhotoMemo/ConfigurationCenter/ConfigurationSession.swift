@@ -174,15 +174,15 @@ extension ConfigurationCenterState {
         let icon =
             DecorationAsset(
                 kind: .icon,
-                title: "Heart",
-                systemSymbolName: "heart.fill"
+                title: "Person",
+                systemSymbolName: "person.fill"
             )
 
         let badge =
             DecorationAsset(
                 kind: .badge,
-                title: "Milestone",
-                systemSymbolName: "seal.fill"
+                title: "Camera",
+                systemSymbolName: "camera.fill"
             )
 
         let subject =
@@ -266,8 +266,8 @@ extension ConfigurationCenterState {
                 decorations: [
                     DecorationAsset(
                         kind: .icon,
-                        title: "Map",
-                        systemSymbolName: "map.fill"
+                        title: "Location",
+                        systemSymbolName: "location.fill"
                     )
                 ]
             )
@@ -278,14 +278,14 @@ extension ConfigurationCenterState {
             DecorationAsset(
                 kind: .icon,
                 strategy: .fixed,
-                title: "Star",
-                systemSymbolName: "star.fill"
+                title: "Flag",
+                systemSymbolName: "flag.fill"
             ),
             DecorationAsset(
                 kind: .badge,
                 strategy: .autoMatch,
-                title: "Ribbon",
-                systemSymbolName: "rosette"
+                title: "Apple",
+                systemSymbolName: "apple.logo"
             ),
             DecorationAsset(
                 kind: .future,

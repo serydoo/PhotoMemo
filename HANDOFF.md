@@ -5,6 +5,149 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-24 IA-002C UI Polish Foundation
+
+- 本轮回应第一次 PhotoMemo V3 可视化 review。
+- 仍然是 mock-only Configuration Center UI polish。
+- 严格没有接入：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension intake
+  - Photo Library
+  - Memory Engine runtime
+  - `PersonalProfile` adapter
+- 中间 Memory Card 已从六宫格改为真实 Bottom Card 构图。
+- 所有 Memory Card 点击仍然通过 `CardRegion`。
+- 当前视觉层级开始转向：
+  - Icon
+  - Slot D
+  - Slot A
+  - Slot B
+  - Slot C
+- 左侧 Sidebar 已升级为 Library 分组：
+  - People
+  - Travel
+  - New Subject
+- 新增 Configuration UI design-system primitives：
+  - `InspectorSectionView`
+  - `InspectorPropertyRow`
+- Object Inspector 改为更清晰的 section 节奏和更大的 section 间距。
+- Memory Subject Inspector 改为：
+  - Overview
+  - Behavior
+- Memory Expression Inspector 改为：
+  - Memory Expression
+  - Properties
+  - Token Library
+- Token 从 bordered button 转向 inline Apple Token / capsule token。
+- Mock decoration symbols 已统一为更 Apple 的 SF Symbols：
+  - `person.fill`
+  - `camera.fill`
+  - `location.fill`
+  - `flag.fill`
+  - `apple.logo`
+- 验证已通过：
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+- 手动查看注意：
+  - `/tmp/PhotoMemoDerivedData` 的新构建可以直接运行
+  - 但 Computer Use 仍把 `PhotoMemo` app 名称解析到旧 bundle 路径
+  - 后续如果要稳定截图，应先清理旧 DerivedData / LaunchServices 缓存或用唯一 bundle id 运行
+
+## 2026-06-24 Repository Amendment: Configuration Center Architecture Revision A
+
+- 本轮是 Repository Amendment，不是开发指令。
+- 严格没有修改：
+  - Swift
+  - SwiftUI
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension
+  - Photo Library
+  - Memory Engine runtime
+  - adapter implementation
+- 新增：
+  - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+- PDR-004 冻结：
+
+```text
+Configuration Center edits Objects, not Data.
+```
+
+```text
+Everything starts from the Memory Card.
+```
+
+```text
+Library
+-> Interactive Memory Card
+-> Object Inspector
+```
+
+- Configuration Center 正式定义为：
+  - Memory Engine Configuration Center
+  - 长期对象定义中心
+  - 不是 Settings
+  - 不是 Workspace
+- Library 正式定义为：
+  - Memory Object Library
+- Interactive Memory Card 正式定义为：
+  - Primary Object
+  - Preview + Navigation + Selection
+  - 不显示照片、示例图、背景图、Renderer Preview
+- Object Inspector 正式替代 generic Editor 语言。
+- Object Inspector 统一结构：
+  - Overview
+  - Properties
+  - Behavior
+  - Resources
+  - Preview
+- `CardRegion` 冻结：
+  - `subject`
+  - `icon`
+  - `badge`
+  - `slotA`
+  - `slotB`
+  - `slotC`
+  - `slotD`
+- `CardRegion -> InspectorProvider -> Object Inspector` 成为正式路由。
+- `MemorySubject -> Identity + MemoryBehavior` 成为正式模型边界。
+- `MemoryExpression -> MemoryTextBlock + MemoryTokenBlock` 成为正式表达结构。
+- `TokenCategory` 冻结为：
+  - Memory
+  - Photo
+  - System
+- `DecorationAsset` 统一 Icon / Badge / Future Decoration。
+- `Logo` 不再作为独立配置对象。
+- `ConfigurationSession` 保持轻量，只负责 Selection / Hover / Editing / Future Undo / Future Redo。
+- Capture-Time Principle 冻结：
+  - Memory Token 基于 Photo Capture Date + Reference Date
+  - 重新导出不得改变 Memory Expression
+- PhotoMemo Design System 正式进入 Repository 事实层。
+- 同步更新：
+  - `PROJECT_CONSTITUTION.md`
+  - `Docs/MASTER_PLAN.md`
+  - `README.md`
+  - `AI_CONTEXT.md`
+  - `AGENTS.md`
+  - `Docs/PDR/PDR_INDEX.md`
+  - `Docs/FROZEN_REGISTRY.md`
+  - `Docs/DESIGN_DECISIONS.md`
+  - `Docs/Configuration/CONFIGURATION_MODEL.md`
+  - `Docs/REPOSITORY_VOCABULARY.md`
+  - `Docs/NEVER_BREAK.md`
+  - `Docs/DOCUMENT_INDEX.md`
+  - `Docs/CURRENT_STATUS.md`
+- 下一轮顺序已修订：
+  1. IA-002C Object Inspector
+  2. IA-002D MemorySubject Adapter
+- 验证：
+  - `git diff --check` 通过
+  - 未运行 build，因为本轮是 documentation-only repository amendment
+
 ## 2026-06-24 Sprint IA-002B Interactive Memory Card
 
 - 本轮继续 IA-002 Configuration Center UI Architecture。
@@ -86,10 +229,11 @@ MemorySubject
 
 下一轮建议：
 
-1. 进入 IA-002C `MemorySubject Adapter`
-2. 只做 `PersonalProfile -> MemorySubject` 适配层
-3. 不要直接替换真实 pipeline
-4. 保持 Renderer / Metadata / Export 不动
+1. 进入 IA-002C `Object Inspector`
+2. 建立 Object Inspector Design System
+3. 继续使用 Mock Data
+4. 不接入 Renderer / Metadata / Export / Memory Engine Runtime / PersonalProfile Adapter
+5. 等 Object Inspector 稳定后，再进入 IA-002D `MemorySubject Adapter`
 
 ## 2026-06-24 Sprint IA-002A Configuration Center Skeleton
 

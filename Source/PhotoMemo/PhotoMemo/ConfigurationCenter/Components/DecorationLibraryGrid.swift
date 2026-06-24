@@ -15,7 +15,7 @@ struct DecorationLibraryGrid: View {
 
             LazyVGrid(
                 columns: [
-                    GridItem(.adaptive(minimum: 96), spacing: 10)
+                    GridItem(.adaptive(minimum: 92), spacing: 10)
                 ],
                 spacing: 10
             ) {
@@ -27,8 +27,9 @@ struct DecorationLibraryGrid: View {
                             Image(
                                 systemName:
                                     decoration.systemSymbolName
-                            )
-                            .font(.title2.weight(.semibold))
+	                            )
+	                            .font(.title2.weight(.semibold))
+                                .symbolRenderingMode(.hierarchical)
 
                             Text(decoration.title)
                                 .font(.caption.weight(.medium))
@@ -39,14 +40,23 @@ struct DecorationLibraryGrid: View {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
-                        .frame(
-                            maxWidth: .infinity,
-                            minHeight: 86
+	                        .frame(
+	                            maxWidth: .infinity,
+	                            minHeight: 82
+	                        )
+	                    }
+	                    .buttonStyle(.plain)
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.gray.opacity(0.06))
                         )
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.black.opacity(0.06))
+                        )
+	                }
+	            }
         }
     }
 }

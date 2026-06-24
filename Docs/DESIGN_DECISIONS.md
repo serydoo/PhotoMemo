@@ -1,6 +1,6 @@
 # Design Decisions
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## Decision 1
 
@@ -465,6 +465,132 @@ The repository needs one stable mission statement that explains why the product 
 Impact:
 
 Future product work should reinforce memory reading rather than drift toward generic photo storage or management.
+
+Status:
+
+Frozen
+
+## Decision 27
+
+Decision:
+
+The Configuration Center edits Objects, not Data.
+
+Reason:
+
+PhotoMemo users should understand the foreground app as a place for shaping durable memory objects, not as a form for changing isolated strings, dates, or configuration fields.
+
+Impact:
+
+Future Configuration Center work must treat strings, dates, tokens, presets, and decorations as properties of objects such as Memory Subject, Memory Card, Decoration, and Preset.
+
+Status:
+
+Frozen
+
+## Decision 28
+
+Decision:
+
+Everything starts from the Memory Card.
+
+Reason:
+
+The Memory Card is the primary object of the Configuration Center and should unify preview, navigation, and selection.
+
+Impact:
+
+Future Configuration Center interaction should begin from Memory Card regions rather than separate form-first or settings-first panels.
+
+Status:
+
+Frozen
+
+## Decision 29
+
+Decision:
+
+The Configuration Center uses `Library -> Interactive Memory Card -> Object Inspector`.
+
+Reason:
+
+The three-column structure makes object selection, primary object interaction, and object inspection explicit.
+
+Impact:
+
+Future UI work must not restore top-bottom layout, Workspace layout, dashboard layout, or task-center layout.
+
+Status:
+
+Frozen
+
+## Decision 30
+
+Decision:
+
+Object Inspector replaces generic editor language for Configuration Center object inspection.
+
+Reason:
+
+PhotoMemo needs one consistent object-inspection model for Memory Subject, Memory Card, Decoration, Preset, and future objects.
+
+Impact:
+
+Inspector layouts should follow a consistent structure: Overview, Properties, Behavior, Resources, and Preview.
+
+Status:
+
+Frozen
+
+## Decision 31
+
+Decision:
+
+Configuration Center routing should flow from `CardRegion` to `InspectorProvider` to Object Inspector.
+
+Reason:
+
+String matching and growing region switches make future interaction architecture brittle.
+
+Impact:
+
+Future card hover, selection, Inspector routing, and accessibility must be based on `CardRegion`.
+
+Status:
+
+Frozen
+
+## Decision 32
+
+Decision:
+
+Memory Tokens use capture time, not export time.
+
+Reason:
+
+PhotoMemo records the moment when a photo was captured, not when a generated output was exported.
+
+Impact:
+
+Re-exporting a photo must not change the Memory Expression when the Photo Capture Date and Reference Date are unchanged.
+
+Status:
+
+Frozen
+
+## Decision 33
+
+Decision:
+
+PhotoMemo must establish and reuse a Configuration UI Design System.
+
+Reason:
+
+Memory Card, Object Inspector, Library, Apple Token, Section, Property, Button, and Empty State should behave consistently across the Configuration Center.
+
+Impact:
+
+Future Configuration UI should reuse shared design-system components rather than repeatedly implementing isolated page-specific patterns.
 
 Status:
 

@@ -1,6 +1,6 @@
 # Frozen Registry
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## PM-003
 
@@ -100,3 +100,37 @@ Frozen areas:
 - Behavior State Machine
 - Configuration Snapshot
 - Batch Scale Language
+
+## PDR-004
+
+Status:
+
+```text
+Frozen
+```
+
+Primary source:
+
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+
+Frozen areas:
+
+- Configuration Center as Memory Engine Configuration Center
+- Configuration Once, Benefit Forever
+- Configuration Center edits Objects, not Data
+- Everything starts from the Memory Card
+- NavigationSplitView layout
+- Library as Memory Object Library
+- Interactive Memory Card as Primary Object
+- CardRegion frozen set
+- Object Inspector
+- InspectorProvider routing
+- Empty Inspector state
+- MemorySubject Identity and MemoryBehavior separation
+- MemoryTextBlock and MemoryTokenBlock
+- TokenCategory
+- DecorationAsset
+- lightweight ConfigurationSession
+- Capture-Time Principle
+- PhotoMemo Design System
+- IA-002C Object Inspector before IA-002D MemorySubject Adapter

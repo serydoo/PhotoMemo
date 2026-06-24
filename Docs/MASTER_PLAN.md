@@ -28,6 +28,12 @@ The current repository synchronization slice is:
 IA-001 Interaction Architecture
 ```
 
+The latest frozen repository amendment is:
+
+```text
+PDR-004 Configuration Center Architecture
+```
+
 ## Current Priority
 
 Build the V2.1 documentation and architecture foundation:
@@ -167,6 +173,36 @@ Primary: 1-20
 Secondary: 20-50
 Advanced: 50+
 ```
+
+### PDR-004: Configuration Center Architecture
+
+Status: frozen.
+
+Scope:
+
+- define Configuration Center as the Memory Engine Configuration Center
+- freeze the object editing principle:
+
+```text
+Configuration Center edits Objects, not Data.
+```
+
+- freeze the central interaction principle:
+
+```text
+Everything starts from the Memory Card.
+```
+
+- freeze the Configuration Center layout:
+
+```text
+Library
+-> Interactive Memory Card
+-> Object Inspector
+```
+
+- freeze `CardRegion`, `InspectorProvider`, `TokenCategory`, `DecorationAsset`, `MemoryBehavior`, and Capture-Time Principle at the repository architecture level
+- establish IA-002C Object Inspector before IA-002D MemorySubject Adapter
 
 ### V2.2: Layout Specification
 
@@ -350,6 +386,7 @@ Current source-of-truth docs from V1 that remain useful:
 - `Docs/RENDER_SPEC.md`
 - `Docs/ClassicWhiteVisualQA.md`
 - `Docs/MemoryEngine.md`
+- `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
 - `Docs/MainWorkflowConsolidation.md`
 - `Docs/ARCHITECTURE.md`
 - `Docs/ADR/INDEX.md`
