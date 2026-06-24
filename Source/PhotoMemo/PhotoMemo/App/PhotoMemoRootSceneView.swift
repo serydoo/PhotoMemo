@@ -5,36 +5,12 @@ struct PhotoMemoRootSceneView: View {
     @Environment(\.scenePhase)
     private var scenePhase
 
-    @StateObject
-    private var personalProfileStore =
-        PersonalProfileStore()
-
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
     var body: some View {
 
-        Group {
-            if personalProfileStore.requiresFirstRun {
-                FirstRunWizardView(
-                    initialProfile:
-                        personalProfileStore.profile
-                ) { profile in
-                    personalProfileStore
-                        .completeFirstRun(
-                            with: profile
-                        )
-                }
-            } else {
-                MainView()
-                    .environmentObject(
-                        personalProfileStore
-                    )
-                    .environmentObject(
-                        runtime.batchQueueStore
-                    )
-            }
-        }
+        ConfigurationCenterView()
             .preferredColorScheme(.light)
             .onOpenURL { url in
                 if let deepLink =

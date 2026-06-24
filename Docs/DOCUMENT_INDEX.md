@@ -1,6 +1,6 @@
 # PhotoMemo Document Index
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 This index explains which project documents should be treated as current working references, which documents are topic-specific, and which documents are mostly historical notes.
 
@@ -13,6 +13,8 @@ Read these before all other project documents:
 - `PROJECT_DIRECTION.md` - current product direction and version sequence
 - `Docs/MASTER_PLAN.md` - single V2 project entry
 - `Docs/Interaction/IA-001_Interaction_Architecture.md` - frozen interaction architecture
+- `Docs/REPOSITORY_VOCABULARY.md` - RSR-001 repository language rules
+- `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - RSR-001 simplification audit and remaining recommendations
 - `PROJECT_RESET.md` - permanent memory for why V2 exists
 - `RepositoryAudit.md` - repository audit and reset assessment
 - `Research/README.md` - research workflow and dataset policy
@@ -34,6 +36,8 @@ Read these first at the start of a new session:
 - `AGENTS.md` - repository rules for agent sessions
 - `Docs/CURRENT_STATUS.md` - current state, latest slices, and next steps
 - `Docs/FROZEN_REGISTRY.md` - current frozen architecture and interaction registry
+- `Docs/REPOSITORY_VOCABULARY.md` - current repository vocabulary
+- `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - latest repository simplification report
 - `Docs/DEVELOPMENT_PLAN.md` - phase-level development plan
 
 ## Current Product Direction
@@ -53,6 +57,8 @@ Use these when deciding what to build next:
 - `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md` - Apple-native product guidelines
 - `Docs/Configuration/CONFIGURATION_MODEL.md` - configuration layer model
 - `Docs/Product/ANTI_GOALS.md` - explicit anti-goals
+- `Docs/REPOSITORY_VOCABULARY.md` - allowed and forbidden product vocabulary
+- `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - simplification decisions and next cleanup targets
 - `Docs/NEVER_BREAK.md` - permanent review gate
 - `PROJECT_PHILOSOPHY.md` - Memory Presentation Engine philosophy
 - `PROJECT_DIRECTION.md` - current V2 direction

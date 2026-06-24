@@ -155,15 +155,29 @@ The renderer layer currently includes:
 
 ## Workflow Evaluation
 
-### Current State
-
-The current workflow is:
+### Previous State
 
 ```text
 Import -> Metadata -> Memory -> Renderer -> Export -> Share/Save
 ```
 
-V2 target workflow is:
+This old wording is now treated as historical implementation language, not product workflow language.
+
+### Current State
+
+The current product lifecycle is:
+
+```text
+Reading -> Share -> Processing -> Notification -> Reading
+```
+
+The daily workflow is:
+
+```text
+Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos
+```
+
+V2 target architecture is:
 
 ```text
 Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export
@@ -171,7 +185,7 @@ Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engin
 
 ### Strengths
 
-- Import, metadata, memory, render, export, save-back, batch queue, and share intake all exist.
+- Apple Photos/share intake, metadata, memory, render, export, save-back, batch queue, and notifications all exist.
 - The local-first and non-destructive rules are well preserved.
 - Batch configuration snapshots already point toward immutable processing context.
 

@@ -42,7 +42,7 @@ Frozen
 
 Decision:
 
-The Main App is a permanent Configuration Center.
+PhotoMemo's foreground product surface is a permanent Configuration Center.
 
 Reason:
 
@@ -50,7 +50,7 @@ Long-term configuration should be separated from daily photo use.
 
 Impact:
 
-The Main App is not the primary daily entry point.
+The Configuration Center is not the primary daily entry point.
 
 Status:
 
@@ -60,7 +60,7 @@ Frozen
 
 Decision:
 
-The primary entry path is `Apple Photos -> Share -> PhotoMemo -> Memory Workflow -> Done`.
+The primary entry path is `Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos`.
 
 Reason:
 
@@ -122,7 +122,7 @@ PhotoMemo should support the photo flow rather than hijack it.
 
 Impact:
 
-Completion surfaces should avoid turning the Main App into the final destination.
+Completion surfaces should avoid turning the Configuration Center into the final destination.
 
 Status:
 

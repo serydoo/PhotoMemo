@@ -14,7 +14,6 @@ The default behavior flow is:
 
 ```text
 Idle
--> Share
 -> Preparing
 -> Processing
 -> Completed
@@ -32,7 +31,7 @@ Preparing
 Recovery includes:
 
 ```text
-Interrupt
+Interrupted
 -> Auto Recovery
 -> Continue
 ```

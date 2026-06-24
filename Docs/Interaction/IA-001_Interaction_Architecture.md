@@ -45,9 +45,9 @@ PhotoMemo should not change how users manage photos.
 
 PhotoMemo should change how users understand photos.
 
-## Main App Role
+## Configuration Center Role
 
-The Main App is permanently:
+PhotoMemo's foreground product surface is permanently:
 
 ```text
 Configuration Center
@@ -65,11 +65,22 @@ The frozen primary path is:
 Apple Photos
 -> Share
 -> PhotoMemo
--> Memory Workflow
--> Done
+-> Processing
+-> Notification
+-> Apple Photos
 ```
 
 This is the product-primary experience.
+
+## Apple Photos Lifecycle
+
+```text
+Reading
+-> Share
+-> Processing
+-> Notification
+-> Reading
+```
 
 ## Zero Interaction Principle
 
@@ -116,7 +127,7 @@ All deep decisions belong to configuration time, not sharing time.
 
 That means:
 
-- long-term setup belongs to the Main App
+- long-term setup belongs to the Configuration Center
 - daily use belongs to Apple Photos share flow
 - happy-path sharing should avoid reconfiguration
 
@@ -155,6 +166,16 @@ PhotoMemo should instead use:
 ```text
 Smart Batch Recommendation
 ```
+
+Batch scale language:
+
+```text
+Primary: 1-20
+Secondary: 20-50
+Advanced: 50+
+```
+
+PhotoMemo is better suited to processing a passage of memory worth returning to than to defining itself around large anonymous runs.
 
 The system should recommend the best experience based on:
 

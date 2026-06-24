@@ -51,8 +51,9 @@ Frozen areas:
 
 - Product Position
 - North Star
-- Main App = Configuration Center
+- Configuration Center
 - Primary Entry Principle
+- Apple Photos Lifecycle
 - Zero Interaction Principle
 - Quiet Computing Principle
 - Back To Photos Principle
@@ -75,3 +76,27 @@ Frozen areas:
 - Anti Goals
 - Never Break List
 - PDR Index
+
+## RSR-001
+
+Status:
+
+```text
+Frozen
+```
+
+Primary sources:
+
+- `Docs/REPOSITORY_VOCABULARY.md`
+- `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
+
+Frozen areas:
+
+- Repository Simplification Principle
+- Configuration Center vocabulary
+- Preset user-layer vocabulary
+- Configuration Preview vocabulary
+- Apple Photos Lifecycle
+- Behavior State Machine
+- Configuration Snapshot
+- Batch Scale Language

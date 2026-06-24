@@ -1,10 +1,10 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## Current Stage
 
-PhotoMemo is now in V2.1 Memory Engine documentation synchronization.
+PhotoMemo is now in V2.1 Memory Engine documentation synchronization and RSR-001 Repository Simplification.
 
 Feature development is paused. Renderer polishing is paused. UI expansion is paused.
 
@@ -13,7 +13,7 @@ PM-003 Phase 1 is frozen.
 The current repository slice is:
 
 ```text
-IA-001 Interaction Architecture
+RSR-001 Repository Simplification Review
 ```
 
 The current target is a local-first Memory Presentation Engine:
@@ -36,8 +36,191 @@ The highest-priority entry documents are:
 - `PROJECT_RESET.md`
 - `RepositoryAudit.md`
 - `Research/README.md`
+- `Docs/REPOSITORY_VOCABULARY.md`
+- `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
 
 Memory Engine is now a first-class architecture module. Renderer is no longer allowed to be the source of layout truth. Future layout work must be researched, specified, measured, and owned by a Layout Engine before renderer implementation.
+
+## 2026-06-24 Sprint IA-002B Interactive Memory Card
+
+This slice continues Configuration Center UI architecture only.
+
+Scope stayed limited to mock Configuration Center state and SwiftUI interaction architecture.
+
+No Renderer, Metadata, Export, Share Extension intake logic, Photo Library behavior, Memory Engine runtime behavior, or `PersonalProfile` adapter was changed.
+
+What changed:
+
+- made `CardRegion` the frozen interaction coordinate for:
+  - `subject`
+  - `icon`
+  - `badge`
+  - `slotA`
+  - `slotB`
+  - `slotC`
+  - `slotD`
+- added `CardRegionBehavior` so card interaction now flows through:
+
+```text
+CardRegion
+-> CardRegionBehavior
+-> CardSelection
+-> InspectorProvider
+```
+
+- expanded `CardSelection` to carry selected and hovered regions
+- added accessibility identifiers and labels for card regions
+- replaced the core `InspectorView` region switch with `InspectorProvider`
+- added Inspector transition animation for region changes
+- made `InteractiveMemoryCard` regions clickable, hoverable, selected, lightly highlighted, and accessibility-addressable
+- split memory expression blocks into:
+  - `MemoryTextBlock`
+  - `MemoryTokenBlock`
+  - `MemoryBlock`
+- added `TokenCategory` for Memory / Photo / System token grouping
+- updated `TokenLibrary` and `TokenPicker` to use `TokenCategory`
+- added `MemoryBehavior`
+- moved Memory Subject behavior fields under `MemorySubject.behavior`:
+  - Primary Anchor
+  - Icon Strategy
+  - Badge Strategy
+  - Memory Expression
+
+IA-002B decisions reflected in code:
+
+- Everything in Configuration Center starts from the Memory Card.
+- The Memory Card is now the central navigation object, not a static preview.
+- Future card region hover, selection, Inspector routing, and accessibility should use `CardRegion`.
+- `ConfigurationSession` remains lightweight and only owns selection, hover, and mock expression/decorations editing.
+- Identity and behavior are separated in `MemorySubject`.
+
+Verification:
+
+- passed macOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS simulator build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed Share Extension build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoShareExtensionDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed:
+  - `git diff --check`
+
+Not yet manually verified:
+
+- running app click-through of every Memory Card region
+- visual hover behavior on a physical pointer device
+- VoiceOver traversal of the new region accessibility labels
+
+## 2026-06-24 Sprint IA-002A Configuration Center Skeleton
+
+This slice starts PhotoMemo V3 Configuration Center UI development.
+
+Scope stayed limited to architecture skeleton and mock data.
+
+No Renderer, Metadata, Export, Share Extension intake logic, or Memory Engine runtime behavior was changed.
+
+What changed:
+
+- added a new `ConfigurationCenter/` SwiftUI surface with `Sidebar`, `MemoryCard`, `Inspector`, `Editors`, `Components`, and `Models`
+- added skeleton domain types:
+  - `MemorySubject`
+  - `MemoryBlock`
+  - `MemoryBlockType`
+  - `MemoryBlockLibrary`
+  - `MemoryExpression`
+  - `TokenLibrary`
+  - `DecorationAsset`
+  - `DecorationKind`
+  - `ConfigurationSnapshot`
+  - `CaptureTimeResolver`
+  - `CardRegion`
+  - `CardSelection`
+  - `InteractiveMemoryCardSelection`
+- added `ConfigurationSession` and `ConfigurationCenterState` with mock data only
+- added a three-column `NavigationSplitView`:
+  - left: `MemorySubjectListView`
+  - center: `InteractiveMemoryCard`
+  - right: `InspectorView`
+- added skeleton editors:
+  - `MemorySubjectEditorView`
+  - `ExpressionEditor`
+  - `TokenPicker`
+  - `IconLibraryView`
+  - `BadgeLibraryView`
+- changed `PhotoMemoRootSceneView` so the main window now opens directly into `ConfigurationCenterView`
+
+IA-002A decisions reflected in code:
+
+- Configuration Center is an object editor, not a form editor
+- Interactive Memory Card is configuration navigation, not photo preview
+- Memory Expression is composed from text plus Apple-style `MemoryBlock` tokens
+- Token Library is grouped by Memory, Photo, and System
+- Decoration is unified under `DecorationAsset`
+- Capture-time calculation is represented by a dedicated `CaptureTimeResolver` skeleton and must not use current export time
+
+Verification:
+
+- passed macOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS simulator build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed Share Extension build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoShareExtensionDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Not yet manually verified:
+
+- visual interaction in a running app window
+- keyboard navigation through all Inspector controls
+- real connection to Memory Engine, Renderer, Metadata, Export, or Share Extension
+
+## 2026-06-24 RSR-001 Repository Simplification Review
+
+This slice is repository documentation simplification only.
+
+No runtime code was changed.
+
+No Swift, SwiftUI, Renderer, Engine, Metadata, Export, Database, Xcode project, or pipeline files were modified.
+
+What changed:
+
+- rewrote `README.md` into a simpler repository entry centered on Mission, Configuration Center, Apple Photos Lifecycle, Behavior State Machine, Configuration Snapshot, batch scale, and V2 architecture
+- added `Docs/REPOSITORY_VOCABULARY.md`
+- added `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
+- updated `PROJECT_CONSTITUTION.md` so the active slice is RSR-001 and Repository Simplification is a first-class rule
+- updated `Docs/MASTER_PLAN.md` so Repository Simplification Review replaces the old Repository Refactor step for this phase
+- updated `AI_CONTEXT.md` and `AGENTS.md` with the new vocabulary rules
+- updated IA-001, Behavior, Configuration, Design Decisions, Frozen Registry, RepositoryAudit, and Document Index to use the Apple Photos Lifecycle and Configuration Center language
+
+Frozen RSR-001 language:
+
+- Configuration Center
+- Preset
+- Configuration Preview
+- Apple Photos Lifecycle
+- Behavior State Machine
+- Configuration Snapshot
+- Primary / Secondary / Advanced batch scale
+
+Daily workflow is now:
+
+```text
+Apple Photos
+-> Share
+-> PhotoMemo
+-> Processing
+-> Notification
+-> Apple Photos
+```
+
+Design review principle:
+
+```text
+Every review should leave the repository simpler than before.
+```
+
+```text
+每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+```
 
 ## 2026-06-23 IA-001A Interaction Architecture Completion
 

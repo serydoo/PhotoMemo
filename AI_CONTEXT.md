@@ -109,9 +109,9 @@ It is not:
 
 It is:
 
-- a template calibration center
-- a metadata and memory overlay tool
-- a background photo-processing pipeline that writes finished images back to the system photo library
+- a Configuration Center for long-term memory setup
+- a metadata and memory presentation system
+- a background photo-processing capability that writes finished images back to the system photo library
 
 PhotoMemo is not an EXIF viewer.
 
@@ -123,26 +123,46 @@ PhotoMemo is a Memory Capability inside Apple Photos workflows.
 
 ## Current Product Shape
 
-- The foreground app is mainly for configuring templates, anchors, badges, album destination, and description-writing rules
-- The Main App is permanently a Configuration Center
-- The main UI should keep one preview image as the calibration surface
-- The primary entry path is Apple Photos -> Share -> PhotoMemo -> Memory Workflow -> Done
+- The foreground app is the Configuration Center for Memory Profile, Life Anchor, Preset, Output, Album, Automation, and Advanced settings
+- The Configuration Center is not the daily workflow surface
+- The main UI should keep one Configuration Preview image as the calibration surface
+- The primary entry path is Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos
 - Real day-to-day usage should move toward external intake such as open-with, share, or similar background entry points
 - The app should generate a new image and preserve original photo usability in the library as much as the platform allows
 - PM-003 freezes semantic content ownership before any future UI or layout implementation
-- PhotoMemo should return users back to Photos instead of pulling them into the Main App
+- PhotoMemo should return users back to Photos instead of pulling them into the Configuration Center
 - Apple Photos and PhotoMemo now have an explicit product-boundary split
 
-## Core User Flow
+## Core Lifecycle
 
-1. Configure template
-2. Configure anchor
-3. Import one preview photo
-4. Generate real preview context from EXIF and anchor rules
-5. Save configuration
-6. Later send photos into PhotoMemo from outside the app
-7. Process in background
-8. Save finished images into the system library and target album
+Daily lifecycle:
+
+```text
+Reading
+-> Share
+-> Processing
+-> Notification
+-> Reading
+```
+
+Daily workflow:
+
+```text
+Apple Photos
+-> Share
+-> PhotoMemo
+-> Processing
+-> Notification
+-> Apple Photos
+```
+
+Configuration lifecycle:
+
+1. Maintain Memory Profile, Life Anchor, Preset, Output, Album, Automation, and Advanced settings in the Configuration Center.
+2. Use one Configuration Preview image to calibrate the current preset against real EXIF and anchor rules.
+3. Start daily processing from Apple Photos through Share.
+4. Process in background from a frozen Configuration Snapshot.
+5. Save finished images into the system library and target album.
 
 Default interaction posture:
 
@@ -157,7 +177,7 @@ Default interaction posture:
 
 - SwiftUI macOS app
 - Light-mode-first minimal system-style UI
-- Template editor supports four custom regions
+- Preset configuration supports four custom regions through the internal template model
 - Smart time-anchor tokens are wired into real EXIF-based calculations
 - Background batch queue exists for external intake and photo-library output
 - Batch notifications now exist for queued and completed background jobs
@@ -167,9 +187,9 @@ Default interaction posture:
 ## Near-Term Priorities
 
 1. preserve Memory Engine and Time Anchor architecture boundaries
-2. keep the Main App as a Configuration Center rather than a daily workflow surface
+2. keep the Configuration Center separate from the daily Apple Photos lifecycle
 3. harden external intake and background processing
-4. ensure preview, render, export, and metadata retention stay aligned
+4. ensure Configuration Preview, render, export, and metadata retention stay aligned
 
 Current documentation priority inside V2.1:
 

@@ -81,11 +81,45 @@ Always preserve these rules:
 - Do not add layout constants directly inside renderers
 - Keep Memory Engine as the owner of Life Position calculations
 - Keep Layout Engine as the only future source of layout truth
-- The main UI is a template calibration center, not a future batch workbench
-- Do not expand feature surface faster than the real import-render-export pipeline can support
-- Preview fidelity must stay tied to the real renderer/exporter
+- The main UI is a Configuration Center, not a future batch workbench
+- Do not expand feature surface faster than the real Apple Photos -> Share -> Processing -> Notification -> Apple Photos lifecycle can support
+- Configuration Preview fidelity must stay tied to the real renderer/exporter
+- User-facing configuration language should say Preset, not Template; the internal renderer/template model may keep `Template`
+- Do not reintroduce Workspace, Dashboard, Task Center, Working Area, or Import Flow as user workflow concepts
 
-## Template And Anchor Rules
+## Repository Simplification Rules
+
+RSR-001 established that repository language should prefer simplification over expansion.
+
+Allowed user-facing repository terms:
+
+- Configuration Center
+- Configuration Session
+- Memory Workflow
+- Preset
+- Time Anchor
+- Life Anchor
+- Behavior
+- Apple Native
+
+Forbidden user-facing repository terms:
+
+- Workspace
+- Import
+- Dashboard
+- Task Center
+- Photo Manager
+- EXIF Tool
+
+Daily workflow must be described as:
+
+`Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos`
+
+Do not describe daily use as:
+
+`Open App -> Import -> Configure -> Export`
+
+## Preset And Anchor Rules
 
 - Smart anchor variables output **time results**, not full sentence copy
 - Users compose the final sentence by combining literal text with variables
@@ -123,7 +157,7 @@ When refactoring `MainView`, preserve these behaviors:
 
 - insertion must go into the explicitly selected custom region
 - do not restore the old implicit right-bottom insertion fallback
-- template switch / reset / rename must refresh composer editing state
+- preset switch / reset / rename must refresh composer editing state
 - do not break drag-sort and local editor-state synchronization
 
 ## Development Workflow

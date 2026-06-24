@@ -34,7 +34,7 @@ PM-003 Phase 1 is frozen.
 The current documentation slice is:
 
 ```text
-IA-001 Interaction Architecture
+RSR-001 Repository Simplification Review
 ```
 
 This is not runtime development.
@@ -156,7 +156,7 @@ Development remains paused.
 
 Renderer remains frozen.
 
-Current work is documentation synchronization for frozen product and interaction architecture.
+Current work is repository simplification for frozen product language, interaction architecture, and Apple Photos lifecycle alignment.
 
 Do not:
 
@@ -167,6 +167,55 @@ Do not:
 - migrate old documents before research specifications stabilize
 
 Focus on repository documentation, product definition, and architecture alignment.
+
+## Repository Simplification Principle
+
+PhotoMemo is now moving from Repository Refactor to Repository Simplification.
+
+Every review should leave the repository simpler than before.
+
+每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+
+Current repository-facing vocabulary must preserve:
+
+- Configuration Center
+- Configuration Session
+- Memory Workflow
+- Preset
+- Time Anchor
+- Life Anchor
+- Behavior
+- Apple Native
+
+Current repository-facing vocabulary must avoid user-workflow concepts such as:
+
+- Workspace
+- Import
+- Dashboard
+- Task Center
+- Photo Manager
+- EXIF Tool
+
+Daily workflow is:
+
+```text
+Apple Photos
+-> Share
+-> PhotoMemo
+-> Processing
+-> Notification
+-> Apple Photos
+```
+
+The Configuration Center owns long-term configuration only:
+
+- Memory Profile
+- Life Anchor
+- Preset
+- Output
+- Album
+- Automation
+- Advanced
 
 ## Repository Audit Phase
 

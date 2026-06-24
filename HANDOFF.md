@@ -5,6 +5,230 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-24 Sprint IA-002B Interactive Memory Card
+
+- 本轮继续 IA-002 Configuration Center UI Architecture。
+- 严格没有接入：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension intake
+  - Photo Library
+  - Memory Engine runtime
+  - `PersonalProfile` adapter
+- 本轮核心原则：
+
+```text
+Everything starts from the Memory Card.
+```
+
+- `CardRegion` 已正式作为交互坐标冻结：
+  - `subject`
+  - `icon`
+  - `badge`
+  - `slotA`
+  - `slotB`
+  - `slotC`
+  - `slotD`
+- 新增：
+  - `CardRegionBehavior`
+  - `InspectorProvider`
+  - `TokenCategory`
+  - `MemoryBehavior`
+- `CardSelection` 现在包含：
+  - selected region
+  - hovered region
+- `InteractiveMemoryCard` 现在支持：
+  - 点击 Subject / Icon / Badge / SlotA / SlotB / SlotC / SlotD
+  - 当前 region selection
+  - hover highlight
+  - 轻量 Apple-native animation
+  - region accessibility identifier / label
+- `InspectorView` 不再直接膨胀 `switch(region)`，改为：
+
+```text
+CardRegion
+-> CardRegionBehavior
+-> InspectorProvider
+-> Inspector View
+```
+
+- `MemoryBlock` 拆分为：
+  - `MemoryTextBlock`
+  - `MemoryTokenBlock`
+  - `MemoryBlock`
+- `TokenLibrary` 现在使用 `TokenCategory` 管理 Memory / Photo / System。
+- `MemorySubject` 不再直接持有 behavior 字段，改为：
+
+```text
+MemorySubject
+-> MemoryBehavior
+```
+
+- `MemoryBehavior` 当前包含：
+  - Primary Anchor
+  - Icon Strategy
+  - Badge Strategy
+  - Memory Expression
+
+验证已通过：
+
+- `PhotoMemo`
+- `PhotoMemoiOS`
+- `PhotoMemoShareExtension`
+- `git diff --check`
+
+未手动验证：
+
+- 运行中点击每个 Memory Card region 的真实视觉反馈
+- 指针设备 hover 体验
+- VoiceOver 读出顺序
+
+下一轮建议：
+
+1. 进入 IA-002C `MemorySubject Adapter`
+2. 只做 `PersonalProfile -> MemorySubject` 适配层
+3. 不要直接替换真实 pipeline
+4. 保持 Renderer / Metadata / Export 不动
+
+## 2026-06-24 Sprint IA-002A Configuration Center Skeleton
+
+- 本轮正式进入 V3 Configuration Center UI skeleton。
+- 严格没有接入：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension intake
+  - Memory Engine runtime behavior
+- 新增 `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/`，包含：
+  - `Sidebar`
+  - `MemoryCard`
+  - `Inspector`
+  - `Editors`
+  - `Components`
+  - `Models`
+- 新增 skeleton 类型：
+  - `MemorySubject`
+  - `MemoryBlock`
+  - `MemoryBlockType`
+  - `MemoryBlockLibrary`
+  - `MemoryExpression`
+  - `TokenLibrary`
+  - `DecorationAsset`
+  - `DecorationKind`
+  - `ConfigurationSnapshot`
+  - `CaptureTimeResolver`
+  - `CardRegion`
+  - `CardSelection`
+  - `InteractiveMemoryCardSelection`
+  - `ConfigurationCenterState`
+  - `ConfigurationSession`
+- 新增三栏 UI：
+  - 左侧 `MemorySubjectListView`
+  - 中间 `InteractiveMemoryCard`
+  - 右侧 `InspectorView`
+- 新增 Inspector skeleton：
+  - `MemorySubjectEditorView`
+  - `ExpressionEditor`
+  - `TokenPicker`
+  - `IconLibraryView`
+  - `BadgeLibraryView`
+- `PhotoMemoRootSceneView` 现在直接打开 `ConfigurationCenterView`。
+- 旧 `MainView`、真实导入/渲染/导出链路仍保留，未接入本轮 UI skeleton。
+- 验证已通过：
+  - `PhotoMemo`
+  - `PhotoMemoiOS`
+  - `PhotoMemoShareExtension`
+
+下一轮建议：
+
+1. 对 IA-002A 进行 Architecture Review，确认 `MemorySubject / DecorationAsset / MemoryBlock / TokenLibrary` 边界
+2. 再开始 IA-002B，把 mock `MemorySubject` 与旧 `PersonalProfile` 做 adapter，而不是直接替换真实业务
+3. 继续保持 Renderer / Metadata / Export 不动，直到 Configuration Experience 骨架冻结
+
+## 2026-06-24 RSR-001 Repository Simplification Review
+
+- 本轮严格保持文档切片，没有改：
+  - Swift
+  - SwiftUI
+  - Renderer
+  - Engine
+  - Metadata
+  - Export
+  - Database
+  - Xcode project
+  - Pipeline
+
+- 本轮目标从 Repository Refactor 切换为 Repository Simplification：
+  - 删除或降级不再符合 PhotoMemo Product Philosophy 的工作台、导入、仪表盘、任务中心、工作区、大批量优先叙事
+  - 把当前仓库语言统一到 Configuration Center / Preset / Configuration Preview / Apple Photos Lifecycle
+
+- 本轮新增：
+  - `Docs/REPOSITORY_VOCABULARY.md`
+  - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
+
+- 本轮重写：
+  - `README.md`
+    - 保留 Repository Mission：
+      - `PhotoMemo exists to help people read their memories, not just store their photos.`
+      - `PhotoMemo 存在的意义，不是帮助人们保存照片，而是帮助人们阅读回忆。`
+      - `Photos preserve moments. PhotoMemo reveals their meaning.`
+      - `照片记录瞬间。PhotoMemo 赋予意义。`
+    - 删除旧的 import-first 首页主链、旧路线图和旧 batch-first 暗示
+    - 新增 Apple Photos Lifecycle / Behavior State Machine / Configuration Snapshot / batch scale
+
+- 本轮同步：
+  - `PROJECT_CONSTITUTION.md`
+  - `Docs/MASTER_PLAN.md`
+  - `RepositoryAudit.md`
+  - `AI_CONTEXT.md`
+  - `AGENTS.md`
+  - `Docs/Interaction/IA-001_Interaction_Architecture.md`
+  - `Docs/Behavior/BEHAVIOR_SPECIFICATION.md`
+  - `Docs/Configuration/CONFIGURATION_MODEL.md`
+  - `Docs/DESIGN_DECISIONS.md`
+  - `Docs/FROZEN_REGISTRY.md`
+  - `Docs/DOCUMENT_INDEX.md`
+  - `Docs/CURRENT_STATUS.md`
+
+- RSR-001 冻结：
+  - Configuration Center
+  - Preset
+  - Configuration Preview
+  - Apple Photos Lifecycle
+  - Behavior State Machine
+  - Configuration Snapshot
+  - batch scale:
+    - Primary: 1-20
+    - Secondary: 20-50
+    - Advanced: 50+
+
+- 当前 Daily Workflow：
+
+```text
+Apple Photos
+-> Share
+-> PhotoMemo
+-> Processing
+-> Notification
+-> Apple Photos
+```
+
+- 当前 Design Review 结束语：
+
+```text
+Every review should leave the repository simpler than before.
+```
+
+```text
+每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+```
+
+- 后续建议：
+  1. 研究规格稳定后，再决定旧 Workspace 文档归档/改名/迁移
+  2. 不要马上改 Swift 中的 `Workspace*` / `Template` / `Preview` 标识，除非单独做 code-safe terminology refactor
+  3. 下一次 runtime 恢复后再审查用户可见字符串里的 template / preview / import
+
 ## 2026-06-23 IA-001A Behavior / Boundary / Mission 补齐
 
 - 本轮继续保持文档切片，没有改：

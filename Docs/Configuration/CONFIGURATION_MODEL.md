@@ -10,11 +10,13 @@ Frozen
 
 ## Configuration Center Principle
 
-The Main App is permanently the Configuration Center.
+PhotoMemo's foreground product surface is permanently the Configuration Center.
 
 It owns long-term setup.
 
 It is not the normal daily workflow entry.
+
+It is not a workspace, dashboard, task center, or temporary session surface.
 
 ## Configuration Layer
 
@@ -43,3 +45,19 @@ Optional deep controls that should never interrupt the normal happy path.
 ## Rule
 
 Any new configuration must clearly belong to one layer before it is added to the product.
+
+## Configuration Domains
+
+The Configuration Center only owns long-term configuration:
+
+- Memory Profile
+- Life Anchor
+- Preset
+- Output
+- Album
+- Automation
+- Advanced
+
+During processing, each task uses a frozen Configuration Snapshot.
+
+Any later edit in the Configuration Center affects the next task only.

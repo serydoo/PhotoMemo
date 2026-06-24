@@ -51,8 +51,8 @@ Any new feature must pass through these five steps:
 
 1. `PDR (Product Design Review)`
    Discuss and freeze the product decisions first.
-2. `Repository Refactor`
-   Synchronize product documents, constitution, philosophy, and design decisions.
+2. `Repository Simplification Review`
+   Remove stale concepts, synchronize vocabulary, and make the repository simpler before adding new decisions.
 3. `Architecture Review`
    Confirm the change does not break existing architecture or project principles.
 4. `Implementation`
@@ -134,11 +134,39 @@ Status: current documentation synchronization slice.
 
 Scope:
 
-- define the Main App as a permanent Configuration Center
-- freeze the Apple Photos -> Share -> PhotoMemo -> Memory Workflow -> Done path
+- define the Configuration Center as the long-term setup surface
+- freeze the Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos lifecycle
 - define Zero Interaction and Quiet Computing behavior
 - define progress language, product personality, and Apple-native interaction principles
 - define the boundary that PhotoMemo extends Apple Photos instead of replacing it
+
+### RSR-001: Repository Simplification Review
+
+Status: current documentation synchronization slice.
+
+Scope:
+
+- remove stale workbench, workspace, dashboard, task-center, and import-first language from current source-of-truth documents
+- standardize user-facing repository vocabulary around Configuration Center, Preset, Configuration Preview, Life Anchor, Time Anchor, Behavior, and Apple Native
+- keep internal renderer/template implementation terminology where it reflects current code ownership
+- establish Apple Photos Lifecycle as the daily workflow:
+
+```text
+Apple Photos
+-> Share
+-> PhotoMemo
+-> Processing
+-> Notification
+-> Apple Photos
+```
+
+- establish batch scale language:
+
+```text
+Primary: 1-20
+Secondary: 20-50
+Advanced: 50+
+```
 
 ### V2.2: Layout Specification
 
@@ -172,7 +200,7 @@ Scope:
 
 - rewrite renderers to draw Layout Engine output
 - remove renderer-owned layout calculations
-- preserve preview/export fidelity through measurable tests
+- preserve Configuration Preview/export fidelity through measurable tests
 
 ### V2.5: macOS Release
 
@@ -251,7 +279,7 @@ Scope:
 
 Current strengths:
 
-- The app already has a real local-first import -> metadata -> memory -> render -> export path.
+- The app already has a real local-first Apple Photos/share intake -> metadata -> memory -> render -> export path.
 - Metadata extraction and export preservation have real tests and docs.
 - MainView has already been reduced into a coordinator shell.
 - iOS and Share Extension groundwork exists.
@@ -297,7 +325,8 @@ The next implementation slice should be documentation and architecture only:
 2. Finish V2.1 Memory Engine architecture documentation.
 3. Synchronize IA-001 Interaction Architecture as frozen repository documentation.
 4. Identify old-document duplication and conflicts without moving files yet.
-5. Wait for reverse-engineering results before expanding V2.2 Layout Specification.
+5. Keep RSR-001 vocabulary and simplification rules synchronized across active source-of-truth docs.
+6. Wait for reverse-engineering results before expanding V2.2 Layout Specification.
 
 Do not migrate old documents, write renderer code, or adjust UI until the research specification is stable.
 
