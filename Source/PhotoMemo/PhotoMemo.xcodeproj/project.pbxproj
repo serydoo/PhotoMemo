@@ -4,23 +4,16 @@
 	classes = {
 	};
 	objectVersion = 110;
-		objects = {
+	objects = {
 
 /* Begin PBXBuildFile section */
 		F4A1B2203A9C410100A10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		F4A1B2303A9C410100A10001 /* PhotoMemoBackgroundLiveActivityPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2383A9C410100A10001 /* PhotoMemoBackgroundLiveActivityPayload.swift */; };
-		F4A1B2313A9C410100A10001 /* PhotoMemoLiveActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2393A9C410100A10001 /* PhotoMemoLiveActivityPresentation.swift */; };
+		F4A1B2303A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2383A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift */; };
+		F4A1B2313A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2393A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift */; };
 		F4A1B2323A9C410100A10001 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		F5B100013A9D000000A10001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = B3DBA4F32FE1581100945016;
-			remoteInfo = PhotoMemo;
-		};
 		F4A1B2213A9C410100A10001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
@@ -35,64 +28,93 @@
 			remoteGlobalIDString = F4A1B23E3A9C410100A10001;
 			remoteInfo = PhotoMemoWidgetExtension;
 		};
+		F5B100013A9D000000A10001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B3DBA4F32FE1581100945016;
+			remoteInfo = PhotoMemo;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		F4A1B2223A9C410100A10001 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 13;
+			dstSubfolder = PlugIns;
 			files = (
 				F4A1B2203A9C410100A10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */,
 				F4A1B2323A9C410100A10001 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		B3DBA4F42FE1581100945016 /* PhotoMemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoMemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2013A9C410100A10001 /* PhotoMemoiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemoiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhotoMemoShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhotoMemoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		F4A1B2383A9C410100A10001 /* PhotoMemoBackgroundLiveActivityPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift; sourceTree = SOURCE_ROOT; };
-		F4A1B2393A9C410100A10001 /* PhotoMemoLiveActivityPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift; sourceTree = SOURCE_ROOT; };
+		F4A1B2383A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift; sourceTree = SOURCE_ROOT; };
+		F4A1B2393A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift; sourceTree = SOURCE_ROOT; };
+		F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoMemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		F4A1B2443A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemo" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"iOS/App/LaunchScreen.storyboard",
-			);
-			target = B3DBA4F32FE1581100945016 /* PhotoMemo */;
-		};
 		F4A1B2113A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemoShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"App/PhotoMemoApp.swift",
-				"App/PhotoMemoAppDelegate.swift",
-				"App/ExternalPhotoIntakeCenter.swift",
-				"App/PhotoMemoRootSceneView.swift",
-				"App/PhotoMemoAppRuntime.swift",
-				"Engines/AnchorEngine.swift",
-				"Engines/BadgeLibrary.swift",
-				"Engines/CardTextBlockEngine.swift",
-				"Engines/TemplateEngine.swift",
-				"Engines/TemplatePresetEngine.swift",
-				"Engines/TemplateVariableEngine.swift",
+				App/ExternalPhotoIntakeCenter.swift,
+				App/PhotoMemoApp.swift,
+				App/PhotoMemoAppDelegate.swift,
+				App/PhotoMemoAppRuntime.swift,
+				App/PhotoMemoRootSceneView.swift,
+				Engines/AnchorEngine.swift,
+				Engines/BadgeLibrary.swift,
+				Engines/CardTextBlockEngine.swift,
+				Engines/TemplateEngine.swift,
+				Engines/TemplatePresetEngine.swift,
+				Engines/TemplateVariableEngine.swift,
 				"Extensions/Date+Anchor.swift",
 				"Extensions/Image+Resize.swift",
 				"Extensions/String+Template.swift",
-				"Views/Anchor/AnchorEditorView.swift",
-				"Views/Anchor/AnchorListView.swift",
-				"Views/Components/PillButton.swift",
-				"Views/Components/SectionHeader.swift",
-				"Views/Components/TemplateChip.swift",
-				"Views/Main/MainView.swift",
+				iOS/App/LaunchScreen.storyboard,
+				iOS/App/PhotoMemoiOSApp.swift,
+				iOS/Views/PhotoMemoiOSHomeView.swift,
+				Models/AnchorResult.swift,
+				Models/CardTextBlock.swift,
+				Models/CardVariableProvider.swift,
+				Models/CustomBadge.swift,
+				Models/MetadataContext.swift,
+				Models/PhotoMetadata.swift,
+				Models/RecordCard.swift,
+				Models/SelectedPhoto.swift,
+				Models/TemplateVariable.swift,
+				Models/TemplateVariableCategory.swift,
+				Models/TemplateVariableLibrary.swift,
+				Renderers/BadgeRenderer.swift,
+				Renderers/ClassicWhiteRenderer.swift,
+				Renderers/ImmersWhiteRenderer.swift,
+				Renderers/RecordCardRenderer.swift,
+				Services/AlbumExportService.swift,
+				Services/BadgeStorageService.swift,
+				Services/BatchNotificationService.swift,
+				Services/BatchProcessingCoordinator.swift,
+				Services/BatchQueueStore.swift,
+				Services/GeocoderService.swift,
+				Services/PermissionCenter.swift,
+				Services/PhotoImportService.swift,
+				Services/PhotoLibraryExportService.swift,
+				Services/PhotoMetadataReader.swift,
+				Services/RecordCardBuildService.swift,
+				Services/RecordCardExportService.swift,
+				Services/SettingsService.swift,
+				Views/Anchor/AnchorEditorView.swift,
+				Views/Anchor/AnchorListView.swift,
+				Views/Components/PillButton.swift,
+				Views/Components/SectionHeader.swift,
+				Views/Components/TemplateChip.swift,
+				Views/Main/MainView.swift,
 				"Views/Main/MainView+ComposerDisplayEngine.swift",
 				"Views/Main/MainView+ComposerEditor.swift",
 				"Views/Main/MainView+ComposerPanels.swift",
@@ -116,46 +138,22 @@
 				"Views/Main/MainView+UIPrimitives.swift",
 				"Views/Main/MainView+WorkspaceConfigurationState.swift",
 				"Views/Main/MainView+WorkspaceControls.swift",
-				"Views/Main/PhotoImporterView.swift",
-				"Views/Preview/CardPreviewView.swift",
-				"Views/Preview/InfoBarPreview.swift",
-				"Views/Preview/RecordCardPreview.swift",
-				"Views/Template/BadgePickerView.swift",
-				"Views/Template/TemplateEditorView.swift",
-				"Views/Template/TemplateVariablePickerView.swift",
-				"iOS/App/PhotoMemoiOSApp.swift",
-				"iOS/App/LaunchScreen.storyboard",
-				"iOS/Views/PhotoMemoiOSHomeView.swift",
-				"Models/AnchorResult.swift",
-				"Models/CardTextBlock.swift",
-				"Models/CardVariableProvider.swift",
-				"Models/CustomBadge.swift",
-				"Models/MetadataContext.swift",
-				"Models/PhotoMetadata.swift",
-				"Models/RecordCard.swift",
-				"Models/SelectedPhoto.swift",
-				"Models/TemplateVariable.swift",
-				"Models/TemplateVariableCategory.swift",
-				"Models/TemplateVariableLibrary.swift",
-				"Renderers/BadgeRenderer.swift",
-				"Renderers/ClassicWhiteRenderer.swift",
-				"Renderers/ImmersWhiteRenderer.swift",
-				"Renderers/RecordCardRenderer.swift",
-				"Services/AlbumExportService.swift",
-				"Services/BadgeStorageService.swift",
-				"Services/BatchNotificationService.swift",
-				"Services/BatchProcessingCoordinator.swift",
-				"Services/BatchQueueStore.swift",
-				"Services/GeocoderService.swift",
-				"Services/PermissionCenter.swift",
-				"Services/PhotoImportService.swift",
-				"Services/PhotoLibraryExportService.swift",
-				"Services/PhotoMetadataReader.swift",
-				"Services/RecordCardBuildService.swift",
-				"Services/RecordCardExportService.swift",
-				"Services/SettingsService.swift",
+				Views/Main/PhotoImporterView.swift,
+				Views/Preview/CardPreviewView.swift,
+				Views/Preview/InfoBarPreview.swift,
+				Views/Preview/RecordCardPreview.swift,
+				Views/Template/BadgePickerView.swift,
+				Views/Template/TemplateEditorView.swift,
+				Views/Template/TemplateVariablePickerView.swift,
 			);
 			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
+		};
+		F4A1B2443A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemo" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				iOS/App/LaunchScreen.storyboard,
+			);
+			target = B3DBA4F32FE1581100945016 /* PhotoMemo */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -169,25 +167,20 @@
 			path = PhotoMemo;
 			sourceTree = "<group>";
 		};
-		F5B100033A9D000000A10001 /* PhotoMemoTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "../../Tests/PhotoMemoTests";
-			sourceTree = "<group>";
-		};
 		F4A1B2373A9C410100A10001 /* PhotoMemoWidgetExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PhotoMemoWidgetExtension;
+			sourceTree = "<group>";
+		};
+		F5B100033A9D000000A10001 /* ../../Tests/PhotoMemoTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ../../Tests/PhotoMemoTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		B3DBA4F12FE1581100945016 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-			);
-		};
-		F5B100043A9D000000A10001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -207,16 +200,31 @@
 			files = (
 			);
 		};
+		F5B100043A9D000000A10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B39FE7622FECAF5200C88A23 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				F4A1B2383A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift */,
+				F4A1B2393A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		B3DBA4EB2FE1581100945016 = {
 			isa = PBXGroup;
 			children = (
 				B3DBA4F62FE1581100945016 /* PhotoMemo */,
-				F5B100033A9D000000A10001 /* PhotoMemoTests */,
+				F5B100033A9D000000A10001 /* ../../Tests/PhotoMemoTests */,
 				F4A1B2373A9C410100A10001 /* PhotoMemoWidgetExtension */,
 				B3DBA4F52FE1581100945016 /* Products */,
+				B39FE7622FECAF5200C88A23 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -252,27 +260,6 @@
 			productName = PhotoMemo;
 			productReference = B3DBA4F42FE1581100945016 /* PhotoMemo.app */;
 			productType = "com.apple.product-type.application";
-		};
-		F5B1000A3A9D000000A10001 /* PhotoMemoTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoTests" */;
-			buildPhases = (
-				F5B100053A9D000000A10001 /* Sources */,
-				F5B100043A9D000000A10001 /* Frameworks */,
-				F5B100063A9D000000A10001 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				F5B100093A9D000000A10001 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				F5B100033A9D000000A10001 /* PhotoMemoTests */,
-			);
-			name = PhotoMemoTests;
-			productName = PhotoMemoTests;
-			productReference = F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F4A1B2033A9C410100A10001 /* PhotoMemoiOS */ = {
 			isa = PBXNativeTarget;
@@ -333,6 +320,27 @@
 			productReference = F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		F5B1000A3A9D000000A10001 /* PhotoMemoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoTests" */;
+			buildPhases = (
+				F5B100053A9D000000A10001 /* Sources */,
+				F5B100043A9D000000A10001 /* Frameworks */,
+				F5B100063A9D000000A10001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F5B100093A9D000000A10001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F5B100033A9D000000A10001 /* ../../Tests/PhotoMemoTests */,
+			);
+			name = PhotoMemoTests;
+			productName = PhotoMemoTests;
+			productReference = F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -346,10 +354,6 @@
 					B3DBA4F32FE1581100945016 = {
 						CreatedOnToolsVersion = 27.0;
 					};
-					F5B1000A3A9D000000A10001 = {
-						CreatedOnToolsVersion = 27.0;
-						TestTargetID = B3DBA4F32FE1581100945016;
-					};
 					F4A1B2033A9C410100A10001 = {
 						CreatedOnToolsVersion = 27.0;
 					};
@@ -358,6 +362,10 @@
 					};
 					F4A1B23E3A9C410100A10001 = {
 						CreatedOnToolsVersion = 27.0;
+					};
+					F5B1000A3A9D000000A10001 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = B3DBA4F32FE1581100945016;
 					};
 				};
 			};
@@ -390,11 +398,6 @@
 			files = (
 			);
 		};
-		F5B100063A9D000000A10001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
 		F4A1B2053A9C410100A10001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
@@ -410,33 +413,15 @@
 			files = (
 			);
 		};
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		F5B100093A9D000000A10001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = B3DBA4F32FE1581100945016 /* PhotoMemo */;
-			targetProxy = F5B100013A9D000000A10001 /* PBXContainerItemProxy */;
-		};
-		F4A1B2233A9C410100A10001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
-			targetProxy = F4A1B2213A9C410100A10001 /* PBXContainerItemProxy */;
-		};
-		F4A1B2353A9C410100A10001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F4A1B23E3A9C410100A10001 /* PhotoMemoWidgetExtension */;
-			targetProxy = F4A1B2343A9C410100A10001 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
-/* Begin PBXSourcesBuildPhase section */
-		B3DBA4F02FE1581100945016 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
+		F5B100063A9D000000A10001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
 			files = (
 			);
 		};
-		F5B100053A9D000000A10001 /* Sources */ = {
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B3DBA4F02FE1581100945016 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
 			);
@@ -454,11 +439,34 @@
 		F4A1B23A3A9C410100A10001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				F4A1B2303A9C410100A10001 /* PhotoMemoBackgroundLiveActivityPayload.swift in Sources */,
-				F4A1B2313A9C410100A10001 /* PhotoMemoLiveActivityPresentation.swift in Sources */,
+				F4A1B2303A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift in Sources */,
+				F4A1B2313A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift in Sources */,
+			);
+		};
+		F5B100053A9D000000A10001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
 			);
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F4A1B2233A9C410100A10001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
+			targetProxy = F4A1B2213A9C410100A10001 /* PBXContainerItemProxy */;
+		};
+		F4A1B2353A9C410100A10001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F4A1B23E3A9C410100A10001 /* PhotoMemoWidgetExtension */;
+			targetProxy = F4A1B2343A9C410100A10001 /* PBXContainerItemProxy */;
+		};
+		F5B100093A9D000000A10001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B3DBA4F32FE1581100945016 /* PhotoMemo */;
+			targetProxy = F5B100013A9D000000A10001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		B3DBA4FD2FE1581300945016 /* Debug configuration for PBXProject "PhotoMemo" */ = {
@@ -651,6 +659,216 @@
 			};
 			name = Release;
 		};
+		F4A1B2063A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        photomemo\n    );\n}";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F4A1B2073A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        photomemo\n    );\n}";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F4A1B20E3A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoShareExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ShareExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_SHARE_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F4A1B20F3A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoShareExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ShareExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_SHARE_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		F4A1B2403A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "PhotoMemoWidgetExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_WIDGET_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F4A1B2413A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "PhotoMemoWidgetExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_WIDGET_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		F5B100073A9D000000A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -693,232 +911,6 @@
 			};
 			name = Release;
 		};
-		F4A1B2063A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleURLTypes = (
-					{
-						CFBundleTypeRole = Editor;
-						CFBundleURLName = com.serydoo.PhotoMemo.iOS;
-						CFBundleURLSchemes = (
-							photomemo,
-						);
-					},
-				);
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		F4A1B2073A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleURLTypes = (
-					{
-						CFBundleTypeRole = Editor;
-						CFBundleURLName = com.serydoo.PhotoMemo.iOS;
-						CFBundleURLSchemes = (
-							photomemo,
-						);
-					},
-				);
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo 需要把处理后的照片存回你的系统相册。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		F4A1B20E3A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoShareExtension" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoShareExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = ShareExtension-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_SHARE_EXTENSION $(inherited)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		F4A1B20F3A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoShareExtension" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoShareExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = ShareExtension-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_SHARE_EXTENSION $(inherited)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
-		F4A1B2403A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoWidgetExtension" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PhotoMemoWidgetExtension-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_WIDGET_EXTENSION $(inherited)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		F4A1B2413A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoWidgetExtension" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PhotoMemoWidgetExtension-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "PHOTOMEMO_WIDGET_EXTENSION $(inherited)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -935,14 +927,6 @@
 			buildConfigurations = (
 				B3DBA5002FE1581300945016 /* Debug configuration for PBXNativeTarget "PhotoMemo" */,
 				B3DBA5012FE1581300945016 /* Release configuration for PBXNativeTarget "PhotoMemo" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F5B100073A9D000000A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoTests" */,
-				F5B100083A9D000000A10001 /* Release configuration for PBXNativeTarget "PhotoMemoTests" */,
 			);
 			defaultConfigurationName = Release;
 		};
@@ -967,6 +951,14 @@
 			buildConfigurations = (
 				F4A1B2403A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoWidgetExtension" */,
 				F4A1B2413A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoWidgetExtension" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F5B100073A9D000000A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoTests" */,
+				F5B100083A9D000000A10001 /* Release configuration for PBXNativeTarget "PhotoMemoTests" */,
 			);
 			defaultConfigurationName = Release;
 		};

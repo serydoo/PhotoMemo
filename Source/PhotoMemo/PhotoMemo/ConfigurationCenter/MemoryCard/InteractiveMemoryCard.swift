@@ -42,6 +42,8 @@ struct InteractiveMemoryCard: View {
                 )
 
                 Spacer(minLength: 0)
+
+                contextPresetActions
             }
 
             if isRenamingMemoryPreset {
@@ -84,7 +86,7 @@ struct InteractiveMemoryCard: View {
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("记忆预设")
+                Text("总体配置")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
@@ -116,8 +118,44 @@ struct InteractiveMemoryCard: View {
             .help("重命名记忆预设")
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("记忆预设")
+        .accessibilityLabel("总体配置")
         .accessibilityValue(session.currentMemoryPresetTitle)
+    }
+
+    private var contextPresetActions: some View {
+        HStack(spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    session.resetSelectedMemoryPreset()
+                }
+            } label: {
+                Label("重置", systemImage: "arrow.counterclockwise")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .help("重置当前总体配置")
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    session.applySelectedMemoryPreset()
+                }
+            } label: {
+                Label(
+                    session.selectedMemoryPresetIsApplied
+                    ? "已生效"
+                    : "保存并生效",
+                    systemImage:
+                        session.selectedMemoryPresetIsApplied
+                        ? "checkmark.circle.fill"
+                        : "checkmark.circle"
+                )
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .help("将当前总体配置设为生效配置")
+        }
+        .font(.caption.weight(.semibold))
     }
 
     private func contextStatusItem(
@@ -634,12 +672,7 @@ struct InteractiveMemoryCard: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Toggle(
-                "自定义写入内容",
-                isOn: memoryWriteToggleBinding
-            )
-            .toggleStyle(.checkbox)
-            .font(.caption.weight(.semibold))
+            memoryWriteToggle
 
             if session.usesCustomMemoryWriteText {
                 TextField(
@@ -685,6 +718,17 @@ struct InteractiveMemoryCard: View {
             .easeInOut(duration: 0.16),
             value: session.usesCustomMemoryWriteText
         )
+    }
+
+    private var memoryWriteToggle: some View {
+        Toggle(
+            "自定义写入内容",
+            isOn: memoryWriteToggleBinding
+        )
+        #if os(macOS)
+        .toggleStyle(.checkbox)
+        #endif
+        .font(.caption.weight(.semibold))
     }
 
     private func guideCard(

@@ -10,7 +10,7 @@ struct PhotoMemoRootSceneView: View {
 
     var body: some View {
 
-        ConfigurationCenterView()
+        rootConfigurationCenter
             .preferredColorScheme(.light)
             .onOpenURL { url in
                 if let deepLink =
@@ -49,5 +49,14 @@ struct PhotoMemoRootSceneView: View {
 
                 runtime.refreshExternalIntakeState()
             }
+    }
+
+    @ViewBuilder
+    private var rootConfigurationCenter: some View {
+        #if os(iOS)
+        ConfigurationCenteriOSView()
+        #else
+        ConfigurationCenterView()
+        #endif
     }
 }

@@ -24,10 +24,16 @@ final class ConfigurationSession:
     @Published
     var latestModuleInsertion: MemoryModuleInsertion?
 
+    @Published
+    var appliedMemoryPresetID: MemoryPreset.ID?
+
     init(
         state: ConfigurationCenterState? = nil
     ) {
-        self.state = state ?? .mock
+        let resolvedState = state ?? .mock
+        self.state = resolvedState
+        self.appliedMemoryPresetID =
+            resolvedState.selectedMemoryPreset?.id
     }
 
     func selectSubject(
@@ -223,6 +229,7 @@ final class ConfigurationSession:
             trimmed.isEmpty
             ? "记忆预设"
             : trimmed
+        markSelectedMemoryPresetNeedsApply()
     }
 
     func updateActiveTemplate(
@@ -235,6 +242,7 @@ final class ConfigurationSession:
 
         state.memoryPresets[presetIndex]
             .regionTemplateIDs[region] = templateID
+        markSelectedMemoryPresetNeedsApply()
     }
 
     func activeTemplateID(
@@ -250,6 +258,24 @@ final class ConfigurationSession:
 
     var currentMemoryPresetSummary: String {
         state.selectedMemoryPreset?.summary ?? "当前区域组合"
+    }
+
+    var selectedMemoryPresetIsApplied: Bool {
+        guard let selectedPresetID = state.selectedMemoryPreset?.id else {
+            return false
+        }
+
+        return appliedMemoryPresetID == selectedPresetID
+    }
+
+    func applySelectedMemoryPreset() {
+        appliedMemoryPresetID = state.selectedMemoryPreset?.id
+    }
+
+    func resetSelectedMemoryPreset() {
+        refreshPresetDrivenPreview()
+        latestModuleInsertion = nil
+        markSelectedMemoryPresetNeedsApply()
     }
 
     var currentConfigurationLabel: String {
@@ -410,6 +436,14 @@ final class ConfigurationSession:
                     subject: state.selectedSubject
                 )
         }
+    }
+
+    private func markSelectedMemoryPresetNeedsApply() {
+        guard selectedMemoryPresetIsApplied else {
+            return
+        }
+
+        appliedMemoryPresetID = nil
     }
 
     static func defaultPreviewText(

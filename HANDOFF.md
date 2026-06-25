@@ -5,6 +5,175 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-25 iOS Compact Profile And Module Library Refinement
+
+- 本轮继续 iOS Configuration Center 局部打磨。
+- iOS 顶部导航标题从 `PhotoMemo` 改为：
+  - `PhotoMemo 配置中心`
+- 顶部 `总体配置` 区进一步压缩为两行：
+  - 第一行：记忆预设下拉、编辑、重置、保存并生效 / 已生效
+  - 第二行：自动输出摘要
+- 区域配置编辑器调整：
+  - 上方状态文案从重复的 `已保存` 改为 `已生效`
+  - 保存按钮保留 `保存配置 / 已保存`
+  - 配置选择、编辑按钮和状态保持横向排列
+- 自定义输入窗口调整：
+  - 用户文字、已插入模块和继续输入区处于同一个编辑容器
+  - 已插入模块改为横向 token strip
+  - 点击多个模块会继续追加到当前区域配置
+- `可插入模块` 调整：
+  - 默认展示当前区域常用的 6 个模块
+  - 新增 `更多模块` 下拉，展示其余可用模块
+  - 目前未接真实 EXIF 的扩展字段插入后输出为空，不生成假值
+- 左侧 Library 调整：
+  - `人物` 分组下方新增 `+ 新增人物` 入口
+  - `旅行` 分组改为 `事件`
+  - `事件` 分组下方新增 `+ 新增事件` 入口
+- 本轮仍然是 iOS-only / UI-only / mock-first，没有接入：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension behavior
+  - Photo Library behavior
+  - Layout Engine
+  - real Memory Engine runtime
+- 验证通过：
+  - `git diff --check`
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `PhotoMemoiOS` Debug connected-device build
+- 已安装并启动到连接的 iPhone：
+  - bundle id: `com.serydoo.PhotoMemo.iOS`
+
+## 2026-06-25 iOS Two-Column Configuration Center Polish
+
+- 本轮继续 iOS Configuration Center 打磨。
+- iOS 主界面已切到两段式：
+  - 左侧为 Apple Mail 风格资料库目录
+  - 右侧为 Profile / Subject / Memory Card / Object Inspector / Output / Guidance 详情区
+- 左侧包含：
+  - 资料库
+  - 人物
+  - 旅行
+  - 卡片区域
+  - 记忆模块
+  - 输出内容
+  - 时间锚点说明
+  - 记忆对象资料库说明
+- 点击 Subject 后，右侧 Profile 区下方展示 `MemorySubjectEditorView`，不再直接占满右侧或改成 sheet。
+- 点击卡片区域后，右侧展示：
+  - 与 macOS 对齐的四区域 + 图标 Memory Card Preview
+  - Region Strip
+  - 同一套 `InspectorProvider` 对象检查器
+  - 可插入模块库
+- iOS 顶部 `总体配置` 支持：
+  - 下拉选择记忆预设
+  - 重命名
+  - 重置
+  - 保存并生效状态
+- macOS 中间顶部同步补齐：
+  - `总体配置`
+  - 重置
+  - 保存并生效
+- `ConfigurationSession` 新增轻量 UI 状态：
+  - `appliedMemoryPresetID`
+  - `selectedMemoryPresetIsApplied`
+  - `applySelectedMemoryPreset()`
+  - `resetSelectedMemoryPreset()`
+- 本轮仍然是 UI-only / mock-first，没有接入：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension behavior
+  - Photo Library behavior
+  - Layout Engine
+  - real Memory Engine runtime
+- 验证通过：
+  - `git diff --check`
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `PhotoMemo` Debug macOS build
+  - `PhotoMemoiOS` Debug connected-device build
+- 已安装到连接的 iPhone：
+  - bundle id: `com.serydoo.PhotoMemo.iOS`
+- 自动启动被设备锁屏阻止：
+  - `Unable to launch ... because the device was not, or could not be, unlocked`
+
+## 2026-06-25 iOS Preview-First Configuration Refinement
+
+- 本轮只修改 iOS 端 Configuration Center。
+- macOS Configuration Center 保持现有结构。
+- 本轮继续压缩 iOS 信息层级，让 Preview 成为第一视觉：
+  - `总体配置` 从大卡片压缩为顶部薄工具条
+  - `当前配置预览` 放大，优先占据右侧上方空间
+  - 左侧资料库整体下移
+  - 左侧目录行高压缩
+- iOS 左侧移除：
+  - `当前配置展示`
+- iOS 左侧调整：
+  - `配置说明` 单独进入低优先级 `说明` 分组
+  - 不再和 `输出` 同级
+- 卡片区域右侧不再直接复用 macOS 完整 Object Inspector。
+- 新增 iOS 专用轻量区域编辑器：
+  - 自由输入当前区域内容
+  - 插入模块以浅色小方块展示
+  - 每个插入模块可删除
+  - 输入和模块变化实时刷新 Preview
+- 非文字区域（例如图标）不再显示可插入模块。
+- 文字区域显示底部模块插入区：
+  - 记录 / 时间线 / 上下文：简化为配置窗口
+  - 记忆：保留紧凑系统模块提示
+- 本轮仍然是 mock-only / UI-only，没有接入：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension behavior
+  - Photo Library behavior
+  - Layout Engine
+  - real Memory Engine runtime
+- 验证通过：
+  - `git diff --check`
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `PhotoMemo` Debug macOS build
+  - `PhotoMemoiOS` Debug connected-device build
+- 已安装并启动到连接的 iPhone。
+
+## 2026-06-25 iOS Configuration Center Polish Shell
+
+- 本轮开始 iOS 版本打磨准备。
+- 新增 iOS-only：
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift`
+- `PhotoMemoRootSceneView` 现在按平台选择：
+  - iOS -> `ConfigurationCenteriOSView`
+  - macOS -> `ConfigurationCenterView`
+- iOS 第一版布局：
+  - 左侧控制列：
+    - Subject
+    - Block Configuration
+    - Content Library
+    - Output
+    - 写入记忆
+  - 右侧预览列：
+    - Profile
+    - 保存并生效
+    - 当前配置预览
+- Subject 点击后进入档案管理 Sheet。
+- Sheet 当前支持 mock 编辑：
+  - 对象定义
+  - 姓名 / 昵称
+  - 记忆显示名称
+  - 人生节点 / 时间锚点
+- 本轮仍然是 UI-only / mock-first。
+- 没有修改：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension behavior
+  - Photo Library behavior
+  - Layout Engine
+  - Memory Engine runtime
+- 验证通过：
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `PhotoMemo` Debug macOS build
+
 ## 2026-06-24 PDR-005 Memory Language Layer
 
 - 本轮是 Repository Amendment。

@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 
 ## Current Stage
 
@@ -42,7 +42,131 @@ The highest-priority entry documents are:
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
 
+## 2026-06-25 iOS Compact Profile And Module Library Refinement
+
+This slice is iOS-only UI refinement and keeps the frozen IA-002 architecture intact.
+
+What changed:
+
+- the iOS navigation title now reads `PhotoMemo 配置中心`
+- the top profile area is compressed into a two-row layout:
+  - row 1: memory preset menu, rename, reset, save-and-apply state
+  - row 2: automatic output summary
+- region configuration editing now separates active state from save action:
+  - top status uses `已生效`
+  - the save button remains `保存配置 / 已保存`
+- custom region editing now keeps literal text, inserted module chips, and continuation text in one editing container
+- inserted module chips use a horizontal token strip so multiple modules can be appended without wrapping the field vertically
+- the insertable module library now:
+  - shows 6 common modules by default
+  - exposes remaining modules through a `更多模块` menu
+  - leaves unavailable EXIF-derived module values blank instead of generating mock values
+- the iOS Library sidebar now exposes placeholder add actions:
+  - `新增人物`
+  - `新增事件`
+- the previous `旅行` group label is generalized to `事件`
+
+Still mock-only:
+
+- add actions are UI placeholders
+- module availability does not call the real metadata pipeline
+- no Renderer, Metadata, Export, Share Extension behavior, Photo Library behavior, Layout Engine, or real Memory Engine runtime work was changed
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOS` Debug iOS Simulator build
+- passed `PhotoMemoiOS` Debug connected-device build
+- installed and launched `PhotoMemoiOS` on the connected iPhone
+
+## 2026-06-25 iOS Two-Column Configuration Center Polish
+
+This slice continues the iOS Configuration Center polish and keeps the frozen IA-002 architecture intact.
+
+What changed:
+
+- iOS now uses a two-column Configuration Center shell with:
+  - a Mail-style left Library sidebar
+  - a right detail surface for profile, subject, card preview, inspector, output, and guidance
+- the right surface now keeps a compact `总体配置` panel at the top
+- the top profile area now supports:
+  - preset selection
+  - rename
+  - reset
+  - save-and-apply state
+- the center card preview remains mock-first and still mirrors the macOS memory-card structure
+- the right-side subject area stays inline inside the detail surface rather than opening a sheet
+- the card-region preview, insertable module library, write-memory panel, and output panel remain mock UI only
+
+Also updated on macOS:
+
+- the top Memory Card context now presents the overall configuration as `总体配置`
+- the same preset can now be reset or saved-and-applied from the center card context
+
+No Renderer, Metadata, Export, Share Extension behavior, Photo Library behavior, Layout Engine, or real Memory Engine runtime work was changed.
+
+Verification:
+
+- passed `git diff --check`
+- passed `xcodebuild` for `PhotoMemoiOS` on the iOS Simulator destination
+- passed `xcodebuild` for `PhotoMemo` on macOS
+- passed `xcodebuild` for `PhotoMemoiOS` on the connected device destination
+- installed `PhotoMemoiOS` on the connected device
+- launch was blocked because the device was locked
+
+## 2026-06-25 iOS Preview-First Configuration Refinement
+
+This slice is iOS-only UI refinement and keeps macOS Configuration Center behavior unchanged.
+
+What changed:
+
+- compressed the iOS `总体配置` area into a thin top toolbar
+- expanded the `当前配置预览` area so the Memory Card Preview has stronger first-visual priority
+- moved the Library sidebar content downward and compressed row height
+- removed the iOS `当前配置展示` entry from the left sidebar
+- moved `配置说明` into a separate lower-priority sidebar group instead of grouping it with Output
+- removed the module-insertion area when the selected card region is non-text, such as the icon region
+- replaced direct macOS Object Inspector reuse in card text regions with an iOS-specific lightweight region composer
+- text regions now support:
+  - free-form input
+  - inserted module chips
+  - module deletion
+  - immediate preview refresh
+- only the Memory region shows a compact system-module strip; Recorder, Timeline, and Context use the simpler configuration-window model
+
+Still mock-only:
+
+- inserted module chips update the Configuration Center preview state only
+- no Renderer, Metadata, Export, Share Extension behavior, Photo Library behavior, Layout Engine, or real Memory Engine runtime work was changed
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOS` Debug iOS Simulator build
+- passed `PhotoMemo` Debug macOS build
+- passed `PhotoMemoiOS` Debug connected-device build
+- installed and launched `PhotoMemoiOS` on the connected iPhone
+
 Memory Engine is now a first-class architecture module. Renderer is no longer allowed to be the source of layout truth. Future layout work must be researched, specified, measured, and owned by a Layout Engine before renderer implementation.
+
+## 2026-06-25 iOS Configuration Center Polish Shell
+
+This slice starts iOS-specific Configuration Center polishing without changing the frozen IA-002 architecture.
+
+What changed:
+
+- added an iOS-only `ConfigurationCenteriOSView`
+- routed the iOS app root to the new iOS shell while macOS still uses `ConfigurationCenterView`
+- introduced a wide iOS / iPad layout with:
+  - left control column for Subject, Block Configuration, Content Library, Output, and 写入记忆
+  - right preview column for Profile selection, 保存并生效, and 当前配置预览
+- added a Subject profile sheet for lightweight mock editing:
+  - object definition
+  - display name choice
+  - time anchors
+- kept all behavior mock-first and UI-only
+
+No Renderer, Metadata, Export, Share Extension, Photo Library behavior, Layout Engine, or real Memory Engine runtime behavior was changed.
 
 ## 2026-06-24 IA-002 Frozen And IA-003 Product Realization
 
