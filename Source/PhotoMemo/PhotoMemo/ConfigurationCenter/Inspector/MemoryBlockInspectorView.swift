@@ -1149,24 +1149,24 @@ private extension MemoryBlockTemplateDraft {
         ),
         MemoryBlockTemplateDraft(
             id: "context.configuration2",
-            title: "配置 2：位置",
-            summary: "展示照片位置，适合地点记忆优先的表达。",
+            title: "配置 2：备用拍摄参数",
+            summary: "保留同一行四项拍摄参数，可用于另一套参数表达。",
             fields: [
                 .init(
                     templateID: "context.configuration2",
-                    key: "location",
-                    label: "位置",
-                    defaultValue: "河南 · 商丘",
+                    key: "cameraParametersAlt",
+                    label: "拍摄参数概要",
+                    defaultValue: "24mm f/1.78 1/100s ISO125",
                     source: .exif
                 )
             ],
-            fallback: "缺少位置时隐藏",
-            displayBehavior: "位置模块"
+            fallback: "缺少参数时隐藏",
+            displayBehavior: "单行四项拍摄参数"
         ),
         MemoryBlockTemplateDraft(
             id: "context.configuration3",
-            title: "配置 3：自定义上下文",
-            summary: "预留给用户保存另一套上下文表达。",
+            title: "配置 3：自定义拍摄参数",
+            summary: "预留给用户保存另一套拍摄参数表达。",
             fields: [],
             fallback: "为空时隐藏",
             displayBehavior: "用户自定义"

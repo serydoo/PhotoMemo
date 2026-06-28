@@ -21,6 +21,13 @@ enum CardRegion:
     }
 }
 
+enum CompactInformationBarTextPosition: String, CaseIterable {
+    case leftPrimary
+    case leftSecondary
+    case rightPrimary
+    case rightSecondary
+}
+
 extension CardRegion {
 
     static let memoryCardRegions: [CardRegion] = [
@@ -62,7 +69,7 @@ extension CardRegion {
         case .slotB:
             return "时间线"
         case .slotC:
-            return "上下文"
+            return "拍摄参数"
         case .slotD:
             return "记忆"
         }
@@ -74,6 +81,55 @@ extension CardRegion {
 
     var accessibilityLabel: String {
         "\(displayTitle), \(semanticTitle)"
+    }
+
+    static func region(
+        for position: CompactInformationBarTextPosition
+    ) -> CardRegion {
+        switch position {
+        case .leftPrimary:
+            return .slotA
+        case .leftSecondary:
+            return .slotB
+        case .rightPrimary:
+            return .slotC
+        case .rightSecondary:
+            return .slotD
+        }
+    }
+
+    var compactInformationBarTextPosition:
+        CompactInformationBarTextPosition? {
+
+        switch self {
+        case .slotA:
+            return .leftPrimary
+        case .slotB:
+            return .leftSecondary
+        case .slotC:
+            return .rightPrimary
+        case .slotD:
+            return .rightSecondary
+        case .subject,
+             .icon,
+             .badge:
+            return nil
+        }
+    }
+
+    var compactInformationBarTextArea: CardTextArea? {
+        switch compactInformationBarTextPosition {
+        case .leftPrimary:
+            return .leftTop
+        case .leftSecondary:
+            return .leftBottom
+        case .rightPrimary:
+            return .rightTop
+        case .rightSecondary:
+            return .rightBottom
+        case nil:
+            return nil
+        }
     }
 }
 #endif

@@ -5,6 +5,192 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-28 Compact Border-Only Preview Correction
+
+- 本轮根据真机检查反馈，进一步修正 preview 展示区域：
+  - preview 现在只展示 Compact White Information Bar 底部边框。
+  - 上方 photo placeholder / photo area 已从预览中移除。
+  - 边框本身仍保持 `width * barHeightToWidth` 的原始比例，不拉伸、不重排。
+- 已同步修改：
+  - macOS `InteractiveMemoryCard`
+  - iOS `ConfigurationCenteriOSView`
+  - iOS MVP `PhotoMemoiOSMVPTestView`
+- 验证通过：
+  - `git diff --check`
+  - `PhotoMemo` Debug macOS build
+  - `PhotoMemoiOS` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+  - `PhotoMemoiOSMVP` Debug connected-device build，destination `iPhone7`
+- 已覆盖安装并启动到连接设备：
+  - device: `iPhone7`
+  - bundle id: `com.serydoo.PhotoMemo.iOS.MVP`
+- 后续编译与文件整理补充：
+  - 清理了 iOS compact preview 中已经不再使用的旧 PM-004/footer/slot helper。
+  - 保留当前 compact 信息栏路径，减少后续维护噪音。
+  - `PhotoMemo` Debug macOS build 通过。
+  - `PhotoMemoiOS` Debug iOS Simulator build 通过。
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build 通过。
+  - `PhotoMemoShareExtension` Debug iOS Simulator build 通过。
+  - `RendererConstantsTests` 通过。
+  - `CaptureTimeResolverTests` 通过。
+  - 全量 `PhotoMemoTests` 首次运行时仅 `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable()` 出现 93 像素快照差异；该单测随后单独重跑通过。
+  - 第二次全量测试启动即被系统杀掉（exit 137），更像当前机器负载/内存压力，不作为代码断言失败处理。
+
+## 2026-06-28 Compact White Information Bar Correction
+
+- 本轮根据用户提供的原图/效果图成对样本，修正底部边框方向：
+  - 当前参考图目标不是 PM-004 的 A/B/C/D 大 Memory Document 布局。
+  - 当前参考图目标是 Compact White Information Bar：照片区 + 紧凑双列白色信息栏。
+- `RendererConstants` 新增 `CompactInformationBar` 参数：
+  - 竖图底栏高度：`W * 0.1660`
+  - 横图底栏高度：`W * 0.1266`
+  - 左列 / 右列 / Logo / Divider 坐标
+  - Primary / Secondary 字号比例
+  - Capture Summary 四项单行输出
+- macOS `InteractiveMemoryCard` 已改为按比例缩小的 Compact 输出预览：
+  - 左列：Slot A + Slot B
+  - 中心：Logo 标识 + Divider
+  - 右列：Slot C + Slot D
+  - 四行内容仍保持各自 CardRegion 可点击选择。
+- 本轮继续补齐精准映射：
+  - Slot A / 记录 -> left primary -> `CardTextArea.leftTop`
+  - Slot B / 时间线 -> left secondary -> `CardTextArea.leftBottom`
+  - Slot C / 拍摄参数 -> right primary -> `CardTextArea.rightTop`
+  - Slot D / 记忆 -> right secondary -> `CardTextArea.rightBottom`
+- Slot C 已从宽泛的“上下文”收窄为“拍摄参数”，右上角始终服务于四项 Capture Summary。
+- iOS MVP Preview 已同步为同一套 Compact 输出预览。
+- iOS Configuration Center Preview 已同步为同一套 Compact 输出预览。
+- `ImmersWhiteRenderer` 的颜色 token 已指向 Compact 信息栏常量；现有真实输出几何比例本来已接近样本，因此未重写真实 export layout。
+- 验证通过：
+  - `PhotoMemo` Debug macOS build
+  - `PhotoMemoiOS` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+  - `PhotoMemoTests/RendererConstantsTests`
+  - `git diff --check`
+- 未手动验证：
+  - macOS 运行时视觉截图
+  - iOS Simulator 视觉截图
+  - reference image golden export comparison
+
+## 2026-06-28 PM-004 Border Preview Foundation
+
+- 本轮根据 Atlas 中整理出的边框规范，先落地 PM-004 的 preview 基础，不直接迁移真实 export renderer。
+- 新增：
+  - `Source/PhotoMemo/PhotoMemo/Renderers/RendererConstants.swift`
+  - `Tests/PhotoMemoTests/RendererTests/RendererConstantsTests.swift`
+- `RendererConstants` 目前冻结：
+  - 8pt Grid token
+  - PM-004 Typography token
+  - Memory Document / Information Bar 颜色
+  - Photo Area / Information Bar 几何比例
+  - Information Bar 内 0-100% Anchor Coordinates
+  - Slot A Recorder: X=6%, Y=18%
+  - Slot B Timeline: X=42%, Y=18%
+  - Slot C Capture Summary: X=74%, Y=18%
+  - Slot D Memory Block: X=6%, Y=60%，最大权重
+  - Badge: 右下预留装饰区域
+  - Capture Summary 只允许四项：焦距 / 光圈 / ISO / 快门
+- macOS `InteractiveMemoryCard` 已从旧左右两列结构改为：
+  - Photo Area
+  - Information Bar
+  - A/B/C 上排
+  - D 左下最大 Memory Block
+  - Badge 右下
+  - Icon region 仍保留可点击路由
+- iOS MVP Preview 已从五列等分白底栏改为同一套 PM-004 坐标系统。
+- 本轮仍未迁移真实输出 renderer：
+  - `ImmersWhiteRenderer`
+  - `ClassicWhiteCardRenderer`
+  - `ClassicWhiteRenderer`
+  - `RecordCardExportService`
+- 验证通过：
+  - `PhotoMemoTests/RendererConstantsTests`
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build
+  - `PhotoMemo` Debug macOS build
+  - `git diff --check`
+- 未手动验证：
+  - iOS 真机/模拟器视觉截图
+  - macOS 运行时 hover/click 路由
+  - 真实 export 输出像素级一致性
+
+## 2026-06-26 iOS MVP Test Module Scaffold
+
+- 本轮新增 iOS-only MVP 测试入口，不改 macOS 主流程，也不改正式 iOS Configuration Center 架构。
+- 后续已补成独立 iPhone 测试 App：
+  - target: `PhotoMemoiOSMVP`
+  - scheme: `PhotoMemoiOSMVP`
+  - bundle id: `com.serydoo.PhotoMemo.iOS.MVP`
+- 新增临时入口切换：
+  - `当前配置中心`
+  - `MVP 测试页`
+- iOS Root 通过临时入口进入 MVP 测试页，便于在手机上直接验证交互方向。
+- 独立 MVP App 默认进入：
+  - `MVP 测试页`
+- 同时保留独立存储的临时入口切换，不影响现有 `PhotoMemoiOS` 的入口状态。
+- 新增 iOS MVP 测试页，复用：
+  - `ConfigurationSession`
+  - 当前 mock preview 文本
+  - 当前模块枚举
+- 新增共享 iOS 模块目录，避免旧 iOS 页面和 MVP 测试页各自维护一套模块定义。
+- MVP 测试页当前包含：
+  - Profile 区：
+    - 当前 Preset 选择
+    - 应用 / 默认 / 重置
+    - 当前记忆对象摘要
+  - Sticky Preview 区：
+    - 白色底栏记忆卡结构
+    - 左侧：记录者 / 记录时间
+    - 中间：Logo 标识
+    - 右侧：拍摄参数 / 智能时间结果
+  - 自定义功能区：
+    - `记录`
+    - `时间线`
+    - `上下文`
+    - `记忆`
+    - 输入后实时刷新 Preview
+  - 模块插入交互：
+    - 编辑区聚焦后弹出约 70% 屏宽模块窗
+    - 选中模块后插入到当前输入区域
+  - Logo 标识：
+    - 默认 Apple mini-logo
+    - 可切换到自选上传占位
+  - `途途生日` 日期输入
+  - 输出区域 UI-only 测试项
+  - 写入记忆 UI-only 状态和预览
+- 页面行为目前为：
+  - Profile 在滚动层内，向上滚动后被带走
+  - Preview 固定优先显示
+  - 自定义功能区在 Preview 下方随滚动淡入
+- 新增智能时间格式化能力：
+  - 基于 mock 拍摄时间与 `途途生日` 的差值输出
+  - 默认格式 `X年X个月X天`
+  - 若差值小于 1 年则不显示 `X年`
+  - 兜底可输出 `X天`
+- 新增测试覆盖：
+  - `CaptureTimeResolverTests`
+- 本轮仍然严格保持：
+  - iOS-only
+  - mock-first
+  - UI-only
+  - 不接 Renderer
+  - 不接 Metadata pipeline
+  - 不接 Export
+  - 不接真实 Photo Library 写入
+  - 不改 Layout Engine
+- 验证通过：
+  - `PhotoMemoTests/CaptureTimeResolverTests`
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `PhotoMemoiOS` Debug connected-device build
+  - 安装到连接 iPhone
+  - 启动 `com.serydoo.PhotoMemo.iOS`
+- 独立 MVP App 验证通过：
+  - `PhotoMemoiOSMVP` target / scheme 已被 Xcode 识别
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build
+  - `PhotoMemoiOSMVP` Debug connected-device build
+  - 已为 `com.serydoo.PhotoMemo.iOS.MVP` 自动生成 Development provisioning profile
+  - 已安装到连接 iPhone
+  - 自动启动被设备锁屏阻止，需要设备解锁后手动打开或再次触发 launch
+
 ## 2026-06-25 iOS Compact Profile And Module Library Refinement
 
 - 本轮继续 iOS Configuration Center 局部打磨。

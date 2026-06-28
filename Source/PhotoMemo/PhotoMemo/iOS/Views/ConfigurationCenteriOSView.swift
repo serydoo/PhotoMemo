@@ -129,7 +129,7 @@ struct ConfigurationCenteriOSView: View {
                     }
 
                     sidebarAction(
-                        title: "上下文",
+                        title: "拍摄参数",
                         subtitle: "区域 C",
                         systemImage: "scope",
                         isSelected: selectedPanel == .card(.slotC)
@@ -617,7 +617,6 @@ struct ConfigurationCenteriOSView: View {
                 .textCase(.uppercase)
 
             IOSMacStyleMemoryCardPreview(session: session)
-                .frame(height: 152)
 
             regionStrip
         }
@@ -745,7 +744,7 @@ struct ConfigurationCenteriOSView: View {
 
             regionStripButton(
                 .slotC,
-                title: "上下文",
+                title: "拍摄参数",
                 systemImage: "scope"
             )
 
@@ -1345,8 +1344,8 @@ struct ConfigurationCenteriOSView: View {
         case .slotC:
             return [
                 option(region, "context.configuration1", "配置 1：拍摄参数概要"),
-                option(region, "context.configuration2", "配置 2：位置"),
-                option(region, "context.configuration3", "配置 3：自定义上下文")
+                option(region, "context.configuration2", "配置 2：备用拍摄参数"),
+                option(region, "context.configuration3", "配置 3：自定义拍摄参数")
             ]
         case .slotD:
             return [
@@ -1560,34 +1559,13 @@ private struct IOSMacStyleMemoryCardPreview: View {
     var session: ConfigurationSession
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 10) {
-                previewTextRegion(.slotA, style: .primary)
-                previewTextRegion(.slotB, style: .secondary)
+        Color.clear
+        .aspectRatio(compactPreviewAspectRatio, contentMode: .fit)
+        .overlay {
+            GeometryReader { proxy in
+                compactPreviewCard(size: proxy.size)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            decorationRegion
-
-            VStack(alignment: .leading, spacing: 10) {
-                previewTextRegion(.slotC, style: .primary)
-                previewTextRegion(.slotD, style: .memory)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            LinearGradient(
-                colors: [
-                    Color.white,
-                    ConfigurationUI.panelBackground
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
@@ -1600,116 +1578,245 @@ private struct IOSMacStyleMemoryCardPreview: View {
         )
     }
 
-    private var decorationRegion: some View {
-        HStack(spacing: 11) {
-            Button {
-                session.selectRegion(.icon)
-            } label: {
-                Image(systemName: selectedIconName)
-                    .font(.system(size: 30, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(
-                        session.state.selectedRegion == .icon
-                        ? Color.accentColor
-                        : Color.secondary.opacity(0.78)
-                    )
-                    .frame(width: 40, height: 48)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(
-                                session.state.selectedRegion == .icon
-                                ? ConfigurationUI.selectedBackground
-                                : Color.clear
-                            )
-                    )
-            }
-            .buttonStyle(.plain)
-
-            Rectangle()
-                .fill(ConfigurationUI.hairline)
-                .frame(width: 1, height: 56)
-        }
-        .padding(.horizontal, 13)
+    private var compactSpec: CompactInformationBarSpec {
+        RendererConstants.CompactInformationBar.landscape
     }
 
-    private func previewTextRegion(
+    private var compactPreviewAspectRatio: CGFloat {
+        1 / compactSpec.barHeightToWidth
+    }
+
+    private func compactPreviewCard(size: CGSize) -> some View {
+        let barHeight =
+            size.width
+            * compactSpec.barHeightToWidth
+
+        return compactInformationBar(
+            width: size.width,
+            height: barHeight
+        )
+        .frame(height: barHeight)
+    }
+
+    private func compactInformationBar(
+        width: CGFloat,
+        height: CGFloat
+    ) -> some View {
+        let spec = compactSpec
+
+        return ZStack(alignment: .topLeading) {
+            RendererConstants.CompactInformationBar.background
+
+            compactTextPair(
+                primaryRegion:
+                    CardRegion.region(for: .leftPrimary),
+                secondaryRegion:
+                    CardRegion.region(for: .leftSecondary),
+                primary:
+                    session.previewText(
+                        for: CardRegion.region(for: .leftPrimary)
+                    ),
+                secondary:
+                    session.previewText(
+                        for: CardRegion.region(for: .leftSecondary)
+                    ),
+                spec: spec,
+                barHeight: height
+            )
+            .frame(
+                width: width * spec.leftWidth,
+                height: height * 0.62,
+                alignment: .leading
+            )
+            .position(
+                x:
+                    width * spec.leftX
+                    + width * spec.leftWidth / 2,
+                y: height * spec.contentCenterY
+            )
+
+            compactLogoRegion(
+                spec: spec,
+                barHeight: height
+            )
+            .position(
+                x: width * spec.logoCenterX,
+                y: height * spec.contentCenterY
+            )
+
+            Rectangle()
+                .fill(RendererConstants.CompactInformationBar.divider)
+                .frame(
+                    width:
+                        min(
+                            max(
+                                height
+                                * spec.dividerWidthToBarHeight,
+                                1
+                            ),
+                            4
+                        ),
+                    height: height * spec.dividerHeight
+                )
+                .position(
+                    x: width * spec.dividerCenterX,
+                    y:
+                        height * spec.dividerTopY
+                        + height * spec.dividerHeight / 2
+                )
+
+            compactTextPair(
+                primaryRegion:
+                    CardRegion.region(for: .rightPrimary),
+                secondaryRegion:
+                    CardRegion.region(for: .rightSecondary),
+                primary: formattedCaptureSummaryText,
+                secondary:
+                    session.previewText(
+                        for: CardRegion.region(for: .rightSecondary)
+                    ),
+                spec: spec,
+                barHeight: height
+            )
+            .frame(
+                width: width * spec.rightWidth,
+                height: height * 0.62,
+                alignment: .leading
+            )
+            .position(
+                x:
+                    width * spec.rightX
+                    + width * spec.rightWidth / 2,
+                y: height * spec.contentCenterY
+            )
+        }
+    }
+
+    private func compactTextPair(
+        primaryRegion: CardRegion,
+        secondaryRegion: CardRegion,
+        primary: String,
+        secondary: String,
+        spec: CompactInformationBarSpec,
+        barHeight: CGFloat
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: barHeight * spec.groupSpacingToBarHeight
+        ) {
+            compactTextLine(
+                primaryRegion,
+                value: primary,
+                fontSize:
+                    barHeight
+                    * spec.primaryFontToBarHeight,
+                weight: .bold,
+                tracking: spec.primaryTracking,
+                color:
+                    RendererConstants
+                    .CompactInformationBar
+                    .primaryText
+            )
+
+            compactTextLine(
+                secondaryRegion,
+                value: secondary,
+                fontSize:
+                    barHeight
+                    * spec.secondaryFontToBarHeight,
+                weight: .regular,
+                tracking: spec.secondaryTracking,
+                color:
+                    RendererConstants
+                    .CompactInformationBar
+                    .secondaryText
+            )
+        }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .center
+        )
+    }
+
+    private func compactTextLine(
         _ region: CardRegion,
-        style: IOSPreviewTextStyle
+        value: String,
+        fontSize: CGFloat,
+        weight: Font.Weight,
+        tracking: CGFloat,
+        color: Color
     ) -> some View {
         Button {
             session.selectRegion(region)
         } label: {
-            Text(session.previewText(for: region))
-                .font(style.font)
+            Text(value.isEmpty ? " " : value)
+                .font(
+                    .system(
+                        size: fontSize,
+                        weight: weight
+                    )
+                )
+                .kerning(tracking)
                 .foregroundStyle(
                     region == session.state.selectedRegion
                     ? Color.accentColor
-                    : style.color
+                    : color
                 )
-                .lineLimit(style.lineLimit)
+                .lineLimit(1)
                 .minimumScaleFactor(0.72)
-                .frame(
-                    maxWidth: .infinity,
-                    minHeight: 34,
-                    alignment: .leading
-                )
-                .padding(.horizontal, 7)
-                .padding(.vertical, 5)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(
-                            region == session.state.selectedRegion
-                            ? ConfigurationUI.selectedBackground
-                            : Color.clear
-                        )
-                )
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
     }
 
-    private var selectedIconName: String {
+    private func compactLogoRegion(
+        spec: CompactInformationBarSpec,
+        barHeight: CGFloat
+    ) -> some View {
+        let logoSize =
+            barHeight
+            * spec.logoSizeToBarHeight
+
+        return Button {
+            session.selectRegion(.badge)
+        } label: {
+            Image(systemName: selectedBadgeName)
+                .font(.system(size: logoSize, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(
+                    session.state.selectedRegion == .badge
+                    ? Color.accentColor
+                    : RendererConstants.CompactInformationBar.logoTint
+                )
+                .frame(width: logoSize * 1.25, height: logoSize * 1.25)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var formattedCaptureSummaryText: String {
+        let facts =
+            session.previewText(
+                for: CardRegion.region(for: .rightPrimary)
+            )
+            .split(separator: " ")
+            .map(String.init)
+            .prefix(RendererConstants.CaptureSummary.allowedFactCount)
+
+        guard !facts.isEmpty else {
+            return session.previewText(
+                for: CardRegion.region(for: .rightPrimary)
+            )
+        }
+
+        return facts.joined(separator: " ")
+    }
+
+    private var selectedBadgeName: String {
         session.state.selectedSubject?
             .decorations
-            .first(where: { $0.kind == .icon })?
-            .systemSymbolName ?? "person.fill"
-    }
-}
-
-private enum IOSPreviewTextStyle {
-    case primary
-    case secondary
-    case memory
-
-    var font: Font {
-        switch self {
-        case .primary:
-            return .subheadline.weight(.semibold)
-        case .secondary:
-            return .caption.weight(.medium)
-        case .memory:
-            return .headline.weight(.semibold)
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .primary:
-            return Color.primary.opacity(0.86)
-        case .secondary:
-            return Color.secondary
-        case .memory:
-            return Color.primary
-        }
-    }
-
-    var lineLimit: Int {
-        switch self {
-        case .memory:
-            return 2
-        case .primary,
-             .secondary:
-            return 1
-        }
+            .first(where: { $0.kind == .badge })?
+            .systemSymbolName ?? "apple.logo"
     }
 }
 
@@ -2049,202 +2156,12 @@ private enum IOSConfigurationPanel:
     case configurationGuide
 }
 
-private struct IOSInsertedModule:
-    Identifiable,
-    Hashable {
-
-    let id = UUID()
-    let title: String
-    let value: String
-    let systemImage: String
-}
-
 private struct IOSRegionConfigurationOption:
     Identifiable,
     Hashable {
 
     let id: String
     let title: String
-}
-
-private enum IOSInsertableModule:
-    String,
-    CaseIterable,
-    Identifiable {
-
-    case subjectNickname
-    case smartTime
-    case captureDate
-    case captureTime
-    case cameraMaker
-    case cameraModel
-    case lensModel
-    case focalLength
-    case aperture
-    case shutterSpeed
-    case iso
-    case exposureBias
-    case meteringMode
-    case flash
-    case whiteBalance
-    case captureSummary
-    case location
-    case altitude
-    case imageSize
-    case orientation
-    case fileFormat
-    case custom
-
-    var id: String {
-        rawValue
-    }
-
-    var title: String {
-        switch self {
-        case .subjectNickname:
-            return "对象昵称"
-        case .smartTime:
-            return "智能时间"
-        case .captureDate:
-            return "拍摄日期"
-        case .captureTime:
-            return "拍摄时间"
-        case .cameraMaker:
-            return "设备厂商"
-        case .cameraModel:
-            return "设备型号"
-        case .lensModel:
-            return "镜头型号"
-        case .focalLength:
-            return "焦距"
-        case .aperture:
-            return "光圈"
-        case .shutterSpeed:
-            return "快门"
-        case .iso:
-            return "ISO"
-        case .exposureBias:
-            return "曝光补偿"
-        case .meteringMode:
-            return "测光模式"
-        case .flash:
-            return "闪光灯"
-        case .whiteBalance:
-            return "白平衡"
-        case .captureSummary:
-            return "参数概要"
-        case .location:
-            return "位置"
-        case .altitude:
-            return "海拔"
-        case .imageSize:
-            return "图片尺寸"
-        case .orientation:
-            return "方向"
-        case .fileFormat:
-            return "文件格式"
-        case .custom:
-            return "自定义"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .subjectNickname:
-            return "person.fill"
-        case .smartTime:
-            return "calendar.badge.clock"
-        case .captureDate:
-            return "calendar"
-        case .captureTime:
-            return "clock"
-        case .cameraMaker:
-            return "apple.logo"
-        case .cameraModel:
-            return "camera.fill"
-        case .lensModel:
-            return "camera.macro"
-        case .focalLength:
-            return "scope"
-        case .aperture:
-            return "camera.aperture"
-        case .shutterSpeed:
-            return "timer"
-        case .iso:
-            return "dial.low"
-        case .exposureBias:
-            return "plusminus"
-        case .meteringMode:
-            return "camera.metering.center.weighted"
-        case .flash:
-            return "bolt.fill"
-        case .whiteBalance:
-            return "sun.max"
-        case .captureSummary:
-            return "camera.metering.center.weighted"
-        case .location:
-            return "location.fill"
-        case .altitude:
-            return "mountain.2.fill"
-        case .imageSize:
-            return "rectangle.inset.filled"
-        case .orientation:
-            return "rectangle.rotate"
-        case .fileFormat:
-            return "doc.fill"
-        case .custom:
-            return "plus.circle"
-        }
-    }
-
-    var token: String {
-        switch self {
-        case .subjectNickname:
-            return "{{subject_nickname}}"
-        case .smartTime:
-            return "{{smart_time_result}}"
-        case .captureDate:
-            return "{{capture_date}}"
-        case .captureTime:
-            return "{{capture_time}}"
-        case .cameraMaker:
-            return "{{camera_make}}"
-        case .cameraModel:
-            return "{{camera_model}}"
-        case .lensModel:
-            return "{{lens_model}}"
-        case .focalLength:
-            return "{{focal_length}}"
-        case .aperture:
-            return "{{aperture}}"
-        case .shutterSpeed:
-            return "{{shutter_speed}}"
-        case .iso:
-            return "{{iso}}"
-        case .exposureBias:
-            return "{{exposure_bias}}"
-        case .meteringMode:
-            return "{{metering_mode}}"
-        case .flash:
-            return "{{flash}}"
-        case .whiteBalance:
-            return "{{white_balance}}"
-        case .captureSummary:
-            return "{{capture_parameters_summary}}"
-        case .location:
-            return "{{location}}"
-        case .altitude:
-            return "{{altitude}}"
-        case .imageSize:
-            return "{{image_size}}"
-        case .orientation:
-            return "{{orientation}}"
-        case .fileFormat:
-            return "{{file_format}}"
-        case .custom:
-            return "{{custom}}"
-        }
-    }
 }
 
 #Preview("iOS 配置中心") {

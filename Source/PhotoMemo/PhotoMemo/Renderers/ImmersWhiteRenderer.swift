@@ -172,35 +172,19 @@ enum ImmersWhiteRenderer {
     }
 
     static let infoBarColor =
-        Color(
-            red: 244 / 255,
-            green: 244 / 255,
-            blue: 242 / 255
-        )
+        RendererConstants.CompactInformationBar.background
 
     static let primaryTextColor =
-        Color.black.opacity(0.92)
+        RendererConstants.CompactInformationBar.primaryText
 
     static let secondaryTextColor =
-        Color(
-            red: 112 / 255,
-            green: 112 / 255,
-            blue: 118 / 255
-        )
+        RendererConstants.CompactInformationBar.secondaryText
 
     static let logoTintColor =
-        Color(
-            red: 128 / 255,
-            green: 128 / 255,
-            blue: 133 / 255
-        )
+        RendererConstants.CompactInformationBar.logoTint
 
     static let dividerColor =
-        Color(
-            red: 216 / 255,
-            green: 216 / 255,
-            blue: 216 / 255
-        )
+        RendererConstants.CompactInformationBar.divider
 
     static let dividerWidth: CGFloat = 2
 

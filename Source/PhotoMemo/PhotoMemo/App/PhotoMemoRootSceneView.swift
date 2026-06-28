@@ -54,7 +54,7 @@ struct PhotoMemoRootSceneView: View {
     @ViewBuilder
     private var rootConfigurationCenter: some View {
         #if os(iOS)
-        ConfigurationCenteriOSView()
+        PhotoMemoiOSTemporaryEntryView()
         #else
         ConfigurationCenterView()
         #endif

@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-25
+Last updated: 2026-06-28
 
 ## Current Stage
 
@@ -41,6 +41,181 @@ The highest-priority entry documents are:
 - `Docs/REPOSITORY_VOCABULARY.md`
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+
+## 2026-06-28 Compact White Information Bar Correction
+
+This slice corrects the bottom-border preview direction after measuring paired
+reference outputs and source photos. The current target for the provided
+reference images is now the compact two-column white information bar, not the
+PM-004 document-style A/B/C/D large Memory Block layout.
+
+What changed:
+
+- added measured `CompactInformationBar` constants in `RendererConstants` for:
+  - portrait bar height: `W * 0.1660`
+  - landscape bar height: `W * 0.1266`
+  - fixed left/right text anchors
+  - fixed Logo / divider anchors
+  - primary and secondary typography ratios
+  - single-line capture-summary behavior
+- macOS `InteractiveMemoryCard` preview now renders:
+  - scaled Photo Area
+  - compact Information Bar
+  - left column: Slot A + Slot B
+  - center: Logo 标识 + divider
+  - right column: Slot C + Slot D
+- iOS MVP preview now uses the same compact scaled output card.
+- iOS Configuration Center preview now uses the same compact scaled output card.
+- `ImmersWhiteRenderer` now points its color tokens at the compact information
+  bar constants while preserving its existing measured output geometry.
+- locked the text-region mapping from Configuration Center custom regions to
+  compact border positions and renderer text areas:
+  - Slot A / 记录 -> left primary -> `CardTextArea.leftTop`
+  - Slot B / 时间线 -> left secondary -> `CardTextArea.leftBottom`
+  - Slot C / 拍摄参数 -> right primary -> `CardTextArea.rightTop`
+  - Slot D / 记忆 -> right secondary -> `CardTextArea.rightBottom`
+- Slot C wording is now narrowed from broad context language to capture
+  parameters so the right-primary border slot remains a four-fact capture
+  summary.
+
+Verification:
+
+- passed `PhotoMemo` Debug macOS build
+- passed `PhotoMemoiOS` Debug iOS Simulator build on `iPhone 17 Pro, iOS 26.4`
+- passed `PhotoMemoiOSMVP` Debug iOS Simulator build on `iPhone 17 Pro, iOS 26.4`
+- passed `PhotoMemoTests/RendererConstantsTests`
+- passed `git diff --check`
+
+Not yet manually verified:
+
+- visual screenshot comparison inside the running macOS app
+- visual screenshot comparison inside iOS Simulator
+- full export golden-image comparison against the provided reference samples
+
+## 2026-06-28 PM-004 Border Preview Foundation
+
+This slice starts the PM-004 border rendering foundation from the Atlas-derived
+specification, but keeps the real export renderer migration for a later reviewed
+renderer slice.
+
+What changed:
+
+- added `RendererConstants` as the first PM-004 engineering entry point for:
+  - 8pt grid tokens
+  - PM-004 typography tokens
+  - document / information-bar colors
+  - border geometry ratios
+  - slot anchor coordinates in the 0-100% information-bar coordinate system
+  - Capture Summary's four allowed facts
+- updated the macOS `InteractiveMemoryCard` preview so the bottom card now uses:
+  - `Photo Area`
+  - `Information Bar`
+  - Slot A / B / C on the top row
+  - Slot D as the larger lower-left Memory Block
+  - Badge in the lower-right reserved decoration slot
+- updated the iOS MVP test preview to use the same PM-004 slot coordinates instead
+  of the previous equal-column bottom bar.
+- Capture Summary in the preview is now constrained to four facts:
+  - focal length
+  - aperture
+  - ISO
+  - shutter speed
+
+Current bottom-border code map:
+
+- PM-004 constants:
+  - `Source/PhotoMemo/PhotoMemo/Renderers/RendererConstants.swift`
+- macOS Configuration Center preview:
+  - `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift`
+- iOS MVP preview:
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSMVPTestView.swift`
+- current real export renderer path, not migrated in this slice:
+  - `Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift`
+  - `Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteCardRenderer.swift`
+  - `Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteRenderer.swift`
+  - `Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift`
+- legacy preview/export support paths still relevant for audit:
+  - `Source/PhotoMemo/PhotoMemo/Views/Preview/RecordCardPreview.swift`
+  - `Source/PhotoMemo/PhotoMemo/Views/Preview/InfoBarPreview.swift`
+  - `Source/PhotoMemo/PhotoMemo/Models/Template.swift`
+  - `Source/PhotoMemo/PhotoMemo/Models/TemplateArea.swift`
+  - `Source/PhotoMemo/PhotoMemo/Engines/CardTextBlockEngine.swift`
+
+Verification:
+
+- passed `PhotoMemoTests/RendererConstantsTests`
+- passed `PhotoMemoiOSMVP` Debug iOS Simulator build
+- passed `PhotoMemo` Debug macOS build with separate PM-004 DerivedData
+- passed `git diff --check`
+
+Not yet manually verified:
+
+- on-device visual review of the iOS MVP preview
+- macOS runtime click/hover review for all card regions after the PM-004 preview
+  remap
+- real rendered/exported image parity, because `ImmersWhiteRenderer` and
+  `ClassicWhiteRenderer` have not yet been migrated to PM-004 constants
+
+## 2026-06-26 iOS MVP Test Module Scaffold
+
+This slice adds an iOS-only MVP test path for phone-side interaction validation without changing the frozen IA-002 Configuration Center architecture.
+
+What changed:
+
+- added a fully separate iPhone MVP app target:
+  - `PhotoMemoiOSMVP`
+  - bundle id `com.serydoo.PhotoMemo.iOS.MVP`
+  - shared scheme `PhotoMemoiOSMVP`
+- added a temporary iOS root entry switcher with:
+  - `当前配置中心`
+  - `MVP 测试页`
+- added a dedicated iOS MVP test view that reuses:
+  - `ConfigurationSession`
+  - current mock preview text
+  - current module enumeration
+- the standalone MVP app now defaults to `MVP 测试页` while keeping its own entry-switch persistence separate from the existing `PhotoMemoiOS` app
+- added a shared iOS module catalog so the existing iOS Configuration Center and the MVP test page use one module definition source
+- the MVP test page now includes:
+  - a Profile area for preset selection, apply/default/reset actions, and current memory-subject summary
+  - a sticky white-bottom-bar Memory Card preview
+  - four simplified editors for `记录`, `时间线`, `上下文`, and `记忆`
+  - real-time preview refresh as each editor changes
+  - a module insertion overlay sized for phone interaction
+  - `Logo 标识` switching between the default Apple mini-logo and a custom-upload placeholder
+  - a `途途生日` date input
+  - UI-only output options
+  - UI-only write-memory controls and preview
+- scrolling behavior now follows the MVP test direction:
+  - Profile scrolls away with content
+  - Preview remains visible at the top
+  - the custom editing area fades in under the preview as the user scrolls upward
+- `CaptureTimeResolver` now exposes formatted smart-time text for the mock capture-date minus `途途生日` case:
+  - default format `X年X个月X天`
+  - omits the year when the difference is below one year
+  - falls back to `X天` when needed
+- added focused tests for the smart-time formatter
+
+Still mock-only:
+
+- no Renderer integration
+- no Metadata pipeline integration
+- no Export integration
+- no real Photo Library write behavior
+- no Layout Engine changes
+- no real Memory Engine runtime data binding yet
+
+Verification:
+
+- passed `PhotoMemoTests/CaptureTimeResolverTests`
+- passed `PhotoMemoiOS` Debug iOS Simulator build
+- passed `PhotoMemoiOS` Debug connected-device build
+- installed `PhotoMemoiOS` on the connected iPhone
+- launched `com.serydoo.PhotoMemo.iOS` on the connected iPhone
+- passed `PhotoMemoiOSMVP` Debug iOS Simulator build
+- passed `PhotoMemoiOSMVP` Debug connected-device build
+- Xcode generated a Development provisioning profile for `com.serydoo.PhotoMemo.iOS.MVP`
+- installed `PhotoMemoiOSMVP` on the connected iPhone
+- automatic launch of `com.serydoo.PhotoMemo.iOS.MVP` was blocked because the device was locked
 
 ## 2026-06-25 iOS Compact Profile And Module Library Refinement
 

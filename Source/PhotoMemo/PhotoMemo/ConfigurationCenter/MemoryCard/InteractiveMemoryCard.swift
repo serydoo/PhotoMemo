@@ -185,13 +185,28 @@ struct InteractiveMemoryCard: View {
         }
     }
 
+    private var compactPreviewSpec: CompactInformationBarSpec {
+        RendererConstants.CompactInformationBar.landscape
+    }
+
+    private var compactPreviewWidth: CGFloat {
+        590
+    }
+
+    private var compactPreviewHeight: CGFloat {
+        compactPreviewWidth * compactPreviewSpec.barHeightToWidth
+    }
+
     private var cardSurface: some View {
         bottomCardPreview
-            .frame(width: 590, height: 220)
+            .frame(
+                width: compactPreviewWidth,
+                height: compactPreviewHeight
+            )
         .background(
             LinearGradient(
                 colors: [
-                    Color.white,
+                    RendererConstants.ColorPalette.documentBackground,
                     ConfigurationUI.panelBackground
                 ],
                 startPoint: .top,
@@ -219,73 +234,210 @@ struct InteractiveMemoryCard: View {
     }
 
     private var bottomCardPreview: some View {
-        HStack(spacing: 0) {
-            leftSlotColumn
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            decorationDivider
-
-            rightSlotColumn
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, 36)
-        .padding(.vertical, 28)
+        informationBarPreview
     }
 
-    private var leftSlotColumn: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            textRegion(
-                .slotA,
-                primary: previewText(for: .slotA),
-                secondary: nil,
-                style: .headline
-            )
+    private var informationBarPreview: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            let spec = compactPreviewSpec
 
-            textRegion(
-                .slotB,
-                primary: previewText(for: .slotB),
-                secondary: nil,
-                style: .secondary
-            )
-        }
-    }
+            ZStack(alignment: .topLeading) {
+                RendererConstants.CompactInformationBar.background
 
-    private var rightSlotColumn: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            textRegion(
-                .slotC,
-                primary: previewText(for: .slotC),
-                secondary: nil,
-                style: .headline
-            )
+                compactTextPair(
+                    primaryRegion:
+                        CardRegion.region(for: .leftPrimary),
+                    secondaryRegion:
+                        CardRegion.region(for: .leftSecondary),
+                    primary:
+                        previewText(
+                            for: CardRegion.region(for: .leftPrimary)
+                        ),
+                    secondary:
+                        previewText(
+                            for: CardRegion.region(for: .leftSecondary)
+                        ),
+                    spec: spec,
+                    barHeight: size.height
+                )
+                .frame(
+                    width: size.width * spec.leftWidth,
+                    height: size.height * 0.62,
+                    alignment: .leading
+                )
+                .position(
+                    x:
+                        size.width * spec.leftX
+                        + size.width * spec.leftWidth / 2,
+                    y: size.height * spec.contentCenterY
+                )
 
-            textRegion(
-                .slotD,
-                primary: previewText(for: .slotD),
-                secondary: nil,
-                style: .memory
-            )
-        }
-    }
+                compactLogoRegion(
+                    spec: spec,
+                    barHeight: size.height
+                )
+                .position(
+                    x: size.width * spec.logoCenterX,
+                    y: size.height * spec.contentCenterY
+                )
 
-    private var decorationDivider: some View {
-        HStack(spacing: 16) {
-            cardRegionButton(
-                .icon,
-                accessibilityValue: selectedIconTitle
-            ) {
-                Image(systemName: selectedIconName)
-                    .font(.system(size: 36, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.secondary.opacity(0.78))
-                    .frame(width: 52, height: 68)
+                Rectangle()
+                    .fill(RendererConstants.CompactInformationBar.divider)
+                .frame(
+                    width:
+                        min(
+                            max(
+                                size.height
+                                * spec.dividerWidthToBarHeight,
+                                8
+                            ),
+                            16
+                        ),
+                    height: size.height * spec.dividerHeight
+                )
+                .position(
+                    x: size.width * spec.dividerCenterX,
+                    y:
+                        size.height * spec.dividerTopY
+                        + size.height * spec.dividerHeight / 2
+                )
+
+                compactTextPair(
+                    primaryRegion:
+                        CardRegion.region(for: .rightPrimary),
+                    secondaryRegion:
+                        CardRegion.region(for: .rightSecondary),
+                    primary: formattedCaptureSummaryText,
+                    secondary:
+                        previewText(
+                            for: CardRegion.region(for: .rightSecondary)
+                        ),
+                    spec: spec,
+                    barHeight: size.height
+                )
+                .frame(
+                    width: size.width * spec.rightWidth,
+                    height: size.height * 0.62,
+                    alignment: .leading
+                )
+                .position(
+                    x:
+                        size.width * spec.rightX
+                        + size.width * spec.rightWidth / 2,
+                    y: size.height * spec.contentCenterY
+                )
             }
-
-            Rectangle()
-                .fill(ConfigurationUI.hairline)
-                .frame(width: 1, height: 76)
         }
-        .padding(.horizontal, 24)
+    }
+
+    private func compactTextPair(
+        primaryRegion: CardRegion,
+        secondaryRegion: CardRegion,
+        primary: String,
+        secondary: String,
+        spec: CompactInformationBarSpec,
+        barHeight: CGFloat
+    ) -> some View {
+        VStack(
+            alignment: .leading,
+            spacing: barHeight * spec.groupSpacingToBarHeight
+        ) {
+            compactTextLine(
+                primaryRegion,
+                value: primary,
+                fontSize:
+                    barHeight
+                    * spec.primaryFontToBarHeight,
+                weight: .bold,
+                tracking: spec.primaryTracking,
+                color:
+                    RendererConstants
+                    .CompactInformationBar
+                    .primaryText
+            )
+
+            compactTextLine(
+                secondaryRegion,
+                value: secondary,
+                fontSize:
+                    barHeight
+                    * spec.secondaryFontToBarHeight,
+                weight: .regular,
+                tracking: spec.secondaryTracking,
+                color:
+                    RendererConstants
+                    .CompactInformationBar
+                    .secondaryText
+            )
+        }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .center
+        )
+    }
+
+    private func compactTextLine(
+        _ region: CardRegion,
+        value: String,
+        fontSize: CGFloat,
+        weight: Font.Weight,
+        tracking: CGFloat,
+        color: Color
+    ) -> some View {
+        cardRegionButton(
+            region,
+            accessibilityValue: value
+        ) {
+            Text(value.isEmpty ? " " : value)
+                .font(
+                    .system(
+                        size: fontSize,
+                        weight: weight
+                    )
+                )
+                .kerning(tracking)
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+        }
+    }
+
+    private func compactLogoRegion(
+        spec: CompactInformationBarSpec,
+        barHeight: CGFloat
+    ) -> some View {
+        let logoSize =
+            barHeight
+            * spec.logoSizeToBarHeight
+
+        return cardRegionButton(
+            .badge,
+            accessibilityValue: selectedBadgeTitle
+        ) {
+            Image(systemName: selectedBadgeName)
+                .font(
+                    .system(
+                        size: logoSize,
+                        weight: .semibold
+                    )
+                )
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(
+                    RendererConstants
+                        .CompactInformationBar
+                        .logoTint
+                )
+                .frame(
+                    width: logoSize * 1.25,
+                    height: logoSize * 1.25
+                )
+        }
     }
 
     private func textRegion(
@@ -322,6 +474,128 @@ struct InteractiveMemoryCard: View {
         }
     }
 
+    private func pm004TextRegion(
+        _ region: CardRegion,
+        spec _: SlotSpec,
+        title: String,
+        value: String,
+        systemImage: String,
+        style: BottomCardTextStyle
+    ) -> some View {
+        cardRegionButton(
+            region,
+            accessibilityValue: value
+        ) {
+            VStack(
+                alignment: .leading,
+                spacing: RendererConstants.Grid.xSmall / 2
+            ) {
+                HStack(spacing: RendererConstants.Grid.xSmall / 2) {
+                    Image(systemName: systemImage)
+                        .font(
+                            .system(
+                                size:
+                                    RendererConstants
+                                    .Typography
+                                    .captionSize,
+                                weight:
+                                    RendererConstants
+                                    .Typography
+                                    .regularWeight
+                            )
+                        )
+
+                    Text(title)
+                        .font(
+                            .system(
+                                size:
+                                    RendererConstants
+                                    .Typography
+                                    .captionSize,
+                                weight:
+                                    RendererConstants
+                                    .Typography
+                                    .regularWeight
+                            )
+                        )
+                }
+                .foregroundStyle(
+                    RendererConstants.ColorPalette.secondaryText
+                )
+
+                Text(value.isEmpty ? " " : value)
+                    .font(style.primaryFont)
+                    .foregroundStyle(style.primaryColor)
+                    .lineLimit(style.primaryLineLimit)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var formattedTimelineText: String {
+        let parts =
+            previewText(
+                for: CardRegion.region(for: .leftSecondary)
+            )
+            .split(separator: " ")
+            .map(String.init)
+
+        if parts.count >= 2 {
+            return "记录于\n\(parts[0])\n\(parts[1])"
+        }
+
+        return previewText(
+            for: CardRegion.region(for: .leftSecondary)
+        )
+    }
+
+    private var formattedCaptureSummaryText: String {
+        let facts =
+            previewText(
+                for: CardRegion.region(for: .rightPrimary)
+            )
+            .split(separator: " ")
+            .map(String.init)
+            .prefix(RendererConstants.CaptureSummary.allowedFactCount)
+
+        guard !facts.isEmpty else {
+            return previewText(
+                for: CardRegion.region(for: .rightPrimary)
+            )
+        }
+
+        return facts.joined(separator: " ")
+    }
+
+    private func slotPosition(
+        _ spec: SlotSpec,
+        in size: CGSize
+    ) -> CGPoint {
+        CGPoint(
+            x:
+                size.width * spec.anchor.x
+                + slotWidth(spec, in: size) / 2,
+            y:
+                size.height * spec.anchor.y
+                + slotHeight(spec, in: size) / 2
+        )
+    }
+
+    private func slotWidth(
+        _ spec: SlotSpec,
+        in size: CGSize
+    ) -> CGFloat {
+        size.width * spec.size.width
+    }
+
+    private func slotHeight(
+        _ spec: SlotSpec,
+        in size: CGSize
+    ) -> CGFloat {
+        size.height * spec.size.height
+    }
+
     private var regionStrip: some View {
         HStack(spacing: 0) {
             regionStripButton(
@@ -338,7 +612,7 @@ struct InteractiveMemoryCard: View {
 
             regionStripButton(
                 .slotC,
-                title: "上下文",
+                title: "拍摄参数",
                 systemImage: "scope"
             )
 
@@ -1137,41 +1411,57 @@ private enum BottomCardTextStyle {
     var primaryFont: Font {
         switch self {
         case .headline:
-            return .system(size: 20, weight: .bold)
+            return .system(
+                size: RendererConstants.Typography.primarySize,
+                weight: RendererConstants.Typography.regularWeight
+            )
         case .secondary:
-            return .system(size: 16, weight: .medium)
+            return .system(
+                size: RendererConstants.Typography.secondarySize,
+                weight: RendererConstants.Typography.regularWeight
+            )
         case .memory:
-            return .system(size: 16, weight: .semibold)
+            return .system(
+                size: RendererConstants.Typography.heroSize,
+                weight: RendererConstants.Typography.heroWeight
+            )
         }
     }
 
     var secondaryFont: Font {
         switch self {
         case .headline:
-            return .system(size: 15, weight: .medium)
+            return .system(
+                size: RendererConstants.Typography.secondarySize,
+                weight: RendererConstants.Typography.regularWeight
+            )
         case .secondary,
              .memory:
-            return .system(size: 14, weight: .regular)
+            return .system(
+                size: RendererConstants.Typography.captionSize,
+                weight: RendererConstants.Typography.regularWeight
+            )
         }
     }
 
     var primaryColor: Color {
         switch self {
         case .headline:
-            return Color.primary
+            return RendererConstants.ColorPalette.secondaryText
         case .secondary:
-            return Color.secondary
+            return RendererConstants.ColorPalette.secondaryText
         case .memory:
-            return Color.primary.opacity(0.82)
+            return RendererConstants.ColorPalette.primaryText
         }
     }
 
     var primaryLineLimit: Int {
         switch self {
         case .headline:
-            return 2
-        case .secondary,
-             .memory:
+            return 3
+        case .secondary:
+            return RendererConstants.CaptureSummary.allowedFactCount
+        case .memory:
             return 3
         }
     }

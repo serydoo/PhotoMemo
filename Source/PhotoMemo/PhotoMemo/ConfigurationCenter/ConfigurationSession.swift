@@ -523,7 +523,7 @@ final class ConfigurationSession:
         case "context.configuration1":
             return "20mm f/1.9 1/117s ISO80"
         case "context.configuration2":
-            return "河南 · 商丘"
+            return "24mm f/1.78 1/100s ISO125"
         case "context.configuration3":
             return " "
         case "memory.configuration1":
@@ -886,7 +886,7 @@ extension ConfigurationCenterState {
         let preset1 =
             MemoryPreset(
                 title: "成长记录",
-                summary: "记录、时间线、上下文和记忆表达使用第一套配置。",
+                summary: "记录、时间线、拍摄参数和记忆表达使用第一套配置。",
                 regionTemplateIDs: [
                     .slotA: "recorder.configuration1",
                     .slotB: "timeline.configuration1",
