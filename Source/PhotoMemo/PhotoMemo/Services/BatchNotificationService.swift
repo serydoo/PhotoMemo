@@ -360,7 +360,7 @@ private extension BatchNotificationService {
 
         if intakeSummary.skippedCount > 0 {
             parts.append(
-                "另有 \(intakeSummary.skippedCount) 张重复跳过"
+                "另有 \(intakeSummary.skippedCount) 张已跳过"
             )
         }
 

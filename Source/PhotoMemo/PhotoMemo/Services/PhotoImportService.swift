@@ -155,7 +155,7 @@ final class PhotoImportService {
     }
 
     func supportedTypes() -> [UTType] {
-        [.jpeg, .png, .heic, .heif, .tiff]
+        PhotoProcessingInputPolicy.supportedImageTypes
     }
 
     func isSupported(_ url: URL) -> Bool {

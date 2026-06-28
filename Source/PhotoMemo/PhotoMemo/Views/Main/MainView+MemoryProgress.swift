@@ -293,7 +293,7 @@ struct MainMemoryProgressPanel: View {
         } else if defaultConfigurationSnapshot
             .selectedAlbumIdentifier.isEmpty {
 
-            albumTitle = "自动存入 PhotoMemo"
+            albumTitle = "自动存入 photomemo"
 
         } else {
 
@@ -365,7 +365,7 @@ struct MainMemoryProgressPanel: View {
 
         if summary.skippedCount > 0 {
             parts.append(
-                "重复跳过 \(summary.skippedCount) 张"
+                "已跳过 \(summary.skippedCount) 张"
             )
         }
 

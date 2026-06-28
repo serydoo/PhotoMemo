@@ -3,29 +3,50 @@ import SwiftUI
 
 enum ConfigurationUI {
 
+    static let cornerRadius: CGFloat = 12
+    static let smallCornerRadius: CGFloat = 10
+    static let contentSpacing: CGFloat = 16
+    static let sectionSpacing: CGFloat = 20
+
+    #if os(iOS)
     static let appBackground =
-        Color(red: 0.965, green: 0.967, blue: 0.972)
+        Color(uiColor: .systemGroupedBackground)
 
     static let panelBackground =
-        Color(red: 0.988, green: 0.988, blue: 0.992)
+        Color(uiColor: .secondarySystemGroupedBackground)
 
     static let controlBackground =
-        Color(red: 0.948, green: 0.950, blue: 0.956)
+        Color(uiColor: .tertiarySystemGroupedBackground)
+    #elseif os(macOS)
+    static let appBackground =
+        Color(nsColor: .windowBackgroundColor)
+
+    static let panelBackground =
+        Color(nsColor: .underPageBackgroundColor)
+
+    static let controlBackground =
+        Color(nsColor: .controlBackgroundColor)
+    #else
+    static let appBackground = Color.primary.opacity(0.04)
+    static let panelBackground = Color.primary.opacity(0.025)
+    static let controlBackground = Color.primary.opacity(0.04)
+    #endif
 
     static let selectedBackground =
-        Color.accentColor.opacity(0.105)
+        Color.accentColor.opacity(0.075)
 
     static let hoverBackground =
-        Color.black.opacity(0.025)
+        Color.primary.opacity(0.018)
 
     static let hairline =
-        Color.black.opacity(0.075)
+        Color.primary.opacity(0.07)
 
     static let faintHairline =
-        Color.black.opacity(0.045)
+        Color.primary.opacity(0.038)
 
     static let cardShadow =
-        Color.black.opacity(0.055)
+        Color.primary.opacity(0.022)
+
 }
 
 struct InspectorSectionView<Content: View>: View {
@@ -102,16 +123,22 @@ struct ConfigurationFieldChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .padding(10)
+            .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.84))
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
+                    style: .continuous
+                )
+                .fill(ConfigurationUI.panelBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
+                    style: .continuous
+                )
                     .stroke(
                         isActive
-                        ? Color.accentColor.opacity(0.34)
+                        ? Color.accentColor.opacity(0.28)
                         : ConfigurationUI.faintHairline,
                         lineWidth: isActive ? 1 : 0.75
                     )
@@ -126,7 +153,10 @@ struct ConfigurationPanelChrome: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.cornerRadius,
+                    style: .continuous
+                )
                     .fill(
                         isSelected
                         ? ConfigurationUI.selectedBackground
@@ -134,10 +164,13 @@ struct ConfigurationPanelChrome: ViewModifier {
                     )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.cornerRadius,
+                    style: .continuous
+                )
                     .stroke(
                         isSelected
-                        ? Color.accentColor.opacity(0.28)
+                        ? Color.accentColor.opacity(0.2)
                         : ConfigurationUI.faintHairline
                     )
             )

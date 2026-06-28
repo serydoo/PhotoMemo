@@ -40,8 +40,8 @@ struct ConfigurationCenteriOSView: View {
             GeometryReader { proxy in
                 let sidebarWidth =
                     min(
-                        max(proxy.size.width * 0.28, 132),
-                        188
+                        max(proxy.size.width * 0.28, 148),
+                        204
                     )
 
                 VStack(spacing: 0) {
@@ -76,7 +76,7 @@ struct ConfigurationCenteriOSView: View {
 
     private var sidebar: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 18) {
                 sidebarHeader
 
                 sidebarSubjectSection(
@@ -184,26 +184,26 @@ struct ConfigurationCenteriOSView: View {
 
                 sidebarFooter
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 14)
+            .padding(.top, 18)
+            .padding(.bottom, 22)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(ConfigurationUI.appBackground)
     }
 
     private var sidebarHeader: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("资料库")
-                .font(.headline.weight(.semibold))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(Color.primary)
 
             Text("记忆对象与卡片配置")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 6)
-        .padding(.bottom, 2)
+        .padding(.horizontal, 8)
+        .padding(.bottom, 4)
     }
 
     private func sidebarSubjectSection(
@@ -246,23 +246,28 @@ struct ConfigurationCenteriOSView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 7) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.caption2.weight(.semibold))
+            HStack(spacing: 9) {
+                Image(systemName: "plus")
+                    .font(.caption.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 15)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 17)
 
                 Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.primary)
                     .lineLimit(1)
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 5)
-            .contentShape(RoundedRectangle(cornerRadius: 9))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .contentShape(
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
+                    style: .continuous
+                )
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -272,14 +277,14 @@ struct ConfigurationCenteriOSView: View {
         _ title: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
-                .padding(.horizontal, 7)
+                .padding(.horizontal, 10)
 
-            VStack(spacing: 2) {
+            VStack(spacing: 3) {
                 content()
             }
         }
@@ -294,20 +299,20 @@ struct ConfigurationCenteriOSView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 7) {
+            HStack(spacing: 10) {
                 Image(systemName: systemImage)
-                    .font(.caption2.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(
                         isSelected
                         ? Color.accentColor
                         : Color.secondary
                     )
-                    .frame(width: 15)
+                    .frame(width: 19)
 
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.caption.weight(.semibold))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color.primary)
                         .lineLimit(1)
 
@@ -319,25 +324,33 @@ struct ConfigurationCenteriOSView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 9)
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
+                    style: .continuous
+                )
                     .fill(
                         isSelected
                         ? ConfigurationUI.selectedBackground
                         : Color.clear
                     )
             )
-            .contentShape(RoundedRectangle(cornerRadius: 9))
+            .contentShape(
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
+                    style: .continuous
+                )
+            )
         }
         .buttonStyle(.plain)
     }
 
     private var sidebarFooter: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             Divider()
-                .opacity(0.45)
+                .opacity(0.28)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("时间锚点")
@@ -361,29 +374,29 @@ struct ConfigurationCenteriOSView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 4)
+        .padding(.horizontal, 10)
+        .padding(.top, 6)
     }
 
     private var detailSurface: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 14) {
                 detailContent
             }
-            .padding(10)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(ConfigurationUI.panelBackground)
     }
 
     private var topConfigurationPreview: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
             profilePanel
             compactCardPreview
         }
-        .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 9)
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 16)
         .background(ConfigurationUI.panelBackground)
         .overlay(
             Rectangle()
@@ -394,8 +407,8 @@ struct ConfigurationCenteriOSView: View {
     }
 
     private var profilePanel: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 Label("总体配置", systemImage: "rectangle.stack.fill")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -444,12 +457,12 @@ struct ConfigurationCenteriOSView: View {
                     )
                     .labelStyle(.titleAndIcon)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
                 .controlSize(.small)
             }
             .font(.caption.weight(.semibold))
 
-            HStack(alignment: .center, spacing: 8) {
+            HStack(alignment: .center, spacing: 10) {
                 Image(systemName: "sparkles")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -498,12 +511,20 @@ struct ConfigurationCenteriOSView: View {
                 )
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(Color.white.opacity(0.84))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(ConfigurationUI.controlBackground.opacity(0.62))
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
                 .stroke(ConfigurationUI.faintHairline)
         )
         .animation(
@@ -543,13 +564,12 @@ struct ConfigurationCenteriOSView: View {
             .foregroundStyle(Color.accentColor)
             .padding(.horizontal, 9)
             .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.accentColor.opacity(0.085))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.accentColor.opacity(0.16))
+            .background(ConfigurationUI.selectedBackground)
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
+                    style: .continuous
+                )
             )
         }
     }
@@ -600,7 +620,7 @@ struct ConfigurationCenteriOSView: View {
     }
 
     private var cardDetail: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 14) {
             activeRegionEditor
 
             if shouldShowInsertableModules {
@@ -610,7 +630,7 @@ struct ConfigurationCenteriOSView: View {
     }
 
     private var compactCardPreview: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("当前配置预览")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -620,12 +640,12 @@ struct ConfigurationCenteriOSView: View {
 
             regionStrip
         }
-        .padding(8)
+        .padding(12)
         .configurationPanelChrome()
     }
 
     private var activeRegionEditor: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Label(
                     "\(session.state.selectedRegion.semanticTitle)配置",
@@ -1566,15 +1586,23 @@ private struct IOSMacStyleMemoryCardPreview: View {
                 compactPreviewCard(size: proxy.size)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
                 .stroke(ConfigurationUI.faintHairline)
         )
         .shadow(
             color: ConfigurationUI.cardShadow,
-            radius: 14,
-            y: 6
+            radius: 8,
+            y: 3
         )
     }
 

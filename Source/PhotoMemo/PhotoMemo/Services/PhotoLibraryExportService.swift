@@ -22,7 +22,7 @@ struct PhotoAlbumOption: Identifiable, Hashable {
 
     static let automatic = PhotoAlbumOption(
         id: automaticIdentifier,
-        title: "自动存入 PhotoMemo",
+        title: "自动存入 photomemo",
         localIdentifier: nil
     )
 }
@@ -48,7 +48,7 @@ enum PhotoLibraryExportError: LocalizedError {
             return "未找到你选择的相册，请刷新后重试。"
 
         case .albumCreateFailed:
-            return "无法创建 PhotoMemo 相册。"
+            return "无法创建 photomemo 相册。"
 
         case .assetSaveFailed:
             return "图片已生成，但写入系统相册失败。"
@@ -59,7 +59,9 @@ enum PhotoLibraryExportError: LocalizedError {
 @MainActor
 final class PhotoLibraryExportService {
 
-    private let defaultAlbumTitle = "PhotoMemo"
+    private let defaultAlbumTitle =
+        PhotoMemoAlbumSelection
+        .defaultAlbumTitle
 
     private let metadataReader =
         PhotoMetadataReader()
@@ -114,6 +116,47 @@ final class PhotoLibraryExportService {
             }
 
         return uniqueAlbums
+    }
+
+    func ensureAlbum(
+        named title: String
+    ) async throws -> PhotoAlbumOption {
+
+        let status = await requestAuthorizationIfNeeded()
+
+        guard isAuthorized(status) else {
+            throw PhotoLibraryExportError.unauthorized
+        }
+
+        let albumTitle =
+            normalizedAlbumTitle(title)
+
+        if let existingAlbum =
+            fetchAlbum(withTitle: albumTitle) {
+
+            return PhotoAlbumOption(
+                id: existingAlbum.localIdentifier,
+                title:
+                    existingAlbum.localizedTitle
+                    ?? albumTitle,
+                localIdentifier:
+                    existingAlbum.localIdentifier
+            )
+        }
+
+        let createdAlbum =
+            try await createAlbum(
+                named: albumTitle
+            )
+
+        return PhotoAlbumOption(
+            id: createdAlbum.localIdentifier,
+            title:
+                createdAlbum.localizedTitle
+                ?? albumTitle,
+            localIdentifier:
+                createdAlbum.localIdentifier
+        )
     }
 
     func saveImage(
@@ -321,6 +364,20 @@ private extension PhotoLibraryExportService {
         return try await createDefaultAlbum()
     }
 
+    func normalizedAlbumTitle(
+        _ title: String
+    ) -> String {
+
+        let trimmedTitle =
+            title.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmedTitle.isEmpty
+            ? defaultAlbumTitle
+            : trimmedTitle
+    }
+
     func fetchAlbum(
         with localIdentifier: String
     ) -> PHAssetCollection? {
@@ -373,14 +430,25 @@ private extension PhotoLibraryExportService {
 
     func createDefaultAlbum() async throws -> PHAssetCollection {
 
+        try await createAlbum(
+            named: defaultAlbumTitle
+        )
+    }
+
+    func createAlbum(
+        named title: String
+    ) async throws -> PHAssetCollection {
+
         var createdIdentifier: String?
+        let albumTitle =
+            normalizedAlbumTitle(title)
 
         try await performChanges {
 
             let request =
                 PHAssetCollectionChangeRequest
                 .creationRequestForAssetCollection(
-                    withTitle: self.defaultAlbumTitle
+                    withTitle: albumTitle
                 )
 
             createdIdentifier =

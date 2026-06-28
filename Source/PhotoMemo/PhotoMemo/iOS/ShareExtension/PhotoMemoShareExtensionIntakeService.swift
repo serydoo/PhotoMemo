@@ -243,6 +243,9 @@ final class PhotoMemoShareExtensionIntakeService {
             case .skippedDuplicate:
                 skippedCount += 1
 
+            case .skippedUnsupported:
+                skippedCount += 1
+
             case .failed(let failureContext):
                 failedCount += 1
                 lastFailureContext =
@@ -429,6 +432,8 @@ private extension PhotoMemoShareExtensionIntakeService {
 
         case skippedDuplicate
 
+        case skippedUnsupported
+
         case failed(
             PhotoMemoShareIntakeFailureContext
         )
@@ -521,6 +526,16 @@ private extension PhotoMemoShareExtensionIntakeService {
 
         if let importRecord =
             fileLoadResult.importRecord {
+
+            if let unsupportedOutcome =
+                unsupportedManagedImportOutcomeIfNeeded(
+                    importRecord,
+                    diagnosticsSeed:
+                        diagnosticsSeed
+                ) {
+                return unsupportedOutcome
+            }
+
             let sourceKey =
                 importRecord.dedupeKey
 
@@ -558,6 +573,16 @@ private extension PhotoMemoShareExtensionIntakeService {
 
         if case .imported(let imported) =
             fallbackResult {
+
+            if let unsupportedOutcome =
+                unsupportedManagedImportOutcomeIfNeeded(
+                    imported,
+                    diagnosticsSeed:
+                        diagnosticsSeed
+                ) {
+                return unsupportedOutcome
+            }
+
             let sourceKey =
                 imported.dedupeKey
 
@@ -1080,6 +1105,42 @@ private extension PhotoMemoShareExtensionIntakeService {
 
         return supportedType?
             .preferredFilenameExtension
+    }
+
+    func unsupportedManagedImportOutcomeIfNeeded(
+        _ importRecord: ManagedImportRecord,
+        diagnosticsSeed:
+            PhotoMemoShareIntakeOperationSeed
+    ) -> ManagedImportOutcome? {
+
+        let verdict =
+            PhotoProcessingInputPolicy.standard
+            .verdict(
+                fileURL:
+                    importRecord.managedURL,
+                declaredContentTypeIdentifier:
+                    importRecord.item
+                    .contentTypeIdentifier
+            )
+
+        guard !verdict.isSupported else {
+            return nil
+        }
+
+        intakeStore.cleanupManagedSourceIfNeeded(
+            at: importRecord.managedURL
+        )
+
+        PhotoMemoShareIntakeLog.notice(
+            """
+            Provider[\(diagnosticsSeed.providerIndex ?? -1)] skipped unsupported photo.
+            reason=\(verdict.reason?.rawValue ?? "unknown")
+            title=\(verdict.title)
+            message=\(verdict.message)
+            """
+        )
+
+        return .skippedUnsupported
     }
 
     func preferredImageTypeIdentifier(

@@ -234,8 +234,12 @@ private extension RecordCardExportService {
     ) -> String {
 
         let baseName =
-            resolvedOutputBaseName(
-                for: photo
+            PhotoFileNameResolver
+            .outputCopyBaseName(
+                from: resolvedOutputBaseName(
+                    for: photo
+                ),
+                index: 1
             )
 
         return baseName + ".jpg"
@@ -246,17 +250,30 @@ private extension RecordCardExportService {
         for photo: SelectedPhoto
     ) -> URL {
 
-        let baseName =
+        let originalBaseName =
             resolvedOutputBaseName(
                 for: photo
             )
 
-        return uniqueOutputURL(
-            for: folderURL.appendingPathComponent(
+        let baseName =
+            PhotoFileNameResolver
+            .nextOutputCopyBaseName(
+                from: originalBaseName
+            ) { candidate in
+                FileManager.default.fileExists(
+                    atPath:
+                        folderURL
+                        .appendingPathComponent(candidate)
+                        .appendingPathExtension("jpg")
+                        .path
+                )
+            }
+
+        return folderURL
+            .appendingPathComponent(
                 baseName
             )
             .appendingPathExtension("jpg")
-            )
     }
 
     func resolvedOutputBaseName(
@@ -387,26 +404,27 @@ private extension RecordCardExportService {
         let pathExtension =
             url.pathExtension
 
-        var index = 1
-
-        while true {
-
-            let candidateURL =
-                folderURL.appendingPathComponent(
-                    "\(baseName) (\(index))"
+        let candidateBaseName =
+            PhotoFileNameResolver
+            .nextOutputCopyBaseName(
+                from: baseName
+            ) { candidate in
+                FileManager.default.fileExists(
+                    atPath:
+                        folderURL
+                        .appendingPathComponent(candidate)
+                        .appendingPathExtension(pathExtension)
+                        .path
                 )
-                .appendingPathExtension(
-                    pathExtension
-                )
-
-            if !FileManager.default.fileExists(
-                atPath: candidateURL.path
-            ) {
-                return candidateURL
             }
 
-            index += 1
-        }
+        return folderURL
+            .appendingPathComponent(
+                candidateBaseName
+            )
+            .appendingPathExtension(
+                pathExtension
+            )
     }
 
     func outputType(

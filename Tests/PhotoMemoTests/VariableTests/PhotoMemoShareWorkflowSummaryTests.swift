@@ -40,7 +40,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
 
         #expect(summary.styleTitle == "宝宝成长卡")
         #expect(summary.memoryDateTitle == nil)
-        #expect(summary.outputTitle == "PhotoMemo 相册")
+        #expect(summary.outputTitle == "photomemo 相册")
     }
 
     @Test("Falls back to preset name when the template name is blank")

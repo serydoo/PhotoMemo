@@ -99,4 +99,65 @@ struct PhotoFileNameResolverTests {
             ) == "IMG_20260620_090819"
         )
     }
+
+    @Test("Builds PhotoMemo output copy names without spaces")
+    func buildsPhotoMemoOutputCopyNamesWithoutSpaces() {
+
+        #expect(
+            PhotoFileNameResolver
+            .outputCopyBaseName(
+                from: "IMG_1234",
+                index: 1
+            ) == "IMG_1234(1)"
+        )
+
+        #expect(
+            PhotoFileNameResolver
+            .outputCopyBaseName(
+                from: " IMG_1234 ",
+                index: 2
+            ) == "IMG_1234(2)"
+        )
+
+        #expect(
+            PhotoFileNameResolver
+            .outputCopyBaseName(
+                from: "",
+                index: 0
+            ) == "PhotoMemo(1)"
+        )
+    }
+
+    @Test("Finds next PhotoMemo output copy name")
+    func findsNextPhotoMemoOutputCopyName() {
+
+        let existingNames: Set<String> = [
+            "IMG_1234(1)",
+            "IMG_1234(2)"
+        ]
+
+        #expect(
+            PhotoFileNameResolver
+            .nextOutputCopyBaseName(
+                from: "IMG_1234",
+                exists: existingNames.contains
+            ) == "IMG_1234(3)"
+        )
+    }
+
+    @Test("Continues PhotoMemo output copy names without nesting suffixes")
+    func continuesPhotoMemoOutputCopyNamesWithoutNestingSuffixes() {
+
+        let existingNames: Set<String> = [
+            "IMG_1234(1)"
+        ]
+
+        #expect(
+            PhotoFileNameResolver
+            .nextOutputCopyBaseName(
+                from: "IMG_1234(1)",
+                exists: existingNames.contains
+            ) == "IMG_1234(2)"
+        )
+    }
 }

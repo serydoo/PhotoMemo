@@ -2,6 +2,9 @@ import Foundation
 
 enum PhotoMemoAlbumSelection {
 
+    static let defaultAlbumTitle =
+        "photomemo"
+
     static let automaticIdentifier =
         "__photomemo_auto__"
 

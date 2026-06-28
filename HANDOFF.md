@@ -5,6 +5,198 @@ Compact AI summary for this round:
 - `Docs/AI_HANDOFF_2026-06-21.md`
 - `Docs/AI_HANDOFF_2026-06-22.md`
 
+## 2026-06-29 Background Pipeline Input Policy
+
+- 本轮围绕“快一点，但不冒险”的后台处理原则，补齐处理输入边界，并接入 Share Extension 前置校验；不改现有 UI、Renderer、Export 输出形式。
+- 新增 `PhotoProcessingInputPolicy`：
+  - 支持格式：`JPEG/JPG`、`HEIC/HEIF`、`PNG`、`TIFF`
+  - 暂不支持：Live Photo、RAW/DNG、GIF、WebP、视频
+  - 标准照片尺寸上限按当前 iPhone 48MP 静态照片包络确定：
+    - 单边最大 `8064 px`
+    - 总像素最大 `8064 x 6048`
+    - 最大长宽比 `3:1`
+  - 超大图、超高像素图、全景图、长截图、极端细长图片会得到明确拒绝原因和 Apple-native 风格反馈文案。
+- `PhotoImportService.supportedTypes()` 已改为引用 `PhotoProcessingInputPolicy.supportedImageTypes`，避免支持格式出现第二套定义。
+- 已继续接入 Share Extension intake 前置校验：
+  - 复制到共享容器后读取文件类型与像素尺寸。
+  - 不支持的图片立即清理临时副本。
+  - 不支持项计入 `skippedCount`，不会进入 Batch Queue。
+  - `skippedCount` 文案从“重复跳过”改为通用“已跳过”，因为跳过原因可能是重复，也可能是不支持。
+- `3:1` 阈值按长边 / 短边计算，不区分横图和竖图：
+  - `6048 x 8064` 竖图支持。
+  - `3024 x 5376` 这类 9:16 竖图支持。
+  - 超过 `3:1` 的长截图、全景图、特别细长图片暂不支持。
+- 推荐后台处理策略继续保持：
+  - Share Extension 只复制与持久化，不渲染。
+  - Import / EXIF 可有限并发。
+  - Render / Photo Library Save 保持串行。
+  - 每张完成后立即清理临时文件。
+- 验证通过：
+  - `PhotoProcessingInputPolicyTests`
+  - `PhotoImportServiceTests`
+  - `PhotoFileNameResolverTests`
+  - `PhotoMemoAlbumSelectionTests`
+  - `PhotoMemoShareExtension` Debug iOS Simulator build
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `git diff --check`
+- 已确认：
+  - `PhotoMemo` scheme 没有配置 test action。
+  - 定向测试应使用 `PhotoMemoTests` scheme。
+- 后续接入建议：
+  - 真机验证 Share Extension 部分成功、部分跳过反馈。
+  - 进一步区分跳过原因的内部统计，但不要在 Share UI 里制造诊断噪音。
+
+## 2026-06-28 MVP Album And Logo Output Completion
+
+- 本轮补齐 MVP 输出设置的两个真实缺口：
+  - 生成图片继续作为新图片进入 Apple Photos 系统图库。
+  - 用户未选择相册时，自动创建/复用小写 `photomemo` 相册。
+- `PhotoLibraryExportService` 新增 `ensureAlbum(named:)`：
+  - 可按名称复用已有相册。
+  - 不存在时创建新相册。
+  - 默认相册名统一为 `photomemo`。
+- iOS MVP 输出区现在支持：
+  - 自动存入 `photomemo`
+  - 仅保存到系统图库
+  - 从现有相册下拉选择
+  - 输入名称并在保存配置时新建/复用相册
+- 保存配置时会把真实相册 localIdentifier 和 title 写入共享设置，Share 后的 snapshot 继续读取同一路径。
+- 自选 Logo 已从占位补为真实上传：
+  - 使用原生 `PhotosPicker`
+  - 用户选择图片后异步优化
+  - 优化文件写入共享容器 `LogoAssets`
+  - 保存为 `.customUpload` Badge，并通过 `imagePath` 供渲染读取
+- Logo 上传/优化规格：
+  - 推荐上传 `2048 x 2048` 透明 PNG
+  - 最低建议 `1024 x 1024`
+  - 后台统一优化为 `2048 x 2048` 方形透明 PNG
+  - 内容保留 `12%` 安全留白
+- 推荐依据：
+  - 当前 4032px 横向输出中 Logo 约显示 `209px`
+  - 12000px 竖向未来输出中 Logo 约显示 `817px`
+  - 2048px master 对大图输出和打印检查有足够余量
+- 新增测试：
+  - `PhotoMemoAlbumSelectionTests`
+  - `LogoAssetOptimizationServiceTests`
+- 验证通过：
+  - 新增两组测试
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `PhotoMemoShareExtension` Debug iOS Simulator build
+  - `PhotoMemo` Debug macOS build
+  - `git diff --check`
+- 未手动验证：
+  - 真机 Apple Photos 相册创建
+  - 真机 Logo 上传后的最终渲染效果
+  - Share 后使用新建相册 + 自选 Logo 的完整实机链路
+
+## 2026-06-28 MVP Share Pipeline Gap Closure
+
+- 本轮继续收敛 MVP 到：
+  - Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos
+  - 原图不被修改
+  - 输出为原图 + 底部边框的新图片
+  - 元数据尽量继承原图，只有输出分辨率跟随新画布更新
+- 已补齐输出命名规则：
+  - `IMG_1234` 首次输出为 `IMG_1234(1).jpg`
+  - 再次输出为 `IMG_1234(2).jpg`
+  - 继续处理 `IMG_1234(1)` 不会生成 `IMG_1234(1)(1)`
+- 已补齐 iOS MVP `设为生效` 的真实落盘：
+  - 当前四个自定义区的单行 Content Builder 内容会写入共享 `Template`
+  - Share Extension 读取 `SharedBatchConfigurationSnapshotService` 时可以拿到这份 active configuration
+  - 编辑器中 token 仍展示示例值，但保存时写入真实渲染 token，例如 `{{model}}` / `{{capture_date_short}}` / `{{camera_summary}}`
+- UI 反馈补齐：
+  - 编辑区域或时间锚点后状态显示 `有未生效修改`
+  - 点击 `设为生效` 后显示 `已生效`
+- Profile 控制形态已调整：
+  - 右侧只保留 `保存` 和小号重置图标按钮
+  - 从 Preset 下拉切换到不同配置后，会弹出原生确认对话
+  - 用户可选择 `保存为生效配置` 或 `仅切换查看`
+- 时间锚点已纳入 MVP 保存范围：
+  - 保存时会创建或更新 `.birthday` Anchor
+  - 该 Anchor 会写入共享 `selectedAnchorID`
+  - Share 后真实渲染中的 `{{anchor_age_text}}` 会走保存后的 Anchor，而不是 MVP 页面里的 mock 预览日期
+- Logo / 输出目标也已跟随 `保存` 写入共享设置：
+  - Apple 标识保存为 Apple badge
+  - 输出目标写入共享相册选择状态
+- 模块插入交互已从自绘遮罩改为原生 sheet：
+  - 使用 medium / large detent
+  - 列表行点选后直接加入当前区域
+  - 去掉“先选模块再点插入”的工具感
+- MVP 可见语言继续收口：
+  - 移除 mock / UI-only / 测试说明类文案
+  - `Token` 改为 `插入信息`
+  - 输出说明改为面向用户的保存行为说明
+- iOS 模块 token 映射收口：
+  - 新增 `IOSInsertableModule.rendererToken`
+  - MVP 页面不再维护第二套 renderer token switch
+- 当前仍未完成：
+  - 真机 Apple Photos share-sheet 手动回归
+  - 多张照片分享后的真实输出视觉检查
+  - 自选 Logo 上传后的真机视觉检查
+  - 新建/指定相册后的真机 Apple Photos 写入检查
+- 验证通过：
+  - `PhotoMemoTests/PhotoFileNameResolverTests`
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build
+  - `PhotoMemoiOSMVP` Profile 保存/重置交互修订后再次构建通过
+  - `PhotoMemoiOSMVP` Time Anchor 持久化与原生模块 sheet 修订后再次构建通过
+  - `PhotoMemoiOS` Debug iOS Simulator build
+  - `PhotoMemoiOS` Time Anchor 持久化与原生模块 sheet 修订后再次构建通过
+  - `PhotoMemoShareExtension` Debug iOS Simulator build
+  - `PhotoMemoShareExtension` Time Anchor 持久化修订后再次构建通过
+  - `PhotoMemo` Debug macOS build
+  - `git diff --check`
+
+## 2026-06-28 Apple First-Party UI Polish
+
+- 本轮根据 Apple Photos / Journal / Health 的方向，只做 Configuration Center 表层 UI polish，不改功能与架构。
+- 视觉方向：
+  - Preview 继续作为第一视觉锚点。
+  - 控制区降低视觉重量，避免工具软件感。
+  - 使用 system colors / native typography / SF Symbols。
+  - 扩大留白，统一圆角，减少边框、阴影和强调色。
+- 已同步修改：
+  - `ConfigurationUI` 统一系统背景、圆角、间距、hairline、shadow token。
+  - macOS `InteractiveMemoryCard` 放大呼吸感，弱化顶部配置条与预览外框。
+  - iOS `ConfigurationCenteriOSView` 放松 sidebar / detail spacing，降低按钮和面板的装饰性。
+  - iOS MVP 测试页将 Preview 前置，并把 Profile / Preview / Output 等命名收敛到更接近产品语义的中文。
+- 明确未改：
+  - Renderer
+  - Metadata
+  - Export
+  - Share Extension behavior
+  - Photo Library behavior
+  - Layout Engine
+  - Memory Engine runtime
+- 验证通过：
+  - `git diff --check`
+  - `PhotoMemo` Debug macOS build
+  - `PhotoMemoiOS` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+  - `PhotoMemoShareExtension` Debug iOS Simulator build
+
+## 2026-06-28 MVP Single-Line Content Builder Refinement
+
+- 本轮根据最新 MVP 边界修正：
+  - MVP 页面继续保留 `记忆档案 / 时间锚点 / 智能模块 / 写入记忆` 这条线。
+  - 四个自定义区域从两段式输入改为单行 Content Builder。
+  - Content Builder 内部统一为 item 模型：
+    - Text
+    - Token
+    - Separator
+    - Line Break（模型预留，当前单行显示不暴露为换行操作）
+  - Token 与分隔符作为同一行 chip 追加，预览仍只展示底部边框。
+  - `应用` 按钮语义收敛为 `设为生效`，用于后续 Share 自动处理读取当前生效配置。
+- 本轮仍未接入：
+  - Share 后前后台自动处理配置读取改造
+  - 真实 EXIF token 替换当前 MVP mock 值
+  - Preset 持久化重建
+- 验证通过：
+  - `git diff --check`
+  - `PhotoMemoiOSMVP` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+  - `PhotoMemoiOS` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
+
 ## 2026-06-28 Compact Border-Only Preview Correction
 
 - 本轮根据真机检查反馈，进一步修正 preview 展示区域：
@@ -2345,7 +2537,7 @@ Build verification for this slice:
 - 本轮顺手补齐：
   - 默认保存位置现在支持明确区分：
     - `系统相册`
-    - `PhotoMemo 相册`
+    - `photomemo 相册`
   - Share 摘要、主界面输出摘要、保存反馈文案都已同步识别 `系统相册`
 - 本轮 target 边界修正：
   - 由于工程会把新文件自动带进 extension target
@@ -3422,7 +3614,7 @@ PhotoMemo 是一个 **local-first 的 macOS 原生照片信息纪念卡生成器
 - 预览渲染
 - 导出成新图
 - 写回系统图库
-- 默认 PhotoMemo 相册策略
+- 默认 photomemo 相册策略
 - 后台队列、通知、权限引导
 
 ## 时间锚点系统共识

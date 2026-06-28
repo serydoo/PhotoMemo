@@ -120,6 +120,51 @@ enum PhotoFileNameResolver {
         return "IMG_\(formatter.string(from: date))"
     }
 
+    nonisolated static func outputCopyBaseName(
+        from originalBaseName: String,
+        index: Int
+    ) -> String {
+
+        let trimmedBaseName =
+            originalBaseName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        let safeBaseName =
+            trimmedBaseName.isEmpty
+            ? "PhotoMemo"
+            : trimmedBaseName
+
+        return "\(safeBaseName)(\(max(index, 1)))"
+    }
+
+    nonisolated static func nextOutputCopyBaseName(
+        from proposedBaseName: String,
+        exists: (String) -> Bool
+    ) -> String {
+
+        let parsed = parsedOutputCopyBaseName(
+            proposedBaseName
+        )
+        let rootBaseName = parsed.root
+        var index = parsed.index ?? 1
+
+        while true {
+            let candidate =
+                outputCopyBaseName(
+                    from: rootBaseName,
+                    index: index
+                )
+
+            if !exists(candidate) {
+                return candidate
+            }
+
+            index += 1
+        }
+    }
+
     private nonisolated static func isSystemPhotoLibraryPlaceholder(
         _ baseName: String
     ) -> Bool {
@@ -190,5 +235,56 @@ enum PhotoFileNameResolver {
 
         return !wrappedValue.isEmpty
             && wrappedValue.allSatisfy(\.isNumber)
+    }
+
+    private nonisolated static func parsedOutputCopyBaseName(
+        _ proposedBaseName: String
+    ) -> (root: String, index: Int?) {
+
+        let trimmedBaseName =
+            proposedBaseName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard
+            let openParenIndex =
+                trimmedBaseName.lastIndex(of: "("),
+            trimmedBaseName.last == ")"
+        else {
+            return (
+                trimmedBaseName.isEmpty ? "PhotoMemo" : trimmedBaseName,
+                nil
+            )
+        }
+
+        let numberStart =
+            trimmedBaseName.index(after: openParenIndex)
+        let numberText =
+            trimmedBaseName[
+                numberStart..<trimmedBaseName.index(before: trimmedBaseName.endIndex)
+            ]
+
+        guard
+            !numberText.isEmpty,
+            numberText.allSatisfy(\.isNumber),
+            let index = Int(numberText)
+        else {
+            return (
+                trimmedBaseName.isEmpty ? "PhotoMemo" : trimmedBaseName,
+                nil
+            )
+        }
+
+        let root =
+            String(trimmedBaseName[..<openParenIndex])
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return (
+            root.isEmpty ? "PhotoMemo" : root,
+            max(index, 1)
+        )
     }
 }

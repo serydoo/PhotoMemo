@@ -1,5 +1,7 @@
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
+import PhotosUI
+import UIKit
 
 struct PhotoMemoiOSMVPTestView: View {
 
@@ -19,6 +21,19 @@ struct PhotoMemoiOSMVPTestView: View {
     private var logoMode: MVPLogoMode = .appleMini
 
     @State
+    private var selectedLogoItem: PhotosPickerItem?
+
+    @State
+    private var customLogoBadge: Badge?
+
+    @State
+    private var isOptimizingLogo = false
+
+    @State
+    private var logoStatusMessage =
+        "建议上传 2048 × 2048 的透明 PNG。"
+
+    @State
     private var birthdayDate =
         Calendar.current.date(
             from: DateComponents(
@@ -29,10 +44,26 @@ struct PhotoMemoiOSMVPTestView: View {
         ) ?? Date()
 
     @State
-    private var outputTarget: MVPIOSOutputTarget = .applePhotos
+    private var outputTarget: MVPIOSOutputTarget = .automatic
 
     @State
-    private var targetAlbumName = "途途相册"
+    private var availableAlbums: [PhotoAlbumOption] = []
+
+    @State
+    private var selectedExistingAlbumIdentifier = ""
+
+    @State
+    private var newAlbumName =
+        PhotoMemoAlbumSelection.defaultAlbumTitle
+
+    @State
+    private var isLoadingAlbums = false
+
+    @State
+    private var albumStatusMessage = ""
+
+    @State
+    private var isSavingConfiguration = false
 
     @State
     private var profileOffsetY: CGFloat = 0
@@ -43,23 +74,26 @@ struct PhotoMemoiOSMVPTestView: View {
     @State
     private var didBootstrap = false
 
+    @State
+    private var activeConfigurationMessage = "尚未保存为分享配置"
+
+    @State
+    private var showsPresetActivationConfirmation = false
+
+    @State
+    private var pendingActivationPresetTitle = ""
+
     private let captureTimeResolver = CaptureTimeResolver()
+
+    private let logoOptimizer =
+        LogoAssetOptimizationService()
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                let overlayWidth = min(proxy.size.width * 0.72, 540)
-
+            GeometryReader { _ in
                 ZStack(alignment: .top) {
                     ScrollView {
-                        VStack(spacing: 16) {
-                            profileSection
-                                .background(
-                                    offsetReader(
-                                        for: .profile
-                                    )
-                                )
-
+                        VStack(spacing: 18) {
                             previewSection
                                 .background(
                                     offsetReader(
@@ -70,6 +104,13 @@ struct PhotoMemoiOSMVPTestView: View {
                                     max(
                                         1 - previewPinProgress,
                                         0
+                                    )
+                                )
+
+                            profileSection
+                                .background(
+                                    offsetReader(
+                                        for: .profile
                                     )
                                 )
 
@@ -86,24 +127,17 @@ struct PhotoMemoiOSMVPTestView: View {
                             outputSection
                             memoryWriteSection
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
-                        .padding(.bottom, 28)
+                        .padding(.horizontal, 18)
+                        .padding(.top, 16)
+                        .padding(.bottom, 34)
                     }
 
                     if previewPinProgress > 0.01 {
                         previewSection
-                            .padding(.horizontal, 16)
-                            .padding(.top, 10)
+                            .padding(.horizontal, 18)
+                            .padding(.top, 12)
                             .opacity(previewPinProgress)
                             .allowsHitTesting(false)
-                    }
-
-                    if let region = activeModuleRegion {
-                        moduleLibraryOverlay(
-                            region: region,
-                            width: overlayWidth
-                        )
                     }
                 }
                 .frame(
@@ -114,10 +148,39 @@ struct PhotoMemoiOSMVPTestView: View {
                 .background(ConfigurationUI.appBackground.ignoresSafeArea())
                 .coordinateSpace(name: "mvp-scroll")
             }
-            .navigationTitle("PhotoMemo MVP 测试")
+            .navigationTitle("PhotoMemo")
             .navigationBarTitleDisplayMode(.inline)
         }
         .preferredColorScheme(.light)
+        .task {
+            await loadAlbumOptions()
+        }
+        .sheet(
+            isPresented: moduleSheetPresented
+        ) {
+            if let region = activeModuleRegion {
+                moduleLibrarySheet(region: region)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+        .confirmationDialog(
+            "将当前 Preset 保存为生效配置？",
+            isPresented: $showsPresetActivationConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("保存为生效配置") {
+                Task {
+                    await applyCurrentMVPConfiguration()
+                }
+            }
+
+            Button("仅切换查看", role: .cancel) {
+                activeConfigurationMessage = "有未保存修改"
+            }
+        } message: {
+            Text("已切换到「\(pendingActivationPresetTitle)」。保存后，下一次从照片分享进入 PhotoMemo 时会使用这套配置和时间锚点。")
+        }
         .onAppear {
             bootstrapIfNeeded()
         }
@@ -126,36 +189,74 @@ struct PhotoMemoiOSMVPTestView: View {
         }
         .onChange(of: birthdayDate) { _, _ in
             refreshDynamicPreview()
+            activeConfigurationMessage = "有未保存修改"
+        }
+        .onChange(of: selectedLogoItem) { _, item in
+            guard let item else {
+                return
+            }
+
+            Task {
+                await optimizeSelectedLogo(item)
+            }
+        }
+        .onChange(of: logoMode) { _, _ in
+            activeConfigurationMessage = "有未保存修改"
+        }
+        .onChange(of: outputTarget) { _, _ in
+            activeConfigurationMessage = "有未保存修改"
+        }
+        .onChange(of: selectedExistingAlbumIdentifier) { _, _ in
+            activeConfigurationMessage = "有未保存修改"
+        }
+        .onChange(of: newAlbumName) { _, _ in
+            activeConfigurationMessage = "有未保存修改"
         }
     }
 
     private var profileSection: some View {
-        MVPCardSurface(title: "Profile") {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
+        MVPCardSurface(title: "记忆档案") {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
                     presetPicker
 
                     Spacer(minLength: 0)
 
-                    Button("应用") {
-                        session.applySelectedMemoryPreset()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-
-                    Text("默认")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    Button("重置") {
-                        session.resetSelectedMemoryPreset()
-                        bootstrapDrafts()
+                    Button {
+                        Task {
+                            await applyCurrentMVPConfiguration()
+                        }
+                    } label: {
+                        if isSavingConfiguration {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("保存")
+                        }
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .disabled(isSavingConfiguration)
+
+                    Button {
+                        session.resetSelectedMemoryPreset()
+                        bootstrapDrafts()
+                        activeConfigurationMessage = "有未保存修改"
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityLabel("重置默认配置")
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                Text(activeConfigurationMessage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+
+                VStack(alignment: .leading, spacing: 6) {
                     Text("当前记忆对象摘要")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -164,7 +265,7 @@ struct PhotoMemoiOSMVPTestView: View {
                     Text(session.currentConfigurationLabel)
                         .font(.headline.weight(.semibold))
 
-                    Text(session.state.selectedSubject?.definition ?? "可后续接入 ConfigurationSession mock 数据。")
+                    Text(session.state.selectedSubject?.definition ?? "用于生成照片底部信息卡。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -176,6 +277,8 @@ struct PhotoMemoiOSMVPTestView: View {
     private var previewSection: some View {
         MVPPreviewCard(
             logoMode: logoMode,
+            customLogoImagePath:
+                customLogoBadge?.imagePath,
             regionText:
                 previewText(
                     for: CardRegion.region(for: .leftPrimary)
@@ -196,7 +299,7 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var editorCluster: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
                 MVPRegionEditorCard(
                     region: region,
@@ -205,21 +308,21 @@ struct PhotoMemoiOSMVPTestView: View {
                         activeModuleRegion = region
                         selectedModule = nil
                     },
-                    onUpdateBaseText: { text in
+                    onUpdateText: { text in
                         updateDraft(for: region) { draft in
-                            draft.baseText = text
+                            draft.updateText(text)
                         }
                     },
-                    onUpdateContinuationText: { text in
+                    onRemoveItem: { item in
                         updateDraft(for: region) { draft in
-                            draft.continuationText = text
-                        }
-                    },
-                    onRemoveModule: { module in
-                        updateDraft(for: region) { draft in
-                            draft.modules.removeAll { $0.id == module.id }
+                            draft.items.removeAll { $0.id == item.id }
                         }
                         refreshPreview(for: region)
+                    },
+                    onAddSeparator: { separator in
+                        updateDraft(for: region) { draft in
+                            draft.items.append(.separator(separator))
+                        }
                     },
                     onShowModules: {
                         activeModuleRegion = region
@@ -230,7 +333,7 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var logoSection: some View {
-        MVPCardSurface(title: "显示标志") {
+        MVPCardSurface(title: "Logo 标识") {
             VStack(alignment: .leading, spacing: 12) {
                 Picker("Logo 标识", selection: $logoMode) {
                     ForEach(MVPLogoMode.allCases) { mode in
@@ -250,16 +353,42 @@ struct PhotoMemoiOSMVPTestView: View {
 
                         Text(logoMode.title)
                             .font(.subheadline.weight(.semibold))
+
+                        Text(logoStatusMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Spacer(minLength: 0)
+                }
+
+                if logoMode == .customUpload {
+                    PhotosPicker(
+                        selection: $selectedLogoItem,
+                        matching: .images
+                    ) {
+                        Label(
+                            isOptimizingLogo
+                            ? "正在优化"
+                            : "选择 Logo",
+                            systemImage:
+                                isOptimizingLogo
+                                ? "hourglass"
+                                : "photo.badge.plus"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .disabled(isOptimizingLogo)
                 }
             }
         }
     }
 
     private var birthdaySection: some View {
-        MVPCardSurface(title: "途途生日") {
+        MVPCardSurface(title: "时间锚点") {
             VStack(alignment: .leading, spacing: 12) {
                 DatePicker(
                     "途途生日",
@@ -275,7 +404,7 @@ struct PhotoMemoiOSMVPTestView: View {
                         .frame(width: 16)
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("智能模块")
+                        Text("时间结果")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
@@ -289,23 +418,55 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var outputSection: some View {
-        MVPCardSurface(title: "输出区域") {
+        MVPCardSurface(title: "输出") {
             VStack(alignment: .leading, spacing: 12) {
-                Picker("输出到", selection: $outputTarget) {
+                Picker("保存位置", selection: $outputTarget) {
                     ForEach(MVPIOSOutputTarget.allCases) { target in
                         Text(target.title).tag(target)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
 
-                if outputTarget == .specificAlbum {
-                    TextField("指定相册名称", text: $targetAlbumName)
+                switch outputTarget {
+                case .automatic,
+                     .applePhotos:
+                    EmptyView()
+
+                case .existingAlbum:
+                    Picker(
+                        "相册",
+                        selection: $selectedExistingAlbumIdentifier
+                    ) {
+                        if availableAlbums.isEmpty {
+                            Text("暂无可用相册").tag("")
+                        } else {
+                            ForEach(availableAlbums) { album in
+                                Text(album.title).tag(album.id)
+                            }
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .disabled(availableAlbums.isEmpty)
+
+                case .newAlbum:
+                    TextField("相册名称", text: $newAlbumName)
                         .textFieldStyle(.roundedBorder)
                 }
 
                 Text(outputTarget.note)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                if isLoadingAlbums {
+                    Label("正在读取相册", systemImage: "photo.on.rectangle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if !albumStatusMessage.isEmpty {
+                    Text(albumStatusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }
@@ -369,6 +530,20 @@ struct PhotoMemoiOSMVPTestView: View {
         }
     }
 
+    private var moduleSheetPresented: Binding<Bool> {
+        Binding(
+            get: {
+                activeModuleRegion != nil
+            },
+            set: { isPresented in
+                if !isPresented {
+                    activeModuleRegion = nil
+                    selectedModule = nil
+                }
+            }
+        )
+    }
+
     private var logoPreview: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
@@ -384,139 +559,74 @@ struct PhotoMemoiOSMVPTestView: View {
             case .appleMini:
                 Image(systemName: "apple.logo")
                     .font(.title2.weight(.semibold))
-            case .customPlaceholder:
-                VStack(spacing: 4) {
+            case .customUpload:
+                if let imagePath = customLogoBadge?.imagePath,
+                   let image = UIImage(contentsOfFile: imagePath) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(8)
+                } else {
+                    VStack(spacing: 4) {
                     Image(systemName: "photo.badge.plus")
                         .font(.title3.weight(.semibold))
-                    Text("占位")
+                    Text("上传")
                         .font(.caption2.weight(.semibold))
+                    }
+                    .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.secondary)
             }
         }
     }
 
-    private func moduleLibraryOverlay(
-        region: CardRegion,
-        width: CGFloat
+    private func moduleLibrarySheet(
+        region: CardRegion
     ) -> some View {
-        ZStack {
-            Color.black.opacity(0.16)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    activeModuleRegion = nil
-                    selectedModule = nil
-                }
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(modules(for: region)) { module in
+                        Button {
+                            insert(module, into: region)
+                            activeModuleRegion = nil
+                            selectedModule = nil
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: module.systemImage)
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 24)
 
-            VStack(spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(region.semanticTitle)
-                            .font(.headline.weight(.semibold))
-                        Text("点选模块后点击插入到编辑区")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(module.title)
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+
+                                    Text(moduleValue(module))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+
+                                Spacer(minLength: 0)
+                            }
+                        }
                     }
-
-                    Spacer(minLength: 0)
-
-                    Button("关闭") {
+                } header: {
+                    Text("加入当前区域")
+                }
+            }
+            .navigationTitle(region.semanticTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完成") {
                         activeModuleRegion = nil
                         selectedModule = nil
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 8),
-                        GridItem(.flexible(), spacing: 8)
-                    ],
-                    spacing: 8
-                ) {
-                    ForEach(modules(for: region)) { module in
-                        Button {
-                            selectedModule = module
-                        } label: {
-                            moduleCard(module, isSelected: selectedModule == module)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                HStack(spacing: 8) {
-                    Text(selectedModule?.title ?? "先选择一个模块")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Spacer(minLength: 0)
-
-                    Button("插入") {
-                        guard let selectedModule, activeModuleRegion == region else {
-                            return
-                        }
-                        insert(selectedModule, into: region)
-                        activeModuleRegion = nil
-                        self.selectedModule = nil
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(selectedModule == nil)
                 }
             }
-            .padding(14)
-            .frame(width: width, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(ConfigurationUI.faintHairline)
-            )
-            .shadow(color: ConfigurationUI.cardShadow, radius: 22, y: 10)
-            .padding(.top, 100)
         }
-    }
-
-    private func moduleCard(
-        _ module: IOSInsertableModule,
-        isSelected: Bool
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: module.systemImage)
-                    .font(.caption.weight(.semibold))
-                Text(module.title)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-            }
-
-            Text(moduleValue(module))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .foregroundStyle(Color.primary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(
-                    isSelected
-                    ? Color.accentColor.opacity(0.11)
-                    : Color.black.opacity(0.03)
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(
-                    isSelected
-                    ? Color.accentColor.opacity(0.30)
-                    : ConfigurationUI.faintHairline
-                )
-        )
     }
 
     private func draft(for region: CardRegion) -> MVPEditorDraft {
@@ -532,6 +642,7 @@ struct PhotoMemoiOSMVPTestView: View {
         transform(&draft)
         regionDrafts[region] = draft
         refreshPreview(for: region)
+        activeConfigurationMessage = "有未保存修改"
     }
 
     private func refreshPreview(for region: CardRegion) {
@@ -553,17 +664,11 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private func composedText(for draft: MVPEditorDraft) -> String {
-        let parts = [
-            draft.baseText.trimmingCharacters(in: .whitespacesAndNewlines),
-            draft.modules
-                .map(\.value)
-                .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                .joined(separator: " "),
-            draft.continuationText.trimmingCharacters(in: .whitespacesAndNewlines)
-        ]
-        .filter { !$0.isEmpty }
+        draft.singleLineText
+    }
 
-        return parts.joined(separator: " ")
+    private func templateText(for draft: MVPEditorDraft) -> String {
+        draft.singleLineTemplateText
     }
 
     private func makeDefaultDraft(
@@ -585,12 +690,14 @@ struct PhotoMemoiOSMVPTestView: View {
             }
 
             return MVPEditorDraft(
-                baseText: "\(recorderName) 当天",
-                continuationText: "",
-                modules: [
-                    IOSInsertedModule(
-                        title: IOSInsertableModule.smartTime.title,
+                items: [
+                    .text("\(recorderName) 当天"),
+                    .token(
+                        IOSInsertableModule.smartTime.title,
                         value: smartTimeResult,
+                        templateValue: templateToken(
+                            for: .smartTime
+                        ),
                         systemImage: IOSInsertableModule.smartTime.systemImage
                     )
                 ]
@@ -598,13 +705,15 @@ struct PhotoMemoiOSMVPTestView: View {
         }
 
         return MVPEditorDraft(
-            baseText: ConfigurationSession.defaultPreviewText(
-                for: region,
-                templateID: templateID,
-                subject: subject
-            ),
-            continuationText: "",
-            modules: []
+            items: [
+                .text(
+                    ConfigurationSession.defaultPreviewText(
+                        for: region,
+                        templateID: templateID,
+                        subject: subject
+                    )
+                )
+            ]
         )
     }
 
@@ -613,14 +722,346 @@ struct PhotoMemoiOSMVPTestView: View {
         into region: CardRegion
     ) {
         updateDraft(for: region) { draft in
-            draft.modules.append(
-                IOSInsertedModule(
-                    title: module.title,
+            draft.items.append(
+                .token(
+                    module.title,
                     value: moduleValue(module),
+                    templateValue: templateToken(for: module),
                     systemImage: module.systemImage
                 )
             )
         }
+    }
+
+    @MainActor
+    private func applyCurrentMVPConfiguration() async {
+        guard !isSavingConfiguration else {
+            return
+        }
+
+        isSavingConfiguration = true
+        activeConfigurationMessage = "正在保存"
+
+        let albumSelection: MVPResolvedAlbumSelection
+
+        do {
+            albumSelection =
+                try await resolvedOutputAlbumSelection()
+        } catch {
+            activeConfigurationMessage =
+                error.localizedDescription
+            isSavingConfiguration = false
+            return
+        }
+
+        let template =
+            Template(
+                preset: .immersWhite,
+                name: session.currentMemoryPresetTitle,
+                leftTopArea: templateArea(
+                    name: "Recorder",
+                    region: .slotA
+                ),
+                leftBottomArea: templateArea(
+                    name: "Timeline",
+                    region: .slotB
+                ),
+                rightTopArea: templateArea(
+                    name: "Capture Summary",
+                    region: .slotC
+                ),
+                rightBottomArea: templateArea(
+                    name: "Memory",
+                    region: .slotD
+                ),
+                badgeArea: .badge
+            )
+
+        let settings = SettingsService()
+        let anchor = persistTimeAnchor(
+            settings: settings
+        )
+        settings.selectedTemplate =
+            template.normalizedForEditing
+        settings.selectedBadge =
+            selectedBadgeForSaving
+        settings.shouldWritePhotoDescription =
+            session.usesCustomMemoryWriteText
+        settings.photoDescriptionOverride =
+            session.usesCustomMemoryWriteText
+            ? session.customMemoryWriteText
+            : ""
+        settings.saveTemplate()
+        settings.saveBadge()
+        settings.savePhotoDescriptionSettings()
+        settings.saveEditorState(
+            selectedAnchorID: anchor.id,
+            selectedAlbumIdentifier:
+                albumSelection.identifier,
+            selectedAlbumTitle:
+                albumSelection.title
+        )
+
+        session.applySelectedMemoryPreset()
+        activeConfigurationMessage = "已保存为分享配置"
+        isSavingConfiguration = false
+    }
+
+    private func persistTimeAnchor(
+        settings: SettingsService
+    ) -> Anchor {
+        let title = timeAnchorTitle
+        let date = birthdayDate
+
+        if let index = settings.anchors.firstIndex(where: {
+            $0.type == .birthday
+        }) {
+            settings.anchors[index].title = title
+            settings.anchors[index].date = date
+            settings.anchors[index].isCountdown = false
+            settings.saveAnchors()
+            return settings.anchors[index]
+        }
+
+        let anchor =
+            Anchor(
+                type: .birthday,
+                title: title,
+                date: date
+            )
+        settings.anchors.append(anchor)
+        settings.saveAnchors()
+        return anchor
+    }
+
+    private var timeAnchorTitle: String {
+        let subjectName =
+            session.state.selectedSubject?.identity.shortName
+            ?? session.state.selectedSubject?.identity.displayName
+            ?? "记忆对象"
+
+        let trimmedName =
+            subjectName.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmedName.isEmpty
+            ? "记忆对象"
+            : trimmedName
+    }
+
+    @MainActor
+    private func loadAlbumOptions() async {
+        guard !isLoadingAlbums else {
+            return
+        }
+
+        isLoadingAlbums = true
+
+        do {
+            let albums =
+                try await PhotoLibraryExportService()
+                .fetchAlbumOptions()
+            availableAlbums = albums
+
+            if selectedExistingAlbumIdentifier.isEmpty,
+               let firstAlbum = albums.first {
+                selectedExistingAlbumIdentifier = firstAlbum.id
+            }
+
+            albumStatusMessage =
+                albums.isEmpty
+                ? "没有找到可选择的自建相册。"
+                : ""
+        } catch {
+            albumStatusMessage =
+                error.localizedDescription
+        }
+
+        isLoadingAlbums = false
+    }
+
+    @MainActor
+    private func optimizeSelectedLogo(
+        _ item: PhotosPickerItem
+    ) async {
+        isOptimizingLogo = true
+        logoStatusMessage = "正在优化 Logo"
+
+        do {
+            guard
+                let data =
+                    try await item.loadTransferable(
+                        type: Data.self
+                    )
+            else {
+                throw LogoAssetOptimizationError.invalidImage
+            }
+
+            let optimizedAsset =
+                try await logoOptimizer.optimize(
+                    data: data
+                )
+
+            customLogoBadge = optimizedAsset.badge
+            logoMode = .customUpload
+            logoStatusMessage =
+                "\(optimizedAsset.pixelSize) × \(optimizedAsset.pixelSize) PNG 已优化"
+            activeConfigurationMessage = "有未保存修改"
+        } catch {
+            logoStatusMessage =
+                error.localizedDescription
+        }
+
+        isOptimizingLogo = false
+    }
+
+    private func bootstrapSavedSettings() {
+        let settings = SettingsService()
+
+        if let savedBadge = settings.selectedBadge,
+           savedBadge.type == .customUpload,
+           savedBadge.imagePath != nil {
+            customLogoBadge = savedBadge
+            logoMode = .customUpload
+            logoStatusMessage = "已使用自选 Logo。"
+        } else {
+            logoMode = .appleMini
+        }
+
+        switch settings.selectedAlbumIdentifier {
+        case PhotoMemoAlbumSelection.systemLibraryIdentifier:
+            outputTarget = .applePhotos
+
+        case "", PhotoMemoAlbumSelection.automaticIdentifier:
+            outputTarget = .automatic
+
+        default:
+            outputTarget = .existingAlbum
+            selectedExistingAlbumIdentifier =
+                settings.selectedAlbumIdentifier
+        }
+
+        let savedAlbumTitle =
+            settings.selectedAlbumTitle
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !savedAlbumTitle.isEmpty,
+           savedAlbumTitle != "系统图库",
+           savedAlbumTitle != "系统相册" {
+            newAlbumName = savedAlbumTitle
+        }
+    }
+
+    private var selectedBadgeForSaving: Badge {
+        switch logoMode {
+        case .appleMini:
+            return .appleClassic
+        case .customUpload:
+            return customLogoBadge ?? .none
+        }
+    }
+
+    @MainActor
+    private func resolvedOutputAlbumSelection()
+        async throws -> MVPResolvedAlbumSelection {
+
+        switch outputTarget {
+        case .automatic:
+            return MVPResolvedAlbumSelection(
+                identifier:
+                    PhotoMemoAlbumSelection
+                    .automaticIdentifier,
+                title:
+                    PhotoMemoAlbumSelection
+                    .defaultAlbumTitle
+            )
+
+        case .applePhotos:
+            return MVPResolvedAlbumSelection(
+                identifier:
+                    PhotoMemoAlbumSelection
+                    .systemLibraryIdentifier,
+                title: "系统图库"
+            )
+
+        case .existingAlbum:
+            guard
+                !selectedExistingAlbumIdentifier.isEmpty,
+                let selectedAlbum =
+                    availableAlbums.first(where: {
+                        $0.id == selectedExistingAlbumIdentifier
+                    })
+            else {
+                return MVPResolvedAlbumSelection(
+                    identifier:
+                        PhotoMemoAlbumSelection
+                        .automaticIdentifier,
+                    title:
+                        PhotoMemoAlbumSelection
+                        .defaultAlbumTitle
+                )
+            }
+
+            return MVPResolvedAlbumSelection(
+                identifier:
+                    selectedAlbum.localIdentifier
+                    ?? selectedAlbum.id,
+                title: selectedAlbum.title
+            )
+
+        case .newAlbum:
+            let album =
+                try await PhotoLibraryExportService()
+                .ensureAlbum(named: newAlbumName)
+
+            await loadAlbumOptions()
+
+            selectedExistingAlbumIdentifier = album.id
+
+            return MVPResolvedAlbumSelection(
+                identifier:
+                    album.localIdentifier
+                    ?? album.id,
+                title: album.title
+            )
+        }
+    }
+
+    private func templateArea(
+        name: String,
+        region: CardRegion
+    ) -> TemplateArea {
+        let text =
+            templateText(
+                for: draft(for: region)
+            )
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return TemplateArea(
+            name: name,
+            items: [
+                TemplateItem(
+                    type: .variable,
+                    name: name,
+                    value: text,
+                    isEnabled: !text.isEmpty
+                )
+            ]
+        )
+    }
+
+    private func templateToken(
+        for module: IOSInsertableModule
+    ) -> String {
+        let token = module.rendererToken
+        return token == module.token
+            ? moduleValue(module)
+            : token
     }
 
     private func modules(for region: CardRegion) -> [IOSInsertableModule] {
@@ -803,6 +1244,7 @@ struct PhotoMemoiOSMVPTestView: View {
         }
 
         didBootstrap = true
+        bootstrapSavedSettings()
         bootstrapDrafts()
     }
 
@@ -825,6 +1267,13 @@ struct PhotoMemoiOSMVPTestView: View {
                 ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
             },
             set: { newValue in
+                let currentID =
+                    session.state.selectedMemoryPreset?.id
+
+                guard newValue != currentID else {
+                    return
+                }
+
                 guard let preset = session.state.memoryPresets.first(where: {
                     $0.id == newValue
                 }) else {
@@ -832,15 +1281,121 @@ struct PhotoMemoiOSMVPTestView: View {
                 }
                 session.selectMemoryPreset(preset)
                 bootstrapDrafts()
+                pendingActivationPresetTitle = preset.title
+                activeConfigurationMessage = "有未保存修改"
+                showsPresetActivationConfirmation = true
             }
         )
     }
 }
 
 private struct MVPEditorDraft: Hashable {
-    var baseText: String
-    var continuationText: String
-    var modules: [IOSInsertedModule]
+    var items: [MVPContentItem]
+
+    var modules: [MVPContentItem] {
+        items.filter { $0.kind != .text }
+    }
+
+    var text: String {
+        items.first { $0.kind == .text }?.value ?? ""
+    }
+
+    var singleLineText: String {
+        items
+            .map(\.displayValue)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .joined(separator: " ")
+    }
+
+    var singleLineTemplateText: String {
+        items
+            .map(\.templateValue)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .joined(separator: " ")
+    }
+
+    mutating func updateText(_ text: String) {
+        if let index = items.firstIndex(where: { $0.kind == .text }) {
+            items[index].value = text
+        } else {
+            items.insert(.text(text), at: 0)
+        }
+    }
+}
+
+private struct MVPContentItem: Identifiable, Hashable {
+
+    enum Kind: Hashable {
+        case text
+        case token
+        case separator
+        case lineBreak
+    }
+
+    let id: UUID
+    let kind: Kind
+    var title: String
+    var value: String
+    var savedValue: String
+    var systemImage: String
+
+    var displayValue: String {
+        switch kind {
+        case .text, .token, .separator:
+            return value
+        case .lineBreak:
+            return " "
+        }
+    }
+
+    var templateValue: String {
+        switch kind {
+        case .text, .separator:
+            return value
+        case .token:
+            return savedValue
+        case .lineBreak:
+            return " "
+        }
+    }
+
+    static func text(_ value: String) -> MVPContentItem {
+        MVPContentItem(
+            id: UUID(),
+            kind: .text,
+            title: "文字",
+            value: value,
+            savedValue: value,
+            systemImage: "textformat"
+        )
+    }
+
+    static func token(
+        _ title: String,
+        value: String,
+        templateValue: String,
+        systemImage: String
+    ) -> MVPContentItem {
+        MVPContentItem(
+            id: UUID(),
+            kind: .token,
+            title: title,
+            value: value,
+            savedValue: templateValue,
+            systemImage: systemImage
+        )
+    }
+
+    static func separator(_ value: String) -> MVPContentItem {
+        MVPContentItem(
+            id: UUID(),
+            kind: .separator,
+            title: "分隔符",
+            value: value,
+            savedValue: value,
+            systemImage: "circle.fill"
+        )
+    }
 }
 
 private struct MVPCardSurface<Content: View>: View {
@@ -857,7 +1412,7 @@ private struct MVPCardSurface<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -866,29 +1421,36 @@ private struct MVPCardSurface<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.88))
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.panelBackground)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
                 .stroke(ConfigurationUI.faintHairline)
         )
-        .shadow(color: ConfigurationUI.cardShadow, radius: 12, y: 6)
+        .shadow(color: ConfigurationUI.cardShadow, radius: 8, y: 3)
     }
 }
 
 private struct MVPPreviewCard: View {
 
     let logoMode: MVPLogoMode
+    let customLogoImagePath: String?
     let regionText: String
     let timeText: String
     let contextText: String
     let memoryText: String
 
     var body: some View {
-        MVPCardSurface(title: "Preview") {
+        MVPCardSurface(title: "预览") {
             Color.clear
             .aspectRatio(compactPreviewAspectRatio, contentMode: .fit)
             .overlay {
@@ -896,9 +1458,17 @@ private struct MVPPreviewCard: View {
                     compactPreviewCard(size: proxy.size)
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.cornerRadius,
+                    style: .continuous
+                )
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.cornerRadius,
+                    style: .continuous
+                )
                     .stroke(ConfigurationUI.faintHairline)
             )
         }
@@ -1078,9 +1648,16 @@ private struct MVPPreviewCard: View {
             case .appleMini:
                 Image(systemName: "apple.logo")
                     .font(.system(size: logoSize, weight: .semibold))
-            case .customPlaceholder:
-                Image(systemName: "photo.badge.plus")
-                    .font(.system(size: logoSize * 0.78, weight: .semibold))
+            case .customUpload:
+                if let customLogoImagePath,
+                   let image = UIImage(contentsOfFile: customLogoImagePath) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Image(systemName: "photo.badge.plus")
+                        .font(.system(size: logoSize * 0.78, weight: .semibold))
+                }
             }
         }
         .symbolRenderingMode(.hierarchical)
@@ -1108,19 +1685,19 @@ private struct MVPRegionEditorCard: View {
     let region: CardRegion
     let draft: MVPEditorDraft
     let onFocus: () -> Void
-    let onUpdateBaseText: (String) -> Void
-    let onUpdateContinuationText: (String) -> Void
-    let onRemoveModule: (IOSInsertedModule) -> Void
+    let onUpdateText: (String) -> Void
+    let onRemoveItem: (MVPContentItem) -> Void
+    let onAddSeparator: (String) -> Void
     let onShowModules: () -> Void
 
     var body: some View {
         MVPCardSurface(title: region.semanticTitle) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
                     Text(region.displayTitle)
                         .font(.headline.weight(.semibold))
                     Spacer()
-                    Button("模块窗口") {
+                    Button("插入信息") {
                         onShowModules()
                     }
                     .buttonStyle(.bordered)
@@ -1128,30 +1705,30 @@ private struct MVPRegionEditorCard: View {
                 }
 
                 TextField(
-                    "第一段输入",
+                    "输入文字",
                     text: Binding(
-                        get: { draft.baseText },
-                        set: onUpdateBaseText
+                        get: { draft.text },
+                        set: onUpdateText
                     ),
-                    axis: .vertical
+                    axis: .horizontal
                 )
                 .textFieldStyle(.roundedBorder)
-                .lineLimit(1...3)
+                .lineLimit(1)
                 .onTapGesture(perform: onFocus)
 
                 if !draft.modules.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
-                            ForEach(draft.modules) { module in
+                            ForEach(draft.modules) { item in
                                 HStack(spacing: 4) {
-                                    Image(systemName: module.systemImage)
-                                    Text(module.title)
-                                    if !module.value.isEmpty {
-                                        Text(module.value)
+                                    Image(systemName: item.systemImage)
+                                    Text(item.title)
+                                    if !item.value.isEmpty {
+                                        Text(item.value)
                                             .foregroundStyle(.secondary)
                                     }
                                     Button {
-                                        onRemoveModule(module)
+                                        onRemoveItem(item)
                                     } label: {
                                         Image(systemName: "xmark.circle.fill")
                                     }
@@ -1175,17 +1752,21 @@ private struct MVPRegionEditorCard: View {
                     }
                 }
 
-                TextField(
-                    "继续输入",
-                    text: Binding(
-                        get: { draft.continuationText },
-                        set: onUpdateContinuationText
-                    ),
-                    axis: .vertical
-                )
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(1...2)
-                .onTapGesture(perform: onFocus)
+                HStack(spacing: 8) {
+                    Text("分隔符")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    ForEach(["·", "|", "/"], id: \.self) { separator in
+                        Button(separator) {
+                            onAddSeparator(separator)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.mini)
+                    }
+
+                    Spacer(minLength: 0)
+                }
             }
         }
     }
@@ -1197,7 +1778,7 @@ private enum MVPLogoMode:
     Identifiable {
 
     case appleMini
-    case customPlaceholder
+    case customUpload
 
     var id: String {
         rawValue
@@ -1206,9 +1787,9 @@ private enum MVPLogoMode:
     var title: String {
         switch self {
         case .appleMini:
-            return "Apple mini-logo"
-        case .customPlaceholder:
-            return "自选上传占位"
+            return "Apple 标识"
+        case .customUpload:
+            return "自选标识"
         }
     }
 }
@@ -1218,8 +1799,10 @@ private enum MVPIOSOutputTarget:
     CaseIterable,
     Identifiable {
 
+    case automatic
     case applePhotos
-    case specificAlbum
+    case existingAlbum
+    case newAlbum
 
     var id: String {
         rawValue
@@ -1227,21 +1810,36 @@ private enum MVPIOSOutputTarget:
 
     var title: String {
         switch self {
+        case .automatic:
+            return "自动"
         case .applePhotos:
-            return "Apple Photos"
-        case .specificAlbum:
-            return "指定相册"
+            return "系统图库"
+        case .existingAlbum:
+            return "已有相册"
+        case .newAlbum:
+            return "新建相册"
         }
     }
 
     var note: String {
         switch self {
+        case .automatic:
+            return "不选择时，生成照片会进入系统图库，并自动归入 photomemo 相册。"
         case .applePhotos:
-            return "仅 UI 状态，不调用真实写库。"
-        case .specificAlbum:
-            return "仅测试相册选择状态，不写入真实 Photo Library。"
+            return "生成照片只写入系统图库，不额外加入 PhotoMemo 指定相册。"
+        case .existingAlbum:
+            return "生成照片会写入系统图库，并加入选中的相册。"
+        case .newAlbum:
+            return "保存配置时会创建或复用这个相册。"
         }
     }
+}
+
+private struct MVPResolvedAlbumSelection {
+
+    let identifier: String
+
+    let title: String
 }
 
 private enum MVPScrollOffsetKind:

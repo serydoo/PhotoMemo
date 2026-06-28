@@ -98,7 +98,7 @@ private extension PhotoMemoShareWorkflowSummaryBuilder {
         }
 
         if selectedAlbumIdentifier.isEmpty {
-            return "PhotoMemo 相册"
+            return "photomemo 相册"
         }
 
         if let resolvedAlbumTitle =

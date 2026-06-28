@@ -14,21 +14,21 @@ struct InteractiveMemoryCard: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: ConfigurationUI.sectionSpacing) {
                 configurationContext
                 cardSurface
                 regionStrip
                 configurationComponentDock
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 40)
-            .padding(.vertical, 30)
+            .padding(.horizontal, 48)
+            .padding(.vertical, 36)
         }
         .background(ConfigurationUI.appBackground)
     }
 
     private var configurationContext: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 18) {
                 contextPresetControl
 
@@ -67,8 +67,8 @@ struct InteractiveMemoryCard: View {
                 )
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .frame(width: 590, alignment: .leading)
         .configurationPanelChrome()
         .animation(
@@ -78,11 +78,11 @@ struct InteractiveMemoryCard: View {
     }
 
     private var contextPresetControl: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 10) {
             Image(systemName: "rectangle.stack.fill")
                 .font(.caption.weight(.semibold))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.secondary)
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -151,7 +151,7 @@ struct InteractiveMemoryCard: View {
                         : "checkmark.circle"
                 )
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
             .controlSize(.small)
             .help("将当前总体配置设为生效配置")
         }
@@ -203,25 +203,24 @@ struct InteractiveMemoryCard: View {
                 width: compactPreviewWidth,
                 height: compactPreviewHeight
             )
-        .background(
-            LinearGradient(
-                colors: [
-                    RendererConstants.ColorPalette.documentBackground,
-                    ConfigurationUI.panelBackground
-                ],
-                startPoint: .top,
-                endPoint: .bottom
+        .background(ConfigurationUI.panelBackground)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
                 .stroke(ConfigurationUI.faintHairline, lineWidth: 1)
         )
         .shadow(
             color: ConfigurationUI.cardShadow,
-            radius: 18,
-            y: 8
+            radius: 10,
+            y: 4
         )
         .animation(
             .easeInOut(duration: 0.16),

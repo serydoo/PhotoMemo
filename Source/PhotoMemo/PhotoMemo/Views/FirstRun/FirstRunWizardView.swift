@@ -262,7 +262,7 @@ private extension FirstRunWizardView {
             ) {
                 Text("系统相册")
                     .tag(PersonalProfileSaveDestination.systemLibrary)
-                Text("PhotoMemo 相册（推荐）")
+                Text("photomemo 相册（推荐）")
                     .tag(PersonalProfileSaveDestination.photoMemoAlbum)
             }
             .pickerStyle(.inline)

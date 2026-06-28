@@ -400,7 +400,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
 
             if intakeSummary.skippedCount > 0 {
                 infoRow(
-                    title: "重复跳过",
+                    title: "已跳过",
                     value:
                         "\(intakeSummary.skippedCount) 张"
                 )
@@ -812,7 +812,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
 
         if summary.skippedCount > 0 {
             parts.append(
-                "重复内容不会重复入队"
+                "重复或暂不支持的图片不会进入本批次"
             )
         }
 

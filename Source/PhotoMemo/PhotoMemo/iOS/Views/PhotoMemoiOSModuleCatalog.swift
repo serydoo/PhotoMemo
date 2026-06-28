@@ -189,5 +189,50 @@ enum IOSInsertableModule:
             return "{{custom}}"
         }
     }
+
+    var rendererToken: String {
+        switch self {
+        case .subjectNickname:
+            return "{{relationship_label}}"
+        case .smartTime:
+            return "{{anchor_age_text}}"
+        case .captureDate:
+            return "{{capture_date_short}}"
+        case .captureTime:
+            return "{{capture_time_short}}"
+        case .cameraMaker:
+            return "{{brand}}"
+        case .cameraModel:
+            return "{{model}}"
+        case .lensModel:
+            return "{{lens}}"
+        case .focalLength:
+            return "{{focal_length}}"
+        case .aperture:
+            return "{{aperture}}"
+        case .shutterSpeed:
+            return "{{shutter}}"
+        case .iso:
+            return "{{iso}}"
+        case .captureSummary:
+            return "{{camera_summary}}"
+        case .location:
+            return "{{location_display}}"
+        case .altitude:
+            return "{{altitude}}"
+        case .imageSize:
+            return "{{width}} × {{height}}"
+        case .orientation:
+            return "{{orientation}}"
+        case .fileFormat:
+            return "{{file_format}}"
+        case .exposureBias,
+             .meteringMode,
+             .flash,
+             .whiteBalance,
+             .custom:
+            return token
+        }
+    }
 }
 #endif
