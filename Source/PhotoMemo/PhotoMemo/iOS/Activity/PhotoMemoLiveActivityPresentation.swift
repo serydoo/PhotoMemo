@@ -127,27 +127,24 @@ private struct PhotoMemoLiveActivityLockScreenView:
             .font(.subheadline.weight(.medium))
             .lineLimit(2)
 
-            if let currentFileName =
-                resolvedCurrentFileName(
-                    for: context
-                ) {
-                Text(currentFileName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+            if isSingleTask(context) {
+                Text(
+                    statusLine(for: context)
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
 
-            Text(
-                statusLine(
+                pipelineView(
                     for: context
                 )
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(
-                horizontal: false,
-                vertical: true
-            )
+            } else {
+                queueLinesView(
+                    for: context,
+                    font: .caption,
+                    secondaryFont: .caption2
+                )
+            }
 
             ProgressView(
                 value:
@@ -157,26 +154,28 @@ private struct PhotoMemoLiveActivityLockScreenView:
                     ) / 100
             )
 
-            HStack(
-                spacing: 12
-            ) {
-                countPill(
-                    title: "完成",
-                    value:
-                        "\(context.state.completedCount)"
-                )
+            if !isSingleTask(context) {
+                HStack(
+                    spacing: 12
+                ) {
+                    countPill(
+                        title: "完成",
+                        value:
+                            "\(context.state.completedCount)"
+                    )
 
-                countPill(
-                    title: "失败",
-                    value:
-                        "\(context.state.failedCount)"
-                )
+                    countPill(
+                        title: "失败",
+                        value:
+                            "\(context.state.failedCount)"
+                    )
 
-                countPill(
-                    title: "总数",
-                    value:
-                        "\(context.state.totalCount)"
-                )
+                    countPill(
+                        title: "总数",
+                        value:
+                            "\(context.state.totalCount)"
+                    )
+                }
             }
 
             if context.isStale {
@@ -316,20 +315,41 @@ private struct PhotoMemoLiveActivityExpandedBottomView:
                     .lineLimit(1)
             }
 
-            Text(
-                statusLine(
+            if isSingleTask(context) {
+                Text(
+                    statusLine(for: context)
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+                pipelineView(
                     for: context
                 )
-            )
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .lineLimit(2)
+            } else {
+                queueLinesView(
+                    for: context,
+                    font: .caption2,
+                    secondaryFont: .caption2
+                )
+            }
         }
         .frame(
             maxWidth: .infinity,
             alignment: .leading
         )
     }
+}
+
+private func isSingleTask(
+    _ context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >
+) -> Bool {
+
+    context.state.displayModeRawValue
+    == "singleTask"
 }
 
 private func compactSymbolName(
@@ -418,5 +438,175 @@ private func statusLine(
     }
 
     return base
+}
+
+@ViewBuilder
+private func pipelineView(
+    for context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >
+) -> some View {
+
+    let titles =
+        context.state.pipelineStepTitles
+    let activeIndex =
+        context.state.activePipelineStepIndex
+
+    HStack(
+        spacing: 5
+    ) {
+        ForEach(
+            Array(titles.enumerated()),
+            id: \.offset
+        ) { index, title in
+            Circle()
+                .fill(
+                    pipelineStepTint(
+                        index: index,
+                        activeIndex: activeIndex,
+                        context: context
+                    )
+                )
+                .frame(
+                    width: 6,
+                    height: 6
+                )
+                .accessibilityLabel(title)
+
+            if index < titles.count - 1 {
+                Rectangle()
+                    .fill(
+                        Color.secondary
+                            .opacity(
+                                index < activeIndex
+                                ? 0.55
+                                : 0.18
+                            )
+                    )
+                    .frame(height: 1)
+            }
+        }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+        resolvedPipelineAccessibilityLabel(
+            titles: titles,
+            activeIndex: activeIndex
+        )
+    )
+}
+
+private func pipelineStepTint(
+    index: Int,
+    activeIndex: Int,
+    context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >
+) -> Color {
+
+    if context.state.presentationStateRawValue
+        == "needsAttention",
+       index == activeIndex {
+        return .orange
+    }
+
+    if index < activeIndex
+        || context.state.presentationStateRawValue
+        == "completed" {
+        return .green
+    }
+
+    if index == activeIndex {
+        return .blue
+    }
+
+    return .secondary.opacity(0.35)
+}
+
+private func resolvedPipelineAccessibilityLabel(
+    titles: [String],
+    activeIndex: Int
+) -> String {
+
+    guard titles.indices.contains(activeIndex) else {
+        return "处理进度"
+    }
+
+    return "当前步骤：\(titles[activeIndex])"
+}
+
+@ViewBuilder
+private func queueLinesView(
+    for context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >,
+    font: Font,
+    secondaryFont: Font
+) -> some View {
+
+    let lines =
+        resolvedQueueLines(
+            for: context
+        )
+
+    VStack(
+        alignment: .leading,
+        spacing: 4
+    ) {
+        ForEach(
+            Array(lines.enumerated()),
+            id: \.offset
+        ) { _, line in
+            Text(line)
+                .font(font)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+
+        if context.state.overflowQueueCount > 0 {
+            Text("另有 \(context.state.overflowQueueCount) 个队列")
+                .font(secondaryFont)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
+    }
+    .fixedSize(
+        horizontal: false,
+        vertical: true
+    )
+}
+
+private func resolvedQueueLines(
+    for context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >
+) -> [String] {
+
+    let lines =
+        context.state.queueLines
+        .map {
+            $0.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        }
+        .filter {
+            !$0.isEmpty
+        }
+
+    if lines.isEmpty {
+        return [
+            statusLine(
+                for: context
+            )
+        ]
+    }
+
+    return Array(
+        lines.prefix(3)
+    )
 }
 #endif

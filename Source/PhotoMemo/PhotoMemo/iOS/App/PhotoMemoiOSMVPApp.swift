@@ -4,11 +4,18 @@ import SwiftUI
 @main
 struct PhotoMemoiOSMVPApp: App {
 
+    @StateObject
+    private var runtime =
+        PhotoMemoAppRuntime()
+
     var body: some Scene {
         WindowGroup {
-            PhotoMemoiOSTemporaryEntryView(
-                storageKey: "photomemo.ios.mvp.temporaryEntry",
-                defaultEntry: "mvpTest"
+            PhotoMemoiOSHomeView(
+                runtime: runtime,
+                temporaryEntryStorageKey:
+                    "photomemo.ios.mvp.temporaryEntry",
+                temporaryEntryDefault:
+                    "mvpTest"
             )
         }
     }

@@ -33,6 +33,27 @@ extension PlatformImage {
 #endif
     }
 
+    static func photoMemoImage(
+        cgImage: CGImage
+    ) -> PlatformImage {
+
+#if os(macOS)
+        return PlatformImage(
+            cgImage: cgImage,
+            size: CGSize(
+                width: cgImage.width,
+                height: cgImage.height
+            )
+        )
+#else
+        return PlatformImage(
+            cgImage: cgImage,
+            scale: 1,
+            orientation: .up
+        )
+#endif
+    }
+
     var photoMemoSize: CGSize {
 
 #if os(macOS)

@@ -116,7 +116,7 @@ struct PhotoMemoiOSMVPTestView: View {
 
                             editorCluster
                                 .opacity(
-                                    max(editorRevealProgress, 0.08)
+                                    max(editorRevealProgress, 0.26)
                                 )
                                 .offset(
                                     y: (1 - editorRevealProgress) * 12
@@ -1507,7 +1507,8 @@ private struct MVPPreviewCard: View {
                 primary: regionText,
                 secondary: timeText,
                 spec: spec,
-                barHeight: height
+                barHeight: height,
+                emphasizesPrimary: true
             )
             .frame(
                 width: width * spec.leftWidth,
@@ -1575,7 +1576,8 @@ private struct MVPPreviewCard: View {
         primary: String,
         secondary: String,
         spec: CompactInformationBarSpec,
-        barHeight: CGFloat
+        barHeight: CGFloat,
+        emphasizesPrimary: Bool = false
     ) -> some View {
         VStack(
             alignment: .leading,
@@ -1585,10 +1587,14 @@ private struct MVPPreviewCard: View {
                 primary,
                 fontSize:
                     barHeight
-                    * spec.primaryFontToBarHeight,
-                weight: .bold,
+                    * spec.primaryFontToBarHeight
+                    * (emphasizesPrimary ? 1.08 : 1),
+                weight: emphasizesPrimary ? .heavy : .bold,
                 tracking: spec.primaryTracking,
                 color:
+                    emphasizesPrimary
+                    ? Color.black.opacity(0.98)
+                    :
                     RendererConstants
                     .CompactInformationBar
                     .primaryText
@@ -1602,6 +1608,9 @@ private struct MVPPreviewCard: View {
                 weight: .regular,
                 tracking: spec.secondaryTracking,
                 color:
+                    emphasizesPrimary
+                    ? Color.black.opacity(0.70)
+                    :
                     RendererConstants
                     .CompactInformationBar
                     .secondaryText

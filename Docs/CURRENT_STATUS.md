@@ -1,6 +1,140 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-28
+Last updated: 2026-06-29
+
+## 2026-06-29 MVP Queue Naming Refinement
+
+This slice aligns the Share-driven progress surface with the latest interaction
+decision: one queue represents one Share action, and the user-facing queue name
+should be based on the share/start time plus the number of photos.
+
+What changed:
+
+- New Share-driven jobs now use compact queue names instead of engineering
+  titles:
+  - today: `18:42（3张）`
+  - yesterday: `昨天 18:42（3张）`
+  - earlier this year: `6月29日 18:42（3张）`
+- Existing persisted jobs are also normalized at display time through
+  `PhotoMemoBackgroundStatusService`, so old titles such as external image
+  processing labels no longer leak into the status sheet or Live Activity.
+- Queue lines now start with the queue name:
+  - `18:42（3张） · 1/3 · 约 2 分钟`
+  - `18:42（3张） · 1 张需要处理`
+  - `18:42（3张） · 已保存 3 张`
+- Completed and failed line copy was tightened from queue-state labels to
+  result-first wording:
+  - `已保存 X 张`
+  - `X 张需要处理`
+- `BatchJob.createdAt` now follows the earliest intake payload request time for
+  newly enqueued jobs, which keeps queue naming closer to the actual Share
+  action.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` Debug build on connected iPhone7
+- installed the updated MVP app to connected iPhone7
+
+Manual verification still needed:
+
+- Share one photo and confirm the status sheet / notification progress uses the
+  compact queue name.
+- Share 2-3 batches and confirm each queue line maps to one Share action.
+- Share 4+ batches and confirm aggregate mode stays calm.
+
+## 2026-06-29 MVP Share Handoff URL Scheme Fix
+
+This slice fixes the next concrete reason the Share-driven MVP could appear to
+accept RAW/JPEG input but then produce no visible progress or output.
+
+Root cause:
+
+- The Share Extension confirmation UI could run and persist incoming items.
+- The MVP host app had Live Activity support and embedded extensions, but its
+  built `Info.plist` did not contain a real `CFBundleURLTypes` entry.
+- The Share Extension hands work to the host app by opening
+  `photomemo://share`.
+- Without the URL scheme registered on `PhotoMemoiOSMVP`, the host app could
+  fail to open, which means it would not drain the shared intake store, enqueue
+  jobs, start Live Activity progress, or save outputs.
+
+What changed:
+
+- Added `Source/PhotoMemo/PhotoMemoiOSMVP-Info.plist`.
+- `PhotoMemoiOSMVP` now uses that Info.plist for Debug and Release.
+- The MVP Info.plist explicitly contains:
+  - `CFBundleURLTypes -> photomemo`
+  - `NSSupportsLiveActivities`
+  - photo-library usage strings
+- Share Extension handoff is now observable:
+  - `requestMainAppRefresh()` returns whether the host app opened.
+  - If handoff fails, the confirmation UI stays visible with a retry action
+    instead of silently completing.
+- After successful intake, the confirmation stack now performs a subtle
+  upward shrink/fade transition before handing work to the host app.
+
+Verification:
+
+- passed `PhotoMemoiOSMVP` Debug build on connected iPhone7
+- confirmed built MVP `Info.plist` includes `CFBundleURLTypes -> photomemo`
+- confirmed built MVP `Info.plist` includes `NSSupportsLiveActivities = true`
+- confirmed built MVP app still embeds both Share and Widget extensions
+- installed the updated MVP app to connected iPhone7
+- passed `PhotoMemoiOSMVP` Debug iOS Simulator build
+- passed `PhotoMemo` Debug macOS build
+- passed `git diff --check`
+
+Manual verification still needed:
+
+- share a JPEG from Apple Photos into PhotoMemo MVP
+- share a RAW / DNG from Apple Photos into PhotoMemo MVP
+- confirm the host app handoff no longer silently fails
+- confirm Lock Screen / Notification Center progress appears for non-trivial
+  work
+- confirm output appears in Apple Photos / the configured album
+
+## 2026-06-29 Single Task Pipeline Progress
+
+This slice refines the Share-driven background progress model so short and long
+tasks feel more understandable without turning PhotoMemo into a batch dashboard.
+
+What changed:
+
+- `PhotoMemoBackgroundJobSnapshot` now exposes a display mode:
+  - single task
+  - queue lines
+  - aggregate
+- Single-photo tasks now use a fixed five-step progress model:
+  - receive photo
+  - read information
+  - generate card
+  - save to library
+  - complete
+- Lock Screen / Live Activity presentation now switches by display mode:
+  - single task: status line + fine progress + pipeline dots
+  - 2-3 queues: existing queue lines
+  - 4+ queues: aggregate summary
+- The iOS status sheet title is now `处理进度`.
+- The iOS status sheet shows the full pipeline for single-photo tasks.
+- Final local notification copy is shorter:
+  - success: `PhotoMemo 已保存 X 张照片`
+  - failure: `X 张照片需要处理`
+  - partial success: `已保存 X 张，Y 张需要处理`
+
+Verification:
+
+- passed `PhotoMemoiOSMVP` Debug build on connected iPhone7
+- installed updated MVP app to connected iPhone7
+- passed `PhotoMemo` Debug macOS build
+
+Manual verification still needed:
+
+- single JPEG task on Lock Screen / Notification Center
+- single RAW task with RAW-stage wording
+- 2-3 share batches as separate queue lines
+- 4+ batches as aggregate summary
+- failure path with retry from the iOS status sheet
 
 ## Current Stage
 
@@ -41,6 +175,147 @@ The highest-priority entry documents are:
 - `Docs/REPOSITORY_VOCABULARY.md`
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md`
+
+## 2026-06-29 MVP RAW / ProRAW Priority Support
+
+This slice upgrades the Share-driven MVP pipeline so RAW-oriented users are no
+longer blocked at intake while preserving the non-destructive product rule.
+
+Principle:
+
+- RAW originals remain untouched.
+- PhotoMemo creates a standard rendered output image from a system display
+  representation plus the configured bottom card.
+- The original RAW metadata remains the source of truth for EXIF-derived card
+  content and metadata propagation.
+
+What changed:
+
+- `PhotoProcessingInputPolicy` now supports:
+  - `JPEG/JPG`
+  - `HEIC/HEIF`
+  - `PNG`
+  - `TIFF`
+  - `RAW/DNG`
+- The unsupported-format message no longer lists RAW / DNG as unsupported.
+- RAW detection uses UTType conformance plus common RAW file extensions such as
+  `dng`, `raw`, `arw`, `cr2`, `cr3`, `nef`, `orf`, `raf`, `rw2`, and `srw`.
+- RAW inputs still follow the current standard photo envelope:
+  - max single side: `8064 px`
+  - max total pixels: `8064 x 6048`
+  - max aspect ratio: `3:1`
+- `PhotoImportService` now keeps normal photos on the existing stable data
+  decode path, but routes RAW photos through a display-representation path:
+  - platform file display image
+  - ImageIO thumbnail/display generation with a bounded max pixel size
+  - CoreImage fallback
+- Batch progress now exposes RAW-specific stages:
+  - `正在准备 RAW 照片`
+  - `已生成 RAW 显示版本`
+- Queue summaries now treat RAW as slower work:
+  - single RAW items can show `准备 RAW` or `RAW 显示版本`
+  - RAW estimate is currently `75 秒/张`
+  - normal still-image estimate remains `14 秒/张`
+- Local progress notification copy now includes the `raw` stage.
+
+Verification:
+
+- passed `PhotoMemoTests/PhotoProcessingInputPolicyTests`
+- passed `PhotoMemoTests/PhotoImportServiceTests`
+- passed `PhotoMemoTests/BatchFixtureCoverageTests`
+- passed `PhotoMemoiOSMVP` Debug build on connected device `iPhone7`
+- installed `PhotoMemoiOSMVP` to connected device `iPhone7`
+- passed `PhotoMemoShareExtension` Debug iOS Simulator build
+- passed `git diff --check`
+
+Not yet manually verified:
+
+- real Apple Photos share using an actual ProRAW / DNG asset
+- final visual output and EXIF-token correctness for RAW-derived outputs
+- memory-pressure behavior on iPhone7 with very large RAW files
+
+## 2026-06-29 Share Confirmation Preview Card Stack
+
+This slice improves the Share Extension confirmation window while keeping the
+Share -> Processing behavior unchanged.
+
+Problem:
+
+- The confirmation window used a single fixed-height `UIImageView`.
+- The preview used `.scaleAspectFill`, so portrait photos could be visibly
+  cropped.
+- Multi-photo shares only previewed the first photo, which made the upcoming
+  queue feel less concrete.
+
+What changed:
+
+- The preview area now uses a horizontal `UIScrollView + UIStackView` card
+  strip.
+- Preview images use `.scaleAspectFit`, so portrait photos remain fully visible.
+- The preview height is slightly reduced to `168pt`, with cards at `158pt`, so
+  the confirmation window stays calm and compact.
+- Multi-photo shares load up to the first 10 previews for memory safety inside
+  the Share Extension.
+- Cards use a subtle overlapping layout to create a restrained card-stack feel.
+- Tapping a card now:
+  - scales it to `1.06x`
+  - strengthens its border
+  - scrolls it into view
+- User-facing copy now says:
+  - `左右滑动查看待处理照片，所有照片会使用相同风格处理。`
+
+Verification:
+
+- passed `PhotoMemoShareExtension` Debug iOS Simulator build
+- passed `PhotoMemoiOSMVP` Debug build on connected device `iPhone7`
+- installed the updated MVP app to connected device `iPhone7`
+- passed `git diff --check`
+
+Manual verification still needed:
+
+- share a single portrait photo and confirm it is no longer cropped
+- share several mixed portrait/landscape photos and check horizontal swiping
+- tap preview cards and verify the selected-card emphasis feels subtle
+
+## 2026-06-29 MVP Live Activity Packaging Fix
+
+This slice fixes the first concrete cause of "no queue progress appears in the
+notification shade" for the MVP test app.
+
+Root cause:
+
+- The installed `PhotoMemoiOSMVP.app` only embedded the Share Extension.
+- It did not embed `PhotoMemoWidgetExtension.appex`, which owns the Live
+  Activity widget presentation.
+- The MVP app Info.plist also missed `NSSupportsLiveActivities = YES`.
+- ActivityKit therefore had no valid Live Activity presentation surface for the
+  queue payloads.
+
+What changed:
+
+- `PhotoMemoiOSMVP` now depends on `PhotoMemoWidgetExtension`.
+- `PhotoMemoiOSMVP` now embeds both app extensions:
+  - `PhotoMemoShareExtension.appex`
+  - `PhotoMemoWidgetExtension.appex`
+- `PhotoMemoiOSMVP` Debug and Release generated Info.plist settings now include:
+  - `INFOPLIST_KEY_NSSupportsLiveActivities = YES`
+
+Verification:
+
+- passed `PhotoMemoiOSMVP` Debug build on connected device `iPhone7`
+- verified the built app bundle contains
+  `PlugIns/PhotoMemoWidgetExtension.appex`
+- verified the built app Info.plist contains
+  `NSSupportsLiveActivities = true`
+- installed the fixed app to connected device `iPhone7`
+- passed `git diff --check`
+
+Manual verification still needed:
+
+- share a RAW or multi-photo batch from Apple Photos and check Lock Screen /
+  Notification Center progress
+- if no Live Activity appears, check system Settings for PhotoMemo Live
+  Activities and notification permissions
 
 ## 2026-06-29 Background Pipeline Input Policy
 

@@ -293,6 +293,20 @@ private extension PhotoMemoiOSLiveActivityDriverService {
                     phaseTitle: "处理完成",
                     statusMessage:
                         "后台任务已结束",
+                    displayModeRawValue:
+                        "singleTask",
+                    pipelineStepTitles: [
+                        "接收照片",
+                        "读取信息",
+                        "生成卡片",
+                        "写入图库",
+                        "完成"
+                    ],
+                    activePipelineStepIndex: 4,
+                    queueLines: [
+                        "已完成 · 后台任务已结束"
+                    ],
+                    overflowQueueCount: 0,
                     currentFileName: nil,
                     completedCount: 0,
                     failedCount: 0,

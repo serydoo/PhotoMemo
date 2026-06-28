@@ -17,7 +17,7 @@ struct PhotoProcessingInputPolicyTests {
         #expect(policy.isSupportedContentType(.tiff))
     }
 
-    @Test("Rejects unsupported animated raw web and video formats")
+    @Test("Rejects unsupported animated web and video formats")
     func rejectsUnsupportedFormats() {
 
         let policy = PhotoProcessingInputPolicy.standard
@@ -25,8 +25,31 @@ struct PhotoProcessingInputPolicyTests {
         #expect(!policy.isSupportedContentType(.gif))
         #expect(!policy.isSupportedContentType(.webP))
         #expect(!policy.isSupportedContentType(.movie))
-        #expect(!policy.isSupportedContentType(UTType("com.adobe.raw-image")))
-        #expect(!policy.isSupportedContentType(UTType("com.adobe.digital-negative")))
+    }
+
+    @Test("Supports RAW and DNG still-image formats")
+    func supportsRawStillImageFormats() throws {
+
+        let policy = PhotoProcessingInputPolicy.standard
+        let cameraRawType =
+            try #require(
+                UTType("public.camera-raw-image")
+            )
+        let adobeRawType =
+            try #require(
+                UTType("com.adobe.raw-image")
+            )
+        let dngType =
+            try #require(
+                UTType(filenameExtension: "dng")
+            )
+
+        #expect(policy.isSupportedContentType(cameraRawType))
+        #expect(policy.isSupportedContentType(adobeRawType))
+        #expect(policy.isSupportedContentType(dngType))
+        #expect(PhotoProcessingInputPolicy.isRawContentType(cameraRawType))
+        #expect(PhotoProcessingInputPolicy.isRawContentType(adobeRawType))
+        #expect(PhotoProcessingInputPolicy.isRawContentType(dngType))
     }
 
     @Test("Rejects Live Photo packages explicitly")
@@ -54,6 +77,24 @@ struct PhotoProcessingInputPolicyTests {
         let verdict =
             PhotoProcessingInputPolicy.standard.verdict(
                 contentType: .heic,
+                pixelWidth: 8064,
+                pixelHeight: 6048
+            )
+
+        #expect(verdict.isSupported)
+    }
+
+    @Test("Accepts RAW photos inside the standard iPhone still-photo envelope")
+    func acceptsRawPhotosInsideStandardEnvelope() throws {
+
+        let rawType =
+            try #require(
+                UTType(filenameExtension: "dng")
+            )
+
+        let verdict =
+            PhotoProcessingInputPolicy.standard.verdict(
+                contentType: rawType,
                 pixelWidth: 8064,
                 pixelHeight: 6048
             )

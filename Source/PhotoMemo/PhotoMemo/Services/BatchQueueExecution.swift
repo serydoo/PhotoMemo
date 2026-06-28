@@ -1,5 +1,6 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
+import UniformTypeIdentifiers
 
 @MainActor
 final class BatchQueueExecution {
@@ -56,12 +57,23 @@ final class BatchQueueExecution {
             )
         }
 
+        let createdAt =
+            tasks.map(
+                \.createdAt
+            )
+            .min()
+            ?? Date()
+
         return BatchJob(
             title:
                 resolvedJobTitle(
                     customTitle: title,
-                    taskCount: tasks.count
+                    taskCount: tasks.count,
+                    startedAt:
+                        createdAt
                 ),
+            createdAt:
+                createdAt,
             state: .queued,
             launchSource: launchSource,
             configuration: configuration,
@@ -186,11 +198,19 @@ final class BatchQueueExecution {
         in store: BatchQueueStore
     ) async {
 
-        guard store.currentTask(
+        guard let initialTask =
+            store.currentTask(
             at: reference
-        ) != nil else {
+        ) else {
             return
         }
+
+        let isRAWTask =
+            taskUsesRAWDisplayRepresentation(
+                initialTask
+            )
+        let totalProgressUnits =
+            isRAWTask ? 6 : 5
 
         store.setActiveProcessingReference(
             reference
@@ -202,10 +222,25 @@ final class BatchQueueExecution {
             task.phase = .importing
             task.progress = BatchTaskProgress(
                 currentUnit: 1,
-                totalUnits: 5,
-                statusMessage: "正在读取原图"
+                totalUnits: totalProgressUnits,
+                statusMessage:
+                    isRAWTask
+                    ? "正在准备 RAW 照片"
+                    : "正在读取原图"
             )
             task.failure = nil
+        }
+
+        if isRAWTask,
+           let jobID =
+            store.currentJobID(
+                at: reference
+            ) {
+            await store
+                .deliverProgressNotificationIfNeeded(
+                    for: jobID,
+                    stage: "raw"
+                )
         }
 
         var temporaryFileURL: URL?
@@ -239,10 +274,14 @@ final class BatchQueueExecution {
                     importedPhoto.metadata.captureDate
                 task.phase = .metadataReady
                 task.progress = BatchTaskProgress(
-                    currentUnit: 2,
-                    totalUnits: 5,
+                    currentUnit:
+                        isRAWTask ? 3 : 2,
+                    totalUnits:
+                        totalProgressUnits,
                     statusMessage:
-                        "已读取 EXIF 和拍摄时间"
+                        isRAWTask
+                        ? "已生成 RAW 显示版本"
+                        : "已读取 EXIF 和拍摄时间"
                 )
             }
 
@@ -275,8 +314,10 @@ final class BatchQueueExecution {
             ) { task in
                 task.phase = .previewReady
                 task.progress = BatchTaskProgress(
-                    currentUnit: 3,
-                    totalUnits: 5,
+                    currentUnit:
+                        isRAWTask ? 4 : 3,
+                    totalUnits:
+                        totalProgressUnits,
                     statusMessage:
                         "已生成模板内容"
                 )
@@ -287,8 +328,10 @@ final class BatchQueueExecution {
             ) { task in
                 task.phase = .exporting
                 task.progress = BatchTaskProgress(
-                    currentUnit: 4,
-                    totalUnits: 5,
+                    currentUnit:
+                        isRAWTask ? 5 : 4,
+                    totalUnits:
+                        totalProgressUnits,
                     statusMessage:
                         "正在生成图片"
                 )
@@ -331,8 +374,10 @@ final class BatchQueueExecution {
                     exportedFileURL
                 task.phase = .savingToPhotoLibrary
                 task.progress = BatchTaskProgress(
-                    currentUnit: 5,
-                    totalUnits: 5,
+                    currentUnit:
+                        isRAWTask ? 6 : 5,
+                    totalUnits:
+                        totalProgressUnits,
                     statusMessage:
                         "正在写入系统图库"
                 )
@@ -384,8 +429,10 @@ final class BatchQueueExecution {
                     saveResult.assetLocalIdentifier
                 task.phase = .completed
                 task.progress = BatchTaskProgress(
-                    currentUnit: 5,
-                    totalUnits: 5,
+                    currentUnit:
+                        totalProgressUnits,
+                    totalUnits:
+                        totalProgressUnits,
                     statusMessage: "处理完成"
                 )
             }
@@ -676,9 +723,24 @@ private extension BatchQueueExecution {
         return true
     }
 
+    func taskUsesRAWDisplayRepresentation(
+        _ task: BatchTask
+    ) -> Bool {
+
+        let contentType =
+            task.contentTypeIdentifier
+            .flatMap(UTType.init)
+
+        return PhotoProcessingInputPolicy
+            .isRawContentType(contentType)
+            || PhotoProcessingInputPolicy
+            .isRawFileURL(task.sourceURL)
+    }
+
     func resolvedJobTitle(
         customTitle: String?,
-        taskCount: Int
+        taskCount: Int,
+        startedAt: Date
     ) -> String {
 
         let trimmedTitle =
@@ -691,14 +753,12 @@ private extension BatchQueueExecution {
             return trimmedTitle
         }
 
-        let formatter =
-            DateFormatter()
-        formatter.locale =
-            Locale(identifier: "zh_CN")
-        formatter.dateFormat =
-            "yyyy.MM.dd HH:mm"
-
-        return "PhotoMemo 后台任务 \(formatter.string(from: Date())) · \(taskCount)张"
+        return PhotoMemoQueueDisplayFormatter.title(
+            startedAt:
+                startedAt,
+            photoCount:
+                taskCount
+        )
     }
 }
 #endif

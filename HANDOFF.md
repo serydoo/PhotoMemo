@@ -1,5 +1,339 @@
 # PhotoMemo Handoff
 
+## 2026-06-29 MVP Queue Naming Refinement
+
+- 用户确认：
+  - 每一个队列代表一次 Share 任务。
+  - 队列名称用开始时间 + 照片数量更直观。
+  - 期望示例：
+    - `18:42（3张） · 1/3 · 约 2 分钟`
+    - `18:42（3张） · 1 张需要处理`
+    - `18:42（3张） · 已保存 3 张`
+- 已实现：
+  - 新增 `PhotoMemoQueueDisplayFormatter`，统一生成用户可读队列名称：
+    - 当天：`18:42（3张）`
+    - 昨天：`昨天 18:42（3张）`
+    - 今年更早：`6月29日 18:42（3张）`
+    - 跨年：`2025年12月31日 18:42（3张）`
+  - `PhotoMemoAppRuntime.resolvedRequestTitle(...)` 不再生成
+    `外部图片处理 yyyy.MM.dd HH:mm · X张`。
+  - `BatchQueueExecution` 的默认后台任务标题不再生成
+    `PhotoMemo 后台任务 ...`。
+  - 新建 `BatchJob.createdAt` 改为跟随最早的 intake payload request time，
+    更贴近真实 Share 开始时间。
+  - `PhotoMemoBackgroundStatusService` 在 snapshot / queue line 展示层统一
+    使用 compact queue title，因此旧持久化任务也不会继续露出旧标题。
+  - 队列行文案收口为结果优先：
+    - 完成：`已保存 X 张`
+    - 失败：`X 张需要处理`
+    - 部分完成：`已保存 X 张 · Y 张需要处理`
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 仍需人工复测：
+  - 分享单张照片，确认通知/锁屏/状态 sheet 使用 compact 队列名。
+  - 连续分享 2-3 批，确认每行代表一次 Share 任务。
+  - 连续分享 4 批以上，确认聚合模式仍然克制。
+
+## 2026-06-29 MVP Share Handoff URL Scheme Fix
+
+- 用户反馈：
+  - RAW 和 JPEG 从 Apple Photos 分享到 MVP 后，确认页能出现，但下拉通知栏没有进度，也没有看到输出结果。
+  - 希望确认后有一个更接近系统感的“收起到通知/灵动岛方向”的过渡动画。
+- 根因定位：
+  - Share Extension 已能展示确认页并执行接单流程。
+  - MVP 主 App target 虽然嵌入了 Share Extension 和 Widget Extension，也有 `NSSupportsLiveActivities`，但构建产物 `Info.plist` 没有真实生成 `CFBundleURLTypes`。
+  - Share Extension 通过 `photomemo://share` 唤起主 App；MVP App 未注册 URL scheme 时，`extensionContext.open(...)` 会失败，主 App 不会被唤起 drain `ExternalPhotoIntakeStore`，因此队列、通知进度、输出都会缺席。
+- 已修复：
+  - 新增 `Source/PhotoMemo/PhotoMemoiOSMVP-Info.plist`，为 MVP App 明确注册：
+    - `CFBundleURLTypes -> photomemo`
+    - `NSSupportsLiveActivities`
+    - 相册读写权限文案
+  - `PhotoMemoiOSMVP` Debug / Release 改为使用这份专用 Info.plist。
+  - Share Extension 的完成流程不再静默忽略唤起失败：
+    - `requestMainAppRefresh()` 现在返回 Bool。
+    - 如果系统没有打开主 App，确认页会停留在“照片已经接收 / 需要重新交给 PhotoMemo”的可见状态。
+  - 持久化成功后增加轻量 UIKit 过渡：
+    - 确认界面向顶部缩小并淡出。
+    - 保留轻触感反馈。
+    - 该动画只在接单成功后触发，不掩盖失败。
+- 已验证：
+  - `PhotoMemoiOSMVP` 真机 Debug build 通过。
+  - 构建产物 `Info.plist` 已包含 `CFBundleURLTypes -> photomemo`。
+  - 构建产物仍包含 `NSSupportsLiveActivities = true`。
+  - 构建产物仍嵌入：
+    - `PhotoMemoShareExtension.appex`
+    - `PhotoMemoWidgetExtension.appex`
+  - `PhotoMemoiOSMVP` 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemoiOSMVP` iOS Simulator Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `git diff --check` 通过。
+- 未验证：
+  - 设备当前锁定，无法通过 devicectl 远程启动 App。
+  - 仍需要用户从 Apple Photos 手动分享 1 张 JPEG 和 1 张 RAW，确认：
+    - 完成动画出现。
+    - 主 App 被打开或后台接单。
+    - 通知/锁屏 Live Activity 出现进度。
+    - 成品写入 Apple Photos / `photomemo` 相册。
+
+## 2026-06-29 Share Confirmation RAW Preview Refinement
+
+- 用户反馈：
+  - 竖图完整显示正常。
+  - 2 张横图 / 竖图混合正常。
+  - RAW 场景下确认页缩略图不能正常显示。
+  - 预览图片不需要边框，只要能显示缩略图，选中时轻微放大即可。
+- 根因定位：
+  - Share 确认页此前只用 `loadItem(UTType.image)` 后尝试 `UIImage(data:)`。
+  - RAW / ProRAW 分享时，系统可能不给可直接 `UIImage` 解码的数据；更稳定的方式是先请求系统预览图，再对文件表示用 ImageIO 生成小缩略图。
+- 已修复：
+  - Share 确认页预览加载顺序改为：
+    1. `NSItemProvider.loadPreviewImage`
+    2. `loadFileRepresentation` + `CGImageSourceCreateThumbnailAtIndex`
+    3. 原有 `UIImage` / `Data` fallback
+  - 预览缩略图限制为 `640px` 级别，避免 RAW 在 Share Extension 内造成内存压力。
+  - 预览 provider 判断扩展为 PhotoMemo 当前支持的图片类型集合，覆盖 RAW / DNG 类型。
+  - 预览卡片去掉容器边框和边框选中态。
+  - 选中态只保留：
+    - `1.06x` 轻微放大
+    - 前景层级提高
+    - 非选中项轻微降透明
+- 已验证：
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 仍需人工验证：
+  - 从 Apple Photos 分享 RAW / ProRAW 到 MVP，确认缩略图能出现。
+  - 确认无边框预览在横图、竖图、多图下视觉足够克制。
+
+## 2026-06-29 Share Confirmation Single Photo Simplification
+
+- 用户反馈：
+  - 单张分享不需要缩略图。
+  - 用户刚看到之前图片的处理结果，说明后台处理耗时可能长短不一，需要重新梳理通知栏和主 App 进度表达。
+- 已修复：
+  - Share 确认页现在只有 `2 张及以上` 时显示多图缩略图卡片。
+  - 单张分享隐藏整个预览 section，只保留：
+    - 照片数量
+    - 默认风格
+    - 结果去向
+    - 当前处理说明
+    - 开始生成按钮
+  - 目的：
+    - 避免单张确认页像“结果预览”。
+    - 降低 RAW 单张场景下的预览解码压力。
+    - 保持 Apple Photos Share 的轻量确认感。
+- 已验证：
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 后续交互方向：
+  - 通知栏/Live Activity 应区分单任务、2-3 个任务、4+ 聚合、完成、失败。
+  - 主 App 后台状态页应从“后台状态”继续收敛为“处理进度/最近结果”，单任务显示完整 Pipeline，多任务显示可展开队列。
+
+## 2026-06-29 Single Task Pipeline Progress
+
+- 用户确认继续推进后台进度交互。
+- 本轮目标：
+  - 单张照片不再用“批处理队列感”的表达。
+  - 单张任务展示完整 Pipeline。
+  - 2-3 个任务继续每队列一行。
+  - 4 个及以上任务聚合成摘要。
+  - 完成/失败通知文案更短，更接近系统通知。
+- 已实现：
+  - `PhotoMemoBackgroundJobSnapshot` 新增展示层字段：
+    - `displayMode`
+    - `pipelineSteps`
+    - `activePipelineStepIndex`
+  - 单张 Pipeline 固定为：
+    1. 接收照片
+    2. 读取信息
+    3. 生成卡片
+    4. 写入图库
+    5. 完成
+  - RAW 相关阶段继续通过状态文案表达：
+    - `正在准备 RAW 照片`
+    - `已生成 RAW 显示版本`
+  - Live Activity / Lock Screen：
+    - 单张显示当前状态 + 细进度 + Pipeline dots。
+    - 多张继续显示 queue lines。
+    - Dynamic Island expanded bottom 跟随单张/多张模式切换。
+  - 主 App 后台 sheet：
+    - 标题从 `后台状态` 改为 `处理进度`。
+    - 单张显示 `处理流程` Pipeline。
+    - 多张仍显示队列摘要和最近记录。
+  - 本地最终通知文案收短：
+    - 成功：`PhotoMemo 已保存 X 张照片`
+    - 失败：`X 张照片需要处理`
+    - 部分完成：`已保存 X 张，Y 张需要处理`
+- 已验证：
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemo` macOS Debug build 通过。
+- 人工复测建议：
+  - 分享 1 张 JPEG，观察 Lock Screen / Notification Center 是否显示 Pipeline。
+  - 分享 1 张 RAW，确认 RAW 阶段文案能解释等待。
+  - 分享 2-3 张，确认每队列一行。
+  - 连续分享 4 组以上，确认聚合摘要出现。
+  - 制造失败项，确认通知和主 App sheet 都显示“需要处理”。
+
+## 2026-06-29 Share Confirmation Preview Card Stack
+
+- 用户反馈：
+  - Share 到 MVP 后的确认窗口体验不错，但下方待处理图片预览里，竖图显示不完整。
+  - 希望保持当前窗口大小，适当缩小示意图或拉高一点，确保图片完整。
+  - 多张图片时希望接近“扑克牌”式左右滑动，点击某张时轻微放大凸显。
+- 根因：
+  - Share Extension 确认页此前只有一个 `UIImageView`。
+  - 固定高度 `180pt`，`contentMode = .scaleAspectFill`，竖图会被裁切。
+  - 多张分享只预览第一张，无法感知待处理队列内容。
+- 已修复：
+  - 将单图 `UIImageView` 改为横向 `UIScrollView + UIStackView` 预览卡片组。
+  - 图片预览卡片统一使用 `.scaleAspectFit`，竖图完整显示，不再裁切。
+  - 预览区域高度收为 `168pt`，卡片高度 `158pt`，保持确认窗口整体克制。
+  - 多张时最多加载前 10 张轻量预览，避免 Share Extension 内存压力。
+  - 卡片采用轻微重叠的横向排列，形成低调的“扑克牌”感。
+  - 点击某张卡片会：
+    - 轻微放大到 `1.06x`
+    - 加深边框
+    - 自动滑动到可见区域
+  - 文案改为：`左右滑动查看待处理照片，所有照片会使用相同风格处理。`
+- 未改：
+  - Share Extension 接单逻辑
+  - 后台队列
+  - Renderer
+  - 输出格式
+  - RAW 处理策略
+- 验证：
+  - `PhotoMemoShareExtension` Debug iOS Simulator build 通过。
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `git diff --check` 通过。
+- 人工复测建议：
+  - 分享 1 张竖图，确认完整显示。
+  - 分享 3-5 张横竖混合照片，左右滑动检查每张预览。
+  - 点击不同卡片，确认轻微放大和滚动定位自然。
+
+## 2026-06-29 MVP Live Activity Packaging Fix
+
+- 用户反馈：从 Apple Photos 分享后，下拉通知栏看不到队列/进度，感觉没有进入队列。
+- 根因定位：
+  - `PhotoMemoiOSMVP.app` 的产物里只有 `PhotoMemoShareExtension.appex`。
+  - MVP target 没有嵌入 `PhotoMemoWidgetExtension.appex`。
+  - MVP target 生成的 Info.plist 里也没有 `NSSupportsLiveActivities = YES`。
+  - 因此 ActivityKit 即使收到后台状态 payload，也没有可展示的 Live Activity widget 承载；驱动层此前 catch 后静默禁用请求，用户侧表现为通知栏没有持续进度。
+- 已修复：
+  - `PhotoMemoiOSMVP` target 增加 `PhotoMemoWidgetExtension` target dependency。
+  - `PhotoMemoiOSMVP` target 的 `Embed App Extensions` 同时嵌入：
+    - `PhotoMemoShareExtension.appex`
+    - `PhotoMemoWidgetExtension.appex`
+  - `PhotoMemoiOSMVP` Debug / Release build settings 增加：
+    - `INFOPLIST_KEY_NSSupportsLiveActivities = YES`
+- 已验证：
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 构建产物 `PhotoMemoiOSMVP.app/PlugIns` 已包含 `PhotoMemoWidgetExtension.appex`。
+  - 构建产物 Info.plist 已包含 `NSSupportsLiveActivities = true`。
+  - 已覆盖安装到设备 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `git diff --check` 通过。
+- 复测建议：
+  - 优先用 RAW 或多张照片测试，因为单张普通图片处理太快，Live Activity 可能还没形成持续可见状态就结束。
+  - 如果仍看不到，下一步检查系统设置里的 PhotoMemo 通知权限与 Live Activities 开关。
+
+## 2026-06-29 MVP RAW / ProRAW Priority Support
+
+- 本轮按“RAW 优先处理，但不冒险”的原则补齐 MVP 后台链路：
+  - RAW / DNG 不再在 Share Extension 前置校验中被跳过。
+  - 原始 RAW 文件仍不被修改，只作为元数据与显示版本来源。
+  - PhotoMemo 会生成一张普通输出图片：系统生成的 RAW 显示版本 + 当前底部边框。
+  - 原 RAW 的 `sourceProperties` / EXIF 仍作为卡片内容和输出元数据来源。
+- 输入策略更新：
+  - 支持：`JPEG/JPG`、`HEIC/HEIF`、`PNG`、`TIFF`、`RAW/DNG`
+  - 仍不支持：Live Photo、GIF、WebP、视频、超长比例图片。
+  - RAW 仍遵守当前 iPhone 标准照片包络：
+    - 单边最大 `8064 px`
+    - 总像素最大 `8064 x 6048`
+    - 最大长宽比 `3:1`
+- RAW 导入策略：
+  - 普通照片继续走原有 `Data -> PlatformImage` 稳定路径。
+  - RAW 照片先尝试平台文件显示版本。
+  - 失败后用 ImageIO 生成最大边长受控的显示版本。
+  - 最后才回退 CoreImage 渲染，避免一开始就走重型路径。
+- 进度感知更新：
+  - RAW 任务开始显示 `正在准备 RAW 照片`。
+  - RAW 导入完成显示 `已生成 RAW 显示版本`。
+  - 单张队列摘要会显示 `准备 RAW` / `RAW 显示版本`，避免用户误以为卡住。
+  - RAW 估时按更保守的 `75 秒/张` 计算；普通照片仍按 `14 秒/张`。
+  - 本地通知新增 `raw` 阶段文案：`正在准备 RAW 照片`。
+- 验证：
+  - `PhotoProcessingInputPolicyTests` 通过。
+  - `PhotoImportServiceTests` 通过。
+  - `BatchFixtureCoverageTests` 通过。
+  - `PhotoMemoiOSMVP` 真机 Debug build 通过。
+  - `PhotoMemoShareExtension` Debug iOS Simulator build 通过。
+  - `git diff --check` 通过。
+- 已覆盖安装到设备：
+  - `iPhone7`
+  - device id `863C2747-6742-5E93-B715-6F89DBF90B31`
+  - bundle id `com.serydoo.PhotoMemo.iOS`
+- 未完成 / 需要人工验证：
+  - 从 Apple Photos 分享真实 ProRAW / DNG 到 PhotoMemo。
+  - 检查输出图片视觉、EXIF token、相册写入是否符合预期。
+  - 在 iPhone7 上观察 RAW 大图处理时是否发生内存压力；如有，下一步应把 RAW 显示版本上限进一步下调到设备自适应。
+
+## 2026-06-29 MVP Queue Summary Live Activity
+
+- 本轮把“近期多个处理队列，每行仅展示一个队列进度”的 MVP 状态模型落地到真机版本。
+- 新增后台状态摘要规则：
+  - `PhotoMemoBackgroundJobSnapshot` 现在包含 `queueLines` 和 `overflowQueueCount`。
+  - 最多展示 3 行，每行代表一个外部队列。
+  - 排序优先级：当前处理 -> 失败/需处理 -> 等待/处理中 -> 最近完成。
+  - 超过 3 个队列时显示 `另有 X 个队列`，避免通知区域变成任务列表。
+- 队列行文案规则：
+  - 单张：`正在处理 · 写入图库 · 约 14 秒`
+  - 多张处理中：`正在处理 · 10/20 · 约 3 分钟`
+  - 等待：`等待中 · 3 张`
+  - 完成：`已完成 · 20 张已保存`
+  - 失败：`需要处理 · 18/20 · 2 张需要查看`
+- Live Activity 已接入：
+  - `PhotoMemoBackgroundActivityAttributes.ContentState` 新增 `queueLines` / `overflowQueueCount`。
+  - 锁屏主视图和 Dynamic Island expanded bottom 复用同一套三行摘要。
+  - Dynamic Island compact 仍保持克制，只显示图标和进度百分比。
+- App 内后台状态页已接入：
+  - 右上角后台状态 sheet 展示同一组三行摘要。
+- 当前剩余时间为保守估算：
+  - 按剩余图片数粗略计算，先用于 MVP 体感验证。
+  - 后续可改为最近 3 张平均耗时。
+- 验证：
+  - `PhotoMemoiOSMVP` 真机 Debug build 通过。
+  - 已重新安装到设备 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `git diff --check` 通过。
+- 下一步人工测试建议：
+  - 分享 1 张，观察单张阶段/剩余时间。
+  - 连续分享多组照片，观察最多 3 行队列摘要。
+  - 分享 10+ 张，观察 `10/20` 风格展示。
+  - 制造失败项，确认失败队列优先显示且不被完成队列挤掉。
+
+## 2026-06-29 MVP Share Output Runtime Fix
+
+- 用户确认 Apple Photos Share Sheet 已能看到并进入 `PhotoMemo MVP`，确认动作也能完成，但之后没有生成/保存输出。
+- 根因定位：
+  - `PhotoMemoShareExtension` 已能把分享图片持久化为 `ExternalPhotoIntakeRequest`。
+  - 正式 iOS App 入口会创建 `PhotoMemoAppRuntime`，并通过 `PhotoMemoRootSceneView` 在 `task/onAppear/onOpenURL/scenePhase` 中调用 `refreshExternalIntakeState()` / `flushExternalRequests()`。
+  - `PhotoMemoiOSMVPApp` 之前直接打开 `PhotoMemoiOSTemporaryEntryView`，绕过了 `PhotoMemoiOSHomeView` 和 `PhotoMemoAppRuntime`，所以 Share Extension 确认后写入了请求，但 MVP App 没有 drain 请求，也没有启动 `BatchQueueStore` 输出链路。
+- 已修复：
+  - `PhotoMemoiOSMVPApp` 现在创建 `PhotoMemoAppRuntime` 并进入 `PhotoMemoiOSHomeView`。
+  - `PhotoMemoiOSHomeView` 和 `PhotoMemoRootSceneView` 增加临时入口参数传递。
+  - MVP 仍默认显示 `mvpTest` 页面，但外层保留正式 iOS runtime、deeplink flush、后台状态入口和 batch processing。
+- 验证：
+  - `PhotoMemoiOSMVP` 真机 Debug build 通过。
+  - 已重新安装并启动到设备 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `git diff --check` 通过。
+- 下一步人工验证：
+  - 从 Apple Photos 分享一张普通静态照片到 `PhotoMemo Share`。
+  - 确认后允许相册权限。
+  - 观察是否保存到系统图库 / `photomemo` 相册。
+  - 如果失败，打开右上角后台状态按钮查看任务阶段与错误信息。
+
 Compact AI summary for this round:
 
 - `Docs/AI_HANDOFF_2026-06-21.md`

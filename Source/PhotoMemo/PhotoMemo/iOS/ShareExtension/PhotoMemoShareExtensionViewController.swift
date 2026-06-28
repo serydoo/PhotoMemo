@@ -1,6 +1,7 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import UIKit
 import UniformTypeIdentifiers
+import ImageIO
 
 final class PhotoMemoShareExtensionViewController:
     UIViewController {
@@ -16,6 +17,8 @@ final class PhotoMemoShareExtensionViewController:
             message: String,
             suggestion: String
         )
+
+        case handoffFailed
     }
 
     private let intakeService =
@@ -31,9 +34,6 @@ final class PhotoMemoShareExtensionViewController:
                 for: identifier
             )
         }
-
-    private let successDisplayNanoseconds:
-        UInt64 = 650_000_000
 
     private let contentStack =
         UIStackView()
@@ -56,11 +56,17 @@ final class PhotoMemoShareExtensionViewController:
     private let outputValueLabel =
         UILabel()
 
-    private let previewImageView =
-        UIImageView()
+    private let previewScrollView =
+        UIScrollView()
+
+    private let previewCardStack =
+        UIStackView()
 
     private let previewCaptionLabel =
         UILabel()
+
+    private var previewSectionView:
+        UIView?
 
     private let activityIndicator =
         UIActivityIndicatorView(style: .medium)
@@ -84,6 +90,14 @@ final class PhotoMemoShareExtensionViewController:
 
     private var firstPreviewTask:
         Task<Void, Never>?
+
+    private var previewCardViews:
+        [UIView] = []
+
+    private var previewImageViews:
+        [UIImageView] = []
+
+    private var selectedPreviewIndex = 0
 
     private var viewState: ViewState = .confirming
 
@@ -116,6 +130,9 @@ private extension PhotoMemoShareExtensionViewController {
                 contentView:
                     makePreviewStack()
             )
+        previewSectionView =
+            previewCard
+
         let summaryCard =
             makeCardContainer(
                 contentView:
@@ -260,15 +277,27 @@ private extension PhotoMemoShareExtensionViewController {
 
     func configurePreviewViews() {
 
-        previewImageView.translatesAutoresizingMaskIntoConstraints =
+        previewScrollView.translatesAutoresizingMaskIntoConstraints =
             false
-        previewImageView.contentMode =
-            .scaleAspectFill
-        previewImageView.clipsToBounds = true
-        previewImageView.layer.cornerRadius = 16
-        previewImageView.layer.cornerCurve = .continuous
-        previewImageView.backgroundColor =
-            .tertiarySystemFill
+        previewScrollView.alwaysBounceHorizontal =
+            true
+        previewScrollView.showsHorizontalScrollIndicator =
+            false
+        previewScrollView.decelerationRate =
+            .fast
+        previewScrollView.contentInset =
+            UIEdgeInsets(
+                top: 0,
+                left: 4,
+                bottom: 0,
+                right: 4
+            )
+
+        previewCardStack.translatesAutoresizingMaskIntoConstraints =
+            false
+        previewCardStack.axis = .horizontal
+        previewCardStack.alignment = .center
+        previewCardStack.spacing = -14
 
         previewCaptionLabel.font =
             .preferredFont(
@@ -331,29 +360,53 @@ private extension PhotoMemoShareExtensionViewController {
             UIView()
         imageContainer.translatesAutoresizingMaskIntoConstraints =
             false
-        imageContainer.addSubview(
-            previewImageView
-        )
+        imageContainer.addSubview(previewScrollView)
+        previewScrollView.addSubview(previewCardStack)
 
         NSLayoutConstraint.activate([
-            previewImageView.topAnchor.constraint(
+            previewScrollView.topAnchor.constraint(
                 equalTo:
                     imageContainer.topAnchor
             ),
-            previewImageView.leadingAnchor.constraint(
+            previewScrollView.leadingAnchor.constraint(
                 equalTo:
                     imageContainer.leadingAnchor
             ),
-            previewImageView.trailingAnchor.constraint(
+            previewScrollView.trailingAnchor.constraint(
                 equalTo:
                     imageContainer.trailingAnchor
             ),
-            previewImageView.bottomAnchor.constraint(
+            previewScrollView.bottomAnchor.constraint(
                 equalTo:
                     imageContainer.bottomAnchor
             ),
-            previewImageView.heightAnchor.constraint(
-                equalToConstant: 180
+            previewScrollView.heightAnchor.constraint(
+                equalToConstant: 168
+            ),
+            previewCardStack.topAnchor.constraint(
+                equalTo:
+                    previewScrollView.contentLayoutGuide
+                    .topAnchor
+            ),
+            previewCardStack.leadingAnchor.constraint(
+                equalTo:
+                    previewScrollView.contentLayoutGuide
+                    .leadingAnchor
+            ),
+            previewCardStack.trailingAnchor.constraint(
+                equalTo:
+                    previewScrollView.contentLayoutGuide
+                    .trailingAnchor
+            ),
+            previewCardStack.bottomAnchor.constraint(
+                equalTo:
+                    previewScrollView.contentLayoutGuide
+                    .bottomAnchor
+            ),
+            previewCardStack.heightAnchor.constraint(
+                equalTo:
+                    previewScrollView.frameLayoutGuide
+                    .heightAnchor
             )
         ])
 
@@ -540,7 +593,15 @@ private extension PhotoMemoShareExtensionViewController {
             ? "\(sharedPhotoCount) 张"
             : "未识别到可处理照片"
 
-        loadFirstPreviewIfNeeded()
+        previewSectionView?.isHidden =
+            sharedPhotoCount <= 1
+
+        if sharedPhotoCount > 1 {
+            loadFirstPreviewIfNeeded()
+        } else {
+            firstPreviewTask?.cancel()
+            resetPreviewCards()
+        }
     }
 
     @MainActor
@@ -704,6 +765,21 @@ private extension PhotoMemoShareExtensionViewController {
             Task { @MainActor in
                 await persistIncomingItems()
             }
+
+        case .handoffFailed:
+            Task { @MainActor in
+                let opened =
+                    await requestMainAppRefresh()
+
+                if opened {
+                    extensionContext?
+                        .completeRequest(
+                            returningItems: nil
+                        )
+                } else {
+                    applyHandoffFailureState()
+                }
+            }
         }
     }
 
@@ -750,16 +826,19 @@ private extension PhotoMemoShareExtensionViewController {
                 "即将完成"
             activityIndicator.stopAnimating()
 
-            try? await Task.sleep(
-                nanoseconds:
-                    successDisplayNanoseconds
-            )
+            await playCompletionTransition()
 
             PhotoMemoShareIntakeLog.notice(
                 "Share extension completion request will be sent."
             )
 
-            await requestMainAppRefresh()
+            let opened =
+                await requestMainAppRefresh()
+
+            guard opened else {
+                applyHandoffFailureState()
+                return
+            }
 
             extensionContext?
                 .completeRequest(
@@ -857,7 +936,74 @@ private extension PhotoMemoShareExtensionViewController {
         return "已接收 \(result.requestedCount) 张。处理完成后会写回系统相册。"
     }
 
-    func requestMainAppRefresh() async {
+    @MainActor
+    func applyHandoffFailureState() {
+
+        viewState = .handoffFailed
+        contentStack.alpha = 1
+        contentStack.transform = .identity
+        activityIndicator.stopAnimating()
+
+        titleLabel.text =
+            "照片已经接收"
+        subtitleLabel.text =
+            "但系统这次没有把处理交给 PhotoMemo。"
+        statusTitleLabel.text =
+            "需要重新交给 PhotoMemo"
+        statusMessageLabel.textColor =
+            .secondaryLabel
+        statusMessageLabel.text =
+            "请点下面按钮再试一次；如果仍失败，请直接打开 PhotoMemo MVP，它会继续检查待处理照片。"
+        footerLabel.text =
+            "这通常和应用唤起或系统分享状态有关，原始照片不会被修改。"
+
+        applyPrimaryButton(
+            title:
+                "重新交给 PhotoMemo"
+        )
+    }
+
+    @MainActor
+    func playCompletionTransition() async {
+
+        UIImpactFeedbackGenerator(
+            style: .soft
+        )
+        .impactOccurred()
+
+        return await withCheckedContinuation {
+            (
+                continuation:
+                    CheckedContinuation<Void, Never>
+            ) in
+
+            UIView.animate(
+                withDuration: 0.46,
+                delay: 0.08,
+                usingSpringWithDamping: 0.88,
+                initialSpringVelocity: 0.18,
+                options: [
+                    .curveEaseInOut,
+                    .beginFromCurrentState
+                ]
+            ) {
+                self.contentStack.transform =
+                    CGAffineTransform(
+                        translationX: 0,
+                        y: -self.view.bounds.height * 0.36
+                    )
+                    .scaledBy(
+                        x: 0.62,
+                        y: 0.62
+                    )
+                self.contentStack.alpha = 0.08
+            } completion: { _ in
+                continuation.resume()
+            }
+        }
+    }
+
+    func requestMainAppRefresh() async -> Bool {
 
         let deepLinkURL =
             PhotoMemoDeepLink.share.url
@@ -890,39 +1036,49 @@ private extension PhotoMemoShareExtensionViewController {
         PhotoMemoShareIntakeLog.notice(
             "Requested main-app refresh via deep link. success=\(opened)"
         )
+
+        return opened
     }
 
     func loadFirstPreviewIfNeeded() {
 
         firstPreviewTask?.cancel()
 
-        guard
-            let provider =
-                supportedFirstProvider()
-        else {
+        let providers =
+            supportedPreviewProviders(
+                limit: 10
+            )
+
+        guard !providers.isEmpty else {
             previewCaptionLabel.text =
                 sharedPhotoCount > 0
                 ? "这次会按相同风格处理 \(sharedPhotoCount) 张照片。"
                 : "未识别到可处理照片。"
-            previewImageView.image = nil
+            resetPreviewCards()
             return
         }
 
+        configurePreviewPlaceholders(
+            count: providers.count
+        )
+
         firstPreviewTask = Task { @MainActor in
-            let image =
-                await loadPreviewImage(
-                    from: provider
+            let images =
+                await loadPreviewImages(
+                    from: providers
                 )
 
             guard !Task.isCancelled else {
                 return
             }
 
-            previewImageView.image = image
+            applyPreviewImages(
+                images
+            )
 
             if sharedPhotoCount > 1 {
                 previewCaptionLabel.text =
-                    "仅预览第一张，其余 \(sharedPhotoCount - 1) 张会使用相同风格处理。"
+                    "左右滑动查看待处理照片，所有照片会使用相同风格处理。"
             } else {
                 previewCaptionLabel.text =
                     "将按当前默认风格处理这张照片。"
@@ -930,36 +1086,297 @@ private extension PhotoMemoShareExtensionViewController {
         }
     }
 
-    func supportedFirstProvider() -> NSItemProvider? {
+    func supportedPreviewProviders(
+        limit: Int
+    ) -> [NSItemProvider] {
 
-        inputItems
+        Array(
+            inputItems
             .flatMap { item in
                 item.attachments ?? []
             }
-            .first {
-                $0.hasItemConformingToTypeIdentifier(
-                    UTType.image.identifier
-                )
+            .filter {
+                isSupportedPreviewProvider($0)
             }
+            .prefix(
+                max(limit, 1)
+            )
+        )
+    }
+
+    @MainActor
+    func resetPreviewCards() {
+
+        previewCardViews.removeAll()
+        previewImageViews.removeAll()
+        selectedPreviewIndex = 0
+
+        previewCardStack
+            .arrangedSubviews
+            .forEach { view in
+                previewCardStack
+                    .removeArrangedSubview(view)
+                view.removeFromSuperview()
+            }
+    }
+
+    @MainActor
+    func configurePreviewPlaceholders(
+        count: Int
+    ) {
+
+        resetPreviewCards()
+
+        for index in 0..<count {
+            let card =
+                makePreviewCard(
+                    index: index
+                )
+            previewCardStack
+                .addArrangedSubview(card.container)
+            previewCardViews
+                .append(card.container)
+            previewImageViews
+                .append(card.imageView)
+        }
+
+        selectedPreviewIndex = 0
+        updateSelectedPreviewCard(
+            animated: false
+        )
+    }
+
+    @MainActor
+    func makePreviewCard(
+        index: Int
+    ) -> (
+        container: UIView,
+        imageView: UIImageView
+    ) {
+
+        let container =
+            UIView()
+        container.translatesAutoresizingMaskIntoConstraints =
+            false
+        container.backgroundColor =
+            .clear
+        container.layer.cornerRadius = 14
+        container.layer.cornerCurve = .continuous
+        container.layer.borderWidth = 0
+        container.clipsToBounds = false
+
+        let imageView =
+            UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints =
+            false
+        imageView.contentMode =
+            .scaleAspectFit
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 11
+        imageView.layer.cornerCurve = .continuous
+        imageView.backgroundColor =
+            .tertiarySystemFill
+
+        container.addSubview(imageView)
+
+        let tap =
+            UITapGestureRecognizer(
+                target: self,
+                action: #selector(
+                    handlePreviewCardTap(_:)
+                )
+            )
+        container.addGestureRecognizer(tap)
+        container.isUserInteractionEnabled = true
+        container.tag = index
+
+        NSLayoutConstraint.activate([
+            container.widthAnchor.constraint(
+                equalToConstant:
+                    sharedPhotoCount > 1 ? 116 : 132
+            ),
+            container.heightAnchor.constraint(
+                equalToConstant: 158
+            ),
+            imageView.topAnchor.constraint(
+                equalTo:
+                    container.topAnchor
+            ),
+            imageView.leadingAnchor.constraint(
+                equalTo:
+                    container.leadingAnchor
+            ),
+            imageView.trailingAnchor.constraint(
+                equalTo:
+                    container.trailingAnchor
+            ),
+            imageView.bottomAnchor.constraint(
+                equalTo:
+                    container.bottomAnchor
+            )
+        ])
+
+        return (container, imageView)
+    }
+
+    @objc
+    func handlePreviewCardTap(
+        _ recognizer: UITapGestureRecognizer
+    ) {
+
+        guard let card =
+            recognizer.view else {
+            return
+        }
+
+        selectedPreviewIndex =
+            max(
+                min(
+                    card.tag,
+                    previewCardViews.count - 1
+                ),
+                0
+            )
+        updateSelectedPreviewCard(
+            animated: true
+        )
+
+        let targetRect =
+            card.convert(
+                card.bounds,
+                to: previewScrollView
+            )
+            .insetBy(
+                dx: -18,
+                dy: 0
+            )
+
+        previewScrollView.scrollRectToVisible(
+            targetRect,
+            animated: true
+        )
+    }
+
+    @MainActor
+    func updateSelectedPreviewCard(
+        animated: Bool
+    ) {
+
+        let updates = {
+            for (index, card) in
+                self.previewCardViews.enumerated() {
+                let isSelected =
+                    index == self.selectedPreviewIndex
+                card.transform =
+                    isSelected
+                    ? CGAffineTransform(
+                        scaleX: 1.06,
+                        y: 1.06
+                    )
+                    : .identity
+                card.layer.zPosition =
+                    isSelected ? 10 : CGFloat(index)
+                card.alpha =
+                    isSelected ? 1 : 0.82
+            }
+        }
+
+        guard animated else {
+            updates()
+            return
+        }
+
+        UIView.animate(
+            withDuration: 0.22,
+            delay: 0,
+            options: [
+                .curveEaseOut,
+                .beginFromCurrentState
+            ],
+            animations: updates
+        )
+    }
+
+    @MainActor
+    func applyPreviewImages(
+        _ images: [UIImage?]
+    ) {
+
+        for (index, image) in
+            images.enumerated() {
+            guard previewImageViews
+                .indices
+                .contains(index) else {
+                continue
+            }
+
+            previewImageViews[index].image =
+                image
+        }
+    }
+
+    func loadPreviewImages(
+        from providers: [NSItemProvider]
+    ) async -> [UIImage?] {
+
+        var images: [UIImage?] = []
+        images.reserveCapacity(
+            providers.count
+        )
+
+        for provider in providers {
+            if Task.isCancelled {
+                break
+            }
+
+            images.append(
+                await loadPreviewImage(
+                    from: provider
+                )
+            )
+        }
+
+        return images
     }
 
     func loadPreviewImage(
         from provider: NSItemProvider
     ) async -> UIImage? {
 
-        await withCheckedContinuation {
-            continuation in
+        if let systemPreview =
+            await loadSystemPreviewImage(
+                from: provider
+            ) {
+            return systemPreview
+        }
+
+        if let filePreview =
+            await loadFilePreviewImage(
+                from: provider
+            ) {
+            return filePreview
+        }
+
+        return await withCheckedContinuation {
+            (
+                continuation:
+                    CheckedContinuation<UIImage?, Never>
+            ) in
 
             provider.loadItem(
                 forTypeIdentifier:
-                    UTType.image.identifier,
+                    preferredPreviewTypeIdentifier(
+                        from: provider
+                    )
+                    ?? UTType.image.identifier,
                 options: nil
             ) { item, _ in
 
                 if let url = item as? URL,
-                   let data =
-                    try? Data(contentsOf: url),
-                   let image = UIImage(data: data) {
+                   let image =
+                    self.thumbnailImage(
+                        from: url
+                    ) {
                     continuation.resume(
                         returning: image
                     )
@@ -986,6 +1403,157 @@ private extension PhotoMemoShareExtensionViewController {
                 )
             }
         }
+    }
+
+    func isSupportedPreviewProvider(
+        _ provider: NSItemProvider
+    ) -> Bool {
+
+        if provider.hasItemConformingToTypeIdentifier(
+            UTType.image.identifier
+        ) {
+            return true
+        }
+
+        return PhotoProcessingInputPolicy
+            .supportedImageTypes
+            .contains { type in
+                provider
+                    .hasItemConformingToTypeIdentifier(
+                        type.identifier
+                    )
+            }
+    }
+
+    func preferredPreviewTypeIdentifier(
+        from provider: NSItemProvider
+    ) -> String? {
+
+        provider
+            .registeredTypeIdentifiers
+            .compactMap(UTType.init)
+            .first { candidate in
+                PhotoProcessingInputPolicy
+                    .supportedImageTypes
+                    .contains { supportedType in
+                        candidate.conforms(
+                            to: supportedType
+                        )
+                        || candidate.identifier
+                            == supportedType.identifier
+                    }
+                || candidate.conforms(to: .image)
+            }?
+            .identifier
+    }
+
+    func loadSystemPreviewImage(
+        from provider: NSItemProvider
+    ) async -> UIImage? {
+
+        await withCheckedContinuation {
+            (
+                continuation:
+                    CheckedContinuation<UIImage?, Never>
+            ) in
+
+            provider.loadPreviewImage(
+                options: [
+                    NSItemProviderPreferredImageSizeKey:
+                        CGSize(width: 420, height: 420)
+                ]
+            ) { item, _ in
+                continuation.resume(
+                    returning:
+                        item as? UIImage
+                )
+            }
+        }
+    }
+
+    func loadFilePreviewImage(
+        from provider: NSItemProvider
+    ) async -> UIImage? {
+
+        guard let typeIdentifier =
+            preferredPreviewTypeIdentifier(
+                from: provider
+            )
+            ?? PhotoProcessingInputPolicy
+            .supportedImageTypes
+            .first(where: {
+                provider
+                    .hasItemConformingToTypeIdentifier(
+                        $0.identifier
+                    )
+            })?
+            .identifier
+        else {
+            return nil
+        }
+
+        return await withCheckedContinuation {
+            continuation in
+
+            provider.loadFileRepresentation(
+                forTypeIdentifier:
+                    typeIdentifier
+            ) { url, _ in
+                guard let url,
+                      let image =
+                        self.thumbnailImage(
+                            from: url
+                        ) else {
+                    continuation.resume(
+                        returning: nil
+                    )
+                    return
+                }
+
+                continuation.resume(
+                    returning: image
+                )
+            }
+        }
+    }
+
+    nonisolated
+    func thumbnailImage(
+        from url: URL
+    ) -> UIImage? {
+
+        guard let source =
+            CGImageSourceCreateWithURL(
+                url as CFURL,
+                [
+                    kCGImageSourceShouldCache:
+                        false
+                ] as CFDictionary
+            ) else {
+            return nil
+        }
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageIfAbsent:
+                true,
+            kCGImageSourceCreateThumbnailWithTransform:
+                true,
+            kCGImageSourceShouldCacheImmediately:
+                true,
+            kCGImageSourceThumbnailMaxPixelSize:
+                640
+        ]
+
+        guard let cgImage =
+            CGImageSourceCreateThumbnailAtIndex(
+                source,
+                0,
+                options as CFDictionary
+            ) else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
     }
 
     func detailedFailureMessage(

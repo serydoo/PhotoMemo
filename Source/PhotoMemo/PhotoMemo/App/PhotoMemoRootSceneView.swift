@@ -8,6 +8,24 @@ struct PhotoMemoRootSceneView: View {
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
+    private let temporaryEntryStorageKey: String
+
+    private let temporaryEntryDefault: String
+
+    init(
+        runtime: PhotoMemoAppRuntime,
+        temporaryEntryStorageKey: String =
+            "photomemo.ios.temporaryEntry",
+        temporaryEntryDefault: String =
+            "configurationCenter"
+    ) {
+        self.runtime = runtime
+        self.temporaryEntryStorageKey =
+            temporaryEntryStorageKey
+        self.temporaryEntryDefault =
+            temporaryEntryDefault
+    }
+
     var body: some View {
 
         rootConfigurationCenter
@@ -54,7 +72,10 @@ struct PhotoMemoRootSceneView: View {
     @ViewBuilder
     private var rootConfigurationCenter: some View {
         #if os(iOS)
-        PhotoMemoiOSTemporaryEntryView()
+        PhotoMemoiOSTemporaryEntryView(
+            storageKey: temporaryEntryStorageKey,
+            defaultEntry: temporaryEntryDefault
+        )
         #else
         ConfigurationCenterView()
         #endif

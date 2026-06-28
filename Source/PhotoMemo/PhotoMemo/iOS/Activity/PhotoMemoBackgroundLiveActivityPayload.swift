@@ -16,6 +16,16 @@ nonisolated struct PhotoMemoBackgroundActivityAttributes:
 
         let statusMessage: String
 
+        let displayModeRawValue: String
+
+        let pipelineStepTitles: [String]
+
+        let activePipelineStepIndex: Int
+
+        let queueLines: [String]
+
+        let overflowQueueCount: Int
+
         let currentFileName: String?
 
         let completedCount: Int

@@ -30,7 +30,7 @@ struct PhotoMemoiOSBackgroundStatusSheet:
                     emptyState
                 }
             }
-            .navigationTitle("后台状态")
+            .navigationTitle("处理进度")
             .navigationBarTitleDisplayMode(
                 .inline
             )
@@ -82,6 +82,11 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                 statusHero(
                     snapshot
                 )
+
+                if snapshot.displayMode
+                    == .singleTask {
+                    pipelineCard(snapshot)
+                }
 
                 if let job = currentJob {
                     processingFocusCard(
@@ -157,6 +162,11 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                     vertical: true
                 )
 
+            if snapshot.displayMode
+                != .singleTask {
+                queueLinesCard(snapshot)
+            }
+
             ProgressView(
                 value:
                     snapshot.progressFraction
@@ -187,6 +197,120 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                         snapshot.currentPhaseTitle
                         ?? snapshot.jobState.displayTitle
                 )
+            }
+        }
+        .padding(16)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .background(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .fill(
+                Color(
+                    uiColor:
+                        .secondarySystemBackground
+                )
+            )
+        )
+    }
+
+    func queueLinesCard(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 8
+        ) {
+            ForEach(
+                Array(
+                    snapshot.queueLines
+                    .prefix(3)
+                    .enumerated()
+                ),
+                id: \.offset
+            ) { _, line in
+                Text(line)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if snapshot.overflowQueueCount > 0 {
+                Text("另有 \(snapshot.overflowQueueCount) 个队列")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .fill(Color.secondary.opacity(0.08))
+        )
+    }
+
+    func pipelineCard(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 12
+        ) {
+            Text("处理流程")
+                .font(.headline)
+
+            ForEach(
+                Array(
+                    snapshot.pipelineSteps
+                    .enumerated()
+                ),
+                id: \.offset
+            ) { _, step in
+                HStack(
+                    alignment: .firstTextBaseline,
+                    spacing: 10
+                ) {
+                    Image(
+                        systemName:
+                            pipelineSymbolName(
+                                for: step.state
+                            )
+                    )
+                    .foregroundStyle(
+                        pipelineTint(
+                            for: step.state
+                        )
+                    )
+                    .frame(width: 18)
+
+                    Text(step.title)
+                        .font(
+                            step.state == .active
+                            ? .subheadline.weight(.semibold)
+                            : .subheadline
+                        )
+                        .foregroundStyle(
+                            step.state == .pending
+                            ? .secondary
+                            : .primary
+                        )
+
+                    Spacer(minLength: 8)
+                }
             }
         }
         .padding(16)
@@ -936,6 +1060,48 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
 
         case .cancelled:
             return 4
+        }
+    }
+
+    func pipelineSymbolName(
+        for state:
+            PhotoMemoBackgroundPipelineStepState
+    ) -> String {
+
+        switch state {
+
+        case .pending:
+            return "circle"
+
+        case .active:
+            return "arrow.trianglehead.2.clockwise.circle.fill"
+
+        case .completed:
+            return "checkmark.circle.fill"
+
+        case .needsAttention:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    func pipelineTint(
+        for state:
+            PhotoMemoBackgroundPipelineStepState
+    ) -> Color {
+
+        switch state {
+
+        case .pending:
+            return .secondary
+
+        case .active:
+            return .blue
+
+        case .completed:
+            return .green
+
+        case .needsAttention:
+            return .orange
         }
     }
 }

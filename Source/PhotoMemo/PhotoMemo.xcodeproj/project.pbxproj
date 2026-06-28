@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		F4A1B2203A9C410100A10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8B0A7C6D4E184A8AA7E10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8B0A7C6D4E184A8AA7E10005 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F4A1B2303A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2383A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift */; };
 		F4A1B2313A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2393A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift */; };
 		F4A1B2323A9C410100A10001 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -22,6 +24,20 @@
 			remoteInfo = PhotoMemoShareExtension;
 		};
 		F4A1B2343A9C410100A10001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F4A1B23E3A9C410100A10001;
+			remoteInfo = PhotoMemoWidgetExtension;
+		};
+		8B0A7C6D4E184A8AA7E10002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F4A1B20B3A9C410100A10001;
+			remoteInfo = PhotoMemoShareExtension;
+		};
+		8B0A7C6D4E184A8AA7E10006 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
 			proxyType = 1;
@@ -45,6 +61,16 @@
 			files = (
 				F4A1B2203A9C410100A10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */,
 				F4A1B2323A9C410100A10001 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+		};
+		8B0A7C6D4E184A8AA7E10003 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				8B0A7C6D4E184A8AA7E10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */,
+				8B0A7C6D4E184A8AA7E10005 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 		};
@@ -314,8 +340,13 @@
 				F89B4A3D3DB343EBAF7D9B7F /* Sources */,
 				630755BBC5174C7A80B839C4 /* Frameworks */,
 				8BC39CB08D7741D3BB38C1AC /* Resources */,
+				8B0A7C6D4E184A8AA7E10003 /* Embed App Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				8B0A7C6D4E184A8AA7E10004 /* PBXTargetDependency */,
+				8B0A7C6D4E184A8AA7E10007 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				B3DBA4F62FE1581100945016 /* PhotoMemo */,
@@ -515,6 +546,16 @@
 			isa = PBXTargetDependency;
 			target = F4A1B23E3A9C410100A10001 /* PhotoMemoWidgetExtension */;
 			targetProxy = F4A1B2343A9C410100A10001 /* PBXContainerItemProxy */;
+		};
+		8B0A7C6D4E184A8AA7E10004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
+			targetProxy = 8B0A7C6D4E184A8AA7E10002 /* PBXContainerItemProxy */;
+		};
+		8B0A7C6D4E184A8AA7E10007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F4A1B23E3A9C410100A10001 /* PhotoMemoWidgetExtension */;
+			targetProxy = 8B0A7C6D4E184A8AA7E10006 /* PBXContainerItemProxy */;
 		};
 		F5B100093A9D000000A10001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -801,11 +842,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "PhotoMemoiOSMVP-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "PhotoMemo MVP";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        photomemo\n    );\n}";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo MVP 需要把处理后的照片存回你的系统相册。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo MVP 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -815,7 +859,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.MVP;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -839,11 +883,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "PhotoMemoiOSMVP-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "PhotoMemo MVP";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        photomemo\n    );\n}";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "PhotoMemo MVP 需要把处理后的照片存回你的系统相册。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PhotoMemo MVP 需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -853,7 +900,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.MVP;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

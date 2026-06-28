@@ -165,15 +165,12 @@ private extension PhotoMemoAppRuntime {
         taskCount: Int
     ) -> String {
 
-        let formatter =
-            DateFormatter()
-
-        formatter.locale =
-            Locale(identifier: "zh_CN")
-        formatter.dateFormat =
-            "yyyy.MM.dd HH:mm"
-
-        return "外部图片处理 \(formatter.string(from: receivedAt)) · \(taskCount)张"
+        PhotoMemoQueueDisplayFormatter.title(
+            startedAt:
+                receivedAt,
+            photoCount:
+                taskCount
+        )
     }
 
     func isValidRequestSourceURL(

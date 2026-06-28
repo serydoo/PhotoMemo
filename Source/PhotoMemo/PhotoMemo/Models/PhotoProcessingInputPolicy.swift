@@ -169,10 +169,62 @@ extension PhotoProcessingInputPolicy {
         .heif,
         .png,
         .tiff
+    ] + rawImageTypes
+
+    static let rawImageTypes: [UTType] = [
+        UTType("public.camera-raw-image"),
+        UTType("com.adobe.raw-image"),
+        UTType("com.adobe.digital-negative"),
+        UTType("com.apple.proraw")
+    ]
+    .compactMap { $0 }
+
+    static func isRawContentType(
+        _ contentType: UTType?
+    ) -> Bool {
+
+        guard let contentType else {
+            return false
+        }
+
+        return rawImageTypes.contains {
+            contentType.conforms(to: $0)
+            || contentType.identifier == $0.identifier
+        }
+        || rawFileExtensions.contains(
+            contentType.preferredFilenameExtension?
+                .lowercased() ?? ""
+        )
+    }
+
+    static func isRawFileURL(
+        _ fileURL: URL
+    ) -> Bool {
+
+        rawFileExtensions.contains(
+            fileURL.pathExtension
+                .lowercased()
+        )
+    }
+
+    static let rawFileExtensions: Set<String> = [
+        "dng",
+        "raw",
+        "arw",
+        "cr2",
+        "cr3",
+        "nef",
+        "nrw",
+        "orf",
+        "raf",
+        "rw2",
+        "rwl",
+        "srw",
+        "pef"
     ]
 
     static let supportedFormatDescription =
-        "JPEG/JPG、HEIC/HEIF、PNG、TIFF"
+        "JPEG/JPG、HEIC/HEIF、PNG、TIFF、RAW/DNG"
 }
 
 private extension PhotoProcessingInputPolicy {
@@ -183,7 +235,7 @@ private extension PhotoProcessingInputPolicy {
             isSupported: false,
             reason: .unsupportedFormat,
             title: "暂不支持这种格式",
-            message: "当前版本支持 \(Self.supportedFormatDescription)。RAW、DNG、GIF、WebP、视频和 Live Photo 暂不处理。"
+            message: "当前版本支持 \(Self.supportedFormatDescription)。GIF、WebP、视频和 Live Photo 暂不处理。"
         )
     }
 
@@ -212,7 +264,12 @@ private extension PhotoProcessingInputPolicy {
             .flatMap(UTType.init)
 
         if let declaredType,
-           isLivePhotoContentType(declaredType) {
+            isLivePhotoContentType(declaredType) {
+            return declaredType
+        }
+
+        if let declaredType,
+           Self.isRawContentType(declaredType) {
             return declaredType
         }
 
@@ -223,11 +280,18 @@ private extension PhotoProcessingInputPolicy {
             return declaredType
         }
 
-        return UTType(
+        let extensionType = UTType(
             filenameExtension:
                 fileURL.pathExtension
                 .lowercased()
-        ) ?? declaredType
+        )
+
+        if let extensionType,
+           Self.isRawContentType(extensionType) {
+            return extensionType
+        }
+
+        return extensionType ?? declaredType
     }
 
     func imagePixelSize(

@@ -285,11 +285,11 @@ private extension BatchNotificationService {
     ) -> String {
 
         if failedCount == 0 {
-            return "PhotoMemo 处理完成"
+            return "PhotoMemo 已保存 \(completedCount) 张照片"
         }
 
         if completedCount == 0 {
-            return "PhotoMemo 处理失败"
+            return "\(failedCount) 张照片需要处理"
         }
 
         if Double(completedCount)
@@ -318,14 +318,14 @@ private extension BatchNotificationService {
 
         if failedCount == 0 {
             if !albumName.isEmpty {
-                return "\(totalCount) 张照片已全部处理完成，已经存入“\(albumName)”相册。"
+                return "已存入“\(albumName)”相册。"
             }
 
-            return "\(totalCount) 张照片已全部处理完成，并已写入系统图库。"
+            return "已写入系统图库。"
         }
 
         if completedCount == 0 {
-            return "\(totalCount) 张照片暂未处理成功，可以回到 PhotoMemo 查看失败原因并重试。"
+            return "可以回到 PhotoMemo 查看原因并重试。"
         }
 
         if Double(completedCount)
@@ -333,17 +333,17 @@ private extension BatchNotificationService {
             >= 0.8 {
 
             if !albumName.isEmpty {
-                return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已存入“\(albumName)”，可回到 PhotoMemo 重试失败项。"
+                return "已保存 \(completedCount) 张到“\(albumName)”，另有 \(failedCount) 张需要处理。"
             }
 
-            return "本批共 \(totalCount) 张，已完成 \(completedCount) 张；另有 \(failedCount) 张作为例外未处理，成功结果已写入系统图库，可回到 PhotoMemo 重试失败项。"
+            return "已保存 \(completedCount) 张，另有 \(failedCount) 张需要处理。"
         }
 
         if !albumName.isEmpty {
-            return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已存入“\(albumName)”，可回到 PhotoMemo 重试失败项。"
+            return "已保存 \(completedCount) 张到“\(albumName)”，\(failedCount) 张需要处理。"
         }
 
-        return "本批共 \(totalCount) 张，已完成 \(completedCount) 张、失败 \(failedCount) 张；成功结果已写入系统图库，可回到 PhotoMemo 重试失败项。"
+        return "已保存 \(completedCount) 张，\(failedCount) 张需要处理。"
     }
 
     func intakeWarningSummary(
@@ -394,6 +394,9 @@ private extension BatchNotificationService {
         let stageTitle: String
 
         switch stage {
+
+        case "raw":
+            stageTitle = "正在准备 RAW 照片"
 
         case "imported":
             stageTitle = "已开始读取原图和 EXIF"

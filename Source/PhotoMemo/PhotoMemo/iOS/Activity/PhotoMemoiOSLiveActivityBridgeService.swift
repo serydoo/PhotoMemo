@@ -136,6 +136,19 @@ private extension PhotoMemoiOSLiveActivityBridgeService {
                     .displayTitle,
                 statusMessage:
                     snapshot.statusMessage,
+                displayModeRawValue:
+                    snapshot.displayMode
+                    .rawValue,
+                pipelineStepTitles:
+                    snapshot.pipelineSteps.map(
+                        \.title
+                    ),
+                activePipelineStepIndex:
+                    snapshot.activePipelineStepIndex,
+                queueLines:
+                    snapshot.queueLines,
+                overflowQueueCount:
+                    snapshot.overflowQueueCount,
                 currentFileName:
                     snapshot.currentFileName,
                 completedCount:

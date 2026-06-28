@@ -24,8 +24,16 @@ struct PhotoMemoiOSHomeView: View {
     private let backgroundExecutionService:
         PhotoMemoiOSBackgroundExecutionService
 
+    private let temporaryEntryStorageKey: String
+
+    private let temporaryEntryDefault: String
+
     init(
-        runtime: PhotoMemoAppRuntime
+        runtime: PhotoMemoAppRuntime,
+        temporaryEntryStorageKey: String =
+            "photomemo.ios.temporaryEntry",
+        temporaryEntryDefault: String =
+            "configurationCenter"
     ) {
         self.runtime = runtime
         self._batchQueueStore =
@@ -42,12 +50,20 @@ struct PhotoMemoiOSHomeView: View {
         self.backgroundExecutionService =
             runtime
             .backgroundExecutionService
+        self.temporaryEntryStorageKey =
+            temporaryEntryStorageKey
+        self.temporaryEntryDefault =
+            temporaryEntryDefault
     }
 
     var body: some View {
 
         PhotoMemoRootSceneView(
-            runtime: runtime
+            runtime: runtime,
+            temporaryEntryStorageKey:
+                temporaryEntryStorageKey,
+            temporaryEntryDefault:
+                temporaryEntryDefault
         )
         .toolbar {
             ToolbarItem(
