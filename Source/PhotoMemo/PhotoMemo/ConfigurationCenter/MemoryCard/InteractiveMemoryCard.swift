@@ -1218,7 +1218,7 @@ private enum CenterInsertableModule:
         case .subjectNickname:
             return "对象昵称"
         case .smartTime:
-            return "智能时间"
+            return "年岁"
         case .captureDate:
             return "拍摄日期"
         case .captureTime:
@@ -1246,7 +1246,7 @@ private enum CenterInsertableModule:
         case .whiteBalance:
             return "白平衡"
         case .captureSummary:
-            return "参数概要"
+            return "拍摄参数汇总"
         case .location:
             return "位置"
         case .altitude:
@@ -1263,7 +1263,7 @@ private enum CenterInsertableModule:
     var previewValue: String {
         switch self {
         case .subjectNickname:
-            return "Tutu"
+            return "途途"
         case .smartTime:
             return "11个月28天"
         case .captureDate:

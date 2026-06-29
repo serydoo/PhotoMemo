@@ -38,13 +38,22 @@ final class BatchNotificationService:
                 for: job
             )
         content.sound = .default
+        configureStatusPresentation(
+            content,
+            for: job,
+            isProgressUpdate: false
+        )
 
         return await schedule(
             content: content,
             identifier:
                 notificationIdentifier(
                     for: job,
-                    suffix: "start"
+                    suffix: "status"
+                ),
+            replacingIdentifiers:
+                legacyNotificationIdentifiers(
+                    for: job
                 )
         )
     }
@@ -90,13 +99,22 @@ final class BatchNotificationService:
                 totalCount: totalCount
             )
         content.sound = .default
+        configureStatusPresentation(
+            content,
+            for: job,
+            isProgressUpdate: false
+        )
 
         return await schedule(
             content: content,
             identifier:
                 notificationIdentifier(
                     for: job,
-                    suffix: "final"
+                    suffix: "status"
+                ),
+            replacingIdentifiers:
+                legacyNotificationIdentifiers(
+                    for: job
                 )
         )
     }
@@ -127,13 +145,22 @@ final class BatchNotificationService:
                 stage: stage
             )
         content.sound = nil
+        configureStatusPresentation(
+            content,
+            for: job,
+            isProgressUpdate: true
+        )
 
         return await schedule(
             content: content,
             identifier:
                 notificationIdentifier(
                     for: job,
-                    suffix: "progress.\(stage)"
+                    suffix: "status"
+                ),
+            replacingIdentifiers:
+                legacyNotificationIdentifiers(
+                    for: job
                 )
         )
     }
@@ -207,10 +234,29 @@ private extension BatchNotificationService {
 
     func schedule(
         content: UNMutableNotificationContent,
-        identifier: String
+        identifier: String,
+        replacingIdentifiers: [String]
     ) async -> Bool {
 
         do {
+            let identifiersToRemove =
+                Array(
+                    Set(
+                        replacingIdentifiers + [
+                            identifier
+                        ]
+                    )
+                )
+
+            center.removePendingNotificationRequests(
+                withIdentifiers:
+                    identifiersToRemove
+            )
+            center.removeDeliveredNotifications(
+                withIdentifiers:
+                    identifiersToRemove
+            )
+
             let request =
                 UNNotificationRequest(
                     identifier: identifier,
@@ -231,6 +277,47 @@ private extension BatchNotificationService {
     ) -> String {
 
         "photomemo.batch.\(job.id.uuidString).\(suffix)"
+    }
+
+    func configureStatusPresentation(
+        _ content: UNMutableNotificationContent,
+        for job: BatchJob,
+        isProgressUpdate: Bool
+    ) {
+        content.threadIdentifier =
+            notificationIdentifier(
+                for: job,
+                suffix: "thread"
+            )
+
+        if isProgressUpdate {
+            content.badge = nil
+        }
+
+        if #available(iOS 15.0, macOS 12.0, *) {
+            content.interruptionLevel =
+                isProgressUpdate ? .passive : .active
+        }
+    }
+
+    func legacyNotificationIdentifiers(
+        for job: BatchJob
+    ) -> [String] {
+
+        [
+            "start",
+            "final",
+            "progress.raw",
+            "progress.imported",
+            "progress.rendering",
+            "progress.saving"
+        ]
+        .map {
+            notificationIdentifier(
+                for: job,
+                suffix: $0
+            )
+        }
     }
 
     func queuedMessage(

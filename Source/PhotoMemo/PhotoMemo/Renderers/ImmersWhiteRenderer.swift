@@ -188,9 +188,9 @@ enum ImmersWhiteRenderer {
 
     static let dividerWidth: CGFloat = 2
 
-    static let primaryMinimumScaleFactor: CGFloat = 0.94
+    static let primaryMinimumScaleFactor: CGFloat = 0.82
 
-    static let secondaryMinimumScaleFactor: CGFloat = 0.88
+    static let secondaryMinimumScaleFactor: CGFloat = 0.84
 
     static func orientation(
         for metadata: PhotoMetadata

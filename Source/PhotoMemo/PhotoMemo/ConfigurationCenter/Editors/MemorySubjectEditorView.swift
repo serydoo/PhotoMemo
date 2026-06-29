@@ -262,7 +262,7 @@ struct MemorySubjectEditorView: View {
                             .foregroundStyle(.secondary)
 
                         TextField(
-                            "例如：图图出生日期",
+                            "例如：途途出生日期",
                             text: anchorBinding.note,
                             axis: .vertical
                         )

@@ -2,6 +2,104 @@
 
 Last updated: 2026-06-29
 
+## 2026-06-29 MVP Content Builder Order And Notification Update
+
+This slice fixes the latest iPhone review feedback without touching the locked
+bottom-border rendering output.
+
+What changed:
+
+- The iOS MVP four-region editor now treats text, modules, separators, and
+  future line-break items as one ordered content stream.
+- User-entered phrases and inserted modules now keep the same order in the
+  editing row, saved preset text, and live preview.
+- Module insertion follows the currently edited text item when possible, so
+  typing a phrase and then inserting a module places that module after the
+  phrase instead of grouping modules separately.
+- Editor module chips stay compact and only show the module title/icon plus the
+  remove action; resolved EXIF/time values remain in the preview output.
+- Share-driven local notifications now use one stable `status` notification
+  identifier per batch job and remove older per-stage identifiers such as
+  `progress.raw`, `progress.rendering`, and `progress.saving`.
+- Progress updates are marked as passive notification updates, while queued and
+  completed states remain active.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on connected iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Manual verification still needed:
+
+- In the iPhone editor, type custom text, insert a module, continue typing, and
+  confirm the row order and preview output stay aligned.
+- Share one RAW or JPEG and confirm Notification Center keeps one task status
+  instead of stacking stage notifications.
+
+## 2026-06-29 MVP Reliability Lock Foundation
+
+This slice starts the MVP Apple-System Capability Sprint without touching the
+locked bottom-border output.
+
+Principle:
+
+- Border layout, typography, icons, content mapping, and rendered visual form
+  remain frozen for this sprint.
+- The current hardening target is the daily Apple Photos lifecycle:
+
+```text
+Apple Photos
+-> Share
+-> PhotoMemo
+-> Processing
+-> Notification
+-> Apple Photos
+```
+
+What changed:
+
+- Added `Docs/MVP_RELIABILITY_LOCK.md` as the current reliability gate for the
+  MVP.
+- The document freezes:
+  - supported and unsupported input formats
+  - queue naming semantics
+  - single-task / multi-queue / aggregate progress behavior
+  - RAW / DNG progress wording expectations
+  - notification and Live Activity result language
+  - manual regression scenarios required before reliability releases
+- Added automated queue-regression coverage:
+  - queue titles format from Share/start time plus photo count
+  - queue creation follows the earliest intake payload request time
+- Refined `PhotoMemoQueueDisplayFormatter` so today/yesterday decisions use the
+  injected `now` value, making queue-title behavior deterministic in tests.
+- Re-aligned `RecordCardBuildServiceTests` with the current MVP output naming
+  rule where generated files use the original base name plus copy suffixes such
+  as `(1)` and `(2)`.
+- Added cleanup around naming tests so temporary export leftovers do not affect
+  repeated local test runs.
+
+Verification:
+
+- passed focused `PhotoMemoTests/BatchFixtureCoverageTests`
+- passed focused `PhotoMemoTests/RecordCardBuildServiceTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+- passed `git diff --check`
+- full `PhotoMemoTests` currently has one remaining failure:
+  `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable`
+
+Next:
+
+- Add automated coverage for background snapshot display modes and final
+  notification copy.
+- Investigate the remaining Classic White landscape snapshot separately without
+  changing the locked border output casually.
+- Run real-device manual regression for JPEG / HEIC / RAW / multi-share /
+  partial-failure paths before the next phone push.
+
 ## 2026-06-29 MVP Queue Naming Refinement
 
 This slice aligns the Share-driven progress surface with the latest interaction

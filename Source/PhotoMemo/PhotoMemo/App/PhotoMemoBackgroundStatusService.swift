@@ -21,14 +21,24 @@ enum PhotoMemoQueueDisplayFormatter {
         let calendar =
             Calendar.current
 
-        if calendar.isDateInToday(
-            startedAt
+        if calendar.isDate(
+            startedAt,
+            inSameDayAs:
+                now
         ) {
             formatter.dateFormat =
                 "HH:mm"
-        } else if calendar.isDateInYesterday(
-            startedAt
-        ) {
+        } else if let yesterday =
+            calendar.date(
+                byAdding: .day,
+                value: -1,
+                to: now
+            ),
+            calendar.isDate(
+                startedAt,
+                inSameDayAs:
+                    yesterday
+            ) {
             formatter.dateFormat =
                 "HH:mm"
             return "昨天 \(formatter.string(from: startedAt))（\(count)张）"

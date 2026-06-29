@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import PhotoMemo
 
-@Suite("RecordCardBuildService")
+@Suite("RecordCardBuildService", .serialized)
 struct RecordCardBuildServiceTests {
 
     @Test("Builds template1 with profile relationship and baby-age phrasing")
@@ -241,23 +241,18 @@ struct RecordCardBuildServiceTests {
         )
 
         let exportFolder =
-            FileManager.default.temporaryDirectory
-            .appendingPathComponent(
-                "PhotoMemoExports",
-                isDirectory: true
-            )
+            temporaryExportFolder()
 
         let firstURL =
             exportFolder.appendingPathComponent(
-                "PhotoMemoNamingFixture.jpg"
+                "PhotoMemoNamingFixture(1).jpg"
             )
         let secondURL =
             exportFolder.appendingPathComponent(
-                "PhotoMemoNamingFixture (1).jpg"
+                "PhotoMemoNamingFixture(2).jpg"
             )
 
-        try? FileManager.default.removeItem(at: firstURL)
-        try? FileManager.default.removeItem(at: secondURL)
+        clearTemporaryExportFolder()
 
         defer {
             try? FileManager.default.removeItem(at: firstURL)
@@ -279,11 +274,11 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             exportedFirstURL.lastPathComponent
-            == "PhotoMemoNamingFixture.jpg"
+            == "PhotoMemoNamingFixture(1).jpg"
         )
         #expect(
             exportedSecondURL.lastPathComponent
-            == "PhotoMemoNamingFixture (1).jpg"
+            == "PhotoMemoNamingFixture(2).jpg"
         )
     }
 
@@ -321,18 +316,14 @@ struct RecordCardBuildServiceTests {
         )
 
         let exportFolder =
-            FileManager.default.temporaryDirectory
-            .appendingPathComponent(
-                "PhotoMemoExports",
-                isDirectory: true
-            )
+            temporaryExportFolder()
 
         let expectedURL =
             exportFolder.appendingPathComponent(
-                "IMG_7581.jpg"
+                "IMG_7581(1).jpg"
             )
 
-        try? FileManager.default.removeItem(at: expectedURL)
+        clearTemporaryExportFolder()
 
         defer {
             try? FileManager.default.removeItem(at: expectedURL)
@@ -347,7 +338,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             exportedURL.lastPathComponent
-            == "IMG_7581.jpg"
+            == "IMG_7581(1).jpg"
         )
     }
 
@@ -410,20 +401,14 @@ struct RecordCardBuildServiceTests {
         )
 
         let exportFolder =
-            FileManager.default.temporaryDirectory
-            .appendingPathComponent(
-                "PhotoMemoExports",
-                isDirectory: true
-            )
+            temporaryExportFolder()
 
         let expectedURL =
             exportFolder.appendingPathComponent(
-                "IMG_20260620_090819.jpg"
+                "IMG_20260620_090819(1).jpg"
             )
 
-        try? FileManager.default.removeItem(
-            at: expectedURL
-        )
+        clearTemporaryExportFolder()
 
         defer {
             try? FileManager.default.removeItem(
@@ -440,7 +425,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             exportedURL.lastPathComponent
-            == "IMG_20260620_090819.jpg"
+            == "IMG_20260620_090819(1).jpg"
         )
     }
 
@@ -467,6 +452,26 @@ struct RecordCardBuildServiceTests {
             service.assetOriginalFilename(
                 for: URL(fileURLWithPath: "/tmp/ ")
             ) == "PhotoMemo.jpg"
+        )
+    }
+}
+
+private extension RecordCardBuildServiceTests {
+
+    func temporaryExportFolder() -> URL {
+
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoExports",
+                isDirectory: true
+            )
+    }
+
+    func clearTemporaryExportFolder() {
+
+        try? FileManager.default.removeItem(
+            at:
+                temporaryExportFolder()
         )
     }
 }

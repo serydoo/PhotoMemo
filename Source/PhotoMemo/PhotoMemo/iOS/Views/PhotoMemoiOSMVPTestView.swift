@@ -15,6 +15,9 @@ struct PhotoMemoiOSMVPTestView: View {
     private var activeModuleRegion: CardRegion?
 
     @State
+    private var activeTextItemIDs: [CardRegion: UUID] = [:]
+
+    @State
     private var selectedModule: IOSInsertableModule?
 
     @State
@@ -37,9 +40,9 @@ struct PhotoMemoiOSMVPTestView: View {
     private var birthdayDate =
         Calendar.current.date(
             from: DateComponents(
-                year: 2024,
-                month: 4,
-                day: 18
+                year: 2025,
+                month: 5,
+                day: 26
             )
         ) ?? Date()
 
@@ -82,6 +85,9 @@ struct PhotoMemoiOSMVPTestView: View {
 
     @State
     private var pendingActivationPresetTitle = ""
+
+    @AppStorage("photomemo.mvp.moduleUsageCounts")
+    private var moduleUsageCountsStorage = "{}"
 
     private let captureTimeResolver = CaptureTimeResolver()
 
@@ -304,24 +310,51 @@ struct PhotoMemoiOSMVPTestView: View {
                 MVPRegionEditorCard(
                     region: region,
                     draft: draft(for: region),
+                    resolvedText:
+                        composedText(
+                            for: draft(for: region)
+                        ),
                     onFocus: {
-                        activeModuleRegion = region
+                        activeModuleRegion = nil
                         selectedModule = nil
                     },
-                    onUpdateText: { text in
+                    onFocusTextItem: { item in
+                        activeTextItemIDs[region] = item.id
+                        activeModuleRegion = nil
+                        selectedModule = nil
+                    },
+                    onUpdateTextItem: { item, text in
+                        activeTextItemIDs[region] = item.id
                         updateDraft(for: region) { draft in
-                            draft.updateText(text)
+                            draft.updateTextItem(
+                                item,
+                                text: text
+                            )
+                            draft.normalizeTrailingTextInput()
+                        }
+                    },
+                    onAppendText: { text in
+                        var appendedID: UUID?
+                        updateDraft(for: region) { draft in
+                            appendedID = draft.appendText(text)
+                            draft.normalizeTrailingTextInput()
+                        }
+                        if let appendedID {
+                            activeTextItemIDs[region] = appendedID
                         }
                     },
                     onRemoveItem: { item in
                         updateDraft(for: region) { draft in
                             draft.items.removeAll { $0.id == item.id }
+                            draft.normalizeTrailingTextInput()
                         }
                         refreshPreview(for: region)
                     },
                     onAddSeparator: { separator in
                         updateDraft(for: region) { draft in
-                            draft.items.append(.separator(separator))
+                            draft.appendComposedItem(
+                                .separator(separator)
+                            )
                         }
                     },
                     onShowModules: {
@@ -587,6 +620,7 @@ struct PhotoMemoiOSMVPTestView: View {
                 Section {
                     ForEach(modules(for: region)) { module in
                         Button {
+                            recordModuleUsage(module)
                             insert(module, into: region)
                             activeModuleRegion = nil
                             selectedModule = nil
@@ -602,10 +636,17 @@ struct PhotoMemoiOSMVPTestView: View {
                                         .font(.body)
                                         .foregroundStyle(.primary)
 
-                                    Text(moduleValue(module))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
+                                    HStack(spacing: 6) {
+                                        Text(moduleCategoryTitle(module))
+                                            .font(.caption2.weight(.semibold))
+                                            .foregroundStyle(.tertiary)
+                                            .textCase(.uppercase)
+
+                                        Text(moduleValue(module))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
                                 }
 
                                 Spacer(minLength: 0)
@@ -613,7 +654,7 @@ struct PhotoMemoiOSMVPTestView: View {
                         }
                     }
                 } header: {
-                    Text("加入当前区域")
+                    Text("常用与模块")
                 }
             }
             .navigationTitle(region.semanticTitle)
@@ -664,7 +705,15 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private func composedText(for draft: MVPEditorDraft) -> String {
-        draft.singleLineText
+        draft.items
+            .map(resolvedDisplayValue)
+            .filter {
+                !$0.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty
+            }
+            .joined(separator: " ")
     }
 
     private func templateText(for draft: MVPEditorDraft) -> String {
@@ -674,46 +723,67 @@ struct PhotoMemoiOSMVPTestView: View {
     private func makeDefaultDraft(
         for region: CardRegion
     ) -> MVPEditorDraft {
-        let subject = session.state.selectedSubject
-        let templateID = session.activeTemplateID(for: region)
+        switch region {
+        case .slotA:
+            return MVPEditorDraft(
+                items: [
+                    .text("记录"),
+                    moduleItem(.cameraModel)
+                ]
+            )
 
-        if region == .slotD {
-            let recorderName: String
+        case .slotB:
+            return MVPEditorDraft(
+                items: [
+                    moduleItem(.captureDate),
+                    moduleItem(.captureTime)
+                ]
+            )
 
-            if let subject,
-               !subject.identity.shortName.isEmpty {
-                recorderName = subject.identity.shortName
-            } else {
-                recorderName =
-                    subject?.identity.displayName
-                    ?? "Tutu"
-            }
+        case .slotC:
+            return MVPEditorDraft(
+                items: [
+                    moduleItem(.captureSummary)
+                ]
+            )
+
+        case .slotD:
+            return MVPEditorDraft(
+                items: [
+                    moduleItem(.subjectNickname),
+                    .text("当天"),
+                    moduleItem(.smartTime)
+                ]
+            )
+
+        default:
+            let subject = session.state.selectedSubject
+            let templateID = session.activeTemplateID(for: region)
 
             return MVPEditorDraft(
                 items: [
-                    .text("\(recorderName) 当天"),
-                    .token(
-                        IOSInsertableModule.smartTime.title,
-                        value: smartTimeResult,
-                        templateValue: templateToken(
-                            for: .smartTime
-                        ),
-                        systemImage: IOSInsertableModule.smartTime.systemImage
+                    .text(
+                        ConfigurationSession.defaultPreviewText(
+                            for: region,
+                            templateID: templateID,
+                            subject: subject
+                        )
                     )
                 ]
             )
         }
+    }
 
-        return MVPEditorDraft(
-            items: [
-                .text(
-                    ConfigurationSession.defaultPreviewText(
-                        for: region,
-                        templateID: templateID,
-                        subject: subject
-                    )
-                )
-            ]
+    private func moduleItem(
+        _ module: IOSInsertableModule
+    ) -> MVPContentItem {
+        .token(
+            module.title,
+            value: moduleValue(module),
+            templateValue: templateToken(
+                for: module
+            ),
+            systemImage: module.systemImage
         )
     }
 
@@ -722,13 +792,9 @@ struct PhotoMemoiOSMVPTestView: View {
         into region: CardRegion
     ) {
         updateDraft(for: region) { draft in
-            draft.items.append(
-                .token(
-                    module.title,
-                    value: moduleValue(module),
-                    templateValue: templateToken(for: module),
-                    systemImage: module.systemImage
-                )
+            draft.insertComposedItem(
+                moduleItem(module),
+                after: activeTextItemIDs[region]
             )
         }
     }
@@ -1064,47 +1130,107 @@ struct PhotoMemoiOSMVPTestView: View {
             : token
     }
 
+    private func resolvedDisplayValue(
+        for item: MVPContentItem
+    ) -> String {
+        guard item.kind == .token else {
+            return item.displayValue
+        }
+
+        guard let module =
+            IOSInsertableModule.allCases.first(where: {
+                $0.rendererToken == item.savedValue
+                || $0.token == item.savedValue
+            })
+        else {
+            return item.displayValue
+        }
+
+        return moduleValue(module)
+    }
+
     private func modules(for region: CardRegion) -> [IOSInsertableModule] {
-        switch region {
-        case .slotA:
-            return [
-                .subjectNickname,
-                .captureDate,
-                .captureTime,
-                .cameraModel,
-                .smartTime,
-                .custom
-            ]
-        case .slotB:
-            return [
-                .captureDate,
-                .captureTime,
-                .captureSummary,
-                .smartTime,
-                .custom
-            ]
-        case .slotC:
-            return [
-                .focalLength,
-                .aperture,
-                .iso,
-                .shutterSpeed,
-                .captureSummary,
-                .cameraModel,
-                .custom
-            ]
-        case .slotD:
-            return [
-                .subjectNickname,
-                .smartTime,
-                .captureDate,
-                .captureTime,
-                .location,
-                .custom
-            ]
-        default:
+        guard CardRegion.memoryCardRegions.contains(region) else {
             return []
         }
+
+        let defaults: [IOSInsertableModule] = [
+            .subjectNickname,
+            .smartTime,
+            .captureSummary,
+            .captureDate,
+            .captureTime,
+            .cameraModel,
+            .location,
+            .imageSize,
+            .fileFormat
+        ]
+
+        let usageCounts = moduleUsageCounts()
+
+        return defaults.sorted { left, right in
+            let leftCount = usageCounts[left.rawValue] ?? 0
+            let rightCount = usageCounts[right.rawValue] ?? 0
+
+            if leftCount != rightCount {
+                return leftCount > rightCount
+            }
+
+            let leftIndex =
+                defaults.firstIndex(of: left) ?? 0
+            let rightIndex =
+                defaults.firstIndex(of: right) ?? 0
+
+            return leftIndex < rightIndex
+        }
+    }
+
+    private func moduleUsageCounts() -> [String: Int] {
+        guard let data =
+            moduleUsageCountsStorage.data(
+                using: .utf8
+            ),
+              let decoded =
+            try? JSONDecoder().decode(
+                [String: Int].self,
+                from: data
+            )
+        else {
+            return [:]
+        }
+
+        return decoded
+    }
+
+    private func moduleCategoryTitle(
+        _ module: IOSInsertableModule
+    ) -> String {
+        switch module {
+        case .subjectNickname,
+             .smartTime,
+             .captureSummary:
+            return "PhotoMemo"
+
+        default:
+            return "EXIF"
+        }
+    }
+
+    private func recordModuleUsage(
+        _ module: IOSInsertableModule
+    ) {
+        var counts = moduleUsageCounts()
+        counts[module.rawValue, default: 0] += 1
+
+        guard let data =
+            try? JSONEncoder().encode(counts),
+              let encoded =
+            String(data: data, encoding: .utf8)
+        else {
+            return
+        }
+
+        moduleUsageCountsStorage = encoded
     }
 
     private func moduleValue(
@@ -1114,7 +1240,7 @@ struct PhotoMemoiOSMVPTestView: View {
         case .subjectNickname:
             return session.state.selectedSubject?.identity.shortName
             ?? session.state.selectedSubject?.identity.displayName
-            ?? "Tutu"
+            ?? "途途"
         case .smartTime:
             return smartTimeResult
         case .captureDate:
@@ -1296,10 +1422,6 @@ private struct MVPEditorDraft: Hashable {
         items.filter { $0.kind != .text }
     }
 
-    var text: String {
-        items.first { $0.kind == .text }?.value ?? ""
-    }
-
     var singleLineText: String {
         items
             .map(\.displayValue)
@@ -1314,11 +1436,104 @@ private struct MVPEditorDraft: Hashable {
             .joined(separator: " ")
     }
 
-    mutating func updateText(_ text: String) {
-        if let index = items.firstIndex(where: { $0.kind == .text }) {
-            items[index].value = text
+    mutating func updateTextItem(
+        _ item: MVPContentItem,
+        text: String
+    ) {
+        guard let index =
+            items.firstIndex(where: { $0.id == item.id })
+        else {
+            return
+        }
+
+        items[index].value = text
+        items[index].savedValue = text
+    }
+
+    @discardableResult
+    mutating func appendText(_ text: String) -> UUID? {
+        let trimmed =
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        let item = MVPContentItem.text(text)
+        items.append(item)
+        return item.id
+    }
+
+    mutating func appendComposedItem(
+        _ item: MVPContentItem
+    ) {
+        if let last = items.last,
+           last.kind == .text,
+           last.value
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            .isEmpty {
+            items.insert(
+                item,
+                at: max(items.count - 1, 0)
+            )
         } else {
-            items.insert(.text(text), at: 0)
+            items.append(item)
+        }
+
+        normalizeTrailingTextInput()
+    }
+
+    mutating func insertComposedItem(
+        _ item: MVPContentItem,
+        after anchorID: UUID?
+    ) {
+        guard let anchorID,
+              let anchorIndex =
+                items.firstIndex(where: { $0.id == anchorID })
+        else {
+            appendComposedItem(item)
+            return
+        }
+
+        let anchor = items[anchorIndex]
+        let insertionIndex: Int
+
+        if anchor.kind == .text,
+           anchor.value
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            .isEmpty {
+            insertionIndex = anchorIndex
+        } else {
+            insertionIndex = min(anchorIndex + 1, items.count)
+        }
+
+        items.insert(item, at: insertionIndex)
+        normalizeTrailingTextInput()
+    }
+
+    mutating func normalizeTrailingTextInput() {
+        while items.count > 1,
+              let last = items.last,
+              let previous = items.dropLast().last,
+              last.kind == .text,
+              previous.kind == .text,
+              last.value
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .isEmpty {
+            items.removeLast()
+        }
+
+        if let last = items.last,
+           last.kind != .text {
+            items.append(.text(""))
         }
     }
 }
@@ -1693,8 +1908,11 @@ private struct MVPRegionEditorCard: View {
 
     let region: CardRegion
     let draft: MVPEditorDraft
+    let resolvedText: String
     let onFocus: () -> Void
-    let onUpdateText: (String) -> Void
+    let onFocusTextItem: (MVPContentItem) -> Void
+    let onUpdateTextItem: (MVPContentItem, String) -> Void
+    let onAppendText: (String) -> Void
     let onRemoveItem: (MVPContentItem) -> Void
     let onAddSeparator: (String) -> Void
     let onShowModules: () -> Void
@@ -1706,36 +1924,45 @@ private struct MVPRegionEditorCard: View {
                     Text(region.displayTitle)
                         .font(.headline.weight(.semibold))
                     Spacer()
-                    Button("插入信息") {
+                    Button("添加模块") {
                         onShowModules()
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
 
-                TextField(
-                    "输入文字",
-                    text: Binding(
-                        get: { draft.text },
-                        set: onUpdateText
-                    ),
-                    axis: .horizontal
-                )
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(1)
-                .onTapGesture(perform: onFocus)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(draft.items) { item in
+                            switch item.kind {
+                            case .text:
+                                TextField(
+                                    "短语",
+                                    text: Binding(
+                                        get: { item.value },
+                                        set: {
+                                            onUpdateTextItem(
+                                                item,
+                                                $0
+                                            )
+                                        }
+                                    ),
+                                    axis: .horizontal
+                                )
+                                .textFieldStyle(.plain)
+                                .font(.subheadline)
+                                .frame(minWidth: 72)
+                                .lineLimit(1)
+                                .onTapGesture {
+                                    onFocusTextItem(item)
+                                }
 
-                if !draft.modules.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(draft.modules) { item in
+                            case .token,
+                                 .separator,
+                                 .lineBreak:
                                 HStack(spacing: 4) {
                                     Image(systemName: item.systemImage)
                                     Text(item.title)
-                                    if !item.value.isEmpty {
-                                        Text(item.value)
-                                            .foregroundStyle(.secondary)
-                                    }
                                     Button {
                                         onRemoveItem(item)
                                     } label: {
@@ -1757,9 +1984,40 @@ private struct MVPRegionEditorCard: View {
                                 )
                             }
                         }
-                        .padding(.vertical, 1)
+
+                        if draft.items.last?.kind != .text {
+                            TextField(
+                                "继续输入短语",
+                                text: Binding(
+                                    get: { "" },
+                                    set: onAppendText
+                                ),
+                                axis: .horizontal
+                            )
+                            .textFieldStyle(.plain)
+                            .font(.subheadline)
+                            .frame(minWidth: 132)
+                            .lineLimit(1)
+                            .onTapGesture(perform: onFocus)
+                        }
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
                 }
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 10,
+                        style: .continuous
+                    )
+                    .fill(Color(uiColor: .secondarySystemBackground))
+                )
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: 10,
+                        style: .continuous
+                    )
+                    .stroke(Color.primary.opacity(0.08))
+                )
 
                 HStack(spacing: 8) {
                     Text("分隔符")
@@ -1775,6 +2033,20 @@ private struct MVPRegionEditorCard: View {
                     }
 
                     Spacer(minLength: 0)
+                }
+
+                if !resolvedText.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("组合结果")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+
+                        Text(resolvedText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
         }

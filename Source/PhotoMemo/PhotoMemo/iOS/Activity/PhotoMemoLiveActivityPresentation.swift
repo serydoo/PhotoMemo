@@ -95,11 +95,12 @@ private struct PhotoMemoLiveActivityLockScreenView:
 
         VStack(
             alignment: .leading,
-            spacing: 12
+            spacing: 8
         ) {
 
             HStack(
-                alignment: .firstTextBaseline
+                alignment: .center,
+                spacing: 8
             ) {
                 Label(
                     "PhotoMemo 后台处理",
@@ -108,31 +109,36 @@ private struct PhotoMemoLiveActivityLockScreenView:
                             for: context
                         )
                 )
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .labelStyle(.titleAndIcon)
 
-                Spacer(minLength: 12)
+                Spacer(minLength: 10)
 
                 Text(
                     "\(context.state.progressPercent)%"
                 )
                 .font(
-                    .headline
+                    .subheadline
+                    .weight(.semibold)
                     .monospacedDigit()
                 )
+                .foregroundStyle(.secondary)
             }
 
             Text(
                 context.attributes.jobTitle
             )
-            .font(.subheadline.weight(.medium))
-            .lineLimit(2)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
 
             if isSingleTask(context) {
                 Text(
                     statusLine(for: context)
                 )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
                 .lineLimit(2)
 
                 pipelineView(
@@ -141,18 +147,22 @@ private struct PhotoMemoLiveActivityLockScreenView:
             } else {
                 queueLinesView(
                     for: context,
-                    font: .caption,
+                    font: .caption2,
                     secondaryFont: .caption2
                 )
             }
 
-            ProgressView(
-                value:
-                    Double(
-                        context.state
-                        .progressPercent
-                    ) / 100
-            )
+            if context.state.presentationStateRawValue
+                != "completed" {
+                ProgressView(
+                    value:
+                        Double(
+                            context.state
+                            .progressPercent
+                        ) / 100
+                )
+                .controlSize(.small)
+            }
 
             if !isSingleTask(context) {
                 HStack(
@@ -188,7 +198,8 @@ private struct PhotoMemoLiveActivityLockScreenView:
                 .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 10)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 
     func countPill(
@@ -453,40 +464,43 @@ private func pipelineView(
     let activeIndex =
         context.state.activePipelineStepIndex
 
-    HStack(
-        spacing: 5
-    ) {
-        ForEach(
-            Array(titles.enumerated()),
-            id: \.offset
-        ) { index, title in
-            Circle()
-                .fill(
-                    pipelineStepTint(
-                        index: index,
-                        activeIndex: activeIndex,
-                        context: context
-                    )
-                )
-                .frame(
-                    width: 6,
-                    height: 6
-                )
-                .accessibilityLabel(title)
-
-            if index < titles.count - 1 {
-                Rectangle()
+    VStack(spacing: 0) {
+        HStack(
+            spacing: 4
+        ) {
+            ForEach(
+                Array(titles.enumerated()),
+                id: \.offset
+            ) { index, title in
+                Circle()
                     .fill(
-                        Color.secondary
-                            .opacity(
-                                index < activeIndex
-                                ? 0.55
-                                : 0.18
-                            )
+                        pipelineStepTint(
+                            index: index,
+                            activeIndex: activeIndex,
+                            context: context
+                        )
                     )
-                    .frame(height: 1)
+                    .frame(
+                        width: 5,
+                        height: 5
+                    )
+                    .accessibilityLabel(title)
+
+                if index < titles.count - 1 {
+                    Capsule()
+                        .fill(
+                            Color.secondary
+                                .opacity(
+                                    index < activeIndex
+                                    ? 0.38
+                                    : 0.14
+                                )
+                        )
+                        .frame(height: 1)
+                }
             }
         }
+        .padding(.horizontal, 6)
     }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(

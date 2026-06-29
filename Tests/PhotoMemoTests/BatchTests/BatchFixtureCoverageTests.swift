@@ -71,6 +71,177 @@ struct BatchFixtureCoverageTests {
         #expect(multi?.launchSource == .automation)
     }
 
+    @Test("Formats share queues from start time and photo count")
+    func formatsShareQueuesFromStartTimeAndPhotoCount() throws {
+
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let now =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 29,
+                        hour: 20,
+                        minute: 0
+                    )
+                )
+            )
+        let today =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 29,
+                        hour: 18,
+                        minute: 42
+                    )
+                )
+            )
+        let yesterday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 28,
+                        hour: 9,
+                        minute: 7
+                    )
+                )
+            )
+        let earlierThisYear =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 2,
+                        day: 3,
+                        hour: 6,
+                        minute: 5
+                    )
+                )
+            )
+        let previousYear =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 12,
+                        day: 31,
+                        hour: 23,
+                        minute: 58
+                    )
+                )
+            )
+
+        #expect(
+            PhotoMemoQueueDisplayFormatter.title(
+                startedAt: today,
+                photoCount: 3,
+                now: now
+            ) == "18:42（3张）"
+        )
+        #expect(
+            PhotoMemoQueueDisplayFormatter.title(
+                startedAt: yesterday,
+                photoCount: 1,
+                now: now
+            ) == "昨天 09:07（1张）"
+        )
+        #expect(
+            PhotoMemoQueueDisplayFormatter.title(
+                startedAt: earlierThisYear,
+                photoCount: 12,
+                now: now
+            ) == "2月3日 06:05（12张）"
+        )
+        #expect(
+            PhotoMemoQueueDisplayFormatter.title(
+                startedAt: previousYear,
+                photoCount: 2,
+                now: now
+            ) == "2025年12月31日 23:58（2张）"
+        )
+    }
+
+    @MainActor
+    @Test("Share queue creation follows the earliest payload request time")
+    func shareQueueCreationFollowsEarliestPayloadRequestTime() throws {
+
+        let execution =
+            BatchQueueExecution(
+                externalIntakeStore:
+                    makeExternalIntakeStore()
+            )
+
+        let firstURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .portraitJPEG
+            )
+        let secondURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .landscapeJPEG
+            )
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let earlyRequest =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 29,
+                        hour: 8,
+                        minute: 12
+                    )
+                )
+            )
+        let laterRequest =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 29,
+                        hour: 8,
+                        minute: 15
+                    )
+                )
+            )
+
+        let job =
+            try #require(
+                execution.enqueue(
+                    payloads: [
+                        BatchTaskIntakePayload(
+                            sourceURL: firstURL,
+                            requestedAt: laterRequest
+                        ),
+                        BatchTaskIntakePayload(
+                            sourceURL: secondURL,
+                            requestedAt: earlyRequest
+                        )
+                    ],
+                    configuration:
+                        makeConfiguration(),
+                    launchSource:
+                        .shareExtension
+                )
+            )
+
+        #expect(job.createdAt == earlyRequest)
+        #expect(
+            job.title
+            == PhotoMemoQueueDisplayFormatter.title(
+                startedAt: earlyRequest,
+                photoCount: 2
+            )
+        )
+    }
+
     @MainActor
     @Test("Payload provenance overrides temporary URL naming and survives into imported photos")
     func payloadProvenanceOverridesTemporaryURLNamingAndSurvivesIntoImportedPhotos() async throws {

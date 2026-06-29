@@ -527,7 +527,7 @@ final class ConfigurationSession:
         case "context.configuration3":
             return " "
         case "memory.configuration1":
-            return "\(subjectName ?? "图图") 当天 11个月28天"
+            return "\(subjectName ?? "途途") 当天 11个月28天"
         case "memory.configuration2",
              "memory.configuration3":
             return " "
@@ -693,8 +693,8 @@ extension ConfigurationCenterState {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "Tutu",
-                        shortName: "Tutu"
+                        displayName: "途途",
+                        shortName: "途途"
                     ),
                 relationship:
                     .init(
@@ -706,9 +706,9 @@ extension ConfigurationCenterState {
                     Calendar.current.date(
                         from:
                             DateComponents(
-                                year: 2024,
-                                month: 4,
-                                day: 18
+                                year: 2025,
+                                month: 5,
+                                day: 26
                             )
                     ) ?? Date(),
                 timeAnchors: [
@@ -718,12 +718,12 @@ extension ConfigurationCenterState {
                             Calendar.current.date(
                                 from:
                                     DateComponents(
-                                        year: 2024,
-                                        month: 4,
-                                        day: 18
+                                        year: 2025,
+                                        month: 5,
+                                        day: 26
                                     )
                             ) ?? Date(),
-                        note: "图图出生日期"
+                        note: "途途出生日期"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "第一次旅行",
@@ -736,7 +736,7 @@ extension ConfigurationCenterState {
                                         day: 2
                                     )
                             ) ?? Date(),
-                        note: "图图第一次旅行"
+                        note: "途途第一次旅行"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "入园",
@@ -749,7 +749,7 @@ extension ConfigurationCenterState {
                                         day: 1
                                     )
                             ) ?? Date(),
-                        note: "图图入园日期"
+                        note: "途途入园日期"
                     )
                 ],
                 behavior:

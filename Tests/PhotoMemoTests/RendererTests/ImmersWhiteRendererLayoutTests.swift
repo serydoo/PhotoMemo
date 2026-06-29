@@ -64,16 +64,16 @@ struct ImmersWhiteRendererLayoutTests {
         )
     }
 
-    @Test("Immers primary text keeps near-full scale and divider stays visibly present")
-    func immersPrimaryTextKeepsNearFullScaleAndDividerStaysVisiblyPresent() {
+    @Test("Immers text can slightly compress before truncating and divider stays visibly present")
+    func immersTextCanSlightlyCompressBeforeTruncatingAndDividerStaysVisiblyPresent() {
 
         #expect(
             ImmersWhiteRenderer.primaryMinimumScaleFactor
-            >= 0.94
+            >= 0.82
         )
         #expect(
             ImmersWhiteRenderer.secondaryMinimumScaleFactor
-            >= 0.88
+            >= 0.84
         )
         #expect(
             ImmersWhiteRenderer.dividerWidth

@@ -1,5 +1,86 @@
 # PhotoMemo Handoff
 
+## 2026-06-29 MVP Content Builder Order And Notification Update
+
+- 用户反馈：
+  - MVP 编辑栏里，自定义字段和模块不能按真实输入顺序展示。
+  - 先输入文字再插入模块时，模块会像被分组到前面，文字长期留在最后。
+  - 编辑中的模块展示应更精简，不显示后面的具体解析值；预览区保持实时刷新。
+  - 单个后台任务不应在通知栏里按阶段堆叠多条通知，应像同一条任务进度持续更新。
+- 已修复：
+  - `PhotoMemoiOSMVPTestView` 的四区域编辑器改为直接渲染同一个
+    `MVPEditorDraft.items` 顺序流。
+  - 自定义文字、Token 模块、分隔符在编辑区、保存模板和预览输出中共享同一顺序。
+  - 模块插入会优先跟随当前正在编辑的文字项；若没有活动文字项，则追加到末尾。
+  - 编辑区模块 chip 只显示图标、模块名和删除按钮，不再在 chip 内展示具体 EXIF /
+    年岁解析内容。
+  - `BatchNotificationService` 统一使用
+    `photomemo.batch.<job-id>.status` 作为同一任务的本地通知 identifier。
+  - 新通知会移除旧的 per-stage identifier：
+    `start`、`final`、`progress.raw`、`progress.imported`、
+    `progress.rendering`、`progress.saving`。
+  - 进度更新设置为 passive，接收/完成通知保持 active。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 仍需用户真机观察：
+  - 在四个区域里测试“输入文字 -> 插入模块 -> 继续输入”的实际顺序。
+  - 分享单张 JPEG / RAW，确认通知栏不再堆叠多个阶段通知。
+
+## 2026-06-29 MVP Reliability Lock Foundation
+
+- 本轮开始进入 `MVP Reliability Lock`，目标是把 PhotoMemo 从“功能可用”
+  推向“像系统能力一样可靠、安静、可预期”。
+- 明确冻结：
+  - 底部边框输出内容
+  - 布局
+  - 字体 / 字号
+  - 图标
+  - 四区域内容映射
+  - 渲染视觉形式
+- 新增：
+  - `Docs/MVP_RELIABILITY_LOCK.md`
+- 该文档作为后续 MVP 可靠性发布门槛，覆盖：
+  - Apple Photos -> Share -> PhotoMemo -> Processing -> Notification ->
+    Apple Photos 生命周期
+  - 支持 / 不支持的图片格式
+  - 队列命名规则
+  - 单任务、2-3 队列、4+ 聚合的状态表达
+  - RAW / DNG 处理阶段
+  - 完成、失败、部分成功的通知语义
+  - 真机人工回归矩阵
+- 自动化护栏：
+  - `BatchFixtureCoverageTests` 新增队列标题格式测试。
+  - `BatchFixtureCoverageTests` 新增“队列创建时间跟随最早 payload request
+    time”的测试。
+  - `PhotoMemoQueueDisplayFormatter` 的今天 / 昨天判断改为使用注入的 `now`，
+    避免测试随真实日期漂移。
+  - `RecordCardBuildServiceTests` 对齐当前 MVP 命名规则：
+    `原图名(1).jpg`、`原图名(2).jpg`。
+  - 命名测试增加临时导出目录清理，避免本地残留影响重复测试。
+- 已验证：
+  - `PhotoMemoTests/BatchFixtureCoverageTests` focused test 通过。
+  - `PhotoMemoTests/RecordCardBuildServiceTests` focused test 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `git diff --check` 通过。
+- 当前完整 `PhotoMemoTests` 仍有一个非本轮新增失败：
+  - `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable`
+  - 该项属于 Classic White 渲染快照；在“边框输出冻结”前提下，不应顺手更新
+    snapshot，应单独调查。
+- 设备状态：
+  - `iPhone7` 当前在 `xcrun devicectl list devices` 中为 unavailable。
+  - `IPhone5` 可见但 Developer Mode disabled，不能用于开发安装。
+  - 本轮没有推送到手机，只完成 generic iOS build。
+- 下一步建议：
+  1. 为 `PhotoMemoBackgroundStatusService` 的 display mode 增加自动化测试。
+  2. 为最终通知文案增加自动化测试。
+  3. 单独调查 Classic White landscape snapshot。
+  4. iPhone7 恢复 available 后，再推真机做真实 Share 回归。
+
 ## 2026-06-29 MVP Queue Naming Refinement
 
 - 用户确认：

@@ -832,13 +832,7 @@ private extension PhotoMemoShareExtensionViewController {
                 "Share extension completion request will be sent."
             )
 
-            let opened =
-                await requestMainAppRefresh()
-
-            guard opened else {
-                applyHandoffFailureState()
-                return
-            }
+            _ = await requestMainAppRefresh()
 
             extensionContext?
                 .completeRequest(

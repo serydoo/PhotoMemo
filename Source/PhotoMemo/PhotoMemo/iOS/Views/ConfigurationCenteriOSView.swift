@@ -1363,7 +1363,7 @@ struct ConfigurationCenteriOSView: View {
             ]
         case .slotC:
             return [
-                option(region, "context.configuration1", "配置 1：拍摄参数概要"),
+                option(region, "context.configuration1", "配置 1：拍摄参数汇总"),
                 option(region, "context.configuration2", "配置 2：备用拍摄参数"),
                 option(region, "context.configuration3", "配置 3：自定义拍摄参数")
             ]
@@ -1482,7 +1482,7 @@ struct ConfigurationCenteriOSView: View {
         case .subjectNickname:
             return session.state.selectedSubject?.identity.shortName
             ?? session.state.selectedSubject?.identity.displayName
-            ?? "Tutu"
+            ?? "途途"
         case .smartTime:
             return smartTimeResult
         case .captureDate:
@@ -2152,7 +2152,7 @@ private struct IOSRegionComposer: View {
 
             HStack(spacing: 6) {
                 systemModuleChip(title: "对象昵称", value: "Subject")
-                systemModuleChip(title: "智能时间", value: "Smart")
+                systemModuleChip(title: "年岁", value: "Age")
                 systemModuleChip(title: "时间锚点", value: "Anchor")
             }
         }

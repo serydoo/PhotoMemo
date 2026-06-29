@@ -918,7 +918,7 @@ struct MemoryBlockInspectorView: View {
         if group == .memory {
             modules.append(
                 InsertableModuleDraft(
-                    title: "智能时间结果",
+                    title: "年岁",
                     token: "{{smart_time_result}}",
                     systemImage: "calendar.badge.clock",
                     previewValue: smartTimeResult
@@ -1133,13 +1133,13 @@ private extension MemoryBlockTemplateDraft {
     static let contextTemplates = [
         MemoryBlockTemplateDraft(
             id: "context.configuration1",
-            title: "配置 1：拍摄参数概要",
-            summary: "默认只展示拍摄参数概要，其他信息由用户通过自定义字段补充。",
+            title: "配置 1：拍摄参数汇总",
+            summary: "默认只展示拍摄参数汇总，其他信息由用户通过自定义字段补充。",
             fields: [
                 .init(
                     templateID: "context.configuration1",
                     key: "cameraParameters",
-                    label: "拍摄参数概要",
+                    label: "拍摄参数汇总",
                     defaultValue: "20mm f/1.9 1/117s ISO80",
                     source: .exif
                 )
@@ -1155,7 +1155,7 @@ private extension MemoryBlockTemplateDraft {
                 .init(
                     templateID: "context.configuration2",
                     key: "cameraParametersAlt",
-                    label: "拍摄参数概要",
+                    label: "拍摄参数汇总",
                     defaultValue: "24mm f/1.78 1/100s ISO125",
                     source: .exif
                 )
@@ -1177,13 +1177,13 @@ private extension MemoryBlockTemplateDraft {
         MemoryBlockTemplateDraft(
             id: "memory.configuration1",
             title: "配置 1：当天多大",
-            summary: "默认表达记忆对象在照片当天的生命时间，底层保留智能时间计算模块。",
+            summary: "默认表达记忆对象在照片当天的生命时间，底层保留年岁计算模块。",
             fields: [
                 .init(
                     templateID: "memory.configuration1",
                     key: "subject",
                     label: "对象昵称",
-                    defaultValue: "Tutu",
+                    defaultValue: "途途",
                     source: .memorySubject
                 ),
                 .init(
@@ -1335,7 +1335,7 @@ private enum ModuleChipGroup:
         case .exif:
             return [
                 .init(
-                    title: "拍摄参数概要",
+                    title: "拍摄参数汇总",
                     token: "{{capture_parameters_summary}}",
                     systemImage: "camera.metering.center.weighted"
                 ),

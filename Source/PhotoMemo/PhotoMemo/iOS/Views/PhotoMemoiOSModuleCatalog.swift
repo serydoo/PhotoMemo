@@ -48,7 +48,7 @@ enum IOSInsertableModule:
         case .subjectNickname:
             return "对象昵称"
         case .smartTime:
-            return "智能时间"
+            return "年岁"
         case .captureDate:
             return "拍摄日期"
         case .captureTime:
@@ -76,7 +76,7 @@ enum IOSInsertableModule:
         case .whiteBalance:
             return "白平衡"
         case .captureSummary:
-            return "参数概要"
+            return "拍摄参数汇总"
         case .location:
             return "位置"
         case .altitude:
@@ -146,7 +146,7 @@ enum IOSInsertableModule:
         case .subjectNickname:
             return "{{subject_nickname}}"
         case .smartTime:
-            return "{{smart_time_result}}"
+            return "{{age_result}}"
         case .captureDate:
             return "{{capture_date}}"
         case .captureTime:
