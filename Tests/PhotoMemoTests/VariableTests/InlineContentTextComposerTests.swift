@@ -50,4 +50,16 @@ struct InlineContentTextComposerTests {
 
         #expect(text == "2026.06.27·11:24:25")
     }
+
+    @Test("Composes formal configuration text modules and continuation naturally")
+    func composesFormalConfigurationPartsNaturally() {
+        let text =
+            InlineContentTextComposer.compose([
+                .init(kind: .text, value: "途途今天"),
+                .init(kind: .token, value: "1岁1个月2天"),
+                .init(kind: .text, value: "啦！")
+            ])
+
+        #expect(text == "途途今天1岁1个月2天啦！")
+    }
 }

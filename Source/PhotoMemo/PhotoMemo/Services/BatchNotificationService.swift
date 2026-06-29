@@ -1,6 +1,79 @@
 import Foundation
 import UserNotifications
 
+enum BatchNotificationMessageFormatter {
+
+    static func finishedTitle(
+        completedCount: Int,
+        failedCount: Int,
+        finishedAt: Date,
+        calendar: Calendar = .current
+    ) -> String {
+
+        let timeText =
+            shortTimeText(
+                for: finishedAt,
+                calendar: calendar
+            )
+
+        if failedCount == 0 {
+            return "\(timeText) 处理 \(completedCount) 张照片已完成"
+        }
+
+        if completedCount == 0 {
+            return "\(timeText) \(failedCount) 张照片需要处理"
+        }
+
+        return "\(timeText) 已完成 \(completedCount) 张，\(failedCount) 张需要处理"
+    }
+
+    static func finishedMessage(
+        completedCount: Int,
+        failedCount: Int,
+        totalCount: Int
+    ) -> String {
+
+        if failedCount == 0 {
+            return "PhotoMemo 已生成新的照片。"
+        }
+
+        if completedCount == 0 {
+            return "请回到 PhotoMemo 查看原因并重试。"
+        }
+
+        if Double(completedCount)
+            / Double(max(1, totalCount))
+            >= 0.8 {
+            return "大部分照片已经完成，另有 \(failedCount) 张需要处理。"
+        }
+
+        return "已完成 \(completedCount) 张，\(failedCount) 张需要处理。"
+    }
+
+    private static func shortTimeText(
+        for date: Date,
+        calendar: Calendar
+    ) -> String {
+
+        let hour =
+            calendar.component(
+                .hour,
+                from: date
+            )
+        let minute =
+            calendar.component(
+                .minute,
+                from: date
+            )
+
+        return String(
+            format: "%02d:%02d",
+            hour,
+            minute
+        )
+    }
+}
+
 @MainActor
 final class BatchNotificationService:
     NSObject,
@@ -87,13 +160,16 @@ final class BatchNotificationService:
             UNMutableNotificationContent()
 
         content.title =
-            finishedTitle(
+            BatchNotificationMessageFormatter
+            .finishedTitle(
                 completedCount: completedCount,
-                failedCount: failedCount
+                failedCount: failedCount,
+                finishedAt:
+                    job.updatedAt
             )
         content.body =
-            finishedMessage(
-                for: job,
+            BatchNotificationMessageFormatter
+            .finishedMessage(
                 completedCount: completedCount,
                 failedCount: failedCount,
                 totalCount: totalCount
@@ -364,73 +440,6 @@ private extension BatchNotificationService {
         }
 
         return enrichedSummary
-    }
-
-    func finishedTitle(
-        completedCount: Int,
-        failedCount: Int
-    ) -> String {
-
-        if failedCount == 0 {
-            return "PhotoMemo 已保存 \(completedCount) 张照片"
-        }
-
-        if completedCount == 0 {
-            return "\(failedCount) 张照片需要处理"
-        }
-
-        if Double(completedCount)
-            / Double(max(1, completedCount + failedCount))
-            >= 0.8 {
-            return "PhotoMemo 基本处理完成"
-        }
-
-        return "PhotoMemo 已完成部分任务"
-    }
-
-    func finishedMessage(
-        for job: BatchJob,
-        completedCount: Int,
-        failedCount: Int,
-        totalCount: Int
-    ) -> String {
-
-        let albumName =
-            job.tasks
-            .compactMap(\.savedAlbumName)
-            .last?
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        if failedCount == 0 {
-            if !albumName.isEmpty {
-                return "已存入“\(albumName)”相册。"
-            }
-
-            return "已写入系统图库。"
-        }
-
-        if completedCount == 0 {
-            return "可以回到 PhotoMemo 查看原因并重试。"
-        }
-
-        if Double(completedCount)
-            / Double(max(1, totalCount))
-            >= 0.8 {
-
-            if !albumName.isEmpty {
-                return "已保存 \(completedCount) 张到“\(albumName)”，另有 \(failedCount) 张需要处理。"
-            }
-
-            return "已保存 \(completedCount) 张，另有 \(failedCount) 张需要处理。"
-        }
-
-        if !albumName.isEmpty {
-            return "已保存 \(completedCount) 张到“\(albumName)”，\(failedCount) 张需要处理。"
-        }
-
-        return "已保存 \(completedCount) 张，\(failedCount) 张需要处理。"
     }
 
     func intakeWarningSummary(

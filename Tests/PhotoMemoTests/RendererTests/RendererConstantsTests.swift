@@ -86,8 +86,16 @@ struct RendererConstantsTests {
         let portrait =
             RendererConstants.CompactInformationBar.portrait
 
-        #expect(portrait.primaryFontToBarHeight == 0.225)
+        #expect(portrait.primaryFontToBarHeight == 0.190)
         #expect(portrait.secondaryFontToBarHeight == 0.142)
+        #expect(
+            RendererConstants.CompactInformationBar.landscape
+                .primaryFontToBarHeight == 0.190
+        )
+        #expect(
+            RendererConstants.CompactInformationBar.landscape
+                .secondaryFontToBarHeight == 0.142
+        )
         #expect(portrait.contentCenterY == 0.500)
         #expect(portrait.dividerTopY < portrait.contentCenterY)
         #expect(

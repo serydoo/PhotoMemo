@@ -348,7 +348,7 @@ struct InteractiveMemoryCard: View {
                 fontSize:
                     barHeight
                     * spec.primaryFontToBarHeight,
-                weight: .bold,
+                weight: .semibold,
                 tracking: spec.primaryTracking,
                 color:
                     RendererConstants

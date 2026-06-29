@@ -886,11 +886,20 @@ struct MemoryBlockInspectorView: View {
             }
 
         let combined =
-            (fieldValues + customValues)
-            .filter {
-                !$0.isEmpty
-            }
-            .joined(separator: " ")
+            InlineContentTextComposer.compose(
+                fieldValues.map { value in
+                    InlineContentTextComposer.Piece(
+                        kind: .token,
+                        value: value
+                    )
+                }
+                + customValues.map { value in
+                    InlineContentTextComposer.Piece(
+                        kind: .text,
+                        value: value
+                    )
+                }
+            )
 
         let fallback =
             ConfigurationSession.defaultPreviewText(
@@ -1273,22 +1282,22 @@ private struct CustomBlockFieldDraft:
     }
 
     var displayText: String {
-        let moduleTitles =
-            modules
-            .map {
-                $0.module.previewValue ?? $0.module.title
+        InlineContentTextComposer.compose(
+            [
+                InlineContentTextComposer.Piece(
+                    kind: .text,
+                    value: text
+                )
+            ]
+            + modules.map { insertedModule in
+                InlineContentTextComposer.Piece(
+                    kind: .token,
+                    value:
+                        insertedModule.module.previewValue
+                        ?? insertedModule.module.title
+                )
             }
-            .joined(separator: " ")
-
-        if text.isEmpty {
-            return moduleTitles
-        }
-
-        if moduleTitles.isEmpty {
-            return text
-        }
-
-        return "\(text) \(moduleTitles)"
+        )
     }
 
     static func defaults(

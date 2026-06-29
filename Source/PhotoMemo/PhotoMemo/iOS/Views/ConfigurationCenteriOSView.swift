@@ -1295,23 +1295,32 @@ struct ConfigurationCenteriOSView: View {
              ))
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let moduleText =
-            (regionInsertedModules[configurationID] ?? [])
-            .map(\.value)
-            .filter {
-                !$0.trimmingCharacters(in: .whitespacesAndNewlines)
-                    .isEmpty
-            }
-            .joined(separator: " ")
-
         let continuationText =
             (regionContinuationTexts[configurationID] ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         let composedText =
-            [baseText, moduleText, continuationText]
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
+            InlineContentTextComposer.compose(
+                [
+                    InlineContentTextComposer.Piece(
+                        kind: .text,
+                        value: baseText
+                    )
+                ]
+                + (regionInsertedModules[configurationID] ?? [])
+                    .map { module in
+                        InlineContentTextComposer.Piece(
+                            kind: .token,
+                            value: module.value
+                        )
+                    }
+                + [
+                    InlineContentTextComposer.Piece(
+                        kind: .text,
+                        value: continuationText
+                    )
+                ]
+            )
 
         session.updateRegionPreview(
             region: region,
@@ -1738,7 +1747,7 @@ private struct IOSMacStyleMemoryCardPreview: View {
                 fontSize:
                     barHeight
                     * spec.primaryFontToBarHeight,
-                weight: .bold,
+                weight: .semibold,
                 tracking: spec.primaryTracking,
                 color:
                     RendererConstants
@@ -2064,7 +2073,7 @@ private struct IOSRegionComposer: View {
     }
 
     private var compositionField: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: 5) {
             TextField(
                 "输入或补充 \(region.semanticTitle)",
                 text: $text,
@@ -2101,7 +2110,7 @@ private struct IOSRegionComposer: View {
 
     private var inlineModuleScroller: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: 3) {
                 ForEach(modules) { module in
                     HStack(spacing: 4) {
                         Image(systemName: module.systemImage)
@@ -2120,8 +2129,8 @@ private struct IOSRegionComposer: View {
                         .buttonStyle(.plain)
                     }
                     .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 7)
                             .fill(Color.accentColor.opacity(0.10))

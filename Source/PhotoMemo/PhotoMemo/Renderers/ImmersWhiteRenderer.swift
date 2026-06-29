@@ -225,8 +225,8 @@ enum ImmersWhiteRenderer {
                 logoSlotWidthRatio: 0.076,
                 logoSizeRatio: 0.34,
                 dividerHeightRatio: 0.50,
-                titleFontRatio: 0.218,
-                metadataFontRatio: 0.218,
+                titleFontRatio: 0.190,
+                metadataFontRatio: 0.190,
                 bottomFontRatio: 0.132,
                 titleLineSpacingRatio: 0.012,
                 metadataLineSpacingRatio: 0.012,
@@ -252,8 +252,8 @@ enum ImmersWhiteRenderer {
                 logoSlotWidthRatio: 0.10,
                 logoSizeRatio: 0.42,
                 dividerHeightRatio: 0.54,
-                titleFontRatio: 0.225,
-                metadataFontRatio: 0.225,
+                titleFontRatio: 0.190,
+                metadataFontRatio: 0.190,
                 bottomFontRatio: 0.142,
                 titleLineSpacingRatio: 0.011,
                 metadataLineSpacingRatio: 0.011,
@@ -435,7 +435,7 @@ struct ImmersWhiteCardRenderer: View {
                     16,
                     height * layout.titleFontRatio
                 ),
-                weight: .bold,
+                weight: .semibold,
                 design: .default,
                 color: ImmersWhiteRenderer
                     .primaryTextColor,
@@ -603,7 +603,7 @@ struct ImmersWhiteCardRenderer: View {
                     15,
                     height * layout.metadataFontRatio
                 ),
-                weight: .bold,
+                weight: .semibold,
                 design: .default,
                 color: ImmersWhiteRenderer
                     .primaryTextColor,

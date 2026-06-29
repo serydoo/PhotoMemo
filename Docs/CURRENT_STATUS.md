@@ -2,6 +2,125 @@
 
 Last updated: 2026-06-29
 
+## 2026-06-29 Share Deferred Handoff And Result Notification
+
+This slice corrects the Share interaction model after real-device diagnostics
+showed that photos were already persisted and later processed successfully even
+when the Share Extension could not confirm immediate host-app handoff.
+
+Decision:
+
+- Share Extension persistence is the user-facing success boundary for intake.
+- A missing immediate handoff confirmation is recorded as deferred diagnostic
+  state, not shown as a blocking failure.
+- Later decode, render, save, or permission failures remain queue/result
+  failures and are reported through the final result notification.
+- Opening the main app can help inspect the recent Share pipeline, but it is
+  not required on the happy path.
+
+What changed:
+
+- After successful intake persistence, the Share Extension now completes calmly
+  even if `photomemo://share` handoff is not confirmed before timeout.
+- The deferred handoff path records `extension.handoff.deferred` for later
+  diagnostics.
+- Final batch notifications now use clear result titles such as
+  `15:20 处理 2 张照片已完成`.
+- Final notification bodies no longer repeat the target album because album
+  selection is already configured by the user.
+- Added formatter coverage for successful, failed, and partial completion
+  result messages.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/BatchNotificationMessageFormatterTests`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Manual verification still needed:
+
+- Share one new JPEG from Apple Photos and confirm the Share sheet no longer
+  stays on the old handoff-failed screen after persistence.
+- Confirm fast jobs may show only the completion result notification, which is
+  acceptable when processing finishes before Live Activity becomes visible.
+- Confirm the final notification title includes clock time and photo count.
+
+## 2026-06-29 Immers White Primary Typography Calibration
+
+This slice responds to the horizontal and vertical border-only pixel
+comparison between the MVP exports and the target references.
+
+Pixel findings:
+
+- Horizontal and vertical bottom border heights already match the target
+  outputs exactly.
+- Secondary gray text height is already close enough and was intentionally
+  preserved.
+- The visible mismatch is the primary black line: MVP output reads larger and
+  heavier than the target.
+
+What changed:
+
+- Compact information-bar primary font ratio changed from `0.225` to `0.190`.
+- Immers White renderer primary title and metadata ratios changed to `0.190`
+  for both landscape and portrait.
+- Primary line weight changed from `.bold` to `.semibold` in renderer output,
+  formal iOS preview, MVP preview, and the interactive memory card.
+- MVP emphasized preview state now uses `.bold` instead of `.heavy`.
+
+Preserved:
+
+- Border height and final image size.
+- Secondary gray text ratio, color, and weight.
+- Image area, metadata/export pipeline, logo geometry, divider geometry, and
+  content strings.
+
+Verification:
+
+- passed focused `PhotoMemoTests/ImmersWhiteRendererLayoutTests`
+- passed focused `PhotoMemoTests/RendererConstantsTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+- `git diff --check` passed
+
+## 2026-06-29 Formal iOS And macOS Composer Alignment
+
+This slice syncs the MVP inline-composition behavior into the formal
+Configuration Center surfaces without copying the MVP test page into the
+production app.
+
+What changed:
+
+- `ConfigurationCenteriOSView` now composes base text, inserted modules, and
+  continuation text through `InlineContentTextComposer`.
+- The formal iOS region editor uses tighter inline module spacing, matching the
+  MVP direction without changing the overall Configuration Center structure.
+- `ConfigurationSession.appendPreviewModule(...)` now uses the shared composer
+  when inserting a module into the currently selected memory-card region.
+- `MemoryBlockInspectorView` on macOS now uses the shared composer for custom
+  field previews and for the final region preview sync.
+- Added a regression test for the formal configuration shape:
+  custom text + module + continuation text.
+
+Preserved:
+
+- The MVP temporary entry remains a test entry and was not copied into the
+  formal iOS app.
+- The macOS app remains the V2
+  `Library -> Interactive Memory Card -> Object Inspector` Configuration
+  Center.
+- Renderer geometry, border typography, EXIF metadata mapping, export, Share
+  Extension, and photo-library behavior were not changed.
+
+Verification:
+
+- passed focused `PhotoMemoTests/InlineContentTextComposerTests`
+- `git diff --check` passed
+
 ## 2026-06-29 Default Logo Tint And Inline Content Spacing
 
 This slice keeps the locked Immers White border geometry intact and fixes two

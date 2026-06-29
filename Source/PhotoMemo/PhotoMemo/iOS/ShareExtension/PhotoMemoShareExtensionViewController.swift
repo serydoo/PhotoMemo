@@ -35,6 +35,8 @@ final class PhotoMemoShareExtensionViewController:
             )
         }
 
+    private var pendingHandoffRequestID: UUID?
+
     private let contentStack =
         UIStackView()
 
@@ -775,7 +777,10 @@ private extension PhotoMemoShareExtensionViewController {
         case .handoffFailed:
             Task { @MainActor in
                 let opened =
-                    await requestMainAppRefresh()
+                    await requestMainAppRefresh(
+                        requestID:
+                            pendingHandoffRequestID
+                    )
 
                 if opened {
                     extensionContext?
@@ -823,6 +828,8 @@ private extension PhotoMemoShareExtensionViewController {
                 .persistSharedItems(
                     inputItems
                 )
+            pendingHandoffRequestID =
+                result.requestID
 
             PhotoMemoShareDiagnostics.record(
                 stage: "extension.persisted",
@@ -846,31 +853,35 @@ private extension PhotoMemoShareExtensionViewController {
                 "即将完成"
             activityIndicator.stopAnimating()
 
-            await playCompletionTransition()
-
             PhotoMemoShareIntakeLog.notice(
                 "Share extension will request main-app handoff before completion."
             )
 
             let opened =
-                await requestMainAppRefresh()
+                await requestMainAppRefresh(
+                    requestID:
+                        result.requestID
+                )
 
-            guard opened else {
-                PhotoMemoShareIntakeLog.error(
-                    "Share extension handoff failed after intake persistence; keeping confirmation UI open for retry."
+            if !opened {
+                PhotoMemoShareIntakeLog.notice(
+                    "Share extension persisted intake, but main-app handoff was not confirmed before timeout."
                 )
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.handoff.failed",
-                    message: "Main app did not accept photomemo://share."
+                    stage: "extension.handoff.deferred",
+                    message:
+                        "Intake is safely persisted; host app will process it when it next drains shared requests.",
+                    requestID:
+                        result.requestID
                 )
-                applyHandoffFailureState()
-                return
+            } else {
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.handoff.accepted",
+                    message: "Main app handoff reported success."
+                )
             }
 
-            PhotoMemoShareDiagnostics.record(
-                stage: "extension.handoff.accepted",
-                message: "Main app handoff reported success."
-            )
+            await playCompletionTransition()
 
             extensionContext?
                 .completeRequest(
@@ -1046,7 +1057,9 @@ private extension PhotoMemoShareExtensionViewController {
         }
     }
 
-    func requestMainAppRefresh() async -> Bool {
+    func requestMainAppRefresh(
+        requestID: UUID?
+    ) async -> Bool {
 
         let deepLinkURL =
             PhotoMemoDeepLink.share.url
@@ -1085,8 +1098,11 @@ private extension PhotoMemoShareExtensionViewController {
             message: "extensionContext.open success=\(opened)"
         )
 
-        guard !opened else {
-            return true
+        if opened {
+            return await waitForMainAppHandoffConfirmation(
+                requestID: requestID,
+                source: "primary"
+            )
         }
 
         let fallbackOpened =
@@ -1103,7 +1119,14 @@ private extension PhotoMemoShareExtensionViewController {
             message: "responderChain success=\(fallbackOpened)"
         )
 
-        return fallbackOpened
+        guard fallbackOpened else {
+            return false
+        }
+
+        return await waitForMainAppHandoffConfirmation(
+            requestID: requestID,
+            source: "fallback"
+        )
     }
 
     @MainActor
@@ -1135,6 +1158,74 @@ private extension PhotoMemoShareExtensionViewController {
         }
 
         return false
+    }
+
+    func waitForMainAppHandoffConfirmation(
+        requestID: UUID?,
+        source: String
+    ) async -> Bool {
+
+        guard let requestID else {
+            PhotoMemoShareDiagnostics.record(
+                stage: "extension.handoff.unconfirmed",
+                message:
+                    "\(source) opened, but no requestID was available."
+            )
+            return false
+        }
+
+        for _ in 0..<25 {
+            if mainAppConsumedRequest(
+                requestID
+            ) {
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.handoff.confirmed",
+                    message:
+                        "\(source) confirmed request consumption.",
+                    requestID:
+                        requestID
+                )
+                return true
+            }
+
+            try? await Task.sleep(
+                nanoseconds: 200_000_000
+            )
+        }
+
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.handoff.unconfirmed",
+            message:
+                "\(source) did not produce app drain/enqueue within timeout.",
+            requestID:
+                requestID
+        )
+        return false
+    }
+
+    func mainAppConsumedRequest(
+        _ requestID: UUID
+    ) -> Bool {
+
+        PhotoMemoShareDiagnostics
+            .loadEvents()
+            .contains { event in
+                guard event.requestID == requestID else {
+                    return false
+                }
+
+                switch event.stage {
+
+                case "app.request.validated",
+                     "app.enqueue.created",
+                     "app.enqueue.failed",
+                     "app.request.dropped":
+                    return true
+
+                default:
+                    return false
+                }
+            }
     }
 
     func loadFirstPreviewIfNeeded() {

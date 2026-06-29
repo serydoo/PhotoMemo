@@ -304,6 +304,8 @@ final class PhotoMemoShareExtensionIntakeService {
         guard !managedItems.isEmpty else {
             let result =
                 PhotoMemoShareExtensionImportResult(
+                    requestID:
+                        requestID,
                     itemProviderCount:
                         itemProviders.count,
                     supportedProviderCount:
@@ -373,6 +375,8 @@ final class PhotoMemoShareExtensionIntakeService {
 
             let result =
                 PhotoMemoShareExtensionImportResult(
+                    requestID:
+                        requestID,
                     itemProviderCount:
                         itemProviders.count,
                     supportedProviderCount:
@@ -429,6 +433,8 @@ final class PhotoMemoShareExtensionIntakeService {
 
         let result =
             PhotoMemoShareExtensionImportResult(
+                requestID:
+                    request.id,
                 itemProviderCount:
                     itemProviders.count,
                 supportedProviderCount:
@@ -1084,6 +1090,13 @@ private extension PhotoMemoShareExtensionIntakeService {
                                             originalFileName:
                                                 Self.resolvedOriginalFileName(
                                                     preferredName:
+                                                        suggestedName
+                                                ),
+                                            sourceIdentifier:
+                                                Self
+                                                .dedupeKey(
+                                                    for: data,
+                                                    suggestedName:
                                                         suggestedName
                                                 ),
                                             contentTypeIdentifier:

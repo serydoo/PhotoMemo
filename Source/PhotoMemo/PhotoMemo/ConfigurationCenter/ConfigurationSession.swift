@@ -160,9 +160,16 @@ final class ConfigurationSession:
             : value
 
         let nextText =
-            current.isEmpty
-            ? insertion
-            : "\(current) \(insertion)"
+            InlineContentTextComposer.compose([
+                InlineContentTextComposer.Piece(
+                    kind: .text,
+                    value: current
+                ),
+                InlineContentTextComposer.Piece(
+                    kind: .token,
+                    value: insertion
+                )
+            ])
 
         updateRegionPreview(
             region: region,

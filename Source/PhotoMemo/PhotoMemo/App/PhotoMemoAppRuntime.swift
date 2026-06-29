@@ -97,6 +97,8 @@ final class PhotoMemoAppRuntime:
             return
         }
 
+        var consumedPayloadKeys = Set<String>()
+
         for request in requests {
             let validPayloads =
                 request.intakePayloads.filter {
@@ -104,11 +106,28 @@ final class PhotoMemoAppRuntime:
                         $0.sourceURL
                     )
                 }
+            let uniquePayloads =
+                uniquePayloadsForCurrentDrain(
+                    validPayloads,
+                    consumedPayloadKeys:
+                        &consumedPayloadKeys
+                )
+            let duplicatePayloads =
+                validPayloads.filter {
+                    !uniquePayloads.contains($0)
+                }
+
+            duplicatePayloads.forEach {
+                externalIntakeStore
+                    .cleanupManagedSourceIfNeeded(
+                        at: $0.sourceURL
+                    )
+            }
 
             PhotoMemoShareDiagnostics.record(
                 stage: "app.request.validated",
                 message:
-                    "payloads=\(request.intakePayloads.count), valid=\(validPayloads.count)",
+                    "payloads=\(request.intakePayloads.count), valid=\(validPayloads.count), unique=\(uniquePayloads.count)",
                 requestID:
                     request.id
             )
@@ -117,10 +136,10 @@ final class PhotoMemoAppRuntime:
                 resolvedIntakeSummary(
                     for: request,
                     validURLCount:
-                        validPayloads.count
+                        uniquePayloads.count
                 )
 
-            guard !validPayloads.isEmpty else {
+            guard !uniquePayloads.isEmpty else {
                 request.urls.forEach {
                     externalIntakeStore
                         .cleanupManagedSourceIfNeeded(
@@ -129,7 +148,10 @@ final class PhotoMemoAppRuntime:
                 }
                 PhotoMemoShareDiagnostics.record(
                     stage: "app.request.dropped",
-                    message: "No valid source files remained.",
+                    message:
+                        validPayloads.isEmpty
+                        ? "No valid source files remained."
+                        : "Duplicate source files were already queued.",
                     requestID:
                         request.id
                 )
@@ -138,7 +160,7 @@ final class PhotoMemoAppRuntime:
 
             let job =
                 batchQueueStore.enqueue(
-                payloads: validPayloads,
+                payloads: uniquePayloads,
                 configuration:
                     request.configurationSnapshot,
                 launchSource:
@@ -150,7 +172,7 @@ final class PhotoMemoAppRuntime:
                         receivedAt:
                             request.receivedAt,
                         taskCount:
-                            validPayloads.count
+                            uniquePayloads.count
                     )
                     )
 
@@ -162,7 +184,7 @@ final class PhotoMemoAppRuntime:
                 message:
                     job == nil
                     ? "BatchQueueStore returned nil."
-                    : "tasks=\(validPayloads.count)",
+                    : "tasks=\(uniquePayloads.count)",
                 requestID:
                     request.id,
                 jobID:
@@ -222,6 +244,69 @@ private extension PhotoMemoAppRuntime {
                     url.standardizedFileURL
                     .path
             )
+    }
+
+    func uniquePayloadsForCurrentDrain(
+        _ payloads: [BatchTaskIntakePayload],
+        consumedPayloadKeys: inout Set<String>
+    ) -> [BatchTaskIntakePayload] {
+
+        payloads.filter { payload in
+            let key =
+                payloadDedupeKey(
+                    for: payload
+                )
+
+            guard !consumedPayloadKeys.contains(key) else {
+                return false
+            }
+
+            consumedPayloadKeys.insert(key)
+            return true
+        }
+    }
+
+    func payloadDedupeKey(
+        for payload: BatchTaskIntakePayload
+    ) -> String {
+
+        let sourceIdentifier =
+            payload.sourceIdentifier?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        if !sourceIdentifier.isEmpty {
+            return "source:\(sourceIdentifier)"
+        }
+
+        let fileName =
+            (
+                payload.fileName?
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                .lowercased()
+            )
+            ?? payload
+                .sourceURL
+                .lastPathComponent
+                .lowercased()
+
+        let fileSize =
+            (
+                try? FileManager.default
+                    .attributesOfItem(
+                        atPath:
+                            payload
+                            .sourceURL
+                            .standardizedFileURL
+                            .path
+                    )[.size] as? NSNumber
+            )?
+            .int64Value ?? -1
+
+        return "file:\(fileName):\(fileSize)"
     }
 
     func resolvedIntakeSummary(

@@ -3,6 +3,8 @@ import Foundation
 
 struct PhotoMemoShareExtensionImportResult {
 
+    let requestID: UUID
+
     let itemProviderCount: Int
 
     let supportedProviderCount: Int

@@ -63,7 +63,11 @@ struct ImmersWhiteRendererLayoutTests {
         )
         #expect(
             layout.titleFontRatio
-            <= 0.225
+            == 0.190
+        )
+        #expect(
+            layout.bottomFontRatio
+            == 0.142
         )
     }
 
@@ -93,7 +97,11 @@ struct ImmersWhiteRendererLayoutTests {
         )
         #expect(
             layout.titleFontRatio
-            <= 0.22
+            == 0.190
+        )
+        #expect(
+            layout.bottomFontRatio
+            == 0.132
         )
     }
 

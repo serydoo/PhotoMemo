@@ -358,11 +358,7 @@ struct PhotoMemoiOSMVPTestView: View {
                 if !shareDiagnosticEvents.isEmpty {
                     VStack(alignment: .leading, spacing: 7) {
                         ForEach(
-                            Array(
-                                shareDiagnosticEvents
-                                    .suffix(6)
-                                    .reversed()
-                            )
+                            shareDiagnosticDisplayEvents
                         ) { event in
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Text(
@@ -376,11 +372,19 @@ struct PhotoMemoiOSMVPTestView: View {
                                 .frame(width: 72, alignment: .leading)
 
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(event.stage)
+                                    Text(
+                                        shareDiagnosticDisplayTitle(
+                                            for: event
+                                        ) ?? ""
+                                    )
                                         .font(.caption2.weight(.semibold))
                                         .foregroundStyle(.secondary)
 
-                                    Text(event.message)
+                                    Text(
+                                        shareDiagnosticDisplayMessage(
+                                            for: event
+                                        )
+                                    )
                                         .font(.caption)
                                         .lineLimit(2)
                                         .fixedSize(
@@ -1466,12 +1470,134 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var shareDiagnosticsSubheadline: String {
-        guard let event =
-            latestShareDiagnosticEvent else {
+        guard latestShareDiagnosticEvent != nil else {
             return "分享一次照片后，这里会显示接收、入队和进度创建结果。"
         }
 
-        return "\(event.stage) · \(event.message)"
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "app.request.dropped"
+        }) {
+            return "重复或失效的照片已跳过，原图不会被修改。"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "extension.handoff.unconfirmed"
+                || $0.stage == "extension.handoff.failed"
+        }),
+           !shareDiagnosticEvents.contains(where: {
+               $0.stage == "app.enqueue.created"
+           }) {
+            return "系统没有完成自动唤起，请点重试或直接打开 PhotoMemo。"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "app.enqueue.created"
+        }) {
+            return "照片已经进入后台队列，完成后会写回系统相册。"
+        }
+
+        return "PhotoMemo 正在接收这次分享。"
+    }
+
+    private var shareDiagnosticDisplayEvents:
+        [PhotoMemoShareDiagnosticEvent] {
+
+        var seenKeys = Set<String>()
+
+        return shareDiagnosticEvents
+            .reversed()
+            .filter { event in
+                shareDiagnosticDisplayTitle(
+                    for: event
+                ) != nil
+            }
+            .filter { event in
+                let key =
+                    "\(shareDiagnosticDisplayTitle(for: event) ?? "")|\(shareDiagnosticDisplayMessage(for: event))"
+
+                guard !seenKeys.contains(key) else {
+                    return false
+                }
+
+                seenKeys.insert(key)
+                return true
+            }
+            .prefix(5)
+            .map { $0 }
+    }
+
+    private func shareDiagnosticDisplayTitle(
+        for event: PhotoMemoShareDiagnosticEvent
+    ) -> String? {
+
+        switch event.stage {
+
+        case "extension.request.persisted",
+             "extension.persisted":
+            return "照片已接收"
+
+        case "extension.handoff.unconfirmed",
+             "extension.handoff.failed":
+            return "等待交给 PhotoMemo"
+
+        case "app.drain":
+            return "检查待处理照片"
+
+        case "app.request.validated":
+            return "照片检查完成"
+
+        case "app.enqueue.created":
+            return "进入处理队列"
+
+        case "app.request.dropped":
+            return "已跳过重复照片"
+
+        case "liveActivity.request.created":
+            return "系统进度已显示"
+
+        case "liveActivity.payload.terminal":
+            return "处理完成"
+
+        default:
+            return nil
+        }
+    }
+
+    private func shareDiagnosticDisplayMessage(
+        for event: PhotoMemoShareDiagnosticEvent
+    ) -> String {
+
+        switch event.stage {
+
+        case "extension.request.persisted",
+             "extension.persisted":
+            return "原图已暂存，等待 PhotoMemo 处理。"
+
+        case "extension.handoff.unconfirmed",
+             "extension.handoff.failed":
+            return "系统没有完成自动唤起，请重试或直接打开 PhotoMemo。"
+
+        case "app.drain":
+            return "正在读取最近分享进来的照片。"
+
+        case "app.request.validated":
+            return "照片可处理，准备加入后台队列。"
+
+        case "app.enqueue.created":
+            return "照片会按当前默认风格生成并保存。"
+
+        case "app.request.dropped":
+            return "同一张照片已经在队列中，本次不会重复生成。"
+
+        case "liveActivity.request.created":
+            return "可以在系统进度区域查看处理状态。"
+
+        case "liveActivity.payload.terminal":
+            return "已完成处理，结果会出现在目标相册。"
+
+        default:
+            return event.message
+        }
     }
 
     private var shareDiagnosticsSymbolName: String {
@@ -2064,7 +2190,7 @@ private struct MVPPreviewCard: View {
                     barHeight
                     * spec.primaryFontToBarHeight
                     * (emphasizesPrimary ? 1.08 : 1),
-                weight: emphasizesPrimary ? .heavy : .bold,
+                weight: emphasizesPrimary ? .bold : .semibold,
                 tracking: spec.primaryTracking,
                 color:
                     emphasizesPrimary

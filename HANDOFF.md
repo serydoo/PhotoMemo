@@ -1,5 +1,109 @@
 # PhotoMemo Handoff
 
+## 2026-06-29 Share Deferred Handoff And Result Notification
+
+- 用户确认方向：
+  - 不希望多一个必须打开主 App 的步骤。
+  - 只要 Share Extension 已经把图片安全暂存，就不应再把这次 Share 表达成失败。
+  - 如果实在需要排查，主 App 的 `最近分享` 可以显示完整 Pipeline，但不是开心路径依赖。
+  - 结果反馈要更清晰，例如 `15:20 处理 2 张照片已完成`。
+  - 完成通知不需要再说明存入哪个相册，因为配置阶段用户已经知道。
+- 真机诊断依据：
+  - Share Extension 成功导入并持久化 2 张照片。
+  - `extensionContext.open` 返回 false，responder-chain fallback 返回 true。
+  - 6 秒内没有确认主 App drain，所以旧 UI 误报 handoff failure。
+  - 主 App 后续实际 drain request、validated payloads、enqueue job，并完成输出。
+  - 因此根因是“确认模型过严”，不是“照片没有处理”。
+- 已修正：
+  - `PhotoMemoShareExtensionViewController` 在 intake persistence 成功后，
+    不再因为即时 handoff 未确认而停留失败界面。
+  - 未确认 handoff 记录为 `extension.handoff.deferred`，供后续诊断。
+  - Share Extension 会播放轻量完成过渡后结束，符合 Apple Photos ->
+    Share -> Processing -> Notification -> Apple Photos 的安静链路。
+  - `BatchNotificationMessageFormatter` 统一最终通知标题：
+    - 成功：`15:20 处理 2 张照片已完成`
+    - 全部失败：`15:20 2 张照片需要处理`
+    - 部分成功：`15:20 已完成 4 张，1 张需要处理`
+  - 最终通知正文移除目标相册描述。
+  - 新增 `BatchNotificationMessageFormatterTests`。
+- 产品边界：
+  - “暂存成功”不等于最终生成永远不会失败。
+  - 它表示 PhotoMemo 已经安全接单；后续解码、RAW、渲染、相册写入失败都属于队列结果，
+    应通过最终通知或 `最近分享` 诊断表达。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoTests/BatchNotificationMessageFormatterTests` 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 下一轮真机观察：
+  - 从 Apple Photos 重新 Share 一张或两张照片。
+  - 快速任务可只看到完成通知，不强求持续进度。
+  - 最终通知应显示时间和数量，不再出现“系统没有把处理交给 PhotoMemo”的阻塞提示。
+
+## 2026-06-29 Immers White Primary Typography Calibration
+
+- 用户确认：
+  - 不动白边高度。
+  - 不动灰色第二行副文字。
+  - 当前阶段先校准主文字字号和字重。
+- 像素依据：
+  - 横图/竖图 MVP 与目标图最终尺寸和底部白边高度一致。
+  - 差异集中在第一行黑色主文字，MVP 明显更大、更重。
+  - 灰色第二行高度已接近目标，保持不动。
+- 已修复：
+  - `RendererConstants.CompactInformationBar.primaryFontToBarHeight`
+    从 `0.225` 调整为 `0.190`。
+  - `ImmersWhiteRenderer` 横图/竖图主文字比例统一为 `0.190`。
+  - Renderer 输出主文字字重从 `.bold` 改为 `.semibold`。
+  - iOS MVP 预览、正式 iOS 配置预览、macOS Interactive Memory Card
+    主文字字重同步为 `.semibold`。
+  - MVP 预览强调态从 `.heavy` 降为 `.bold`。
+- 特意未做：
+  - 未改白边高度、图片拼接尺寸、灰色副文字字号/颜色/字重。
+  - 未改 Logo、分割线、背景色、EXIF 格式、时间/年岁内容字符串。
+  - 未改 Share、Export、Photo Library 或后台队列。
+- 已验证：
+  - `PhotoMemoTests/ImmersWhiteRendererLayoutTests` 通过。
+  - `PhotoMemoTests/RendererConstantsTests` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `git diff --check` 通过。
+
+## 2026-06-29 Formal iOS And macOS Composer Alignment
+
+- 用户确认：
+  - 将 MVP 已验证优化同步到正式版本和 macOS 版本。
+  - 本轮先落地第一阶段：内容组织与输出一致性。
+- 已同步：
+  - 正式 iOS `ConfigurationCenteriOSView` 的四区域配置输出改用
+    `InlineContentTextComposer`。
+  - iOS 正式配置中心的 `baseText + insertedModules + continuationText`
+    不再用 `.joined(separator: " ")` 强行插空格。
+  - 正式 iOS inline module chip 间距收紧，和 MVP 编辑体验方向一致。
+  - macOS V2 Configuration Center 的 `MemoryBlockInspectorView` 自定义字段
+    组合预览改用同一 composer。
+  - macOS `syncRegionPreview()` 最终写回 Memory Card 预览时也走同一 composer。
+  - `ConfigurationSession.appendPreviewModule(...)` 中央卡片直接插入模块时也走
+    composer。
+  - `InlineContentTextComposerTests` 新增正式配置形态回归：
+    `自定义文字 + 年岁模块 + 后缀`。
+- 特意未做：
+  - 没有把 `PhotoMemoiOSMVPTestView` 整页复制进正式 iOS。
+  - 没有改变正式 iOS 默认入口结构。
+  - 没有改变 macOS 的
+    `Library -> Interactive Memory Card -> Object Inspector` 架构。
+  - 没有改变 renderer 几何、边框字体、EXIF 映射、Share、Export 或 Photo Library。
+- 已验证：
+  - `PhotoMemoTests/InlineContentTextComposerTests` 通过。
+  - `git diff --check` 通过。
+- 仍建议下一轮：
+  - 将正式 iOS 三段式编辑 UI 进一步升级为和 MVP 一致的单一 ordered item
+    stream。
+  - 将模块库 sheet/popover、使用频率排序同步到 iOS/macOS 正式配置中心。
+
 ## 2026-06-29 Default Logo Tint And Inline Content Spacing
 
 - 用户反馈：
