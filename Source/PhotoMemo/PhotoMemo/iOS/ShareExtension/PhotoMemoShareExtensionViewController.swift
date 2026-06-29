@@ -588,6 +588,12 @@ private extension PhotoMemoShareExtensionViewController {
                 in: inputItems
             )
 
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.input",
+            message:
+                "inputItems=\(inputItems.count), supportedPhotos=\(sharedPhotoCount)"
+        )
+
         sharedCountValueLabel.text =
             sharedPhotoCount > 0
             ? "\(sharedPhotoCount) 张"
@@ -786,9 +792,17 @@ private extension PhotoMemoShareExtensionViewController {
     @MainActor
     func persistIncomingItems() async {
 
+        PhotoMemoShareDiagnostics.reset(
+            reason: "Share confirmation started"
+        )
+
         guard !inputItems.isEmpty else {
             PhotoMemoShareIntakeLog.error(
                 "persistIncomingItems failed before intake: inputItems was empty."
+            )
+            PhotoMemoShareDiagnostics.record(
+                stage: "extension.input.empty",
+                message: "No NSExtensionItem was available."
             )
             applyFailureState(
                 title:
@@ -810,6 +824,12 @@ private extension PhotoMemoShareExtensionViewController {
                     inputItems
                 )
 
+            PhotoMemoShareDiagnostics.record(
+                stage: "extension.persisted",
+                message:
+                    "imported=\(result.importedCount), requested=\(result.requestedCount), skipped=\(result.skippedCount), failed=\(result.failedCount)"
+            )
+
             statusTitleLabel.text =
                 "已经开始处理"
             statusMessageLabel.textColor =
@@ -829,10 +849,28 @@ private extension PhotoMemoShareExtensionViewController {
             await playCompletionTransition()
 
             PhotoMemoShareIntakeLog.notice(
-                "Share extension completion request will be sent."
+                "Share extension will request main-app handoff before completion."
             )
 
-            _ = await requestMainAppRefresh()
+            let opened =
+                await requestMainAppRefresh()
+
+            guard opened else {
+                PhotoMemoShareIntakeLog.error(
+                    "Share extension handoff failed after intake persistence; keeping confirmation UI open for retry."
+                )
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.handoff.failed",
+                    message: "Main app did not accept photomemo://share."
+                )
+                applyHandoffFailureState()
+                return
+            }
+
+            PhotoMemoShareDiagnostics.record(
+                stage: "extension.handoff.accepted",
+                message: "Main app handoff reported success."
+            )
 
             extensionContext?
                 .completeRequest(
@@ -843,6 +881,12 @@ private extension PhotoMemoShareExtensionViewController {
                 error as? PhotoMemoShareExtensionError {
                 PhotoMemoShareIntakeLog.error(
                     "Share extension caught PhotoMemoShareExtensionError.\n\(shareError.diagnosticsDescription ?? "no diagnostics")"
+                )
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.error",
+                    message:
+                        shareError.errorDescription
+                        ?? shareError.failureTitle
                 )
                 applyFailureState(
                     title:
@@ -867,6 +911,11 @@ private extension PhotoMemoShareExtensionViewController {
                     code: \(nsError.code)
                     underlyingError: \(((nsError.userInfo[NSUnderlyingErrorKey] as? NSError)?.localizedDescription) ?? "nil")
                     """
+                )
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.error.unexpected",
+                    message:
+                        "\(nsError.domain) / \(nsError.code): \(nsError.localizedDescription)"
                 )
                 applyFailureState(
                     title:
@@ -1031,7 +1080,61 @@ private extension PhotoMemoShareExtensionViewController {
             "Requested main-app refresh via deep link. success=\(opened)"
         )
 
-        return opened
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.handoff.primary",
+            message: "extensionContext.open success=\(opened)"
+        )
+
+        guard !opened else {
+            return true
+        }
+
+        let fallbackOpened =
+            requestMainAppRefreshThroughResponderChain(
+                deepLinkURL
+            )
+
+        PhotoMemoShareIntakeLog.notice(
+            "Requested main-app refresh through responder chain. success=\(fallbackOpened)"
+        )
+
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.handoff.fallback",
+            message: "responderChain success=\(fallbackOpened)"
+        )
+
+        return fallbackOpened
+    }
+
+    @MainActor
+    func requestMainAppRefreshThroughResponderChain(
+        _ url: URL
+    ) -> Bool {
+
+        let selector =
+            NSSelectorFromString(
+                "openURL:"
+            )
+        var responder: UIResponder? =
+            self
+
+        while let currentResponder =
+            responder {
+            if currentResponder.responds(
+                to: selector
+            ) {
+                currentResponder.perform(
+                    selector,
+                    with: url
+                )
+                return true
+            }
+
+            responder =
+                currentResponder.next
+        }
+
+        return false
     }
 
     func loadFirstPreviewIfNeeded() {

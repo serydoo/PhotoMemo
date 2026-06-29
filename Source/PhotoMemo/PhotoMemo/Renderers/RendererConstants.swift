@@ -108,9 +108,9 @@ enum RendererConstants {
         )
 
         static let logoTint = Color(
-            red: 128 / 255,
-            green: 128 / 255,
-            blue: 133 / 255
+            red: 142 / 255,
+            green: 142 / 255,
+            blue: 147 / 255
         )
 
         static let divider = Color(

@@ -4,8 +4,14 @@ struct BadgeRenderer {
 
     let badge: Badge?
 
-    init(badge: Badge? = nil) {
+    let systemSymbolTint: Color?
+
+    init(
+        badge: Badge? = nil,
+        systemSymbolTint: Color? = nil
+    ) {
         self.badge = badge
+        self.systemSymbolTint = systemSymbolTint
     }
 
     @ViewBuilder
@@ -34,7 +40,7 @@ struct BadgeRenderer {
                         width: size,
                         height: size
                     )
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(systemSymbolTint ?? .primary)
 
             case .png,
                  .customUpload,

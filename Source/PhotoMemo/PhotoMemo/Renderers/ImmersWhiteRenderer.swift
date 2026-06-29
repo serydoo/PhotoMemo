@@ -246,9 +246,9 @@ enum ImmersWhiteRenderer {
                 horizontalPaddingRatio: 0.041,
                 verticalPaddingRatio: 0.2,
                 logoToDividerSpacingRatio: 0.015,
-                dividerToTextSpacingRatio: 0.007,
+                dividerToTextSpacingRatio: 0.026,
                 leftColumnWidthRatio: 0.43,
-                rightColumnWidthRatio: 0.35,
+                rightColumnWidthRatio: 0.369,
                 logoSlotWidthRatio: 0.10,
                 logoSizeRatio: 0.42,
                 dividerHeightRatio: 0.54,
@@ -559,7 +559,8 @@ struct ImmersWhiteCardRenderer: View {
     ) -> some View {
 
         BadgeRenderer(
-            badge: resolvedLogoBadge
+            badge: resolvedLogoBadge,
+            systemSymbolTint: ImmersWhiteRenderer.logoTintColor
         )
         .render(
             size:
@@ -567,9 +568,6 @@ struct ImmersWhiteCardRenderer: View {
                     height * layout.logoSizeRatio,
                     width * layout.logoSlotWidthRatio
                 )
-        )
-        .colorMultiply(
-            ImmersWhiteRenderer.logoTintColor
         )
         .opacity(0.94)
         .frame(

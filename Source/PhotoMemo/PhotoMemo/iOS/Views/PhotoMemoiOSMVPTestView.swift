@@ -5,6 +5,9 @@ import UIKit
 
 struct PhotoMemoiOSMVPTestView: View {
 
+    @Environment(\.scenePhase)
+    private var scenePhase
+
     @StateObject
     private var session = ConfigurationSession()
 
@@ -81,6 +84,10 @@ struct PhotoMemoiOSMVPTestView: View {
     private var activeConfigurationMessage = "尚未保存为分享配置"
 
     @State
+    private var shareDiagnosticEvents:
+        [PhotoMemoShareDiagnosticEvent] = []
+
+    @State
     private var showsPresetActivationConfirmation = false
 
     @State
@@ -112,6 +119,8 @@ struct PhotoMemoiOSMVPTestView: View {
                                         0
                                     )
                                 )
+
+                            shareDiagnosticsSection
 
                             profileSection
                                 .background(
@@ -189,6 +198,14 @@ struct PhotoMemoiOSMVPTestView: View {
         }
         .onAppear {
             bootstrapIfNeeded()
+            refreshShareDiagnostics()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else {
+                return
+            }
+
+            refreshShareDiagnostics()
         }
         .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
             bootstrapDrafts()
@@ -304,6 +321,81 @@ struct PhotoMemoiOSMVPTestView: View {
         )
     }
 
+    private var shareDiagnosticsSection: some View {
+        MVPCardSurface(title: "最近分享") {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .center, spacing: 10) {
+                    Image(systemName: shareDiagnosticsSymbolName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(shareDiagnosticsTint)
+                        .frame(width: 20)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(shareDiagnosticsHeadline)
+                            .font(.subheadline.weight(.semibold))
+
+                        Text(shareDiagnosticsSubheadline)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
+                            )
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button {
+                        refreshShareDiagnostics()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityLabel("刷新最近分享状态")
+                }
+
+                if !shareDiagnosticEvents.isEmpty {
+                    VStack(alignment: .leading, spacing: 7) {
+                        ForEach(
+                            Array(
+                                shareDiagnosticEvents
+                                    .suffix(6)
+                                    .reversed()
+                            )
+                        ) { event in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(
+                                    event.timestamp.formatted(
+                                        date: .omitted,
+                                        time: .standard
+                                    )
+                                )
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .frame(width: 72, alignment: .leading)
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(event.stage)
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+
+                                    Text(event.message)
+                                        .font(.caption)
+                                        .lineLimit(2)
+                                        .fixedSize(
+                                            horizontal: false,
+                                            vertical: true
+                                        )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private var editorCluster: some View {
         VStack(spacing: 14) {
             ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
@@ -331,6 +423,16 @@ struct PhotoMemoiOSMVPTestView: View {
                                 text: text
                             )
                             draft.normalizeTrailingTextInput()
+                        }
+                    },
+                    onPrependText: { text in
+                        var prependedID: UUID?
+                        updateDraft(for: region) { draft in
+                            prependedID = draft.prependText(text)
+                            draft.normalizeTrailingTextInput()
+                        }
+                        if let prependedID {
+                            activeTextItemIDs[region] = prependedID
                         }
                     },
                     onAppendText: { text in
@@ -705,15 +807,14 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private func composedText(for draft: MVPEditorDraft) -> String {
-        draft.items
-            .map(resolvedDisplayValue)
-            .filter {
-                !$0.trimmingCharacters(
-                    in: .whitespacesAndNewlines
+        InlineContentTextComposer.compose(
+            draft.items.map { item in
+                InlineContentTextComposer.Piece(
+                    kind: item.kind.inlineComposerKind,
+                    value: resolvedDisplayValue(for: item)
                 )
-                .isEmpty
             }
-            .joined(separator: " ")
+        )
     }
 
     private func templateText(for draft: MVPEditorDraft) -> String {
@@ -1326,6 +1427,97 @@ struct PhotoMemoiOSMVPTestView: View {
         return calendar
     }
 
+    private var latestShareDiagnosticEvent:
+        PhotoMemoShareDiagnosticEvent? {
+
+        shareDiagnosticEvents.last
+    }
+
+    private var shareDiagnosticsHeadline: String {
+        guard let event =
+            latestShareDiagnosticEvent else {
+            return "等待下一次分享"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "liveActivity.request.created"
+        }) {
+            return "进度已交给系统"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "app.enqueue.created"
+        }) {
+            return "照片已进入处理队列"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "app.openURL.share"
+        }) {
+            return "PhotoMemo 已被唤起"
+        }
+
+        if event.stage.contains("failed")
+            || event.stage.contains("error") {
+            return "这次分享需要查看"
+        }
+
+        return "正在交给 PhotoMemo"
+    }
+
+    private var shareDiagnosticsSubheadline: String {
+        guard let event =
+            latestShareDiagnosticEvent else {
+            return "分享一次照片后，这里会显示接收、入队和进度创建结果。"
+        }
+
+        return "\(event.stage) · \(event.message)"
+    }
+
+    private var shareDiagnosticsSymbolName: String {
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "liveActivity.request.created"
+        }) {
+            return "checkmark.circle.fill"
+        }
+
+        if latestShareDiagnosticEvent?.stage.contains("failed") == true
+            || latestShareDiagnosticEvent?.stage.contains("error") == true {
+            return "exclamationmark.triangle.fill"
+        }
+
+        if shareDiagnosticEvents.isEmpty {
+            return "square.stack.3d.down.forward"
+        }
+
+        return "arrow.trianglehead.2.clockwise.circle.fill"
+    }
+
+    private var shareDiagnosticsTint: Color {
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "liveActivity.request.created"
+        }) {
+            return .green
+        }
+
+        if latestShareDiagnosticEvent?.stage.contains("failed") == true
+            || latestShareDiagnosticEvent?.stage.contains("error") == true {
+            return .orange
+        }
+
+        if shareDiagnosticEvents.isEmpty {
+            return .secondary
+        }
+
+        return .blue
+    }
+
+    private func refreshShareDiagnostics() {
+        shareDiagnosticEvents =
+            PhotoMemoShareDiagnostics
+            .loadEvents()
+    }
+
     private var editorRevealProgress: CGFloat {
         let threshold: CGFloat = 30
         let distance: CGFloat = 120
@@ -1423,17 +1615,25 @@ private struct MVPEditorDraft: Hashable {
     }
 
     var singleLineText: String {
-        items
-            .map(\.displayValue)
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .joined(separator: " ")
+        InlineContentTextComposer.compose(
+            items.map { item in
+                InlineContentTextComposer.Piece(
+                    kind: item.kind.inlineComposerKind,
+                    value: item.displayValue
+                )
+            }
+        )
     }
 
     var singleLineTemplateText: String {
-        items
-            .map(\.templateValue)
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .joined(separator: " ")
+        InlineContentTextComposer.compose(
+            items.map { item in
+                InlineContentTextComposer.Piece(
+                    kind: item.kind.inlineComposerKind,
+                    value: item.templateValue
+                )
+            }
+        )
     }
 
     mutating func updateTextItem(
@@ -1448,6 +1648,22 @@ private struct MVPEditorDraft: Hashable {
 
         items[index].value = text
         items[index].savedValue = text
+    }
+
+    @discardableResult
+    mutating func prependText(_ text: String) -> UUID? {
+        let trimmed =
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        let item = MVPContentItem.text(text)
+        items.insert(item, at: 0)
+        return item.id
     }
 
     @discardableResult
@@ -1613,6 +1829,22 @@ private struct MVPContentItem: Identifiable, Hashable {
     }
 }
 
+private extension MVPContentItem.Kind {
+
+    var inlineComposerKind: InlineContentTextComposer.PieceKind {
+        switch self {
+        case .text:
+            return .text
+        case .token:
+            return .token
+        case .separator:
+            return .separator
+        case .lineBreak:
+            return .lineBreak
+        }
+    }
+}
+
 private struct MVPCardSurface<Content: View>: View {
 
     let title: String
@@ -1723,17 +1955,26 @@ private struct MVPPreviewCard: View {
                 secondary: timeText,
                 spec: spec,
                 barHeight: height,
-                emphasizesPrimary: true
+                emphasizesPrimary: true,
+                primaryMinimumScaleFactor: 0.94,
+                secondaryMinimumScaleFactor: 0.90
             )
             .frame(
-                width: width * spec.leftWidth,
+                width:
+                    width
+                    * compactPreviewLeftTextWidth(
+                        spec: spec
+                    ),
                 height: height * 0.62,
                 alignment: .leading
             )
             .position(
                 x:
                     width * spec.leftX
-                    + width * spec.leftWidth / 2,
+                    + width
+                    * compactPreviewLeftTextWidth(
+                        spec: spec
+                    ) / 2,
                 y: height * spec.contentCenterY
             )
 
@@ -1771,7 +2012,9 @@ private struct MVPPreviewCard: View {
                 primary: formattedCaptureSummaryText,
                 secondary: memoryText,
                 spec: spec,
-                barHeight: height
+                barHeight: height,
+                primaryMinimumScaleFactor: 0.72,
+                secondaryMinimumScaleFactor: 0.82
             )
             .frame(
                 width: width * spec.rightWidth,
@@ -1787,12 +2030,29 @@ private struct MVPPreviewCard: View {
         }
     }
 
+    private func compactPreviewLeftTextWidth(
+        spec: CompactInformationBarSpec
+    ) -> CGFloat {
+
+        min(
+            max(
+                spec.leftWidth,
+                0.46
+            ),
+            spec.logoCenterX
+            - spec.leftX
+            - 0.10
+        )
+    }
+
     private func compactTextPair(
         primary: String,
         secondary: String,
         spec: CompactInformationBarSpec,
         barHeight: CGFloat,
-        emphasizesPrimary: Bool = false
+        emphasizesPrimary: Bool = false,
+        primaryMinimumScaleFactor: CGFloat = 0.84,
+        secondaryMinimumScaleFactor: CGFloat = 0.84
     ) -> some View {
         VStack(
             alignment: .leading,
@@ -1812,7 +2072,8 @@ private struct MVPPreviewCard: View {
                     :
                     RendererConstants
                     .CompactInformationBar
-                    .primaryText
+                    .primaryText,
+                minimumScaleFactor: primaryMinimumScaleFactor
             )
 
             compactTextLine(
@@ -1828,7 +2089,8 @@ private struct MVPPreviewCard: View {
                     :
                     RendererConstants
                     .CompactInformationBar
-                    .secondaryText
+                    .secondaryText,
+                minimumScaleFactor: secondaryMinimumScaleFactor
             )
         }
         .frame(
@@ -1843,7 +2105,8 @@ private struct MVPPreviewCard: View {
         fontSize: CGFloat,
         weight: Font.Weight,
         tracking: CGFloat,
-        color: Color
+        color: Color,
+        minimumScaleFactor: CGFloat
     ) -> some View {
         Text(value.isEmpty ? " " : value)
             .font(
@@ -1855,7 +2118,7 @@ private struct MVPPreviewCard: View {
             .kerning(tracking)
             .foregroundStyle(color)
             .lineLimit(1)
-            .minimumScaleFactor(0.72)
+            .minimumScaleFactor(minimumScaleFactor)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -1912,6 +2175,7 @@ private struct MVPRegionEditorCard: View {
     let onFocus: () -> Void
     let onFocusTextItem: (MVPContentItem) -> Void
     let onUpdateTextItem: (MVPContentItem, String) -> Void
+    let onPrependText: (String) -> Void
     let onAppendText: (String) -> Void
     let onRemoveItem: (MVPContentItem) -> Void
     let onAddSeparator: (String) -> Void
@@ -1932,30 +2196,20 @@ private struct MVPRegionEditorCard: View {
                 }
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 3) {
+                        if draft.items.first?.kind != .text {
+                            transientTextField(
+                                placeholder: "短语",
+                                minWidth: 46,
+                                onChange: onPrependText
+                            )
+                            .onTapGesture(perform: onFocus)
+                        }
+
                         ForEach(draft.items) { item in
                             switch item.kind {
                             case .text:
-                                TextField(
-                                    "短语",
-                                    text: Binding(
-                                        get: { item.value },
-                                        set: {
-                                            onUpdateTextItem(
-                                                item,
-                                                $0
-                                            )
-                                        }
-                                    ),
-                                    axis: .horizontal
-                                )
-                                .textFieldStyle(.plain)
-                                .font(.subheadline)
-                                .frame(minWidth: 72)
-                                .lineLimit(1)
-                                .onTapGesture {
-                                    onFocusTextItem(item)
-                                }
+                                editableTextField(item)
 
                             case .token,
                                  .separator,
@@ -1972,8 +2226,8 @@ private struct MVPRegionEditorCard: View {
                                     .foregroundStyle(.secondary)
                                 }
                                 .font(.caption.weight(.semibold))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 5)
                                 .background(
                                     Capsule()
                                         .fill(Color.accentColor.opacity(0.09))
@@ -1986,23 +2240,16 @@ private struct MVPRegionEditorCard: View {
                         }
 
                         if draft.items.last?.kind != .text {
-                            TextField(
-                                "继续输入短语",
-                                text: Binding(
-                                    get: { "" },
-                                    set: onAppendText
-                                ),
-                                axis: .horizontal
+                            transientTextField(
+                                placeholder: "短语",
+                                minWidth: 58,
+                                onChange: onAppendText
                             )
-                            .textFieldStyle(.plain)
-                            .font(.subheadline)
-                            .frame(minWidth: 132)
-                            .lineLimit(1)
                             .onTapGesture(perform: onFocus)
                         }
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 7)
                 }
                 .background(
                     RoundedRectangle(
@@ -2050,6 +2297,68 @@ private struct MVPRegionEditorCard: View {
                 }
             }
         }
+    }
+
+    private func editableTextField(
+        _ item: MVPContentItem
+    ) -> some View {
+        TextField(
+            "短语",
+            text: Binding(
+                get: { item.value },
+                set: {
+                    onUpdateTextItem(
+                        item,
+                        $0
+                    )
+                }
+            ),
+            axis: .horizontal
+        )
+        .textFieldStyle(.plain)
+        .font(.subheadline)
+        .frame(minWidth: textFieldWidth(for: item.value))
+        .lineLimit(1)
+        .onTapGesture {
+            onFocusTextItem(item)
+        }
+    }
+
+    private func transientTextField(
+        placeholder: String,
+        minWidth: CGFloat,
+        onChange: @escaping (String) -> Void
+    ) -> some View {
+        TextField(
+            placeholder,
+            text: Binding(
+                get: { "" },
+                set: onChange
+            ),
+            axis: .horizontal
+        )
+        .textFieldStyle(.plain)
+        .font(.subheadline)
+        .frame(minWidth: minWidth)
+        .lineLimit(1)
+    }
+
+    private func textFieldWidth(
+        for value: String
+    ) -> CGFloat {
+        let trimmed =
+            value.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !trimmed.isEmpty else {
+            return 52
+        }
+
+        return min(
+            max(CGFloat(trimmed.count) * 18, 42),
+            180
+        )
     }
 }
 

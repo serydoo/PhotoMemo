@@ -2,6 +2,368 @@
 
 Last updated: 2026-06-29
 
+## 2026-06-29 Default Logo Tint And Inline Content Spacing
+
+This slice keeps the locked Immers White border geometry intact and fixes two
+small output-readability issues found during MVP review.
+
+What changed:
+
+- Default system-symbol logos now render with the compact information bar logo
+  tint directly instead of starting from `.primary` and using color multiply.
+- The compact information bar logo tint now matches a softer Apple system gray
+  direction: `#8E8E93`.
+- User-uploaded bitmap logos are not recolored by this default-symbol tint path.
+- The iOS MVP four-region Content Builder now uses
+  `InlineContentTextComposer` for preview output, saved template text, and
+  editor single-line display.
+- Custom Chinese text and smart/token modules no longer receive automatic
+  spaces between every item, while adjacent token values can still remain
+  readable when no explicit separator is provided.
+
+Preserved:
+
+- The previously corrected Immers White portrait right-top capture-summary
+  geometry was not changed.
+- Border height, slot coordinates, font sizes, icon sizes, and parameter layout
+  remain locked.
+
+Verification:
+
+- passed focused `PhotoMemoTests/InlineContentTextComposerTests`
+- passed focused `PhotoMemoTests/ImmersWhiteRendererLayoutTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `git diff --check`
+
+## 2026-06-29 Immers White Portrait Right-Top Pixel Calibration
+
+This slice responds to the comparison between the MVP-generated output
+`IMG_9943(1).JPG` and the expected reference `IMG_9842 2.JPEG`.
+
+Pixel findings:
+
+- Reference image: `4536 x 8817`.
+- MVP output: `3213 x 6246`.
+- Bottom information bar height ratio is already aligned at about `8.6%` of
+  final image height.
+- The visible mismatch is in the portrait right-top capture-summary cluster:
+  the MVP output starts the right text around `x = 0.609`, while the measured
+  compact information-bar spec expects `x = 0.590`.
+- That difference costs about `61 px` on a `3213 px` wide output and causes
+  the capture summary to truncate earlier than the reference.
+
+What changed:
+
+- Adjusted the Immers White portrait renderer right column from `0.350` to
+  `0.369`.
+- Adjusted the divider-to-text spacing from `0.007` to `0.026`.
+- This aligns the portrait geometry with the frozen measured spec:
+  - right text start: `0.590`
+  - divider center: `0.564`
+  - logo center: about `0.514`
+- Landscape Immers White geometry was not changed.
+- Border height, fonts, colors, logo size, text content, export pipeline, and
+  share/notification behavior were not changed.
+
+Verification:
+
+- confirmed focused renderer layout test failed before the renderer constant
+  fix
+- passed focused `PhotoMemoTests/ImmersWhiteRendererLayoutTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `git diff --check`
+
+## 2026-06-29 Share Intake Drain Order Fix
+
+This slice fixes the real-device Share path where PhotoMemo appeared to accept
+a photo but then showed no visible progress or output.
+
+Evidence gathered from iPhone7 App Group diagnostics:
+
+- Share Extension successfully imported `IMG_9943.jpg`.
+- Share Extension persisted the request into the shared intake store.
+- The primary `extensionContext.open(photomemo://share)` path returned false,
+  but the responder-chain fallback returned true.
+- The MVP host app received/drained the request.
+- Before the fix, app-side validation reported `payloads=1, valid=0` and
+  dropped the request as `No valid source files remained`.
+
+Root cause:
+
+- `PhotoMemoAppRuntime.refreshExternalIntakeState()` cleaned orphaned managed
+  intake files before draining pending shared requests.
+- The cleanup only kept files already referenced by the batch queue.
+- A freshly shared file was still referenced only by the pending shared request,
+  so the host app deleted the managed copy before validating/enqueuing it.
+
+What changed:
+
+- `refreshExternalIntakeState()` now updates configuration, drains pending
+  shared requests into the batch queue, and only then runs orphan cleanup.
+- This preserves freshly shared files until they become queue-owned.
+- No renderer, export layout, border typography, or locked bottom-border output
+  behavior changed.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+- after a fresh Apple Photos Share test, diagnostics reported:
+  - `extension.request.persisted`
+  - `app.drain drainedRequests=1`
+  - `app.request.validated payloads=1, valid=1`
+  - `app.enqueue.created tasks=1`
+- the resulting queue job `DFBAF8ED-C460-4629-89AC-4423A8B4C5B7` completed
+  and recorded a `savedAssetIdentifier` in the target Photos album.
+
+Remaining follow-up:
+
+- Longer RAW / ProRAW tasks should be manually tested next, because fast JPEG
+  jobs can complete before a persistent Live Activity becomes visible.
+- One older terminal Live Activity attempt produced
+  `Target is not foreground`; treat that as a separate ActivityKit visibility
+  follow-up rather than the root cause of missing output.
+
+## 2026-06-29 Share Progress Diagnostics Layer
+
+This slice adds a local diagnostic timeline because the latest real-device
+behavior can still leave users unable to tell whether a Share task is running.
+
+Problem:
+
+- The Share confirmation sheet no longer stays in the handoff-failed state.
+- However, no visible progress appears afterward.
+- Without instrumentation, the failure point could be any of:
+  Share Extension intake, shared inbox persistence, main-app URL handoff,
+  app-side drain, queue enqueue, or ActivityKit request.
+
+What changed:
+
+- Added `PhotoMemoShareDiagnostics`, a small App Group backed diagnostic store.
+- Share Extension now records:
+  - input item count
+  - supported photo count
+  - request creation
+  - imported / skipped / failed item results
+  - persisted request ID
+  - primary and fallback handoff result
+  - extension errors
+- MVP host app now records:
+  - `photomemo://share` receipt
+  - shared-intake drain count
+  - valid payload count
+  - dropped request reason
+  - created queue job ID
+- Live Activity driver now records:
+  - Activity authorization disabled state
+  - terminal payload receipt
+  - Live Activity request success
+  - Live Activity request failure domain/code/message
+- iOS MVP configuration screen now includes a calm `最近分享` diagnostic card
+  that shows the latest Share timeline and a manual refresh button.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Manual verification needed:
+
+- Share one new photo from Apple Photos.
+- Open PhotoMemo MVP after 10-20 seconds.
+- Screenshot the `最近分享` card.
+- Use the stage timeline to identify the exact failing boundary.
+
+## 2026-06-29 Share Handoff Fallback And MVP Preview Width
+
+This slice responds to the device screenshot where the Share Extension showed
+the explicit handoff-failed state after receiving the photo.
+
+Root cause:
+
+- The MVP app bundle still correctly registers the `photomemo` URL scheme.
+- The Share Extension is installed and persisted the incoming photo.
+- The system `extensionContext.open(photomemo://share)` call can still return
+  `false` in this Share context, so the first handoff path is not reliable
+  enough by itself.
+
+What changed:
+
+- `requestMainAppRefresh()` now keeps the official `extensionContext.open`
+  path first.
+- If that path fails, the Share Extension attempts a responder-chain fallback
+  to open `photomemo://share`.
+- The visible handoff-failed retry state remains as the final safety net.
+- The iOS MVP configuration preview gives the left-top text area more width
+  before the logo, reducing unnecessary ellipsis in strings such as
+  `记录 iPhone 17 Pro...`.
+- This preview-width change is local to the MVP configuration preview and does
+  not change the locked rendered border/export layout.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Manual verification still needed:
+
+- Share a new photo from Apple Photos and confirm the sheet no longer stays in
+  the handoff-failed state.
+- Confirm the new task appears as fresh progress rather than showing only a
+  previous completed card.
+- Confirm the left-top configuration preview no longer truncates too early.
+
+## 2026-06-29 Share Handoff And Live Activity Visibility Fix
+
+This slice addresses the latest real-device observation: the visible Live
+Activity card could be from a previous task, while a newly shared task did not
+show fresh progress.
+
+Root cause:
+
+- The Share Extension persisted incoming photos and called the
+  `photomemo://share` handoff.
+- The return value from `requestMainAppRefresh()` was ignored.
+- If iOS did not actually open the MVP host app, the extension still completed
+  and disappeared.
+- In that failed handoff path, the host app never drained the shared intake
+  store, so no new queue, new Live Activity, or new output could be created.
+
+What changed:
+
+- Share Extension now treats host-app handoff as required before completing the
+  extension request.
+- If the handoff fails, the confirmation UI stays open and shows the existing
+  `重新交给 PhotoMemo` retry state instead of closing silently.
+- Live Activity driver now tracks activity start time and keeps terminal states
+  visible for a short minimum window.
+- If a job reaches terminal state before an activity was visible, the driver
+  attempts to create a short-lived final Live Activity instead of silently
+  recording the payload.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+
+Manual verification still needed:
+
+- Install to iPhone7 and share a new photo from Apple Photos.
+- Confirm the Share confirmation sheet only disappears when PhotoMemo handoff
+  succeeds.
+- Confirm a new Live Activity appears for the new Share task, not only the
+  previous completed card.
+
+## 2026-06-29 Notification Progress Model Simplification
+
+This slice clarifies the MVP progress surface after real lock-screen testing.
+
+Decision:
+
+- Local notifications are not the real-time progress surface.
+- Stage-by-stage progress belongs to Live Activity / Lock Screen / Dynamic
+  Island.
+- Notification Center should stay quiet and only carry lifecycle results such
+  as received, completed, or needs attention.
+
+What changed:
+
+- `BatchQueueNotifications.deliverProgressNotificationIfNeeded(...)` no longer
+  reposts local notifications for `raw`, `imported`, `rendering`, or `saving`
+  stages.
+- The execution pipeline still updates task progress and Live Activity payloads
+  through the queue state.
+- Start and final local notifications remain available.
+- This prevents stacked Notification Center cards from being used as a pseudo
+  progress UI.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on connected iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Manual verification still needed:
+
+- Share a new photo and confirm ordinary Notification Center no longer stacks
+  stage updates.
+- Confirm Live Activity remains the place where live progress changes.
+
+## 2026-06-29 Live Activity Contrast Fix
+
+This slice fixes a lock-screen readability issue found during iPhone testing.
+
+What changed:
+
+- The single-task Lock Screen Live Activity status line now uses `.secondary`
+  instead of `.tertiary`.
+- This makes messages such as `处理完成 · IMG_9927.jpg` readable on dark
+  wallpapers and Notification Center blur backgrounds.
+- No layout, progress model, notification scheduling, renderer, or export
+  behavior changed.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on connected iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Manual verification still needed:
+
+- Start a new Share task and confirm the Lock Screen / Notification Center
+  status line is visible against the current dark wallpaper.
+
+## 2026-06-29 MVP Preview And Inline Editor Polish
+
+This slice responds to the latest iPhone visual review while preserving the
+locked rendered bottom-border output.
+
+What changed:
+
+- The iOS MVP preview now applies strong text shrinking only to the right-side
+  capture-summary area where overflow is most likely.
+- The left-top preview line keeps a much higher minimum scale factor so recorder
+  text returns closer to the previous visual size.
+- The four-region inline editor spacing is tighter:
+  - chip-to-text spacing reduced
+  - chip padding reduced slightly
+  - trailing phrase input width reduced so empty editor space no longer feels
+    oversized
+- When a module is the first item in a region, the editor now shows a small
+  leading phrase input target so users can insert custom text before that
+  module.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` Debug build on connected iPhone7
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Manual verification still needed:
+
+- Confirm the preview left-top recorder text no longer looks over-shrunk.
+- Confirm the right-top capture summary still fits without obvious truncation.
+- Confirm typing before a leading module feels natural on the iPhone keyboard.
+
 ## 2026-06-29 MVP Content Builder Order And Notification Update
 
 This slice fixes the latest iPhone review feedback without touching the locked

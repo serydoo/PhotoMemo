@@ -88,6 +88,11 @@ final class PhotoMemoAppRuntime:
             externalIntakeCenter
             .drainPendingRequests()
 
+        PhotoMemoShareDiagnostics.record(
+            stage: "app.drain",
+            message: "drainedRequests=\(requests.count)"
+        )
+
         guard !requests.isEmpty else {
             return
         }
@@ -99,6 +104,14 @@ final class PhotoMemoAppRuntime:
                         $0.sourceURL
                     )
                 }
+
+            PhotoMemoShareDiagnostics.record(
+                stage: "app.request.validated",
+                message:
+                    "payloads=\(request.intakePayloads.count), valid=\(validPayloads.count)",
+                requestID:
+                    request.id
+            )
 
             let intakeSummary =
                 resolvedIntakeSummary(
@@ -114,10 +127,17 @@ final class PhotoMemoAppRuntime:
                             at: $0
                         )
                 }
+                PhotoMemoShareDiagnostics.record(
+                    stage: "app.request.dropped",
+                    message: "No valid source files remained.",
+                    requestID:
+                        request.id
+                )
                 continue
             }
 
-            _ = batchQueueStore.enqueue(
+            let job =
+                batchQueueStore.enqueue(
                 payloads: validPayloads,
                 configuration:
                     request.configurationSnapshot,
@@ -133,6 +153,21 @@ final class PhotoMemoAppRuntime:
                             validPayloads.count
                     )
                     )
+
+            PhotoMemoShareDiagnostics.record(
+                stage:
+                    job == nil
+                    ? "app.enqueue.failed"
+                    : "app.enqueue.created",
+                message:
+                    job == nil
+                    ? "BatchQueueStore returned nil."
+                    : "tasks=\(validPayloads.count)",
+                requestID:
+                    request.id,
+                jobID:
+                    job?.id
+            )
         }
 
         externalIntakeCenter.updateDefaultConfiguration(
@@ -143,18 +178,18 @@ final class PhotoMemoAppRuntime:
 
     func refreshExternalIntakeState() {
 
+        externalIntakeCenter.updateDefaultConfiguration(
+            batchQueueStore
+                .defaultConfigurationSnapshot
+        )
+        flushExternalRequests()
+
         externalIntakeStore
             .cleanupOrphanedManagedContent(
                 keepingReferencedURLs:
                     batchQueueStore
                     .referencedManagedSourceURLs
             )
-
-        externalIntakeCenter.updateDefaultConfiguration(
-            batchQueueStore
-                .defaultConfigurationSnapshot
-        )
-        flushExternalRequests()
     }
 }
 

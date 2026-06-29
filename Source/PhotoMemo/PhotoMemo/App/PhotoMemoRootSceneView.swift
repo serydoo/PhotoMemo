@@ -37,6 +37,10 @@ struct PhotoMemoRootSceneView: View {
                     ) {
                     switch deepLink {
                     case .share:
+                        PhotoMemoShareDiagnostics.record(
+                            stage: "app.openURL.share",
+                            message: "Received photomemo://share."
+                        )
                         runtime
                             .refreshExternalIntakeState()
                     }
@@ -46,6 +50,10 @@ struct PhotoMemoRootSceneView: View {
                 runtime.handleExternalURLs(
                     [url],
                     source: .fileOpen
+                )
+                PhotoMemoShareDiagnostics.record(
+                    stage: "app.openURL.file",
+                    message: url.lastPathComponent
                 )
             }
             .onReceive(

@@ -71,37 +71,12 @@ final class BatchQueueNotifications {
         stage: String,
         in store: BatchQueueStore
     ) async {
-
-        guard let jobIndex =
-            store.jobIndex(
-                for: jobID
-            ),
-            let job =
-                store.job(at: jobIndex)
-        else {
-            return
-        }
-
-        guard job.lastProgressNotificationStage
-            != stage else {
-            return
-        }
-
-        let didSend =
-            await notificationService
-            .notifyJobProgress(
-                job,
-                stage: stage
-            )
-
-        guard didSend else {
-            return
-        }
-
-        store.markProgressNotificationSent(
-            at: jobIndex,
-            stage: stage
-        )
+        // Stage-by-stage progress belongs to Live Activity. Reposting local
+        // notifications for each phase creates stacked cards in Notification
+        // Center and is not reliable as a real-time progress surface.
+        _ = jobID
+        _ = stage
+        _ = store
     }
 
     func deliverFinalNotificationIfNeeded(

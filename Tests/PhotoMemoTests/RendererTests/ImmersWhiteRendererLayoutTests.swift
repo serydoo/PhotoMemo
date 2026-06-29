@@ -11,6 +11,25 @@ struct ImmersWhiteRendererLayoutTests {
             ImmersWhiteRenderer.layout(
                 for: .portrait
             )
+        let measuredSpec =
+            RendererConstants
+            .CompactInformationBar
+            .portrait
+        let rightTextStart =
+            1
+            - layout.horizontalPaddingRatio
+            - layout.rightColumnWidthRatio
+        let dividerCenter =
+            rightTextStart
+            - layout.dividerToTextSpacingRatio
+        let logoCenter =
+            dividerCenter
+            - layout.logoToDividerSpacingRatio
+            - (
+                measuredSpec.barHeightToWidth
+                * layout.logoSizeRatio
+                / 2
+            )
 
         #expect(
             layout.rightColumnAlignment
@@ -21,8 +40,22 @@ struct ImmersWhiteRendererLayoutTests {
             == layout.titleFontRatio
         )
         #expect(
-            layout.dividerToTextSpacingRatio
-            < layout.logoToDividerSpacingRatio
+            abs(
+                rightTextStart
+                - measuredSpec.rightX
+            ) < 0.002
+        )
+        #expect(
+            abs(
+                dividerCenter
+                - measuredSpec.dividerCenterX
+            ) < 0.004
+        )
+        #expect(
+            abs(
+                logoCenter
+                - measuredSpec.logoCenterX
+            ) < 0.004
         )
         #expect(
             layout.groupSpacingRatio

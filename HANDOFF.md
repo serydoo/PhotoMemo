@@ -1,5 +1,263 @@
 # PhotoMemo Handoff
 
+## 2026-06-29 Default Logo Tint And Inline Content Spacing
+
+- 用户反馈：
+  - 默认苹果 Logo 仍然偏黑，希望改成柔和灰色。
+  - 右上参数区域前面已经修正过，不希望因为这轮继续误改参数几何。
+  - 自定义短语与模块组合后，不能出现类似 `途途今天 1 岁... 啦`
+    这种不自然空格。
+- 已修复：
+  - `BadgeRenderer` 新增 `systemSymbolTint`，系统符号可直接使用指定 tint。
+  - `ImmersWhiteRenderer.logoArea` 对默认 Apple / 系统符号 Logo 直接使用
+    `ImmersWhiteRenderer.logoTintColor`，不再从 `.primary` 叠加
+    `colorMultiply`。
+  - `RendererConstants.CompactInformationBar.logoTint` 调整为更柔和的系统灰
+    `#8E8E93`。
+  - 新增 `InlineContentTextComposer`，统一处理 Text / Token / Separator /
+    Line Break 的内联拼接。
+  - iOS MVP 四区域编辑器的预览输出、保存模板文本、单行编辑展示现在都走同一
+    composer。
+- 当前拼接规则：
+  - 自定义中文短语 + 模块：不自动加空格。
+  - 模块 + 自定义后缀：不自动加空格。
+  - 模块 + 模块：保留一个可读空格，除非用户显式用了分隔符。
+  - 分隔符两侧不再额外加空格。
+- 未触碰：
+  - 右上拍摄参数区域几何。
+  - 边框高度、字体、字号、图标尺寸、slot 坐标。
+  - Share / Notification / Export 管线。
+- 已验证：
+  - `PhotoMemoTests/InlineContentTextComposerTests` 通过。
+  - `PhotoMemoTests/ImmersWhiteRendererLayoutTests` 通过，确认右上参数几何仍保持
+    已修正状态。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `git diff --check` 通过。
+
+## 2026-06-29 Immers White Portrait Right-Top Pixel Calibration
+
+- 用户提供两张本地对比图，素材只作为临时测量输入，不进入仓库：
+  - 预期参考样本：`IMG_9842 2.JPEG`
+  - MVP 输出样本：`IMG_9943(1).JPG`
+- 像素观察：
+  - 参考图尺寸：`4536 x 8817`
+  - MVP 输出尺寸：`3213 x 6246`
+  - 底部白边高度比例基本正确，约为最终图高度的 `8.6%`
+  - 主要问题不是白边高度，而是 portrait 右上拍摄参数区被压窄
+  - MVP 输出右上文字起点约 `x = 0.609`
+  - 测量规格期望右上文字起点 `x = 0.590`
+  - 在 `3213 px` 宽输出里，这会损失约 `61 px`，导致
+    `100mm f/2.8 1/100s IS...` 这类内容提前省略
+- 根因：
+  - `ImmersWhiteRenderer.layout(for: .portrait)` 中
+    `rightColumnWidthRatio` 仍为 `0.35`
+  - `dividerToTextSpacingRatio` 仍为 `0.007`
+  - 这让 trailing cluster 的文字起点和分隔线都偏右
+- 已修复：
+  - `rightColumnWidthRatio: 0.369`
+  - `dividerToTextSpacingRatio: 0.026`
+  - portrait 几何现在对齐：
+    - right text start `0.590`
+    - divider center `0.564`
+    - logo center about `0.514`
+  - 新增测试保护 right text / divider / logo 三点关系
+- 未触碰：
+  - landscape Immers White
+  - 白边高度
+  - 字体、字号、颜色、logo size
+  - 文本内容映射
+  - share / notification / export pipeline
+- 已验证：
+  - 修复前聚焦 renderer layout test 确认失败
+  - 修复后 `PhotoMemoTests/ImmersWhiteRendererLayoutTests` 通过
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过
+  - `git diff --check` 通过
+
+## 2026-06-29 Share Intake Drain Order Fix
+
+- 用户问题：
+  - Share 后确认页正常，handoff 也不再停在失败界面。
+  - 但用户看不见是否在处理，之前还出现过没有输出的情况。
+- 真机抓数方式：
+  - 通过 `xcrun devicectl device copy from` 拉取 iPhone7 的
+    App Group `group.com.serydoo.PhotoMemo` 下 `Library/Preferences`。
+  - 解码 `photomemo.shareDiagnostics.events` 和
+    `photomemo.batchQueue.jobs`。
+- 关键证据：
+  - 旧请求：
+    - `extension.request.persisted`
+    - `extension.handoff.primary success=false`
+    - `extension.handoff.fallback success=true`
+    - `app.drain drainedRequests=1`
+    - `app.request.validated payloads=1, valid=0`
+    - `app.request.dropped No valid source files remained`
+  - 说明 Share Extension 接收/持久化成功，主 App 也醒来了，真正失败点是
+    App 端验证前源文件已消失。
+- 根因：
+  - `PhotoMemoAppRuntime.refreshExternalIntakeState()` 在 drain pending
+    shared requests 之前先运行 `cleanupOrphanedManagedContent`。
+  - 清理逻辑只保留 batch queue 已引用的文件，不保留 pending request 里的文件。
+  - 刚分享进来的 `ExternalIntake/<requestID>/...` 文件还没入队，就被误判为孤儿并删除。
+- 已修复：
+  - `refreshExternalIntakeState()` 顺序改为：
+    1. 更新默认配置
+    2. `flushExternalRequests()`
+    3. 再执行 orphan cleanup
+  - 这样新分享文件会先进入队列引用集合，再参与清理判断。
+  - 未触碰 Renderer、Export、底部边框布局/字体/图标/输出形式。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 用户重新从 Apple Photos 分享 1 张 JPEG 后，设备诊断显示：
+    - `app.request.validated payloads=1, valid=1`
+    - `app.enqueue.created tasks=1`
+  - 队列 job `DFBAF8ED-C460-4629-89AC-4423A8B4C5B7` 为 `completed`，
+    且写入了 `savedAssetIdentifier`，目标相册为 `🐣整理水印相册`。
+- 仍需后续单独处理：
+  - JPEG 单张处理太快，Live Activity 可能只留下 terminal payload，不一定形成可见持续进度。
+  - 旧任务里曾记录 `liveActivity.request.failed`：
+    `com.apple.ActivityKit.ActivityAuthorization / 7: Target is not foreground`。
+  - 这属于 ActivityKit 可见性/启动时机问题，应作为下一条独立 follow-up，
+    不再和“没有输出”的根因混在一起。
+
+## 2026-06-29 Share Handoff Fallback And MVP Preview Width
+
+- 用户基于新截图反馈：
+  - Share 后弹出 `照片已经接收 / 但系统这次没有把处理交给 PhotoMemo`。
+  - 说明扩展已经接收并保存了图片，但主 App handoff 仍然失败。
+  - 配置界面预览左上区域 `记录 iPhone 17 Pro...` 过早出现省略号，实际右侧还有空间。
+- 根因更新：
+  - 构建产物 `PhotoMemoiOSMVP.app/Info.plist` 已确认包含：
+    `CFBundleURLTypes -> photomemo`。
+  - `PhotoMemoShareExtension.appex` 也已正确嵌入 MVP App。
+  - 因此这次不是 URL scheme 缺失，而是 `extensionContext.open(photomemo://share)`
+    在该 Share 上下文中返回失败。
+- 已修复：
+  - `requestMainAppRefresh()` 保留官方 `extensionContext.open` 作为第一路径。
+  - 如果第一路径失败，新增 responder-chain fallback 再尝试打开 `photomemo://share`。
+  - 原有 handoff 失败重试界面保留，作为最后可见兜底。
+  - iOS MVP 配置预览的左上文本区域从渲染规格的窄宽度局部放宽到 Logo 前的安全空间，
+    减少不必要省略号。
+  - 该宽度调整只影响配置预览，不改变真实导出边框。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 仍需用户真机观察：
+  - 从 Apple Photos 重新分享一张照片，确认 handoff 不再停在失败界面。
+  - 确认新任务进度出现。
+  - 确认左上预览文本不再过早省略。
+
+## 2026-06-29 Share Handoff And Live Activity Visibility Fix
+
+- 用户澄清：
+  - 截图里看到的 Live Activity 是前面添加的任务，不是刚刚添加的新任务。
+  - 也就是说问题不是单纯“新任务完成太快”，而是新 Share 动作可能没有产生新的可见进度。
+- 根因定位：
+  - Share Extension 已经能持久化分享进来的图片。
+  - 但 `persistIncomingItems()` 在调用 `requestMainAppRefresh()` 后丢弃了返回值。
+  - 如果系统这次没有真的打开 `photomemo://share` 对应的 MVP 主 App，扩展仍然会
+    `completeRequest` 并消失。
+  - 这种情况下主 App 不会 drain `ExternalPhotoIntakeStore`，因此不会有新队列、新
+    Live Activity 或新输出。
+- 已修复：
+  - Share Extension 现在必须确认主 App handoff 成功后才关闭。
+  - handoff 失败时，会恢复到已有的 `重新交给 PhotoMemo` 可见重试状态。
+  - Live Activity driver 增加最小可见窗口，避免新 job 很快进入终态时卡片被立即结束。
+  - 若终态 payload 到达时还没有对应活动卡片，driver 会尝试创建一个短暂可见的终态
+    Live Activity，而不是静默记录。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+- 仍需用户真机观察：
+  - 从 Apple Photos 分享一张新照片，确认看到的是新任务进度。
+  - 若 handoff 偶发失败，确认 Share Sheet 不再直接消失，而是显示重试入口。
+
+## 2026-06-29 Notification Progress Model Simplification
+
+- 用户追问：
+  - 发出去的任务似乎不能实时更新在普通通知栏。
+  - 多层通知栏里展示进度是否合理。
+- 判断：
+  - 普通 Notification Center 不应该作为实时进度面。
+  - Apple 风格更合理的模型是：
+    - Live Activity / 锁屏 / 灵动岛承载持续进度。
+    - 普通通知只提示“已接收 / 已完成 / 需要处理”。
+  - 继续对 `raw / imported / rendering / saving` 阶段发本地通知，会导致通知中心堆叠，看起来像多层通知日志。
+- 已修复：
+  - `BatchQueueNotifications.deliverProgressNotificationIfNeeded(...)` 改为不再发送阶段型本地通知。
+  - 队列任务进度仍会正常更新，Live Activity payload 仍跟随队列状态刷新。
+  - 起始通知和最终结果通知保留。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 仍需用户真机观察：
+  - 重新 Share 一张照片，确认普通通知中心不再出现阶段堆叠。
+  - 确认实时进度主要显示在 Live Activity 上。
+
+## 2026-06-29 Live Activity Contrast Fix
+
+- 用户基于锁屏截图反馈：
+  - Live Activity 有进度，但状态正文颜色几乎看不见。
+  - 截图中标题和百分比可见，`处理完成 · IMG_9927.jpg` 一行明显过暗。
+- 根因定位：
+  - Lock Screen 单任务视图里，任务标题 `09:34（1张）` 使用 `.secondary`。
+  - 状态正文使用 `.tertiary`。
+  - 在深色壁纸和通知中心磨砂背景上，`.tertiary` 被系统压到接近不可见。
+- 已修复：
+  - `PhotoMemoLiveActivityPresentation.swift` 中单任务锁屏状态正文从
+    `.tertiary` 提升为 `.secondary`。
+  - 未改 Live Activity 布局、进度模型、通知调度、Renderer 或 Export。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 仍需用户真机观察：
+  - 重新 Share 一张图片，让新的 Live Activity 状态刷新，确认状态正文在当前黑色壁纸上可读。
+
+## 2026-06-29 MVP Preview And Inline Editor Polish
+
+- 用户基于 iPhone 截图反馈：
+  - 右上拍摄参数汇总适当缩小效果不错。
+  - 左上 Recorder 区域被一起缩小后显得不对，应该恢复接近之前字号。
+  - 编辑栏内自定义字段与模块之间间距偏大。
+  - 当模块出现在最左侧时，用户无法点击模块前方插入光标输入自定义短语。
+- 已修复：
+  - iOS MVP 预览的左上文字使用更高的最小缩放比例：
+    - primary `0.94`
+    - secondary `0.90`
+  - 右上拍摄参数仍保留更强的缩小能力：
+    - primary `0.72`
+    - secondary `0.82`
+  - 编辑栏横向内容流收紧：
+    - HStack spacing 从 `6` 收为 `3`
+    - chip padding 从 `8/6` 收为 `7/5`
+    - 尾部空短语输入槽从 `132pt` 收为 `58pt`
+  - 模块位于最左侧时，前方会出现一个小号“短语”输入目标，输入内容会插入到模块之前。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` connected-device Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 仍需用户真机观察：
+  - 左上 Recorder 是否恢复到满意的字号感。
+  - 右上拍摄参数是否仍然完整。
+  - 在区域 C 这类“模块在最左侧”的场景，点击模块前方输入短语是否顺手。
+
 ## 2026-06-29 MVP Content Builder Order And Notification Update
 
 - 用户反馈：

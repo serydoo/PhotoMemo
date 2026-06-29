@@ -207,6 +207,13 @@ final class PhotoMemoShareExtensionIntakeService {
         }
 
         let requestID = UUID()
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.request.created",
+            message:
+                "providers=\(providers.count), itemProviders=\(itemProviders.count)",
+            requestID:
+                requestID
+        )
         var managedItems:
             [ExternalPhotoIntakeItem] = []
         var seenSourceKeys = Set<String>()
@@ -239,17 +246,43 @@ final class PhotoMemoShareExtensionIntakeService {
                 managedItems.append(
                     importRecord.item
                 )
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.item.imported",
+                    message:
+                        importRecord.item.originalFileName,
+                    requestID:
+                        requestID
+                )
 
             case .skippedDuplicate:
                 skippedCount += 1
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.item.skipped",
+                    message: "duplicate",
+                    requestID:
+                        requestID
+                )
 
             case .skippedUnsupported:
                 skippedCount += 1
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.item.skipped",
+                    message: "unsupported",
+                    requestID:
+                        requestID
+                )
 
             case .failed(let failureContext):
                 failedCount += 1
                 lastFailureContext =
                     failureContext
+                PhotoMemoShareDiagnostics.record(
+                    stage: "extension.item.failed",
+                    message:
+                        failureContext.stage.title,
+                    requestID:
+                        requestID
+                )
                 logFailureContext(
                     failureContext,
                     prefix:
@@ -384,6 +417,14 @@ final class PhotoMemoShareExtensionIntakeService {
 
         PhotoMemoShareIntakeLog.notice(
             "persistSharedItems result: persistedRequestID=\(request.id.uuidString)"
+        )
+
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.request.persisted",
+            message:
+                "requestID=\(request.id.uuidString), imported=\(managedItems.count)",
+            requestID:
+                request.id
         )
 
         let result =

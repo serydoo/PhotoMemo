@@ -138,7 +138,7 @@ private struct PhotoMemoLiveActivityLockScreenView:
                     statusLine(for: context)
                 )
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
                 .lineLimit(2)
 
                 pipelineView(
