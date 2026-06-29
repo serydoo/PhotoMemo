@@ -3,13 +3,21 @@ import SwiftUI
 
 struct PhotoMemoiOSTemporaryEntryView: View {
 
+    @ObservedObject
+    var backgroundStatusService:
+        PhotoMemoBackgroundStatusService
+
     @AppStorage
     private var selectedEntry: String
 
     init(
+        backgroundStatusService:
+            PhotoMemoBackgroundStatusService,
         storageKey: String = "photomemo.ios.temporaryEntry",
         defaultEntry: String = "configurationCenter"
     ) {
+        self.backgroundStatusService =
+            backgroundStatusService
         _selectedEntry =
             AppStorage(
                 wrappedValue: defaultEntry,
@@ -39,7 +47,10 @@ struct PhotoMemoiOSTemporaryEntryView: View {
     private var content: some View {
         switch selectedEntry {
         case "mvpTest":
-            PhotoMemoiOSMVPTestView()
+            PhotoMemoiOSMVPTestView(
+                backgroundStatusService:
+                    backgroundStatusService
+            )
         default:
             ConfigurationCenteriOSView()
         }

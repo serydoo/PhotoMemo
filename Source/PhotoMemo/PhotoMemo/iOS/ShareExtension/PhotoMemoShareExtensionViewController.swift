@@ -99,6 +99,12 @@ final class PhotoMemoShareExtensionViewController:
     private var previewImageViews:
         [UIImageView] = []
 
+    private var previewCardSizeConstraints:
+        [UIView: (
+            width: NSLayoutConstraint,
+            height: NSLayoutConstraint
+        )] = [:]
+
     private var selectedPreviewIndex = 0
 
     private var viewState: ViewState = .confirming
@@ -299,7 +305,7 @@ private extension PhotoMemoShareExtensionViewController {
             false
         previewCardStack.axis = .horizontal
         previewCardStack.alignment = .center
-        previewCardStack.spacing = -14
+        previewCardStack.spacing = 10
 
         previewCaptionLabel.font =
             .preferredFont(
@@ -846,11 +852,11 @@ private extension PhotoMemoShareExtensionViewController {
                     for: result
                 )
             footerLabel.text =
-                "接下来会回到 PhotoMemo，继续完成生成和保存。"
+                "进度可以在 PhotoMemo 主 App 的处理进度中查看。"
             primaryButton.isEnabled =
                 false
             primaryButton.configuration?.title =
-                "即将完成"
+                "已接收"
             activityIndicator.stopAnimating()
 
             PhotoMemoShareIntakeLog.notice(
@@ -881,7 +887,7 @@ private extension PhotoMemoShareExtensionViewController {
                 )
             }
 
-            await playCompletionTransition()
+            await holdCompletionStateBeforeDismissal()
 
             extensionContext?
                 .completeRequest(
@@ -984,10 +990,10 @@ private extension PhotoMemoShareExtensionViewController {
                 )
             }
 
-            return "\(summaryParts.joined(separator: "，"))。处理完成后会写回系统相册。"
+            return "\(summaryParts.joined(separator: "，"))。PhotoMemo 已开始后台处理。"
         }
 
-        return "已接收 \(result.requestedCount) 张。处理完成后会写回系统相册。"
+        return "已接收 \(result.requestedCount) 张。PhotoMemo 已开始后台处理。"
     }
 
     @MainActor
@@ -1018,43 +1024,19 @@ private extension PhotoMemoShareExtensionViewController {
     }
 
     @MainActor
-    func playCompletionTransition() async {
+    func holdCompletionStateBeforeDismissal() async {
 
         UIImpactFeedbackGenerator(
             style: .soft
         )
         .impactOccurred()
 
-        return await withCheckedContinuation {
-            (
-                continuation:
-                    CheckedContinuation<Void, Never>
-            ) in
+        contentStack.transform = .identity
+        contentStack.alpha = 1
 
-            UIView.animate(
-                withDuration: 0.46,
-                delay: 0.08,
-                usingSpringWithDamping: 0.88,
-                initialSpringVelocity: 0.18,
-                options: [
-                    .curveEaseInOut,
-                    .beginFromCurrentState
-                ]
-            ) {
-                self.contentStack.transform =
-                    CGAffineTransform(
-                        translationX: 0,
-                        y: -self.view.bounds.height * 0.36
-                    )
-                    .scaledBy(
-                        x: 0.62,
-                        y: 0.62
-                    )
-                self.contentStack.alpha = 0.08
-            } completion: { _ in
-                continuation.resume()
-            }
-        }
+        try? await Task.sleep(
+            nanoseconds: 1_150_000_000
+        )
     }
 
     func requestMainAppRefresh(
@@ -1297,6 +1279,7 @@ private extension PhotoMemoShareExtensionViewController {
 
         previewCardViews.removeAll()
         previewImageViews.removeAll()
+        previewCardSizeConstraints.removeAll()
         selectedPreviewIndex = 0
 
         previewCardStack
@@ -1320,14 +1303,18 @@ private extension PhotoMemoShareExtensionViewController {
                 makePreviewCard(
                     index: index
                 )
-            previewCardStack
-                .addArrangedSubview(card.container)
             previewCardViews
                 .append(card.container)
             previewImageViews
                 .append(card.imageView)
         }
 
+        rebuildPreviewLayout(
+            using: Array(
+                repeating: nil,
+                count: count
+            )
+        )
         selectedPreviewIndex = 0
         updateSelectedPreviewCard(
             animated: false
@@ -1363,7 +1350,7 @@ private extension PhotoMemoShareExtensionViewController {
         imageView.layer.cornerRadius = 11
         imageView.layer.cornerCurve = .continuous
         imageView.backgroundColor =
-            .tertiarySystemFill
+            .clear
 
         container.addSubview(imageView)
 
@@ -1378,14 +1365,24 @@ private extension PhotoMemoShareExtensionViewController {
         container.isUserInteractionEnabled = true
         container.tag = index
 
-        NSLayoutConstraint.activate([
+        let widthConstraint =
             container.widthAnchor.constraint(
                 equalToConstant:
-                    sharedPhotoCount > 1 ? 116 : 132
-            ),
+                    sharedPhotoCount > 1 ? 116 : 164
+            )
+        let heightConstraint =
             container.heightAnchor.constraint(
                 equalToConstant: 158
-            ),
+            )
+        previewCardSizeConstraints[container] =
+            (
+                widthConstraint,
+                heightConstraint
+            )
+
+        NSLayoutConstraint.activate([
+            widthConstraint,
+            heightConstraint,
             imageView.topAnchor.constraint(
                 equalTo:
                     container.topAnchor
@@ -1458,14 +1455,14 @@ private extension PhotoMemoShareExtensionViewController {
                 card.transform =
                     isSelected
                     ? CGAffineTransform(
-                        scaleX: 1.06,
-                        y: 1.06
+                        scaleX: 1.045,
+                        y: 1.045
                     )
                     : .identity
                 card.layer.zPosition =
                     isSelected ? 10 : CGFloat(index)
                 card.alpha =
-                    isSelected ? 1 : 0.82
+                    isSelected ? 1 : 0.74
             }
         }
 
@@ -1501,6 +1498,246 @@ private extension PhotoMemoShareExtensionViewController {
             previewImageViews[index].image =
                 image
         }
+
+        rebuildPreviewLayout(
+            using: images
+        )
+    }
+
+    @MainActor
+    func rebuildPreviewLayout(
+        using images: [UIImage?]
+    ) {
+
+        previewCardStack
+            .arrangedSubviews
+            .forEach { view in
+                previewCardStack
+                    .removeArrangedSubview(view)
+                view.removeFromSuperview()
+            }
+
+        previewCardViews
+            .forEach { card in
+                card.removeFromSuperview()
+                card.transform = .identity
+            }
+
+        let count =
+            previewCardViews.count
+
+        previewCardStack.axis = .horizontal
+        previewCardStack.alignment = .center
+        previewCardStack.spacing =
+            count > 3 ? -18 : 10
+
+        guard count > 0 else {
+            return
+        }
+
+        if count == 1 {
+            let card =
+                previewCardViews[0]
+            setPreviewCard(
+                card,
+                size:
+                    previewSize(
+                        for: images.first ?? nil,
+                        fallback: CGSize(
+                            width: 184,
+                            height: 150
+                        )
+                    )
+            )
+            previewCardStack
+                .addArrangedSubview(card)
+            return
+        }
+
+        if count == 3,
+           let portraitIndex =
+            firstPortraitIndex(in: images),
+           landscapeIndexes(in: images).count >= 2 {
+            installPortraitWithStackedLandscapesLayout(
+                portraitIndex: portraitIndex,
+                landscapeIndexes:
+                    Array(
+                        landscapeIndexes(in: images)
+                        .prefix(2)
+                    )
+            )
+            return
+        }
+
+        for index in 0..<count {
+            let card =
+                previewCardViews[index]
+            setPreviewCard(
+                card,
+                size:
+                    previewSize(
+                        for:
+                            images.indices
+                            .contains(index)
+                            ? images[index]
+                            : nil,
+                        fallback:
+                            count > 3
+                            ? CGSize(
+                                width: 108,
+                                height: 148
+                            )
+                            : CGSize(
+                                width: 124,
+                                height: 154
+                            )
+                    )
+            )
+            previewCardStack
+                .addArrangedSubview(card)
+        }
+    }
+
+    @MainActor
+    func installPortraitWithStackedLandscapesLayout(
+        portraitIndex: Int,
+        landscapeIndexes: [Int]
+    ) {
+
+        let portraitCard =
+            previewCardViews[portraitIndex]
+        setPreviewCard(
+            portraitCard,
+            size:
+                CGSize(
+                    width: 104,
+                    height: 154
+                )
+        )
+        previewCardStack
+            .addArrangedSubview(portraitCard)
+
+        let stack =
+            UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints =
+            false
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 8
+
+        landscapeIndexes
+            .forEach { index in
+                let card =
+                    previewCardViews[index]
+                setPreviewCard(
+                    card,
+                    size:
+                        CGSize(
+                            width: 156,
+                            height: 72
+                        )
+                )
+                stack.addArrangedSubview(card)
+            }
+
+        previewCardStack
+            .addArrangedSubview(stack)
+
+        let remainingIndexes =
+            previewCardViews.indices
+            .filter {
+                $0 != portraitIndex
+                && !landscapeIndexes.contains($0)
+            }
+
+        remainingIndexes
+            .forEach { index in
+                let card =
+                    previewCardViews[index]
+                setPreviewCard(
+                    card,
+                    size:
+                        CGSize(
+                            width: 96,
+                            height: 132
+                        )
+                )
+                previewCardStack
+                    .addArrangedSubview(card)
+            }
+    }
+
+    func previewSize(
+        for image: UIImage?,
+        fallback: CGSize
+    ) -> CGSize {
+
+        guard let image,
+              image.size.width > 0,
+              image.size.height > 0 else {
+            return fallback
+        }
+
+        return image.size.width >= image.size.height
+            ? CGSize(
+                width: 158,
+                height: 104
+            )
+            : CGSize(
+                width: 104,
+                height: 154
+            )
+    }
+
+    func firstPortraitIndex(
+        in images: [UIImage?]
+    ) -> Int? {
+
+        images
+            .enumerated()
+            .first { _, image in
+                guard let image else {
+                    return false
+                }
+
+                return image.size.height
+                    > image.size.width
+            }?
+            .offset
+    }
+
+    func landscapeIndexes(
+        in images: [UIImage?]
+    ) -> [Int] {
+
+        images
+            .enumerated()
+            .compactMap { index, image in
+                guard let image else {
+                    return nil
+                }
+
+                return image.size.width
+                    >= image.size.height
+                    ? index
+                    : nil
+            }
+    }
+
+    @MainActor
+    func setPreviewCard(
+        _ card: UIView,
+        size: CGSize
+    ) {
+
+        previewCardSizeConstraints[card]?
+            .width
+            .constant =
+            size.width
+        previewCardSizeConstraints[card]?
+            .height
+            .constant =
+            size.height
     }
 
     func loadPreviewImages(

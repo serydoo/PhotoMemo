@@ -8,6 +8,10 @@ struct PhotoMemoiOSMVPTestView: View {
     @Environment(\.scenePhase)
     private var scenePhase
 
+    @ObservedObject
+    private var backgroundStatusService:
+        PhotoMemoBackgroundStatusService
+
     @StateObject
     private var session = ConfigurationSession()
 
@@ -93,6 +97,15 @@ struct PhotoMemoiOSMVPTestView: View {
     @State
     private var pendingActivationPresetTitle = ""
 
+    @State
+    private var isEditingMemoryPresetTitle = false
+
+    @State
+    private var memoryPresetTitleDraft = ""
+
+    @FocusState
+    private var memoryPresetTitleFieldFocused: Bool
+
     @AppStorage("photomemo.mvp.moduleUsageCounts")
     private var moduleUsageCountsStorage = "{}"
 
@@ -100,6 +113,17 @@ struct PhotoMemoiOSMVPTestView: View {
 
     private let logoOptimizer =
         LogoAssetOptimizationService()
+
+    init(
+        backgroundStatusService:
+            PhotoMemoBackgroundStatusService
+    ) {
+        self._backgroundStatusService =
+            ObservedObject(
+                wrappedValue:
+                    backgroundStatusService
+            )
+    }
 
     var body: some View {
         NavigationStack {
@@ -208,6 +232,8 @@ struct PhotoMemoiOSMVPTestView: View {
             refreshShareDiagnostics()
         }
         .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
+            isEditingMemoryPresetTitle = false
+            memoryPresetTitleFieldFocused = false
             bootstrapDrafts()
         }
         .onChange(of: birthdayDate) { _, _ in
@@ -242,6 +268,15 @@ struct PhotoMemoiOSMVPTestView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
                     presetPicker
+                    Button {
+                        beginEditingMemoryPresetTitle()
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityLabel("编辑 Preset 名称")
 
                     Spacer(minLength: 0)
 
@@ -274,16 +309,46 @@ struct PhotoMemoiOSMVPTestView: View {
                     .accessibilityLabel("重置默认配置")
                 }
 
-                Text(activeConfigurationMessage)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                if isEditingMemoryPresetTitle {
+                    HStack(spacing: 8) {
+                        TextField(
+                            "Preset 名称",
+                            text: $memoryPresetTitleDraft
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        .font(.subheadline)
+                        .submitLabel(.done)
+                        .focused($memoryPresetTitleFieldFocused)
+                        .onSubmit {
+                            commitMemoryPresetTitle()
+                        }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("当前记忆对象摘要")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
+                        Button {
+                            commitMemoryPresetTitle()
+                        } label: {
+                            Image(systemName: "checkmark")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .accessibilityLabel("完成名称编辑")
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("当前记忆对象摘要")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+
+                        Spacer(minLength: 0)
+
+                        Text(activeConfigurationMessage)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
 
                     Text(session.currentConfigurationLabel)
                         .font(.headline.weight(.semibold))
@@ -295,6 +360,24 @@ struct PhotoMemoiOSMVPTestView: View {
                 }
             }
         }
+    }
+
+    private func beginEditingMemoryPresetTitle() {
+        memoryPresetTitleDraft = session.currentMemoryPresetTitle
+        isEditingMemoryPresetTitle = true
+
+        DispatchQueue.main.async {
+            memoryPresetTitleFieldFocused = true
+        }
+    }
+
+    private func commitMemoryPresetTitle() {
+        session.updateSelectedMemoryPresetTitle(
+            memoryPresetTitleDraft
+        )
+        activeConfigurationMessage = "有未保存修改"
+        isEditingMemoryPresetTitle = false
+        memoryPresetTitleFieldFocused = false
     }
 
     private var previewSection: some View {
@@ -322,7 +405,7 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var shareDiagnosticsSection: some View {
-        MVPCardSurface(title: "最近分享") {
+        MVPCardSurface(title: "处理进度") {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .center, spacing: 10) {
                     Image(systemName: shareDiagnosticsSymbolName)
@@ -352,7 +435,13 @@ struct PhotoMemoiOSMVPTestView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .accessibilityLabel("刷新最近分享状态")
+                    .accessibilityLabel("刷新处理进度")
+                }
+
+                if let snapshot =
+                    backgroundStatusService
+                    .currentSnapshot {
+                    shareProgressSummary(snapshot)
                 }
 
                 if !shareDiagnosticEvents.isEmpty {
@@ -398,6 +487,175 @@ struct PhotoMemoiOSMVPTestView: View {
                 }
             }
         }
+    }
+
+    private func shareProgressSummary(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Label(
+                    shareProgressTitle(snapshot),
+                    systemImage:
+                        shareProgressSymbolName(snapshot)
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(
+                    shareProgressTint(snapshot)
+                )
+
+                Spacer(minLength: 0)
+
+                Text(
+                    progressPercentText(snapshot)
+                )
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.secondary)
+            }
+
+            ProgressView(
+                value:
+                    clampedProgressFraction(snapshot)
+            )
+            .progressViewStyle(.linear)
+            .tint(
+                shareProgressTint(snapshot)
+            )
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(snapshot.statusMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
+
+                Spacer(minLength: 0)
+
+                if snapshot.overflowQueueCount > 0 {
+                    Button("清除历史") {
+                        backgroundStatusService
+                            .clearCompletedHistory()
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("清除已完成的处理历史")
+                }
+            }
+
+            if shareProgressShowsPipeline(snapshot) {
+                sharePipelineSteps(snapshot)
+            } else if !snapshot.queueLines.isEmpty {
+                shareQueueLines(snapshot)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    private func shareProgressShowsPipeline(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> Bool {
+
+        snapshot.overflowQueueCount == 0
+            && snapshot.queueLines.count <= 1
+    }
+
+    private func sharePipelineSteps(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> some View {
+
+        VStack(alignment: .leading, spacing: 7) {
+            ForEach(
+                Array(
+                    snapshot.pipelineSteps
+                        .enumerated()
+                ),
+                id: \.offset
+            ) { _, step in
+                HStack(spacing: 8) {
+                    Image(
+                        systemName:
+                            pipelineSymbolName(
+                                for: step.state
+                            )
+                    )
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(
+                        pipelineTint(
+                            for: step.state
+                        )
+                    )
+                    .frame(width: 16)
+
+                    Text(step.title)
+                        .font(
+                            step.state == .active
+                            ? .caption.weight(.semibold)
+                            : .caption
+                        )
+                        .foregroundStyle(
+                            step.state == .pending
+                            ? .secondary
+                            : .primary
+                        )
+
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func shareQueueLines(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> some View {
+
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(
+                Array(
+                    snapshot.queueLines
+                        .prefix(3)
+                        .enumerated()
+                ),
+                id: \.offset
+            ) { _, line in
+                HStack(spacing: 8) {
+                    Image(systemName: "photo.stack")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 16)
+
+                    Text(line)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            if snapshot.overflowQueueCount > 0 {
+                Text(
+                    "另有 \(snapshot.overflowQueueCount) 个队列"
+                )
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .padding(.leading, 24)
+            }
+        }
+        .padding(.top, 2)
     }
 
     private var editorCluster: some View {
@@ -455,13 +713,6 @@ struct PhotoMemoiOSMVPTestView: View {
                             draft.normalizeTrailingTextInput()
                         }
                         refreshPreview(for: region)
-                    },
-                    onAddSeparator: { separator in
-                        updateDraft(for: region) { draft in
-                            draft.appendComposedItem(
-                                .separator(separator)
-                            )
-                        }
                     },
                     onShowModules: {
                         activeModuleRegion = region
@@ -840,6 +1091,7 @@ struct PhotoMemoiOSMVPTestView: View {
         case .slotB:
             return MVPEditorDraft(
                 items: [
+                    .text("记录于"),
                     moduleItem(.captureDate),
                     moduleItem(.captureTime)
                 ]
@@ -1438,15 +1690,15 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var shareDiagnosticsHeadline: String {
+        if let snapshot =
+            backgroundStatusService
+            .currentSnapshot {
+            return shareProgressTitle(snapshot)
+        }
+
         guard let event =
             latestShareDiagnosticEvent else {
             return "等待下一次分享"
-        }
-
-        if shareDiagnosticEvents.contains(where: {
-            $0.stage == "liveActivity.request.created"
-        }) {
-            return "进度已交给系统"
         }
 
         if shareDiagnosticEvents.contains(where: {
@@ -1470,6 +1722,12 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var shareDiagnosticsSubheadline: String {
+        if let snapshot =
+            backgroundStatusService
+            .currentSnapshot {
+            return snapshot.statusMessage
+        }
+
         guard latestShareDiagnosticEvent != nil else {
             return "分享一次照片后，这里会显示接收、入队和进度创建结果。"
         }
@@ -1487,7 +1745,7 @@ struct PhotoMemoiOSMVPTestView: View {
            !shareDiagnosticEvents.contains(where: {
                $0.stage == "app.enqueue.created"
            }) {
-            return "系统没有完成自动唤起，请点重试或直接打开 PhotoMemo。"
+            return "原图已经接收，等待 PhotoMemo 接力处理。"
         }
 
         if shareDiagnosticEvents.contains(where: {
@@ -1497,6 +1755,118 @@ struct PhotoMemoiOSMVPTestView: View {
         }
 
         return "PhotoMemo 正在接收这次分享。"
+    }
+
+    private func shareProgressTitle(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> String {
+        switch snapshot.presentationState {
+        case .active:
+            return "\(snapshot.title) 正在处理"
+        case .needsAttention:
+            return "\(snapshot.title) 需要查看"
+        case .completed:
+            return "\(snapshot.title) 已完成"
+        }
+    }
+
+    private func shareProgressSymbolName(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> String {
+        switch snapshot.presentationState {
+        case .active:
+            return "arrow.trianglehead.2.clockwise.circle.fill"
+        case .needsAttention:
+            return "exclamationmark.triangle.fill"
+        case .completed:
+            return "checkmark.circle.fill"
+        }
+    }
+
+    private func shareProgressTint(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> Color {
+        switch snapshot.presentationState {
+        case .active:
+            return .blue
+        case .needsAttention:
+            return .orange
+        case .completed:
+            return .green
+        }
+    }
+
+    private func clampedProgressFraction(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> Double {
+        min(
+            max(
+                snapshot.progressFraction,
+                0
+            ),
+            1
+        )
+    }
+
+    private func progressPercentText(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> String {
+        let percent =
+            Int(
+                round(
+                    clampedProgressFraction(snapshot)
+                    * 100
+                )
+            )
+
+        return "\(percent)%"
+    }
+
+    private func pipelineSymbolName(
+        for state:
+            PhotoMemoBackgroundPipelineStepState
+    ) -> String {
+
+        switch state {
+
+        case .pending:
+            return "circle"
+
+        case .active:
+            return "arrow.trianglehead.2.clockwise.circle.fill"
+
+        case .completed:
+            return "checkmark.circle.fill"
+
+        case .needsAttention:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private func pipelineTint(
+        for state:
+            PhotoMemoBackgroundPipelineStepState
+    ) -> Color {
+
+        switch state {
+
+        case .pending:
+            return .secondary
+
+        case .active:
+            return .blue
+
+        case .completed:
+            return .green
+
+        case .needsAttention:
+            return .orange
+        }
     }
 
     private var shareDiagnosticDisplayEvents:
@@ -1522,7 +1892,7 @@ struct PhotoMemoiOSMVPTestView: View {
                 seenKeys.insert(key)
                 return true
             }
-            .prefix(5)
+            .prefix(3)
             .map { $0 }
     }
 
@@ -1538,7 +1908,7 @@ struct PhotoMemoiOSMVPTestView: View {
 
         case "extension.handoff.unconfirmed",
              "extension.handoff.failed":
-            return "等待交给 PhotoMemo"
+            return "等待 PhotoMemo 接力"
 
         case "app.drain":
             return "检查待处理照片"
@@ -1575,10 +1945,10 @@ struct PhotoMemoiOSMVPTestView: View {
 
         case "extension.handoff.unconfirmed",
              "extension.handoff.failed":
-            return "系统没有完成自动唤起，请重试或直接打开 PhotoMemo。"
+            return "原图已接收，主程序会在可用时继续处理。"
 
         case "app.drain":
-            return "正在读取最近分享进来的照片。"
+            return "正在读取刚接收的照片。"
 
         case "app.request.validated":
             return "照片可处理，准备加入后台队列。"
@@ -1601,6 +1971,12 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var shareDiagnosticsSymbolName: String {
+        if let snapshot =
+            backgroundStatusService
+            .currentSnapshot {
+            return shareProgressSymbolName(snapshot)
+        }
+
         if shareDiagnosticEvents.contains(where: {
             $0.stage == "liveActivity.request.created"
         }) {
@@ -1620,6 +1996,12 @@ struct PhotoMemoiOSMVPTestView: View {
     }
 
     private var shareDiagnosticsTint: Color {
+        if let snapshot =
+            backgroundStatusService
+            .currentSnapshot {
+            return shareProgressTint(snapshot)
+        }
+
         if shareDiagnosticEvents.contains(where: {
             $0.stage == "liveActivity.request.created"
         }) {
@@ -2081,7 +2463,7 @@ private struct MVPPreviewCard: View {
                 secondary: timeText,
                 spec: spec,
                 barHeight: height,
-                emphasizesPrimary: true,
+                emphasizesPrimary: false,
                 primaryMinimumScaleFactor: 0.94,
                 secondaryMinimumScaleFactor: 0.90
             )
@@ -2304,7 +2686,6 @@ private struct MVPRegionEditorCard: View {
     let onPrependText: (String) -> Void
     let onAppendText: (String) -> Void
     let onRemoveItem: (MVPContentItem) -> Void
-    let onAddSeparator: (String) -> Void
     let onShowModules: () -> Void
 
     var body: some View {
@@ -2391,22 +2772,6 @@ private struct MVPRegionEditorCard: View {
                     )
                     .stroke(Color.primary.opacity(0.08))
                 )
-
-                HStack(spacing: 8) {
-                    Text("分隔符")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    ForEach(["·", "|", "/"], id: \.self) { separator in
-                        Button(separator) {
-                            onAddSeparator(separator)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.mini)
-                    }
-
-                    Spacer(minLength: 0)
-                }
 
                 if !resolvedText.isEmpty {
                     VStack(alignment: .leading, spacing: 3) {
@@ -2579,6 +2944,12 @@ private struct MVPScrollOffsetPreferenceKey:
 }
 
 #Preview("iOS MVP 测试") {
-    PhotoMemoiOSMVPTestView()
+    let runtime =
+        PhotoMemoAppRuntime()
+
+    PhotoMemoiOSMVPTestView(
+        backgroundStatusService:
+            runtime.backgroundStatusService
+    )
 }
 #endif

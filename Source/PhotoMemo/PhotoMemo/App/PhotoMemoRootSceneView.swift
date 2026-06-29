@@ -81,6 +81,8 @@ struct PhotoMemoRootSceneView: View {
     private var rootConfigurationCenter: some View {
         #if os(iOS)
         PhotoMemoiOSTemporaryEntryView(
+            backgroundStatusService:
+                runtime.backgroundStatusService,
             storageKey: temporaryEntryStorageKey,
             defaultEntry: temporaryEntryDefault
         )

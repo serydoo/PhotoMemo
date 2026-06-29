@@ -160,7 +160,7 @@ extension TemplateItem {
     static let captureDateLine = TemplateItem(
         type: .variable,
         name: "Capture Date Line",
-        value: "拍摄于{{capture_date_display}}"
+        value: "记录于{{capture_date_display}}"
     )
 
     static let captureDateCompact = TemplateItem(

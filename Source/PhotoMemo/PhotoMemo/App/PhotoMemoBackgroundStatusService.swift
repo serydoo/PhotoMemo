@@ -162,6 +162,23 @@ final class PhotoMemoBackgroundStatusService:
         bind()
         refreshSnapshot()
     }
+
+    func clearCompletedHistory(
+        preservingCurrentJob: Bool = true
+    ) {
+
+        let preservedJobID =
+            preservingCurrentJob
+            ? currentSnapshot?.jobID
+            : nil
+
+        batchQueueStore
+            .clearCompletedExternalJobHistory(
+                preserving: preservedJobID
+            )
+
+        refreshSnapshot()
+    }
 }
 private extension PhotoMemoBackgroundStatusService {
 

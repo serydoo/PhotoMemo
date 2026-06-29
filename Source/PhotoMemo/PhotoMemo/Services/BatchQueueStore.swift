@@ -255,6 +255,40 @@ final class BatchQueueStore: ObservableObject {
             in: latestFailureSummary.jobID
         )
     }
+
+    func clearCompletedExternalJobHistory(
+        preserving preservedJobID: UUID?
+    ) {
+
+        let originalCount =
+            jobs.count
+
+        jobs =
+            jobs.filter { job in
+                if job.id == preservedJobID {
+                    return true
+                }
+
+                guard job.launchSource != .inAppPreview else {
+                    return true
+                }
+
+                guard job.tasks.allSatisfy({
+                    $0.phase.isTerminal
+                }) else {
+                    return true
+                }
+
+                return job.hasRetryableFailures
+                    || job.failedTaskCount > 0
+            }
+
+        guard jobs.count != originalCount else {
+            return
+        }
+
+        persistJobs()
+    }
 }
 
 // MARK: - Internal Coordination

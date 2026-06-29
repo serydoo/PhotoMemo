@@ -1,5 +1,188 @@
 # PhotoMemo Handoff
 
+## 2026-06-29 Final Export Edge Guard And Share Confirmation Polish
+
+- 用户反馈：
+  - 最新真机输出仍能看到竖图左侧黑边。
+  - Share 后确认页关闭时，内容整体向左上角缩小淡出，视觉很别扭。
+  - 希望确认页短暂停留，明确说明已经开始处理，进度可在主 App 查看，然后自动关闭。
+  - 多图预览希望更像系统级轻量预览，不要图片边框；少量横竖图应有更自然排布。
+- 像素核对：
+  - 旧输出 `IMG_0015(1) 2.JPG` 为 `4536 x 8817`。
+  - 其中原照片区域高度 `8064`。
+  - 左侧 `x = 0...50` 共 `51 px` 在照片区域为近黑色。
+  - 白色信息条区域不含黑边，因此继续判定为照片层/最终合成图问题，不是底部信息条问题。
+- 已落实：
+  - `RecordCardExportService` 在 `ImageRenderer` 生成最终 `CGImage` 后，增加最终导出图防护。
+  - 防护只采样照片区域，保守检测窄黑边；命中后裁掉左侧黑带，将照片区域恢复到原输出宽度。
+  - 底部信息条单独裁出并原样复制回去，避免影响已锁定的边框效果。
+  - 新增 `PhotoImportServiceTests/correctsRenderedPhotoAreaEdgeWithoutChangingInformationBar`。
+  - Share Extension 成功态不再执行左上角缩小/淡出动画。
+  - 成功态改为静态短暂停留约 1.15 秒后自动关闭。
+  - 成功文案改为“已接收，PhotoMemo 已开始后台处理”，并提示可在主 App `处理进度` 查看。
+  - Share Extension 预览缩略图去掉灰色卡片边框感。
+  - 单张按横竖比例显示；三张若包含一张竖图和两张横图，则竖图在左、两张横图在右侧上下排列；更多图保持轻微堆叠。
+- 特意未改：
+  - Immers White 底部边框高度、文字布局、字号、Logo、EXIF 格式。
+  - Metadata / Photo Library 保存逻辑。
+  - 主 App 配置中心架构。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+  - `PhotoMemoTests/PhotoImportServiceTests` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
+  - 已覆盖安装并启动到 iPhone7
+    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+- 下一轮真机重点：
+  - 用同一张竖图重新 Share 生成新图，确认照片区域左侧 51px 黑边消失。
+  - 测 1 张、2 张、3 张混合横竖图的 Share 确认预览。
+  - 确认 Share 成功页不再向左上角收缩，而是稳定显示后自动关闭。
+
+## 2026-06-29 Portrait Left Edge Artifact Guard
+
+- 用户提供竖图输出样张 `IMG_9911(1).JPG`，反馈照片左侧隐约有黑色竖线。
+- 像素核对：
+  - 样张尺寸：`4536 x 8817`
+  - 原照片区域高度：`8064`
+  - 左侧 `x = 0...50` 共 `51 px` 在照片区域接近纯黑。
+  - 底部信息条区域左侧为白色，没有黑条。
+  - 因此问题属于导入显示图/照片层，不属于底部信息条或边框几何。
+- 用户随后补充原图/输出图：
+  - 原图：`IMG_0015.jpg`，尺寸 `4536 x 8064`
+  - 输出：`IMG_0015(1).JPG`，尺寸 `4536 x 8817`
+  - 原图左侧没有黑边，输出照片区域左侧新增 `51 px` 纯黑带。
+  - 输出 `x = 51` 的内容与原图 `x = 0` 基本对应，说明照片内容整体被向右偏移。
+- 根因方向：
+  - 普通 JPEG 之前走 `PlatformImage(data:)`。
+  - 在 SwiftUI `ImageRenderer` 导出时，这类 UIKit/AppKit 解码图可能产生边界绘制偏移。
+  - 应优先让普通图片也走 ImageIO，生成方向已烘焙的 `CGImage` 后再交给 renderer。
+- 已修复：
+  - `PhotoImportService.loadDisplayImage(...)` 对非 RAW 图片优先调用
+    `imageIODisplayImage(from:)`。
+  - `PlatformImage.removingPhotoMemoLeftEdgeArtifact()` 检测窄黑边。
+  - 仅在左边缘为近纯黑、贯穿至少 96% 采样高度、宽度小于 2% 且不超过 96px、
+    后续列明显非黑时才触发。
+  - 触发后裁掉左侧黑边，并将剩余画面轻微横向铺回原尺寸，保持 renderer 输出尺寸不变。
+  - `PhotoImportService.importPhotoSync(...)` 在导入显示图后应用该保护。
+  - 新增 `PhotoImportServiceTests/removesNarrowBlackLeftEdgeArtifact`。
+- 特意未改：
+  - Immers White 底部信息条、字号、布局、边框高度。
+  - 原图文件、EXIF 元数据写入逻辑、Photo Library 保存逻辑。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoTests/PhotoImportServiceTests` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+- 下一轮真机重点：
+  - 用同一张竖图重新 Share 生成，确认照片区域左侧黑条消失。
+  - 注意这是导入后生成新图的修复，已生成的旧图不会被回写修改。
+
+## 2026-06-29 iOS MVP Configuration Surface Compression
+
+- 用户反馈：
+  - `记忆档案` 的 Preset 选择旁边需要一个可编辑按钮，用于自定义名称。
+  - `当前记忆对象摘要` 文字希望上提并压缩空间。
+  - `处理进度` 中历史队列溢出如 `另有40个队列` 需要可清理，但不影响当前进度。
+  - ABCD 四个自定义区域中的分隔符快捷行占空间，用户可以自己输入分隔符。
+- 已落实：
+  - `PhotoMemoiOSMVPTestView.profileSection` 在 Preset picker 旁新增 pencil 按钮。
+  - 点击后显示 inline `TextField`，提交时调用
+    `ConfigurationSession.updateSelectedMemoryPresetTitle(...)`。
+  - `当前记忆对象摘要` 与 `activeConfigurationMessage` 合并到同一摘要行，减少一行垂直占用。
+  - `处理进度` 在出现 overflow queue 时，进度条下方右侧显示 `清除历史`。
+  - `BatchQueueStore.clearCompletedExternalJobHistory(preserving:)` 只清除：
+    - 外部 Share 来源
+    - 已终态
+    - 没有失败待处理
+    - 且不是当前显示队列
+  - `PhotoMemoBackgroundStatusService.clearCompletedHistory(...)` 暴露给 UI 使用。
+  - `MVPRegionEditorCard` 移除固定分隔符快捷行，保留组合结果展示。
+- 特意未改：
+  - renderer / border / export / metadata / Share Extension / Photo Library。
+  - 已保存配置的内容结构和分隔符 item 支持；只是去掉 MVP 编辑卡上的快捷按钮行。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+- 下一轮真机重点：
+  - Preset 名称编辑、保存、切换后显示是否稳定。
+  - `清除历史` 是否只移除历史 overflow，不影响当前/等待/失败队列。
+  - ABCD 编辑卡高度是否明显收紧，组合结果是否仍实时显示。
+
+## 2026-06-29 iOS MVP Processing Progress Panel
+
+- 用户反馈：
+  - 现阶段系统状态栏 / Live Activity 不够可信，Share 后需要在主 App 内直观看见是否正在处理。
+  - 如果结束时间估不准，可以先展示进程；尤其要避免用户看不见 App 是否在工作。
+  - 多个队列时，每行展示一个队列，命名应包含任务时间和图片张数。
+  - 单个队列时保留 5 个处理进程。
+  - 完成后主 App 模块也要更新，不应只依赖系统通知。
+  - 模块标题不应再叫 `最近分享`。
+- 已落实：
+  - iOS MVP 主界面模块标题改为 `处理进度`。
+  - `PhotoMemoiOSMVPTestView` 直接观察
+    `PhotoMemoBackgroundStatusService.currentSnapshot`。
+  - 单队列展示 5 步 Pipeline：
+    `接收照片 / 读取信息 / 生成卡片 / 写入图库 / 完成`。
+  - 多队列展示最多 3 行 queue lines，继续使用
+    `HH:mm（X张）` / `昨天 HH:mm（X张）` 等任务标题。
+  - 完成态标题改为类似 `15:20（2张）已完成`。
+  - 诊断事件从 5 条收敛到 3 条，作为辅助记录，不再压过进度卡。
+  - `extension.handoff.unconfirmed` / `extension.handoff.failed` 在主界面不再写成阻塞失败，
+    改为“原图已接收，等待 PhotoMemo 接力处理”。
+- 特意未改：
+  - renderer / border / export / metadata / Share Extension / Photo Library 管线。
+  - 背景队列估时算法，仅使用现有 `remainingTimeText` 和
+    `PhotoMemoBackgroundStatusService` 快照。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+- 下一轮真机重点：
+  - Share 1 张快图，确认主 App 中 `处理进度` 最终留在完成态。
+  - Share 2-3 张照片，确认仍显示单队列 Pipeline，而不是误拆成多个任务。
+  - 连续 Share 多批照片，确认最多 3 行队列摘要和 overflow 文案。
+
+## 2026-06-29 Immers White Landscape Cluster Recalibration
+
+- 用户提供新一轮横图/竖图三件套：
+  - 原图
+  - MVP 生成结果
+  - 目标效果图
+- 像素核对：
+  - 横图原图 `4032 x 2268`，MVP/目标输出 `4032 x 2779`，底部白边均为
+    `511 px`。
+  - 竖图原图 `4536 x 8064`，MVP/目标输出 `4536 x 8817`，底部白边均为
+    `753 px`。
+  - 白边高度已经正确，本轮未改。
+- 关键差异：
+  - 横图真实 renderer 的右侧文字起点约 `x = 61.7%`。
+  - 目标/冻结规格期望横图右侧文字起点约 `x = 69.6%`。
+  - 竖图右侧 cluster 已基本按 portrait spec 工作。
+  - MVP 样张中间红章来自当前保存的自定义 Logo 配置；目标图灰 Apple 是默认 fallback，
+    这属于配置状态差异，不是 renderer 几何差异。
+- 已修正：
+  - `ImmersWhiteRenderer.layout(for: .landscape)` 同步到
+    `RendererConstants.CompactInformationBar.landscape`：
+    - right text start `~0.696`
+    - divider center `~0.675`
+    - logo center `~0.636`
+  - `TemplateItem.captureDateLine` 改为
+    `记录于{{capture_date_display}}`。
+  - MVP 默认 Slot B 改为 `记录于 + 日期 + 时间`。
+  - MVP 预览左主文字不再额外 `1.08x` 放大/加粗，减少预览和真实导出差异。
+  - `ImmersWhiteRendererLayoutTests` 增加 landscape anchor 断言。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoTests/ImmersWhiteRendererLayoutTests` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+- 真机注意：
+  - 若 iPhone 上仍显示红章或旧时间顺序，需要在 MVP 配置里重置默认配置或重新保存生效配置；
+    已保存配置不会被代码默认值强制覆盖。
+
 ## 2026-06-29 Share Deferred Handoff And Result Notification
 
 - 用户确认方向：

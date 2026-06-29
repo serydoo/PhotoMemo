@@ -147,6 +147,7 @@ final class PhotoImportService {
                 from: url,
                 sourceInfo: sourceInfo
             )
+            .removingPhotoMemoLeftEdgeArtifact()
 
         return SelectedPhoto(
             sourceURL: url,
@@ -210,11 +211,18 @@ final class PhotoImportService {
             )
         }
 
+        if let image =
+            imageIODisplayImage(
+                from: url
+            ) {
+            return image
+        }
+
         guard let data = try? Data(contentsOf: url),
               let image =
-                PlatformImage.loadPhotoMemoImage(
-                    from: data
-                ) else {
+            PlatformImage.loadPhotoMemoImage(
+                from: data
+            ) else {
 
             throw PhotoImportError.imageLoadFailed
         }

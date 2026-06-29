@@ -2,6 +2,228 @@
 
 Last updated: 2026-06-29
 
+## 2026-06-29 Final Export Edge Guard And Share Confirmation Polish
+
+This slice adds a final safety guard for the portrait left-edge artifact and
+polishes the iOS Share Extension confirmation experience.
+
+Finding:
+
+- The newest user sample still showed the same pattern: the original photo
+  area can contain a narrow near-black strip on the left edge, while the bottom
+  information bar remains correct.
+- Pixel inspection of the generated portrait sample found a `51 px` near-black
+  strip in the photo area only.
+- Because the strip appears after the full card is composed, import-time
+  decoding protection is not enough by itself.
+
+What changed:
+
+- `RecordCardExportService` now applies a conservative final rendered-image
+  guard after `ImageRenderer` produces the composed card.
+- The guard samples only the photo area, detects a narrow near-solid black left
+  strip, crops that strip, stretches the photo area back to the original output
+  width, and copies the information bar unchanged.
+- Share Extension success no longer animates the content stack toward the
+  top-left. It now holds a stable received/processing state briefly, then
+  dismisses.
+- Success copy now says the photos have been received and PhotoMemo has started
+  background processing; progress can be checked in the main app's `处理进度`.
+- Share Extension preview thumbnails no longer use a visible card/border
+  background. Small batches now use calmer orientation-aware sizing, including a
+  portrait-plus-two-landscape arrangement.
+
+Preserved:
+
+- Immers White border height, text layout, typography constants, logo behavior,
+  metadata writing, and Photo Library behavior are unchanged.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed focused `PhotoMemoTests/PhotoImportServiceTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+- passed `PhotoMemoiOSMVP` iPhone7 Debug build
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+## 2026-06-29 Portrait Left Edge Artifact Guard
+
+This slice fixes a generated portrait image issue where the photo area could
+contain a narrow black vertical strip on the left edge while the bottom
+information bar remained correct.
+
+Finding:
+
+- The user sample `IMG_9911(1).JPG` is `4536 x 8817`.
+- Pixel inspection showed the photo area left edge had a `51 px` near-black
+  strip from `y = 0` through the original photo area.
+- The bottom information bar started at `y = 8064` and did not contain the
+  strip, so the issue belongs to the imported photo display layer, not the
+  Immers White information bar.
+- A later source/output pair (`IMG_0015.jpg` and `IMG_0015(1).JPG`) confirmed
+  the original source image itself has no black strip at the left edge, while
+  the generated image introduces a `51 px` black strip in the photo area.
+- Root cause direction: normal JPEG import used `PlatformImage(data:)`, leaving
+  UIKit/AppKit image decoding details for SwiftUI `ImageRenderer`. For this
+  source, the final rendered photo content was shifted right by `51 px`.
+
+What changed:
+
+- Normal non-RAW image import now prefers ImageIO display decoding through
+  `CGImageSourceCreateThumbnailAtIndex(..., kCGImageSourceCreateThumbnailWithTransform)`,
+  producing an orientation-baked `CGImage` before SwiftUI rendering.
+- `PlatformImage.removingPhotoMemoLeftEdgeArtifact()` now detects a narrow,
+  near-solid black strip at the left edge.
+- Detection is intentionally conservative:
+  - maximum trim is `2%` of image width, capped at `96 px`
+  - the edge column must be near black across at least `96%` of sampled height
+  - the transition column must be visibly non-black
+- When detected, the image is cropped and stretched back to its original pixel
+  width and height, so renderer/export dimensions remain unchanged.
+- `PhotoImportService` applies ImageIO decoding and then the guard to the display
+  image used by render and export.
+- Added `PhotoImportServiceTests/removesNarrowBlackLeftEdgeArtifact`.
+
+Preserved:
+
+- Original source files are not modified.
+- Renderer geometry, bottom border height, typography, metadata, export
+  metadata, and Photo Library behavior are unchanged.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/PhotoImportServiceTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
+## 2026-06-29 iOS MVP Configuration Surface Compression
+
+This slice tightens the iOS MVP configuration surface without changing the
+locked renderer output.
+
+What changed:
+
+- `记忆档案` now has a small edit button next to the Preset picker.
+- Tapping the edit button opens an inline Preset-name field and commits the new
+  name through `ConfigurationSession.updateSelectedMemoryPresetTitle`.
+- `当前记忆对象摘要` is moved into the same compact summary block as the active
+  configuration message, reducing vertical space.
+- `处理进度` now shows a small `清除历史` action below the progress bar when
+  historical queue overflow is visible.
+- Clearing history removes only completed external-history jobs while preserving
+  the currently displayed queue, active/waiting queues, and failure records that
+  may still need attention.
+- The four custom region cards no longer show the dedicated separator shortcut
+  row; users can still type separators directly in the inline text field and
+  the composed result remains visible.
+
+Preserved:
+
+- No renderer, border typography, export, metadata, Share Extension, or Photo
+  Library behavior was changed.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
+## 2026-06-29 iOS MVP Processing Progress Panel
+
+This slice makes the iOS MVP foreground app the trusted place to inspect Share
+processing progress when system notification or Live Activity updates are too
+fast or unreliable to observe.
+
+Decision:
+
+- Rename the foreground Share status module from `最近分享` to `处理进度`.
+- Treat a single processing queue as one job, even when it contains multiple
+  photos.
+- When there is one queue, show the full five-stage pipeline:
+  `接收照片 -> 读取信息 -> 生成卡片 -> 写入图库 -> 完成`.
+- When there are multiple queues, show at most three queue lines using the
+  existing `开始时间（X张）` queue title format, plus a compact overflow count.
+- Completion state should remain visible in the module, using titles such as
+  `15:20（2张）已完成`.
+- Deferred handoff is no longer worded as a blocking failure once intake has
+  persisted the original photos.
+
+What changed:
+
+- `PhotoMemoiOSMVPTestView` now renders `PhotoMemoBackgroundStatusService`
+  snapshots directly in the main configuration surface.
+- The progress card shows a linear progress value, current status text, and
+  either the five pipeline steps or compact queue lines.
+- Diagnostic event display is reduced to three recent meaningful events so the
+  progress surface stays calm.
+- Handoff-unconfirmed copy now says PhotoMemo is waiting to continue, instead
+  of telling the user to retry or open the app.
+
+Preserved:
+
+- No renderer, border geometry, export, metadata, Share Extension, or Photo
+  Library behavior was changed in this progress-panel slice.
+
+Verification:
+
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
+## 2026-06-29 Immers White Landscape Cluster Recalibration
+
+This slice responds to the new horizontal and vertical MVP-vs-target samples:
+
+- `横图mvp生成图片1.JPG`
+- `竖图mvp生成图片1.JPG`
+- `横图我的目标.JPEG`
+- `竖图我的目标.JPEG`
+
+Pixel findings:
+
+- Horizontal output and target both keep the original `4032 x 2268` photo area
+  and add a `511 px` bottom information bar.
+- Vertical output and target both keep the original `4536 x 8064` photo area
+  and add a `753 px` bottom information bar.
+- Therefore the white border height is already correct and was not changed.
+- The largest real renderer mismatch was horizontal right-cluster placement:
+  current renderer placed the right text start around `x = 61.7%`, while the
+  measured landscape spec expects `x = 69.6%`.
+- Portrait right-cluster placement already follows the measured compact spec.
+- The red seal seen in the MVP sample is a saved/custom Logo configuration,
+  while the target uses the gray Apple fallback. This is configuration state,
+  not a renderer geometry bug.
+
+What changed:
+
+- Horizontal Immers White renderer now matches the landscape compact spec:
+  - right text start about `0.696`
+  - divider center about `0.675`
+  - logo center about `0.636`
+- The default capture-time line now uses `记录于{{capture_date_display}}`, matching
+  the target wording/order when defaults are reset.
+- MVP default Slot B now composes `记录于 + 日期 + 时间`.
+- MVP preview no longer enlarges/boldens the left-primary line beyond the real
+  renderer direction.
+- Added test coverage so horizontal renderer geometry must match the measured
+  `RendererConstants.CompactInformationBar.landscape` anchors.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/ImmersWhiteRendererLayoutTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
+Manual note:
+
+- Existing iPhone presets may still carry the old custom Logo or old Slot B
+  ordering until the user resets/defaults or saves a new effective preset.
+
 ## 2026-06-29 Share Deferred Handoff And Result Notification
 
 This slice corrects the Share interaction model after real-device diagnostics
