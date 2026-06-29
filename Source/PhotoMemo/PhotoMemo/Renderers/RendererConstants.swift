@@ -99,7 +99,7 @@ enum RendererConstants {
             blue: 242 / 255
         )
 
-        static let primaryText = Color.black.opacity(0.92)
+        static let primaryText = Color.black.opacity(0.98)
 
         static let secondaryText = Color(
             red: 112 / 255,
@@ -122,20 +122,22 @@ enum RendererConstants {
         static let portrait = CompactInformationBarSpec(
             barHeightToWidth: 0.1660,
             referencePhotoHeightToWidth: 8064.0 / 4536.0,
-            leftX: 0.046,
+            leftX: 0.045,
             leftWidth: 0.364,
-            logoCenterX: 0.514,
+            logoCenterX: 0.490,
             logoSizeToBarHeight: 0.410,
-            dividerCenterX: 0.564,
+            dividerCenterX: 0.540,
             dividerTopY: 0.264,
             dividerHeight: 0.468,
-            dividerWidthToBarHeight: 0.018,
-            rightX: 0.590,
-            rightWidth: 0.364,
+            dividerWidthToBarHeight: 0.022,
+            rightX: 0.566,
+            rightWidth: 0.389,
             primaryFontToBarHeight: 0.190,
             secondaryFontToBarHeight: 0.142,
             groupSpacingToBarHeight: 0.098,
             contentCenterY: 0.500,
+            primaryYOffsetToBarHeight: 0.019,
+            secondaryYOffsetToBarHeight: -0.028,
             primaryTracking: -0.12,
             secondaryTracking: 0
         )
@@ -150,13 +152,15 @@ enum RendererConstants {
             dividerCenterX: 0.675,
             dividerTopY: 0.263,
             dividerHeight: 0.472,
-            dividerWidthToBarHeight: 0.018,
+            dividerWidthToBarHeight: 0.022,
             rightX: 0.696,
             rightWidth: 0.268,
             primaryFontToBarHeight: 0.190,
             secondaryFontToBarHeight: 0.142,
             groupSpacingToBarHeight: 0.112,
             contentCenterY: 0.500,
+            primaryYOffsetToBarHeight: 0.020,
+            secondaryYOffsetToBarHeight: -0.037,
             primaryTracking: -0.18,
             secondaryTracking: 0
         )
@@ -228,6 +232,8 @@ struct CompactInformationBarSpec: Equatable {
     let secondaryFontToBarHeight: CGFloat
     let groupSpacingToBarHeight: CGFloat
     let contentCenterY: CGFloat
+    let primaryYOffsetToBarHeight: CGFloat
+    let secondaryYOffsetToBarHeight: CGFloat
     let primaryTracking: CGFloat
     let secondaryTracking: CGFloat
 }

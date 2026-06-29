@@ -2503,9 +2503,9 @@ private struct MVPPreviewCard: View {
                             max(
                                 height
                                 * spec.dividerWidthToBarHeight,
-                                1
+                                2
                             ),
-                            4
+                            8
                         ),
                     height: height * spec.dividerHeight
                 )
@@ -2583,6 +2583,11 @@ private struct MVPPreviewCard: View {
                     .primaryText,
                 minimumScaleFactor: primaryMinimumScaleFactor
             )
+            .offset(
+                y:
+                    barHeight
+                    * spec.primaryYOffsetToBarHeight
+            )
 
             compactTextLine(
                 secondary,
@@ -2599,6 +2604,11 @@ private struct MVPPreviewCard: View {
                     .CompactInformationBar
                     .secondaryText,
                 minimumScaleFactor: secondaryMinimumScaleFactor
+            )
+            .offset(
+                y:
+                    barHeight
+                    * spec.secondaryYOffsetToBarHeight
             )
         }
         .frame(

@@ -34,6 +34,8 @@ enum ImmersWhiteRenderer {
 
         let dividerHeightRatio: CGFloat
 
+        let dividerWidthRatio: CGFloat
+
         let titleFontRatio: CGFloat
 
         let metadataFontRatio: CGFloat
@@ -47,6 +49,10 @@ enum ImmersWhiteRenderer {
         let bottomLineSpacingRatio: CGFloat
 
         let groupSpacingRatio: CGFloat
+
+        let primaryYOffsetRatio: CGFloat
+
+        let secondaryYOffsetRatio: CGFloat
 
         let titleTracking: CGFloat
 
@@ -186,7 +192,7 @@ enum ImmersWhiteRenderer {
     static let dividerColor =
         RendererConstants.CompactInformationBar.divider
 
-    static let dividerWidth: CGFloat = 2
+    static let dividerWidth: CGFloat = 6
 
     static let primaryMinimumScaleFactor: CGFloat = 0.82
 
@@ -225,6 +231,7 @@ enum ImmersWhiteRenderer {
                 logoSlotWidthRatio: 0.076,
                 logoSizeRatio: 0.34,
                 dividerHeightRatio: 0.50,
+                dividerWidthRatio: 0.022,
                 titleFontRatio: 0.190,
                 metadataFontRatio: 0.190,
                 bottomFontRatio: 0.132,
@@ -232,6 +239,8 @@ enum ImmersWhiteRenderer {
                 metadataLineSpacingRatio: 0.012,
                 bottomLineSpacingRatio: 0.008,
                 groupSpacingRatio: 0.112,
+                primaryYOffsetRatio: 0.020,
+                secondaryYOffsetRatio: -0.037,
                 titleTracking: -0.18,
                 metadataTracking: -0.18,
                 bottomTracking: 0,
@@ -243,15 +252,16 @@ enum ImmersWhiteRenderer {
 
             return Layout(
                 borderToImageHeightRatio: 753 / 8064,
-                horizontalPaddingRatio: 0.041,
+                horizontalPaddingRatio: 0.045,
                 verticalPaddingRatio: 0.2,
                 logoToDividerSpacingRatio: 0.015,
                 dividerToTextSpacingRatio: 0.026,
                 leftColumnWidthRatio: 0.43,
-                rightColumnWidthRatio: 0.369,
+                rightColumnWidthRatio: 0.389,
                 logoSlotWidthRatio: 0.10,
                 logoSizeRatio: 0.42,
                 dividerHeightRatio: 0.54,
+                dividerWidthRatio: 0.022,
                 titleFontRatio: 0.190,
                 metadataFontRatio: 0.190,
                 bottomFontRatio: 0.142,
@@ -259,6 +269,8 @@ enum ImmersWhiteRenderer {
                 metadataLineSpacingRatio: 0.011,
                 bottomLineSpacingRatio: 0.008,
                 groupSpacingRatio: 0.098,
+                primaryYOffsetRatio: 0.019,
+                secondaryYOffsetRatio: -0.028,
                 titleTracking: -0.12,
                 metadataTracking: -0.12,
                 bottomTracking: 0,
@@ -474,7 +486,13 @@ struct ImmersWhiteCardRenderer: View {
             ),
             spacing:
                 height
-                * layout.groupSpacingRatio
+                * layout.groupSpacingRatio,
+            topVisualYOffset:
+                height
+                * layout.primaryYOffsetRatio,
+            bottomVisualYOffset:
+                height
+                * layout.secondaryYOffsetRatio
         )
         .frame(
             width:
@@ -521,8 +539,12 @@ struct ImmersWhiteCardRenderer: View {
                     )
                     .frame(
                         width:
-                            ImmersWhiteRenderer
-                            .dividerWidth,
+                            max(
+                                ImmersWhiteRenderer
+                                    .dividerWidth,
+                                height
+                                    * layout.dividerWidthRatio
+                            ),
                         height:
                             height
                             * layout.dividerHeightRatio
@@ -646,7 +668,13 @@ struct ImmersWhiteCardRenderer: View {
             ),
             spacing:
                 height
-                * layout.groupSpacingRatio
+                * layout.groupSpacingRatio,
+            topVisualYOffset:
+                height
+                * layout.primaryYOffsetRatio,
+            bottomVisualYOffset:
+                height
+                * layout.secondaryYOffsetRatio
         )
     }
 
@@ -656,7 +684,9 @@ struct ImmersWhiteCardRenderer: View {
         bottomValue: String,
         topStyle: BlockStyle,
         bottomStyle: BlockStyle,
-        spacing: CGFloat
+        spacing: CGFloat,
+        topVisualYOffset: CGFloat,
+        bottomVisualYOffset: CGFloat
     ) -> some View {
 
         let hasTop =
@@ -678,6 +708,7 @@ struct ImmersWhiteCardRenderer: View {
                     topValue,
                     style: topStyle
                 )
+                .offset(y: topVisualYOffset)
             }
 
             if hasBottom {
@@ -685,6 +716,7 @@ struct ImmersWhiteCardRenderer: View {
                     bottomValue,
                     style: bottomStyle
                 )
+                .offset(y: bottomVisualYOffset)
             }
         }
         .frame(

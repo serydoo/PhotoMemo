@@ -355,6 +355,11 @@ struct InteractiveMemoryCard: View {
                     .CompactInformationBar
                     .primaryText
             )
+            .offset(
+                y:
+                    barHeight
+                    * spec.primaryYOffsetToBarHeight
+            )
 
             compactTextLine(
                 secondaryRegion,
@@ -368,6 +373,11 @@ struct InteractiveMemoryCard: View {
                     RendererConstants
                     .CompactInformationBar
                     .secondaryText
+            )
+            .offset(
+                y:
+                    barHeight
+                    * spec.secondaryYOffsetToBarHeight
             )
         }
         .frame(

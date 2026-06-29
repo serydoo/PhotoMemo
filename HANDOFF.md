@@ -1,5 +1,100 @@
 # PhotoMemo Handoff
 
+## 2026-06-30 Immers White Secondary Line And Divider Pixel Pass
+
+- 用户要求：
+  - 按上一轮横图、竖图像素对比结论执行解决方案。
+  - 分隔符宽度可以进一步拉到位。
+  - 本轮仍只处理底部边框输出形式，不改内容逻辑。
+- 已落实：
+  - `RendererConstants.CompactInformationBar` 新增
+    `secondaryYOffsetToBarHeight`：
+    - portrait `-0.028`
+    - landscape `-0.037`
+  - `ImmersWhiteRenderer.Layout` 新增 `secondaryYOffsetRatio`。
+  - `pinnedColumn` 对 bottom/secondary B/D 文本应用视觉 offset，
+    不影响 A/C 主文字已校准的位置。
+  - portrait 右侧 cluster 继续左移：
+    - `rightX 0.580 -> 0.566`
+    - `dividerCenterX 0.554 -> 0.540`
+    - `logoCenterX 0.504 -> 0.490`
+    - renderer `rightColumnWidthRatio 0.375 -> 0.389`
+  - 分隔符从固定 `4 px` 改成随白边高度比例绘制：
+    - `dividerWidthToBarHeight 0.018 -> 0.022`
+    - renderer 最小可见宽度 `6 px`
+  - iOS MVP preview、正式 iOS Configuration Preview、macOS
+    Interactive Memory Card Preview 同步使用 secondary offset。
+- 特意未改：
+  - 白边高度、照片拼接、主文字字号/字重、灰色副文字字号、内容字符串。
+  - 自定义 Logo、EXIF、Share、Export、Photo Library 行为。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoTests/ImmersWhiteRendererLayoutTests` 通过。
+  - `PhotoMemoTests/RendererConstantsTests` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+- 下一轮真机重点：
+  - 横图检查 B/D 是否从此前低约 `17-21 px` 回到目标线。
+  - 竖图检查 B/D 是否从此前低约 `20-21 px` 回到目标线。
+  - 竖图检查右侧内容/分隔符/Logo 是否整体左移约 `62 px`。
+  - 分隔符应比 4px 版本更明显，但不要抢过文字和 Logo 标识。
+
+## 2026-06-29 Immers White Pixel-Level Text Alignment Pass
+
+- 用户要求：
+  - 继续进行 PhotoMemo 底部边框像素级打磨。
+  - 本轮只比较输出形式，不考虑内容差异。
+  - 忽略红色自定义 Logo。
+  - 同时参考 Logo 与右侧内容之间分隔符的差异，让 MVP 内分隔符稍微更宽、更显眼。
+- 前两轮标线测量结论：
+  - 横图白边高度正确，照片区/底部栏尺寸正确。
+  - 竖图白边高度正确，照片区/底部栏尺寸正确。
+  - 横图：
+    - A 主文字比目标高约 `13 px`
+    - C 主文字比目标高约 `8 px`
+    - B/D 副文字垂直位置基本对齐
+  - 竖图：
+    - A 主文字比目标高约 `15 px`
+    - C 主文字比目标高约 `14 px`
+    - B/D 副文字垂直位置基本对齐
+  - 结论：不能整体下移文字列，只能单独下移 A/C 主文字。
+- 已落实：
+  - `RendererConstants.CompactInformationBar` 新增
+    `primaryYOffsetToBarHeight`：
+    - portrait `0.019`
+    - landscape `0.020`
+  - `ImmersWhiteRenderer.Layout` 新增 `primaryYOffsetRatio`。
+  - `pinnedColumn` 对 top/primary 文本应用视觉 offset，下移 A/C，
+    不改变 B/D 副文字布局位置。
+  - portrait 实际 renderer 锚点微调：
+    - `horizontalPaddingRatio 0.041 -> 0.045`
+    - `rightColumnWidthRatio 0.369 -> 0.375`
+  - compact portrait spec 同步：
+    - `leftX 0.046 -> 0.045`
+    - `rightX 0.590 -> 0.580`
+    - `dividerCenterX 0.564 -> 0.554`
+    - `logoCenterX 0.514 -> 0.504`
+  - 主文字颜色从 `black.opacity(0.92)` 调整为 `0.98`，更接近目标图纯黑质感。
+  - `ImmersWhiteRenderer.dividerWidth 2 -> 4`，让 Logo 与右侧内容之间的分隔符更清楚。
+  - iOS MVP preview、正式 iOS Configuration Preview、Interactive Memory Card Preview
+    同步使用 primary offset，保持预览/导出方向一致。
+  - 更新 `RendererConstantsTests` 和 `ImmersWhiteRendererLayoutTests` 锁住本轮校准。
+- 特意未改：
+  - 内容字符串、日期/秒数、年岁计算、EXIF 格式。
+  - 白边高度、照片区拼接、底部栏背景色。
+  - 自定义 Logo 处理逻辑。
+- 已验证：
+  - `git diff --check` 通过。
+  - `PhotoMemoTests/ImmersWhiteRendererLayoutTests` 通过。
+  - `PhotoMemoTests/RendererConstantsTests` 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+- 下一轮真机重点：
+  - 重新生成同一组横图/竖图 MVP 输出。
+  - 横图重点看 A/C 主文字是否不再偏高，B/D 是否仍对齐。
+  - 竖图重点看 A/C 主文字高度、左侧文字右移、右侧文字左移是否接近目标。
+  - 看 4px divider 是否比原来更接近目标，但不显得过重。
+
 ## 2026-06-29 Final Export Edge Guard And Share Confirmation Polish
 
 - 用户反馈：

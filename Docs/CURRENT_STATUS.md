@@ -2,6 +2,94 @@
 
 Last updated: 2026-06-29
 
+## 2026-06-29 Immers White Pixel-Level Text Alignment Pass
+
+Follow-up on 2026-06-30:
+
+- Applied the second measured border-form correction after the newest
+  landscape/portrait MVP-vs-target comparison.
+- Preserved the locked photo area and bottom white-bar height.
+- Added a measured `secondaryYOffsetToBarHeight` compact-bar token:
+  - portrait `-0.028`
+  - landscape `-0.037`
+- `ImmersWhiteRenderer` now applies this as a visual offset only to the
+  secondary B/D line, while keeping the already-corrected primary A/C offset.
+- Portrait right-side cluster was moved left to match the newest measured
+  target:
+  - right text start `0.580 -> 0.566`
+  - divider center `0.554 -> 0.540`
+  - logo center `0.504 -> 0.490`
+- Divider width now follows a bar-height ratio:
+  - `dividerWidthToBarHeight 0.018 -> 0.022`
+  - renderer minimum visible width `4 px -> 6 px`
+- iOS MVP preview, formal iOS configuration preview, and macOS interactive
+  memory card preview now apply the same secondary-line offset.
+- Focused renderer tests and constant tests were updated to lock these values.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/ImmersWhiteRendererLayoutTests`
+- passed focused `PhotoMemoTests/RendererConstantsTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
+Manual follow-up:
+
+- Reinstall on iPhone and regenerate the same horizontal/vertical samples.
+- Confirm B/D no longer sit about `20 px` low.
+- Confirm portrait right cluster no longer sits about `62 px` too far right.
+- Confirm the divider reads closer to the target without overpowering the Logo
+  标识.
+
+This slice performs a pixel-level output-form polish for the Immers White
+bottom information bar. It does not change generated content strings.
+
+Finding:
+
+- New landscape and portrait MVP-vs-target border comparisons showed that the
+  bottom bar height is already correct.
+- The measured difference is line-specific rather than bar-wide:
+  - landscape primary A is about `13 px` high, primary C about `8 px` high
+  - portrait primary A is about `15 px` high, primary C about `14 px` high
+  - secondary B/D are already vertically aligned
+- Therefore the column should not be moved as a whole. Only the primary line
+  needs a visual downward correction.
+- Portrait horizontal alignment still needs a small refinement:
+  - left text is slightly too far left
+  - right text is too far right
+- The divider between the logo and right text was too subtle compared with the
+  target samples.
+
+What changed:
+
+- Added a measured `primaryYOffsetToBarHeight` compact-bar token:
+  - portrait `0.019`
+  - landscape `0.020`
+- `ImmersWhiteRenderer` applies this as a visual offset only to primary A/C
+  text, preserving the secondary B/D line position.
+- Portrait renderer layout now nudges the left column right and the right
+  cluster left by updating the measured compact anchors.
+- Primary text color is slightly darker, moving from black `0.92` opacity to
+  `0.98`.
+- The logo/right-content divider width is increased from `2 px` to `4 px`.
+- iOS MVP preview, formal iOS configuration preview, and the interactive memory
+  card preview now apply the same primary-line visual offset.
+- Renderer constant and layout tests now lock the new offsets and divider width.
+
+Preserved:
+
+- Border height, photo area, secondary text line position, content generation,
+  metadata/export behavior, and custom logo handling are unchanged.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/ImmersWhiteRendererLayoutTests`
+- passed focused `PhotoMemoTests/RendererConstantsTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
 ## 2026-06-29 Final Export Edge Guard And Share Confirmation Polish
 
 This slice adds a final safety guard for the portrait left-edge artifact and

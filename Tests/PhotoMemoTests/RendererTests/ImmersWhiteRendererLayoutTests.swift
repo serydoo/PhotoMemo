@@ -62,6 +62,12 @@ struct ImmersWhiteRendererLayoutTests {
             >= 0.095
         )
         #expect(
+            layout.primaryYOffsetRatio == 0.019
+        )
+        #expect(
+            layout.secondaryYOffsetRatio == -0.028
+        )
+        #expect(
             layout.titleFontRatio
             == 0.190
         )
@@ -129,6 +135,12 @@ struct ImmersWhiteRendererLayoutTests {
             >= 0.11
         )
         #expect(
+            layout.primaryYOffsetRatio == 0.020
+        )
+        #expect(
+            layout.secondaryYOffsetRatio == -0.037
+        )
+        #expect(
             layout.titleFontRatio
             == 0.190
         )
@@ -151,7 +163,15 @@ struct ImmersWhiteRendererLayoutTests {
         )
         #expect(
             ImmersWhiteRenderer.dividerWidth
-            == 2
+            == 6
+        )
+        #expect(
+            ImmersWhiteRenderer.layout(for: .portrait).dividerWidthRatio
+            == 0.022
+        )
+        #expect(
+            ImmersWhiteRenderer.layout(for: .landscape).dividerWidthRatio
+            == 0.022
         )
     }
 }

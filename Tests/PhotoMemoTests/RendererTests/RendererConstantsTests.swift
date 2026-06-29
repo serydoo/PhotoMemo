@@ -70,10 +70,10 @@ struct RendererConstantsTests {
         let landscape =
             RendererConstants.CompactInformationBar.landscape
 
-        #expect(portrait.leftX == 0.046)
-        #expect(portrait.rightX == 0.590)
-        #expect(portrait.logoCenterX == 0.514)
-        #expect(portrait.dividerCenterX == 0.564)
+        #expect(portrait.leftX == 0.045)
+        #expect(portrait.rightX == 0.566)
+        #expect(portrait.logoCenterX == 0.490)
+        #expect(portrait.dividerCenterX == 0.540)
 
         #expect(landscape.leftX == 0.035)
         #expect(landscape.rightX == 0.696)
@@ -97,6 +97,21 @@ struct RendererConstantsTests {
                 .secondaryFontToBarHeight == 0.142
         )
         #expect(portrait.contentCenterY == 0.500)
+        #expect(portrait.primaryYOffsetToBarHeight == 0.019)
+        #expect(portrait.secondaryYOffsetToBarHeight == -0.028)
+        #expect(portrait.dividerWidthToBarHeight == 0.022)
+        #expect(
+            RendererConstants.CompactInformationBar.landscape
+                .primaryYOffsetToBarHeight == 0.020
+        )
+        #expect(
+            RendererConstants.CompactInformationBar.landscape
+                .secondaryYOffsetToBarHeight == -0.037
+        )
+        #expect(
+            RendererConstants.CompactInformationBar.landscape
+                .dividerWidthToBarHeight == 0.022
+        )
         #expect(portrait.dividerTopY < portrait.contentCenterY)
         #expect(
             portrait.dividerTopY + portrait.dividerHeight

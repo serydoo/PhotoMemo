@@ -1689,9 +1689,9 @@ private struct IOSMacStyleMemoryCardPreview: View {
                             max(
                                 height
                                 * spec.dividerWidthToBarHeight,
-                                1
+                                2
                             ),
-                            4
+                            8
                         ),
                     height: height * spec.dividerHeight
                 )
@@ -1754,6 +1754,11 @@ private struct IOSMacStyleMemoryCardPreview: View {
                     .CompactInformationBar
                     .primaryText
             )
+            .offset(
+                y:
+                    barHeight
+                    * spec.primaryYOffsetToBarHeight
+            )
 
             compactTextLine(
                 secondaryRegion,
@@ -1767,6 +1772,11 @@ private struct IOSMacStyleMemoryCardPreview: View {
                     RendererConstants
                     .CompactInformationBar
                     .secondaryText
+            )
+            .offset(
+                y:
+                    barHeight
+                    * spec.secondaryYOffsetToBarHeight
             )
         }
         .frame(
