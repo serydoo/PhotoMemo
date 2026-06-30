@@ -2,6 +2,129 @@
 
 Last updated: 2026-06-30
 
+## 2026-06-30 Share Handoff And Stale Queue Recovery Fix
+
+User reported the latest device build regressed in four linked ways:
+
+- after tapping the Share stage-1 start button, the sheet could close before the
+  stage-2 queue was useful
+- stage 2 could wait without any real processing starting
+- the iOS MVP processing panel kept showing an old `09:05` task
+- newly shared photos could fail to produce output
+
+Root cause:
+
+- The Share Extension can persist intake and observe shared queue snapshots, but
+  it does not own the renderer/export/photo-library pipeline.
+- The previous follow-up removed the automatic main-app handoff, so the
+  extension could wait for a `BatchJob` that the main app had not been woken to
+  create.
+- The queue stores newest jobs at index `0`, but the execution selector walked
+  indices in reverse, so an older non-terminal job could block the newest Share
+  job.
+- On resume, missing managed App Group intake files were re-queued instead of
+  being marked as non-retryable failures, allowing stale jobs to stay visible
+  and keep occupying progress.
+
+What changed:
+
+- Share stage 1 now persists intake, switches visibly into stage 2, waits
+  briefly, then requests the main app handoff so processing can actually start.
+- If handoff is not confirmed, the stage-2 queue stays visible and offers the
+  explicit open-PhotoMemo recovery path.
+- `BatchQueueExecution.nextPendingTaskReference` now honors the queue ordering
+  created by `jobs.insert(job, at: 0)`, so newest queued Share jobs run first.
+- `BatchQueuePersistence.normalizeJobsForResume` now marks missing managed
+  intake sources as failed/non-retryable instead of re-queuing them.
+- Batch queue persistence now synchronizes shared defaults after writes so the
+  Share Extension snapshot reader can see fresh state sooner.
+- Added focused regression coverage for newest-job selection and stale managed
+  source recovery.
+
+Verification:
+
+- passed focused `PhotoMemoTests/BatchQueueRecoveryTests`
+- passed focused `PhotoMemoTests/SharedBatchQueueSnapshotServiceTests`
+- passed focused `PhotoMemoTests/BatchNotificationMessageFormatterTests`
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` iPhone7 Debug build
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Follow-up device finding:
+
+- Real-device testing with 2 photos showed that automatic main-app handoff from
+  inside the Share Extension still makes iOS close the share sheet before the
+  stage-2 queue can be observed.
+- The automatic handoff path was removed again from the stage-1 start flow.
+- Stage 2 now stays inside the Share Extension and presents the queue/waiting
+  state first.
+- Opening PhotoMemo is kept as an explicit recovery action from the stage-2
+  waiting state, because opening the containing app is what dismisses the share
+  sheet on iOS.
+- Share copy no longer says processing has already started before a host-app
+  queue is observed; it now says the photos were received and are waiting to be
+  added to the processing queue.
+
+Follow-up verification:
+
+- passed focused `PhotoMemoTests/BatchQueueRecoveryTests`
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` iPhone7 Debug build
+- installed `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+- automatic launch was blocked only because the device was locked
+
+Second follow-up after user device test:
+
+- User confirmed the two-stage Share sheet remained unreliable: no useful stage
+  2 and no output.
+- Product decision for the MVP test path: stop attempting a two-stage Share
+  observation sheet for now.
+- Share Extension is reduced back to a single confirmation surface:
+  - shows detected photo count
+  - explains that tapping the button opens PhotoMemo
+  - persists the intake
+  - immediately requests host-app handoff
+  - leaves detailed progress to the main app's `处理进度` module
+- Main-app progress now allows a newer Share diagnostic event to override an
+  older completed snapshot, so a previous `09:05` completed card does not hide
+  a fresh `10:44` intake/drain state before the new queue appears.
+
+Second follow-up verification:
+
+- passed focused `PhotoMemoTests/BatchQueueRecoveryTests`
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` iPhone7 Debug build
+- installed and launched `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+Third follow-up for output stability:
+
+- User clarified the priority is stable output before any further Share UI
+  polish.
+- `requestMainAppRefresh` no longer waits for
+  `app.enqueue.created` / handoff confirmation after iOS accepts the open-app
+  request.
+- The Share Extension now treats its responsibility as:
+  persist intake -> request opening PhotoMemo -> let the main app drain and
+  process.
+- This removes an unnecessary confirmation wait from the extension lifecycle
+  and keeps renderer/export/photo-library output owned by the main app.
+
+Third follow-up verification:
+
+- passed focused `PhotoMemoTests/BatchQueueRecoveryTests`
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` iPhone7 Debug build
+- installed `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+- automatic launch was blocked only because the device was locked
+
 ## 2026-06-30 Share Two-Stage Flow And Result Notification Polish
 
 User clarified the MVP share flow should be staged:

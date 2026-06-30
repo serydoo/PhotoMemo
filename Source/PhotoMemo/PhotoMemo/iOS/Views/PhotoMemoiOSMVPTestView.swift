@@ -12,6 +12,9 @@ struct PhotoMemoiOSMVPTestView: View {
     private var backgroundStatusService:
         PhotoMemoBackgroundStatusService
 
+    private let refreshExternalIntake:
+        () -> Void
+
     @StateObject
     private var session = ConfigurationSession()
 
@@ -116,13 +119,17 @@ struct PhotoMemoiOSMVPTestView: View {
 
     init(
         backgroundStatusService:
-            PhotoMemoBackgroundStatusService
+            PhotoMemoBackgroundStatusService,
+        refreshExternalIntake:
+            @escaping () -> Void = {}
     ) {
         self._backgroundStatusService =
             ObservedObject(
                 wrappedValue:
                     backgroundStatusService
             )
+        self.refreshExternalIntake =
+            refreshExternalIntake
     }
 
     var body: some View {
@@ -222,14 +229,14 @@ struct PhotoMemoiOSMVPTestView: View {
         }
         .onAppear {
             bootstrapIfNeeded()
-            refreshShareDiagnostics()
+            refreshProcessingState()
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else {
                 return
             }
 
-            refreshShareDiagnostics()
+            refreshProcessingState()
         }
         .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
             isEditingMemoryPresetTitle = false
@@ -429,7 +436,7 @@ struct PhotoMemoiOSMVPTestView: View {
                     Spacer(minLength: 0)
 
                     Button {
-                        refreshShareDiagnostics()
+                        refreshProcessingState()
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
@@ -1692,7 +1699,10 @@ struct PhotoMemoiOSMVPTestView: View {
     private var shareDiagnosticsHeadline: String {
         if let snapshot =
             backgroundStatusService
-            .currentSnapshot {
+            .currentSnapshot,
+           !shouldPrioritizeLatestShareDiagnostic(
+                over: snapshot
+           ) {
             return shareProgressTitle(snapshot)
         }
 
@@ -1724,7 +1734,10 @@ struct PhotoMemoiOSMVPTestView: View {
     private var shareDiagnosticsSubheadline: String {
         if let snapshot =
             backgroundStatusService
-            .currentSnapshot {
+            .currentSnapshot,
+           !shouldPrioritizeLatestShareDiagnostic(
+                over: snapshot
+           ) {
             return snapshot.statusMessage
         }
 
@@ -1973,7 +1986,10 @@ struct PhotoMemoiOSMVPTestView: View {
     private var shareDiagnosticsSymbolName: String {
         if let snapshot =
             backgroundStatusService
-            .currentSnapshot {
+            .currentSnapshot,
+           !shouldPrioritizeLatestShareDiagnostic(
+                over: snapshot
+           ) {
             return shareProgressSymbolName(snapshot)
         }
 
@@ -1998,7 +2014,10 @@ struct PhotoMemoiOSMVPTestView: View {
     private var shareDiagnosticsTint: Color {
         if let snapshot =
             backgroundStatusService
-            .currentSnapshot {
+            .currentSnapshot,
+           !shouldPrioritizeLatestShareDiagnostic(
+                over: snapshot
+           ) {
             return shareProgressTint(snapshot)
         }
 
@@ -2024,6 +2043,34 @@ struct PhotoMemoiOSMVPTestView: View {
         shareDiagnosticEvents =
             PhotoMemoShareDiagnostics
             .loadEvents()
+    }
+
+    private func shouldPrioritizeLatestShareDiagnostic(
+        over snapshot:
+            PhotoMemoBackgroundJobSnapshot
+    ) -> Bool {
+
+        guard let latestShareDiagnosticEvent else {
+            return false
+        }
+
+        guard latestShareDiagnosticEvent.timestamp
+            > snapshot.updatedAt else {
+            return false
+        }
+
+        switch snapshot.presentationState {
+        case .completed:
+            return true
+        case .active,
+             .needsAttention:
+            return false
+        }
+    }
+
+    private func refreshProcessingState() {
+        refreshExternalIntake()
+        refreshShareDiagnostics()
     }
 
     private var editorRevealProgress: CGFloat {

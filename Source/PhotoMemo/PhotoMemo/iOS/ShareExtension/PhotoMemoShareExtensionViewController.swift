@@ -678,19 +678,19 @@ private extension PhotoMemoShareExtensionViewController {
 
         subtitleLabel.text =
             sharedPhotoCount > 0
-            ? "PhotoMemo 会按当前配置开始处理。"
+            ? "将按当前配置交给 PhotoMemo 主程序处理。"
             : "当前内容看起来不像可直接处理的原始照片。"
 
         if sharedPhotoCount > 0 {
             statusTitleLabel.text =
-                "准备就绪"
+                "准备交给 PhotoMemo"
             statusMessageLabel.text =
-                "点击开始后，会进入短暂停留的处理观察窗口。"
+                "点击后会打开 PhotoMemo，处理进度在主程序中查看。"
             footerLabel.text =
-                "你也可以在开始处理后直接离开。"
+                "完成后结果会写回系统相册，并发送系统通知。"
             applyPrimaryButton(
                 title:
-                    "开始处理 \(sharedPhotoCount) 张"
+                    "交给 PhotoMemo 处理 \(sharedPhotoCount) 张"
             )
         } else {
             statusTitleLabel.text =
@@ -716,26 +716,24 @@ private extension PhotoMemoShareExtensionViewController {
         viewState = .processing
         activityIndicator.startAnimating()
         summarySectionView?.isHidden = true
-        previewSectionView?.isHidden =
-            sharedPhotoCount <= 0
-        loadFirstPreviewIfNeeded()
+        previewSectionView?.isHidden = true
         titleLabel.text =
-            "正在处理"
+            "正在交给 PhotoMemo"
         subtitleLabel.text =
-            "PhotoMemo 已接收这次分享。"
+            "正在安全接收这次分享。"
         statusTitleLabel.text =
             "正在接收原图"
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "如果很快完成，这里会直接显示完成状态。"
+            "会把照片暂存后打开 PhotoMemo 继续处理。"
         footerLabel.text =
-            "处理会继续进行，不需要再次设置。"
+            "原始照片不会被修改。"
 
         primaryButton.isEnabled =
             false
         primaryButton.configuration?.title =
-            "处理中"
+            "正在接收"
     }
 
     @MainActor
@@ -828,16 +826,10 @@ private extension PhotoMemoShareExtensionViewController {
                     )
 
                 if opened {
-                    if let pendingHandoffRequestID {
-                        await observeProcessingProgress(
-                            requestID:
-                                pendingHandoffRequestID,
-                            fallbackPhotoCount:
-                                pendingHandoffPhotoCount
+                    extensionContext?
+                        .completeRequest(
+                            returningItems: nil
                         )
-                    } else {
-                        applyHandoffFailureState()
-                    }
                 } else {
                     applyHandoffFailureState()
                 }
@@ -891,7 +883,7 @@ private extension PhotoMemoShareExtensionViewController {
             )
 
             statusTitleLabel.text =
-                "正在加入处理队列"
+                "正在打开 PhotoMemo"
             statusMessageLabel.textColor =
                 .secondaryLabel
             statusMessageLabel.text =
@@ -899,48 +891,42 @@ private extension PhotoMemoShareExtensionViewController {
                     for: result
                 )
             footerLabel.text =
-                "可以关闭窗口，处理完成后会收到系统通知。"
-            viewState = .received
-            applyPrimaryButton(
-                title:
-                    "关闭"
-            )
-            activityIndicator.stopAnimating()
+                "处理进度会在 PhotoMemo 主程序中显示。"
 
-            PhotoMemoShareIntakeLog.notice(
-                "Share extension will request main-app handoff before completion."
+            PhotoMemoShareDiagnostics.record(
+                stage: "extension.handoff.requested",
+                message:
+                    "Intake is safely persisted; requesting host app handoff.",
+                requestID:
+                    result.requestID
             )
 
             let opened =
                 await requestMainAppRefresh(
-                    requestID:
-                        result.requestID
-                )
+                requestID:
+                    result.requestID
+            )
 
-            if !opened {
-                PhotoMemoShareIntakeLog.notice(
-                    "Share extension persisted intake, but main-app handoff was not confirmed before timeout."
-                )
-                PhotoMemoShareDiagnostics.record(
-                    stage: "extension.handoff.deferred",
-                    message:
-                        "Intake is safely persisted; host app will process it when it next drains shared requests.",
-                    requestID:
-                        result.requestID
+            if opened {
+                titleLabel.text =
+                    "已交给 PhotoMemo"
+                subtitleLabel.text =
+                    "主程序会继续处理并写回系统相册。"
+                statusTitleLabel.text =
+                    "处理进度请在 PhotoMemo 查看"
+                statusMessageLabel.text =
+                    "如果系统没有自动切换，请手动打开 PhotoMemo。"
+                footerLabel.text =
+                    "可以关闭这个窗口。"
+                viewState = .received
+                activityIndicator.stopAnimating()
+                applyPrimaryButton(
+                    title:
+                        "关闭"
                 )
             } else {
-                PhotoMemoShareDiagnostics.record(
-                    stage: "extension.handoff.accepted",
-                    message: "Main app handoff reported success."
-                )
+                applyHandoffFailureState()
             }
-
-            await observeProcessingProgress(
-                requestID:
-                    result.requestID,
-                fallbackPhotoCount:
-                    result.importedCount
-            )
         } catch {
             if let shareError =
                 error as? PhotoMemoShareExtensionError {
@@ -1038,10 +1024,10 @@ private extension PhotoMemoShareExtensionViewController {
                 )
             }
 
-            return "\(summaryParts.joined(separator: "，"))。PhotoMemo 已开始后台处理。"
+            return "\(summaryParts.joined(separator: "，"))，正在交给 PhotoMemo 主程序。"
         }
 
-        return "已接收 \(result.requestedCount) 张。PhotoMemo 已开始后台处理。"
+        return "已接收 \(result.requestedCount) 张，正在交给 PhotoMemo 主程序。"
     }
 
     @MainActor
@@ -1129,10 +1115,7 @@ private extension PhotoMemoShareExtensionViewController {
         )
 
         if opened {
-            return await waitForMainAppHandoffConfirmation(
-                requestID: requestID,
-                source: "primary"
-            )
+            return true
         }
 
         let fallbackOpened =
@@ -1153,10 +1136,7 @@ private extension PhotoMemoShareExtensionViewController {
             return false
         }
 
-        return await waitForMainAppHandoffConfirmation(
-            requestID: requestID,
-            source: "fallback"
-        )
+        return true
     }
 
     @MainActor

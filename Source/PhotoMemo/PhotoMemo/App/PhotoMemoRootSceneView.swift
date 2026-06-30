@@ -83,6 +83,9 @@ struct PhotoMemoRootSceneView: View {
         PhotoMemoiOSTemporaryEntryView(
             backgroundStatusService:
                 runtime.backgroundStatusService,
+            refreshExternalIntake: {
+                runtime.refreshExternalIntakeState()
+            },
             storageKey: temporaryEntryStorageKey,
             defaultEntry: temporaryEntryDefault
         )

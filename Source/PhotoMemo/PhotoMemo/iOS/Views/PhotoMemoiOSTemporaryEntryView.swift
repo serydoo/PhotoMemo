@@ -7,17 +7,24 @@ struct PhotoMemoiOSTemporaryEntryView: View {
     var backgroundStatusService:
         PhotoMemoBackgroundStatusService
 
+    let refreshExternalIntake:
+        () -> Void
+
     @AppStorage
     private var selectedEntry: String
 
     init(
         backgroundStatusService:
             PhotoMemoBackgroundStatusService,
+        refreshExternalIntake:
+            @escaping () -> Void = {},
         storageKey: String = "photomemo.ios.temporaryEntry",
         defaultEntry: String = "configurationCenter"
     ) {
         self.backgroundStatusService =
             backgroundStatusService
+        self.refreshExternalIntake =
+            refreshExternalIntake
         _selectedEntry =
             AppStorage(
                 wrappedValue: defaultEntry,
@@ -49,7 +56,9 @@ struct PhotoMemoiOSTemporaryEntryView: View {
         case "mvpTest":
             PhotoMemoiOSMVPTestView(
                 backgroundStatusService:
-                    backgroundStatusService
+                    backgroundStatusService,
+                refreshExternalIntake:
+                    refreshExternalIntake
             )
         default:
             ConfigurationCenteriOSView()

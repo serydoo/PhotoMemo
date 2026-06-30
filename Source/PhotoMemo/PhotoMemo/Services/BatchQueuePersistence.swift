@@ -57,6 +57,38 @@ struct BatchQueuePersistence {
                     continue
                 }
 
+                if isMissingManagedIntakeSource(
+                    jobs[jobIndex]
+                        .tasks[taskIndex]
+                        .sourceURL
+                ) {
+                    jobs[jobIndex]
+                        .tasks[taskIndex]
+                        .phase = .failed
+                    jobs[jobIndex]
+                        .tasks[taskIndex]
+                        .renderedFileURL = nil
+                    jobs[jobIndex]
+                        .tasks[taskIndex]
+                        .failure =
+                        BatchTaskFailure(
+                            phase: phase,
+                            message: "原始临时文件已不可用",
+                            canRetry: false
+                        )
+                    jobs[jobIndex]
+                        .tasks[taskIndex]
+                        .progress =
+                        BatchTaskProgress(
+                            currentUnit: 0,
+                            totalUnits: 1,
+                            statusMessage:
+                                "原始临时文件已不可用"
+                        )
+                    changed = true
+                    continue
+                }
+
                 jobs[jobIndex]
                     .tasks[taskIndex]
                     .phase = .queued
@@ -98,6 +130,34 @@ struct BatchQueuePersistence {
         defaults.set(
             data,
             forKey: storageKey
+        )
+        defaults.synchronize()
+    }
+}
+
+private extension BatchQueuePersistence {
+
+    func isMissingManagedIntakeSource(
+        _ url: URL
+    ) -> Bool {
+
+        let normalizedURL =
+            url.standardizedFileURL
+        let intakeDirectoryPath =
+            PhotoMemoSharedContainer
+            .externalIntakeDirectoryURL
+            .standardizedFileURL
+            .path
+
+        guard normalizedURL.path.hasPrefix(
+            intakeDirectoryPath
+        ) else {
+            return false
+        }
+
+        return !FileManager.default.fileExists(
+            atPath:
+                normalizedURL.path
         )
     }
 }

@@ -548,7 +548,7 @@ final class BatchQueueExecution {
         in jobs: [BatchJob]
     ) -> TaskReference? {
 
-        for jobIndex in jobs.indices.reversed() {
+        for jobIndex in jobs.indices {
             let job = jobs[jobIndex]
 
             for taskIndex in job.tasks.indices {

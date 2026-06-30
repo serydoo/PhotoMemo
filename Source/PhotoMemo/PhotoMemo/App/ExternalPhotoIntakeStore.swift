@@ -697,6 +697,7 @@ private extension ExternalPhotoIntakeStore {
             data,
             forKey: storageKey
         )
+        defaults.synchronize()
         return true
     }
 
@@ -717,6 +718,7 @@ private extension ExternalPhotoIntakeStore {
                 data,
                 forKey: storageKey
             )
+            defaults.synchronize()
 
             return nil
         } catch {
