@@ -215,6 +215,21 @@ final class ExternalPhotoIntakeStore {
         if normalizedURL.path.hasPrefix(
             intakeDirectoryURL.path
         ) {
+            guard PhotoMemoImageFileReadiness
+                .waitForReadableImageFile(
+                    at: normalizedURL
+                ) else {
+                return unreadableManagedCopyResult(
+                    sourceURL: normalizedURL,
+                    destinationURL: normalizedURL,
+                    diagnosticsSeed: diagnosticsSeed,
+                    operation:
+                        "createManagedCopy.validateAlreadyManagedImage",
+                    temporaryCopyResult:
+                        "already-managed-unreadable"
+                )
+            }
+
             return PhotoMemoShareIntakeManagedCopyResult(
                 managedURL:
                     normalizedURL,
@@ -308,6 +323,21 @@ final class ExternalPhotoIntakeStore {
         }
 
         do {
+            guard PhotoMemoImageFileReadiness
+                .waitForReadableImageFile(
+                    at: normalizedURL
+                ) else {
+                return unreadableManagedCopyResult(
+                    sourceURL: normalizedURL,
+                    destinationURL: destinationURL,
+                    diagnosticsSeed: diagnosticsSeed,
+                    operation:
+                        "createManagedCopy.waitForReadableSourceImage",
+                    temporaryCopyResult:
+                        "source-unreadable-before-copy"
+                )
+            }
+
             if FileManager.default.fileExists(
                 atPath:
                     destinationURL.path
@@ -326,6 +356,25 @@ final class ExternalPhotoIntakeStore {
             let managedURL =
                 destinationURL
                 .standardizedFileURL
+
+            guard PhotoMemoImageFileReadiness
+                .waitForReadableImageFile(
+                    at: managedURL
+                ) else {
+                try? FileManager.default
+                    .removeItem(
+                        at: managedURL
+                    )
+                return unreadableManagedCopyResult(
+                    sourceURL: normalizedURL,
+                    destinationURL: managedURL,
+                    diagnosticsSeed: diagnosticsSeed,
+                    operation:
+                        "createManagedCopy.validateCopiedImage",
+                    temporaryCopyResult:
+                        "copied-but-unreadable"
+                )
+            }
 
             return PhotoMemoShareIntakeManagedCopyResult(
                 managedURL:
@@ -449,6 +498,25 @@ final class ExternalPhotoIntakeStore {
             let managedURL =
                 destinationURL
                 .standardizedFileURL
+
+            guard PhotoMemoImageFileReadiness
+                .waitForReadableImageFile(
+                    at: managedURL
+                ) else {
+                try? FileManager.default
+                    .removeItem(
+                        at: managedURL
+                    )
+                return unreadableManagedCopyResult(
+                    sourceURL: nil,
+                    destinationURL: managedURL,
+                    diagnosticsSeed: diagnosticsSeed,
+                    operation:
+                        "createManagedCopyFromData.validateWrittenImage",
+                    temporaryCopyResult:
+                        "copied-data-but-unreadable"
+                )
+            }
 
             return PhotoMemoShareIntakeManagedCopyResult(
                 managedURL:
@@ -786,6 +854,46 @@ private extension ExternalPhotoIntakeStore {
         }
     }
 
+    func unreadableManagedCopyResult(
+        sourceURL: URL?,
+        destinationURL: URL,
+        diagnosticsSeed:
+            PhotoMemoShareIntakeOperationSeed,
+        operation: String,
+        temporaryCopyResult: String
+    ) -> PhotoMemoShareIntakeManagedCopyResult {
+
+        let wrappedError =
+            PhotoMemoShareIntakeDiagnosticError
+            .make(
+                description:
+                    "Share intake copied a file, but ImageIO could not read it as a complete image.",
+                code: 1007
+            )
+
+        return PhotoMemoShareIntakeManagedCopyResult(
+            managedURL: nil,
+            temporaryCopyResult:
+                temporaryCopyResult,
+            sharedContainerDestination:
+                destinationURL,
+            failureContext:
+                diagnosticsSeed
+                .failureContext(
+                    stage: .copy,
+                    operation:
+                        operation,
+                    returnedURL:
+                        sourceURL,
+                    temporaryCopyResult:
+                        temporaryCopyResult,
+                    sharedContainerDestination:
+                        destinationURL,
+                    error: wrappedError
+                )
+        )
+    }
+
     func preparedManagedURLs(
         for urls: [URL],
         requestID: UUID
@@ -885,6 +993,13 @@ private extension ExternalPhotoIntakeStore {
                 normalizedURL
                     .stopAccessingSecurityScopedResource()
             }
+        }
+
+        guard PhotoMemoImageFileReadiness
+            .waitForReadableImageFile(
+                at: normalizedURL
+            ) else {
+            return nil
         }
 
         do {

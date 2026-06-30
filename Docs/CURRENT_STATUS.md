@@ -2,6 +2,61 @@
 
 Last updated: 2026-06-30
 
+## 2026-06-30 iCloud Source Readiness Guard For Share Intake
+
+User reported the MVP could still sit at:
+
+- `正在交给 PhotoMemo`
+- `检查待处理照片`
+- `正在读取刚接收的照片`
+
+Additional requirement:
+
+- account for iCloud Photos needing to cache/download the full original before
+  PhotoMemo can safely process it
+- show this only when it matters; local readable photos should not gain an
+  extra visible step
+
+What changed:
+
+- Added `PhotoMemoImageFileReadiness` as a shared guard for external intake.
+- Share intake now waits for provider URLs to become real readable image files
+  before copying them into App Group storage.
+- Managed copies are verified after copy/write with ImageIO before being
+  persisted as successful intake.
+- The host app no longer treats `fileExists` alone as enough to enqueue a
+  Share request; the file must be readable as an image.
+- `PhotoImportService` now performs a final bounded readiness wait before
+  metadata/image decoding.
+- Share Extension diagnostics now emit source-readiness events only when the
+  source needs preparation:
+  - `extension.source.prepare`
+  - `extension.source.ready`
+  - `extension.source.unavailable`
+- The Share sheet can briefly show `正在读取 iCloud 原图` while the source is
+  being prepared.
+- The iOS MVP `处理进度` panel maps those events to an iCloud-original
+  preparation step, then proceeds to handoff/queue status.
+
+Preserved:
+
+- Renderer/layout/export/photo-library save behavior was not changed.
+- Local already-readable images skip the extra user-visible iCloud preparation
+  step.
+
+Verification:
+
+- passed focused `PhotoMemoTests/ExternalPhotoIntakeStoreDiagnosticsTests`
+- passed focused `PhotoMemoTests/PhotoImportServiceTests`
+- passed `git diff --check`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` iPhone7 Debug build
+- installed `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+- automatic launch after install was denied by iOS because the current debug
+  signing profile is not trusted on the device
+
 ## 2026-06-30 Share Handoff And Stale Queue Recovery Fix
 
 User reported the latest device build regressed in four linked ways:

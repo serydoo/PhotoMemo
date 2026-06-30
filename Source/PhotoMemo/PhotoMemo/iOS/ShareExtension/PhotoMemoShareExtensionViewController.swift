@@ -101,6 +101,9 @@ final class PhotoMemoShareExtensionViewController:
     private var firstPreviewTask:
         Task<Void, Never>?
 
+    private var intakeDiagnosticTask:
+        Task<Void, Never>?
+
     private var previewCardViews:
         [UIView] = []
 
@@ -737,6 +740,80 @@ private extension PhotoMemoShareExtensionViewController {
     }
 
     @MainActor
+    func startIntakeDiagnosticMonitor() {
+
+        intakeDiagnosticTask?.cancel()
+        intakeDiagnosticTask =
+            Task { @MainActor [weak self] in
+                for _ in 0..<40 {
+                    guard let self,
+                          !Task.isCancelled else {
+                        return
+                    }
+
+                    self.applyLatestIntakeDiagnosticStatus()
+
+                    try? await Task.sleep(
+                        nanoseconds: 180_000_000
+                    )
+                }
+            }
+    }
+
+    @MainActor
+    func stopIntakeDiagnosticMonitor() {
+
+        intakeDiagnosticTask?.cancel()
+        intakeDiagnosticTask = nil
+    }
+
+    @MainActor
+    func applyLatestIntakeDiagnosticStatus() {
+
+        guard case .processing = viewState else {
+            return
+        }
+
+        let events =
+            PhotoMemoShareDiagnostics
+            .loadEvents()
+
+        if events.contains(where: {
+            $0.stage == "extension.source.prepare"
+        }),
+           !events.contains(where: {
+               $0.stage == "extension.source.ready"
+           }) {
+            titleLabel.text =
+                "正在准备原图"
+            subtitleLabel.text =
+                "系统正在把 iCloud 原图准备到本地。"
+            statusTitleLabel.text =
+                "正在读取 iCloud 原图"
+            statusMessageLabel.text =
+                "原图可读取后会继续交给 PhotoMemo。"
+            primaryButton.configuration?.title =
+                "正在准备"
+            return
+        }
+
+        if events.contains(where: {
+            $0.stage == "extension.source.ready"
+        }) {
+            titleLabel.text =
+                "原图已可读取"
+            subtitleLabel.text =
+                "正在安全交给 PhotoMemo 主程序。"
+            statusTitleLabel.text =
+                "正在交给 PhotoMemo"
+            statusMessageLabel.text =
+                "照片可用，正在继续处理。"
+            primaryButton.configuration?.title =
+                "正在交给 PhotoMemo"
+        }
+    }
+
+    @MainActor
     func applyFailureState(
         title: String,
         message: String,
@@ -864,6 +941,10 @@ private extension PhotoMemoShareExtensionViewController {
         }
 
         applyProcessingState()
+        startIntakeDiagnosticMonitor()
+        defer {
+            stopIntakeDiagnosticMonitor()
+        }
 
         do {
             let result =

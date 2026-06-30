@@ -1,4 +1,6 @@
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 import Testing
 @testable import PhotoMemo
 
@@ -101,7 +103,7 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
             at: rootDirectoryURL,
             withIntermediateDirectories: true
         )
-        try Data([1, 2, 3, 4]).write(
+        try Self.writeSmallJPEG(
             to: sourceURL
         )
 
@@ -131,9 +133,67 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
                 atPath: managedURL.path
             )
         )
+        #expect(CGImageSourceCreateWithURL(managedURL as CFURL, nil) != nil)
+    }
+
+    @Test("Detailed managed copy rejects files that exist but are not readable images")
+    func rejectsFilesThatExistButAreNotReadableImages() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.InvalidImage.\(UUID().uuidString)"
+
+        guard let defaults =
+            UserDefaults(suiteName: suiteName) else {
+            Issue.record("Unable to create isolated UserDefaults suite")
+            return
+        }
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let rootDirectoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        let sourceURL =
+            rootDirectoryURL
+            .appendingPathComponent("source.jpg")
+
+        try FileManager.default.createDirectory(
+            at: rootDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        try Data([1, 2, 3, 4]).write(
+            to: sourceURL
+        )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: rootDirectoryURL
+                    .appendingPathComponent(
+                        "Intake",
+                        isDirectory: true
+                    )
+            )
+
+        let result =
+            store.createManagedCopyDetailed(
+                from: sourceURL,
+                requestID: UUID(),
+                index: 0
+            )
+
+        #expect(result.managedURL == nil)
+        #expect(result.failureContext?.stage == .copy)
         #expect(
-            try Data(contentsOf: managedURL)
-            == Data([1, 2, 3, 4])
+            result.failureContext?
+                .temporaryCopyResult == "source-unreadable-before-copy"
         )
 
         try? FileManager.default.removeItem(
@@ -186,7 +246,7 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
                 "IMG_7065.JPEG"
             )
 
-        try Data([9, 8, 7, 6]).write(
+        try Self.writeSmallJPEG(
             to: sourceURL
         )
 
@@ -212,7 +272,7 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
 
         let secondResult =
             store.createManagedCopyDetailed(
-                fromData: Data([1, 2, 3]),
+                fromData: try Self.smallJPEGData(),
                 requestID: requestID,
                 index: 1,
                 preferredFileExtension:
@@ -285,7 +345,7 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
                 "share-provider-temp-file"
             )
 
-        try Data([4, 5, 6, 7]).write(
+        try Self.writeSmallJPEG(
             to: sourceURL
         )
 
@@ -360,7 +420,7 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
                 "IMG_9558.HEIC"
             )
 
-        try Data([4, 5, 6]).write(
+        try Self.smallJPEGData().write(
             to: managedURL
         )
 
@@ -414,5 +474,70 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
         defaults.removePersistentDomain(
             forName: suiteName
         )
+    }
+}
+
+private extension ExternalPhotoIntakeStoreDiagnosticsTests {
+
+    static func writeSmallJPEG(
+        to url: URL
+    ) throws {
+        try smallJPEGData()
+            .write(
+                to: url
+            )
+    }
+
+    static func smallJPEGData() throws -> Data {
+        var pixels: [UInt8] = [
+            255, 0, 0, 255,
+            0, 255, 0, 255,
+            0, 0, 255, 255,
+            255, 255, 255, 255
+        ]
+
+        let context =
+            try #require(
+                CGContext(
+                    data: &pixels,
+                    width: 2,
+                    height: 2,
+                    bitsPerComponent: 8,
+                    bytesPerRow: 8,
+                    space:
+                        CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo:
+                        CGImageAlphaInfo
+                        .premultipliedLast
+                        .rawValue
+                )
+            )
+        let image =
+            try #require(
+                context.makeImage()
+            )
+        let data = NSMutableData()
+        let destination =
+            try #require(
+                CGImageDestinationCreateWithData(
+                    data,
+                    UTType.jpeg.identifier as CFString,
+                    1,
+                    nil
+                )
+            )
+
+        CGImageDestinationAddImage(
+            destination,
+            image,
+            nil
+        )
+        #expect(
+            CGImageDestinationFinalize(
+                destination
+            )
+        )
+
+        return data as Data
     }
 }

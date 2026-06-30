@@ -17,7 +17,7 @@ struct PhotoMemoShareDiagnosticEvent:
 
     let jobID: UUID?
 
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         timestamp: Date = Date(),
         stage: String,
@@ -36,12 +36,12 @@ struct PhotoMemoShareDiagnosticEvent:
 
 enum PhotoMemoShareDiagnostics {
 
-    private static let storageKey =
+    nonisolated private static let storageKey =
         "photomemo.shareDiagnostics.events"
 
-    private static let maxEventCount = 80
+    nonisolated private static let maxEventCount = 80
 
-    static func reset(
+    nonisolated static func reset(
         reason: String
     ) {
 
@@ -53,7 +53,7 @@ enum PhotoMemoShareDiagnostics {
         ])
     }
 
-    static func record(
+    nonisolated static func record(
         stage: String,
         message: String,
         requestID: UUID? = nil,
@@ -78,7 +78,7 @@ enum PhotoMemoShareDiagnostics {
         )
     }
 
-    static func loadEvents()
+    nonisolated static func loadEvents()
     -> [PhotoMemoShareDiagnosticEvent] {
 
         guard let data =
@@ -101,7 +101,7 @@ enum PhotoMemoShareDiagnostics {
         ) ?? []
     }
 
-    private static func persist(
+    nonisolated private static func persist(
         _ events: [PhotoMemoShareDiagnosticEvent]
     ) {
 

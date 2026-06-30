@@ -1,5 +1,47 @@
 # PhotoMemo Handoff
 
+## 2026-06-30 iCloud Source Readiness Guard For Share Intake
+
+- 用户反馈：
+  - 当前仍可能卡在 `正在交给 PhotoMemo`、`检查待处理照片`、
+    `正在读取刚接收的照片`。
+  - 需要考虑 iCloud 照片完整原图缓存到本地后，PhotoMemo 才能取得完整数据。
+  - 如果是本地可读图片，不需要额外显示 iCloud 准备环节。
+- 根因判断：
+  - 之前 Share Extension / 主 App 只把 `copyItem` 成功或 `fileExists`
+    当作可处理依据。
+  - 这不足以证明 App Group 内的文件已经是完整、可由 ImageIO 解码的图片。
+- 已落实：
+  - 新增 `PhotoMemoImageFileReadiness`。
+  - Share intake 在复制 provider URL 前，会触发 iCloud 下载请求并等待源图可读。
+  - 复制/写入 App Group 后，再用 ImageIO 验证目标文件能读出尺寸。
+  - 主 App drain 时不再只检查文件存在，必须确认图片可读才入队。
+  - `PhotoImportService` 在实际导入前再做一次短等待，避免刚接收文件尚未稳定。
+  - Share Extension 新增只在必要时出现的诊断事件：
+    - `extension.source.prepare`
+    - `extension.source.ready`
+    - `extension.source.unavailable`
+  - Share 窗口处理态会根据诊断短轮询显示：
+    - `正在读取 iCloud 原图`
+    - `原图已可读取`
+  - iOS MVP `处理进度` 面板同步显示 iCloud 原图准备环节。
+- 特意未改：
+  - renderer、底部边框、文字布局、Photo Library 保存、通知完成语义。
+  - 本地已可读图片不会多出额外 iCloud 步骤。
+- 已验证：
+  - `PhotoMemoTests/ExternalPhotoIntakeStoreDiagnosticsTests` 通过。
+  - `PhotoMemoTests/PhotoImportServiceTests` 通过。
+  - `git diff --check` 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
+  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 自动启动被 iOS 拒绝，原因是当前 debug 签名 profile 未在设备上信任。
+- 下一轮真机重点：
+  - 从 Apple Photos 分享一张本地图片，确认不额外显示 iCloud 准备环节。
+  - 从 Apple Photos 分享一张未下载原图的 iCloud 图片，确认 Share/主程序进度能显示原图准备，
+    准备完成后继续入队并输出。
+
 ## 2026-06-30 Immers White Secondary Line And Divider Pixel Pass
 
 - 用户要求：

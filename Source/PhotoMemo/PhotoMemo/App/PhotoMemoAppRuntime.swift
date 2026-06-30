@@ -238,11 +238,10 @@ private extension PhotoMemoAppRuntime {
             return false
         }
 
-        return FileManager.default
-            .fileExists(
-                atPath:
+        return PhotoMemoImageFileReadiness
+            .isExistingReadableImageFile(
+                at:
                     url.standardizedFileURL
-                    .path
             )
     }
 

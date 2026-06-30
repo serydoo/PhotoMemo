@@ -133,6 +133,15 @@ final class PhotoImportService {
             }
         }
 
+        guard PhotoMemoImageFileReadiness
+            .waitForReadableImageFile(
+                at: url,
+                timeout: 5,
+                pollInterval: 0.12
+            ) else {
+            throw PhotoImportError.imageLoadFailed
+        }
+
         let sourceProperties =
             metadataReader.properties(from: url)
             ?? [:]

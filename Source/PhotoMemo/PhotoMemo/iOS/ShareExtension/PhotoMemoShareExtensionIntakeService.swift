@@ -777,6 +777,17 @@ private extension PhotoMemoShareExtensionIntakeService {
                     "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returnedURL=\(url.standardizedFileURL.path)"
                 )
 
+                let sourceReadiness =
+                    PhotoMemoImageFileReadiness
+                    .probe(
+                        at: url.standardizedFileURL
+                    )
+                Self.recordSourcePreparationIfNeeded(
+                    sourceReadiness,
+                    requestID: requestID,
+                    index: index
+                )
+
                 let originalFileName =
                     Self.resolvedOriginalFileName(
                         preferredName:
@@ -803,6 +814,15 @@ private extension PhotoMemoShareExtensionIntakeService {
                 guard let managedURL =
                     copyResult.managedURL
                 else {
+                    Self.recordSourceUnavailableIfNeeded(
+                        sourceReadiness,
+                        copyResult:
+                            copyResult,
+                        requestID:
+                            requestID,
+                        index:
+                            index
+                    )
                     continuation.resume(
                         returning:
                             FileRepresentationLoadResult(
@@ -836,6 +856,12 @@ private extension PhotoMemoShareExtensionIntakeService {
                     )
                     return
                 }
+
+                Self.recordSourceReadyIfNeeded(
+                    sourceReadiness,
+                    requestID: requestID,
+                    index: index
+                )
 
                 continuation.resume(
                     returning:
@@ -942,6 +968,17 @@ private extension PhotoMemoShareExtensionIntakeService {
                         "Provider[\(index)] loadItem returnedURL=\(normalizedURL.path)"
                     )
 
+                    let sourceReadiness =
+                        PhotoMemoImageFileReadiness
+                        .probe(
+                            at: normalizedURL
+                        )
+                    Self.recordSourcePreparationIfNeeded(
+                        sourceReadiness,
+                        requestID: requestID,
+                        index: index
+                    )
+
                     let originalFileName =
                         Self.resolvedOriginalFileName(
                             preferredName:
@@ -969,6 +1006,15 @@ private extension PhotoMemoShareExtensionIntakeService {
                     guard let managedURL =
                         copyResult.managedURL
                     else {
+                        Self.recordSourceUnavailableIfNeeded(
+                            sourceReadiness,
+                            copyResult:
+                                copyResult,
+                            requestID:
+                                requestID,
+                            index:
+                                index
+                        )
                         continuation.resume(
                             returning:
                                 .failed(
@@ -1000,6 +1046,12 @@ private extension PhotoMemoShareExtensionIntakeService {
                         )
                         return
                     }
+
+                    Self.recordSourceReadyIfNeeded(
+                        sourceReadiness,
+                        requestID: requestID,
+                        index: index
+                    )
 
                     continuation.resume(
                         returning:
@@ -1208,6 +1260,71 @@ private extension PhotoMemoShareExtensionIntakeService {
                 type.conforms(to: .image)
             }?
             .identifier
+    }
+
+    nonisolated static
+    func recordSourcePreparationIfNeeded(
+        _ probe:
+            PhotoMemoImageFileReadiness.ProbeResult,
+        requestID: UUID,
+        index: Int
+    ) {
+
+        guard probe.shouldDisplayPreparationState else {
+            return
+        }
+
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.source.prepare",
+            message:
+                "providerIndex=\(index), \(probe.diagnosticMessage)",
+            requestID:
+                requestID
+        )
+    }
+
+    nonisolated static
+    func recordSourceReadyIfNeeded(
+        _ probe:
+            PhotoMemoImageFileReadiness.ProbeResult,
+        requestID: UUID,
+        index: Int
+    ) {
+
+        guard probe.shouldDisplayPreparationState else {
+            return
+        }
+
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.source.ready",
+            message:
+                "providerIndex=\(index)",
+            requestID:
+                requestID
+        )
+    }
+
+    nonisolated static
+    func recordSourceUnavailableIfNeeded(
+        _ probe:
+            PhotoMemoImageFileReadiness.ProbeResult,
+        copyResult:
+            PhotoMemoShareIntakeManagedCopyResult,
+        requestID: UUID,
+        index: Int
+    ) {
+
+        guard probe.shouldDisplayPreparationState else {
+            return
+        }
+
+        PhotoMemoShareDiagnostics.record(
+            stage: "extension.source.unavailable",
+            message:
+                "providerIndex=\(index), result=\(copyResult.temporaryCopyResult ?? "unknown")",
+            requestID:
+                requestID
+        )
     }
 
     nonisolated static

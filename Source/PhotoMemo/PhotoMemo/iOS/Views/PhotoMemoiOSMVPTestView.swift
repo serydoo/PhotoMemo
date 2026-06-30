@@ -1712,9 +1712,25 @@ struct PhotoMemoiOSMVPTestView: View {
         }
 
         if shareDiagnosticEvents.contains(where: {
+            $0.stage == "extension.source.prepare"
+        }),
+           !shareDiagnosticEvents.contains(where: {
+               $0.stage == "extension.source.ready"
+               || $0.stage == "app.enqueue.created"
+           }) {
+            return "正在准备 iCloud 原图"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
             $0.stage == "app.enqueue.created"
         }) {
             return "照片已进入处理队列"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "extension.source.ready"
+        }) {
+            return "原图可用，正在交给 PhotoMemo"
         }
 
         if shareDiagnosticEvents.contains(where: {
@@ -1749,6 +1765,25 @@ struct PhotoMemoiOSMVPTestView: View {
             $0.stage == "app.request.dropped"
         }) {
             return "重复或失效的照片已跳过，原图不会被修改。"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "extension.source.prepare"
+        }),
+           !shareDiagnosticEvents.contains(where: {
+               $0.stage == "extension.source.ready"
+               || $0.stage == "app.enqueue.created"
+           }) {
+            return "已向系统请求原图数据，等 iCloud 缓存到本地后继续。"
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "extension.source.ready"
+        }),
+           !shareDiagnosticEvents.contains(where: {
+               $0.stage == "app.enqueue.created"
+           }) {
+            return "原图已经可读取，正在交给 PhotoMemo 主程序。"
         }
 
         if shareDiagnosticEvents.contains(where: {
@@ -1919,6 +1954,15 @@ struct PhotoMemoiOSMVPTestView: View {
              "extension.persisted":
             return "照片已接收"
 
+        case "extension.source.prepare":
+            return "准备 iCloud 原图"
+
+        case "extension.source.ready":
+            return "原图可读取"
+
+        case "extension.source.unavailable":
+            return "原图暂时不可读取"
+
         case "extension.handoff.unconfirmed",
              "extension.handoff.failed":
             return "等待 PhotoMemo 接力"
@@ -1955,6 +1999,15 @@ struct PhotoMemoiOSMVPTestView: View {
         case "extension.request.persisted",
              "extension.persisted":
             return "原图已暂存，等待 PhotoMemo 处理。"
+
+        case "extension.source.prepare":
+            return "正在向系统请求原图数据，等待 iCloud 缓存到本地。"
+
+        case "extension.source.ready":
+            return "原图已经可读取，正在继续交给 PhotoMemo。"
+
+        case "extension.source.unavailable":
+            return "系统暂时没有提供完整原图，请稍后重试或先在相册打开原图。"
 
         case "extension.handoff.unconfirmed",
              "extension.handoff.failed":
@@ -1999,6 +2052,15 @@ struct PhotoMemoiOSMVPTestView: View {
             return "checkmark.circle.fill"
         }
 
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "extension.source.prepare"
+        }),
+           !shareDiagnosticEvents.contains(where: {
+               $0.stage == "extension.source.ready"
+           }) {
+            return "icloud.and.arrow.down"
+        }
+
         if latestShareDiagnosticEvent?.stage.contains("failed") == true
             || latestShareDiagnosticEvent?.stage.contains("error") == true {
             return "exclamationmark.triangle.fill"
@@ -2025,6 +2087,15 @@ struct PhotoMemoiOSMVPTestView: View {
             $0.stage == "liveActivity.request.created"
         }) {
             return .green
+        }
+
+        if shareDiagnosticEvents.contains(where: {
+            $0.stage == "extension.source.prepare"
+        }),
+           !shareDiagnosticEvents.contains(where: {
+               $0.stage == "extension.source.ready"
+           }) {
+            return .blue
         }
 
         if latestShareDiagnosticEvent?.stage.contains("failed") == true

@@ -2,13 +2,13 @@ import Foundation
 
 enum PhotoMemoSharedContainer {
 
-    static let appGroupIdentifier =
+    nonisolated static let appGroupIdentifier =
         "group.com.serydoo.PhotoMemo"
 
-    private static let migrationFlagKey =
+    nonisolated private static let migrationFlagKey =
         "photomemo.sharedDefaults.didMigrate"
 
-    static var sharedUserDefaults: UserDefaults {
+    nonisolated static var sharedUserDefaults: UserDefaults {
 
         let sharedDefaults =
             UserDefaults(
@@ -22,7 +22,7 @@ enum PhotoMemoSharedContainer {
         return sharedDefaults
     }
 
-    static var baseDirectoryURL: URL {
+    nonisolated static var baseDirectoryURL: URL {
 
         let fileManager =
             FileManager.default
@@ -49,7 +49,7 @@ enum PhotoMemoSharedContainer {
             )
     }
 
-    static var externalIntakeDirectoryURL: URL {
+    nonisolated static var externalIntakeDirectoryURL: URL {
 
         baseDirectoryURL
             .appendingPathComponent(
@@ -59,7 +59,7 @@ enum PhotoMemoSharedContainer {
     }
 
     @discardableResult
-    static func ensureDirectory(
+    nonisolated static func ensureDirectory(
         at url: URL
     ) -> Bool {
 
@@ -74,7 +74,7 @@ enum PhotoMemoSharedContainer {
         }
     }
 
-    static func migrateLegacyDefaultsIfNeeded(
+    nonisolated static func migrateLegacyDefaultsIfNeeded(
         into sharedDefaults: UserDefaults
     ) {
 
