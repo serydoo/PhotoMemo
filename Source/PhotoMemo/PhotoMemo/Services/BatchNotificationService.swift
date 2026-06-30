@@ -3,6 +3,7 @@ import UserNotifications
 
 enum BatchNotificationMessageFormatter {
 
+    nonisolated
     static func finishedTitle(
         completedCount: Int,
         failedCount: Int,
@@ -27,14 +28,21 @@ enum BatchNotificationMessageFormatter {
         return "\(timeText) 已完成 \(completedCount) 张，\(failedCount) 张需要处理"
     }
 
+    nonisolated
     static func finishedMessage(
         completedCount: Int,
         failedCount: Int,
-        totalCount: Int
+        totalCount: Int,
+        savedAlbumName: String? = nil
     ) -> String {
 
         if failedCount == 0 {
-            return "PhotoMemo 已生成新的照片。"
+            return savedAlbumName
+                .flatMap(normalizedAlbumName)
+                .map {
+                    "已保存到「\($0)」。"
+                }
+                ?? "PhotoMemo 已生成新的照片。"
         }
 
         if completedCount == 0 {
@@ -44,12 +52,40 @@ enum BatchNotificationMessageFormatter {
         if Double(completedCount)
             / Double(max(1, totalCount))
             >= 0.8 {
+            if let albumName =
+                savedAlbumName
+                .flatMap(normalizedAlbumName) {
+                return "大部分照片已保存到「\(albumName)」，另有 \(failedCount) 张需要处理。"
+            }
+
             return "大部分照片已经完成，另有 \(failedCount) 张需要处理。"
+        }
+
+        if let albumName =
+            savedAlbumName
+            .flatMap(normalizedAlbumName) {
+            return "已保存 \(completedCount) 张到「\(albumName)」，\(failedCount) 张需要处理。"
         }
 
         return "已完成 \(completedCount) 张，\(failedCount) 张需要处理。"
     }
 
+    nonisolated
+    static func normalizedAlbumName(
+        _ value: String
+    ) -> String? {
+
+        let trimmed =
+            value.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmed.isEmpty
+            ? nil
+            : trimmed
+    }
+
+    nonisolated
     private static func shortTimeText(
         for date: Date,
         calendar: Calendar
@@ -172,9 +208,17 @@ final class BatchNotificationService:
             .finishedMessage(
                 completedCount: completedCount,
                 failedCount: failedCount,
-                totalCount: totalCount
+                totalCount: totalCount,
+                savedAlbumName:
+                    savedAlbumName(
+                        for: job
+                    )
             )
         content.sound = .default
+        content.attachments =
+            notificationAttachments(
+                for: job
+            )
         configureStatusPresentation(
             content,
             for: job,
@@ -394,6 +438,73 @@ private extension BatchNotificationService {
                 suffix: $0
             )
         }
+    }
+
+    func notificationAttachments(
+        for job: BatchJob
+    ) -> [UNNotificationAttachment] {
+
+        guard let attachmentURL =
+            job.tasks
+            .first(where: {
+                $0.phase == .completed
+                && $0.notificationAttachmentURL != nil
+            })?
+            .notificationAttachmentURL
+        else {
+            return []
+        }
+
+        guard FileManager.default.fileExists(
+            atPath:
+                attachmentURL
+                .standardizedFileURL
+                .path
+        ) else {
+            return []
+        }
+
+        guard let attachment =
+            try? UNNotificationAttachment(
+                identifier:
+                    "photomemo-result",
+                url: attachmentURL,
+                options: nil
+            )
+        else {
+            return []
+        }
+
+        return [attachment]
+    }
+
+    func savedAlbumName(
+        for job: BatchJob
+    ) -> String? {
+
+        let albumNames =
+            Set(
+                job.tasks
+                    .filter {
+                        $0.phase == .completed
+                    }
+                    .compactMap {
+                        BatchNotificationMessageFormatter
+                            .normalizedAlbumName(
+                                $0.savedAlbumName ?? ""
+                            )
+                    }
+            )
+
+        if albumNames.count == 1 {
+            return albumNames.first
+        }
+
+        if albumNames.count > 1 {
+            return "多个相册"
+        }
+
+        return nil
     }
 
     func queuedMessage(

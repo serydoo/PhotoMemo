@@ -71,9 +71,9 @@ struct RendererConstantsTests {
             RendererConstants.CompactInformationBar.landscape
 
         #expect(portrait.leftX == 0.045)
-        #expect(portrait.rightX == 0.566)
-        #expect(portrait.logoCenterX == 0.490)
-        #expect(portrait.dividerCenterX == 0.540)
+        #expect(portrait.rightX == 0.549)
+        #expect(portrait.logoCenterX == 0.473)
+        #expect(portrait.dividerCenterX == 0.523)
 
         #expect(landscape.leftX == 0.035)
         #expect(landscape.rightX == 0.696)
@@ -87,14 +87,25 @@ struct RendererConstantsTests {
             RendererConstants.CompactInformationBar.portrait
 
         #expect(portrait.primaryFontToBarHeight == 0.190)
+        #expect(portrait.rightPrimaryFontToBarHeight == 0.154)
         #expect(portrait.secondaryFontToBarHeight == 0.142)
+        #expect(portrait.customLogoScale == 1.360)
+        #expect(portrait.dividerHeight == 0.465)
         #expect(
             RendererConstants.CompactInformationBar.landscape
                 .primaryFontToBarHeight == 0.190
         )
         #expect(
             RendererConstants.CompactInformationBar.landscape
+                .rightPrimaryFontToBarHeight == 0.190
+        )
+        #expect(
+            RendererConstants.CompactInformationBar.landscape
                 .secondaryFontToBarHeight == 0.142
+        )
+        #expect(
+            RendererConstants.CompactInformationBar.landscape
+                .customLogoScale == 1.000
         )
         #expect(portrait.contentCenterY == 0.500)
         #expect(portrait.primaryYOffsetToBarHeight == 0.019)

@@ -32,6 +32,8 @@ enum ImmersWhiteRenderer {
 
         let logoSizeRatio: CGFloat
 
+        let customLogoScaleRatio: CGFloat
+
         let dividerHeightRatio: CGFloat
 
         let dividerWidthRatio: CGFloat
@@ -230,6 +232,7 @@ enum ImmersWhiteRenderer {
                 rightColumnWidthRatio: 0.271,
                 logoSlotWidthRatio: 0.076,
                 logoSizeRatio: 0.34,
+                customLogoScaleRatio: 1.00,
                 dividerHeightRatio: 0.50,
                 dividerWidthRatio: 0.022,
                 titleFontRatio: 0.190,
@@ -257,13 +260,14 @@ enum ImmersWhiteRenderer {
                 logoToDividerSpacingRatio: 0.015,
                 dividerToTextSpacingRatio: 0.026,
                 leftColumnWidthRatio: 0.43,
-                rightColumnWidthRatio: 0.389,
+                rightColumnWidthRatio: 0.406,
                 logoSlotWidthRatio: 0.10,
                 logoSizeRatio: 0.42,
-                dividerHeightRatio: 0.54,
+                customLogoScaleRatio: 1.36,
+                dividerHeightRatio: 0.465,
                 dividerWidthRatio: 0.022,
                 titleFontRatio: 0.190,
-                metadataFontRatio: 0.190,
+                metadataFontRatio: 0.154,
                 bottomFontRatio: 0.142,
                 titleLineSpacingRatio: 0.011,
                 metadataLineSpacingRatio: 0.011,
@@ -587,7 +591,11 @@ struct ImmersWhiteCardRenderer: View {
         .render(
             size:
                 min(
-                    height * layout.logoSizeRatio,
+                    height
+                    * layout.logoSizeRatio
+                    * logoVisualScale(
+                        layout: layout
+                    ),
                     width * layout.logoSlotWidthRatio
                 )
         )
@@ -787,6 +795,22 @@ struct ImmersWhiteCardRenderer: View {
             .resolvedLogoBadge(
                 from: card.badge
             )
+    }
+
+    private func logoVisualScale(
+        layout: ImmersWhiteRenderer.Layout
+    ) -> CGFloat {
+
+        switch resolvedLogoBadge?.type {
+        case .some(.png),
+             .some(.customUpload),
+             .some(.svg):
+            return layout.customLogoScaleRatio
+        case .some(.none),
+             .some(.systemSymbol),
+             nil:
+            return 1
+        }
     }
 
     private var imageAspectRatio: CGFloat {

@@ -1746,7 +1746,10 @@ private struct IOSMacStyleMemoryCardPreview: View {
                 value: primary,
                 fontSize:
                     barHeight
-                    * spec.primaryFontToBarHeight,
+                    * primaryFontToBarHeight(
+                        for: primaryRegion,
+                        spec: spec
+                    ),
                 weight: .semibold,
                 tracking: spec.primaryTracking,
                 color:
@@ -1815,6 +1818,15 @@ private struct IOSMacStyleMemoryCardPreview: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
+    }
+
+    private func primaryFontToBarHeight(
+        for region: CardRegion,
+        spec: CompactInformationBarSpec
+    ) -> CGFloat {
+        region == CardRegion.region(for: .rightPrimary)
+            ? spec.rightPrimaryFontToBarHeight
+            : spec.primaryFontToBarHeight
     }
 
     private func compactLogoRegion(

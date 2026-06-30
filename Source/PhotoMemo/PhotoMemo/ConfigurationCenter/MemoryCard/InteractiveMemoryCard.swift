@@ -347,7 +347,10 @@ struct InteractiveMemoryCard: View {
                 value: primary,
                 fontSize:
                     barHeight
-                    * spec.primaryFontToBarHeight,
+                    * primaryFontToBarHeight(
+                        for: primaryRegion,
+                        spec: spec
+                    ),
                 weight: .semibold,
                 tracking: spec.primaryTracking,
                 color:
@@ -415,6 +418,15 @@ struct InteractiveMemoryCard: View {
                     alignment: .leading
                 )
         }
+    }
+
+    private func primaryFontToBarHeight(
+        for region: CardRegion,
+        spec: CompactInformationBarSpec
+    ) -> CGFloat {
+        region == CardRegion.region(for: .rightPrimary)
+            ? spec.rightPrimaryFontToBarHeight
+            : spec.primaryFontToBarHeight
     }
 
     private func compactLogoRegion(

@@ -124,15 +124,17 @@ enum RendererConstants {
             referencePhotoHeightToWidth: 8064.0 / 4536.0,
             leftX: 0.045,
             leftWidth: 0.364,
-            logoCenterX: 0.490,
+            logoCenterX: 0.473,
             logoSizeToBarHeight: 0.410,
-            dividerCenterX: 0.540,
+            customLogoScale: 1.360,
+            dividerCenterX: 0.523,
             dividerTopY: 0.264,
-            dividerHeight: 0.468,
+            dividerHeight: 0.465,
             dividerWidthToBarHeight: 0.022,
-            rightX: 0.566,
-            rightWidth: 0.389,
+            rightX: 0.549,
+            rightWidth: 0.406,
             primaryFontToBarHeight: 0.190,
+            rightPrimaryFontToBarHeight: 0.154,
             secondaryFontToBarHeight: 0.142,
             groupSpacingToBarHeight: 0.098,
             contentCenterY: 0.500,
@@ -149,6 +151,7 @@ enum RendererConstants {
             leftWidth: 0.300,
             logoCenterX: 0.636,
             logoSizeToBarHeight: 0.410,
+            customLogoScale: 1.000,
             dividerCenterX: 0.675,
             dividerTopY: 0.263,
             dividerHeight: 0.472,
@@ -156,6 +159,7 @@ enum RendererConstants {
             rightX: 0.696,
             rightWidth: 0.268,
             primaryFontToBarHeight: 0.190,
+            rightPrimaryFontToBarHeight: 0.190,
             secondaryFontToBarHeight: 0.142,
             groupSpacingToBarHeight: 0.112,
             contentCenterY: 0.500,
@@ -222,6 +226,7 @@ struct CompactInformationBarSpec: Equatable {
     let leftWidth: CGFloat
     let logoCenterX: CGFloat
     let logoSizeToBarHeight: CGFloat
+    let customLogoScale: CGFloat
     let dividerCenterX: CGFloat
     let dividerTopY: CGFloat
     let dividerHeight: CGFloat
@@ -229,6 +234,7 @@ struct CompactInformationBarSpec: Equatable {
     let rightX: CGFloat
     let rightWidth: CGFloat
     let primaryFontToBarHeight: CGFloat
+    let rightPrimaryFontToBarHeight: CGFloat
     let secondaryFontToBarHeight: CGFloat
     let groupSpacingToBarHeight: CGFloat
     let contentCenterY: CGFloat

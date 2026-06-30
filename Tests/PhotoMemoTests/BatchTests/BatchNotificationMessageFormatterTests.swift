@@ -31,9 +31,10 @@ struct BatchNotificationMessageFormatterTests {
             BatchNotificationMessageFormatter.finishedMessage(
                 completedCount: 2,
                 failedCount: 0,
-                totalCount: 2
+                totalCount: 2,
+                savedAlbumName: "家庭相册"
             )
-            == "PhotoMemo 已生成新的照片。"
+            == "已保存到「家庭相册」。"
         )
     }
 
@@ -95,9 +96,23 @@ struct BatchNotificationMessageFormatterTests {
             BatchNotificationMessageFormatter.finishedMessage(
                 completedCount: 4,
                 failedCount: 1,
-                totalCount: 5
+                totalCount: 5,
+                savedAlbumName: "家庭相册"
             )
-            == "大部分照片已经完成，另有 1 张需要处理。"
+            == "大部分照片已保存到「家庭相册」，另有 1 张需要处理。"
+        )
+    }
+
+    @Test("Keeps fallback completion message when album is unavailable")
+    func keepsFallbackCompletionMessageWhenAlbumIsUnavailable() {
+        #expect(
+            BatchNotificationMessageFormatter.finishedMessage(
+                completedCount: 1,
+                failedCount: 0,
+                totalCount: 1,
+                savedAlbumName: " "
+            )
+            == "PhotoMemo 已生成新的照片。"
         )
     }
 

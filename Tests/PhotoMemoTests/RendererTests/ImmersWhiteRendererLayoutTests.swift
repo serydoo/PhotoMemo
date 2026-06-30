@@ -37,7 +37,7 @@ struct ImmersWhiteRendererLayoutTests {
         )
         #expect(
             layout.metadataFontRatio
-            == layout.titleFontRatio
+            < layout.titleFontRatio
         )
         #expect(
             abs(
@@ -72,8 +72,20 @@ struct ImmersWhiteRendererLayoutTests {
             == 0.190
         )
         #expect(
+            layout.metadataFontRatio
+            == 0.154
+        )
+        #expect(
             layout.bottomFontRatio
             == 0.142
+        )
+        #expect(
+            layout.dividerHeightRatio
+            == 0.465
+        )
+        #expect(
+            layout.customLogoScaleRatio
+            == 1.36
         )
     }
 
@@ -147,6 +159,10 @@ struct ImmersWhiteRendererLayoutTests {
         #expect(
             layout.bottomFontRatio
             == 0.132
+        )
+        #expect(
+            layout.customLogoScaleRatio
+            == 1.00
         )
     }
 

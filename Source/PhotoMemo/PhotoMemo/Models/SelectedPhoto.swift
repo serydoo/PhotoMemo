@@ -116,6 +116,11 @@ extension PlatformImage {
         return Image(uiImage: self)
 #endif
     }
+
+    var photoMemoExportCGImage: CGImage? {
+
+        photoMemoCGImage
+    }
 }
 
 private extension PlatformImage {
@@ -149,12 +154,12 @@ private extension PlatformImage {
                     Int(
                         ceil(
                             Double(image.width)
-                            * 0.02
+                            * 0.03
                         )
                     ),
                     2
                 ),
-                96
+                160
             )
 
         let sampleWidth =

@@ -144,15 +144,31 @@ private extension RecordCardExportService {
             throw RecordCardExportError.renderFailed
         }
 
+        let photoAreaHeight =
+            Int(
+                photo.metadata.imageHeight
+                ?? renderedCGImage.height
+            )
+        let preservedPhotoCGImage =
+            if card.template.preset.renderLayout == .immersWhite,
+               let sourceCGImage =
+                sourcePhotoCGImage(for: photo) {
+                PhotoMemoRenderedImageArtifactGuard
+                    .replacingPhotoArea(
+                        in: renderedCGImage,
+                        with: sourceCGImage,
+                        photoHeight:
+                            photoAreaHeight
+                    )
+            } else {
+                renderedCGImage
+            }
         let cgImage =
             PhotoMemoRenderedImageArtifactGuard
             .removingLeftPhotoEdgeArtifact(
-                from: renderedCGImage,
+                from: preservedPhotoCGImage,
                 photoHeight:
-                    Int(
-                        photo.metadata.imageHeight
-                        ?? renderedCGImage.height
-                    )
+                    photoAreaHeight
             )
 
         let actualRenderSize = CGSize(
@@ -211,6 +227,66 @@ private extension RecordCardExportService {
         )
 
         return resolvedSaveURL
+    }
+
+    func sourcePhotoCGImage(
+        for photo: SelectedPhoto
+    ) -> CGImage? {
+
+        imageIOExportImage(from: photo)
+            ?? photo.image.photoMemoExportCGImage
+    }
+
+    func imageIOExportImage(
+        from photo: SelectedPhoto
+    ) -> CGImage? {
+
+        let accessGranted =
+            photo.sourceURL
+            .startAccessingSecurityScopedResource()
+        defer {
+            if accessGranted {
+                photo.sourceURL
+                    .stopAccessingSecurityScopedResource()
+            }
+        }
+
+        guard let source =
+            CGImageSourceCreateWithURL(
+                photo.sourceURL as CFURL,
+                [
+                    kCGImageSourceShouldCache:
+                        false
+                ] as CFDictionary
+            )
+        else {
+            return nil
+        }
+
+        let maxPixelSize =
+            max(
+                photo.metadata.imageWidth ?? 0,
+                photo.metadata.imageHeight ?? 0,
+                Int(photo.image.photoMemoSize.width),
+                Int(photo.image.photoMemoSize.height),
+                1
+            )
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways:
+                true,
+            kCGImageSourceCreateThumbnailWithTransform:
+                true,
+            kCGImageSourceShouldCacheImmediately:
+                true,
+            kCGImageSourceThumbnailMaxPixelSize:
+                maxPixelSize
+        ]
+
+        return CGImageSourceCreateThumbnailAtIndex(
+            source,
+            0,
+            options as CFDictionary
+        )
     }
 
 #if os(macOS)
@@ -975,6 +1051,108 @@ private extension RecordCardExportService {
 
 enum PhotoMemoRenderedImageArtifactGuard {
 
+    static func replacingPhotoArea(
+        in renderedImage: CGImage,
+        with sourceImage: CGImage,
+        photoHeight: Int
+    ) -> CGImage {
+
+        let resolvedPhotoHeight =
+            min(
+                max(photoHeight, 1),
+                renderedImage.height
+            )
+        let bytesPerPixel = 4
+        let bytesPerRow =
+            renderedImage.width * bytesPerPixel
+        var pixels =
+            [UInt8](
+                repeating: 0,
+                count:
+                    bytesPerRow
+                    * renderedImage.height
+            )
+
+        guard let context =
+            CGContext(
+                data: &pixels,
+                width: renderedImage.width,
+                height: renderedImage.height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space:
+                    CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo:
+                    CGImageAlphaInfo
+                    .premultipliedLast
+                    .rawValue
+            )
+        else {
+            return renderedImage
+        }
+
+        context.interpolationQuality = .high
+        context.setFillColor(
+            CGColor(
+                red: 1,
+                green: 1,
+                blue: 1,
+                alpha: 1
+            )
+        )
+        context.fill(
+            CGRect(
+                x: 0,
+                y: 0,
+                width: renderedImage.width,
+                height: renderedImage.height
+            )
+        )
+
+        if resolvedPhotoHeight < renderedImage.height,
+           let infoBarCrop =
+            renderedImage.cropping(
+                to:
+                    CGRect(
+                        x: 0,
+                        y: resolvedPhotoHeight,
+                        width: renderedImage.width,
+                        height:
+                            renderedImage.height
+                            - resolvedPhotoHeight
+                    )
+            ) {
+            context.draw(
+                infoBarCrop,
+                in:
+                    CGRect(
+                        x: 0,
+                        y: 0,
+                        width: renderedImage.width,
+                        height:
+                            renderedImage.height
+                            - resolvedPhotoHeight
+                    )
+            )
+        }
+
+        context.draw(
+            sourceImage,
+            in:
+                CGRect(
+                    x: 0,
+                    y:
+                        renderedImage.height
+                        - resolvedPhotoHeight,
+                    width: renderedImage.width,
+                    height: resolvedPhotoHeight
+                )
+        )
+
+        return context.makeImage()
+            ?? renderedImage
+    }
+
     static func removingLeftPhotoEdgeArtifact(
         from image: CGImage,
         photoHeight: Int
@@ -1119,12 +1297,12 @@ enum PhotoMemoRenderedImageArtifactGuard {
                     Int(
                         ceil(
                             Double(image.width)
-                            * 0.02
+                            * 0.03
                         )
                     ),
                     2
                 ),
-                96
+                160
             )
         let sampleWidth =
             min(

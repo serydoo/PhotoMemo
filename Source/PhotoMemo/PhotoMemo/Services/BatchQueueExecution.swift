@@ -1,5 +1,6 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
+import ImageIO
 import UniformTypeIdentifiers
 
 @MainActor
@@ -108,6 +109,7 @@ final class BatchQueueExecution {
             job.tasks[index].phase = .queued
             job.tasks[index].failure = nil
             job.tasks[index].renderedFileURL = nil
+            job.tasks[index].notificationAttachmentURL = nil
             job.tasks[index].savedAlbumName = nil
             job.tasks[index].savedAssetIdentifier = nil
             job.tasks[index].progress =
@@ -415,6 +417,12 @@ final class BatchQueueExecution {
                         .selectedAlbumIdentifier
                 )
 
+            let notificationAttachmentURL =
+                makeNotificationAttachmentIfNeeded(
+                    from: exportedFileURL,
+                    taskID: task.id
+                )
+
             coordinator.cleanupTemporaryFile(
                 at: exportedFileURL
             )
@@ -427,6 +435,8 @@ final class BatchQueueExecution {
                     saveResult.albumTitle
                 task.savedAssetIdentifier =
                     saveResult.assetLocalIdentifier
+                task.notificationAttachmentURL =
+                    notificationAttachmentURL
                 task.phase = .completed
                 task.progress = BatchTaskProgress(
                     currentUnit:
@@ -494,6 +504,7 @@ final class BatchQueueExecution {
                     )
 
                 task.renderedFileURL = nil
+                task.notificationAttachmentURL = nil
                 task.phase = .failed
                 task.failure = BatchTaskFailure(
                     phase: failurePhase,
@@ -659,6 +670,88 @@ private extension BatchQueueExecution {
             .cleanupManagedSourceIfNeeded(
                 at: sourceURL
             )
+    }
+
+    func makeNotificationAttachmentIfNeeded(
+        from exportedFileURL: URL,
+        taskID: UUID
+    ) -> URL? {
+
+        let directory =
+            PhotoMemoSharedContainer
+            .baseDirectoryURL
+            .appendingPathComponent(
+                "NotificationAttachments",
+                isDirectory: true
+            )
+
+        guard PhotoMemoSharedContainer
+            .ensureDirectory(
+                at: directory
+            ) else {
+            return nil
+        }
+
+        let destinationURL =
+            directory
+            .appendingPathComponent(
+                "\(taskID.uuidString).jpg",
+                isDirectory: false
+            )
+
+        try? FileManager.default
+            .removeItem(
+                at: destinationURL
+            )
+
+        guard let source =
+            CGImageSourceCreateWithURL(
+                exportedFileURL as CFURL,
+                [
+                    kCGImageSourceShouldCache:
+                        false
+                ] as CFDictionary
+            ),
+              let thumbnail =
+            CGImageSourceCreateThumbnailAtIndex(
+                source,
+                0,
+                [
+                    kCGImageSourceCreateThumbnailFromImageAlways:
+                        true,
+                    kCGImageSourceCreateThumbnailWithTransform:
+                        true,
+                    kCGImageSourceShouldCacheImmediately:
+                        true,
+                    kCGImageSourceThumbnailMaxPixelSize:
+                        720
+                ] as CFDictionary
+            ),
+              let destination =
+            CGImageDestinationCreateWithURL(
+                destinationURL as CFURL,
+                UTType.jpeg.identifier as CFString,
+                1,
+                nil
+            )
+        else {
+            return nil
+        }
+
+        CGImageDestinationAddImage(
+            destination,
+            thumbnail,
+            [
+                kCGImageDestinationLossyCompressionQuality:
+                    0.82
+            ] as CFDictionary
+        )
+
+        return CGImageDestinationFinalize(
+            destination
+        )
+        ? destinationURL
+        : nil
     }
 
     func preserveManagedTaskSourceForRetryIfNeeded(

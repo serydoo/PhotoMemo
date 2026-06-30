@@ -2521,6 +2521,8 @@ private struct MVPPreviewCard: View {
                 secondary: memoryText,
                 spec: spec,
                 barHeight: height,
+                primaryFontToBarHeight:
+                    spec.rightPrimaryFontToBarHeight,
                 primaryMinimumScaleFactor: 0.72,
                 secondaryMinimumScaleFactor: 0.82
             )
@@ -2559,6 +2561,7 @@ private struct MVPPreviewCard: View {
         spec: CompactInformationBarSpec,
         barHeight: CGFloat,
         emphasizesPrimary: Bool = false,
+        primaryFontToBarHeight: CGFloat? = nil,
         primaryMinimumScaleFactor: CGFloat = 0.84,
         secondaryMinimumScaleFactor: CGFloat = 0.84
     ) -> some View {
@@ -2570,7 +2573,10 @@ private struct MVPPreviewCard: View {
                 primary,
                 fontSize:
                     barHeight
-                    * spec.primaryFontToBarHeight
+                    * (
+                        primaryFontToBarHeight
+                        ?? spec.primaryFontToBarHeight
+                    )
                     * (emphasizesPrimary ? 1.08 : 1),
                 weight: emphasizesPrimary ? .bold : .semibold,
                 tracking: spec.primaryTracking,
@@ -2659,6 +2665,14 @@ private struct MVPPreviewCard: View {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFit()
+                        .frame(
+                            width:
+                                logoSize
+                                * spec.customLogoScale,
+                            height:
+                                logoSize
+                                * spec.customLogoScale
+                        )
                 } else {
                     Image(systemName: "photo.badge.plus")
                         .font(.system(size: logoSize * 0.78, weight: .semibold))

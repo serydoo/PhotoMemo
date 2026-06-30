@@ -259,6 +259,50 @@ struct PhotoImportServiceTests {
         )
     }
 
+    @Test("Removes wider portrait black left edge artifact while preserving size")
+    func removesWiderPortraitBlackLeftEdgeArtifact() throws {
+
+        let sourceImage =
+            PlatformImage.photoMemoImage(
+                cgImage:
+                    try makeSyntheticEdgeArtifactImage(
+                        width: 4_536,
+                        height: 806,
+                        blackWidth: 122
+                    )
+            )
+
+        let correctedImage =
+            sourceImage
+            .removingPhotoMemoLeftEdgeArtifact()
+
+        #expect(
+            correctedImage.photoMemoSize
+            == sourceImage.photoMemoSize
+        )
+
+        let correctedCGImage =
+            try #require(
+                cgImage(
+                    from: correctedImage
+                )
+            )
+        let leftPixel =
+            try pixel(
+                in: correctedCGImage,
+                x: 0,
+                y: 0
+            )
+
+        #expect(
+            max(
+                leftPixel.red,
+                leftPixel.green,
+                leftPixel.blue
+            ) > 45
+        )
+    }
+
     @Test("Corrects rendered photo area edge without changing information bar")
     func correctsRenderedPhotoAreaEdgeWithoutChangingInformationBar() throws {
 
@@ -305,6 +349,132 @@ struct PhotoImportServiceTests {
         #expect(barLeftPixel.blue > 230)
     }
 
+    @Test("Corrects wider portrait rendered photo edge artifact")
+    func correctsWiderPortraitRenderedPhotoEdgeArtifact() throws {
+
+        let renderedImage =
+            try makeSyntheticRenderedImage(
+                width: 4_536,
+                photoHeight: 806,
+                barHeight: 75,
+                blackWidth: 122
+            )
+        let originalPhotoLeftPixel =
+            try pixel(
+                in: renderedImage,
+                x: 0,
+                y: 0
+            )
+
+        #expect(
+            max(
+                originalPhotoLeftPixel.red,
+                originalPhotoLeftPixel.green,
+                originalPhotoLeftPixel.blue
+            ) <= 24
+        )
+        #expect(
+            PhotoMemoRenderedImageArtifactGuard
+                .leftPhotoEdgeArtifactWidth(
+                    in: renderedImage,
+                    photoHeight: 806
+                ) == 122
+        )
+
+        let correctedImage =
+            PhotoMemoRenderedImageArtifactGuard
+            .removingLeftPhotoEdgeArtifact(
+                from: renderedImage,
+                photoHeight: 806
+            )
+
+        #expect(correctedImage.width == renderedImage.width)
+        #expect(correctedImage.height == renderedImage.height)
+
+        let photoLeftPixel =
+            try pixel(
+                in: correctedImage,
+                x: 0,
+                y: 0
+            )
+        let barLeftPixel =
+            try pixel(
+                in: correctedImage,
+                x: 0,
+                y: 850
+            )
+
+        #expect(
+            max(
+                photoLeftPixel.red,
+                photoLeftPixel.green,
+                photoLeftPixel.blue
+            ) > 45
+        )
+        #expect(barLeftPixel.red > 230)
+        #expect(barLeftPixel.green > 230)
+        #expect(barLeftPixel.blue > 230)
+    }
+
+    @Test("Replacing rendered photo area preserves original right edge")
+    func replacingRenderedPhotoAreaPreservesOriginalRightEdge() throws {
+
+        let sourceImage =
+            try makeSyntheticHorizontalGradientImage(
+                width: 4_536,
+                height: 806
+            )
+        let renderedImage =
+            try makeSyntheticShiftedRenderedImage(
+                sourceImage: sourceImage,
+                barHeight: 75,
+                blackWidth: 122
+            )
+
+        let shiftedRightPixel =
+            try pixel(
+                in: renderedImage,
+                x: renderedImage.width - 1,
+                y: 0
+            )
+
+        #expect(shiftedRightPixel.red < 252)
+
+        let correctedImage =
+            PhotoMemoRenderedImageArtifactGuard
+            .replacingPhotoArea(
+                in: renderedImage,
+                with: sourceImage,
+                photoHeight: 806
+            )
+
+        let correctedLeftPixel =
+            try pixel(
+                in: correctedImage,
+                x: 0,
+                y: 0
+            )
+        let correctedRightPixel =
+            try pixel(
+                in: correctedImage,
+                x: correctedImage.width - 1,
+                y: 0
+            )
+        let barLeftPixel =
+            try pixel(
+                in: correctedImage,
+                x: 0,
+                y: 850
+            )
+
+        #expect(correctedLeftPixel.green == 100)
+        #expect(correctedRightPixel.red > 252)
+        #expect(correctedRightPixel.green == 100)
+        #expect(barLeftPixel.red > 230)
+        #expect(barLeftPixel.green > 230)
+        #expect(barLeftPixel.blue > 230)
+    }
+
     private func makeSyntheticEdgeArtifactImage(
         width: Int,
         height: Int,
@@ -336,6 +506,183 @@ struct PhotoImportServiceTests {
                     pixels[offset] = 120
                     pixels[offset + 1] = 118
                     pixels[offset + 2] = 112
+                }
+
+                pixels[offset + 3] = 255
+            }
+        }
+
+        let context =
+            try #require(
+                CGContext(
+                    data: &pixels,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space:
+                        CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo:
+                        CGImageAlphaInfo
+                        .premultipliedLast
+                        .rawValue
+                )
+            )
+
+        return try #require(
+            context.makeImage()
+        )
+    }
+
+    private func makeSyntheticHorizontalGradientImage(
+        width: Int,
+        height: Int
+    ) throws -> CGImage {
+
+        let bytesPerPixel = 4
+        let bytesPerRow =
+            width * bytesPerPixel
+        var pixels =
+            [UInt8](
+                repeating: 0,
+                count:
+                    bytesPerRow
+                    * height
+            )
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset =
+                    y * bytesPerRow
+                    + x * bytesPerPixel
+                let red =
+                    UInt8(
+                        min(
+                            255,
+                            Int(
+                                round(
+                                    Double(x)
+                                    * 255
+                                    / Double(width - 1)
+                                )
+                            )
+                        )
+                    )
+
+                pixels[offset] = red
+                pixels[offset + 1] = 100
+                pixels[offset + 2] = 50
+                pixels[offset + 3] = 255
+            }
+        }
+
+        let context =
+            try #require(
+                CGContext(
+                    data: &pixels,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space:
+                        CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo:
+                        CGImageAlphaInfo
+                        .premultipliedLast
+                        .rawValue
+                )
+            )
+
+        return try #require(
+            context.makeImage()
+        )
+    }
+
+    private func makeSyntheticShiftedRenderedImage(
+        sourceImage: CGImage,
+        barHeight: Int,
+        blackWidth: Int
+    ) throws -> CGImage {
+
+        let width = sourceImage.width
+        let photoHeight = sourceImage.height
+        let height =
+            photoHeight + barHeight
+        let bytesPerPixel = 4
+        let bytesPerRow =
+            width * bytesPerPixel
+        var sourcePixels =
+            [UInt8](
+                repeating: 0,
+                count:
+                    bytesPerRow
+                    * photoHeight
+            )
+        var pixels =
+            [UInt8](
+                repeating: 0,
+                count:
+                    bytesPerRow
+                    * height
+            )
+
+        let sourceContext =
+            try #require(
+                CGContext(
+                    data: &sourcePixels,
+                    width: width,
+                    height: photoHeight,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space:
+                        CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo:
+                        CGImageAlphaInfo
+                        .premultipliedLast
+                        .rawValue
+                )
+            )
+        sourceContext.draw(
+            sourceImage,
+            in:
+                CGRect(
+                    x: 0,
+                    y: 0,
+                    width: width,
+                    height: photoHeight
+                )
+        )
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset =
+                    y * bytesPerRow
+                    + x * bytesPerPixel
+
+                if y >= photoHeight {
+                    pixels[offset] = 244
+                    pixels[offset + 1] = 244
+                    pixels[offset + 2] = 242
+                } else if x < blackWidth {
+                    pixels[offset] = 0
+                    pixels[offset + 1] = 0
+                    pixels[offset + 2] = 0
+                } else {
+                    let sourceX =
+                        min(
+                            x - blackWidth,
+                            width - 1
+                        )
+                    let sourceOffset =
+                        y * bytesPerRow
+                        + sourceX * bytesPerPixel
+
+                    pixels[offset] =
+                        sourcePixels[sourceOffset]
+                    pixels[offset + 1] =
+                        sourcePixels[sourceOffset + 1]
+                    pixels[offset + 2] =
+                        sourcePixels[sourceOffset + 2]
                 }
 
                 pixels[offset + 3] = 255

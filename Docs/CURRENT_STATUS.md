@@ -1,6 +1,212 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-06-29
+Last updated: 2026-06-30
+
+## 2026-06-30 Share Two-Stage Flow And Result Notification Polish
+
+User clarified the MVP share flow should be staged:
+
+- Stage 1 only confirms the share payload is usable:
+  `检测到 X 张照片` plus one `开始处理 X 张` button.
+- Stage 1 should not show thumbnails, configuration details, or target-album
+  details.
+- Stage 2 appears after tapping start and acts as a short observation window:
+  thumbnails are shown there, PhotoMemo indicates processing has started, and
+  the user can close the window while final feedback comes through the system
+  notification.
+- Live Activity is not appropriate for the current fast MVP path; keep final
+  completion/failure notification as the main system-level result feedback.
+
+What changed:
+
+- `PhotoMemoShareExtensionViewController` now hides the preview and workflow
+  summary during the initial confirmation stage.
+- The confirmation title now reads like `检测到 2 张照片`, with a single start
+  button.
+- After the user starts processing, the same share sheet switches into the
+  processing/received stage, loads the thumbnail queue, and leaves a stable
+  close button instead of auto-dismissing immediately.
+- The processing/received stage now shows per-photo status badges backed by
+  the real persisted batch queue:
+  - gray: waiting
+  - blue: processing
+  - green: completed
+  - red: needs attention
+- The second-stage queue display was corrected from horizontal thumbnail cards
+  to compact per-photo rows, matching the referenced queue design direction:
+  thumbnail on the left, photo row text in the middle, status icon on the right.
+- The Share Extension now reads a lightweight App Group batch queue snapshot,
+  finds the job created for the current share request through share diagnostics,
+  and polls briefly at high frequency so very fast jobs can visibly complete in
+  the sheet.
+- Root-cause clarification: the Share Extension can persist the request, but it
+  does not own the real batch renderer/export pipeline. The queue starts when
+  the main PhotoMemo app consumes the shared request and creates a `BatchJob`.
+  If that handoff does not produce `app.enqueue.created`, the sheet now says the
+  photos are received but waiting for PhotoMemo to take over, with a button to
+  open PhotoMemo and continue processing.
+- Final batch notifications now include the saved album name when available,
+  e.g. `已保存到「家庭相册」。`
+- Completed tasks now keep a small local notification thumbnail attachment
+  copied from the generated output before the temporary render file is cleaned
+  up. The final notification attaches the first completed thumbnail when
+  available.
+- Added focused snapshot-reader coverage for the new shared queue observation
+  layer.
+
+Preserved:
+
+- No renderer layout, metadata extraction, Photo Library save behavior, or
+  original-photo mutation behavior was changed.
+- Stage-by-stage local notifications remain disabled; detailed real-time
+  progress remains a main-app concern.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/BatchNotificationMessageFormatterTests`
+- passed focused `PhotoMemoTests/SharedBatchQueueSnapshotServiceTests`
+- passed `PhotoMemoShareExtension` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemoiOSMVP` iPhone7 Debug build
+- passed `PhotoMemo` macOS Debug build
+- installed `PhotoMemoiOSMVP` on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+- installed the follow-up compact queue build and launched it on iPhone7
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+## 2026-06-30 Immers White Portrait Right Cluster Pixel Pass
+
+User provided the newest portrait Apple-target and MVP-red-seal samples:
+
+- Target: `/Users/rui/Downloads/IMG_0015 3.JPEG`
+- MVP: `/Users/rui/Downloads/IMG_0015(1) 5.JPG`
+
+Measured finding:
+
+- Canvas remains `4536 x 8817`.
+- Photo area remains `8064 px`.
+- Bottom information bar remains `753 px`.
+- Therefore the correction is not a border-height or canvas-size change.
+- Compared with the Apple baseline, the MVP portrait right-side cluster still
+  sits about `75-78 px` too far right.
+- The right primary metadata line is about `25 px` taller than the Apple
+  baseline.
+- The divider is about `57 px` taller than the baseline.
+- The custom red Logo visual footprint is smaller than the Apple fallback and
+  its visible center sits about `62 px` to the right of the baseline Apple
+  center.
+
+What changed:
+
+- Portrait Immers White right-side frame now moves left by increasing the right
+  column width from `0.389` to `0.406`, making the effective right anchor
+  `0.549`.
+- Portrait right-primary metadata font ratio is separated from the left-primary
+  title ratio and reduced to `0.154`.
+- Portrait divider height is reduced to `0.465` of the bar height.
+- Portrait custom image Logo rendering is scaled by `1.36x` so the red seal
+  occupies a footprint closer to the Apple fallback. System-symbol Apple
+  fallback remains unscaled.
+- Compact preview specs now expose `rightPrimaryFontToBarHeight` and
+  `customLogoScale` so preview surfaces can stay aligned with the renderer.
+
+Preserved:
+
+- Landscape Immers White values were intentionally left unchanged.
+- Photo-area preservation, export metadata, Share Extension, and Photo Library
+  behavior were not changed.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/ImmersWhiteRendererLayoutTests`
+- passed focused `PhotoMemoTests/RendererConstantsTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
+## 2026-06-30 Portrait Left Edge Artifact Threshold Follow-Up
+
+Follow-up after device review:
+
+- User noticed the generated portrait output still felt slightly shifted right
+  compared with the original photo, as if the right side of the original image
+  had been removed.
+- Pixel mapping confirmed this observation:
+  - in older generated samples, output `x ~= 122` corresponded to original
+    `x = 0`
+  - the output right edge corresponded to original `x ~= width - 122`
+  - therefore the previous crop-and-stretch safety guard could hide the black
+    line, but it could not restore the already-missing right-edge content
+- Export now treats this as a photo-area preservation problem instead of only an
+  edge-artifact cleanup problem.
+- For Immers White output, `RecordCardExportService` now:
+  1. renders the full card normally to preserve the existing information bar
+  2. decodes the original source photo again with ImageIO for export
+  3. replaces only the rendered photo area with that source image
+  4. keeps the bottom information bar from the SwiftUI render unchanged
+  5. leaves the previous black-edge guard as a fallback safety pass
+- Added regression coverage proving that a shifted rendered photo area with a
+  `122 px` lost right edge is replaced by the original source image and keeps
+  the original right edge intact.
+- This supersedes the crop-and-stretch guard as the primary fix for Immers White
+  final output. The guard remains only as a conservative fallback.
+
+Additional verification:
+
+- passed focused `PhotoMemoTests/PhotoImportServiceTests`
+- passed `git diff --check`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+
+User provided three original/output portrait sample pairs generated through the
+iOS MVP flow:
+
+- `IMG_9704.jpg` -> `IMG_9704(1).JPG`
+- `IMG_9856.jpg` -> `IMG_9856(1).JPG`
+- `IMG_9910.jpg` -> `IMG_9910(1).JPG`
+
+Finding:
+
+- The original photos do not contain a solid black left border.
+- The generated outputs contain a pure-black strip only in the photo area, not
+  in the bottom information bar.
+- Measured strip widths:
+  - `IMG_9704(1).JPG`: about `86 px`
+  - `IMG_9856(1).JPG`: about `122 px`
+  - `IMG_9910(1).JPG`: about `51 px`
+- The previous artifact guard was still too conservative for the newest MVP
+  outputs because it only accepted up to `2%` of width, capped at `96 px`.
+
+What changed:
+
+- The import display-image guard and final rendered-image guard now accept a
+  still-narrow left-edge artifact up to `3%` of image width, capped at
+  `160 px`.
+- Detection remains conservative: the left columns must be near-solid black
+  across almost the full photo height and the transition column must be visibly
+  non-black.
+- Added regression coverage for a `4536 px`-wide portrait case with a
+  `122 px` black strip at both the import-display and final-rendered stages.
+
+Preserved:
+
+- No bottom information bar layout, text, Logo 标识, metadata writing, Photo
+  Library behavior, Share Extension behavior, or renderer layout constants were
+  changed.
+
+Verification:
+
+- passed `git diff --check`
+- passed focused `PhotoMemoTests/PhotoImportServiceTests`
+- passed `PhotoMemoiOSMVP` generic iOS Debug build
+- passed `PhotoMemo` macOS Debug build
+- full `PhotoMemoTests` still reports two order-dependent failures when run as
+  a full suite:
+  - `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable`
+  - `RecordCardBuildServiceTests.buildsTemplate1WithProfileRelationshipAndBabyAgePhrasing`
+- both full-suite failures pass when rerun individually, and are outside the
+  import/export edge-guard path changed in this slice.
 
 ## 2026-06-29 Immers White Pixel-Level Text Alignment Pass
 

@@ -367,6 +367,8 @@ struct BatchTask:
 
     var renderedFileURL: URL?
 
+    var notificationAttachmentURL: URL?
+
     var retryCount: Int
 
     var failure: BatchTaskFailure?
@@ -385,6 +387,7 @@ struct BatchTask:
         savedAlbumName: String? = nil,
         savedAssetIdentifier: String? = nil,
         renderedFileURL: URL? = nil,
+        notificationAttachmentURL: URL? = nil,
         retryCount: Int = 0,
         failure: BatchTaskFailure? = nil,
         progress: BatchTaskProgress = .init()
@@ -403,6 +406,8 @@ struct BatchTask:
         self.savedAlbumName = savedAlbumName
         self.savedAssetIdentifier = savedAssetIdentifier
         self.renderedFileURL = renderedFileURL
+        self.notificationAttachmentURL =
+            notificationAttachmentURL
         self.retryCount = max(retryCount, 0)
         self.failure = failure
         self.progress = progress
