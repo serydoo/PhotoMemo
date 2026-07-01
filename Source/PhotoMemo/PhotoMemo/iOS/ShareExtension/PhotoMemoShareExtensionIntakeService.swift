@@ -208,7 +208,7 @@ final class PhotoMemoShareExtensionIntakeService {
 
         let requestID = UUID()
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.request.created",
+            stage: .extensionRequestCreated,
             message:
                 "providers=\(providers.count), itemProviders=\(itemProviders.count)",
             requestID:
@@ -247,7 +247,7 @@ final class PhotoMemoShareExtensionIntakeService {
                     importRecord.item
                 )
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.item.imported",
+                    stage: .extensionItemImported,
                     message:
                         importRecord.item.originalFileName,
                     requestID:
@@ -257,7 +257,7 @@ final class PhotoMemoShareExtensionIntakeService {
             case .skippedDuplicate:
                 skippedCount += 1
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.item.skipped",
+                    stage: .extensionItemSkipped,
                     message: "duplicate",
                     requestID:
                         requestID
@@ -266,7 +266,7 @@ final class PhotoMemoShareExtensionIntakeService {
             case .skippedUnsupported:
                 skippedCount += 1
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.item.skipped",
+                    stage: .extensionItemSkipped,
                     message: "unsupported",
                     requestID:
                         requestID
@@ -277,7 +277,7 @@ final class PhotoMemoShareExtensionIntakeService {
                 lastFailureContext =
                     failureContext
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.item.failed",
+                    stage: .extensionItemFailed,
                     message:
                         failureContext.stage.title,
                     requestID:
@@ -424,7 +424,7 @@ final class PhotoMemoShareExtensionIntakeService {
         )
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.request.persisted",
+            stage: .extensionRequestPersisted,
             message:
                 "requestID=\(request.id.uuidString), imported=\(managedItems.count)",
             requestID:
@@ -1275,7 +1275,7 @@ private extension PhotoMemoShareExtensionIntakeService {
         }
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.source.prepare",
+            stage: .extensionSourcePrepare,
             message:
                 "providerIndex=\(index), \(probe.diagnosticMessage)",
             requestID:
@@ -1296,7 +1296,7 @@ private extension PhotoMemoShareExtensionIntakeService {
         }
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.source.ready",
+            stage: .extensionSourceReady,
             message:
                 "providerIndex=\(index)",
             requestID:
@@ -1319,7 +1319,7 @@ private extension PhotoMemoShareExtensionIntakeService {
         }
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.source.unavailable",
+            stage: .extensionSourceUnavailable,
             message:
                 "providerIndex=\(index), result=\(copyResult.temporaryCopyResult ?? "unknown")",
             requestID:

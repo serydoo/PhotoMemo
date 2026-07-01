@@ -73,8 +73,8 @@ extension MainView {
             spacing: 18
         ) {
 
-            GroupBox("我的记录") {
-                personalProfileSection
+            GroupBox("当前记忆对象") {
+                subjectSection
             }
             .groupBoxStyle(
                 MinimalCardGroupBoxStyle()
@@ -129,8 +129,8 @@ extension MainView {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                GroupBox("我的记录") {
-                    personalProfileSection
+                GroupBox("当前记忆对象") {
+                    subjectSection
                 }
 
                 GroupBox("默认风格") {
@@ -166,11 +166,25 @@ extension MainView {
 
 extension MainView {
 
-    var personalProfileSection: some View {
-        MainPersonalProfileSectionView(
+    var subjectSection: some View {
+        MainSubjectSectionView(
             profile: personalProfileStore.profile,
+            anchors: settings.anchors,
+            selectedAnchorID: $selectedAnchorID,
+            selectedAnchorTitle:
+                selectedAnchor?.title,
+            selectedAnchorDateText:
+                selectedAnchor?.date.formatted(
+                    date: .abbreviated,
+                    time: .omitted
+                ),
+            anchorQuickFacts:
+                anchorQuickFactItems,
             saveDestinationSummary:
                 personalProfileDestinationSummary,
+            onPresentAnchorManager: {
+                presentAnchorManager()
+            },
             onUpdateProfile: { profile in
                 personalProfileStore.updateProfile(
                     profile

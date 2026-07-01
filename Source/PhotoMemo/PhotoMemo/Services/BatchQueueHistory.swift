@@ -268,6 +268,11 @@ struct BatchQueueHistory {
         _ jobs: inout [BatchJob]
     ) {
 
+        guard jobs.count
+            > maxRetainedTerminalJobs else {
+            return
+        }
+
         var retainedTerminalCount = 0
 
         jobs = jobs.filter { job in

@@ -1,6 +1,21 @@
 import Foundation
 import Photos
 
+protocol PhotoLibraryExporting {
+
+    func fetchAlbumOptions() async throws -> [PhotoAlbumOption]
+
+    func ensureAlbum(
+        named title: String
+    ) async throws -> PhotoAlbumOption
+
+    func saveImageResult(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?
+    ) async throws -> PhotoLibrarySaveResult
+}
+
 struct PhotoLibrarySaveResult: Hashable {
 
     let albumTitle: String
@@ -57,7 +72,8 @@ enum PhotoLibraryExportError: LocalizedError {
 }
 
 @MainActor
-final class PhotoLibraryExportService {
+final class PhotoLibraryExportService:
+    PhotoLibraryExporting {
 
     private let defaultAlbumTitle =
         PhotoMemoAlbumSelection

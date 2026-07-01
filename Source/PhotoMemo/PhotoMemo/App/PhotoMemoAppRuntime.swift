@@ -5,6 +5,9 @@ import Combine
 final class PhotoMemoAppRuntime:
     ObservableObject {
 
+    let environment:
+        AppEnvironment
+
     let batchQueueStore: BatchQueueStore
 
     let backgroundStatusService:
@@ -30,13 +33,12 @@ final class PhotoMemoAppRuntime:
         ExternalPhotoIntakeStore
 
     init(
-        batchQueueStore: BatchQueueStore? = nil,
-        externalIntakeCenter:
-            ExternalPhotoIntakeCenter? = nil
+        environment: AppEnvironment
     ) {
+        self.environment =
+            environment
         self.batchQueueStore =
-            batchQueueStore
-            ?? BatchQueueStore()
+            environment.batchQueueStore
         self.backgroundStatusService =
             PhotoMemoBackgroundStatusService(
                 batchQueueStore:
@@ -64,10 +66,26 @@ final class PhotoMemoAppRuntime:
 #endif
 #endif
         self.externalIntakeCenter =
-            externalIntakeCenter
-            ?? .shared
+            environment.externalIntakeCenter
         self.externalIntakeStore =
-            .shared
+            environment.services
+            .externalIntakeStore
+    }
+
+    convenience init(
+        batchQueueStore: BatchQueueStore? = nil,
+        externalIntakeCenter:
+            ExternalPhotoIntakeCenter? = nil
+    ) {
+        self.init(
+            environment:
+                AppEnvironment.live(
+                    batchQueueStore:
+                        batchQueueStore,
+                    externalIntakeCenter:
+                        externalIntakeCenter
+                )
+        )
     }
 
     func handleExternalURLs(
@@ -89,7 +107,7 @@ final class PhotoMemoAppRuntime:
             .drainPendingRequests()
 
         PhotoMemoShareDiagnostics.record(
-            stage: "app.drain",
+            stage: .appDrain,
             message: "drainedRequests=\(requests.count)"
         )
 
@@ -100,96 +118,61 @@ final class PhotoMemoAppRuntime:
         var consumedPayloadKeys = Set<String>()
 
         for request in requests {
-            let validPayloads =
-                request.intakePayloads.filter {
-                    isValidRequestSourceURL(
-                        $0.sourceURL
-                    )
-                }
-            let uniquePayloads =
-                uniquePayloadsForCurrentDrain(
-                    validPayloads,
+            let processedRequest =
+                ProcessShareIntent(
+                    request: request,
                     consumedPayloadKeys:
-                        &consumedPayloadKeys
+                        consumedPayloadKeys,
+                    coordinator:
+                        environment
+                        .coordinators
+                        .share
                 )
-            let duplicatePayloads =
-                validPayloads.filter {
-                    !uniquePayloads.contains($0)
-                }
+                .executeSynchronously()
 
-            duplicatePayloads.forEach {
-                externalIntakeStore
-                    .cleanupManagedSourceIfNeeded(
-                        at: $0.sourceURL
-                    )
-            }
+            switch processedRequest {
+            case .success(let receipt):
+                consumedPayloadKeys =
+                    receipt.consumedPayloadKeys
 
-            PhotoMemoShareDiagnostics.record(
-                stage: "app.request.validated",
-                message:
-                    "payloads=\(request.intakePayloads.count), valid=\(validPayloads.count), unique=\(uniquePayloads.count)",
-                requestID:
-                    request.id
-            )
-
-            let intakeSummary =
-                resolvedIntakeSummary(
-                    for: request,
-                    validURLCount:
-                        uniquePayloads.count
-                )
-
-            guard !uniquePayloads.isEmpty else {
-                request.urls.forEach {
-                    externalIntakeStore
-                        .cleanupManagedSourceIfNeeded(
-                            at: $0
-                        )
-                }
                 PhotoMemoShareDiagnostics.record(
-                    stage: "app.request.dropped",
+                    stage: .appRequestValidated,
                     message:
-                        validPayloads.isEmpty
-                        ? "No valid source files remained."
-                        : "Duplicate source files were already queued.",
+                        "payloads=\(receipt.requestedPayloadCount), valid=\(receipt.validPayloadCount), unique=\(receipt.uniquePayloadCount)",
+                    requestID:
+                        receipt.requestID
+                )
+
+                if let droppedReason =
+                    receipt.droppedReason {
+                    PhotoMemoShareDiagnostics.record(
+                        stage: .appRequestDropped,
+                        message:
+                            droppedReason,
+                        requestID:
+                            receipt.requestID
+                    )
+                    continue
+                }
+
+                PhotoMemoShareDiagnostics.record(
+                    stage: .appEnqueueCreated,
+                    message:
+                        "tasks=\(receipt.uniquePayloadCount)",
+                    requestID:
+                        receipt.requestID,
+                    jobID:
+                        receipt.job?.id
+                )
+            case .failure(let error):
+                PhotoMemoShareDiagnostics.record(
+                    stage: .appEnqueueFailed,
+                    message:
+                        error.message,
                     requestID:
                         request.id
                 )
-                continue
             }
-
-            let job =
-                batchQueueStore.enqueue(
-                payloads: uniquePayloads,
-                configuration:
-                    request.configurationSnapshot,
-                launchSource:
-                    request.launchSource,
-                intakeSummary:
-                    intakeSummary,
-                title:
-                    resolvedRequestTitle(
-                        receivedAt:
-                            request.receivedAt,
-                        taskCount:
-                            uniquePayloads.count
-                    )
-                    )
-
-            PhotoMemoShareDiagnostics.record(
-                stage:
-                    job == nil
-                    ? "app.enqueue.failed"
-                    : "app.enqueue.created",
-                message:
-                    job == nil
-                    ? "BatchQueueStore returned nil."
-                    : "tasks=\(uniquePayloads.count)",
-                requestID:
-                    request.id,
-                jobID:
-                    job?.id
-            )
         }
 
         externalIntakeCenter.updateDefaultConfiguration(
@@ -212,153 +195,5 @@ final class PhotoMemoAppRuntime:
                     batchQueueStore
                     .referencedManagedSourceURLs
             )
-    }
-}
-
-private extension PhotoMemoAppRuntime {
-
-    func resolvedRequestTitle(
-        receivedAt: Date,
-        taskCount: Int
-    ) -> String {
-
-        PhotoMemoQueueDisplayFormatter.title(
-            startedAt:
-                receivedAt,
-            photoCount:
-                taskCount
-        )
-    }
-
-    func isValidRequestSourceURL(
-        _ url: URL
-    ) -> Bool {
-
-        guard url.isFileURL else {
-            return false
-        }
-
-        return PhotoMemoImageFileReadiness
-            .isExistingReadableImageFile(
-                at:
-                    url.standardizedFileURL
-            )
-    }
-
-    func uniquePayloadsForCurrentDrain(
-        _ payloads: [BatchTaskIntakePayload],
-        consumedPayloadKeys: inout Set<String>
-    ) -> [BatchTaskIntakePayload] {
-
-        payloads.filter { payload in
-            let key =
-                payloadDedupeKey(
-                    for: payload
-                )
-
-            guard !consumedPayloadKeys.contains(key) else {
-                return false
-            }
-
-            consumedPayloadKeys.insert(key)
-            return true
-        }
-    }
-
-    func payloadDedupeKey(
-        for payload: BatchTaskIntakePayload
-    ) -> String {
-
-        let sourceIdentifier =
-            payload.sourceIdentifier?
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        if !sourceIdentifier.isEmpty {
-            return "source:\(sourceIdentifier)"
-        }
-
-        let fileName =
-            (
-                payload.fileName?
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                )
-                .lowercased()
-            )
-            ?? payload
-                .sourceURL
-                .lastPathComponent
-                .lowercased()
-
-        let fileSize =
-            (
-                try? FileManager.default
-                    .attributesOfItem(
-                        atPath:
-                            payload
-                            .sourceURL
-                            .standardizedFileURL
-                            .path
-                    )[.size] as? NSNumber
-            )?
-            .int64Value ?? -1
-
-        return "file:\(fileName):\(fileSize)"
-    }
-
-    func resolvedIntakeSummary(
-        for request:
-            ExternalPhotoIntakeRequest,
-        validURLCount: Int
-    ) -> ExternalPhotoImportSummary? {
-
-        let droppedCount =
-            max(
-                request.urls.count
-                - validURLCount,
-                0
-            )
-
-        guard
-            let existingSummary =
-                request.importSummary
-        else {
-            guard droppedCount > 0 else {
-                return nil
-            }
-
-            return ExternalPhotoImportSummary(
-                importedCount:
-                    validURLCount,
-                skippedCount: 0,
-                failedCount:
-                    droppedCount
-            )
-        }
-
-        let adjustedImportedCount =
-            min(
-                existingSummary.importedCount,
-                validURLCount
-            )
-
-        let additionalFailedCount =
-            max(
-                existingSummary.importedCount
-                - adjustedImportedCount,
-                0
-            )
-
-        return ExternalPhotoImportSummary(
-            importedCount:
-                adjustedImportedCount,
-            skippedCount:
-                existingSummary.skippedCount,
-            failedCount:
-                existingSummary.failedCount
-                + additionalFailedCount
-        )
     }
 }

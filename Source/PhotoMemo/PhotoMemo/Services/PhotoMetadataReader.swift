@@ -42,14 +42,44 @@ final class PhotoMetadataReader {
             let source = CGImageSourceCreateWithURL(
                 url as CFURL,
                 nil
-            ),
-            let properties =
-                CGImageSourceCopyPropertiesAtIndex(
-                    source,
-                    0,
-                    nil
-                ) as? [CFString: Any]
+            )
         else {
+            return nil
+        }
+
+        return properties(
+            from: source
+        )
+    }
+
+    func properties(
+        from data: Data
+    ) -> [CFString: Any]? {
+
+        guard
+            let source = CGImageSourceCreateWithData(
+                data as CFData,
+                nil
+            )
+        else {
+            return nil
+        }
+
+        return properties(
+            from: source
+        )
+    }
+
+    func properties(
+        from source: CGImageSource
+    ) -> [CFString: Any]? {
+
+        guard let properties =
+            CGImageSourceCopyPropertiesAtIndex(
+                source,
+                0,
+                nil
+            ) as? [CFString: Any] else {
             return nil
         }
 
@@ -61,6 +91,19 @@ final class PhotoMetadataReader {
     ) -> PhotoMetadata {
 
         guard let properties = properties(from: url) else {
+            return PhotoMetadata()
+        }
+
+        return read(
+            from: properties
+        )
+    }
+
+    func read(
+        from data: Data
+    ) -> PhotoMetadata {
+
+        guard let properties = properties(from: data) else {
             return PhotoMetadata()
         }
 

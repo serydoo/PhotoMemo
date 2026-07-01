@@ -71,9 +71,21 @@ final class PhotoImportService {
                     assetLocalIdentifier:
                         assetLocalIdentifier
                 )
+            let imageSource =
+                makeImageSource(
+                    from: data
+                )
+            let sourceProperties =
+                imageSource.flatMap {
+                    metadataReader.properties(
+                        from: $0
+                    )
+                }
 
             return try importPhotoSync(
                 from: temporaryURL,
+                imageSource: imageSource,
+                sourceProperties: sourceProperties,
                 sourceInfo: sourceInfo
             )
 
@@ -123,6 +135,8 @@ final class PhotoImportService {
 
     private func importPhotoSync(
         from url: URL,
+        imageSource: CGImageSource? = nil,
+        sourceProperties: [CFString: Any]? = nil,
         sourceInfo: PhotoSourceInfo? = nil
     ) throws -> SelectedPhoto {
 
@@ -142,25 +156,36 @@ final class PhotoImportService {
             throw PhotoImportError.imageLoadFailed
         }
 
-        let sourceProperties =
-            metadataReader.properties(from: url)
+        let resolvedImageSource =
+            imageSource
+            ?? makeImageSource(
+                from: url
+            )
+        let resolvedSourceProperties =
+            sourceProperties
+            ?? resolvedImageSource.flatMap {
+                metadataReader.properties(
+                    from: $0
+                )
+            }
             ?? [:]
 
         let metadata =
             metadataReader.read(
-                from: sourceProperties
+                from: resolvedSourceProperties
             )
 
         let image =
             try loadDisplayImage(
                 from: url,
+                imageSource: resolvedImageSource,
                 sourceInfo: sourceInfo
             )
             .removingPhotoMemoLeftEdgeArtifact()
 
         return SelectedPhoto(
             sourceURL: url,
-            sourceProperties: sourceProperties,
+            sourceProperties: resolvedSourceProperties,
             image: image,
             metadata: metadata,
             sourceInfo:
@@ -199,6 +224,7 @@ final class PhotoImportService {
 
     private func loadDisplayImage(
         from url: URL,
+        imageSource: CGImageSource? = nil,
         sourceInfo: PhotoSourceInfo?
     ) throws -> PlatformImage {
 
@@ -216,13 +242,15 @@ final class PhotoImportService {
 
         if isRAW {
             return try loadRAWDisplayImage(
-                from: url
+                from: url,
+                imageSource: imageSource
             )
         }
 
         if let image =
             imageIODisplayImage(
-                from: url
+                from: url,
+                imageSource: imageSource
             ) {
             return image
         }
@@ -240,7 +268,8 @@ final class PhotoImportService {
     }
 
     private func loadRAWDisplayImage(
-        from url: URL
+        from url: URL,
+        imageSource: CGImageSource? = nil
     ) throws -> PlatformImage {
 
         if let image =
@@ -252,7 +281,8 @@ final class PhotoImportService {
 
         if let image =
             imageIODisplayImage(
-                from: url
+                from: url,
+                imageSource: imageSource
             ) {
             return image
         }
@@ -271,16 +301,14 @@ final class PhotoImportService {
     }
 
     private func imageIODisplayImage(
-        from url: URL
+        from url: URL,
+        imageSource: CGImageSource? = nil
     ) -> PlatformImage? {
 
         guard let source =
-            CGImageSourceCreateWithURL(
-                url as CFURL,
-                [
-                    kCGImageSourceShouldCache:
-                        false
-                ] as CFDictionary
+            imageSource
+            ?? makeImageSource(
+                from: url
             ) else {
             return nil
         }
@@ -312,6 +340,32 @@ final class PhotoImportService {
 
         return PlatformImage.photoMemoImage(
             cgImage: cgImage
+        )
+    }
+
+    private func makeImageSource(
+        from url: URL
+    ) -> CGImageSource? {
+
+        CGImageSourceCreateWithURL(
+            url as CFURL,
+            [
+                kCGImageSourceShouldCache:
+                    false
+            ] as CFDictionary
+        )
+    }
+
+    private func makeImageSource(
+        from data: Data
+    ) -> CGImageSource? {
+
+        CGImageSourceCreateWithData(
+            data as CFData,
+            [
+                kCGImageSourceShouldCache:
+                    false
+            ] as CFDictionary
         )
     }
 

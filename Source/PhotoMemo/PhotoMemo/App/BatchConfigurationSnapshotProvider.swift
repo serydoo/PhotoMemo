@@ -70,6 +70,52 @@ struct BatchConfigurationSnapshotProvider {
         )
     }
 
+    func loadAnchorsResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        [Anchor]
+    > {
+
+        decodeValueResult(
+            [Anchor].self,
+            forKey: Keys.anchors
+        )
+    }
+
+    func loadTemplateResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        Template
+    > {
+
+        switch decodeValueResult(
+            Template.self,
+            forKey: Keys.selectedTemplate
+        ) {
+        case .noValue:
+            return .noValue
+
+        case .success(let template):
+            return .success(
+                template.normalizedForEditing
+            )
+
+        case .decodingFailed(let failure):
+            return .decodingFailed(
+                failure
+            )
+        }
+    }
+
+    func loadBadgeResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        Badge
+    > {
+
+        decodeValueResult(
+            Badge.self,
+            forKey: Keys.selectedBadge
+        )
+    }
+
     func makeSnapshot(
         template: Template?,
         badge: Badge?,
@@ -155,54 +201,74 @@ private extension BatchConfigurationSnapshotProvider {
 
     func loadAnchors() -> [Anchor] {
 
-        guard
-            let data = defaults.data(
-                forKey: Keys.anchors
-            ),
-            let anchors =
-                try? JSONDecoder().decode(
-                    [Anchor].self,
-                    from: data
-                )
-        else {
+        switch loadAnchorsResult() {
+        case .success(let anchors):
+            return anchors
+
+        case .noValue,
+             .decodingFailed:
             return []
         }
-
-        return anchors
     }
 
     func loadTemplate() -> Template? {
 
-        guard
-            let data = defaults.data(
-                forKey: Keys.selectedTemplate
-            ),
-            let template =
-                try? JSONDecoder().decode(
-                    Template.self,
-                    from: data
-                )
-        else {
+        switch loadTemplateResult() {
+        case .success(let template):
+            return template
+
+        case .noValue,
+             .decodingFailed:
             return nil
         }
-
-        return template.normalizedForEditing
     }
 
     func loadBadge() -> Badge? {
 
-        guard
-            let data = defaults.data(
-                forKey: Keys.selectedBadge
-            )
-        else {
+        switch loadBadgeResult() {
+        case .success(let badge):
+            return badge
+
+        case .noValue,
+             .decodingFailed:
             return nil
         }
+    }
 
-        return try? JSONDecoder().decode(
-            Badge.self,
-            from: data
-        )
+    func decodeValueResult<Value: Decodable>(
+        _ valueType: Value.Type,
+        forKey storageKey: String
+    ) -> PhotoMemoSharedDefaultsReadResult<
+        Value
+    > {
+
+        guard
+            let data = defaults.data(
+                forKey: storageKey
+            )
+        else {
+            return .noValue
+        }
+
+        do {
+            return .success(
+                try JSONDecoder().decode(
+                    valueType,
+                    from: data
+                )
+            )
+        } catch {
+            return .decodingFailed(
+                PhotoMemoSharedDefaultsReadFailure(
+                    storageKey: storageKey,
+                    payloadByteCount: data.count,
+                    underlyingDescription:
+                        String(
+                            describing: error
+                        )
+                )
+            )
+        }
     }
 
     func resolvedAnchor(

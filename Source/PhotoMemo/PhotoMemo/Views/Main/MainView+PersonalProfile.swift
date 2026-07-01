@@ -1,11 +1,24 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
 
-struct MainPersonalProfileSectionView: View {
+struct MainSubjectSectionView: View {
 
     let profile: PersonalProfile
 
+    let anchors: [Anchor]
+
+    @Binding
+    var selectedAnchorID: Anchor.ID?
+
+    let selectedAnchorTitle: String?
+
+    let selectedAnchorDateText: String?
+
+    let anchorQuickFacts: [MainAnchorQuickFact]
+
     let saveDestinationSummary: String
+
+    let onPresentAnchorManager: () -> Void
 
     let onUpdateProfile: (PersonalProfile) -> Void
 
@@ -17,12 +30,28 @@ struct MainPersonalProfileSectionView: View {
 
     init(
         profile: PersonalProfile,
+        anchors: [Anchor],
+        selectedAnchorID: Binding<Anchor.ID?>,
+        selectedAnchorTitle: String?,
+        selectedAnchorDateText: String?,
+        anchorQuickFacts: [MainAnchorQuickFact],
         saveDestinationSummary: String,
+        onPresentAnchorManager: @escaping () -> Void,
         onUpdateProfile: @escaping (PersonalProfile) -> Void
     ) {
         self.profile = profile
+        self.anchors = anchors
+        self._selectedAnchorID = selectedAnchorID
+        self.selectedAnchorTitle =
+            selectedAnchorTitle
+        self.selectedAnchorDateText =
+            selectedAnchorDateText
+        self.anchorQuickFacts =
+            anchorQuickFacts
         self.saveDestinationSummary =
             saveDestinationSummary
+        self.onPresentAnchorManager =
+            onPresentAnchorManager
         self.onUpdateProfile =
             onUpdateProfile
         self._draftProfile =
@@ -42,7 +71,7 @@ struct MainPersonalProfileSectionView: View {
             spacing: 16
         ) {
 
-            Text("这些信息只需要认真设定一次，之后分享照片时会自动沿用。")
+            Text("记忆对象会决定这张记忆卡在讲述谁、围绕哪个时间锚点展开。这里稳定设定一次，之后分享照片时会自动沿用。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(
@@ -50,12 +79,17 @@ struct MainPersonalProfileSectionView: View {
                     vertical: true
                 )
 
-            profileSummaryCard
+            subjectOverviewCard
 
             VStack(
                 alignment: .leading,
                 spacing: 14
             ) {
+
+                subjectSubsectionHeader(
+                    title: "基本资料",
+                    summary: "先确认主角身份、称呼和默认保存习惯。"
+                )
 
                 Picker(
                     "你的身份",
@@ -110,6 +144,31 @@ struct MainPersonalProfileSectionView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            VStack(
+                alignment: .leading,
+                spacing: 14
+            ) {
+
+                subjectSubsectionHeader(
+                    title: "时间锚点",
+                    summary: "这里维护长期时间参照；后续在编辑和生成阶段都会沿用当前选择。"
+                )
+
+                MainSubjectAnchorSectionView(
+                    anchors: anchors,
+                    selectedAnchorID:
+                        $selectedAnchorID,
+                    selectedAnchorTitle:
+                        selectedAnchorTitle,
+                    selectedAnchorDateText:
+                        selectedAnchorDateText,
+                    anchorQuickFacts:
+                        anchorQuickFacts,
+                    onPresentAnchorManager:
+                        onPresentAnchorManager
+                )
+            }
         }
         .onAppear(
             perform: syncDraftWithProfile
@@ -134,9 +193,16 @@ struct MainPersonalProfileSectionView: View {
         }
     }
 
-    private var profileSummaryCard: some View {
+    private var subjectOverviewCard: some View {
 
         MinimalInsetCard {
+            summaryRow(
+                title: "当前记忆对象",
+                value: subjectNameSummary
+            )
+
+            Divider()
+
             summaryRow(
                 title: "记录身份",
                 value:
@@ -147,17 +213,23 @@ struct MainPersonalProfileSectionView: View {
             Divider()
 
             summaryRow(
-                title: "宝宝昵称",
-                value: nicknameSummary
+                title: "当前时间锚点",
+                value: selectedAnchorSummary
             )
 
             Divider()
 
             summaryRow(
-                title: "出生日期",
-                value: birthdaySummary
+                title: "默认保存位置",
+                value: saveDestinationSummary
             )
         }
+    }
+
+    private var subjectNameSummary: String {
+        nicknameSummary == "未填写"
+            ? "未命名记忆对象"
+            : nicknameSummary
     }
 
     private var nicknameSummary: String {
@@ -173,8 +245,21 @@ struct MainPersonalProfileSectionView: View {
             : trimmed
     }
 
-    private var birthdaySummary: String {
-        birthday.formatted(date: .abbreviated, time: .omitted)
+    private var selectedAnchorSummary: String {
+
+        guard let selectedAnchorTitle else {
+            return "未设置"
+        }
+
+        let trimmed =
+            selectedAnchorTitle
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmed.isEmpty
+            ? "未设置"
+            : trimmed
     }
 
     private func summaryRow(
@@ -202,6 +287,189 @@ struct MainPersonalProfileSectionView: View {
         draftProfile.babyBirthday =
             birthday
         onUpdateProfile(draftProfile.normalized)
+    }
+
+    private func subjectSubsectionHeader(
+        title: String,
+        summary: String
+    ) -> some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 4
+        ) {
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+
+            Text(summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
+        }
+    }
+}
+
+private struct MainSubjectAnchorSectionView: View {
+
+    let anchors: [Anchor]
+
+    @Binding
+    var selectedAnchorID: Anchor.ID?
+
+    let selectedAnchorTitle: String?
+
+    let selectedAnchorDateText: String?
+
+    let anchorQuickFacts: [MainAnchorQuickFact]
+
+    let onPresentAnchorManager: () -> Void
+
+    var body: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 14
+        ) {
+
+            HStack(spacing: 10) {
+                Picker(
+                    "当前时间锚点",
+                    selection: $selectedAnchorID
+                ) {
+
+                    Text("未选择")
+                        .tag(Optional<Anchor.ID>.none)
+
+                    ForEach(anchors) { anchor in
+
+                        Text(anchor.title)
+                            .tag(Optional(anchor.id))
+                    }
+                }
+                .pickerStyle(.menu)
+                .controlSize(.small)
+
+                Button(action: onPresentAnchorManager) {
+                    Label(
+                        "管理锚点",
+                        systemImage: "calendar.badge.plus"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+
+            MinimalInsetCard {
+                subjectAnchorRow(
+                    title: "当前锚点",
+                    value: selectedAnchorDisplayTitle
+                )
+
+                Divider()
+
+                subjectAnchorRow(
+                    title: "记忆日期",
+                    value: selectedAnchorDateText
+                    ?? "未设置"
+                )
+            }
+
+            if !anchorQuickFacts.isEmpty {
+                LazyVGrid(
+                    columns: [
+                        GridItem(
+                            .adaptive(
+                                minimum: 120
+                            ),
+                            spacing: 8
+                        )
+                    ],
+                    alignment: .leading,
+                    spacing: 8
+                ) {
+                    ForEach(anchorQuickFacts) { fact in
+                        MainSubjectAnchorFactView(
+                            title: fact.label,
+                            value: fact.value
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private var selectedAnchorDisplayTitle: String {
+
+        guard let selectedAnchorTitle else {
+            return "未设置"
+        }
+
+        let trimmed =
+            selectedAnchorTitle
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmed.isEmpty
+            ? "未设置"
+            : trimmed
+    }
+
+    private func subjectAnchorRow(
+        title: String,
+        value: String
+    ) -> some View {
+
+        LabeledContent(title) {
+            Text(value)
+                .font(.subheadline.weight(.medium))
+        }
+    }
+}
+
+private struct MainSubjectAnchorFactView: View {
+
+    let title: String
+
+    let value: String
+
+    var body: some View {
+
+        VStack(
+            alignment: .leading,
+            spacing: 4
+        ) {
+
+            Text(title)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+        }
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .fill(Color.white.opacity(0.82))
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .stroke(MinimalPalette.border)
+        )
     }
 }
 #endif

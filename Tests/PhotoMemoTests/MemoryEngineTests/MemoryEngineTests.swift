@@ -45,7 +45,7 @@ struct MemoryEngineTests {
         #expect(result.monthsSince == "8")
         #expect(result.weeksSince == "34")
         #expect(result.babyAge == "8个月")
-        #expect(result.memorySummary == "宝宝今天8个月")
+        #expect(result.memorySummary == "宝宝今天8个月啦！")
     }
 
     @Test("Handles leap-year birthdays deterministically")

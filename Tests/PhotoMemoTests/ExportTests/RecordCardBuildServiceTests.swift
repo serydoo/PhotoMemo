@@ -116,7 +116,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "途途今天9个月14天啦"
+            == "途途今天9个月14天啦！"
         )
     }
 

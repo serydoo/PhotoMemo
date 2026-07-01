@@ -1,4 +1,4 @@
-#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+#if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
 struct IOSInsertedModule:
@@ -48,7 +48,7 @@ enum IOSInsertableModule:
         case .subjectNickname:
             return "对象昵称"
         case .smartTime:
-            return "年岁"
+            return "智能结果"
         case .captureDate:
             return "拍摄日期"
         case .captureTime:
@@ -195,7 +195,7 @@ enum IOSInsertableModule:
         case .subjectNickname:
             return "{{relationship_label}}"
         case .smartTime:
-            return "{{anchor_age_text}}"
+            return "{{memory_summary}}"
         case .captureDate:
             return "{{capture_date_short}}"
         case .captureTime:

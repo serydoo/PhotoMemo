@@ -293,7 +293,7 @@ private extension MemoryVariableProvider {
                 return ageText
             }
 
-            return "\(anchor.title)今天\(ageText)"
+            return "\(anchor.title)今天\(ageText)啦！"
 
         case .relationship,
              .marriage,

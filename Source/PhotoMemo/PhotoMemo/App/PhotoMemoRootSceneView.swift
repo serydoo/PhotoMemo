@@ -8,22 +8,17 @@ struct PhotoMemoRootSceneView: View {
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
-    private let temporaryEntryStorageKey: String
-
-    private let temporaryEntryDefault: String
+    private let temporaryEntryConfiguration:
+        PhotoMemoiOSTemporaryEntryConfiguration
 
     init(
         runtime: PhotoMemoAppRuntime,
-        temporaryEntryStorageKey: String =
-            "photomemo.ios.temporaryEntry",
-        temporaryEntryDefault: String =
-            "configurationCenter"
+        temporaryEntryConfiguration:
+            PhotoMemoiOSTemporaryEntryConfiguration = .standard
     ) {
         self.runtime = runtime
-        self.temporaryEntryStorageKey =
-            temporaryEntryStorageKey
-        self.temporaryEntryDefault =
-            temporaryEntryDefault
+        self.temporaryEntryConfiguration =
+            temporaryEntryConfiguration
     }
 
     var body: some View {
@@ -38,7 +33,7 @@ struct PhotoMemoRootSceneView: View {
                     switch deepLink {
                     case .share:
                         PhotoMemoShareDiagnostics.record(
-                            stage: "app.openURL.share",
+                            stage: .appOpenURLShare,
                             message: "Received photomemo://share."
                         )
                         runtime
@@ -52,7 +47,7 @@ struct PhotoMemoRootSceneView: View {
                     source: .fileOpen
                 )
                 PhotoMemoShareDiagnostics.record(
-                    stage: "app.openURL.file",
+                    stage: .appOpenURLFile,
                     message: url.lastPathComponent
                 )
             }
@@ -86,8 +81,10 @@ struct PhotoMemoRootSceneView: View {
             refreshExternalIntake: {
                 runtime.refreshExternalIntakeState()
             },
-            storageKey: temporaryEntryStorageKey,
-            defaultEntry: temporaryEntryDefault
+            environment:
+                runtime.environment,
+            configuration:
+                temporaryEntryConfiguration
         )
         #else
         ConfigurationCenterView()

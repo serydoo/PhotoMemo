@@ -633,7 +633,7 @@ private extension PhotoMemoShareExtensionViewController {
             )
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.input",
+            stage: .extensionInput,
             message:
                 "inputItems=\(inputItems.count), supportedPhotos=\(sharedPhotoCount)"
         )
@@ -779,10 +779,10 @@ private extension PhotoMemoShareExtensionViewController {
             .loadEvents()
 
         if events.contains(where: {
-            $0.stage == "extension.source.prepare"
+            $0.stage == .extensionSourcePrepare
         }),
            !events.contains(where: {
-               $0.stage == "extension.source.ready"
+               $0.stage == .extensionSourceReady
            }) {
             titleLabel.text =
                 "正在准备原图"
@@ -798,7 +798,7 @@ private extension PhotoMemoShareExtensionViewController {
         }
 
         if events.contains(where: {
-            $0.stage == "extension.source.ready"
+            $0.stage == .extensionSourceReady
         }) {
             titleLabel.text =
                 "原图已可读取"
@@ -926,7 +926,7 @@ private extension PhotoMemoShareExtensionViewController {
                 "persistIncomingItems failed before intake: inputItems was empty."
             )
             PhotoMemoShareDiagnostics.record(
-                stage: "extension.input.empty",
+                stage: .extensionInputEmpty,
                 message: "No NSExtensionItem was available."
             )
             applyFailureState(
@@ -958,7 +958,7 @@ private extension PhotoMemoShareExtensionViewController {
                 result.importedCount
 
             PhotoMemoShareDiagnostics.record(
-                stage: "extension.persisted",
+                stage: .extensionPersisted,
                 message:
                     "imported=\(result.importedCount), requested=\(result.requestedCount), skipped=\(result.skippedCount), failed=\(result.failedCount)"
             )
@@ -975,7 +975,7 @@ private extension PhotoMemoShareExtensionViewController {
                 "处理进度会在 PhotoMemo 主程序中显示。"
 
             PhotoMemoShareDiagnostics.record(
-                stage: "extension.handoff.requested",
+                stage: .extensionHandoffRequested,
                 message:
                     "Intake is safely persisted; requesting host app handoff.",
                 requestID:
@@ -1015,7 +1015,7 @@ private extension PhotoMemoShareExtensionViewController {
                     "Share extension caught PhotoMemoShareExtensionError.\n\(shareError.diagnosticsDescription ?? "no diagnostics")"
                 )
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.error",
+                    stage: .extensionError,
                     message:
                         shareError.errorDescription
                         ?? shareError.failureTitle
@@ -1045,7 +1045,7 @@ private extension PhotoMemoShareExtensionViewController {
                     """
                 )
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.error.unexpected",
+                    stage: .extensionErrorUnexpected,
                     message:
                         "\(nsError.domain) / \(nsError.code): \(nsError.localizedDescription)"
                 )
@@ -1128,7 +1128,7 @@ private extension PhotoMemoShareExtensionViewController {
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "请点下面按钮再试一次；如果仍失败，请直接打开 PhotoMemo MVP，它会继续检查待处理照片。"
+            "请点下面按钮再试一次；如果仍失败，请直接打开 PhotoMemo V1.0，它会继续检查待处理照片。"
         footerLabel.text =
             "这通常和应用唤起或系统分享状态有关，原始照片不会被修改。"
 
@@ -1191,7 +1191,7 @@ private extension PhotoMemoShareExtensionViewController {
         )
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.handoff.primary",
+            stage: .extensionHandoffPrimary,
             message: "extensionContext.open success=\(opened)"
         )
 
@@ -1209,7 +1209,7 @@ private extension PhotoMemoShareExtensionViewController {
         )
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.handoff.fallback",
+            stage: .extensionHandoffFallback,
             message: "responderChain success=\(fallbackOpened)"
         )
 
@@ -1258,7 +1258,7 @@ private extension PhotoMemoShareExtensionViewController {
 
         guard let requestID else {
             PhotoMemoShareDiagnostics.record(
-                stage: "extension.handoff.unconfirmed",
+                stage: .extensionHandoffUnconfirmed,
                 message:
                     "\(source) opened, but no requestID was available."
             )
@@ -1270,7 +1270,7 @@ private extension PhotoMemoShareExtensionViewController {
                 requestID
             ) {
                 PhotoMemoShareDiagnostics.record(
-                    stage: "extension.handoff.confirmed",
+                    stage: .extensionHandoffConfirmed,
                     message:
                         "\(source) confirmed request consumption.",
                     requestID:
@@ -1285,7 +1285,7 @@ private extension PhotoMemoShareExtensionViewController {
         }
 
         PhotoMemoShareDiagnostics.record(
-            stage: "extension.handoff.unconfirmed",
+            stage: .extensionHandoffUnconfirmed,
             message:
                 "\(source) did not produce app drain/enqueue within timeout.",
             requestID:
@@ -1307,9 +1307,9 @@ private extension PhotoMemoShareExtensionViewController {
 
                 switch event.stage {
 
-                case "app.enqueue.created",
-                     "app.enqueue.failed",
-                     "app.request.dropped":
+                case .appEnqueueCreated,
+                     .appEnqueueFailed,
+                     .appRequestDropped:
                     return true
 
                 default:
@@ -1327,7 +1327,7 @@ private extension PhotoMemoShareExtensionViewController {
             .reversed()
             .first { event in
                 event.requestID == requestID
-                && event.stage == "app.enqueue.created"
+                && event.stage == .appEnqueueCreated
             }?
             .jobID
     }

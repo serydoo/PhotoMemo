@@ -1,5 +1,13 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
+#if canImport(PhotosUI)
+import PhotosUI
+#endif
+#if os(macOS)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 struct MemorySubjectEditorView: View {
 
@@ -19,10 +27,26 @@ struct MemorySubjectEditorView: View {
     private var relationshipLabel = ""
 
     @State
+    private var avatarImagePath: String?
+
+    @State
+    private var avatarBadgeImagePath: String?
+
+    @State
+    private var avatarPreviewImagePath: String?
+
+    @State
+    private var avatarStatusMessage = "可上传对象头像，用于头像、标识与预览。"
+
+    @State
     private var definition = ""
 
     @State
     private var timeAnchors: [MemorySubject.TimeAnchor] = []
+
+    @State
+    private var expressionSubjectSource:
+        MemorySubjectExpressionSubjectSource = .displayName
 
     @State
     private var selectedTimeAnchorID: UUID?
@@ -30,8 +54,19 @@ struct MemorySubjectEditorView: View {
     @State
     private var isEditingTimeAnchor = false
 
+    @State
+    private var isOptimizingAvatar = false
+
+#if canImport(PhotosUI)
+    @State
+    private var selectedAvatarItem: PhotosPickerItem?
+#endif
+
     @FocusState
     private var focusedField: SubjectFocusedField?
+
+    private let avatarOptimizer =
+        SubjectAvatarAssetOptimizationService()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
@@ -62,8 +97,10 @@ struct MemorySubjectEditorView: View {
                     systemImage: "switch.2"
                 ) {
                     InspectorPropertyRow(
-                        title: "主要时间",
-                        value: subject.behavior.primaryAnchor,
+                        title: "当前生效时间",
+                        value:
+                            subject.primaryTimeAnchor?.title
+                            ?? subject.behavior.primaryAnchor,
                         systemImage: "flag.fill"
                     )
                     InspectorPropertyRow(
@@ -110,6 +147,9 @@ struct MemorySubjectEditorView: View {
         .onChange(of: relationshipLabel) { _, _ in
             syncDraftToSession()
         }
+        .onChange(of: expressionSubjectSource) { _, _ in
+            syncDraftToSession()
+        }
         .onChange(of: definition) { _, _ in
             syncDraftToSession()
         }
@@ -119,38 +159,113 @@ struct MemorySubjectEditorView: View {
         .onChange(of: selectedTimeAnchorID) { _, _ in
             syncDraftToSession()
         }
+#if canImport(PhotosUI)
+        .onChange(of: selectedAvatarItem) { _, item in
+            guard let item else {
+                return
+            }
+
+            Task {
+                await optimizeSelectedAvatar(item)
+            }
+        }
+#endif
     }
 
     private var identityEditor: some View {
         VStack(alignment: .leading, spacing: 12) {
+            avatarEditor
+
             labeledTextField(
                 "显示名称",
                 text: $displayName,
                 systemImage: "person.text.rectangle",
-                focus: .displayName
+                focus: .displayName,
+                subjectSource: .displayName
             )
 
             labeledTextField(
                 "昵称",
                 text: $shortName,
                 systemImage: "person.crop.circle",
-                focus: .shortName
+                focus: .shortName,
+                subjectSource: .shortName
             )
 
             labeledTextField(
                 "关系类型",
                 text: $relationshipRole,
                 systemImage: "person.2",
-                focus: .relationshipRole
+                focus: .relationshipRole,
+                subjectSource: .relationshipRole
             )
 
             labeledTextField(
                 "关系备注",
                 text: $relationshipLabel,
                 systemImage: "heart.text.square",
-                focus: .relationshipLabel
+                focus: .relationshipLabel,
+                subjectSource: .relationshipLabel
             )
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16)
+
+                Text("记忆引擎默认使用当前勾选的一行作为表述主体；如果没有可用值，会自动回退到显示名称。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+    }
+
+    private var avatarEditor: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 14) {
+                subjectAvatarPreview
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("对象头像")
+                        .font(.subheadline.weight(.semibold))
+
+                    Text(avatarStatusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+
+                Spacer(minLength: 0)
+            }
+
+#if canImport(PhotosUI)
+            PhotosPicker(
+                selection: $selectedAvatarItem,
+                matching: .images
+            ) {
+                Label(
+                    isOptimizingAvatar
+                    ? "正在优化头像"
+                    : "上传对象头像",
+                    systemImage:
+                        isOptimizingAvatar
+                        ? "hourglass"
+                        : "person.crop.circle.badge.plus"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+            .disabled(isOptimizingAvatar)
+#endif
+        }
+        .padding(12)
+        .configurationPanelChrome(isSelected: true)
     }
 
     private var definitionEditor: some View {
@@ -182,11 +297,11 @@ struct MemorySubjectEditorView: View {
                     .foregroundStyle(.secondary)
             } else {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("时间锚点")
+                    Text("当前生效时间锚点")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.primary)
 
-                    Text("定义记忆对象的关键日期，用于理解回忆的位置。")
+                    Text("选择当前真正参与记忆表达和后台计算的时间锚点。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -196,7 +311,7 @@ struct MemorySubjectEditorView: View {
 
                 HStack(spacing: 8) {
                     Picker(
-                        "时间锚点",
+                        "当前生效时间锚点",
                         selection: Binding(
                             get: {
                                 selectedTimeAnchorID
@@ -297,7 +412,8 @@ struct MemorySubjectEditorView: View {
         _ title: String,
         text: Binding<String>,
         systemImage: String,
-        focus: SubjectFocusedField
+        focus: SubjectFocusedField,
+        subjectSource: MemorySubjectExpressionSubjectSource? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 7) {
@@ -309,6 +425,35 @@ struct MemorySubjectEditorView: View {
                 Text(title)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
+
+                Spacer(minLength: 0)
+
+                if let subjectSource {
+                    Button {
+                        expressionSubjectSource =
+                            subjectSource
+                    } label: {
+                        Label(
+                            expressionSubjectSource
+                                == subjectSource
+                            ? "主体已生效"
+                            : "设为主体",
+                            systemImage:
+                                expressionSubjectSource
+                                == subjectSource
+                                ? "checkmark.circle.fill"
+                                : "circle"
+                        )
+                        .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(
+                        expressionSubjectSource
+                            == subjectSource
+                        ? Color.accentColor
+                        : .secondary
+                    )
+                }
             }
 
             TextField(title, text: text)
@@ -330,12 +475,21 @@ struct MemorySubjectEditorView: View {
         shortName = subject.identity.shortName
         relationshipRole = subject.relationship.role
         relationshipLabel = subject.relationship.label
+        avatarImagePath = subject.identity.avatarImagePath
+        avatarBadgeImagePath =
+            subject.identity.avatarBadgeImagePath
+        avatarPreviewImagePath =
+            subject.identity.avatarPreviewImagePath
+        avatarStatusMessage =
+            normalizedAvatarStatusMessage(
+                from: subject.identity.avatarImagePath
+            )
         definition = subject.definition
         timeAnchors = subject.timeAnchors
+        expressionSubjectSource =
+            subject.expressionSubjectSource
         selectedTimeAnchorID =
-            subject.timeAnchors.first(where: {
-                $0.title == subject.behavior.primaryAnchor
-            })?.id
+            subject.primaryTimeAnchor?.id
             ?? subject.timeAnchors.first?.id
         isEditingTimeAnchor = false
     }
@@ -359,21 +513,104 @@ struct MemorySubjectEditorView: View {
 
         updated.identity.displayName = displayName
         updated.identity.shortName = shortName
+        updated.identity.avatarImagePath = avatarImagePath
+        updated.identity.avatarBadgeImagePath =
+            avatarBadgeImagePath
+        updated.identity.avatarPreviewImagePath =
+            avatarPreviewImagePath
         updated.relationship.role = relationshipRole
         updated.relationship.label = relationshipLabel
         updated.definition = definition
         updated.timeAnchors = timeAnchors
+        updated.expressionSubjectSource =
+            expressionSubjectSource
 
         if let selectedAnchor =
             timeAnchors.first(where: {
                 $0.id == selectedTimeAnchorID
             }) {
+            updated.activeTimeAnchorID = selectedAnchor.id
             updated.behavior.primaryAnchor = selectedAnchor.title
             updated.referenceDate = selectedAnchor.date
         }
 
         session.updateSelectedSubject(updated)
     }
+
+    private var subjectAvatarPreview: some View {
+        ZStack {
+            Circle()
+                .fill(Color.accentColor.opacity(0.10))
+
+            if let previewPath =
+                avatarPreviewImagePath
+                ?? avatarImagePath {
+                PlatformAvatarImage(path: previewPath)
+                    .scaledToFill()
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .frame(width: 64, height: 64)
+        .overlay(
+            Circle()
+                .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
+    private func normalizedAvatarStatusMessage(
+        from avatarPath: String?
+    ) -> String {
+        if let avatarPath,
+           !avatarPath.isEmpty {
+            return "已准备头像衍生资源，可用于头像、标识与预览。"
+        }
+
+        return "可上传对象头像，用于头像、标识与预览。"
+    }
+
+#if canImport(PhotosUI)
+    @MainActor
+    private func optimizeSelectedAvatar(
+        _ item: PhotosPickerItem
+    ) async {
+        isOptimizingAvatar = true
+        avatarStatusMessage = "正在优化对象头像"
+
+        do {
+            guard
+                let data =
+                    try await item.loadTransferable(
+                        type: Data.self
+                    )
+            else {
+                throw SubjectAvatarAssetOptimizationError.invalidImage
+            }
+
+            let optimizedAsset =
+                try await avatarOptimizer.optimize(
+                    data: data
+                )
+
+            avatarImagePath =
+                optimizedAsset.displayImagePath
+            avatarBadgeImagePath =
+                optimizedAsset.badgeImagePath
+            avatarPreviewImagePath =
+                optimizedAsset.previewImagePath
+            avatarStatusMessage = "头像已优化并同步到头像、标识与预览资源。"
+            syncDraftToSession()
+        } catch {
+            avatarStatusMessage =
+                error.localizedDescription
+        }
+
+        isOptimizingAvatar = false
+    }
+#endif
 }
 
 private enum SubjectFocusedField: Hashable {
@@ -384,6 +621,29 @@ private enum SubjectFocusedField: Hashable {
     case definition
     case timeTitle
     case timeNote
+}
+
+private struct PlatformAvatarImage: View {
+
+    let path: String
+
+    var body: some View {
+#if os(macOS)
+        if let image = NSImage(contentsOfFile: path) {
+            Image(nsImage: image)
+                .resizable()
+        } else {
+            Color.clear
+        }
+#elseif canImport(UIKit)
+        if let image = UIImage(contentsOfFile: path) {
+            Image(uiImage: image)
+                .resizable()
+        } else {
+            Color.clear
+        }
+#endif
+    }
 }
 
 private extension Binding where Value == MemorySubject.TimeAnchor {

@@ -21,6 +21,30 @@ struct SharedBatchConfigurationSnapshotService {
         snapshotProvider.loadSnapshot()
     }
 
+    func loadAnchorsResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        [Anchor]
+    > {
+
+        snapshotProvider.loadAnchorsResult()
+    }
+
+    func loadTemplateResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        Template
+    > {
+
+        snapshotProvider.loadTemplateResult()
+    }
+
+    func loadBadgeResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        Badge
+    > {
+
+        snapshotProvider.loadBadgeResult()
+    }
+
     func resolvedAlbumTitle(
         for identifier: String
     ) -> String? {

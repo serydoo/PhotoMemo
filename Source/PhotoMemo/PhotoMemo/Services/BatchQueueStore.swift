@@ -44,7 +44,13 @@ final class BatchQueueStore: ObservableObject {
         notificationService:
             BatchNotificationService? = nil,
         externalIntakeStore:
-            ExternalPhotoIntakeStore? = nil
+            ExternalPhotoIntakeStore? = nil,
+        photoRepository:
+            PhotoRepository? = nil,
+        previewCoordinator:
+            PreviewCoordinator? = nil,
+        exportCoordinator:
+            ExportCoordinator? = nil
     ) {
         let resolvedDefaults =
             defaults
@@ -65,7 +71,13 @@ final class BatchQueueStore: ObservableObject {
                     executionCoordinator
                     ?? BatchProcessingCoordinator(),
                 externalIntakeStore:
-                    resolvedExternalIntakeStore
+                    resolvedExternalIntakeStore,
+                photoRepository:
+                    photoRepository,
+                previewCoordinator:
+                    previewCoordinator,
+                exportCoordinator:
+                    exportCoordinator
             )
         self.persistence =
             BatchQueuePersistence(
@@ -453,6 +465,7 @@ extension BatchQueueStore {
     func updateTask(
         at reference:
             BatchQueueExecution.TaskReference,
+        persist: Bool = true,
         mutate: (inout BatchTask) -> Void
     ) {
 
@@ -476,6 +489,11 @@ extension BatchQueueStore {
                 from: job.tasks
             )
         jobs[reference.jobIndex] = job
+
+        guard persist else {
+            return
+        }
+
         persistJobs()
     }
 
