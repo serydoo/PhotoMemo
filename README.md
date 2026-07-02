@@ -1,16 +1,37 @@
 # PhotoMemo
 
-## Project Mission
+> 让照片，不止记录画面，更记录人生。
+
+PhotoMemo is a local-first Memory Presentation Engine for Apple Photos.
+
+PhotoMemo 是一款围绕 Apple Photos 打造的本地化照片记忆增强应用。它不会修改原始照片，也不是传统意义上的水印工具。它读取照片的拍摄事实，结合用户设定的 Memory Subject、Life Anchor、Time Anchor 和表达内容，为照片生成一张新的记忆版本。
+
+多年以后，当再次翻开照片时，看到的不只是画面，更是那一天在生命时间线里的位置。
+
+<!--
+Hero image slot:
+
+Add a public, non-private product image here when available.
+Recommended path: Screenshots/photomemo-hero.png
+
+![PhotoMemo memory card example](Screenshots/photomemo-hero.png)
+-->
+
+## Why PhotoMemo Exists
+
+Today, we take more photos than we can meaningfully reread.
+
+The details people care about years later are rarely only camera settings. More often, they are:
+
+- Where was this?
+- How old was the child?
+- What happened that day?
+- Why was this photo taken?
+- Where does this photo belong in a person's life?
 
 PhotoMemo exists to help people read their memories, not just store their photos.
 
-PhotoMemo 存在的意义，
-
-不是帮助人们保存照片，
-
-而是帮助人们阅读回忆。
-
-## Project Manifesto
+PhotoMemo 存在的意义，不是帮助人们保存照片，而是帮助人们阅读回忆。
 
 Photos preserve moments.
 
@@ -20,11 +41,18 @@ PhotoMemo reveals their meaning.
 
 PhotoMemo 赋予意义。
 
-## Repository Identity
+## What PhotoMemo Is
 
-PhotoMemo is a local-first Memory Presentation Engine.
+PhotoMemo is:
 
-It is not:
+- a local-first Memory Presentation Engine
+- a memory timeline system
+- a metadata-driven presentation engine
+- a research-first layout-specification project
+- a system that generates a new image while preserving the original photo
+- a Memory Capability inside Apple Photos workflows
+
+PhotoMemo is not:
 
 - a cloud photo product
 - a general image editor
@@ -32,36 +60,48 @@ It is not:
 - an EXIF tool
 - a template marketplace
 - a batch-first dashboard
+- a watermark clone app
 
-It is:
+Apple Photos remains the trusted library, timeline, map, people system, search system, sync system, and reading space. PhotoMemo only owns the Memory Workflow that helps a meaningful photo reveal its Life Position.
 
-- a research-first memory presentation system
-- a memory timeline system
-- a metadata-driven presentation engine
-- a layout-specification project
-- a system that generates a new image while preserving the original photo
+## Core Principles
 
-PhotoMemo trusts Apple Photos as the user's photo library, timeline, map, people system, search system, sync system, and reading space.
+### Memory, Not Parameters
 
-PhotoMemo only owns the memory capability that helps a meaningful photo reveal its Life Position.
+EXIF is data. Memory is relationship.
 
-## Product Center
+PhotoMemo does not display photo facts for their own sake. It uses capture time, location, camera information, Life Anchors, and user expression to make a photo easier to understand later.
 
-PhotoMemo is a Configuration Center, not a daily workbench.
+Photos have timestamps.
 
-The Configuration Center is the Memory Engine Configuration Center.
+Memories have positions.
 
-Configuration Once.
+### Local First
 
-Benefit Forever.
+All core processing is local.
 
-Configuration Center edits Objects, not Data.
+PhotoMemo does not upload photos, does not depend on cloud processing, and does not mutate the original image. The output is a newly generated image.
 
-Everything starts from the Memory Card.
+### Apple Native
 
-Preview is the Renderer before Rendering.
+PhotoMemo extends Apple Photos instead of replacing it.
 
-The center surface is Memory Card Preview. Photos belong to Apple Photos; PhotoMemo owns the Memory Card.
+The intended daily lifecycle is:
+
+```text
+Apple Photos
+-> Share
+-> PhotoMemo
+-> Processing
+-> Notification
+-> Apple Photos
+```
+
+PhotoMemo should return users to Apple Photos instead of pulling them into a separate app-owned workflow.
+
+### Configuration Once, Benefit Forever
+
+The foreground app is the Configuration Center.
 
 The Configuration Center is responsible for long-term setup:
 
@@ -73,76 +113,13 @@ The Configuration Center is responsible for long-term setup:
 - Automation
 - Advanced settings
 
-Its frozen architecture is:
+The Configuration Center edits Objects, not Data.
 
-```text
-Library
--> Interactive Memory Card
--> Object Inspector
-```
+Everything starts from the Memory Card.
 
-Daily use should begin and end in Apple Photos.
+## Memory Card Workflow
 
-## Apple Photos Lifecycle
-
-```text
-Reading
--> Share
--> Processing
--> Notification
--> Reading
-```
-
-Daily workflow:
-
-```text
-Apple Photos
--> Share
--> PhotoMemo
--> Processing
--> Notification
--> Apple Photos
-```
-
-PhotoMemo should return users to Apple Photos instead of pulling them into an app-owned workflow.
-
-## Behavior State Machine
-
-```text
-Idle
--> Preparing
--> Processing
--> Completed
--> Reading
-```
-
-Exceptional path:
-
-```text
-Interrupted
--> Auto Recovery
--> Continue
-```
-
-Each processing task starts from a Configuration Snapshot. The snapshot freezes the selected configuration at task start, and the running task treats that configuration as read-only.
-
-## Batch Philosophy
-
-PhotoMemo is best at processing a passage of memory worth returning to, not a large anonymous photo dump.
-
-Batch scale language:
-
-```text
-Primary: 1-20
-Secondary: 20-50
-Advanced: 50+
-```
-
-Larger runs are possible only as an advanced capability. They must not redefine PhotoMemo as a batch dashboard.
-
-## Architecture
-
-Target flow:
+PhotoMemo's long-term workflow is:
 
 ```text
 Photo
@@ -165,27 +142,106 @@ Ownership:
 
 Renderer must not own layout decisions.
 
-## Current Phase
+## Time Anchor
 
-PhotoMemo is entering Product Realization through IA-003 Memory Engine Integration.
+Time Anchor is one of PhotoMemo's core capabilities.
 
-Unscoped feature development, renderer polishing, and UI architecture redesign remain paused. IA-002 Configuration Center Architecture is frozen; IA-003 may connect real business data in reviewed slices.
+A photo already has a capture time. PhotoMemo adds relationships between that capture time and important life events.
 
-Current next slice:
+Examples of anchors:
+
+- birth
+- marriage
+- relationship
+- first meeting
+- graduation
+- travel
+- pet adoption
+- memorial day
+- custom life event
+
+The Memory Engine calculates reusable time results such as:
+
+- `1岁3个月18天`
+- `相识267天`
+- `结婚第8年`
+- `旅行第5天`
+- `还有86天`
+
+Smart anchor variables output time results, not complete prose. Users remain in control of the final sentence by combining literal text and variables.
+
+## Memory Subject
+
+PhotoMemo is not centered on generic contacts.
+
+It is centered on Memory Subjects: the people, relationships, events, and life contexts that make a photo meaningful.
+
+A Memory Subject may include:
+
+- display name
+- nickname
+- relationship
+- reference date
+- Life Anchors
+- Time Anchors
+- expression behavior
+- decoration assets
+- default presentation choices
+
+One photo may belong to multiple life timelines. The long-term goal is to let every meaningful photo know where it belongs inside a person's life.
+
+## Current Status
+
+PhotoMemo is in V2.1 Memory Engine Product Realization.
+
+The approved implementation track is:
 
 ```text
-IA-003A MemorySubject Adapter
+IA-003 Memory Engine Integration
 ```
 
-Start here:
+IA-002 Configuration Center Architecture is frozen. Unscoped feature development, renderer polishing, and UI architecture redesign remain paused.
+
+Recent IA-003-compatible foundation work has established the first Memory Expression Engine path:
+
+```text
+MemorySubject
+-> ConfigurationSnapshot
+-> MemoryExpressionEngine
+-> MemoryModule
+```
+
+The next implementation work should continue from this controlled path. It must not jump ahead into renderer, metadata, export, share-extension, photo-library, or Layout Engine work before the approved IA-003 slice reaches that boundary.
+
+## Repository Map
+
+Current source and project structure:
+
+- `Source/PhotoMemo/` - current Xcode project and app source
+- `Research/` - active V2 research and specification work
+- `Docs/` - product, architecture, behavior, QA, release, and historical documents
+- `App/` - reserved future V2 app-facing structure
+- `DesignSystem/` - reserved durable design-system assets
+- `LayoutEngine/` - reserved future Layout Engine boundary
+- `Renderer/` - reserved future renderer boundary
+- `Examples/` - public non-private examples
+- `Screenshots/` - public non-private screenshots
+- `Tests/` - fixtures and Swift tests
+- `scripts/` - local automation helpers
+
+Existing source files remain under `Source/PhotoMemo/` until a reviewed migration slice moves them safely.
+
+## Start Here
+
+For project context, read:
 
 1. `PROJECT_CONSTITUTION.md`
 2. `Docs/MASTER_PLAN.md`
-3. `PROJECT_RESET.md`
-4. `RepositoryAudit.md`
-5. `Research/README.md`
-6. `Docs/REPOSITORY_VOCABULARY.md`
-7. `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md`
+3. `PROJECT_PHILOSOPHY.md`
+4. `PROJECT_DIRECTION.md`
+5. `Docs/DOCUMENT_INDEX.md`
+6. `Docs/PROJECT_STRUCTURE.md`
+7. `Docs/CURRENT_STATUS.md`
 
 Old documents remain reference material for now. Do not migrate them until the research specifications stabilize.
 
@@ -194,3 +250,9 @@ Old documents remain reference material for now. Do not migrate them until the r
 Every review should leave the repository simpler than before.
 
 每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+
+## Closing
+
+照片记录的是那一刻。
+
+PhotoMemo 希望记录的是，那一刻背后的故事。
