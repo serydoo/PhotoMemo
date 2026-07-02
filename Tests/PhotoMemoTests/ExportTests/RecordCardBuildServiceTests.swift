@@ -108,7 +108,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.leftBottom })?.value
-            == "拍摄于2026.04.11 10:13:05"
+            == "记录于2026.04.11 10:13:05"
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightTop })?.value
@@ -116,7 +116,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "途途今天9个月14天啦！"
+            == "途途今天9个月14天啦"
         )
     }
 
@@ -210,6 +210,95 @@ struct RecordCardBuildServiceTests {
 
         #expect(card.exportDescriptionOverride == "My export note")
         #expect(CardVariableProvider.exportDescription(from: card) == "My export note")
+    }
+
+    @Test("Build chain keeps raw anchor expression-style payloads available to downstream output")
+    func buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput() throws {
+
+        let service = RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 5,
+                        day: 26
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 6,
+                        day: 13,
+                        hour: 10,
+                        minute: 13,
+                        second: 5
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_5668.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                iso: "125",
+                aperture: "1.78",
+                shutterSpeed: "1/98",
+                focalLength35mm: "24",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+
+        let snapshot =
+            try injectedExpressionStyleSnapshot(
+                base:
+                    BatchConfigurationSnapshot(
+                        template:
+                            .template1
+                            .normalizedForEditing,
+                        badge: nil,
+                        anchor: Anchor(
+                            type: .birthday,
+                            title: "途途",
+                            date: birthday,
+                            isCountdown: false
+                        ),
+                        shouldWritePhotoDescription:
+                            false,
+                        photoDescriptionOverride: "",
+                        selectedAlbumIdentifier: ""
+                    ),
+                expressionStyle:
+                    "birthdayAgeToday"
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            context[MetadataContext.Key.memorySummary]
+            == "途途今天18天啦！"
+        )
+        #expect(
+            try encodedExpressionStyle(
+                from: card.anchor
+            ) == "birthdayNatural"
+        )
     }
 
     @MainActor
@@ -473,5 +562,58 @@ private extension RecordCardBuildServiceTests {
             at:
                 temporaryExportFolder()
         )
+    }
+
+    func injectedExpressionStyleSnapshot(
+        base: BatchConfigurationSnapshot,
+        expressionStyle: String
+    ) throws -> BatchConfigurationSnapshot {
+
+        let data =
+            try JSONEncoder().encode(base)
+        guard
+            var payload =
+                try JSONSerialization
+                .jsonObject(with: data)
+                as? [String: Any],
+            var anchorPayload =
+                payload["anchor"]
+                as? [String: Any]
+        else {
+            throw CocoaError(.coderInvalidValue)
+        }
+
+        anchorPayload["expressionStyle"] =
+            expressionStyle
+        payload["anchor"] =
+            anchorPayload
+
+        let mutatedData =
+            try JSONSerialization.data(
+                withJSONObject: payload
+            )
+
+        return try JSONDecoder().decode(
+            BatchConfigurationSnapshot.self,
+            from: mutatedData
+        )
+    }
+
+    func encodedExpressionStyle(
+        from anchor: Anchor?
+    ) throws -> String? {
+
+        guard let anchor else {
+            return nil
+        }
+
+        let data =
+            try JSONEncoder().encode(anchor)
+
+        return (
+            try JSONSerialization
+            .jsonObject(with: data)
+            as? [String: Any]
+        )?["expressionStyle"] as? String
     }
 }

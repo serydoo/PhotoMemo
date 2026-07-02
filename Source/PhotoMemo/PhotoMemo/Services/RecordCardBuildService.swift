@@ -90,6 +90,8 @@ private extension RecordCardBuildService {
             story: resolvedStory(
                 from: configuration
             ),
+            memorySubjectText:
+                configuration.memorySubjectText,
             exportDescriptionOverride: nil
         )
     }

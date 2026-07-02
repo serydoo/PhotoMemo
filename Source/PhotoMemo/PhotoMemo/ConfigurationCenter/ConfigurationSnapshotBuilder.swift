@@ -52,7 +52,10 @@ private extension ConfigurationSnapshotBuilder {
             id: anchor.id,
             title: anchor.title,
             date: anchor.date,
-            anchorType: anchor.anchorType
+            anchorType:
+                anchor.resolvedAnchorType,
+            expressionStyle:
+                anchor.resolvedExpressionStyle
         )
     }
 }

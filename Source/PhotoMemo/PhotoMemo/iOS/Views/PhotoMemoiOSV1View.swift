@@ -349,6 +349,12 @@ struct PhotoMemoiOSV1View: View {
                             persistSubject: {
                                 subject in
                                 persistSubjectToDefaults(subject)
+                                if let anchorDate =
+                                    subject.primaryTimeAnchor?.date {
+                                    birthdayDate = anchorDate
+                                }
+                                refreshDynamicPreview()
+                                activeConfigurationMessage = "有未保存修改"
                             }
                         )
                 }
@@ -748,6 +754,8 @@ struct PhotoMemoiOSV1View: View {
             birthdayDate: $birthdayDate,
             logoStatusMessage: resolvedLogoStatusMessage,
             logoRowDetail: logoRowDetail,
+            logoPersistenceHint:
+                resolvedLogoPersistenceHint,
             subjectAvatarLogoImagePath:
                 resolvedSubjectAvatarLogoImagePath,
             subjectAvatarPreviewImagePath:
@@ -755,8 +763,8 @@ struct PhotoMemoiOSV1View: View {
             customLogoImagePath:
                 customLogoBadge?.imagePath,
             isOptimizingLogo: isOptimizingLogo,
-            timeAnchorTitle: timeAnchorTitle,
-            smartTimeValue: moduleValue(.smartTime),
+            timeAnchorPresentation:
+                timeAnchorEntryPresentation,
             birthdaySummaryText: birthdaySummaryText,
             logoExpanded:
                 expansionBinding(
@@ -795,6 +803,30 @@ struct PhotoMemoiOSV1View: View {
                 ? "当前记忆对象还没有可用头像，先去对象配置里上传头像即可。"
                 : "当前使用对象头像作为标识。"
         }
+    }
+
+    private var resolvedLogoPersistenceHint: String? {
+        guard
+            activeConfigurationMessage
+            == V1DraftMutationCoordinator
+            .dirtyStateMessage
+        else {
+            return nil
+        }
+
+        return "预览区已经切换，点击“保存为默认配置”后，实际输出才会同步到当前标识。"
+    }
+
+    private var timeAnchorEntryPresentation:
+        V1TimeAnchorEntryPresentation {
+
+        V1TimeAnchorEntryPresenter
+            .presentation(
+                subject:
+                    alignedSelectedSubject()
+                    ?? session.state.selectedSubject,
+                anchorTitle: timeAnchorTitle
+            )
     }
 
     private var resolvedSubjectAvatarLogoImagePath: String? {

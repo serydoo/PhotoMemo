@@ -18,18 +18,17 @@ enum MemoryAnchorTypeRegistry {
         }
 
         switch anchorType {
-        case .birthday:
-            return MemoryAnchorTypeDefinition(
-                calculator:
-                    BirthdayAgeCalculator(),
-                expressionProvider:
-                    BirthdayAgeExpressionProvider()
-            )
-        case .relationship,
+        case .birthday,
+             .relationship,
              .marriage,
              .exam,
              .custom:
-            return nil
+            return MemoryAnchorTypeDefinition(
+                calculator:
+                    RelativeTimeMemoryCalculator(),
+                expressionProvider:
+                    ConfiguredAnchorExpressionProvider()
+            )
         }
     }
 }

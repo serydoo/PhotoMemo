@@ -221,6 +221,9 @@ final class SettingsService: ObservableObject {
         static let selectedMemorySubject =
             "photomemo.selectedMemorySubject"
 
+        static let selectedMemorySubjectText =
+            "photomemo.selectedMemorySubjectText"
+
         static let activeConfigurationSlotID =
             "photomemo.activeConfigurationSlotID"
 
@@ -390,6 +393,10 @@ final class SettingsService: ObservableObject {
             defaults.removeObject(
                 forKey: Keys.selectedMemorySubject
             )
+            defaults.removeObject(
+                forKey:
+                    Keys.selectedMemorySubjectText
+            )
             return
         }
 
@@ -402,6 +409,12 @@ final class SettingsService: ObservableObject {
         defaults.set(
             data,
             forKey: Keys.selectedMemorySubject
+        )
+
+        defaults.set(
+            subject.resolvedExpressionSubjectText,
+            forKey:
+                Keys.selectedMemorySubjectText
         )
     }
 
@@ -839,6 +852,11 @@ extension SettingsService {
             anchors: anchors,
             selectedAnchorIDString:
                 resolvedSelectedAnchorIDString,
+            memorySubjectText:
+                defaults.string(
+                    forKey:
+                        Keys.selectedMemorySubjectText
+                ),
             shouldWritePhotoDescription:
                 shouldWritePhotoDescription,
             photoDescriptionOverride:

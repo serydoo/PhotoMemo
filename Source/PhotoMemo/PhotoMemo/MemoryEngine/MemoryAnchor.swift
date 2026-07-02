@@ -10,6 +10,8 @@ struct MemoryAnchor:
     var title: String
     var date: Date
     var anchorType: AnchorType?
+    var expressionStyle:
+        MemoryAnchorExpressionStyle?
     var isEnabled: Bool
 
     init(
@@ -17,12 +19,16 @@ struct MemoryAnchor:
         title: String,
         date: Date,
         anchorType: AnchorType? = nil,
+        expressionStyle:
+            MemoryAnchorExpressionStyle? = nil,
         isEnabled: Bool = true
     ) {
         self.id = id
         self.title = title
         self.date = date
         self.anchorType = anchorType
+        self.expressionStyle =
+            expressionStyle
         self.isEnabled = isEnabled
     }
 }

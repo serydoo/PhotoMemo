@@ -34,12 +34,26 @@ struct ConfigurationMigrationTests {
         let template =
             Template.immersWhite
             .renamed("成长卡片")
+        var subject =
+            ConfigurationCenterState
+            .mock
+            .selectedSubject
+        if let primaryAnchorIndex =
+            subject?.timeAnchors.indices.first {
+            let primaryAnchorID =
+                subject?.timeAnchors[primaryAnchorIndex]
+                .id
+            subject?.activeTimeAnchorID =
+                primaryAnchorID
+            subject?.timeAnchors[primaryAnchorIndex]
+                .anchorType = .birthday
+            subject?.timeAnchors[primaryAnchorIndex]
+                .expressionStyle =
+                    .birthdayAgeToday
+        }
         let request =
             V1ConfigurationSaveRequest(
-                subject:
-                    ConfigurationCenterState
-                    .mock
-                    .selectedSubject,
+                subject: subject,
                 template: template,
                 badge: .family,
                 shouldWritePhotoDescription: true,
@@ -113,6 +127,11 @@ struct ConfigurationMigrationTests {
             == "album-88"
         )
         #expect(
+            snapshot.memorySubjectText
+            == request.subject?
+                .resolvedExpressionSubjectText
+        )
+        #expect(
             settings.selectedAlbumTitle
             == "成长记录"
         )
@@ -125,8 +144,20 @@ struct ConfigurationMigrationTests {
             == request.subject
         )
         #expect(
+            bootstrap.selectedSubject?
+                .primaryTimeAnchor?
+                .expressionStyle
+            == .birthdayAgeToday
+        )
+        #expect(
             receipt.anchor.title
-            == request.timeAnchor.title
+            == request.subject?
+                .primaryTimeAnchor?
+                .title
+        )
+        #expect(
+            receipt.anchor.expressionStyle
+            == .birthdayAgeToday
         )
     }
 
@@ -515,6 +546,154 @@ struct ConfigurationMigrationTests {
         #expect(
             bootstrap.suggestedNewAlbumName
             == "成长记录"
+        )
+    }
+
+    @MainActor
+    @Test("SaveV1ConfigurationIntent persists subject-avatar logo into the default output snapshot")
+    func saveV1ConfigurationIntentPersistsSubjectAvatarLogoIntoTheDefaultOutputSnapshot() async throws {
+
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.subjectAvatar.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let subject =
+            MemorySubject(
+                identity: .init(
+                    displayName: "王途途",
+                    shortName: "途途",
+                    avatarImagePath: "/tmp/avatar-display.png",
+                    avatarBadgeImagePath: "/tmp/avatar-badge.png",
+                    avatarPreviewImagePath: "/tmp/avatar-preview.png"
+                ),
+                relationship: .init(
+                    role: "宝宝",
+                    label: "妈妈眼里的宝宝"
+                ),
+                definition: "测试对象",
+                referenceDate: Date(
+                    timeIntervalSince1970:
+                        1_716_825_600
+                ),
+                timeAnchors: [
+                    .init(
+                        title: "生日",
+                        date: Date(
+                            timeIntervalSince1970:
+                                1_716_825_600
+                        ),
+                        note: "出生日期",
+                        anchorType: .birthday
+                    )
+                ],
+                activeTimeAnchorID: nil,
+                expressionSubjectSource: .shortName,
+                behavior: MemoryBehavior(
+                    primaryAnchor: "生日",
+                    iconStrategy: .autoMatch,
+                    badgeStrategy: .autoMatch,
+                    memoryExpression: MemoryExpression(
+                        title: "生日记忆",
+                        blocks: []
+                    )
+                ),
+                decorations: []
+            )
+        let subjectAvatarBadge =
+            Badge(
+                name:
+                    OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                imagePath: "/tmp/avatar-badge.png"
+            )
+        let coordinator =
+            Self.makeConfigurationCoordinator(
+                defaults: defaults
+            )
+        let request =
+            V1ConfigurationSaveRequest(
+                subject: subject,
+                template:
+                    Template.immersWhite
+                    .renamed("对象头像配置"),
+                badge: subjectAvatarBadge,
+                shouldWritePhotoDescription: true,
+                photoDescriptionOverride: "",
+                timeAnchor:
+                    .init(
+                        title: "生日",
+                        date: subject.referenceDate
+                    ),
+                albumSelection:
+                    .init(
+                        identifier:
+                            PhotoMemoAlbumSelection
+                            .automaticIdentifier,
+                        title:
+                            PhotoMemoAlbumSelection
+                            .defaultAlbumTitle
+                    )
+            )
+
+        let result =
+            await SaveV1ConfigurationIntent(
+                request: request,
+                coordinator: coordinator
+            )
+            .execute()
+
+        _ =
+            try Self.requireSuccess(
+                result,
+                failurePrefix:
+                    "Expected subject-avatar configuration save to succeed"
+            )
+        let snapshot =
+            try Self.requireSuccess(
+                coordinator
+                .loadDefaultBatchConfigurationSnapshot(),
+                failurePrefix:
+                    "Expected saved subject-avatar snapshot to load"
+            )
+        let bootstrap =
+            try Self.requireSuccess(
+                await LoadV1ConfigurationBootstrapIntent(
+                    coordinator: coordinator
+                )
+                .execute(),
+                failurePrefix:
+                    "Expected subject-avatar bootstrap state to load"
+            )
+
+        #expect(
+            snapshot.badge
+            == subjectAvatarBadge
+        )
+        #expect(
+            bootstrap.logoMode
+            == .subjectAvatar
+        )
+        #expect(
+            bootstrap.customLogoBadge
+            == nil
+        )
+        #expect(
+            bootstrap.selectedSubject
+            == subject
         )
     }
 

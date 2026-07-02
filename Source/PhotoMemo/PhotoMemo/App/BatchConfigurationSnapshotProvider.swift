@@ -28,6 +28,9 @@ struct BatchConfigurationSnapshotProvider {
 
         static let selectedAlbumTitle =
             "photomemo.selectedAlbumTitle"
+
+        static let selectedMemorySubjectText =
+            "photomemo.selectedMemorySubjectText"
     }
 
     init(
@@ -47,6 +50,11 @@ struct BatchConfigurationSnapshotProvider {
                 defaults.string(
                     forKey: Keys.selectedAnchorID
                 ) ?? "",
+            memorySubjectText:
+                defaults.string(
+                    forKey:
+                        Keys.selectedMemorySubjectText
+                ),
             shouldWritePhotoDescription:
                 defaults.object(
                     forKey:
@@ -121,6 +129,7 @@ struct BatchConfigurationSnapshotProvider {
         badge: Badge?,
         anchors: [Anchor],
         selectedAnchorIDString: String,
+        memorySubjectText: String?,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
         selectedAlbumIdentifier: String
@@ -139,6 +148,10 @@ struct BatchConfigurationSnapshotProvider {
                     selectedAnchorIDString,
                 anchors: anchors
             ),
+            memorySubjectText:
+                normalizedSubjectText(
+                    memorySubjectText
+                ),
             shouldWritePhotoDescription:
                 shouldWritePhotoDescription,
             photoDescriptionOverride:
@@ -233,6 +246,24 @@ private extension BatchConfigurationSnapshotProvider {
              .decodingFailed:
             return nil
         }
+    }
+
+    func normalizedSubjectText(
+        _ text: String?
+    ) -> String? {
+
+        guard let text else {
+            return nil
+        }
+
+        let trimmed =
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmed.isEmpty
+            ? nil
+            : trimmed
     }
 
     func decodeValueResult<Value: Decodable>(

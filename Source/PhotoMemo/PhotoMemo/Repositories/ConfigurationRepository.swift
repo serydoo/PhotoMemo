@@ -45,6 +45,40 @@ final class ConfigurationRepository {
             )
     }
 
+    func syncAnchors(
+        from subject: MemorySubject?,
+        fallbackTitle: String,
+        fallbackDate: Date
+    ) -> Anchor {
+
+        guard
+            let subject,
+            !subject.timeAnchors.isEmpty
+        else {
+            return upsertBirthdayAnchor(
+                title: fallbackTitle,
+                date: fallbackDate
+            )
+        }
+
+        settingsService.anchors =
+            subject.timeAnchors.map {
+                mappedAnchor(from: $0)
+            }
+        settingsService.saveAnchors()
+
+        let resolvedAnchor =
+            subject.primaryTimeAnchor
+            .map(mappedAnchor(from:))
+            ?? settingsService.anchors.first
+            ?? upsertBirthdayAnchor(
+                title: fallbackTitle,
+                date: fallbackDate
+            )
+
+        return resolvedAnchor
+    }
+
     func upsertBirthdayAnchor(
         title: String,
         date: Date
@@ -65,6 +99,17 @@ final class ConfigurationRepository {
                 .anchors[index]
                 .isCountdown = false
             settingsService
+                .anchors[index]
+                .expressionStyle =
+                MemoryAnchorExpressionStyle
+                .resolvedStyle(
+                    for: .birthday,
+                    candidate:
+                        settingsService
+                        .anchors[index]
+                        .expressionStyle
+                )
+            settingsService
                 .saveAnchors()
             return settingsService
                 .anchors[index]
@@ -74,7 +119,12 @@ final class ConfigurationRepository {
             Anchor(
                 type: .birthday,
                 title: title,
-                date: date
+                date: date,
+                expressionStyle:
+                    MemoryAnchorExpressionStyle
+                    .defaultStyle(
+                        for: .birthday
+                    )
             )
         settingsService
             .anchors
@@ -82,6 +132,26 @@ final class ConfigurationRepository {
         settingsService
             .saveAnchors()
         return anchor
+    }
+
+    private func mappedAnchor(
+        from timeAnchor:
+            MemorySubject.TimeAnchor
+    ) -> Anchor {
+        let anchorType =
+            timeAnchor.resolvedAnchorType
+
+        return Anchor(
+            id: timeAnchor.id,
+            type: anchorType,
+            title: timeAnchor.title,
+            date: timeAnchor.date,
+            isCountdown:
+                anchorType.defaultCountdown,
+            expressionStyle:
+                timeAnchor
+                .resolvedExpressionStyle
+        )
     }
 }
 #endif

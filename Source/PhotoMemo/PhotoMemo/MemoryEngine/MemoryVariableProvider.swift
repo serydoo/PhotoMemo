@@ -73,37 +73,14 @@ struct MemoryVariableProvider {
 
 private extension MemoryVariableProvider {
 
-    struct RelativeSnapshot {
-
-        let years: Int
-
-        let months: Int
-
-        let days: Int
-
-        let totalDays: Int
-
-        let isFutureRelative: Bool
-
-        var totalMonths: Int {
-
-            max(years * 12 + months, 0)
-        }
-
-        var weeks: Int {
-
-            max(totalDays, 0) / 7
-        }
-    }
-
     func relativeSnapshot(
         from context: MemoryContext
-    ) -> RelativeSnapshot? {
+    ) -> MemoryAnchorRelativeSnapshot? {
 
         if let anchorResult =
             context.anchorResult {
 
-            return RelativeSnapshot(
+            return MemoryAnchorRelativeSnapshot(
                 years: max(anchorResult.years, 0),
                 months: max(anchorResult.months, 0),
                 days: max(anchorResult.days, 0),
@@ -144,14 +121,14 @@ private extension MemoryVariableProvider {
                 to: endDate
             )
 
-        let totalDays =
+            let totalDays =
             context.calendar.dateComponents(
                 [.day],
                 from: startDate,
                 to: endDate
             ).day ?? 0
 
-        return RelativeSnapshot(
+        return MemoryAnchorRelativeSnapshot(
             years: max(
                 components.year ?? 0,
                 0
@@ -171,7 +148,8 @@ private extension MemoryVariableProvider {
 
     func shouldExposeBabyAge(
         for anchor: Anchor?,
-        snapshot: RelativeSnapshot
+        snapshot:
+            MemoryAnchorRelativeSnapshot
     ) -> Bool {
 
         guard let anchor else {
@@ -183,7 +161,8 @@ private extension MemoryVariableProvider {
     }
 
     func formatBabyAge(
-        from snapshot: RelativeSnapshot
+        from snapshot:
+            MemoryAnchorRelativeSnapshot
     ) -> String {
 
         if snapshot.years > 0 {
@@ -214,103 +193,40 @@ private extension MemoryVariableProvider {
         return "\(snapshot.days)天"
     }
 
-    func formatDuration(
-        from snapshot: RelativeSnapshot
-    ) -> String {
-
-        let parts = [
-            snapshot.years > 0
-                ? "\(snapshot.years)年"
-                : nil,
-            snapshot.months > 0
-                ? "\(snapshot.months)个月"
-                : nil,
-            snapshot.days > 0
-                ? "\(snapshot.days)天"
-                : nil
-        ]
-        .compactMap { $0 }
-
-        if parts.isEmpty {
-            return "0天"
-        }
-
-        return parts.joined()
-    }
-
     func memorySummary(
         from context: MemoryContext,
-        snapshot: RelativeSnapshot,
+        snapshot:
+            MemoryAnchorRelativeSnapshot,
         babyAge: String
     ) -> String {
-
-        if let anchorResult =
-            context.anchorResult {
-
-            let summary =
-                anchorResult.summaryText
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                )
-
-            if !summary.isEmpty {
-                return summary
-            }
-        }
 
         guard let anchor = context.anchor else {
             return ""
         }
 
-        if snapshot.isFutureRelative {
+        return MemoryAnchorExpressionResolver
+            .renderedText(
+                subjectText:
+                    context.trimmedSubjectText
+                    ?? anchor.title,
+                anchorTitle: anchor.title,
+                anchorType: anchor.type,
+                expressionStyle:
+                    anchor.expressionStyle,
+                relativeSnapshot:
+                    snapshot
+            )
+    }
+}
 
-            let countdown =
-                "还有\(snapshot.totalDays)天"
+private extension MemoryAnchorRelativeSnapshot {
 
-            if anchor.title.isEmpty {
-                return countdown
-            }
+    var totalMonths: Int {
+        max(years * 12 + months, 0)
+    }
 
-            return "\(anchor.title)\(countdown)"
-        }
-
-        switch anchor.type {
-
-        case .birthday:
-
-            let ageText =
-                babyAge.isEmpty
-                ? formatBabyAge(
-                    from: snapshot
-                )
-                : babyAge
-
-            guard !ageText.isEmpty else {
-                return ""
-            }
-
-            if anchor.title.isEmpty {
-                return ageText
-            }
-
-            return "\(anchor.title)今天\(ageText)啦！"
-
-        case .relationship,
-             .marriage,
-             .custom,
-             .exam:
-
-            let duration =
-                formatDuration(
-                    from: snapshot
-                )
-
-            if anchor.title.isEmpty {
-                return duration
-            }
-
-            return "\(anchor.title)\(duration)"
-        }
+    var weeks: Int {
+        max(totalDays, 0) / 7
     }
 }
 #endif

@@ -10,12 +10,12 @@ struct V1AccessoryEntrySection: View {
     @Binding var birthdayDate: Date
     let logoStatusMessage: String
     let logoRowDetail: String
+    let logoPersistenceHint: String?
     let subjectAvatarLogoImagePath: String?
     let subjectAvatarPreviewImagePath: String?
     let customLogoImagePath: String?
     let isOptimizingLogo: Bool
-    let timeAnchorTitle: String
-    let smartTimeValue: String
+    let timeAnchorPresentation: V1TimeAnchorEntryPresentation
     let birthdaySummaryText: String
     let logoExpanded: Binding<Bool>
     let anchorExpanded: Binding<Bool>
@@ -35,8 +35,8 @@ struct V1AccessoryEntrySection: View {
 
             IOSCompactEntryDisclosureRow(
                 title: "时间锚点",
-                subtitle: timeAnchorTitle,
-                value: smartTimeValue,
+                subtitle: timeAnchorPresentation.rowSubtitle,
+                value: timeAnchorPresentation.rowValue,
                 detail: birthdaySummaryText,
                 systemImage: "calendar.badge.clock",
                 showsDivider: false,
@@ -75,6 +75,17 @@ struct V1AccessoryEntrySection: View {
                             horizontal: false,
                             vertical: true
                         )
+
+                    if let logoPersistenceHint,
+                       !logoPersistenceHint.isEmpty {
+                        Text(logoPersistenceHint)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
+                            )
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -120,6 +131,36 @@ struct V1AccessoryEntrySection: View {
             )
             .datePickerStyle(.compact)
 
+            VStack(alignment: .leading, spacing: 6) {
+                Text(
+                    timeAnchorPresentation
+                        .currentFormulaTitle
+                )
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+                Text(
+                    timeAnchorPresentation
+                        .currentFormulaValue
+                )
+                .font(.subheadline.weight(.semibold))
+
+                Text("当前表述公式由记忆对象配置中的时间锚点选择决定，保存后会同步影响智能模块预览。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.82))
+            )
+
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "sparkles")
                     .font(.caption.weight(.semibold))
@@ -127,13 +168,23 @@ struct V1AccessoryEntrySection: View {
                     .frame(width: 16)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("时间结果")
+                    Text(
+                        timeAnchorPresentation
+                            .formulaTitle
+                    )
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
 
-                    Text(smartTimeValue)
+                    Text(
+                        timeAnchorPresentation
+                            .formulaPreviewText
+                    )
                         .font(.subheadline.weight(.semibold))
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
                 }
             }
         }

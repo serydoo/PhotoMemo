@@ -32,29 +32,20 @@ struct V1EditorPageSurface<
 
     var body: some View {
         GeometryReader { _ in
+            let isPreviewPinned =
+                previewPinProgress > 0.01
+
             ZStack(alignment: .top) {
                 ScrollView {
                     VStack(spacing: 18) {
                         previewContent
                             .opacity(
-                                max(
-                                    1 - previewPinProgress,
-                                    0
-                                )
+                                isPreviewPinned
+                                ? 0
+                                : 1
                             )
 
                         editorContent
-                            .opacity(
-                                max(
-                                    editorRevealProgress,
-                                    0.26
-                                )
-                            )
-                            .offset(
-                                y:
-                                    (1 - editorRevealProgress)
-                                    * 12
-                            )
 
                         accessoryContent
                     }
@@ -63,18 +54,11 @@ struct V1EditorPageSurface<
                     .padding(.bottom, 34)
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .simultaneousGesture(
-                    TapGesture()
-                        .onEnded {
-                            onDismissKeyboard()
-                        }
-                )
 
-                if previewPinProgress > 0.01 {
+                if isPreviewPinned {
                     previewContent
                         .padding(.horizontal, 18)
                         .padding(.top, 12)
-                        .opacity(previewPinProgress)
                 }
             }
             .frame(

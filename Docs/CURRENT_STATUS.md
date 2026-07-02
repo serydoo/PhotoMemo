@@ -1,6 +1,225 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-07-01
+Last updated: 2026-07-02
+
+## 2026-07-02 V1.0 subject formula selector default-edit fix + iPhone7 install verification
+
+Scoped to one small V1 interaction/debugging slice:
+
+- remove the last confusing edit gate around subject time-anchor controls
+- ensure the formula/style picker is immediately usable when entering the subject configuration page
+- verify the corrected build can be signed, installed, and launched on the real `iPhone7`
+
+What landed:
+
+- Updated [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+  - removed the old top-level `编辑 / 完成` toggle from the active-anchor card
+  - replaced it with the passive status hint `可直接编辑`
+  - `loadDrafts()` now defaults `isEditingTimeAnchor = true`
+  - saving the subject keeps the time-anchor section in the directly editable state instead of returning to a locked-looking mode
+
+Behavior result:
+
+- entering `记忆对象配置 -> 时间锚点` no longer requires a second edit-mode step before the lower controls become active
+- `锚点类型` and `当前表述公式` should open directly instead of appearing as a disabled gray selector
+- the visible UI state now better matches the actual V1 editing model
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'id=863C2747-6742-5E93-B715-6F89DBF90B31' -derivedDataPath /tmp/PhotoMemoDeviceSignedBuild COMPILER_INDEX_STORE_ENABLE=NO build`
+  - `xcrun devicectl device install app --device 863C2747-6742-5E93-B715-6F89DBF90B31 /tmp/PhotoMemoDeviceSignedBuild/Build/Products/Debug-iphoneos/PhotoMemoiOSV1.app`
+  - `xcrun devicectl device process launch --device 863C2747-6742-5E93-B715-6F89DBF90B31 com.serydoo.PhotoMemo.iOS`
+
+## 2026-07-02 V1.0 time-anchor formula selection surfaced in subject configuration and live preview sync
+
+Scoped to one focused V1 + IA-003-compatible interaction slice:
+
+- keep formula ownership inside MME/runtime instead of UI string branching
+- make the active anchor formula visible in both the subject editor and the V1 time-anchor accessory surface
+- ensure saving subject-level anchor formula changes refreshes inserted smart-module previews, not just the default slot D fallback
+
+What landed:
+
+- Updated [V1TimeAnchorEntryPresenter.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1TimeAnchorEntryPresenter.swift)
+  - the V1 time-anchor presentation now exposes:
+    - `当前表述公式`
+    - the resolved current style title, such as `自然（默认）` or `温馨`
+- Updated [V1AccessoryEntrySection.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1AccessoryEntrySection.swift)
+  - the expanded time-anchor area now shows the current formula style as a dedicated info block
+  - the formula preview remains below it as the readable MME output rule
+- Updated [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+  - the time-anchor editor now surfaces:
+    - current active formula summary
+    - a clearer `当前表述公式` selection block
+    - an explicit note that the first formula is the default and changing it immediately affects smart-module preview behavior
+- Updated [PhotoMemoiOSV1View.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+  - saving the subject configuration now:
+    - persists the subject as before
+    - realigns the active anchor date back into the V1 preview context
+    - forces a dynamic preview refresh so smart modules already inserted into `slotA/B/C/D` recompose against the newly selected formula
+- Updated [ConfigurationSnapshotBuilder.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSnapshotBuilder.swift)
+  - runtime snapshots now normalize legacy subject anchors to `resolvedAnchorType + resolvedExpressionStyle`
+  - old mock / legacy anchors with missing type metadata no longer fall back to historical block text during preview composition
+
+Behavior result:
+
+- the time-anchor formula is now a first-class visible configuration concept instead of a hidden picker detail
+- V1 smart-module preview recomposition now stays aligned with the selected anchor formula even when the module is inserted outside slot D
+- preview-time runtime defaults now prefer normalized MME anchor rules over legacy `昵称 / 今天 / 年龄` block wording
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+## 2026-07-02 V1.0 anchor formula library expanded into multi-style MME rules
+
+Scoped to one focused Memory Engine slice:
+
+- expand `expressionStyle` from one default formula per anchor type into a real V1.0 anchor-formula library
+- keep the rule owned by MME and preview resolvers, not by UI string branching
+- preserve legacy payload compatibility for already-saved style values
+
+What landed:
+
+- Updated [MemoryAnchorExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/MemoryAnchorExpressionStyle.swift)
+  - each anchor type now exposes 5 selectable styles
+  - current library covers:
+    - `birthday`: natural / ceremonial / growth / warm / minimal
+    - `marriage`: natural / ceremonial / warm / minimal / memory
+    - `relationship`: natural / ceremonial / memory / warm / minimal
+    - `exam`: natural / ceremonial / motivational / minimal / record
+    - `custom`: natural / ceremonial / memory / warm / minimal
+  - old saved raw values such as `birthdayAgeToday` still decode and normalize into the new library
+- Updated [MemoryAnchorExpressionResolver.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchorExpressionResolver.swift)
+  - the full before/after formula text now resolves from the selected style
+  - birthday natural before now follows the frozen wording:
+    - `距离{主体}出生还有{倒计时天数}`
+- Updated [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+  - anchor-type changes now immediately reset the style picker to the new type's default legal style
+  - the editor no longer risks carrying an invalid previous-type style into the current anchor
+- Updated tests:
+  - [MemoryExpressionEngineTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/MemoryExpressionEngineTests.swift)
+  - [V1TimeAnchorEntryPresenterTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1TimeAnchorEntryPresenterTests.swift)
+  - [BatchConfigurationSnapshotProviderDiagnosticsTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/BatchTests/BatchConfigurationSnapshotProviderDiagnosticsTests.swift)
+  - [RecordCardBuildServiceTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift)
+
+Behavior result:
+
+- `expressionStyle` is now a real formula-library selector, not just a type label
+- MME generation, preview resolver output, V1 formula preview, and legacy/batch snapshot persistence now all understand the expanded style system
+- share-safe shared models keep compiling with the new enum shape
+
+Verification:
+
+- passed:
+  - `git diff --check`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/MemoryExpressionEngineTests -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/ConfigurationMigrationTests -only-testing:PhotoMemoTests/BatchConfigurationSnapshotProviderDiagnosticsTests -only-testing:PhotoMemoTests/RecordCardBuildServiceTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+## 2026-07-02 expression-style unified into batch/share/default-processing
+
+Scoped to one focused IA-003 follow-up slice:
+
+- keep `expressionStyle` from stopping at the V1 editor and configuration snapshot
+- make the old `Anchor / BatchConfigurationSnapshot / RecordCard / template-variable` chain consume the same anchor-level expression rule
+- preserve the renderer/export/layout boundary and avoid reopening visual architecture
+
+What landed:
+
+- Added [MemoryAnchorExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/MemoryAnchorExpressionStyle.swift)
+  - moved the anchor expression-style model into a shared runtime-safe location
+  - keeps one normalized definition that can be used by app, batch, and share-facing snapshot code
+- Added [MemoryAnchorExpressionResolver.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchorExpressionResolver.swift), [RelativeTimeMemoryCalculator.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/RelativeTimeMemoryCalculator.swift), and [ConfiguredAnchorExpressionProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/ConfiguredAnchorExpressionProvider.swift)
+  - freezes one shared relative-time + formula-resolution layer
+  - makes anchor type decide the event category, calculator decide the time result, and expression style decide how that result is spoken
+- Updated [MemoryAnchorTypeRegistry.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchorTypeRegistry.swift)
+  - the current anchor families now route through the shared relative-time calculator and configured expression provider instead of diverging per-type
+- Updated [Anchor.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/Anchor.swift), [BatchProcessing.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/BatchProcessing.swift), [SettingsService.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift), and [BatchConfigurationSnapshotProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/App/BatchConfigurationSnapshotProvider.swift)
+  - old persisted anchors now retain `expressionStyle`
+  - batch/share-facing snapshots now also freeze `memorySubjectText`
+- Updated [ConfigurationRepository.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/ConfigurationRepository.swift), [ConfigurationCoordinator.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Coordinators/ConfigurationCoordinator.swift), [MemorySubjectAdapter.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemorySubjectAdapter.swift), and [PersonalProfileStore.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PersonalProfileStore.swift)
+  - subject anchor edits now sync back into the legacy anchor store with both `anchorType` and `expressionStyle`
+  - loading legacy subject data back into the IA-003 subject model preserves those fields instead of dropping them
+- Updated [RecordCard.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/RecordCard.swift), [RecordCardBuildService.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift), [MemoryContext.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryContext.swift), [MemoryVariableProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryVariableProvider.swift), and [CardVariableProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/CardVariableProvider.swift)
+  - the legacy preview/export template-variable path now reads the same resolved subject text and expression style as the newer MME path
+  - old `memorySummary` generation no longer depends on a separate hard-coded sentence family
+
+Behavior result:
+
+- `expressionStyle` is now a real persisted configuration field across:
+  - subject editing
+  - V1 save / restore
+  - IA-003 snapshot projection
+  - legacy anchor persistence
+  - batch/share configuration snapshot freezing
+  - default photo-description generation
+  - legacy template-variable memory summary output
+- the system still keeps capture time as the truth for time calculation
+- the current first-family formula behavior now branches by anchor type and by whether capture time is before or after the anchor date
+
+Verification:
+
+- passed:
+  - `git diff --check`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/MemoryExpressionEngineTests -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/ConfigurationMigrationTests -only-testing:PhotoMemoTests/BatchConfigurationSnapshotProviderDiagnosticsTests -only-testing:PhotoMemoTests/SharedBatchConfigurationSnapshotServiceTests -only-testing:PhotoMemoTests/RecordCardBuildServiceTests -only-testing:PhotoMemoTests/MemoryEngineTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+Current boundary:
+
+- `expressionStyle` is now in the real processing chain, not just the editor chain
+- renderer/layout/export architecture was intentionally not redesigned in this slice
+- share-facing user copy still does not independently explain expression-style choices; the runtime behavior is aligned first
+## 2026-07-02 V1 editor fade removal + time-anchor type/style configuration
+
+Scoped to one focused V1 polish slice:
+
+- remove the intermittent washed-out/fade treatment in the iOS V1 editor surface
+- keep preview pinning, but stop blending two semi-transparent preview copies
+- stop using the accessory time-anchor disclosure as a time-result panel and switch it to formula presentation
+- restructure subject time-anchor editing into:
+  - current active anchor selection + inline naming
+  - anchor type
+  - anchor expression style
+  - anchor note
+- keep the change additive to the current save pipeline and avoid touching renderer/export/share behavior
+
+What landed:
+
+- Added [MemoryAnchorExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/MemoryAnchorExpressionStyle.swift)
+  - establishes the first persisted anchor-level expression-style model
+  - currently maps one default style per anchor type and provides formula preview text
+- Updated [MemorySubject.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/MemorySubject.swift)
+  - `MemorySubject.TimeAnchor` now carries optional `expressionStyle`
+- Updated [MemoryAnchor.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchor.swift) and [ConfigurationSnapshotBuilder.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSnapshotBuilder.swift)
+  - IA-003 snapshot projection now keeps anchor expression-style metadata instead of dropping it immediately
+- Updated [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+  - active-anchor card now owns selection and inline naming
+  - removed the old redundant detail `名称` row
+  - added `锚点类型`, `锚点表述方式`, and `当前公式预览`
+  - normalizes legacy anchors into explicit type/style defaults when loaded for editing
+- Updated [V1TimeAnchorEntryPresenter.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1TimeAnchorEntryPresenter.swift) and [V1AccessoryEntrySection.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1AccessoryEntrySection.swift)
+  - folded state keeps `主体 · 当前生效锚点`
+  - expanded content now shows the current formula preview instead of the live smart-time result
+- Updated [V1EditorPageSurface.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPageSurface.swift)
+  - removed the page-level opacity choreography that caused the intermittent washed-out editor/preview effect
+  - switched preview pinning to an opaque pinned/unpinned swap
+  - removed the scroll-surface tap-dismiss path that was fighting inline editing focus
+
+Verification:
+
+- passed:
+  - `git diff --check`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/ConfigurationMigrationTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+Known follow-up:
+
+- preview tap-to-dismiss remains the preferred explicit keyboard-dismiss surface; no broad editor-page tap catcher was reintroduced
+- share-facing user copy may still want a later explicit explanation of which expression style is active, but the processing chain itself is now aligned
 
 ## 2026-07-01 Architecture Freeze V1 compile recovery + V1 / ConfigurationCenter support-view extraction
 

@@ -79,19 +79,25 @@ struct MemorySubject:
         var date: Date
         var note: String
         var anchorType: AnchorType?
+        var expressionStyle:
+            MemoryAnchorExpressionStyle?
 
         init(
             id: UUID = UUID(),
             title: String,
             date: Date,
             note: String,
-            anchorType: AnchorType? = nil
+            anchorType: AnchorType? = nil,
+            expressionStyle:
+                MemoryAnchorExpressionStyle? = nil
         ) {
             self.id = id
             self.title = title
             self.date = date
             self.note = note
             self.anchorType = anchorType
+            self.expressionStyle =
+                expressionStyle
         }
     }
 

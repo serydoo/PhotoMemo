@@ -204,6 +204,78 @@ struct PreviewCompositionMigrationTests {
             ) == "途途今天11个月28天啦！"
         )
     }
+
+    @MainActor
+    @Test("smart module inserted into slot A follows the selected anchor formula style")
+    func smartModuleInsertedIntoSlotAFollowsSelectedAnchorFormulaStyle() {
+        let birthday =
+            Calendar.current.date(
+                from: DateComponents(
+                    year: 2025,
+                    month: 5,
+                    day: 26
+                )
+            ) ?? Date()
+        let subject =
+            MemorySubject(
+                identity: .init(
+                    displayName: "王途途",
+                    shortName: "途途"
+                ),
+                relationship: .init(
+                    role: "宝宝",
+                    label: "妈妈眼里的宝宝"
+                ),
+                definition: "测试对象",
+                referenceDate: birthday,
+                timeAnchors: [
+                    .init(
+                        title: "生日",
+                        date: birthday,
+                        note: "出生日期",
+                        anchorType: .birthday,
+                        expressionStyle: .birthdayMinimal
+                    )
+                ],
+                activeTimeAnchorID: nil,
+                expressionSubjectSource: .shortName,
+                behavior: .init(
+                    primaryAnchor: "生日",
+                    iconStrategy: .autoMatch,
+                    badgeStrategy: .autoMatch,
+                    memoryExpression: .init(
+                        title: "生日记忆",
+                        blocks: []
+                    )
+                ),
+                decorations: []
+            )
+        let engine =
+            V1PreviewCompositionEngine()
+        let context =
+            V1PreviewCompositionContext(
+                subject: subject,
+                birthdayDate: birthday
+            )
+        let slotADraft =
+            V1PreviewDraft(
+                items: [
+                    .text("记录"),
+                    engine.makeModuleItem(
+                        .smartTime,
+                        context: context
+                    )
+                ]
+            )
+
+        #expect(
+            composedText(
+                for: slotADraft,
+                context: context,
+                engine: engine
+            ) == "记录途途11个月28天"
+        )
+    }
 }
 
 private func composedText(

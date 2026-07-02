@@ -1,7 +1,7 @@
 import Foundation
 
 #if !PHOTOMEMO_SHARE_EXTENSION
-struct BirthdayAgeCalculator:
+struct RelativeTimeMemoryCalculator:
     MemoryCalculator {
 
     func calculate(
@@ -14,20 +14,31 @@ struct BirthdayAgeCalculator:
             return nil
         }
 
-        let calendar = Calendar.current
-
+        let anchorType =
+            anchor.anchorType ?? .birthday
         let relativeSnapshot =
             MemoryAnchorRelativeSnapshot
             .resolve(
                 anchorDate: anchor.date,
                 captureDate: captureDate,
-                calendar: calendar
+                calendar: Calendar.current
             )
 
         return MemorySemanticResult(
-            kind: .birthdayAge,
+            kind:
+                MemoryAnchorExpressionResolver
+                .semanticKind(
+                    anchorType: anchorType,
+                    relativeSnapshot:
+                        relativeSnapshot
+                ),
             displayText:
-                relativeSnapshot.ageText,
+                MemoryAnchorExpressionResolver
+                .semanticDisplayText(
+                    anchorType: anchorType,
+                    relativeSnapshot:
+                        relativeSnapshot
+                ),
             relativeSnapshot:
                 relativeSnapshot
         )

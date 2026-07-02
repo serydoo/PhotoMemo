@@ -95,10 +95,11 @@ final class ConfigurationCoordinator {
 
         let anchor =
             configurationRepository
-            .upsertBirthdayAnchor(
-                title:
+            .syncAnchors(
+                from: request.subject,
+                fallbackTitle:
                     request.timeAnchor.title,
-                date:
+                fallbackDate:
                     request.timeAnchor.date
             )
 

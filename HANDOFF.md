@@ -1,5 +1,330 @@
 # PhotoMemo Handoff
 
+## 2026-07-02 subject formula selector enabled by default + real-device reinstall complete
+
+- 这轮是一次很小但很关键的交互收口：
+  - 你在真机里看到“当前表述公式”下拉是灰的
+  - 代码检查后确认，真正的问题不是 MME，也不是公式库本身
+  - 而是 `MemorySubjectEditorView` 里还残留了一层旧的 `isEditingTimeAnchor` 编辑门槛
+
+- 已处理：
+  - [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+    - 顶部旧的 `编辑 / 完成` 按钮已去掉
+    - 改成被动提示 `可直接编辑`
+    - `loadDrafts()` 进入页面时直接把 `isEditingTimeAnchor` 设为 `true`
+    - 保存后保持可编辑态，不再回落成“看起来像锁住”的模式
+
+- 这意味着：
+  - `记忆对象配置 -> 时间锚点` 下方这几项现在应该默认直接可用：
+    - `日期`
+    - `锚点类型`
+    - `当前表述公式`
+    - `锚点说明`
+
+- 真机验证链也已经跑通：
+  - 先用未签名包验证功能构建通过
+  - 再切回自动签名，完成：
+    - signed device build
+    - install to `iPhone7`
+    - launch on device
+  - 所以当前 `iPhone7` 上已经是包含这次修正的新包，不是旧界面残留
+
+- 关键结论：
+  - 如果用户现在在 `iPhone7` 上继续看到旧的 `编辑` 顶栏样式或灰色下拉，就不再是“没装到新包”的问题了，而要继续排查更上层容器状态
+  - 但本轮实际结果是：新包已成功安装并启动，用户随后确认“可以了”
+
+## 2026-07-02 V1 formula selector surfaced + smart-module preview refresh aligned
+
+- 这一轮把你刚确认的交互真正落到当前 V1 流程里了：
+  - 公式选择仍然放在“记忆对象配置 -> 时间锚点”里
+  - 但它不再只是一个埋在表单里的 menu，而是被提升成了明确可见的“当前表述公式”
+  - 同时，保存后主 V1 页里已经插入到任意 `slotA/B/C/D` 的智能模块，也会立刻跟着新公式刷新预览
+
+- 这轮核心改动：
+  - [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+    - 时间锚点卡片里新增了当前公式摘要
+    - `锚点表述方式` 改成更明确的 `当前表述公式`
+    - 保留公式预览，但现在和公式选择放在同一个更清晰的配置块里
+  - [V1TimeAnchorEntryPresenter.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1TimeAnchorEntryPresenter.swift)
+    - 新增：
+      - `currentFormulaTitle`
+      - `currentFormulaValue`
+    - 让主配置页时间锚点模块可以直接显示“当前表述公式”
+  - [V1AccessoryEntrySection.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1AccessoryEntrySection.swift)
+    - 时间锚点展开区现在会先显示当前公式风格，再显示该锚点对应的完整公式预览
+  - [PhotoMemoiOSV1View.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - subject 配置保存时，除了原来的持久化，还会：
+      - 更新当前 active anchor date 到 V1 preview context
+      - 主动 `refreshDynamicPreview()`
+      - 把页面状态标成 `有未保存修改`
+    - 这一步就是为了让已经插入到 A/B/C/D 任意区域的智能模块，一起按新公式重组，而不是只刷新默认 D 区
+  - [ConfigurationSnapshotBuilder.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSnapshotBuilder.swift)
+    - runtime snapshot 现在不再直接吃 legacy nil anchor metadata
+    - 会统一走：
+      - `resolvedAnchorType`
+      - `resolvedExpressionStyle`
+    - 这样旧 mock / 旧 subject 在 preview runtime 里也会优先走 MME 公式，而不是回退到历史 block 文案
+
+- 这一轮顺手修掉的一个重要历史兼容点：
+  - 之前有些默认 mock anchor 没有 `anchorType`
+  - 所以 preview runtime 会回退成老的：
+    - `昵称 今天 年龄 啦`
+  - 现在 snapshot runtime 会自动归一化成生日默认规则，所以 slot D 默认预览重新回到了：
+    - `途途今天11个月28天啦！`
+
+- 新增 / 更新测试：
+  - [V1TimeAnchorEntryPresenterTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1TimeAnchorEntryPresenterTests.swift)
+    - 现在锁住：
+      - 当前公式标题
+      - 当前公式值
+      - relationship warm 等非默认风格的显示
+  - [PreviewCompositionMigrationTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/PreviewCompositionMigrationTests.swift)
+    - 新增断言：
+      - 智能模块插入 `slotA` 时，也必须跟随当前公式风格输出
+    - 同时旧 preview migration 基线已经重新对齐到新的 runtime 真相
+
+- 本轮验证：
+  - 通过：
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+- 下一轮如果继续：
+  1. 可以直接上真机看这套“当前表述公式”信息块的视觉密度和层级是否还需要再收
+  2. 如果你要继续扩每类锚点的公式库，当前这套 UI / presenter / preview refresh 链已经能承接
+  3. 如果后面要把“公式选择后即时生效”进一步做到不经保存也能映射回主页，那就要明确是否打破当前 subject draft-save 的隔离边界；这轮还没有动这个边界
+
+## 2026-07-02 V1.0 Anchor Formula Library multi-style expansion
+
+- 这一轮不是再加一个 UI 下拉而已，而是把 `expressionStyle` 真正扩成了 V1.0 锚点公式库，并继续挂在同一条 MME / 预览 / 持久化链上。
+
+- 本轮关键判断：
+  - 之前的 `expressionStyle` 虽然已经进入真实处理链，但每个锚点类型还只有 1 套公式族
+  - 现在要冻结的是：
+    - `anchorType` 决定语义类别
+    - `expressionStyle` 决定同类别下的表达风格
+    - 每个 style 自带一套 `Before + After`
+  - 所以这次的核心不是 view，而是：
+    - [MemoryAnchorExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/MemoryAnchorExpressionStyle.swift)
+    - [MemoryAnchorExpressionResolver.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchorExpressionResolver.swift)
+
+- 已落地：
+  - `birthday`
+    - natural / ceremonial / growth / warm / minimal
+  - `marriage`
+    - natural / ceremonial / warm / minimal / memory
+  - `relationship`
+    - natural / ceremonial / memory / warm / minimal
+  - `exam`
+    - natural / ceremonial / motivational / minimal / record
+  - `custom`
+    - natural / ceremonial / memory / warm / minimal
+
+- 重要实现细节：
+  - [MemoryAnchorExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/MemoryAnchorExpressionStyle.swift)
+    - 旧 raw value 兼容已保留：
+      - `birthdayAgeToday`
+      - `relationshipAnniversary`
+      - `marriageAnniversary`
+      - `examCountdown`
+    - 已保存旧配置不会因为这次扩枚举直接解码失败
+  - [MemoryAnchorExpressionResolver.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchorExpressionResolver.swift)
+    - 现在按 style 分流 before / after 全句输出
+    - `birthday natural before` 已按最新冻结口径改成：
+      - `距离{主体}出生还有{倒计时天数}`
+  - [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+    - 锚点类型切换时，会立刻把 `expressionStyle` 重置到该类型的默认合法 style
+    - 避免出现“生日风格挂在结婚锚点上”的脏状态
+
+- 这一轮之后的真实效果：
+  - `MemoryExpressionEngine`
+  - `MemoryExpressionPreviewResolver`
+  - `V1PreviewCompositionEngine`
+  - `V1TimeAnchorEntryPresenter`
+  - legacy `Anchor / BatchConfigurationSnapshot / RecordCard`
+    这几条链都已经开始理解“同类锚点下多风格公式”
+
+- 新增 / 更新测试：
+  - [MemoryExpressionEngineTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/MemoryExpressionEngineTests.swift)
+    - 断言：
+      - 每类 5 个可选 style
+      - 默认 style
+      - 多类风格文案 before / after 输出
+      - 生日前默认文案已更新为“距离主体出生还有…”
+  - [V1TimeAnchorEntryPresenterTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1TimeAnchorEntryPresenterTests.swift)
+    - 断言：
+      - 默认生日公式预览
+      - relationship warm 风格预览
+  - [BatchConfigurationSnapshotProviderDiagnosticsTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/BatchTests/BatchConfigurationSnapshotProviderDiagnosticsTests.swift)
+  - [RecordCardBuildServiceTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift)
+    - legacy payload 解码后重新编码时，现在会输出新 raw value，例如 `birthdayNatural`
+
+- 本轮验证：
+  - 通过：
+    - `git diff --check`
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/MemoryExpressionEngineTests -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/ConfigurationMigrationTests -only-testing:PhotoMemoTests/BatchConfigurationSnapshotProviderDiagnosticsTests -only-testing:PhotoMemoTests/RecordCardBuildServiceTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+- 当前仍可继续的下一步：
+  1. 继续把 `relationship / exam / custom` 的最终文案再打磨一轮
+  2. 再补更全的“25 套 style 全覆盖”测试，而不是当前的代表性 coverage
+  3. 如果要做用户可见说明，再单独决定是否在 share / output 页显式展示“当前表述方式”
+
+## 2026-07-02 expression-style unified into batch/share/default-processing
+
+- 这轮把上一条“先保留 UI / snapshot 元数据，暂不碰 batch/share”的边界正式往前推了一步：
+  - `expressionStyle` 不再只停留在 subject 编辑 / V1 保存 / IA-003 snapshot
+  - 旧的 `Anchor -> BatchConfigurationSnapshot -> RecordCard -> template-variable` 处理链现在也开始真正消费它
+
+- 本轮关键判断：
+  - 真正的断点不在 `MemorySubject` 持久化
+  - 而在旧配置链路：
+    - legacy `Anchor` 没有稳定保留 `expressionStyle`
+    - `BatchConfigurationSnapshot` 没冻结主体文本
+    - 旧导出文案仍可能走另一套 memory-summary 句式
+  - 所以如果不把这些边界接上，就会出现：
+    - 配置页显示的是一套公式
+    - 预览 MME 看的是一套公式
+    - 后台 / 默认说明 / 老输出链又是另一套
+
+- 已落地：
+  - 新增：
+    - [MemoryAnchorExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/MemoryAnchorExpressionStyle.swift)
+      - expression-style 模型已提升到 shared runtime-safe 层
+    - [MemorySubject+ExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/MemorySubject+ExpressionStyle.swift)
+      - 集中做 subject time-anchor 的 style 归一化
+    - [MemoryAnchorExpressionResolver.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchorExpressionResolver.swift)
+    - [RelativeTimeMemoryCalculator.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/RelativeTimeMemoryCalculator.swift)
+    - [ConfiguredAnchorExpressionProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/ConfiguredAnchorExpressionProvider.swift)
+      - 这三层把“时间怎么算”和“怎么算完以后怎么说”正式拆开
+  - 更新：
+    - [Anchor.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/Anchor.swift)
+    - [BatchProcessing.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/BatchProcessing.swift)
+    - [SettingsService.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift)
+    - [BatchConfigurationSnapshotProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/App/BatchConfigurationSnapshotProvider.swift)
+      - legacy anchor 现在会保留 `expressionStyle`
+      - batch/share snapshot 现在会冻结 `memorySubjectText`
+    - [ConfigurationRepository.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/ConfigurationRepository.swift)
+    - [ConfigurationCoordinator.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Coordinators/ConfigurationCoordinator.swift)
+    - [MemorySubjectAdapter.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemorySubjectAdapter.swift)
+    - [PersonalProfileStore.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PersonalProfileStore.swift)
+      - subject 编辑 -> legacy anchor 同步链现在会把 `anchorType + expressionStyle` 一起保存
+      - legacy 读回 subject 时也不再丢 style
+    - [MemoryAnchorTypeRegistry.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchorTypeRegistry.swift)
+      - 当前各 anchor type 已统一走同一套 relative-time calculator + configured expression provider
+    - [RecordCard.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/RecordCard.swift)
+    - [RecordCardBuildService.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift)
+    - [MemoryContext.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryContext.swift)
+    - [MemoryVariableProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryVariableProvider.swift)
+    - [CardVariableProvider.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/CardVariableProvider.swift)
+      - 旧 memory-summary 输出现在会读取冻结下来的主体文本
+      - 且改为复用 `MemoryAnchorExpressionResolver`
+      - 这样 preview MME 与旧导出模板变量链终于开始讲同一句话
+
+- 当前默认公式族已经冻结到第一版：
+  - `birthday`
+    - 锚点后：`主体今天年龄结果啦！`
+    - 锚点前：`距离锚点还有天数`
+  - `relationship`
+    - 锚点后：`主体和锚点已经时间结果`
+    - 锚点前：`主体距离锚点还有天数`
+  - `marriage`
+    - 锚点后：`主体和锚点已经时间结果`
+    - 锚点前：`主体距离锚点还有天数`
+  - `exam`
+    - 锚点前：`距离锚点还有天数`
+    - 锚点后：`锚点已经时间结果`
+  - `custom`
+    - 锚点后：`主体与锚点的记忆已有时间结果`
+    - 锚点前：`主体距离锚点还有天数`
+
+- 验证：
+  - 通过：
+    - `git diff --check`
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/MemoryExpressionEngineTests -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/ConfigurationMigrationTests -only-testing:PhotoMemoTests/BatchConfigurationSnapshotProviderDiagnosticsTests -only-testing:PhotoMemoTests/SharedBatchConfigurationSnapshotServiceTests -only-testing:PhotoMemoTests/RecordCardBuildServiceTests -only-testing:PhotoMemoTests/MemoryEngineTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+- 这一轮之后的真实边界：
+  - `expressionStyle` 已经进入：
+    - subject 持久化
+    - V1 restore/save
+    - IA-003 snapshot
+    - legacy anchor 持久化
+    - batch/share snapshot 冻结
+    - 默认图片说明生成
+    - 旧模板变量 memory summary 输出
+  - 还没做的是：
+    - share 界面自己的用户文案是否进一步显式提示“当前表述方式”
+    - 更多公式族的持续扩充
+  - 但“配置一套、后台另一套”的核心分叉，已经先被收掉了
+
+## 2026-07-02 V1 editor fade removal + time-anchor type/style pass
+
+- 这一轮把用户最新两条反馈一起落地了：
+  - V1 配置页 `slot A/B/C/D` 编辑区偶发发灰 / 淡入淡出
+  - 记忆对象时间锚点编辑区需要升级为：
+    - `当前生效时间锚点`
+    - `锚点类型`
+    - `锚点表述方式`
+    - `锚点说明`
+
+- 本轮关键判断：
+  - 发灰不是 renderer 问题，而是 page-level surface 自己在做透明度编舞
+  - 根因在：
+    - [V1EditorPageSurface.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPageSurface.swift)
+      - scroll 内 preview 一份
+      - pinned overlay 再一份
+      - 两份都跟随 `previewPinProgress` 半透明交叉
+      - editor 自身还吃 `editorRevealProgress`
+  - 这会让白底和文字在某些滚动态里看起来像“发灰”
+
+- 已落地：
+  - 新增：
+    - [MemoryAnchorExpressionStyle.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/MemoryAnchorExpressionStyle.swift)
+      - 先冻结第一层锚点表述方式模型
+      - 目前每个锚点类型先只挂一条默认表述方式
+  - 更新：
+    - [MemorySubject.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/MemorySubject.swift)
+      - `MemorySubject.TimeAnchor` 增加可持久化 `expressionStyle`
+    - [MemoryAnchor.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchor.swift)
+    - [ConfigurationSnapshotBuilder.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSnapshotBuilder.swift)
+      - IA-003 snapshot 不再立刻丢掉 expression-style 元数据
+    - [MemorySubjectEditorView.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+      - 当前生效锚点卡片现在负责：
+        - 选择
+        - inline 命名
+      - 旧的独立 `名称` 明细行已经去掉
+      - 新增：
+        - `锚点类型`
+        - `锚点表述方式`
+        - `当前公式预览`
+      - legacy anchor 进入编辑器时会自动补齐默认 type/style
+    - [V1TimeAnchorEntryPresenter.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1TimeAnchorEntryPresenter.swift)
+    - [V1AccessoryEntrySection.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1AccessoryEntrySection.swift)
+      - 折叠态保持：
+        - `主体 · 当前生效锚点`
+      - 展开态不再展示实时 smart-time 结果
+      - 改为展示当前锚点对应的公式预览
+    - [V1EditorPageSurface.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPageSurface.swift)
+      - 去掉 editor / preview 的透明度 choreography
+      - 改成 pinned / unpinned 的不透明切换
+      - 删掉整个 scroll surface 的 tap-dismiss，避免和输入焦点互相打架
+
+- 新增 / 更新测试：
+  - [V1TimeAnchorEntryPresenterTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1TimeAnchorEntryPresenterTests.swift)
+    - 现在断言 compact summary 与公式预览
+  - [ConfigurationMigrationTests.swift](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/ConfigurationMigrationTests.swift)
+    - 增加 expression-style 在 V1 保存/引导恢复链路中的回归断言
+
+- 本轮验证：
+  - 通过：
+    - `git diff --check`
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1TimeAnchorEntryPresenterTests -only-testing:PhotoMemoTests/ConfigurationMigrationTests CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test`
+    - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+- 当前仍需记住的边界：
+  - 这轮是 UI / V1 入口层修正
+  - 后续 expression-style 真正进入 batch/share/default-processing 的落地，见上方同日后续记录
+
 ## 2026-07-01 Architecture Freeze V1 compile recovery + V1 / ConfigurationCenter support-view extraction
 
 - 这一轮先处理“验证基础设施”问题，而不是盲拆：
