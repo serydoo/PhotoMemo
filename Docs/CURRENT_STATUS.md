@@ -2,6 +2,33 @@
 
 Last updated: 2026-07-02
 
+## 2026-07-02 V1.0.0-test1 IPA packaged and synced for tester distribution
+
+Scoped to one release-packaging slice:
+
+- produce the first GitHub-synced V1 testing IPA from the current `PhotoMemoiOSV1` target
+- keep the packaging path reproducible inside the repository instead of relying on one-off local Xcode export steps
+
+What landed:
+
+- Added [scripts/export_options_v1_testing.plist](/Users/rui/.codex/worktrees/b72f/PhotoMemo/scripts/export_options_v1_testing.plist)
+  - repository-owned IPA export configuration for the current signed `debugging` export path
+- Added [Docs/07_Releases/V1.0/README.md](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Docs/07_Releases/V1.0/README.md)
+  - release label, packaging notes, install limits, and reproducible commands
+- Added:
+  - [PhotoMemo-V1.0.0-test1.ipa](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Docs/07_Releases/V1.0/PhotoMemo-V1.0.0-test1.ipa)
+  - [PhotoMemo-V1.0.0-test1.sha256](/Users/rui/.codex/worktrees/b72f/PhotoMemo/Docs/07_Releases/V1.0/PhotoMemo-V1.0.0-test1.sha256)
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/.codex/worktrees/b72f/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS' -archivePath /tmp/PhotoMemo-V1.0.0-test1.xcarchive COMPILER_INDEX_STORE_ENABLE=NO archive`
+  - `xcodebuild -exportArchive -archivePath /tmp/PhotoMemo-V1.0.0-test1.xcarchive -exportPath /tmp/PhotoMemo-V1.0.0-test1-export -exportOptionsPlist /Users/rui/.codex/worktrees/b72f/PhotoMemo/scripts/export_options_v1_testing.plist`
+
+Release note:
+
+- this IPA is suitable for the current signed tester flow, but broader public installation still depends on provisioning coverage or a later TestFlight/distribution path
+
 ## 2026-07-02 V1.0 subject formula selector default-edit fix + iPhone7 install verification
 
 Scoped to one small V1 interaction/debugging slice:

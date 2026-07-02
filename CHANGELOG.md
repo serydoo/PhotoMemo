@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.0.0-test1 - 2026-07-02
+
+### Added
+- Added the first GitHub-synced V1 testing IPA at `Docs/07_Releases/V1.0/PhotoMemo-V1.0.0-test1.ipa`.
+- Added `Docs/07_Releases/V1.0/README.md` with packaging notes, release label, and tester installation caveats.
+- Added `scripts/export_options_v1_testing.plist` so the current IPA export path is reproducible from the repository.
+- Added `Docs/07_Releases/V1.0/PhotoMemo-V1.0.0-test1.sha256` for artifact checksum verification.
+
+### Changed
+- Standardized the repository release artifact path for the current V1 testing line under `Docs/07_Releases/V1.0/`.
+
+### Notes
+- This is the first V1 testing release artifact, built from `PhotoMemoiOSV1`.
+- The exported IPA uses the current local signed debugging export path and is appropriate for the active tester/provisioning setup.
+
 ## PhotoMemo IA-001A Repository Product Definition Completion - 2026-06-23
 
 ### Added
