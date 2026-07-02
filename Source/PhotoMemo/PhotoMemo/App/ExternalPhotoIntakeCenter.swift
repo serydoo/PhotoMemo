@@ -30,13 +30,28 @@ final class ExternalPhotoIntakeCenter:
             .tiff
         ]
 
-    private init() {
+    init() {
 
         self.intakeStore =
             .shared
 
         self.defaultConfigurationSnapshot =
             SettingsService()
+            .buildBatchConfigurationSnapshot()
+    }
+
+    init(
+        intakeStore:
+            ExternalPhotoIntakeStore,
+        settingsService:
+            SettingsService
+    ) {
+
+        self.intakeStore =
+            intakeStore
+
+        self.defaultConfigurationSnapshot =
+            settingsService
             .buildBatchConfigurationSnapshot()
     }
 

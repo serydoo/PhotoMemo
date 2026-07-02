@@ -2,7 +2,7 @@
 import SwiftUI
 
 @main
-struct PhotoMemoiOSMVPApp: App {
+struct PhotoMemoiOSV1App: App {
 
     @StateObject
     private var runtime =
@@ -12,12 +12,11 @@ struct PhotoMemoiOSMVPApp: App {
         WindowGroup {
             PhotoMemoiOSHomeView(
                 runtime: runtime,
-                temporaryEntryStorageKey:
-                    "photomemo.ios.mvp.temporaryEntry",
-                temporaryEntryDefault:
-                    "mvpTest"
+                temporaryEntryConfiguration:
+                    .v1
             )
         }
     }
 }
+
 #endif

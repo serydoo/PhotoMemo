@@ -215,6 +215,62 @@ struct PhotoImportServiceTests {
         )
     }
 
+    @Test("Data imports preserve metadata and image size from the source photo")
+    func dataImportsPreserveMetadataAndImageSizeFromSourcePhoto() async throws {
+
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let sourceData =
+            try Data(contentsOf: sourceURL)
+        let service =
+            PhotoImportService()
+
+        let fileImport =
+            try await service.importPhoto(
+                from: sourceURL
+            )
+        let dataImport =
+            try await service.importPhoto(
+                from: sourceData,
+                suggestedFileName:
+                    sourceURL.lastPathComponent,
+                contentType: .jpeg
+            )
+
+        defer {
+            try? FileManager.default.removeItem(
+                at: dataImport.sourceURL
+            )
+        }
+
+        #expect(
+            dataImport.metadata.captureDate
+            == fileImport.metadata.captureDate
+        )
+        #expect(
+            dataImport.metadata.deviceBrand
+            == fileImport.metadata.deviceBrand
+        )
+        #expect(
+            dataImport.metadata.deviceModel
+            == fileImport.metadata.deviceModel
+        )
+        #expect(
+            dataImport.image.photoMemoSize
+            == fileImport.image.photoMemoSize
+        )
+        #expect(
+            dataImport.sourceProperties[kCGImagePropertyPixelWidth] as? Int
+            == fileImport.sourceProperties[kCGImagePropertyPixelWidth] as? Int
+        )
+        #expect(
+            dataImport.sourceProperties[kCGImagePropertyPixelHeight] as? Int
+            == fileImport.sourceProperties[kCGImagePropertyPixelHeight] as? Int
+        )
+    }
+
     @Test("Removes narrow black left edge artifact while preserving size")
     func removesNarrowBlackLeftEdgeArtifact() throws {
 

@@ -16,6 +16,15 @@ final class BatchQueueExecution {
     private let coordinator:
         BatchProcessingCoordinator
 
+    private let photoRepository:
+        PhotoRepository
+
+    private let previewCoordinator:
+        PreviewCoordinator
+
+    private let exportCoordinator:
+        ExportCoordinator
+
     private let externalIntakeStore:
         ExternalPhotoIntakeStore
 
@@ -23,11 +32,48 @@ final class BatchQueueExecution {
         coordinator:
             BatchProcessingCoordinator? = nil,
         externalIntakeStore:
-            ExternalPhotoIntakeStore? = nil
+            ExternalPhotoIntakeStore? = nil,
+        photoRepository:
+            PhotoRepository? = nil,
+        previewCoordinator:
+            PreviewCoordinator? = nil,
+        exportCoordinator:
+            ExportCoordinator? = nil
     ) {
         self.coordinator =
             coordinator
             ?? BatchProcessingCoordinator()
+        let resolvedPhotoImportService =
+            PhotoImportService()
+        let resolvedPhotoLibraryExportService =
+            PhotoLibraryExportService()
+        let resolvedPhotoLibraryRepository =
+            PhotoLibraryRepository(
+                photoLibraryExportService:
+                    resolvedPhotoLibraryExportService
+            )
+        self.photoRepository =
+            photoRepository
+            ?? PhotoRepository(
+                importService:
+                    resolvedPhotoImportService,
+                photoLibraryExportService:
+                    resolvedPhotoLibraryExportService
+            )
+        self.previewCoordinator =
+            previewCoordinator
+            ?? PreviewCoordinator(
+                buildService:
+                    RecordCardBuildService()
+            )
+        self.exportCoordinator =
+            exportCoordinator
+            ?? ExportCoordinator(
+                exportService:
+                    RecordCardExportService(),
+                photoLibraryRepository:
+                    resolvedPhotoLibraryRepository
+            )
         self.externalIntakeStore =
             externalIntakeStore
             ?? .shared
@@ -233,18 +279,6 @@ final class BatchQueueExecution {
             task.failure = nil
         }
 
-        if isRAWTask,
-           let jobID =
-            store.currentJobID(
-                at: reference
-            ) {
-            await store
-                .deliverProgressNotificationIfNeeded(
-                    for: jobID,
-                    stage: "raw"
-                )
-        }
-
         var temporaryFileURL: URL?
 
         do {
@@ -257,9 +291,13 @@ final class BatchQueueExecution {
             }
 
             let importedPhoto =
-                try await coordinator
-                .importPhoto(
-                    for: task
+                try await requireValue(
+                    ImportBatchPhotoIntent(
+                        task: task,
+                        repository:
+                            photoRepository
+                    )
+                    .execute()
                 )
 
             guard !shouldAbortFurtherProcessing(
@@ -270,7 +308,8 @@ final class BatchQueueExecution {
             }
 
             store.updateTask(
-                at: reference
+                at: reference,
+                persist: false
             ) { task in
                 task.captureDate =
                     importedPhoto.metadata.captureDate
@@ -287,17 +326,6 @@ final class BatchQueueExecution {
                 )
             }
 
-            if let jobID =
-                store.currentJobID(
-                    at: reference
-                ) {
-                await store
-                    .deliverProgressNotificationIfNeeded(
-                        for: jobID,
-                        stage: "imported"
-                    )
-            }
-
             guard let configuration =
                 store.currentJob(
                     at: reference
@@ -306,13 +334,20 @@ final class BatchQueueExecution {
             }
 
             let card =
-                coordinator.buildCard(
-                    from: importedPhoto,
-                    configuration: configuration
+                try requireValue(
+                    await BuildPreviewIntent(
+                        photo: importedPhoto,
+                        configuration:
+                            configuration,
+                        coordinator:
+                            previewCoordinator
+                    )
+                    .execute()
                 )
 
             store.updateTask(
-                at: reference
+                at: reference,
+                persist: false
             ) { task in
                 task.phase = .previewReady
                 task.progress = BatchTaskProgress(
@@ -339,21 +374,15 @@ final class BatchQueueExecution {
                 )
             }
 
-            if let jobID =
-                store.currentJobID(
-                    at: reference
-                ) {
-                await store
-                    .deliverProgressNotificationIfNeeded(
-                        for: jobID,
-                        stage: "rendering"
-                    )
-            }
-
             let exportedFileURL =
-                try coordinator.exportCard(
-                    photo: importedPhoto,
-                    card: card
+                try requireValue(
+                    await ExportRecordCardIntent(
+                        photo: importedPhoto,
+                        card: card,
+                        coordinator:
+                            exportCoordinator
+                    )
+                    .execute()
                 )
 
             temporaryFileURL =
@@ -385,17 +414,6 @@ final class BatchQueueExecution {
                 )
             }
 
-            if let jobID =
-                store.currentJobID(
-                    at: reference
-                ) {
-                await store
-                    .deliverProgressNotificationIfNeeded(
-                        for: jobID,
-                        stage: "saving"
-                    )
-            }
-
             guard !shouldAbortFurtherProcessing(
                 at: reference,
                 in: store
@@ -407,14 +425,19 @@ final class BatchQueueExecution {
             }
 
             let saveResult =
-                try await coordinator
-                .saveRenderedPhoto(
-                    at: exportedFileURL,
-                    metadata:
-                        importedPhoto.metadata,
-                    preferredAlbumIdentifier:
-                        configuration
-                        .selectedAlbumIdentifier
+                try await requireValue(
+                    SaveRenderedPhotoIntent(
+                        fileURL:
+                            exportedFileURL,
+                        metadata:
+                            importedPhoto.metadata,
+                        preferredAlbumIdentifier:
+                            configuration
+                            .selectedAlbumIdentifier,
+                        coordinator:
+                            exportCoordinator
+                    )
+                    .execute()
                 )
 
             let notificationAttachmentURL =
@@ -451,8 +474,6 @@ final class BatchQueueExecution {
                 at: reference,
                 in: store
             )
-
-            store.persistJobs()
 
             if let jobID =
                 store.currentJobID(
@@ -623,6 +644,31 @@ final class BatchQueueExecution {
 }
 
 private extension BatchQueueExecution {
+
+    struct IntentExecutionError:
+        LocalizedError {
+
+        let error:
+            PhotoMemoError
+
+        var errorDescription: String? {
+            error.message
+        }
+    }
+
+    func requireValue<Value>(
+        _ result: PhotoMemoResult<Value>
+    ) throws -> Value {
+
+        switch result {
+        case .success(let value):
+            return value
+        case .failure(let error):
+            throw IntentExecutionError(
+                error: error
+            )
+        }
+    }
 
     func shouldAbortFurtherProcessing(
         at reference: TaskReference,

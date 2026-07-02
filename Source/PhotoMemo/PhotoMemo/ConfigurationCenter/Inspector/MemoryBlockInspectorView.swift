@@ -166,376 +166,48 @@ struct MemoryBlockInspectorView: View {
     }
 
     private var configurationPicker: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Picker(
-                "配置",
-                selection: Binding(
-                    get: {
-                        selectedTemplateID
-                    },
-                    set: {
-                        selectedTemplateIDs[selectedRegion] = $0
-                        session.updateActiveTemplate(
-                            for: selectedRegion,
-                            templateID: $0
-                        )
-                        ensureCustomFields()
-                        syncRegionPreview()
-                    }
-                )
-            ) {
-                ForEach(templates) { template in
-                    Text(configurationName(for: template))
-                        .tag(template.id)
-                }
+        MemoryBlockInspectorConfigurationPickerSection(
+            options: configurationOptions,
+            selectedTemplateID: selectedTemplateIDBinding,
+            currentTemplateSummary: currentTemplate.summary,
+            isSaved: savedConfigurationIDs.contains(selectedTemplateID),
+            renamingConfigurationID: $renamingConfigurationID,
+            renameText: configurationNameBinding(for: currentTemplate),
+            onSaveConfiguration: {
+                savedConfigurationIDs.insert(selectedTemplateID)
             }
-            .pickerStyle(.menu)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(currentTemplate.summary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.caption2.weight(.semibold))
-
-                Text("当前记忆预设使用中")
-                    .font(.caption.weight(.semibold))
-            }
-            .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(
-                Capsule()
-                    .fill(Color.accentColor.opacity(0.08))
-            )
-
-            HStack(spacing: 8) {
-                Button {
-                    savedConfigurationIDs.insert(selectedTemplateID)
-                } label: {
-                    Label(
-                        savedConfigurationIDs.contains(selectedTemplateID)
-                        ? "已保存"
-                        : "保存配置",
-                        systemImage:
-                            savedConfigurationIDs.contains(selectedTemplateID)
-                            ? "checkmark.circle.fill"
-                            : "tray.and.arrow.down"
-                    )
-                }
-                .buttonStyle(.borderless)
-
-                Button {
-                    renamingConfigurationID =
-                        renamingConfigurationID == selectedTemplateID
-                        ? nil
-                        : selectedTemplateID
-                } label: {
-                    Label("重命名", systemImage: "pencil")
-                }
-                .buttonStyle(.borderless)
-            }
-            .font(.caption.weight(.medium))
-
-            if renamingConfigurationID == selectedTemplateID {
-                TextField(
-                    "配置名称",
-                    text: configurationNameBinding(for: currentTemplate)
-                )
-                .textFieldStyle(.plain)
-                .font(.subheadline)
-                .configurationFieldChrome(isActive: true)
-            }
-        }
-        .padding(12)
-        .configurationPanelChrome(isSelected: true)
+        )
     }
 
     private var systemModules: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if activeSystemFields.isEmpty {
-                Text("此区域由用户自定义。可以在下方添加字段，并插入照片信息、记忆或系统模块。")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(12)
-                    .configurationPanelChrome()
-            } else {
-                ForEach(activeSystemFields) { field in
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: field.source.symbolName)
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 22)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(field.label)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            Text(value(for: field))
-                                .font(.subheadline)
-                                .foregroundStyle(Color.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        Spacer(minLength: 0)
-
-                        Button(role: .destructive) {
-                            removeSystemField(field)
-                        } label: {
-                            Label("删除", systemImage: "trash")
-                                .labelStyle(.iconOnly)
-                        }
-                        .buttonStyle(.borderless)
-                        .help("删除默认模块")
-                    }
-                    .padding(10)
-                    .configurationPanelChrome()
+        MemoryBlockInspectorSystemModulesSection(
+            fields: systemFieldDisplayItems,
+            onDelete: { fieldID in
+                guard let field = activeSystemFields.first(where: { $0.id == fieldID }) else {
+                    return
                 }
+                removeSystemField(field)
             }
-        }
+        )
     }
 
     private var customFieldsEditor: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(currentCustomFields) { field in
-                customFieldCard(field)
-            }
-
-            Button {
-                addCustomField()
-            } label: {
-                Label("新增内容", systemImage: "plus.circle")
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(.plain)
-            .configurationPanelChrome()
-        }
-    }
-
-    private func customFieldCard(
-        _ field: CustomBlockFieldDraft
-    ) -> some View {
-        let index = indexOfCustomField(field.id)
-
-        return VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 8) {
-                Image(systemName: "line.3.horizontal")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text("自定义内容 \(index.map { $0 + 1 } ?? 1)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Button {
-                    moveCustomField(
-                        field.id,
-                        direction: -1
-                    )
-                } label: {
-                    Label("上移", systemImage: "chevron.up")
-                        .labelStyle(.iconOnly)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .disabled(index == nil || index == 0)
-                .help("上移")
-
-                Button {
-                    moveCustomField(
-                        field.id,
-                        direction: 1
-                    )
-                } label: {
-                    Label("下移", systemImage: "chevron.down")
-                        .labelStyle(.iconOnly)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .disabled(
-                    index == nil
-                    || index == currentCustomFields.count - 1
-                )
-                .help("下移")
-            }
-
-            customFieldContentEditor(for: field)
-        }
-        .padding(10)
-        .configurationPanelChrome(
-            isSelected: selectedCustomFieldIDs[selectedTemplateID] == field.id
+        MemoryBlockInspectorCustomFieldsSection(
+            fields: currentCustomFields,
+            selectedFieldID:
+                selectedCustomFieldIDs[selectedTemplateID],
+            focusedField: $focusedField,
+            textBinding: customFieldTextBinding(for:),
+            indexProvider: indexOfCustomField,
+            onSelectField: { fieldID in
+                selectedCustomFieldIDs[selectedTemplateID] = fieldID
+            },
+            onMoveField: moveCustomField(_:direction:),
+            onMoveBefore: moveCustomField(_:before:),
+            onRemoveInsertedModule: removeInsertedModule(_:from:),
+            onDeleteField: deleteCustomField,
+            onAddField: addCustomField
         )
-        .contentShape(RoundedRectangle(cornerRadius: 8))
-        .onTapGesture {
-            selectedCustomFieldIDs[selectedTemplateID] = field.id
-        }
-        .draggable(field.id.uuidString)
-        .dropDestination(for: String.self) { items, _ in
-            guard
-                let dragged = items.first,
-                let draggedID = UUID(uuidString: dragged)
-            else {
-                return false
-            }
-
-            moveCustomField(
-                draggedID,
-                before: field.id
-            )
-            return true
-        }
-    }
-
-    private func customFieldContentEditor(
-        for field: CustomBlockFieldDraft
-    ) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .leading, spacing: 8) {
-                TextField(
-                    "输入自定义内容，或从下方插入模块",
-                    text: customFieldTextBinding(for: field),
-                    axis: .vertical
-                )
-                .textFieldStyle(.plain)
-                .font(.subheadline)
-                .lineLimit(1...3)
-                .focused($focusedField, equals: .customField(field.id))
-
-                if !field.displayText.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("组合预览")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-
-                        if !field.text.isEmpty {
-                            Text(field.text)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(Color.primary.opacity(0.82))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        if !field.modules.isEmpty {
-                            LazyVGrid(
-                                columns: [
-                                    GridItem(.adaptive(minimum: 96), spacing: 6)
-                                ],
-                                alignment: .leading,
-                                spacing: 6
-                            ) {
-                                ForEach(field.modules) { insertedModule in
-                                    InsertedTokenChip(
-                                        insertedModule: insertedModule
-                                    ) {
-                                        removeInsertedModule(
-                                            insertedModule.id,
-                                            from: field.id
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(8)
-                    .configurationPanelChrome()
-                }
-            }
-
-            Button(role: .destructive) {
-                deleteCustomField(field.id)
-            } label: {
-                Image(systemName: "trash.fill")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 32, height: 32)
-            }
-            .buttonStyle(.borderless)
-            .help("删除自定义内容")
-        }
-        .padding(10)
-        .configurationFieldChrome(
-            isActive:
-                focusedField == .customField(field.id)
-        )
-    }
-
-    private var moduleInsertionLibrary: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ForEach(ModuleChipGroup.allCases) { group in
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(group.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    LazyVGrid(
-                        columns: [
-                            GridItem(
-                                .adaptive(minimum: 108),
-                                spacing: 7
-                            )
-                        ],
-                        alignment: .leading,
-                        spacing: 7
-                    ) {
-                        ForEach(modules(for: group)) { module in
-                            Button {
-                                insert(module)
-                            } label: {
-                                ModuleChip(module: module)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var resolvedResult: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(activeSystemFields) { field in
-                Text(value(for: field))
-                    .font(field.resultFont)
-                    .foregroundStyle(field.resultColor)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
-            }
-
-            ForEach(currentCustomFields) { field in
-                if !field.displayText.isEmpty {
-                    Text(field.displayText)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.primary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .configurationPanelChrome()
-    }
-
-    private var behaviorSummary: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            InspectorPropertyRow(
-                title: "缺省行为",
-                value: currentTemplate.fallback,
-                systemImage: "arrow.triangle.2.circlepath"
-            )
-
-            InspectorPropertyRow(
-                title: "显示方式",
-                value: currentTemplate.displayBehavior,
-                systemImage: "rectangle.compress.vertical"
-            )
-        }
     }
 
     private var selectedRegion: CardRegion {
@@ -559,6 +231,34 @@ struct MemoryBlockInspectorView: View {
         }
         ?? templates.first
         ?? .empty(region: selectedRegion)
+    }
+
+    private var configurationOptions:
+        [MemoryBlockInspectorConfigurationOption] {
+        templates.map { template in
+            MemoryBlockInspectorConfigurationOption(
+                id: template.id,
+                title: configurationName(for: template)
+            )
+        }
+    }
+
+    private var selectedTemplateIDBinding:
+        Binding<String> {
+        Binding(
+            get: {
+                selectedTemplateID
+            },
+            set: {
+                selectedTemplateIDs[selectedRegion] = $0
+                session.updateActiveTemplate(
+                    for: selectedRegion,
+                    templateID: $0
+                )
+                ensureCustomFields()
+                syncRegionPreview()
+            }
+        )
     }
 
     private func configurationName(
@@ -599,6 +299,18 @@ struct MemoryBlockInspectorView: View {
         }
     }
 
+    private var systemFieldDisplayItems:
+        [MemoryBlockInspectorSystemFieldDisplayItem] {
+        activeSystemFields.map { field in
+            MemoryBlockInspectorSystemFieldDisplayItem(
+                id: field.id,
+                label: field.label,
+                symbolName: field.source.symbolName,
+                value: value(for: field)
+            )
+        }
+    }
+
     private func ensureTemplateSelection() {
         if selectedTemplateIDs[selectedRegion] == nil {
             selectedTemplateIDs[selectedRegion] =
@@ -614,19 +326,6 @@ struct MemoryBlockInspectorView: View {
                 )
         }
         syncRegionPreview()
-    }
-
-    private func binding(
-        for field: MemoryBlockFieldDraft
-    ) -> Binding<String> {
-        Binding(
-            get: {
-                value(for: field)
-            },
-            set: {
-                fieldDrafts[field.draftKey] = $0
-            }
-        )
     }
 
     private func value(
@@ -698,30 +397,6 @@ struct MemoryBlockInspectorView: View {
         fields[index].text = text
         customFields[selectedTemplateID] = fields
         selectedCustomFieldIDs[selectedTemplateID] = id
-        syncRegionPreview()
-    }
-
-    private func insert(
-        _ module: InsertableModuleDraft
-    ) {
-        if selectedCustomFieldIDs[selectedTemplateID] == nil {
-            addCustomField()
-        }
-
-        guard let fieldID = selectedCustomFieldIDs[selectedTemplateID] else {
-            return
-        }
-
-        var fields = currentCustomFields
-        guard let index = fields.firstIndex(where: { $0.id == fieldID }) else {
-            return
-        }
-
-        fields[index].modules.append(
-            InsertedModuleDraft(module: module)
-        )
-        customFields[selectedTemplateID] = fields
-        selectedCustomFieldIDs[selectedTemplateID] = fieldID
         syncRegionPreview()
     }
 
@@ -919,25 +594,6 @@ struct MemoryBlockInspectorView: View {
         )
     }
 
-    private func modules(
-        for group: ModuleChipGroup
-    ) -> [InsertableModuleDraft] {
-        var modules = group.modules
-
-        if group == .memory {
-            modules.append(
-                InsertableModuleDraft(
-                    title: "年岁",
-                    token: "{{smart_time_result}}",
-                    systemImage: "calendar.badge.clock",
-                    previewValue: smartTimeResult
-                )
-            )
-        }
-
-        return modules
-    }
-
     private var smartTimeResult: String {
         guard
             let subject = session.state.selectedSubject,
@@ -988,7 +644,7 @@ struct MemoryBlockInspectorView: View {
 
 }
 
-private enum BlockFocusedField: Hashable {
+enum BlockFocusedField: Hashable {
     case customField(UUID)
 }
 
@@ -996,9 +652,6 @@ private enum BlockInspectorSection: Hashable {
     case configuration
     case system
     case custom
-    case library
-    case output
-    case behavior
 }
 
 private struct MemoryBlockTemplateDraft:
@@ -1185,28 +838,28 @@ private extension MemoryBlockTemplateDraft {
     static let memoryTemplates = [
         MemoryBlockTemplateDraft(
             id: "memory.configuration1",
-            title: "配置 1：当天多大",
-            summary: "默认表达记忆对象在照片当天的生命时间，底层保留年岁计算模块。",
+            title: ConfigurationCenterMemoryTemplateCatalog.birthdayAgeTitle,
+            summary: ConfigurationCenterMemoryTemplateCatalog.birthdayAgeSummary,
             fields: [
                 .init(
                     templateID: "memory.configuration1",
                     key: "subject",
                     label: "对象昵称",
-                    defaultValue: "途途",
+                    defaultValue: ConfigurationCenterMemoryTemplateCatalog.birthdayAgeSubjectDefault,
                     source: .memorySubject
                 ),
                 .init(
                     templateID: "memory.configuration1",
                     key: "action",
                     label: "事件",
-                    defaultValue: "当天",
+                    defaultValue: ConfigurationCenterMemoryTemplateCatalog.birthdayAgeActionDefault,
                     source: .fixedText
                 ),
                 .init(
                     templateID: "memory.configuration1",
                     key: "result",
                     label: "计算结果",
-                    defaultValue: "11个月28天",
+                    defaultValue: ConfigurationCenterMemoryTemplateCatalog.birthdayAgeResultDefault,
                     source: .smartModule
                 )
             ],
@@ -1263,7 +916,7 @@ private struct MemoryBlockFieldDraft:
     }
 }
 
-private struct CustomBlockFieldDraft:
+struct CustomBlockFieldDraft:
     Identifiable,
     Hashable {
 
@@ -1300,7 +953,7 @@ private struct CustomBlockFieldDraft:
         )
     }
 
-    static func defaults(
+    fileprivate static func defaults(
         for template: MemoryBlockTemplateDraft
     ) -> [CustomBlockFieldDraft] {
         if template.fields.isEmpty {
@@ -1315,121 +968,7 @@ private struct CustomBlockFieldDraft:
     }
 }
 
-private enum ModuleChipGroup:
-    String,
-    CaseIterable,
-    Identifiable {
-
-    case exif
-    case memory
-    case system
-
-    var id: String {
-        rawValue
-    }
-
-    var title: String {
-        switch self {
-        case .exif:
-            return "照片信息"
-        case .memory:
-            return "记忆"
-        case .system:
-            return "系统"
-        }
-    }
-
-    var modules: [InsertableModuleDraft] {
-        switch self {
-        case .exif:
-            return [
-                .init(
-                    title: "拍摄参数汇总",
-                    token: "{{capture_parameters_summary}}",
-                    systemImage: "camera.metering.center.weighted"
-                ),
-                .init(
-                    title: "设备型号",
-                    token: "{{camera_model}}",
-                    systemImage: "camera.fill"
-                ),
-                .init(
-                    title: "焦距",
-                    token: "{{focal_length}}",
-                    systemImage: "scope"
-                ),
-                .init(
-                    title: "光圈",
-                    token: "{{aperture}}",
-                    systemImage: "camera.aperture"
-                ),
-                .init(
-                    title: "快门速度",
-                    token: "{{shutter_speed}}",
-                    systemImage: "timer"
-                ),
-                .init(
-                    title: "ISO",
-                    token: "{{iso}}",
-                    systemImage: "dial.low"
-                ),
-                .init(
-                    title: "拍摄日期",
-                    token: "{{capture_date}}",
-                    systemImage: "calendar"
-                ),
-                .init(
-                    title: "拍摄时间",
-                    token: "{{capture_time}}",
-                    systemImage: "clock"
-                ),
-                .init(
-                    title: "位置",
-                    token: "{{location}}",
-                    systemImage: "location.fill"
-                )
-            ]
-        case .memory:
-            return [
-                .init(
-                    title: "对象昵称",
-                    token: "{{subject_nickname}}",
-                    systemImage: "person.fill"
-                ),
-                .init(
-                    title: "主要时间",
-                    token: "{{primary_anchor}}",
-                    systemImage: "flag.fill"
-                ),
-                .init(
-                    title: "年龄结果",
-                    token: "{{age_result}}",
-                    systemImage: "sparkles"
-                ),
-                .init(
-                    title: "已经过去",
-                    token: "{{days_since}}",
-                    systemImage: "calendar.badge.clock"
-                )
-            ]
-        case .system:
-            return [
-                .init(
-                    title: "当前日期",
-                    token: "{{system_current_date}}",
-                    systemImage: "calendar.circle"
-                ),
-                .init(
-                    title: "当前预设",
-                    token: "{{preset_name}}",
-                    systemImage: "slider.horizontal.3"
-                )
-            ]
-        }
-    }
-}
-
-private struct InsertableModuleDraft:
+struct InsertableModuleDraft:
     Identifiable,
     Hashable {
 
@@ -1455,7 +994,7 @@ private struct InsertableModuleDraft:
     }
 }
 
-private struct InsertedModuleDraft:
+struct InsertedModuleDraft:
     Identifiable,
     Hashable {
 
@@ -1468,81 +1007,6 @@ private struct InsertedModuleDraft:
     ) {
         self.id = id
         self.module = module
-    }
-}
-
-private struct ModuleChip: View {
-
-    let module: InsertableModuleDraft
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: module.systemImage)
-                .font(.caption2.weight(.semibold))
-
-            Text(module.title)
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
-        }
-        .foregroundStyle(Color.accentColor)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color.accentColor.opacity(0.085))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.accentColor.opacity(0.16))
-        )
-    }
-}
-
-private struct InsertedTokenChip: View {
-
-    let insertedModule: InsertedModuleDraft
-    let onDelete: () -> Void
-
-    var body: some View {
-        let module = insertedModule.module
-
-        HStack(spacing: 5) {
-            Image(systemName: module.systemImage)
-                .font(.caption2.weight(.semibold))
-
-            Text(module.title)
-                .font(.caption.weight(.medium))
-                .lineLimit(1)
-
-            if let previewValue = module.previewValue {
-                Text(previewValue)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Button {
-                onDelete()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("移除此模块")
-        }
-        .foregroundStyle(Color.primary.opacity(0.78))
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(ConfigurationUI.controlBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(ConfigurationUI.hairline)
-        )
-        .accessibilityLabel(module.title)
     }
 }
 

@@ -1,5 +1,16 @@
 import Foundation
 
+enum SharedBatchQueueSnapshotLoadResult {
+    case noValue
+    case jobNotFound
+    case success(
+        SharedBatchJobSnapshot
+    )
+    case decodingFailed(
+        PhotoMemoSharedDefaultsReadFailure
+    )
+}
+
 struct SharedBatchTaskSnapshot:
     Identifiable,
     Hashable {
@@ -83,36 +94,94 @@ struct SharedBatchQueueSnapshotService {
         for jobID: UUID
     ) -> SharedBatchJobSnapshot? {
 
-        loadJobs()
-            .first {
-                $0.id == jobID
-            }
-            .map(
-                makeSnapshot(from:)
+        switch loadSnapshotResult(
+            for: jobID
+        ) {
+        case .success(let snapshot):
+            return snapshot
+        case .noValue,
+             .jobNotFound,
+             .decodingFailed:
+            return nil
+        }
+    }
+
+    func loadSnapshotResult(
+        for jobID: UUID
+    ) -> SharedBatchQueueSnapshotLoadResult {
+
+        switch loadJobsResult() {
+        case .noValue:
+            return .noValue
+        case .decodingFailed(let failure):
+            return .decodingFailed(
+                failure
             )
+        case .success(let jobs):
+            guard
+                let job =
+                    jobs.first(where: {
+                        $0.id == jobID
+                    })
+            else {
+                return .jobNotFound
+            }
+
+            return .success(
+                makeSnapshot(from: job)
+            )
+        }
     }
 
     func loadJobs() -> [BatchJob] {
 
+        switch loadJobsResult() {
+        case .success(let jobs):
+            return jobs
+        case .noValue,
+             .decodingFailed:
+            return []
+        }
+    }
+
+    func loadJobsResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        [BatchJob]
+    > {
+
         defaults.synchronize()
 
-        guard
-            let data =
-                defaults.data(
-                    forKey:
-                        storageKey
-                ),
+        guard let data =
+            defaults.data(
+                forKey:
+                    storageKey
+            )
+        else {
+            return .noValue
+        }
+
+        do {
             let jobs =
-                try? JSONDecoder()
+                try JSONDecoder()
                 .decode(
                     [BatchJob].self,
                     from: data
                 )
-        else {
-            return []
+            return .success(jobs)
+        } catch {
+            return .decodingFailed(
+                PhotoMemoSharedDefaultsReadFailure(
+                    storageKey:
+                        storageKey,
+                    payloadByteCount:
+                        data.count,
+                    underlyingDescription:
+                        String(
+                            describing: error
+                        )
+                )
+            )
         }
-
-        return jobs
     }
 
     private func makeSnapshot(

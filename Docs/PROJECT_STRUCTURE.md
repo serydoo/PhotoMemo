@@ -1,6 +1,6 @@
 # PhotoMemo Project Structure
 
-Last updated: 2026-06-22
+Last updated: 2026-07-02
 
 This document maps the current source tree at a practical level. It is meant to help new sessions find the right file quickly, not to replace architecture or workflow docs.
 
@@ -42,6 +42,20 @@ The V2 target structure is now represented non-destructively at the repository r
 
 Existing source files remain under `Source/PhotoMemo/` until a reviewed migration slice moves them safely.
 
+## Repository Line Management
+
+Historical PhotoMemo phases should be preserved through Git lines, not duplicated source folders.
+
+Current intended split:
+
+- `main` - V2 reset, IA-003, and repository source-of-truth line
+- `release/v1` - ongoing V1 iPhone product line
+- tags / releases - macOS foundation, iOS foundation, MVP, and V1 checkpoints
+
+Do not create parallel root trees such as `MacVersion/`, `MVP/`, or `V1/` to archive history.
+
+See `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md` for the repository cleanup policy.
+
 ## Xcode Workspace
 
 - `Source/PhotoMemo/PhotoMemo.xcodeproj`
@@ -54,7 +68,11 @@ Existing source files remain under `Source/PhotoMemo/` until a reviewed migratio
 `Source/PhotoMemo/PhotoMemo/` currently contains:
 
 - `App/` - app runtime, external intake, shared container, deep links, and share workflow summaries
+- `Architecture/` - lightweight shared app primitives such as result/environment wrappers
 - `Models/` - core data models such as templates, anchors, badges, metadata, record cards, selected photos, and batch state
+- `Repositories/` - repository-facing access boundaries for configuration, settings, queue, diagnostics, and photo-library reads
+- `Intent/` - explicit app-flow, preview, queue, export, and save intents
+- `Coordinators/` - higher-level orchestration for configuration, preview, export, queue, and share flows
 - `Engines/` - deterministic calculation and template engines
 - `MemoryEngine/` - memory-context and memory-variable calculation support
 - `Renderers/` - preview/export renderers and render theme support
@@ -84,6 +102,36 @@ The main editor has been decomposed into a coordinator shell plus focused extens
 - `Views/Main/MainView+ModalAndLifecycle.swift` - modal and lifecycle glue
 
 When touching main editor behavior, inspect `MainView.swift` plus the newest relevant `MainView+*.swift` file instead of assuming all logic still lives in one large file.
+
+## iOS Configuration Center And V1 Surface
+
+`Source/PhotoMemo/PhotoMemo/iOS/Views/` is still physically flat, but the current working structure is easiest to read as four logical groups:
+
+- Configuration Center:
+  - `ConfigurationCenteriOSView.swift`
+  - `ConfigurationCenter*`
+  - `IOSConfigurationPanel.swift`
+  - `MemoryWriteOptionPresenter.swift`
+- V1 shell and subject flow:
+  - `PhotoMemoiOSV1View.swift`
+  - `V1Configuration*`
+  - `V1Draft*`
+  - `V1Preview*`
+  - `V1IOSSubject*`
+  - `V1SubjectHomeSummarySupport.swift`
+- Home surface:
+  - `PhotoMemoiOSHomeView.swift`
+  - `PhotoMemoiOSBackgroundStatusSheet.swift`
+  - `V1IOSHome*`
+- Diagnostics and support:
+  - `PhotoMemoiOSProcessingDiagnosticsSnapshot.swift`
+  - `PhotoMemoiOSQueueDiagnosticsProjectionEngine.swift`
+  - `V1DiagnosticsRefreshCoordinator.swift`
+  - `PhotoMemoiOSTemporaryEntryView.swift`
+  - `PhotoMemoiOSModuleCatalog.swift`
+  - `IOSCompactEntryRow.swift`
+
+The folder remains physically flat for now because the Xcode project uses filesystem-synchronized groups and the repository keeps long handoff histories with direct file links. Treat the grouping above as the current lookup map until a dedicated filesystem migration slice is approved.
 
 ## Tests
 

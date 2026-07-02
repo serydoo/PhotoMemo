@@ -1,6 +1,6 @@
 # PhotoMemo Document Index
 
-Last updated: 2026-06-24
+Last updated: 2026-07-02
 
 This index explains which project documents should be treated as current working references, which documents are topic-specific, and which documents are mostly historical notes.
 
@@ -41,6 +41,7 @@ Read these first at the start of a new session:
 - `Docs/REPOSITORY_VOCABULARY.md` - current repository vocabulary
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - latest repository simplification report
 - `Docs/DEVELOPMENT_PLAN.md` - phase-level development plan
+- `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md` - branch, tag, and archive-line policy
 
 ## Current Product Direction
 
@@ -139,6 +140,7 @@ Use these when preparing verification or release-quality checks:
 - `Docs/Alpha/BugList.md`
 - `Docs/Alpha/KnownIssues.md`
 - `Docs/Alpha/UXNotes.md`
+- `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md`
 
 ## Historical Or Session-Specific Notes
 

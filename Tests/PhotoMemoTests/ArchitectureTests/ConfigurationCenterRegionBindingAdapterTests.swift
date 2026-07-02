@@ -1,0 +1,155 @@
+#if !PHOTOMEMO_SHARE_EXTENSION
+import Foundation
+import Testing
+@testable import PhotoMemo
+
+@Suite("Configuration center region binding adapter")
+struct ConfigurationCenterRegionBindingAdapterTests {
+
+    @Test("setText updates the draft store and recomputes preview text")
+    func setTextUpdatesStoreAndPreviewText() {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(subject: subject)
+            )
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotD,
+                subject: subject,
+                store: .init(),
+                coordinator:
+                    .init(previewHelper: helper)
+            )
+
+        let mutation =
+            adapter.setText("新的记忆内容")
+
+        #expect(
+            mutation.store.text(
+                for: .slotD,
+                subject: subject
+            ) == "新的记忆内容"
+        )
+        #expect(
+            mutation.previewText
+            == helper.composedPreviewText(
+                for: .slotD,
+                store: mutation.store
+            )
+        )
+    }
+
+    @Test("setConfigurationName updates only store state")
+    func setConfigurationNameUpdatesOnlyStoreState() {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotA,
+                subject: subject,
+                store: .init(),
+                coordinator:
+                    .init(
+                        previewHelper:
+                            .init(context: .init(subject: subject))
+                    )
+            )
+
+        let mutation =
+            adapter.setConfigurationName("配置 1：旅行记录")
+
+        #expect(
+            mutation.store.configurationName(for: .slotA)
+            == "配置 1：旅行记录"
+        )
+        #expect(mutation.previewText == nil)
+    }
+
+    @Test("setRenamingConfiguration toggles rename state without preview recomposition")
+    func setRenamingConfigurationUpdatesOnlyStoreState() {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotB,
+                subject: subject,
+                store: .init(),
+                coordinator:
+                    .init(
+                        previewHelper:
+                            .init(context: .init(subject: subject))
+                    )
+            )
+
+        let mutation =
+            adapter.setRenamingConfiguration(true)
+
+        #expect(
+            mutation.store.isRenamingConfiguration(for: .slotB)
+        )
+        #expect(mutation.previewText == nil)
+    }
+
+    @Test("insertModule returns nil for non-memory-card regions")
+    func insertModuleSkipsNonMemoryCardRegions() {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .icon,
+                subject: subject,
+                store: .init(),
+                coordinator:
+                    .init(
+                        previewHelper:
+                            .init(context: .init(subject: subject))
+                    )
+            )
+
+        let mutation =
+            adapter.insertModule(.captureDate)
+
+        #expect(mutation == nil)
+    }
+
+    @Test("removeInsertedModule recomputes preview text from the updated store")
+    func removeInsertedModuleRecomputesPreviewText() {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(subject: subject)
+            )
+        var store =
+            ConfigurationCenterRegionDraftStore()
+        let insertedModule =
+            IOSInsertedModule(
+                title: "拍摄日期",
+                value: "2026.05.24",
+                systemImage: "calendar"
+            )
+        store.setText("记录于", for: .slotB)
+        store.setModules([insertedModule], for: .slotB)
+
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotB,
+                subject: subject,
+                store: store,
+                coordinator:
+                    .init(previewHelper: helper)
+            )
+
+        let mutation =
+            adapter.removeInsertedModule(insertedModule)
+
+        #expect(
+            mutation.store.modules(for: .slotB).isEmpty
+        )
+        #expect(
+            mutation.previewText
+            == helper.composedPreviewText(
+                for: .slotB,
+                store: mutation.store
+            )
+        )
+    }
+}
+#endif

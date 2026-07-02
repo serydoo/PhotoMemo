@@ -26,6 +26,26 @@ final class BatchProcessingCoordinator {
             PhotoLibraryExportService()
     }
 
+    init(
+        importService:
+            PhotoImportService,
+        cardBuildService:
+            RecordCardBuildService,
+        exportService:
+            RecordCardExportService,
+        photoLibraryExportService:
+            PhotoLibraryExportService
+    ) {
+        self.importService =
+            importService
+        self.cardBuildService =
+            cardBuildService
+        self.exportService =
+            exportService
+        self.photoLibraryExportService =
+            photoLibraryExportService
+    }
+
     func importPhoto(
         for task: BatchTask
     ) async throws -> SelectedPhoto {

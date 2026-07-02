@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "DF8E1E1435DC445F99C53213"
-               BuildableName = "PhotoMemoiOSMVP.app"
-               BlueprintName = "PhotoMemoiOSMVP"
+               BuildableName = "PhotoMemoiOSV1.app"
+               BlueprintName = "PhotoMemoiOSV1"
                ReferencedContainer = "container:PhotoMemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DF8E1E1435DC445F99C53213"
-            BuildableName = "PhotoMemoiOSMVP.app"
-            BlueprintName = "PhotoMemoiOSMVP"
+            BuildableName = "PhotoMemoiOSV1.app"
+            BlueprintName = "PhotoMemoiOSV1"
             ReferencedContainer = "container:PhotoMemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DF8E1E1435DC445F99C53213"
-            BuildableName = "PhotoMemoiOSMVP.app"
-            BlueprintName = "PhotoMemoiOSMVP"
+            BuildableName = "PhotoMemoiOSV1.app"
+            BlueprintName = "PhotoMemoiOSV1"
             ReferencedContainer = "container:PhotoMemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

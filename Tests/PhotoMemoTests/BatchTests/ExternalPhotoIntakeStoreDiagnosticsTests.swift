@@ -7,6 +7,186 @@ import Testing
 @Suite("ExternalPhotoIntakeStore Diagnostics")
 struct ExternalPhotoIntakeStoreDiagnosticsTests {
 
+    @Test("Detailed drain preserves returned requests while surfacing clear-persistence failures")
+    func detailedDrainSurfacesClearPersistenceFailures() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.Drain.\(UUID().uuidString)"
+
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let directoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: directoryURL
+            )
+
+        let request =
+            try #require(
+                store.persistManagedRequest(
+                    urls: [
+                        directoryURL
+                        .appendingPathComponent(
+                            "managed.jpg"
+                        )
+                    ],
+                    source: .shareExtension,
+                    configurationSnapshot:
+                        BatchConfigurationSnapshot(
+                            template: .template1,
+                            badge: nil,
+                            anchor: nil,
+                            shouldWritePhotoDescription: true,
+                            photoDescriptionOverride: "",
+                            selectedAlbumIdentifier: ""
+                        )
+                )
+            )
+
+        enum ExpectedFailure: Error {
+            case encodeFailed
+        }
+
+        let drainResult =
+            store.drainRequestsResult(
+                encode: { _ in
+                    throw ExpectedFailure.encodeFailed
+                }
+            )
+
+        #expect(
+            drainResult.requests
+            == [request]
+        )
+
+        switch drainResult.clearPersistedRequestsResult {
+        case .encodingFailed(let failure):
+            #expect(
+                failure.storageKey
+                == "photomemo.externalIntake.requests"
+            )
+            #expect(
+                failure.underlyingDescription
+                .contains("encodeFailed")
+            )
+        case .success:
+            Issue.record(
+                "Expected .encodingFailed when clearing persisted requests cannot encode."
+            )
+        case nil:
+            Issue.record(
+                "Expected a clear-persistence result when draining stored requests."
+            )
+        }
+
+        switch store.loadRequestsResult() {
+        case .success(let requests):
+            #expect(requests == [request])
+        case .noValue,
+             .decodingFailed:
+            Issue.record(
+                "Expected the original persisted request to remain when clear persistence fails."
+            )
+        }
+
+        try? FileManager.default.removeItem(
+            at: directoryURL
+        )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
+
+    @Test("Distinguishes missing persisted intake requests from corrupted payloads")
+    func distinguishesMissingPersistedRequestsFromCorruptedPayloads() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.Persistence.\(UUID().uuidString)"
+
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let directoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: directoryURL
+            )
+
+        switch store.loadRequestsResult() {
+        case .noValue:
+            break
+        case .success,
+             .decodingFailed:
+            Issue.record(
+                "Expected .noValue for empty intake-request storage."
+            )
+        }
+
+        defaults.set(
+            Data("bad-intake".utf8),
+            forKey:
+                "photomemo.externalIntake.requests"
+        )
+
+        switch store.loadRequestsResult() {
+        case .decodingFailed(let failure):
+            #expect(
+                failure.storageKey
+                == "photomemo.externalIntake.requests"
+            )
+            #expect(
+                failure.payloadByteCount
+                == Data("bad-intake".utf8).count
+            )
+            #expect(
+                !failure.underlyingDescription.isEmpty
+            )
+        case .noValue,
+             .success:
+            Issue.record(
+                "Expected .decodingFailed for corrupted intake-request payload."
+            )
+        }
+
+        try? FileManager.default.removeItem(
+            at: directoryURL
+        )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
+
     @Test("Detailed managed copy reports copy-stage failure for non-file URLs")
     func reportsCopyStageFailureForNonFileURLs() {
 

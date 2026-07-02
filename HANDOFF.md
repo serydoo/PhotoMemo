@@ -1,5 +1,2751 @@
 # PhotoMemo Handoff
 
+## 2026-07-02 repository line cleanup baseline
+
+- 这一轮没有做旧文档大迁移，也没有开始复制版本目录。
+- 这次清理只做仓库规则层面的收口，目的是把 GitHub 主线、V1 产品线、历史里程碑三者的边界写清楚，减少后续继续整理时的歧义。
+- 已新增：
+  - [REPOSITORY_LINE_STRATEGY.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md)
+    - 明确 `main` 应继续代表 V2 / IA-003 / 当前仓库主线
+    - 明确 V1 更适合收成单独长期产品线 `release/v1`
+    - 明确 mac 起步 / iOS 起步 / MVP / V1 这类历史阶段应通过 branch / tag / release 保留，而不是复制成根目录版本文件夹
+- 已更新：
+  - [README.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/README.md)
+    - 新增 `Repository Lines` 说明
+    - `Start Here` 增补仓库版本线策略入口
+  - [Docs/PROJECT_STRUCTURE.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/PROJECT_STRUCTURE.md)
+    - 新增 `Repository Line Management`
+  - [Docs/DOCUMENT_INDEX.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DOCUMENT_INDEX.md)
+    - 把版本线策略纳入启动/发布文档索引
+- 这一轮刻意没有做的事：
+  - 不迁移旧文档
+  - 不创建 `MacVersion/` / `MVP/` / `V1/` 之类的重复源码目录
+  - 不改当前代码行为和 Xcode target 结构
+- 推荐后续顺序：
+  1. 先把当前 `v1-checkpoint-20260702` 收敛成正式长期分支 `release/v1`
+  2. 再补齐 mac foundation / iOS foundation / MVP / V1 的 milestone tags
+  3. 最后再决定哪些 IPA、截图、历史说明要进入 GitHub Releases，而不是仓库源码树
+
+## 2026-07-02 V1 app icon candidate from scheme 1
+
+- 基于用户提供的图标方案总图，已选择并裁切 `方案 1` 作为一版可用的 V1 app icon 候选。
+- 产出母图：
+  - `output/app-icons/photomemo-v1-scheme1-master-1024.png`
+- 产出更聚焦圆角图标本体的候选裁切：
+  - `output/app-icons/photomemo-v1-scheme1-tight-crop.png`
+- 同时产出一张便于快速查看的预览：
+  - `output/app-icons/photomemo-v1-scheme1-preview-512.png`
+- 当前决定是先作为候选资产保存，暂不切换为工程正在使用的 app icon。
+- `Source/PhotoMemo/PhotoMemo/Assets.xcassets/AppIcon.appiconset/` 已恢复为之前版本。
+- 处理方式保持克制：
+  - 直接从总图中裁切图标 tile
+  - 保留原方案的柔和背景、双卡叠层、山峰与太阳语义
+  - 仅做轻微对比度与锐度整理，避免过度二次设计
+- 本轮未运行 Xcode build；这是一次静态候选资产整理。
+
+## 2026-07-02 README public-entry rebuild
+
+- 已按项目发展历程和用户提供的新叙事方向重建顶层 [README.md](/Users/rui/Desktop/PhotoMemo/README.md)。
+- 新 README 现在更像公开项目入口：
+  - 开头转向“让照片，不止记录画面，更记录人生”
+  - 保留 `local-first Memory Presentation Engine for Apple Photos`
+  - 增加 hero 效果图占位说明，但不引用不存在的图片文件
+  - 强化 Why PhotoMemo Exists / What PhotoMemo Is / Core Principles
+  - 保留 Apple Photos lifecycle：`Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos`
+  - 将 `Time Anchor`、`Memory Subject`、Memory Card workflow 作为核心说明
+  - 将当前状态更新为 `V2.1 Memory Engine Product Realization` 与 `IA-003 Memory Engine Integration`
+  - 记录当前 IA-003-compatible foundation 路径：`MemorySubject -> ConfigurationSnapshot -> MemoryExpressionEngine -> MemoryModule`
+- 特意没有把 README 写成 V1 功能营销页，也没有重新引入 workspace/import/dashboard/task-center 等旧用户工作流概念。
+- 后续如果要放最终效果图，建议只使用公开、非私密样张，并放入：
+  - `Screenshots/photomemo-hero.png`
+
+## 2026-07-01 ConfigurationCenter region-composer host + BackgroundStatus dead-helper cleanup
+
+- 这一小轮继续严格守在 `Architecture Freeze V1`：
+  - 本地主线继续收 `ConfigurationCenteriOSView`
+  - 关键路径只做 `IOSRegionComposer` 宿主装配抽离
+  - 并行 worker 清掉 `PhotoMemoiOSBackgroundStatusSheet` 里已经断线的旧展示块
+  - 不改 renderer / export / metadata / share / queue semantics
+
+- 已新增：
+  - [ConfigurationCenterRegionComposerSection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterRegionComposerSection.swift)
+    - 承接 `IOSRegionComposer` 的宿主装配
+    - 只接收：
+      - region
+      - configuration options
+      - parent-owned bindings
+      - save / delete callbacks
+
+- 已更新：
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - `activeRegionEditorContent` 的 `regionComposer` 分支已退到独立 support view
+    - 父层继续保留 region binding adapter、draft store、preview helper、mutation seam
+    - 顺手移除了已断线的本地 helper：
+      - `refreshRegionPreview`
+      - `selectedMemoryPresetBinding`
+      - `moduleValue`
+  - [PhotoMemoiOSBackgroundStatusSheet.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheet.swift)
+    - 已清理未挂载的旧展示 helper：
+      - `statusCounts`
+      - `currentConfigurationCard`
+      - `intakeSummaryCard`
+      - `currentJobTimelineCard`
+      - `recentFailuresCard`
+      - `infoRow`
+      - `countCard`
+    - 以及只服务它们的辅助代码：
+      - `intakeExplanation`
+      - `resolvedTemplateTitle`
+      - `resolvedAnchorTitle`
+      - `resolvedDestinationTitle`
+      - `jobTimelineRecords`
+      - `taskPriority`
+      - `JobTimelineRecord`
+
+- 这轮最直接的结果：
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - `1021` 行
+    - → `971` 行
+  - [PhotoMemoiOSBackgroundStatusSheet.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheet.swift)
+    - `890` 行
+    - → `314` 行
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemo -configuration Debug CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+- 这一轮之后，最值得继续的顺序：
+  1. [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+     - 继续 page-level surface / support-view shrink
+  2. [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift)
+     - 再确认是否还有纯展示孤岛
+  3. [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+     - 继续只做 parent-owned seam 不变前提下的 support extraction
+
+## 2026-07-01 PhotoMemoiOSV1 settings-page + ConfigurationCenter support extraction
+
+- 这一轮继续沿着 `Architecture Freeze V1` 做同步收敛：
+  - 本地先收 `PhotoMemoiOSV1View.settingsPage`
+  - 并行 agent 盘点 `ConfigurationCenteriOSView` 和剩余低风险清理点
+  - 再本地落 `ConfigurationCenteriOSView` 的最安全 support sections
+
+- 已新增：
+  - [V1SettingsPageSurface.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift)
+    - 承接：
+      - 设置页外壳
+      - 处理进度卡片
+      - progress summary / pipeline / queue lines
+  - [ConfigurationCenterInsertableModuleLibrarySection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterInsertableModuleLibrarySection.swift)
+    - 承接固定可插入模块库
+  - [ConfigurationCenterActiveRegionEditorSection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterActiveRegionEditorSection.swift)
+    - 承接 active-region editor header + outer shell
+
+- 已更新：
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `settingsPage` 已退到独立 surface
+    - 父层只保留诊断 header/data projection 和 refresh / clear action
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - `fixedInsertableModuleLibrary` 已退到独立 section
+    - `activeRegionEditor` 外壳已退到独立 section
+    - 父层继续保留 region mutation seam、adapter、draft store、insert action
+
+- 这轮最直接的结果：
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `2370` 行
+    - → `2095` 行
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - `1106` 行
+    - → `1021` 行
+
+- 并行 agent 结论：
+  - `ConfigurationCenteriOSView`
+    - 下一刀最值的是 `IOSRegionComposer` host assembly
+    - 但必须继续让 parent 先组装 bindings / mutation closures，child 只吃值与动作
+  - `PhotoMemoiOSBackgroundStatusSheet`
+    - 比 `MemoryBlockInspectorView` 更值得做下一次低风险 cleanup
+    - 里面像是还留着一组未挂载的旧展示块
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemo -configuration Debug CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+## 2026-07-01 PhotoMemoiOSV1 home-page surface extraction
+
+- 这一小轮继续只做 `Architecture Freeze V1` 范围内的 view shrink：
+  - 不改 renderer / export / metadata / share semantics
+  - 不碰 save/bootstrap/application seam
+  - 只把 `PhotoMemoiOSV1View` 首页展示拼装退成独立 surface
+
+- 已新增：
+  - [V1HomePageSurface.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift)
+    - 现在承接：
+      - 当前记忆对象卡片
+      - 当前配置卡片
+      - 快捷操作
+      - 最近处理
+      - 默认输出摘要
+
+- 已更新：
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `homePage` 已经退到独立 surface
+    - 父层只保留：
+      - preset picker / operations menu
+      - focus / binding
+      - 保存默认配置动作
+      - tab 跳转
+      - offset reader
+      - projection / message 组装
+
+- 这轮最直接的结果：
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `2556` 行
+    - → `2370` 行
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemo -configuration Debug CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+## 2026-07-01 InteractiveMemoryCard configuration-dock extraction
+
+- 这一小轮继续只做 `Architecture Freeze V1` 范围内的 support-view extraction：
+  - 不改 renderer / export / metadata / share semantics
+  - 不碰 application seam
+  - 只把 `InteractiveMemoryCard` 下方 dock 区退成独立 support view
+
+- 已新增：
+  - [InteractiveMemoryCardConfigurationComponentDock.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCardConfigurationComponentDock.swift)
+    - 现在承接：
+      - 智能模块写入区
+      - 可插入模块库
+      - 当前配置展示
+      - 输出 / 存储设置
+      - 配置说明卡片
+
+- 已更新：
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+    - `configurationComponentDock` 已经退到独立 support view
+    - 父层只保留 expansion state、binding、resolved text、module insert action
+    - `CenterInsertableModule` 已经从文件私有调整为可跨文件复用
+
+- 这轮最直接的结果：
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+    - `1562` 行
+    - → `1313` 行
+    - → `1195` 行
+    - → `867` 行
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemo -configuration Debug CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+## 2026-07-01 InteractiveMemoryCard configuration-context extraction
+
+- 这一小轮继续沿着 `Architecture Freeze V1` 收：
+  - 不改 renderer / export / metadata / share semantics
+  - 不碰 application seam
+  - 只把 `InteractiveMemoryCard` 顶部配置区退成独立 support view
+
+- 已新增：
+  - [InteractiveMemoryCardConfigurationContext.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCardConfigurationContext.swift)
+    - 现在承接：
+      - 总体配置 picker
+      - 时间锚点状态
+      - 预设重命名输入
+      - 重置 / 保存并生效按钮
+
+- 已更新：
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+    - 顶部 `configurationContext` 已经退到独立 support view
+    - 父层只保留 preset binding、rename toggle state、apply/reset action routing
+
+- 这轮最直接的结果：
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+    - `1562` 行
+    - → `1313` 行
+    - → `1195` 行
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemo -configuration Debug CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+
+## 2026-07-01 MemoryBlockInspector custom-fields extraction + dead-helper cleanup
+
+- 这一小轮继续严格守在 `Architecture Freeze V1`：
+  - 不改 renderer / export / metadata / share semantics
+  - 不碰 save/bootstrap/application seam
+  - 只处理 `MemoryBlockInspectorView` 内已经成熟的纯展示抽离，以及已经断线的旧 helper 清理
+
+- 已新增：
+  - [MemoryBlockInspectorCustomFieldsSection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorCustomFieldsSection.swift)
+    - 现在承接：
+      - 自定义内容卡片列表
+      - 拖拽/重排
+      - 组合预览 token chip
+      - 删除动作的展示层
+
+- 已更新：
+  - [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift)
+    - `customFieldsEditor` 已经退到独立 support view
+    - 父层只保留自定义字段 state、binding、mutation routing
+    - 顺手移除了当前完全未接进 `body` 的旧 helper：
+      - `moduleInsertionLibrary`
+      - `resolvedResult`
+      - `behaviorSummary`
+      - 以及相关未使用 enum cases / chip helpers
+
+- 这轮最直接的结果：
+  - [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift)
+    - `1589` 行
+    - → `1520` 行
+    - → `1053` 行
+
+- 当前并行 agent 盘点出的下一刀建议：
+  1. `InteractiveMemoryCard`
+  2. `PhotoMemoiOSV1View`
+     - `homePage`
+     - `settingsPage`
+  3. `ConfigurationCenteriOSView`
+     - active-region editor 周边 support sections
+
+## 2026-07-01 Multi-agent view-surface extraction pass
+
+- 这一轮明确按“多 agent + 单一边界”来推：
+  - 主线仍然是 `Architecture Freeze V1`
+  - 不动 renderer / export / metadata / share semantics
+  - 不碰 save/bootstrap/application seam
+  - 只做纯 view / support-view extraction
+
+- 本轮新增：
+  - [MemoryBlockInspectorConfigurationPickerSection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorConfigurationPickerSection.swift)
+  - [MemoryBlockInspectorCustomFieldsSection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorCustomFieldsSection.swift)
+  - [MemoryBlockInspectorSystemModulesSection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorSystemModulesSection.swift)
+  - [InteractiveMemoryCardCompactPreview.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCardCompactPreview.swift)
+  - [ConfigurationCenterDetailSupportPanels.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterDetailSupportPanels.swift)
+  - [V1OutputPageSurface.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift)
+  - [PhotoMemoiOSBackgroundStatusSheetSupportViews.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheetSupportViews.swift)
+
+- 本轮更新：
+  - [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift)
+    - 抽出了 configuration picker
+    - 抽出了 custom fields section
+    - 抽出了 system modules section
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+    - 抽出了 compact preview surface
+    - 父层仍然保留 `session.select(...)` / `session.hoverRegion(...)`
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - 抽出了 detail-side 的 memory-write / output / guide panels
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - 抽出了 output-tab surface
+  - [PhotoMemoiOSBackgroundStatusSheet.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheet.swift)
+    - 抽出了 hero / pipeline / focus / latest-failure 显示块
+
+- 这一轮最直观的结果：
+  - [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift)
+    - `1589` 行
+    - → `1053` 行
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+    - `1562` 行
+    - → `1313` 行
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - `1197` 行
+    - → `1106` 行
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `2699` 行
+    - → `2556` 行
+  - [PhotoMemoiOSBackgroundStatusSheet.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheet.swift)
+    - `1180` 行
+    - → `890` 行
+
+- 这轮中间有一个需要记住的现象：
+  - 并行 agent 在同一时间段内落新 support files 时，`PhotoMemoiOSV1` scheme build 一度报“找不到新 type”
+  - 不是代码边界错误，而是构建开始时文件列表还没完全包含刚落地的文件
+  - 最终用更稳定的总体验证口径完成确认：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemo -configuration Debug CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
+    - 最终 `BUILD SUCCEEDED`
+
+- 当前剩余大头：
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift) `2370`
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift) `1106`
+  - [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift) `1053`
+  - [PhotoMemoiOSBackgroundStatusSheet.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheet.swift) `890`
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift) `867`
+
+- 下一刀建议严格按这个顺序继续：
+  1. `PhotoMemoiOSV1View`
+     - `settingsPage`
+     - 继续 page-level surface extraction
+  2. `ConfigurationCenteriOSView`
+     - active-region editor 周边 support sections
+  3. `MemoryBlockInspectorView`
+     - 当前已不再是第一优先，但如果继续收，可以再检查是否还有可见的纯展示孤岛
+  4. `PhotoMemoiOSBackgroundStatusSheet`
+     - 现在已经不再是第一优先，可以后移
+
+## 2026-07-01 ConfigurationCenter top preview extraction
+
+- 这一小轮继续严格守住 `Architecture Freeze V1`：
+  - 不改 renderer
+  - 不改 export / metadata / share-extension 语义
+  - 不碰 `ConfigurationCenteriOSView` 里真正的 binding / mutation 胶水
+  - 只继续做纯 view support extraction
+
+- 已新增：
+  - [ConfigurationCenterTopPreviewSection.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterTopPreviewSection.swift)
+    - 现在承接：
+      - 顶部 profile summary panel
+      - compact preview 外层块
+      - region strip
+      - region strip button
+
+- 已更新：
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - `topConfigurationPreview` 现在只保留父层 action/binding 路由
+    - preset apply/reset、rename toggle、region selection 仍然走原来的父层 closure 和 `ConfigurationCenterSelectionCoordinator`
+
+- 这轮最直接的结果：
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - `1419` 行
+    - → `1197` 行
+  - 顶部整块展示层已经从父文件里退出来，父文件更接近：
+    - page shell
+    - sidebar/detail assembly
+    - binding / mutation seam
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-config-top-preview-pass CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- 并行 agent 盘点后的剩余 view 大头：
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift) `2699`
+  - [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift) `1589`
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift) `1562`
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift) `1197`
+  - [PhotoMemoiOSBackgroundStatusSheet.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSBackgroundStatusSheet.swift) `1180`
+
+- 建议下一刀按这个顺序继续：
+  1. `MemoryBlockInspectorView`
+     - 先抽 `configuration picker`
+     - 再抽 `custom-field editor`
+     - 再抽 `system modules`
+  2. `InteractiveMemoryCard`
+     - 先抽 `compact preview surface`
+     - 再抽 `configuration context`
+     - 再抽 `configuration dock`
+  3. `PhotoMemoiOSV1View`
+     - 继续抽 `home / output / settings` page-level surfaces
+     - 仍然先做 view-only shrink，不急着回头碰 application seam
+  4. `ConfigurationCenteriOSView`
+     - 如果还要继续收，优先 detail-side 的 `memoryWritePanel / outputSelection / configurationGuide`
+
+## 2026-07-01 ConfigurationSession presentation-state extraction + V1 draft orchestration cleanup
+
+- 这一轮继续严格按 `Architecture Freeze V1` 的后续小切片推进，没有回头去做“大拆大改”。
+- 目标只有三件事：
+  1. 让 `ConfigurationSession` 少背一点明显属于 UI 的状态
+  2. 把 `memory.configuration1` 的旧文案漂移再收一轮
+  3. 让 `PhotoMemoiOSV1View` 继续保持 state in view，但把 draft / preview 编排胶水往外收
+
+- 已新增：
+  - [ConfigurationSessionPresentationState.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSessionPresentationState.swift)
+    - 新的职责很单一，只装：
+      - `selectedOutputOption`
+      - `selectedStorageOption`
+      - `usesCustomMemoryWriteText`
+      - `customMemoryWriteText`
+      - `latestModuleInsertion`
+      - `appliedMemoryPresetID`
+  - [ConfigurationCenterMemoryTemplateCatalog.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterMemoryTemplateCatalog.swift)
+    - 现在 `memory.configuration1` 的生日年龄模板标题、说明、默认字段值、预览句子都集中在这里
+  - [V1DraftOrchestrationCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1DraftOrchestrationCoordinator.swift)
+    - 负责：
+      - `ViewState <-> MutationState` 桥接
+      - dirty region 的 preview draft 批量生成
+      - 默认 draft 回退
+
+- 已更新：
+  - [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
+    - 现有对外属性基本没变，但底层不再把那组 UI-only 状态全摊在 session 顶层
+  - [ConfigurationCenterPreviewDefaults.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterPreviewDefaults.swift)
+    - `memory.configuration1` 不再返回旧的 `"当天 11个月28天"` fallback
+  - [ConfigurationCenterRegionDraftStore.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterRegionDraftStore.swift)
+  - [MemoryBlockInspectorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorView.swift)
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+    - 这三处都改成复用同一份 birthday-age 模板 copy，而不是各说各话
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `draft(for:)` 现在走 orchestration helper
+    - `applyDraftMutationUpdate(...)` 不再自己逐 region 刷 preview，而是一次桥接 view state 后，批量把 dirty preview draft 交给 `previewSyncCoordinator`
+    - `refreshDynamicPreview()` 也不再自己拼 map，改由 helper 提供
+
+- 对应测试：
+  - 新增 [V1DraftOrchestrationCoordinatorTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1DraftOrchestrationCoordinatorTests.swift)
+  - 更新 [ConfigurationCenterRegionDraftStoreTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/ConfigurationCenterRegionDraftStoreTests.swift)
+
+- 这一轮真正的意义：
+  - `ConfigurationSession` 继续朝“编辑壳 + 状态协调”方向收，不再无限往里塞输出页细节
+  - `memory.configuration1` 现在更接近一份共享模板定义，而不是 preview / inspector / region-store / card 各自维护一套说法
+  - `PhotoMemoiOSV1View` 继续瘦了一层，但没有把 `@State` 生硬搬离 view
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemoTests -configuration Debug CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-architecture-freeze-pass-4 CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData-architecture-freeze-pass-2 CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- 建议下一刀：
+  1. 把 `ConfigurationSession` 剩下的 presentation-only seams 再往外剥一层，尤其是 output / write 绑定和 preset applied 标记
+  2. 继续把 placeholder-style 的 smart-module fallback 收到更少的位置，最终只留 MME / preview default 一条主路
+  3. 再去处理更大的 application/usecase / intent 归一化，尤其旧 `Intent/` 里仍存在的 service fallback
+
+## 2026-07-01 V1 pure-view support extraction
+
+- 这一小轮继续做 view 层瘦身，但只做了最安全的一刀：
+  - 不改交互
+  - 不改状态流
+  - 只把 `PhotoMemoiOSV1View` 里已经完全独立成型的纯 UI support views 拆出去
+
+- 新增：
+  - [V1IOSViewSupportComponents.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift)
+    - 现在承接：
+      - `V1CardSurface`
+      - `V1PreviewCard`
+      - `V1RegionEditorCard`
+      - `CardRegion.systemImage`
+
+- 更新：
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - 只删除内联定义，调用点保持不变
+
+- 这一轮最直观的结果：
+  - `PhotoMemoiOSV1View.swift`
+    - `3310` 行
+    - → `2699` 行
+  - 也就是说，只这一刀就又收掉了大约 `600+` 行最纯的 view 代码
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-view-slice-pass CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- 如果下一轮继续收 view，优先级建议是：
+  1. `PhotoMemoiOSV1View`
+     - 继续往外抽 page-level section/support presenters
+     - 尤其 `home / output / settings` 这几块的展示拼装
+  2. `ConfigurationCenteriOSView`
+     - 现在还是 `2200+` 行
+     - 里面的 `compact preview / region composer / output-memory panels` 已经具备进一步拆出去的条件
+  3. `InteractiveMemoryCard`
+     - 主要问题已经不只是大，而是 preview + dock + guide 全在一个文件里
+
+## 2026-07-01 Architecture Freeze V1 + V1 save/bootstrap seam cleanup
+
+- 这一轮不再只是继续“把大文件拆碎”，而是先把当前 V1 最容易失控的边界钉住：
+  1. View 禁止直接 new Service
+  2. save / bootstrap 必须走 application seam
+  3. 后续 intent / usecase 开发要建立在 frozen boundary 上
+
+- 已新增架构冻结文档：
+  - [ARCHITECTURE_FREEZE_V1.md](/Users/rui/Desktop/PhotoMemo/Docs/ARCHITECTURE_FREEZE_V1.md)
+  - 这份文档冻结了当前最重要的四条：
+    - `Presentation -> Application -> Domain -> Infrastructure`
+    - `View must not new Service`
+    - `ConfigurationSession` 不能继续长成 God Object
+    - MME 必须逐步成为唯一表达真相
+
+- 本轮真正落地的代码变化：
+  - 新增 [V1ConfigurationApplyCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationApplyCoordinator.swift)
+    - 现在由它统一处理：
+      - 相册选择解析
+      - `V1ConfigurationSaveRequest` 构建
+      - `SaveV1ConfigurationIntent` 调用
+  - 更新 [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `applyCurrentV1Configuration()` 不再直接 `SettingsService()`
+    - 旧的本地 `persistTimeAnchor(...)` 已从 view 删除
+    - 旧的本地 `resolvedOutputAlbumSelection()` 已从 view 删除
+  - 更新 [V1ConfigurationBootstrapCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationBootstrapCoordinator.swift)
+    - `init(configurationCoordinator:)` 不再 `SettingsRepository(SettingsService())`
+    - coordinator 缺失时只返回纯默认 bootstrap 状态，不再从 presentation helper 读持久化
+  - 跟进的 `ConfigurationSession` 收口也一起落了：
+    - 新增 [ConfigurationCenterPreviewDefaults.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterPreviewDefaults.swift)
+      - 把 preview default / template registry 停在 session 外面
+    - 新增 [ConfigurationCenterMockSeed.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterMockSeed.swift)
+      - 把 `ConfigurationCenterState.mock` 停在独立 mock factory
+    - [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
+      - 现在只保留对 preview default 的薄封装，不再内联完整 registry 和 mock seed 构造
+
+- 这一轮的意义不是“最终架构已经完成”，而是：
+  - 当前最危险的 `View -> Service` 回退路径被真正切掉了
+  - 后续如果继续做 `ApplyConfigurationUseCase` / `BootstrapUseCase`，已经有了一个更干净的起点
+  - `ConfigurationSession` 继续长成 God Object 的速度也先被压住了一层
+
+- 对应测试：
+  - 新增 [V1ConfigurationApplyCoordinatorTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1ConfigurationApplyCoordinatorTests.swift)
+  - 更新 [V1ConfigurationBootstrapCoordinatorTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1ConfigurationBootstrapCoordinatorTests.swift)
+
+- 本轮验证：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemoTests -configuration Debug CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-architecture-freeze-pass-3 CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData-architecture-freeze-pass CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- 下一刀建议严格按这个顺序继续：
+  1. 继续拆 `ConfigurationSession` 的 UI-only output/write state
+  2. 清掉旧的 `"当天 11个月28天"` / legacy smart-module wording
+  3. 把 preview / draft orchestration 再从 `PhotoMemoiOSV1View` 收出去
+  4. 再继续做真正的 application usecase / intent 归一化
+
+## 2026-07-01 V1 subject persistence + MME smart-module preview alignment
+
+- 这轮主要不是继续堆 UI，而是把用户刚指出的“假接通”问题收掉：
+  1. `subject` 头像 / 主体来源 / 生效锚点不能再只活在 `ConfigurationSession`
+  2. `smart module` 插入任意 `slotA/B/C/D` 后，预览不能再只是本地年龄拼接
+  3. V1 配置页和 subject 配置页的键盘收起需要再稳一点
+
+- 已落地的主干代码：
+  - [ConfigurationSaveIntents.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Intent/ConfigurationSaveIntents.swift)
+    - `V1ConfigurationSaveRequest` 新增 `subject`
+    - `V1ConfigurationBootstrapState` 新增 `selectedSubject`
+  - [SettingsService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift)
+    - 新增 `photomemo.selectedMemorySubject`
+    - 新增 `saveSelectedMemorySubject(_:)`
+    - 新增 `loadV1SelectedSubjectResult()`
+    - `loadV1BootstrapReadState()` 现在返回 typed `subjectResult`
+  - [SettingsRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/SettingsRepository.swift)
+    - V1 bootstrap 现在会把保存过的 `MemorySubject` 解出来
+  - [ConfigurationCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Coordinators/ConfigurationCoordinator.swift)
+    - `saveV1Configuration(...)` 现在把 `subject` 一起落库
+  - [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
+    - 新增 `restoreSelectedSubject(_:)`
+    - `generatedMemoryModule` 现在使用 preview capture date 走 MME
+    - `generatedMemoryModuleText` 改走共享 preview resolver
+  - 新增 [MemoryExpressionPreviewResolver.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryExpressionPreviewResolver.swift)
+    - 当前唯一职责：
+      - 给配置中心 / V1 预览统一生成一条“预览态 MME 智能模块文本”
+  - [ConfigurationCenterPreviewCompositionHelper.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterPreviewCompositionHelper.swift)
+    - `smartTimeResult` 不再自己算月龄，而是走 MME preview resolver
+  - [V1PreviewCompositionEngine.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift)
+    - `smartTime` 的显示值现在走 MME preview resolver
+    - `smartTime.rendererToken` 从 `{{anchor_age_text}}` 切到 `{{memory_summary}}`
+    - slot-D 默认 draft 现在只放 smart module，不再继续本地拼 `对象 + 当天 + 年龄`
+  - [PhotoMemoiOSModuleCatalog.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSModuleCatalog.swift)
+    - `smartTime.rendererToken` 同步切到 `{{memory_summary}}`
+  - [MemoryVariableProvider.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryVariableProvider.swift)
+  - [AnchorEngine.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Engines/AnchorEngine.swift)
+    - 生日摘要现在统一改成 `主体今天X...啦！`
+
+- `PhotoMemoiOSV1View.swift` 这一轮的关键行为变化：
+  - 保存默认配置时，先把当前 `session.state.selectedSubject` 按当前 anchor editor 的日期对齐，再一起传进 `V1ConfigurationSaveRequest`
+  - bootstrap 恢复时，如果拿到了保存过的 subject，会通过 `session.restoreSelectedSubject(...)` 灌回当前 live session，而不是依赖 mock subject 的 UUID 恰好一致
+  - `timeAnchorTitle` 现在优先使用 `resolvedExpressionSubjectText`，所以你选中的“表述主体”终于会进入 V1 默认保存链路
+  - 新增页面级键盘收起：
+    - home
+    - editor
+    - output
+    - settings
+    都加了 tap 空白区 / scroll dismiss
+  - `V1IOSSubjectConfigurationFlow` 也补了 tap 空白区收键盘
+
+- 这轮对用户反馈的直接响应关系：
+  - “smart module 是通用模块，不局限于 D 区”
+    - 已保持这个方向，没回退
+    - 本轮重点是让它在任意区域插入后，显示值变成整句 MME，而不是只显示年龄结果
+  - “默认内容用户自己知道怎么清，不用管”
+    - 这次没有继续去大规模改所有默认底稿，只收口了真正导致公式不一致的 smart-module 链路
+  - “subject 还没接进旧 V1 save pipeline，要及时处理”
+    - 这一条本轮已经真正进入旧 V1 save/load seam 了
+
+- 验证结果：
+  - 通过：
+    - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemoTests -configuration Debug CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-mme-subject-pass CODE_SIGNING_ALLOWED=NO -quiet build`
+  - 尝试但被工程现状阻塞：
+    - `xcodebuild ... -scheme PhotoMemo ... test`
+    - 阻塞原因不是断言失败，而是：
+      - `Scheme PhotoMemo is not currently configured for the test action.`
+
+- 还没做的手工确认：
+  1. 真机 kill app 后重新启动，是否能直接恢复最近保存的 subject
+  2. iPhone 上在 multiline 字段弹出键盘后，点 preview 卡片或空白区域的 dismiss 体验
+  3. 真正生成一张图时，`{{memory_summary}}` 切换后最终文案是否已经完全符合这条冻结公式
+
+## 2026-07-01 V1 subject/avatar/logo alignment + active-anchor quick switch
+
+- 本轮继续落实用户已确认的 V1 反馈，但仍然守住边界：
+  - 不动 renderer
+  - 不动 export
+  - 不动 share extension 语义
+  - 不动 photo-library 语义
+- 这次真正落地了三条主线：
+  1. `subject` 编辑器补齐头像与表述主体
+  2. 首页 / 当前记忆对象 sheet 改成“当前生效时间锚点”语义
+  3. `Logo 标识` 扩成三选项，并支持 `使用对象头像`
+
+- 具体代码结果：
+  - [MemorySubject.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/MemorySubject.swift)
+    - `Identity` 新增：
+      - `avatarImagePath`
+      - `avatarBadgeImagePath`
+      - `avatarPreviewImagePath`
+    - 现有：
+      - `activeTimeAnchorID`
+      - `expressionSubjectSource`
+      - `primaryTimeAnchor`
+      这次开始真正进入 UI 使用链路
+  - [SubjectAvatarAssetOptimizationService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/SubjectAvatarAssetOptimizationService.swift)
+    - 新增固定用途头像资源准备：
+      - 头像显示图
+      - 标识图
+      - 预览图
+    - 目标是把压缩/裁切处理停在 renderer 之前
+  - [MemorySubjectEditorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift)
+    - 已新增头像上传入口
+    - 已新增 4 行资料的单选“表述主体”控制
+    - 时间锚点区标题已改为 `当前生效时间锚点`
+    - `selectedTimeAnchorID` 现在同步写回：
+      - `activeTimeAnchorID`
+      - `behavior.primaryAnchor`
+      - `referenceDate`
+  - [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
+    - `currentConfigurationLabel`
+    - `currentTimeAnchorTitle`
+    - `currentTimeAnchorDescription`
+    现在都优先走 `primaryTimeAnchor`
+  - [V1IOSSubjectOverviewSupport.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift)
+    - 首页 `当前记忆对象` 下方重复的 `时间锚点` 入口已去掉
+    - 主卡片现在显示：
+      - 头像
+      - 当前生效时间锚点
+    - `当前记忆对象` sheet 已支持：
+      - 下拉选择锚点
+      - `设为生效` 明确确认
+      - `前往对象配置` 继续保留
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - 已接上 overview sheet 的生效锚点确认回写
+    - `Logo 标识` 现在支持：
+      - `Apple 标识`
+      - `自选标识`
+      - `使用对象头像`
+    - 预览条也已支持 `subjectAvatar` 模式
+  - [V1LogoMode.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1LogoMode.swift)
+    - 把 logo mode 从 iOS 视图私有枚举抽到共享文件，解决 bootstrap / test 编译面可见性问题
+  - [V1ConfigurationBootstrapPresenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationBootstrapPresenter.swift)
+  - [ConfigurationSaveIntents.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Intent/ConfigurationSaveIntents.swift)
+  - [SettingsRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/SettingsRepository.swift)
+    - V1 bootstrap 状态现在显式持有 `logoMode`
+    - 通过 badge 名称 `对象头像` 恢复第三种 logo 模式
+  - 补的收尾验证修正：
+    - [V1IOSHomeSupportViews.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSHomeSupportViews.swift)
+      - 取消 `iOS-only` 编译门，恢复 `V1IOSHomeRecentProcessingPresenter` 在 macOS/test 编译面的可见性
+    - [V1IOSHomeProjectionTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1IOSHomeProjectionTests.swift)
+      - 对齐当前 `MemoryBehavior` 初始化形状与 `DecorationStrategy` 枚举
+
+- 本轮验证：
+  1. 通过：
+     - `git -C /Users/rui/Desktop/PhotoMemo diff --check`
+  2. 通过 iOS V1：
+     - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-mee-ui-pass-2 CODE_SIGNING_ALLOWED=NO -quiet build`
+     - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-mee-ui-pass-3 CODE_SIGNING_ALLOWED=NO -quiet build`
+  3. 通过 macOS 主 app：
+     - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData-mac-shared-check CODE_SIGNING_ALLOWED=NO -quiet build`
+  4. `PhotoMemoTests` target 级 build 现已恢复通过：
+     - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemoTests -configuration Debug CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- 这一轮重要提醒：
+  - `subject` / 头像 / 表述主体 现在已经真实进入 V1 UI 与 MEE 路径
+  - 但它们**仍然主要存在于 `ConfigurationSession` 内**
+  - 也就是说：
+    - logo mode 的三选项恢复了 bootstrap
+    - subject object 本身的长期持久化还没有正式接入旧 V1 save pipeline
+  - 如果下一轮继续，比较自然的顺序是：
+    1. 把 subject 的长期持久化边界补上
+    2. 再把 active anchor 与 birthday-only MEE 模块进一步对齐
+    3. 最后再做真机交互细修
+
+## 2026-07-01 repository file organization baseline
+
+- 本轮没有继续扩写业务逻辑，先做了一次仓库层面的“文件整理基线”，目标是让后续继续推进 IA-003 / V1 时更容易找文件，而不冒然触碰物理迁移风险。
+- 这次整理只做三件事：
+  1. 给当前源码树补清楚目录说明
+  2. 给 `iOS/Views` 补一份逻辑分区索引
+  3. 清掉明显的本地残留
+- 已更新：
+  - [PROJECT_STRUCTURE.md](/Users/rui/Desktop/PhotoMemo/Docs/PROJECT_STRUCTURE.md)
+  - [README.md](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/README.md)
+  - [CURRENT_STATUS.md](/Users/rui/Desktop/PhotoMemo/Docs/CURRENT_STATUS.md)
+- 当前明确约定：
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/` 暂时继续保持物理平铺
+  - 逻辑上按以下几组理解即可：
+    - `ConfigurationCenter*` / `IOSConfigurationPanel.swift` / `MemoryWriteOptionPresenter.swift`
+    - `PhotoMemoiOSV1View.swift` + `V1*`
+    - `PhotoMemoiOSHomeView.swift` + `V1IOSHome*`
+    - diagnostics / support 相关 helper
+  - 之所以这轮**不**直接物理挪动这些文件，是因为当前工程使用 filesystem-synchronized groups，同时 `HANDOFF.md` / `CURRENT_STATUS.md` 里有大量历史路径引用；现在硬搬文件，收益不如风险低。
+- 这轮整理后的含义是：
+  - 先把“怎么看懂文件”整理清楚
+  - 等后续如果真的要做物理迁移，再单独作为一个 reviewed cleanup slice 处理
+
+## 2026-07-01 MEE foundation + configuration-center secondary-menu alignment
+
+- 本轮开始把你确认过的 `Memory Expression Engine` 方向落到代码，但严格停在 IA-003A / IA-003B 的安全边界内：
+  - 不动 renderer
+  - 不动 export
+  - 不动 share extension
+  - 不动 photo-library 语义
+- 这次落地分成两条并行主线：
+  1. 建立一层可编译的 MEE foundation 壳
+  2. 把 iOS 配置中心二级菜单从“`slotD` 专属记忆区”拉回到“先生成 1 个智能模块，再决定承载与写入”
+
+- 新增的 foundation 文件：
+  - [MemoryAnchor.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryAnchor.swift)
+  - [MemoryModule.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryModule.swift)
+  - [MemoryExpressionContext.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryExpressionContext.swift)
+  - [MemoryExpressionEngine.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryExpressionEngine.swift)
+  - [MemorySubjectAdapter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemorySubjectAdapter.swift)
+  - [ConfigurationSnapshotBuilder.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSnapshotBuilder.swift)
+
+- foundation 实际建立了这条最小闭环：
+  - `MemorySubject`
+  - `ConfigurationSnapshot`
+  - `MemoryExpressionEngine.generateModule(context)`
+  - `MemoryModule`
+  - `preferredRegion`
+- 当前实现含义：
+  - 后台先生成 1 个 `MemoryModule`
+  - module 自身带 `preferredRegion`
+  - region 是承载者，不再是智能模块的所有者
+  - 这一步还没有接入生产 renderer，只先在配置中心内部建立语义边界
+
+- 本轮对现有配置中心语义的主要调整：
+  - [IOSConfigurationPanel.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/IOSConfigurationPanel.swift)
+    - `.writeMemory` 已升级为 `.memoryModule`
+  - [ConfigurationCenterDetailPresenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterDetailPresenter.swift)
+    - 二级页面标题改为 `智能模块`
+    - 副标题明确为“先生成 1 个智能模块，再决定承载与写入方式”
+    - `slotA/B/C/D` 的编辑标题改成 `区域 A/B/C/D 配置`
+  - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - sidebar 中 `记忆模块` 改成 `智能模块`
+    - 二级入口改成 `智能模块 / 生成、承载与写入`
+    - `区域 D` 文案改成 `记忆 · 默认承载`
+    - `showsMemorySystemModules` 不再只给 `slotD`
+    - 现在四个 memory card region 都能看到同一套智能模块插入能力
+  - [ConfigurationCenterSessionBindingPresenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterSessionBindingPresenter.swift)
+  - [MemoryWriteOptionPresenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/MemoryWriteOptionPresenter.swift)
+  - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - `写入记忆` 的用户可见文案统一改向：
+      - `智能模块`
+      - `单独录入相册说明`
+      - `当前生成的智能模块完整结果`
+
+- 对 `ConfigurationSession` 的关键收口：
+  - 新增：
+    - `smartModuleCarrierRegion`
+    - `currentConfigurationSnapshot`
+    - `generatedMemoryModule`
+  - `resolvedMemoryWriteText` 现在优先消费 `generatedMemoryModule.renderedText`
+  - `selectBlock(...)` 不再强制跳回 `slotD`
+  - `select(region:)` 也不再因为离开 `slotD` 就清 `selectedBlockID`
+  - 这一步的目的，是先把“智能模块内容”和“D 区布局默认值”拆开
+
+- `ConfigurationSnapshot` 现在额外持有：
+  - `primaryAnchor`
+  - `smartModuleCarrierRegion`
+- `MemorySubject` 现在有：
+  - `resolvedShortName`
+  - `primaryTimeAnchor`
+  - `timeAnchor(named:)`
+
+- 新增测试：
+  - [MemorySubjectAdapterTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/MemorySubjectAdapterTests.swift)
+  - [ConfigurationSnapshotBuilderTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/ConfigurationSnapshotBuilderTests.swift)
+  - [MemoryExpressionEngineTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/MemoryExpressionEngineTests.swift)
+  - 同时更新了 `ConfigurationCenterDetailPresenterTests`、`ConfigurationCenterPageChromePresenterTests`、`ConfigurationCenterSelectionCoordinatorTests`、`ConfigurationCenterSessionBindingPresenterTests`、`MemoryWriteOptionPresenterTests`
+
+- 本轮验证结果：
+  1. 主 macOS app build 通过：
+     - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoMEEAppDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+     - 退出 `0`
+  2. `PhotoMemoTests` target 级 build 仍被仓库内既有历史测试 debt 阻塞，但已确认不是本轮新 foundation 引入：
+     - `V1IOSHomeProjectionTests`
+       - 仍在使用旧 `MemoryBehavior` / `DecorationStrategy` 形状
+     - `V1IOSHomeRecentProcessingPresenterTests`
+       - 仍引用找不到的旧 presenter 名称
+  3. 也就是说：
+     - 本轮新增源代码已进入主 target 并编译通过
+     - 当前 test build 失败仍主要来自旧 V1 测试残留，不是 renderer/export/share/photo-library 边界回归
+
+- 当前仍然**没有**做的事：
+  - 还没有把这套 MEE foundation 接进生产 renderer
+  - 还没有把 `PersonalProfileStore` / `SettingsService` 正式迁移为新 subject 来源
+  - 还没有开始 IA-003C 级别的 block resolver 真正重写
+  - 还没有清理所有老 V1 architecture tests
+
+## 下一轮建议
+
+- 如果继续 IA-003 正线，最自然的后续顺序是：
+  1. 让 `Configuration Snapshot` 真正成为配置中心对外唯一导出
+  2. 开始把 `MemoryBlock Resolver` 接到 `generatedMemoryModule`
+  3. 再讨论如何把当前 preview 中的 `slotD` 默认结果逐步降格为“默认承载”，而不是“唯一智能结果来源”
+
+## 2026-07-01 V1 iOS subject flow + configuration center polish landed
+
+- 本轮已经从“反馈记录”进入实际实现，并保持不触碰 renderer / export / share / photo-library 语义：
+  1. 首页 `当前记忆对象` 入口不再通过概览 sheet 直接切回主 tab `配置中心`
+  2. 现在改为进入独立的 subject 配置流
+  3. 主 `配置中心` 同步完成页面级工具栏、键盘收起、淡入淡出移除、写入记忆语义修正
+- subject 专属配置流已落地：
+  - 相关文件：
+    - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - [V1IOSSubjectOverviewSupport.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift)
+    - [V1IOSSubjectConfigurationFlow.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift)
+  - 当前行为：
+    1. `当前记忆对象` -> `V1IOSSubjectOverviewSheet`
+    2. `前往对象配置` -> 打开独立 `V1IOSSubjectConfigurationFlow`
+    3. flow 内复用 `MemorySubjectEditorView`
+    4. 页面级 `返回` 直接关闭，不提交草稿
+    5. 页面级 `保存` 才把 draft `ConfigurationSession` 回写到 live session
+  - 这满足了用户要求的：
+    - subject 入口聚焦概览 / 基本资料 / 时间锚点
+    - 具备明确保存 / 返回
+- 主 `配置中心` polish 已落地：
+  - 相关文件：
+    - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+    - [ConfigurationCenterPageChromePresenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterPageChromePresenter.swift)
+    - [ConfigurationCenterSelectionCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterSelectionCoordinator.swift)
+    - [ConfigurationCenterSessionBindingPresenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterSessionBindingPresenter.swift)
+    - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift)
+  - 实际变化：
+    1. 页面级 toolbar 已补上 section/status + `重置` / `保存并生效`
+    2. sidebar / detail / preview interaction 现在都会配合键盘收起
+    3. `slotA/B/C/D` 编辑区域相关的 fade / slide 过渡残留已移除
+    4. `写入记忆` 语义已改成“是否使用单独录入文字”，不再误导成“不勾选就不写入”
+    5. 默认回退规则保持不变：仍然回退到 `slotD` 完整输出
+- 本轮还额外补了 V1 输出页的统一语义 presenter：
+  - [MemoryWriteOptionPresenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/MemoryWriteOptionPresenter.swift)
+  - [MemoryWriteOptionPresenterTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/MemoryWriteOptionPresenterTests.swift)
+- 本轮验证结论：
+  1. `PhotoMemoiOSV1` iOS generic build 已通过：
+     - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-ui-pass CODE_SIGNING_ALLOWED=NO -quiet build`
+     - 退出 `0`
+  2. `PhotoMemoTests` target 级编译尝试仍被仓库内既有 iOS 架构测试残留阻塞，当前观察到的外部问题包括：
+     - `V1IOSHomeRecentProcessingPresenterTests`
+     - iOS-only view presenter / support 测试在 macOS test build 下的可见性条件
+     - 这些不是本轮新增 UI 改动首次引入的唯一问题来源
+- 当前剩余注意点：
+  1. 本轮已完成 UI/交互主路径落地，但还没有做真机层面的手工点按验证
+  2. 如果下一轮继续，应优先：
+     - 真机看 subject flow 的保存 / 返回体验
+     - 看主配置中心键盘 dismiss 是否完全符合预期
+     - 再决定是否继续清理 `PhotoMemoTests` 里那些与当前 iOS 壳层重命名同步不一致的旧测试
+
+## 2026-07-01 V1 UI feedback intake: subject entry should become dedicated subject configuration flow
+
+- 用户最新补充的方向需要和前一轮反馈分开理解：
+  1. 从首页 `当前记忆对象` 进入后的“配置中心”，本质上应该是**该记忆对象的专属配置流**
+  2. 这个流里主要配置的是：
+     - 概览
+     - 基本资料
+     - 时间锚点
+  3. 该流应具备更明确的页面动作：
+     - 保存
+     - 返回
+  4. 与此同时，主界面底部 tab 的 `配置中心` 仍可保持当前“自由切换不同页面”的能力
+  5. 主 tab `配置中心` 仍需要按前面反馈修正：
+     - 去掉配置区域淡入淡出
+     - 补强保存动作感知
+     - 统一键盘收起
+     - 不必额外强调“返回上一级”，因为它本身就是底部一级页面
+- 当前代码链路已经确认：
+  1. 首页 `当前记忆对象` 点击后，先打开的是 `V1IOSSubjectOverviewSheet`
+     - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift:288)
+     - [V1IOSSubjectOverviewSupport.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift:184)
+  2. 该 sheet 底部的 `前往配置中心` 目前不是进入独立 subject 配置流，而是：
+     - 先关闭 sheet
+     - 再把底部 tab 切到 `.editor`
+     - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift:295)
+     - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift:297)
+  3. 也就是说，当前行为其实是：
+     - `当前记忆对象 -> 概览 sheet -> 主 tab 配置中心`
+     - 而不是
+     - `当前记忆对象 -> 该对象的专属配置页`
+- 当前已有可复用能力：
+  1. 主 `配置中心` 里已经有 `.subject` 面板选择语义
+     - [ConfigurationCenterSelectionCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterSelectionCoordinator.swift:22)
+  2. `MemorySubjectEditorView` 已经覆盖了用户强调的核心资料项：
+     - 显示名称 / 昵称 / 关系 / 定义
+     - 时间锚点列表、主锚点选择、日期 / 名称 / 说明编辑
+     - 区域内保存按钮
+     - [MemorySubjectEditorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift:26)
+     - [MemorySubjectEditorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift:82)
+  3. 所以未来并不一定要重做 subject 编辑内容本体，更可能是：
+     - 复用 `MemorySubjectEditorView`
+     - 外层包一层专属的 iOS subject 配置容器
+     - 给它补齐页面级保存 / 返回 / 导航语义
+- 目前更合理的后续拆分应是：
+  1. `当前记忆对象` 入口：
+     - 改为进入独立的 subject 配置流
+     - 页面聚焦 `概览 + 基本资料 + 时间锚点`
+     - 具备保存与返回
+  2. 主 tab `配置中心`：
+     - 继续承担通用配置、卡片区域、输出、写入记忆等内容
+     - 保留底部自由切页能力
+     - 修正前面已经确认的问题，但不强行做成“返回链路”
+- 这条反馈与仓库冻结边界不冲突，因为它仍属于：
+  - 已冻结 IA-002 架构内的 iOS polish / entry semantics 调整
+  - 不是重新设计新的整体配置中心架构
+  - 也不要求进入 renderer / export / share / photo-library 语义改动
+
+## 2026-07-01 V1 UI feedback intake: slot fade + page actions
+
+- 用户最新反馈先记录，不在本轮立即改代码：
+  1. `slotA/B/C/D` 区域不再需要沿用早期 MVP 为凸显 preview 而加的淡入淡出
+  2. 当前页面感知上缺少更明确的保存按钮
+  3. 当前页面感知上缺少返回上一级入口
+  4. 配置页面键盘弹出后，点击其他区域应能收起，当前会卡住半屏操作
+  5. 配置页面里的时间锚点，从产品理解上更应该是下拉可选内容；但这条当前先保持现状，后续再研究具体逻辑
+  6. 输出模块里的“写入记忆”应改成：
+     - 用户可选是否单独录入
+     - 勾选后出现单独录入窗口，写入用户文字
+     - 不勾选时，默认把 `slotD` 的完整输出结果写入图片说明栏
+- 当前代码定位结论：
+  1. `slotA/B/C/D` 相关的淡入淡出/滑入残留并不只是静态透明度，还包括交互过渡：
+     - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift:64)
+     - [InteractiveMemoryCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift:982)
+     - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:540)
+  2. 配置中心当前确实没有页面级 toolbar 保存动作，也没有页面级返回动作：
+     - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:24)
+     - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:57)
+     - 当前只有 `navigationTitle`，没有对应 `.toolbar { ... }`
+  3. 现有“保存”是区域级、局部保存，不是页面级主操作：
+     - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:1999)
+     - 这会造成“局部能保存，但整页像没保存按钮”的感知
+  4. `PhotoMemoiOSV1View` 的编辑页本身也是顶层 tab 页面，不天然带“返回上一级”：
+     - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift:439)
+     - 只有某些下钻页/弹层才有显式完成按钮，例如模块面板：
+       - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift:1522)
+  5. 键盘收起问题当前也成立，但原因是“局部有焦点清理，页面没有统一 dismiss 策略”：
+     - 区域编辑器 `IOSRegionComposer` 只有组件内 `.onTapGesture { isFocused = false }`
+       - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:1910)
+     - 文本输入真正绑定的是局部 `@FocusState private var isFocused`
+       - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:1861)
+       - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:2033)
+     - 但页面容器 `NavigationStack -> GeometryReader -> VStack/HStack -> ScrollView`
+       当前没有统一的 `scrollDismissesKeyboard` / 页面空白区 dismiss / 全局 focus reset
+       - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:24)
+  6. 时间锚点这条目前需要区分“当前代码事实”和“后续产品表达”：
+     - 在 `subject` 编辑器里，时间锚点实际上已经是 `Picker(.menu)` 选择当前锚点
+       - [MemorySubjectEditorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift:198)
+     - 选中后再编辑该锚点的日期 / 名称 / 说明
+       - [MemorySubjectEditorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift:233)
+     - 当前逻辑也确实是“一个 subject 持有多个 timeAnchors，并有一个 primaryAnchor 被选中”
+       - [MemorySubjectEditorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift:334)
+       - [MemorySubjectEditorView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift:367)
+     - 所以这条不是“完全没做成可选”，而是配置页整体还没有把这层选择语义表达得足够明确；按用户要求，本轮保持现状
+  7. “写入记忆”这条当前是“底层回退逻辑基本正确，但 UI 语义不对”：
+     - 当前底层解析 `resolvedMemoryWriteText` 的逻辑是：
+       - 若勾选自定义且文本非空，则写入自定义文本
+       - 否则回退为 `slotD` 的输出结果
+       - [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift:199)
+     - 这与用户想要的最终写入规则本质上是接近的
+     - 但当前 UI 开关语义写成了：
+       - `是否写入记忆说明`
+       - `自定义写入内容`
+       - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift:1354)
+       - [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift:894)
+     - 这会让人误以为“不勾选 = 不写入”，但当前真实行为其实是“不勾选 = 写入 `slotD` 默认内容”
+     - 所以后续更合理的改法不是重写底层 fallback，而是把 UI 改成：
+       - 一个明确的勾选控件，表达“是否使用单独录入内容”
+       - 勾选后出现录入框
+       - 不勾选时明确展示“将默认写入记忆区域完整结果”
+- 建议后续统一处理方向：
+  1. 把 `slotA/B/C/D` 区域相关的 `.transition(.opacity...)` / 淡入淡出残留全部清掉，改成稳定直接显示
+  2. 明确区分“区域级保存”与“页面级保存并生效”，避免用户把两者混淆
+  3. 如果该页面未来仍定位为独立配置流，需要补一个明确的上级退出/返回语义；如果继续保留为顶层 tab，则要补足页面级主操作，让它不像“少了返回按钮”
+  4. 为配置页加统一的键盘收起策略，至少满足“点空白区 / 滚动 / 切换面板时键盘能退”
+  5. 时间锚点先不改逻辑，后续再决定是只强化现有 `subject -> 多锚点 -> 选 primaryAnchor` 表达，还是再抽到更明确的配置层入口
+  6. “写入记忆”优先保留当前 fallback 规则，只重做控件语义、文案和勾选后的录入交互
+
+## 2026-07-01 V1 target / scheme rename completion
+
+- 本轮目标是把当前活跃 iOS V1 线剩余的工程层 `MVP` 命名全部收口到 `V1`：
+  - target
+  - shared scheme
+  - app product name
+  - 临时入口枚举残留
+- 严格保持：
+  - 不动 renderer
+  - 不动 Memory Engine 边界
+  - 不动 export / share / photo-library 语义
+  - 不改 bundle identifier
+- 本轮实际完成：
+  1. 当前独立 iOS V1 target 已从 `PhotoMemoiOSMVP` 改成：
+     - `PhotoMemoiOSV1`
+  2. 当前 shared scheme 已改成：
+     - `PhotoMemoiOSV1`
+  3. 当前构建产物名已改成：
+     - `PhotoMemoiOSV1.app`
+  4. 临时入口最后一处旧枚举 case 也已收掉：
+     - `.mvpTest` -> `.v1Preview`
+  5. 活跃工程 / 源码 / 测试范围内，已扫空：
+     - `MVP`
+     - `mvp`
+     - `PhotoMemoiOSMVP`
+- 本轮验证：
+  - `xcodebuild -list -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj`
+    已确认 target / scheme 列表出现 `PhotoMemoiOSV1`
+  - `git diff --check -- /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj/xcshareddata/xcschemes/PhotoMemoiOSV1.xcscheme /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj/xcuserdata/rui.xcuserdatad/xcschemes/xcschememanagement.plist /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSTemporaryEntryView.swift /Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/BatchTests/PhotoMemoiOSTemporaryEntryTests.swift`
+    通过
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData-v1-rename-check-2 CODE_SIGNING_ALLOWED=NO -quiet build`
+    退出 `0`
+- 当前结论：
+  - 之后你直接说 `V1`，就对应当前这条 iOS 线
+  - 下面文档里还保留的 `PhotoMemoiOSMVP`，现在都只应视为历史记录，不再是当前活跃 target / scheme 名
+  - 后续如果要推真机，应该优先用 `PhotoMemoiOSV1`
+
+## 2026-07-01 V1 real-device compile verification
+
+- 本轮目标是重新检查工程后，确认当前 `V1` 线是否已经具备真机编译前提
+- 严格保持：
+  - 不动 renderer
+  - 不动 export / photo-library 语义
+  - 不扩成新的 UI / 架构改造
+- 本轮确认结果：
+  1. 当前 `PhotoMemoiOSMVP` 已可完成整条 iPhoneOS Debug 编译链
+  2. 本次通过使用的是：
+     - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSMVP -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/PhotoMemoiOSMVPDerivedData-v1-final-check CODE_SIGNING_ALLOWED=NO -quiet build`
+  3. 构建产物已实际生成：
+     - `PhotoMemoiOSMVP.app`
+     - `PhotoMemoShareExtension.appex`
+     - `PhotoMemoWidgetExtension.appex`
+  4. 说明当前关注点已经从“工程还能不能编译”前移到：
+     - 签名
+     - 真机安装
+     - 设备侧行为验证
+- 本轮没有继续做：
+  - 真机签名配置修改
+  - 安装到设备
+  - 运行时交互验证
+
+## 2026-07-01 Share Extension target membership shrink
+
+- 本轮只修工程 membership 结构：
+  - `Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj`
+- 严格保持：
+  - 不改 Share Extension 业务语义
+  - 不动 renderer
+  - 不动 export / photo-library 行为
+  - 不把这轮扩成 UI / architecture feature work
+- 根因确认：
+  - `PhotoMemoShareExtension` 之前把整个 `PhotoMemo` 根目录作为
+    `fileSystemSynchronizedGroups`
+  - 再靠一大串 exception 排除
+  - 结果是主工程一旦继续长新文件，extension target 就会自动重新吸进去
+- 本轮完成的结构修正：
+  1. `PhotoMemoShareExtension` 不再同步整棵 `PhotoMemo`
+  2. 改成只同步三块白名单目录：
+     - `PhotoMemo/App`
+     - `PhotoMemo/Models`
+     - `PhotoMemo/iOS/ShareExtension`
+  3. 在 `App` 白名单里继续排掉 app-runtime-only 文件：
+     - `PhotoMemoApp*`
+     - `PhotoMemoBackgroundStatusService`
+     - `PhotoMemoRootSceneView`
+     - `PhotoMemoiOSTemporaryEntry`
+  4. 在 `Models` 白名单里继续排掉非 share 需要的模型族：
+     - `CardVariableProvider`
+     - `PhotoMetadata`
+     - `RecordCard`
+     - `SelectedPhoto`
+     - `TemplateVariable*`
+  5. `iOS/ShareExtension` 目录内备用
+     `PhotoMemoShareExtension-Info.plist`
+     也排除了，避免被当成无关 build member
+- 结果：
+  - Share Extension 当前实际 Swift compile list 已收敛到 `28` 个文件
+  - 原来被误吸进来的这些大片目录已不再进入该 target：
+    - `ConfigurationCenter/*`
+    - `Coordinators/*`
+    - `Intent/*`
+    - `iOS/Views/*`
+    - `Views/Main/*`
+    - `Renderers/*`
+- 本轮验证：
+  - `git diff --check -- Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj`
+    通过
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -target PhotoMemoShareExtension -configuration Debug CODE_SIGNING_ALLOWED=NO -quiet build`
+    退出 `0`
+  - 另外也试了 scheme 级 `PhotoMemoShareExtension` build：
+    - 发现当前 scheme 的 build action 还会顺带编
+      `PhotoMemoiOS` / `PhotoMemoiOSMVP`
+    - 所以它不适合作为这轮“extension target 是否独立干净”的唯一证据
+    - target-only build 才是这轮最干净的验证
+- 仍然存在、但和这轮修正分开的环境问题：
+  - `CoreSimulatorService`
+  - `simdiskimaged`
+  - 这是本机 Simulator 服务层异常，不是这次 pbx 收缩造成的
+- 这轮之后最自然的下一步：
+  1. 如果还想继续收紧，可以再把 `App` / `Models` 从目录白名单进一步切成
+     更细的显式共享文件白名单
+  2. 单独处理 `PhotoMemoShareExtension` scheme build action
+     为什么会 fan out 到 `PhotoMemoiOS` / `PhotoMemoiOSMVP`
+  3. 另起一条环境线修 `CoreSimulatorService / simdiskimaged`
+
+## 2026-07-01 V1 shell identifier migration batch 1
+
+- 本轮继续严格保持：
+  - 不动 renderer
+  - 不动 Memory Engine 边界
+  - 不动 Export / Share / Photo Library 语义
+  - 不改 target / scheme / bundle 结构
+- 本轮只做当前 iOS `V1` 壳层的内部命名迁移第一刀，并保留兼容别名
+- 本轮接入文件：
+  - `Source/PhotoMemo/PhotoMemo/iOS/App/PhotoMemoiOSMVPApp.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSTemporaryEntryView.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/MVPIOSHomeCardPrimitives.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/MVPIOSHomeProjection.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/MVPIOSHomeSupportViews.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/MVPIOSSubjectOverviewSupport.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/MVPSubjectHomeSummarySupport.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSMVPTestView.swift`
+  - 对应 Home / Subject architecture tests
+- 实际完成的变化：
+  1. 入口壳层类型已开始正式切到 `V1`：
+     - `PhotoMemoiOSV1App`
+     - `PhotoMemoiOSV1View`
+  2. Home / Subject presenter 与 support surface 的核心命名已同步切到 `V1`：
+     - `V1IOSHomeProjection`
+     - `V1IOSHomeRecentProcessingPresenter`
+     - `V1IOSSubjectOverviewPresenter`
+     - `V1SubjectHomeSummaryPresenter`
+  3. 当前批次没有硬删旧名，而是保留了 `typealias` 兼容层：
+     - 这样后面还能继续按 Home / Subject / draft / preview contract 分批迁
+  4. 顺手收掉一条还残留在 Subject Home 摘要里的旧语义文案：
+     - `Preset` -> `配置组合`
+- 本轮验证：
+  - `git diff --check` 已通过
+  - 已尝试：
+    - `PhotoMemo` macOS build
+    - `PhotoMemoiOSMVP` iOS build
+  - 当前状态：
+    - 两条 build 都进入了 Xcode build execution
+    - 之后仍卡在同类 `in flight operation` / package-loading 路径
+    - 最终为人工中断，因此没有最终 pass / fail verdict
+    - 在中断前没有出现这轮 `V1` 壳层命名迁移带来的新增 compiler diagnostic
+- 这轮之后最自然的下一步：
+  1. 继续收 `PhotoMemoiOSMVPTestView` 周围还没进入本轮的 `MVP*` UI 壳层类型
+  2. 再进入 Home / Subject 之外的 draft / helper / preview contract 家族
+  3. target / scheme / product 级重命名仍然放到更后面，避免和 bundle / scheme 风险混在一起
+
+## 2026-07-01 V1.0 visible-name cleanup
+
+- 本轮只做用户可见层的 `MVP / MVPTest -> V1.0` 收口：
+  - 不动 renderer
+  - 不动 Memory Engine
+  - 不做 target / scheme / 类型名级别的大重命名
+- 本轮接入文件：
+  - `Source/PhotoMemo/PhotoMemoiOSMVP-Info.plist`
+  - `Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj`
+  - `Source/PhotoMemo/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift`
+  - `Source/PhotoMemo/PhotoMemo/PhotoMemo/App/PhotoMemoiOSTemporaryEntry.swift`
+  - `Source/PhotoMemo/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSMVPTestView.swift`
+- 实际完成的变化：
+  1. 当前独立 iOS MVP app 的显示名已改成：
+     - `PhotoMemo V1.0`
+  2. 相册权限文案同步从：
+     - `PhotoMemo MVP`
+     收成：
+     - `PhotoMemo V1.0`
+  3. Share Extension 失败兜底文案已改成：
+     - `请直接打开 PhotoMemo V1.0`
+  4. 临时入口页标题从：
+     - `MVP 测试页`
+     改成：
+     - `V1.0 预览`
+  5. SwiftUI preview 标题从：
+     - `iOS MVP 测试`
+     改成：
+     - `iOS V1.0 预览`
+- 本轮验证：
+  - `git diff --check` 通过
+  - 定向 grep 已确认这批旧可见字符串在 `Source/PhotoMemo` +
+    `PhotoMemo.xcodeproj` 中已经清空：
+    - `PhotoMemo MVP`
+    - `MVP 测试页`
+    - `iOS MVP 测试`
+  - 已尝试：
+    - `PhotoMemoiOSMVP` iOS build
+    - `PhotoMemo` macOS build
+  - 当前状态：
+    - 两条 build 都已进入 Xcode build execution
+    - 但在本轮 handoff 记录时，还没有拿到最终 compiler verdict
+- 与本轮并行盘点结果一致的当前共识：
+  1. 用户可见层的 `MVP` 基本已经收干净
+  2. 剩余主要是内部代码标识符层：
+     - 约 `25` 个源码文件
+     - 约 `74` 个 `MVP*` 类型
+     - 约 `14` 个直接带 MVP 名的测试文件
+  3. 下一步最合理顺序：
+     - 先改入口壳层
+     - 再改 Home / Subject 壳层
+     - 再改 draft / helper / preview contract
+     - 最后再碰 configuration / output 契约与 target / scheme
+
+## 2026-07-01 iOS Classic White naming lift
+
+- 本轮继续严格保持：
+  - 不动 renderer / preview 内部规范
+  - 不动 export / share / photo-library 语义
+  - 只做 iOS 可见层的命名与层级收口
+- 本轮接入文件：
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSMVPTestView.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift`
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/MVPIOSHomeCardPrimitives.swift`
+- 实际完成的变化：
+  1. Home 的 `当前配置` 卡片现在显式拆成两层：
+     - `边框样式`
+     - `配置组合`
+  2. 当前唯一公开样式已经在 iOS 壳层固定露出为：
+     - `Classic White`
+  3. Home 卡片里原来偏内部实现的 preset 文案已收成更贴近产品语义的：
+     - `切换配置组合`
+     - `重命名配置组合`
+     - `配置组合名称`
+  4. 保存确认文案也同步从直接 `Preset` 说法，收成了
+     `配置组合 + 时间锚点 + 输出设置`
+  5. `ConfigurationCenteriOSView` 顶部摘要现在也补上同一套分层：
+     - `边框样式`
+     - `配置组合`
+  6. 顺手修掉一个已存在的跨平台编译点：
+     - `MVPIOSHomeStatusBadge.Tone.neutral`
+       不再使用 mac 路径下会报错的 `secondarySystemBackground`
+- 本轮验证：
+  - `git diff --check` 通过
+  - 首次 macOS build 明确抓到一个真实编译错误：
+    - `MVPIOSHomeCardPrimitives.swift`
+    - `Color(.secondarySystemBackground)` 在当前编译路径下无效
+  - 这个错误已在本轮修复
+  - 修复后重新尝试：
+    - `PhotoMemoiOS`
+    - `PhotoMemo`
+    两条 build 都长时间停留在 Xcode 自己的 in-flight build/package
+    operation，最终是人工中断，因此没有拿到最终 pass/fail verdict
+  - 在人工中断前，没有再出现这轮 `Classic White / 配置组合`
+    命名收口带来的新增编译诊断
+- 这轮之后最自然的下一步：
+  1. 继续把 iOS 壳层残留的 `Preset` 可见文案收掉
+  2. 等 style 体系真正开放多个边框时，把 `Classic White`
+     这一层接成可选样式入口
+  3. 等壳层命名稳定后，再评估是否开始更大范围的
+     `MVP* -> V1*` 代码标识迁移
+
+## 2026-07-01 iOS compact editor entry-row patch
+
+- 本轮严格保持：
+  - 不动 renderer / preview internals
+  - 不动 export / share / photo-library 语义
+  - 只做 `PhotoMemoiOSMVPTestView` 的紧凑编辑入口 UI
+- 本轮新增：
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/IOSCompactEntryRow.swift`
+- 本轮接入：
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSMVPTestView.swift`
+- 实际变化：
+  1. 新增可复用的 compact entry-row helpers：
+     - `IOSCompactEntryListGroup`
+     - `IOSCompactEntryDisclosureRow`
+  2. Slot A / B / C / D 改成更接近 Apple grouped list 的 compact entry rows
+  3. `Logo 标识` 与 `时间锚点` 也统一成同一套 row + disclosure 展开样式
+  4. 详细编辑内容仍保留在展开区：
+     - slot 文本/模块编辑
+     - logo picker / 上传
+     - anchor date picker
+- 本轮没有做：
+  - preview composition 改造
+  - renderer / export 边界改动
+  - 新业务状态机
+- 本轮验证：
+  - `git diff --check` 通过
+  - `PhotoMemoiOS` build 未能作为最终通过依据：
+    - 当前被已有的 `MemorySubjectEditorView.swift` Swift macro/plugin 失败阻塞
+    - 失败信息指向 `SwiftUIMacros.StateMacro` / `swift-plugin-server`
+    - 编译日志没有显示本轮 compact row patch 的新增错误
+
+## 2026-07-01 iOS MVP subject/home summary extraction
+
+- 本轮继续严格保持：
+  - 不动 renderer / export / share / photo-library 语义
+  - 不动 preview typography / layout 规则
+  - 尽量不扩散 `PhotoMemoiOSMVPTestView` 写入范围
+- 本轮新增并接入：
+  - `MVPSubjectHomeSummarySupport`
+  - `MVPSubjectHomeSummaryPresenterTests`
+- 实际完成的变化：
+  1. 把 `PhotoMemoiOSMVPTestView` 顶部原本内联的 `当前记忆对象摘要`
+     投影抽成独立 presenter + support view
+  2. 顶部卡片标题从更旧的 `记忆档案` 提升为更贴近 V1.0/Home 语义的
+     `记忆对象`
+  3. 新 summary 结构改为更稳定的 Home/Subject overview 语义：
+     - 当前配置
+     - 记忆对象
+     - 记录身份
+     - 当前时间锚点
+  4. fallback 文案统一收口，避免 view 里继续散落对象/锚点缺省判断
+- 本轮没有做：
+  - renderer / Memory Engine / Metadata 边界改动
+  - preview card 几何、字体、底栏布局调整
+  - share / output / album 行为变更
+- 已确认通过：
+  - `git diff --check`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- 当前已知验证说明：
+  - 试图跑 `PhotoMemoTests` 的 focused test 时，命中了工作区内已有的其他
+    测试编译失败（如 `MVPIOSHomeProjectionTests` / `DecorationStrategy`
+    相关），不是本轮新增 summary seam 直接引入的失败
+  - 本轮新增测试文件已进入同一批编译目标中，但完整 tests 目前仍受上述
+    现有失败阻塞
+- 这轮之后最自然的下一步：
+  1. 继续把 Home 顶部其它 subject-era 文案投影，从 view 中收成 presenter
+  2. 如果要继续贴近 V1.0/Home，可考虑把 `记忆对象` 顶部 facts 再和后续
+     一级导航入口做更明确分层
+  3. 在现有测试工作区恢复后，再补跑 focused `MVPSubjectHomeSummaryPresenterTests`
+
+## 2026-07-01 macOS Subject area in-place promotion
+
+- 本轮严格保持：
+  - 不动 renderer
+  - 不动 Memory Engine 边界
+  - 不动 Export / Share / Photo Library 语义
+  - 不做大结构搬家
+- 本轮只在 mac `MainView` 现有结构上，把原来的 `profile` 入口往
+  `Subject` 正式位置抬了一步：
+  - `MainView+LayoutSections.swift`
+  - `MainView+PersonalProfile.swift`
+- 实际完成的变化：
+  1. 左侧入口从 `我的记录` 升级为 `当前记忆对象`
+  2. `MainView` 侧新增更贴近产品语义的 `subjectSection`
+  3. 原来的个人档案块被整理成更正式的 Subject 总览：
+     - 概览卡
+     - `基本资料`
+     - `时间锚点`
+  4. 时间锚点没有改语义，只是前置到 Subject 区域里展示：
+     - 当前锚点
+     - 记忆日期
+     - 现有 quick facts
+     - 进入锚点管理
+- 这一轮特意没有做：
+  - Home / Editor / Output / Settings 一级导航改造
+  - Editor 区域重排
+  - Preview / renderer 相关任何改动
+  - Subject 模型层替换 PersonalProfile
+- 已确认通过：
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `git diff --check`
+- 这轮之后最自然的下一步：
+  1. 继续把 Home 顶部做成真正的 Subject overview 入口语言
+  2. 盘一遍 `MainView` 里还残留的 profile-era 文案与命名
+  3. 再决定是否进入一级导航 `Home / Editor / Output / Settings` 的最小迁移
+  4. 在此之前仍不要碰 renderer / export / share 这条冻结边界
+
+## 2026-07-01 MVP preview-sync + editor-draft bridge follow-up
+
+- 本轮继续严格保持：
+  - 不改 UI 行为
+  - 不改 renderer / export / share / photo-library 语义
+  - 只做 `PhotoMemoiOSMVPTestView` 内部职责收口
+- 本轮新增并接入：
+  - `MVPPreviewSyncCoordinator`
+  - `MVPEditorDraft`
+  - `MVPContentItem`
+  - `MVPDraftBridge`
+  - `MVPDraftBootstrapCoordinator`
+- 实际收掉的是两类还留在 view 里的胶水：
+  1. preview sync orchestration
+     - compose preview text
+     - single-region refresh
+     - all-region refresh
+     - preview text load fallback
+  2. draft bridge / projection glue
+     - editor <-> preview draft conversion
+     - editor <-> mutation draft conversion
+     - item / kind mapping
+     - mutation state -> local view state writeback
+  3. draft bootstrap fallback
+     - templateIDs projection
+     - preview-draft bootstrap intent call
+     - default editor-draft fallback generation
+- `PhotoMemoiOSMVPTestView` 现在不再自己维护那一长串：
+  - `previewDraft`
+  - `mutationDraft`
+  - `editorDraft`
+  - `previewItem`
+  - `mutationItem`
+  - `editorKind` / `previewKind` / `mutationKind`
+- 为了让已接入的 mutation helper 与现有测试行为对齐，这轮还顺手稳定了
+  `MVPDraftMutationCoordinator` 的尾部空文本规则：
+  - append text 会复用 trailing empty input
+  - duplicate trailing empty input 只保留一个
+  - remove composed item 后仍然会清理多余的空尾巴
+- 本轮新增测试：
+  - `MVPPreviewSyncCoordinatorTests`
+  - `MVPDraftBridgeTests`
+  - `MVPDraftBootstrapCoordinatorTests`
+- 本轮重新确认通过：
+  - focused macOS-hosted tests（`CODE_SIGNING_ALLOWED=NO`）：
+    - `MVPPreviewSyncCoordinatorTests`
+    - `MVPDraftBridgeTests`
+    - `MVPDraftBootstrapCoordinatorTests`
+    - `MVPDraftMutationCoordinatorTests`
+    - `MVPConfigurationBootstrapCoordinatorTests`
+    - `MVPConfigurationBootstrapPresenterTests`
+    - `MVPDiagnosticsRefreshCoordinatorTests`
+    - `MVPModulePanelCoordinatorTests`
+    - `MVPModuleLibraryPresenterTests`
+    - `MVPPresetSelectionCoordinatorTests`
+    - `PreviewMigrationTests`
+    - `PreviewCompositionMigrationTests`
+  - `PhotoMemo` macOS Debug build
+  - `git diff --check`
+- 这轮之后更清楚的下一步是：
+  1. `PhotoMemoiOSMVPTestView`
+     - `bootstrapDrafts()` 的 state/writeback seam
+     - preset/config activation 的 side-effect grouping
+  2. `ConfigurationCenter`
+     - `IOSRegionComposer` 里剩余的 local interaction state
+     - detail/card 组合层的继续压薄
+
+## 2026-07-01 ConfigurationCenter detail/composer + MVP diagnostics/module/bootstrap follow-up
+
+- 本轮继续严格保持：
+  - 不改 UI 行为
+  - 不改 renderer / export / share / photo-library 语义
+  - 只做 `ConfigurationCenteriOSView` / `PhotoMemoiOSMVPTestView`
+    的内部职责收口
+- `ConfigurationCenteriOSView` 这轮新增并接入：
+  - `ConfigurationCenterDetailPresenter`
+  - `ConfigurationCenterRegionComposerPresenter`
+- 实际收掉的是两段还留在 view / subview 里的投影分支：
+  1. detail / panel routing
+     - selected panel -> detail kind
+     - selected region -> active editor header / content kind
+     - 保留 `.card` 仍然是不包 `IOSDetailPanel` 的现状
+  2. `IOSRegionComposer` projection
+     - selected configuration title fallback
+     - 已生效 / 未保存 图标和文案
+     - placeholder 文案
+- `PhotoMemoiOSMVPTestView` 这轮新增并接入：
+  - `MVPDiagnosticsRefreshCoordinator`
+  - `MVPModulePanelCoordinator`
+  - `MVPConfigurationBootstrapCoordinator`
+- 实际收掉的是三段仍在 view 里的编排胶水：
+  1. diagnostics / queue refresh
+     - refresh processing state
+     - repository failure fallback
+     - clear history preserving current job
+  2. module panel state
+     - editor focus dismiss
+     - sheet presented-state resolution
+     - usage persistence + dismiss order on module selection
+  3. bootstrap loading
+     - `configurationCoordinator` success path
+     - fallback `SettingsRepository` path
+- 这轮还顺手移除了一个已确认死状态：
+  - `selectedModule`
+- 本轮新增测试：
+  - `ConfigurationCenterDetailPresenterTests`
+  - `ConfigurationCenterRegionComposerPresenterTests`
+  - `MVPDiagnosticsRefreshCoordinatorTests`
+  - `MVPModulePanelCoordinatorTests`
+  - `MVPConfigurationBootstrapCoordinatorTests`
+- 本轮重新确认通过：
+  - focused macOS-hosted tests（`CODE_SIGNING_ALLOWED=NO`）：
+    - `ConfigurationCenterDetailPresenterTests`
+    - `ConfigurationCenterRegionComposerPresenterTests`
+    - `MVPConfigurationBootstrapCoordinatorTests`
+    - `MVPConfigurationBootstrapPresenterTests`
+    - `MVPDiagnosticsRefreshCoordinatorTests`
+    - `MVPModulePanelCoordinatorTests`
+    - `MVPModuleLibraryPresenterTests`
+    - `MVPPresetSelectionCoordinatorTests`
+    - `QueueStatusMigrationTests`
+  - `PhotoMemo` macOS Debug build
+  - `git diff --check`
+- 这轮之后更清楚的下一步是：
+  1. `PhotoMemoiOSMVPTestView`
+     - draft state bridge / apply extraction
+     - preview refresh / bootstrap coordination
+  2. `ConfigurationCenter`
+     - `IOSRegionComposer` 里剩余的 local interaction state
+     - 继续把 card/detail 组合层压薄
+
+## 2026-07-01 ConfigurationCenter binding-adapter + MVP preset-routing follow-up
+
+- 本轮继续严格保持：
+  - 不改 UI 行为
+  - 不改 renderer / export / share / photo-library 语义
+  - 只做 `ConfigurationCenteriOSView` / `PhotoMemoiOSMVPTestView`
+    的内部职责收口
+- `ConfigurationCenteriOSView` 这轮新增并接入：
+  - `ConfigurationCenterSessionBindingPresenter`
+  - `ConfigurationCenterRegionBindingAdapter`
+- 实际收掉的是两层还留在 view 里的机械编排：
+  1. 直接 session 绑定桥接
+     - profile title rename binding
+     - storage option
+     - memory-write toggle
+     - memory-write text
+  2. region binding / mutation glue
+     - text
+     - modules
+     - continuation text
+     - selected configuration ID
+     - configuration rename state
+     - insert / remove module
+     - refresh preview
+- 这意味着 view 不再自己区分：
+  - 只是改本地 store
+  - 改 store 后还要不要同步 preview/session
+  - 非记忆卡 region 的模块插入是否需要 guard return
+- 这轮还顺手校准了两条 Configuration Center 旧回归测试，使它们锁住真实现状而不是错误预期：
+  - text + token 之间不会自动补空格
+  - slotC 的配置 ID 是 `context.configuration*`
+- `PhotoMemoiOSMVPTestView` 这轮新增并接入：
+  - `MVPPresetSelectionCoordinator`
+- 收掉的是 `selectedPresetBinding` 里原本内联的：
+  - same-preset no-op
+  - preset lookup
+  - pending activation title
+  - dirty message
+  - activation confirmation flag
+- 本轮新增测试：
+  - `ConfigurationCenterSessionBindingPresenterTests`
+  - `ConfigurationCenterRegionBindingAdapterTests`
+  - `MVPPresetSelectionCoordinatorTests`
+- 本轮重新确认通过：
+  - focused ConfigurationCenter suite
+  - focused `MVPPresetSelectionCoordinatorTests`
+  - `PhotoMemo` macOS Debug build
+  - `git diff --check`
+- 这轮之后更清楚的下一步是：
+  1. `ConfigurationCenter`：
+     - selection applier
+     - detail/panel routing presenter
+     - `IOSRegionComposer` local projection/focus seam
+  2. `PhotoMemoiOSMVPTestView`：
+     - draft bridge/apply adapter
+     - diagnostics refresh coordinator
+     - module panel / usage persistence adapter
+
+## 2026-07-01 MVP draft-adoption + ConfigurationCenter coordinator/policy seam
+
+- 本轮继续严格保持：
+  - 不改 UI 行为
+  - 不改 renderer / export / share / photo-library 语义
+  - 只做内部职责收口与测试补强
+- `PhotoMemoiOSMVPTestView.swift` 这轮已经把一段真正还在 view 内的本地草稿状态机接到
+  `MVPDraftMutationCoordinator`：
+  - `draft(for:)`
+  - update text item
+  - prepend / append
+  - remove
+  - insert module
+- 为了保证接线后 editor 不丢展示信息，`MVPDraftMutationItem` 现在补齐并保留：
+  - `title`
+  - `systemImage`
+- `ConfigurationCenteriOSView.swift` 这轮新增并接入：
+  - `ConfigurationCenterRegionEditCoordinator`
+  - `ConfigurationCenterInsertableModulePolicy`
+- 其中 `ConfigurationCenterRegionEditCoordinator` 收掉的是一整组重复的
+  `store 写入 -> preview 重算 -> session.updateRegionPreview`
+  编排逻辑，覆盖：
+  - region text
+  - inserted modules
+  - continuation text
+  - selected configuration
+  - insert/remove module
+  - explicit refresh preview
+- `ConfigurationCenterInsertableModulePolicy` 收掉的是 view 里原本直接判断：
+  - 哪些 region 显示模块面板
+  - slotD 和其它 region 分别显示哪些快捷模块
+  - additional modules 如何计算
+- 本轮新增/补强测试：
+  - `ConfigurationCenterRegionEditCoordinatorTests.swift`
+  - `ConfigurationCenterInsertableModulePolicyTests.swift`
+  - `MVPDraftMutationCoordinatorTests.swift` 新增 token metadata 保真覆盖
+- 本轮已确认通过：
+  - focused `MVPDraftMutationCoordinatorTests`
+  - focused architecture suite：
+    - `MVPDraftMutationCoordinatorTests`
+    - `ConfigurationCenterPreviewCompositionHelperTests`
+    - `ConfigurationCenterRegionDraftStoreTests`
+    - `ConfigurationCenterRegionEditCoordinatorTests`
+    - `ConfigurationMigrationTests`
+  - focused Configuration helper suite：
+    - `ConfigurationCenterInsertableModulePolicyTests`
+    - `ConfigurationCenterRegionEditCoordinatorTests`
+    - `ConfigurationCenterPreviewCompositionHelperTests`
+    - `ConfigurationCenterRegionDraftStoreTests`
+  - `git diff --check`
+- 这轮之后更清楚的下一步是：
+  1. 继续把 `ConfigurationCenteriOSView` 里剩余的 session binding / selection routing 收口
+  2. 再回头看 `PhotoMemoiOSMVPTestView` 还留在 view 内的 queue / diagnostics / panel routing 尾巴
+  3. 暂时不要碰 renderer / export / share 业务本体
+
+## 2026-07-01 ConfigurationCenter selection/preset/compact-preview seam
+
+- 本轮继续保持：
+  - 不改 UI 外观
+  - 不改 renderer / export / share 语义
+  - 只做 `ConfigurationCenteriOSView` 内部职责收口
+- 本轮新增并接入：
+  - `ConfigurationCenterSelectionCoordinator.swift`
+  - `ConfigurationCenterCompactPreviewPresenter.swift`
+  - `ConfigurationCenterPresetSelectionPresenter.swift`
+  - `IOSConfigurationPanel.swift`
+- `ConfigurationCenterSelectionCoordinator` 现在统一了这些入口的状态跳转：
+  - sidebar card routes
+  - sidebar subject routes
+  - sidebar write-memory / output / guide routes
+  - region strip routes
+  - compact preview taps
+- 特意保留了 compact preview 现有非对称行为：
+  - preview tap 只切 `selectedRegion`
+  - 不切 `selectedPanel`
+- `ConfigurationCenterCompactPreviewPresenter` 收掉的是：
+  - capture summary fact 裁剪
+  - badge symbol fallback
+- `ConfigurationCenterPresetSelectionPresenter` 收掉的是：
+  - selected preset fallback
+  - preset lookup by ID
+  - preset selected-state projection
+- 并行补上的 `ConfigurationCenterRegionDraftStoreTests` 也已经进入主工作树，覆盖：
+  - region selection 不串草稿/continuation
+  - rename state 跟随 configuration ID
+- 本轮已确认通过：
+  - `ConfigurationCenterSelectionCoordinatorTests`
+  - `ConfigurationCenterCompactPreviewPresenterTests`
+  - `ConfigurationCenterPresetSelectionPresenterTests`
+  - `ConfigurationCenterInsertableModulePolicyTests`
+  - `ConfigurationCenterRegionEditCoordinatorTests`
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `ConfigurationCenterRegionDraftStoreTests`
+  - `git diff --check`
+- 现在 `ConfigurationCenteriOSView` 最值得继续收的尾巴主要只剩：
+  1. session binding adapters
+  2. detail/panel switching glue
+  3. `IOSRegionComposer` 里与 presentation 混在一起的本地 projection / focus 行为
+
+## 2026-06-30 MVP draft-mutation helper/test seam
+
+- 本轮继续严格保持：
+  - 不改 `PhotoMemoiOSMVPTestView.swift`
+  - 不改 UI 行为
+  - 不改 renderer / export / share / photo-library 语义
+  - 只新增 helper / test 文件
+- 本轮新增了一个纯逻辑 seam，用来锁住 MVP 本地草稿编辑态目前真实行为：
+  - `Source/PhotoMemo/PhotoMemo/iOS/Views/MVPDraftMutationCoordinator.swift`
+- 这个 seam 目前是 **non-adopted**：
+  - 目的不是立刻替换 view
+  - 而是先把 `draft(for:)` / `updateDraft(for:transform:)` /
+    `insert(_:into:)` / `activeTextItemIDs` 路由 /
+    dirty-state message 这些本地职责提炼成纯输入输出
+  - 这样下一轮如果要把 `PhotoMemoiOSMVPTestView` 接过去，会更像机械迁移
+    而不是边猜边改
+- helper 里镜像了当前 view 的关键语义：
+  - prepend / append 只接受非空白文本
+  - composed item 插入优先走 active text item 锚点
+  - active 锚点如果正好指向空 trailing text，会在它前面插入
+  - trailing text normalization 会：
+    - 删除重复的空尾部 text item
+    - 在最后一个 item 不是 text 时补一个空 text item
+  - 每次 draft mutation 都会返回 dirty region，并把 message 置成
+    `有未保存修改`
+- 新增 focused tests：
+  - `Tests/PhotoMemoTests/ArchitectureTests/MVPDraftMutationCoordinatorTests.swift`
+  - 覆盖：
+    - `draft(for:)` default fallback
+    - prepend
+    - append
+    - remove
+    - insert-after-active-item
+    - active empty trailing item insertion
+    - trailing-text normalization
+- 这轮的价值主要是：
+  - 把 `PhotoMemoiOSMVPTestView` 还留在 view 内的一块高风险本地状态机
+    先变成可测试、可迁移、纯逻辑的契约
+  - 不会碰到当前同文件里的并行修改
+
+## 2026-06-30 Shared-defaults typed read seam follow-up
+
+- 本轮继续严格保持：
+  - 不改 UI 行为
+  - 不改 renderer / 输出图
+  - 不改 Share / Export / Photo Library 语义
+  - 只做 shared-defaults / bootstrap read 侧 typed seam 补强
+- 本轮实际落地的是一条很窄的 additive read seam：
+  1. `SharedBatchConfigurationSnapshotService`
+     - 新增 typed forwards：
+       - `loadAnchorsResult()`
+       - `loadTemplateResult()`
+       - `loadBadgeResult()`
+     - 旧 `loadSnapshot()` 容错语义不变
+  2. `SettingsService`
+     - 新增：
+       `loadMVPBootstrapReadState()`
+     - 现在可以在不依赖 `@Published` 状态刷新的前提下，
+       直接拿到：
+       - typed badge read result
+       - fresh editor-state reads
+  3. `SettingsRepository`
+     - `loadMVPConfigurationBootstrapState()`
+       现在改走新的 typed read adapter 投影 bootstrap state
+     - 但旧行为保持不变：
+       - badge 缺失/损坏仍然按非 custom-logo 处理
+       - 不引入新的用户可见失败路径
+- 本轮新增/补强测试：
+  - `SharedBatchConfigurationSnapshotServiceTests`
+  - `SettingsServiceTests` typed bootstrap read coverage
+- 这轮的实际价值是：
+  - shared-defaults typed diagnostics 现在从 provider 提升到了 service seam
+  - 以后如果要继续做 main-thread integration 或 repository diagnostics，
+    不需要再先触发一次 `selectedBadge` 刷新才能拿读侧结果
+
+## 2026-06-30 ConfigurationCenter / MVP state-projection follow-up
+
+- 本轮继续严格保持：
+  - 不改 UI 行为
+  - 不改 renderer / 输出图
+  - 不改 Share / Export / Photo Library 语义
+  - 只做 `ConfigurationCenteriOSView` / `PhotoMemoiOSMVPTestView`
+    的本地状态收口，以及一个低风险 shared-defaults typed seam
+- 本轮实际落地了三条低风险收口：
+  1. `ConfigurationCenter region draft store`
+     - 新增：
+       `ConfigurationCenterRegionDraftStore`
+     - `ConfigurationCenteriOSView` 不再直接散持：
+       - selected configuration IDs
+       - draft texts
+       - inserted modules
+       - continuation texts
+       - save markers
+       - rename state
+       - configuration option/title projection
+     - view 端保留：
+       - 现有 `Binding`
+       - `refreshRegionPreview(...)` 触发
+       - 原本的 UI 布局与交互外观
+  2. `MVP bootstrap -> local UI projection`
+     - 新增：
+       `MVPConfigurationBootstrapPresenter`
+     - `PhotoMemoiOSMVPTestView.applyBootstrapState(_:)`
+       不再自己内联完整 logo / output / album bootstrap 映射
+     - view 端只保留本地 UI 文案：
+       `已使用自选 Logo。`
+  3. `shared defaults typed read seam`
+     - `BatchConfigurationSnapshotProvider` 新增：
+       - `loadAnchorsResult()`
+       - `loadTemplateResult()`
+       - `loadBadgeResult()`
+     - 旧 `loadSnapshot()` 容错语义保持不变
+     - 但现在内部可以区分：
+       - noValue
+       - success
+       - decodingFailed
+- 这一轮还把 module-usage 迁移测试的 target 可见性边界收掉了：
+  - `PhotoMemoiOSModuleCatalog.swift`
+  - `MVPModuleUsageTracker.swift`
+  现在都从 `os(iOS)` 放宽到所有非 share-extension target
+  因此 `PhotoMemoTests` 在 macOS host 下也能编译这组迁移测试
+- 本轮新增测试：
+  - `ConfigurationCenterRegionDraftStoreTests`
+  - `MVPConfigurationBootstrapPresenterTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- 本轮重新确认通过：
+  - `PhotoMemoTests` focused：
+    - `ModuleUsageMigrationTests`
+    - `ConfigurationCenterRegionDraftStoreTests`
+    - `MVPConfigurationBootstrapPresenterTests`
+    - `ConfigurationMigrationTests`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - `git diff --check`
+- 结合今天的持续迁移，现在边界状态更明确了：
+  - `ConfigurationCenteriOSView`
+    已经先收掉了最值钱的一层本地草稿/configuration 状态机
+    还没动的是：
+    - preview composition / module resolution
+    - sidebar / panel 纯投影
+  - `PhotoMemoiOSMVPTestView`
+    已经补上 bootstrap state presenter
+    还留在 view 里的高价值尾巴主要是：
+    - draft mutation + focus routing
+    - logo optimization UI 收尾
+    - save/export 返回后的部分本地状态拼装
+  - `静默失败 / typed diagnostics`
+    现在除了 shared queue snapshot / share diagnostics / external intake，
+    也开始覆盖到 shared defaults bootstrap read
+- 如果下一轮继续同一任务，最自然顺序是：
+  1. 抽 `ConfigurationCenter` 的 preview composition / module-resolution seam
+  2. 再抽 `PhotoMemoiOSMVPTestView` 的 draft/focus helper
+  3. 最后补一条跨 seam 的集成回归，而不只是继续加 seam 单测
+
+## 2026-06-30 V1 Architecture Migration Phase 2F
+
+- 本轮继续严格保持：
+  - 不改 UI 行为
+  - 不改 renderer / 输出图
+  - 不改 Share / Export / Photo Library 语义
+  - 只做 `PhotoMemoiOSMVPTestView` 残余职责收口和静默失败/配置读取边界补强
+- 本轮实际落地了三条已经抽好的 seam adoption：
+  1. `Queue / Share diagnostics`
+     - `PhotoMemoiOSMVPTestView` 不再自己主要持有
+       headline / subheadline / symbol / tint /
+       progress / pipeline / event-display 映射
+     - 现在改走：
+       `PhotoMemoiOSQueueDiagnosticsProjectionEngine`
+     - `loadProcessingDiagnosticsSnapshot()` 现在改走：
+       `LoadQueueProcessingDiagnosticsSnapshotIntent`
+  2. `Preview composition`
+     - `PhotoMemoiOSMVPTestView.composedText(for:)`
+       现在改走：
+       `ComposeMVPPreviewTextIntent`
+     - token 显示值解析现在改走：
+       `ResolveMVPPreviewDisplayValueIntent`
+     - 默认 drafts bootstrap 现在改走：
+       `BootstrapMVPPreviewDraftsIntent`
+     - view 端只保留本地编辑态桥接：
+       `MVPEditorDraft <-> MVPPreviewDraft`
+  3. `Configuration bootstrap`
+     - `bootstrapSavedSettings()` 现在无论走 coordinator 还是 fallback，
+       都统一应用
+       `MVPConfigurationBootstrapState`
+     - fallback 不再自己重写一套 album/logo 分支判断
+     - 为了维持旧 view 的 fresh-read 语义，
+       `SettingsService` 新增：
+       `reloadMVPBootstrapState()`
+     - `SettingsRepository.loadMVPConfigurationBootstrapState()`
+       现在会先刷新 badge + editor-state 再投影
+- 这轮还顺手修正了两组迁移测试的“校准问题”：
+  - `PreviewCompositionMigrationTests`
+    现在锁住的是旧 view 的真实输出：
+    - `记录iPhone 17 Pro Max`
+    - `记录于2026.05.24 14:33:00`
+    - `途途当天11个月28天`
+  - 不是错误地假定 text-token 之间会自动插入空格
+  - `ConfigurationMigrationTests`
+    修正了自定义 badge 的构造参数，并锁住 automatic bootstrap
+    会在 repository seam 下继续恢复成 `.automatic + "photomemo"`
+- 本轮重新确认通过：
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - focused `PhotoMemoTests`：
+    - `PreviewCompositionMigrationTests`
+    - `QueueStatusProjectionEngineTests`
+    - `QueueStatusMigrationTests`
+    - `ExportAlbumPresenterTests`
+    - `ConfigurationMigrationTests`
+  - `git diff --check`
+- 结合今天中午开始的迁移要求，目前比较明确的状态是：
+  - `Configuration`：
+    - save path 已迁
+    - bootstrap read path 已迁
+    - bootstrap state 应用已统一
+    - 还没做的是更细的 UI state presenter 化
+  - `PhotoMemoiOSMVPTestView`：
+    - Queue 主要 orchestration 已迁
+    - Queue/share diagnostics mapping 已迁
+    - Preview session read/write 已迁
+    - Preview draft/bootstrap/composition/token display 已迁
+    - Export album loading / output-target branching 已迁
+    - 还留在 view 里的主要是本地编辑态和 UI 驱动状态
+  - `静默失败`：
+    - shared queue snapshot / share diagnostics / external intake
+      的 typed diagnostics seam 已补
+    - 旧 convenience API 仍保留兼容层
+- 如果下一轮继续同一任务，最自然顺序是：
+  1. 继续清理 `PhotoMemoiOSMVPTestView` 里仍然偏业务化的本地状态拼装
+     - draft mutation helpers
+     - module usage persistence
+     - bootstrap 后的局部 UI state 应用
+  2. 评估 `ConfigurationCenteriOSView` 是否沿同样 seam 模式继续瘦身
+  3. 在确认这些内部边界稳定后，再决定是否进入下一阶段的
+     Apple `AppIntents` 接边
+
+## 2026-06-30 V1 Architecture Migration Phase 2E
+
+- 本轮继续只做 `PhotoMemoiOSMVPTestView` 的 `Export` 尾巴收口，明确没有动：
+  - UI 行为
+  - 输出图本身
+  - Share 语义
+  - Preview / Queue 剩余职责
+- 新增类型：
+  - `Intent/ExportAlbumIntents.swift`
+    - `MVPIOSOutputTarget`
+    - `MVPResolvedAlbumSelection`
+    - `MVPOutputAlbumSelectionRequest`
+    - `ResolveMVPOutputAlbumSelectionIntent`
+- 已落地的 export branching adoption：
+  - `PhotoMemoiOSMVPTestView.resolvedOutputAlbumSelection()`
+    不再自己保留完整的 output target 分支判断
+  - 现在优先改走：
+    `ResolveMVPOutputAlbumSelectionIntent`
+  - `.newAlbum` 的确保相册逻辑仍通过现有
+    `EnsureExportAlbumIntent -> ExportCoordinator`
+  - view 端只保留本地 UI 后处理：
+    - `await loadAlbumOptions()`
+    - 同步 `selectedExistingAlbumIdentifier`
+- 兼容层仍保留：
+  - 当没有注入 `ExportCoordinator` 时，
+    `ResolveMVPOutputAlbumSelectionIntent` 仍会 fallback 到
+    `PhotoLibraryExportService().ensureAlbum(...)`
+  - 所以这轮不会要求其它入口一起改
+- 新增测试：
+  - `ExportMigrationTests`
+    - 锁住 existing-album resolution
+    - 锁住 existing-album 缺失时回退 automatic
+    - 锁住 new-album resolution 仍通过 `ExportCoordinator`
+- 本轮我重新确认通过：
+  - `PhotoMemoTests/ConfigurationMigrationTests`
+  - `PhotoMemoTests/ExportMigrationTests`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - `git diff --check`
+- 当前结论：
+  - export output-target branching 已经不再主要由 view 持有
+  - 但 album picker 的 loading / status message 投影仍在 view 内
+  - 如果下一轮继续只做 export，最自然的顺序是：
+    1. 把 `loadAlbumOptions()` / `applyLoadedAlbumOptions(_:)` 抽成 presenter
+    2. 再评估是否去掉新 intent 内的 direct service fallback
+
+## 2026-06-30 V1 Architecture Migration Phase 2D
+
+- 本轮补齐了 `PhotoMemoiOSMVPTestView.applyCurrentMVPConfiguration()` 的
+  view adoption，明确没有动：
+  - UI 行为
+  - renderer / output image
+  - Share / Export / Photo Library 语义
+- 新增类型：
+  - `Intent/ConfigurationSaveIntents.swift`
+    - `MVPConfigurationSaveRequest`
+    - `MVPConfigurationSaveReceipt`
+    - `SaveMVPConfigurationIntent`
+- configuration 基础设施补强：
+  - `ConfigurationCoordinator` 新增：
+    - `saveMVPConfiguration(...)`
+  - `SettingsRepository` 新增：
+    - `saveSelectedTemplate(...)`
+    - `saveSelectedBadge(...)`
+    - `savePhotoDescriptionSettings(...)`
+    - `saveEditorState(...)`
+  - `ConfigurationRepository` 新增：
+    - `upsertBirthdayAnchor(...)`
+- 已落地的 MVP view adoption：
+  - `PhotoMemoiOSMVPTestView` 现在接收
+    `configurationCoordinator`
+  - `applyCurrentMVPConfiguration()` 现在优先改走：
+    `SaveMVPConfigurationIntent -> ConfigurationCoordinator`
+  - 没注入 coordinator 时，仍保留原来的 `SettingsService()` fallback
+  - `session.applySelectedMemoryPreset()` 继续留在 view 层，
+    因为它仍然是本地 session 状态同步
+- 依赖注入路径已补齐：
+  - `PhotoMemoiOSTemporaryEntryView`
+  - `PhotoMemoiOSMVPTestView #Preview`
+- 新增测试：
+  - `ConfigurationMigrationTests`
+    - 锁住 template / badge / photo description / editor state 的保存
+    - 锁住 automatic album normalization
+    - 锁住 birthday anchor 的 in-place upsert + `isCountdown = false`
+- 本轮我重新确认通过：
+  - `PhotoMemoTests/ConfigurationMigrationTests`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - `git diff --check`
+- 当前结论：
+  - `applyCurrentMVPConfiguration()` 最大块的保存职责已经迁出 view
+  - 但 preview 文字拼装、queue diagnostics 映射、album loading presenter
+    仍然还在 view 内
+
+## 2026-06-30 V1 Architecture Migration Phase 2C
+
+- 本轮只迁移了 `PhotoMemoiOSMVPTestView` 的 `Export` 相关职责，明确没有动：
+  - UI 行为
+  - 输出图本身
+  - Share / Queue / Preview 已稳定部分
+  - 配置保存、时间锚点、badge 等非 export 逻辑
+- 新增类型：
+  - `Intent/ExportAlbumIntents.swift`
+    - `LoadExportAlbumOptionsIntent`
+    - `EnsureExportAlbumIntent`
+- export 基础设施补强：
+  - `PhotoLibraryExportService` 现在实现了 `PhotoLibraryExporting`
+  - `PhotoLibraryRepository` 新增：
+    - `fetchAlbumOptions()`
+    - `ensureAlbum(named:)`
+  - `ExportCoordinator` 新增：
+    - `fetchAlbumOptions()`
+    - `ensureAlbum(named:)`
+- 已落地的 MVP view adoption：
+  - `PhotoMemoiOSMVPTestView.loadAlbumOptions()`
+    不再优先直接 new `PhotoLibraryExportService`
+    现在优先改走：
+    `LoadExportAlbumOptionsIntent -> ExportCoordinator`
+  - `PhotoMemoiOSMVPTestView.resolvedOutputAlbumSelection()`
+    在 `.newAlbum` 分支里不再优先直接
+    `PhotoLibraryExportService.ensureAlbum(...)`
+    现在优先改走：
+    `EnsureExportAlbumIntent -> ExportCoordinator`
+- 依赖注入路径已补齐：
+  - `PhotoMemoiOSTemporaryEntryView`
+    现在会把现有 `runtime.environment.coordinators.export` 传进
+    `PhotoMemoiOSMVPTestView`
+- 兼容层仍保留：
+  - `PhotoMemoiOSMVPTestView` 在没有注入 export coordinator 时，
+    仍会 fallback 到原来的 `PhotoLibraryExportService` 直接路径
+  - 所以这轮不会要求其它入口一起修改
+- 新增测试：
+  - `ExportMigrationTests`
+    - 锁住 album options 读取会通过 `ExportCoordinator`
+    - 锁住 ensure album 会通过 `ExportCoordinator`
+  - 为了让这组测试不碰真实 Photos 权限，这轮引入了
+    `PhotoLibraryExporting` 协议并用 stub service 验证 repository/coordinator
+    包装层
+- 本轮我重新确认通过：
+  - `PhotoMemoTests/ExportMigrationTests`
+  - `PhotoMemoTests/PreviewMigrationTests`
+  - `PhotoMemoTests/QueueStatusMigrationTests`
+  - `PhotoMemoTests/ArchitectureMigrationFoundationTests`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - `git diff --check`
+- 当前结论：
+  - 这轮可以视为 `PhotoMemoiOSMVPTestView` 的 `Export` 第一刀迁移已落地
+  - 但还不是完整 export 解耦，因为：
+    - output target 的 branching 仍留在 view 内
+    - `applyCurrentMVPConfiguration()` 里的设置保存仍留在 view / settings 路径
+  - 如果下一轮继续只做 export，最自然的顺序是：
+    1. 把 output target -> resolved album selection 的 branching 抽成 export intent
+    2. 再决定是否把“保存当前 MVP 配置”里与输出目标相关的部分从 view 中分离
+
+## 2026-06-30 V1 Architecture Migration Phase 2B
+
+- 本轮只迁移了 `PhotoMemoiOSMVPTestView` 的 `Preview` 相关职责，明确没有动：
+  - UI 行为
+  - 输出图
+  - Share / Export / Photo Library 语义
+  - Queue 之外已经迁稳的其它链路
+- 新增类型：
+  - `Intent/MVPPreviewIntents.swift`
+    - `UpdateRegionPreviewIntent`
+    - `UpdateRegionPreviewsIntent`
+    - `LoadRegionPreviewTextIntent`
+- 已补上的架构入口：
+  1. `PreviewCoordinator.updateRegionPreview(...)`
+  2. `PreviewCoordinator.updateRegionPreviews(...)`
+  3. `PreviewCoordinator.previewText(...)`
+- 已落地的 MVP view adoption：
+  - `PhotoMemoiOSMVPTestView.refreshPreview(for:)`
+    不再优先直接 `session.updateRegionPreview(...)`
+    现在优先改走：
+    `UpdateRegionPreviewIntent -> PreviewCoordinator`
+  - `PhotoMemoiOSMVPTestView.refreshDynamicPreview()`
+    现在优先改走：
+    `UpdateRegionPreviewsIntent -> PreviewCoordinator`
+  - `PhotoMemoiOSMVPTestView.previewText(for:)`
+    现在优先改走：
+    `LoadRegionPreviewTextIntent -> PreviewCoordinator`
+- 依赖注入路径已补齐：
+  - `PhotoMemoiOSTemporaryEntryView`
+    现在会把现有 `runtime.environment.coordinators.preview` 传进
+    `PhotoMemoiOSMVPTestView`
+- 兼容层仍保留：
+  - `PhotoMemoiOSMVPTestView` 在没有注入 preview coordinator 时，
+    仍会 fallback 到原来的 `session` 直接读写路径
+  - 所以这轮不会要求其它调用点一起修改
+- 新增测试：
+  - `PreviewMigrationTests`
+    - 锁住单区域 preview sync 会通过 `PreviewCoordinator` 写回 session
+    - 锁住多区域 sync 后，preview load intent 读回的文本保持不变
+- 本轮我重新确认通过：
+  - `PhotoMemoTests/PreviewMigrationTests`
+  - `PhotoMemoTests/QueueStatusMigrationTests`
+  - `PhotoMemoTests/ArchitectureMigrationFoundationTests`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - `git diff --check`
+- 当前结论：
+  - 这轮可以视为 `PhotoMemoiOSMVPTestView` 的 `Preview` 第一刀迁移已落地
+  - 但还不是完整 preview 解耦，因为：
+    - draft -> composed text 的拼装仍留在 view 内
+    - module/token 显示值解析仍留在 view 内
+  - 如果下一轮继续只做 preview，最自然的顺序是：
+    1. 把 draft -> preview text 的组装从 view 搬到 preview service/coordinator
+    2. 再决定是否把默认 draft 生成与 preview bootstrap 分离
+
+## 2026-06-30 V1 Architecture Migration Phase 2A
+
+- 本轮只迁移了 `PhotoMemoiOSMVPTestView` 的 `Queue` 相关职责，明确没有动：
+  - UI 行为
+  - 输出图
+  - Share / Export / Photo Library 语义
+  - 其它 Preview / Preset / Logo / Album 逻辑
+- 新增类型：
+  - `Intent/QueueStatusIntents.swift`
+    - `RefreshQueueProcessingStatusIntent`
+    - `ClearCompletedQueueHistoryIntent`
+- 已补上的架构入口：
+  1. `DiagnosticsRepository.loadProcessingDiagnosticsSnapshot()`
+     - 收口 MVP 视图对 processing diagnostics snapshot 的直接读取
+  2. `QueueRepository.clearCompletedHistory(...)`
+  3. `QueueCoordinator.clearCompletedHistory(...)`
+- 已落地的 MVP view adoption：
+  - `PhotoMemoiOSMVPTestView.refreshProcessingState()`
+    不再只靠 view 自己串
+    `refreshExternalIntake + PhotoMemoiOSProcessingDiagnosticsSnapshot.load()`
+  - 现在优先改走：
+    `RefreshQueueProcessingStatusIntent -> DiagnosticsRepository`
+  - “清除历史”按钮不再直接调
+    `backgroundStatusService.clearCompletedHistory()`
+  - 现在优先改走：
+    `ClearCompletedQueueHistoryIntent -> QueueCoordinator`
+- 依赖注入路径已补齐：
+  - `PhotoMemoRootSceneView`
+  - `PhotoMemoiOSTemporaryEntryView`
+  现在会把现有 `runtime.environment` 里的 queue / diagnostics 依赖传进
+  `PhotoMemoiOSMVPTestView`
+- 兼容层仍保留：
+  - `PhotoMemoiOSMVPTestView` 在没有注入 queue / diagnostics 依赖时，
+    仍会 fallback 到原来的直接读取/直接调用路径
+  - 这样 Preview 和其它非迁移入口不需要一起被改
+- 新增测试：
+  - `QueueStatusMigrationTests`
+    - 锁住 queue status refresh intent 会先执行 intake refresh，再读 diagnostics
+    - 锁住 clear history intent 会通过 queue coordinator 清理已完成 external jobs
+- 本轮我重新确认通过：
+  - `PhotoMemoTests/QueueStatusMigrationTests`
+  - `PhotoMemoTests/ArchitectureMigrationFoundationTests`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - `git diff --check`
+- 当前结论：
+  - 这轮可以视为 `PhotoMemoiOSMVPTestView` 的 `Queue` 第一刀迁移已落地
+  - 但还不是完整 queue 解耦，因为：
+    - live queue display 仍然直接依赖 `PhotoMemoBackgroundStatusService`
+    - share diagnostics 的标题/文案计算仍然留在 view 内
+  - 如果下一轮继续只做 queue，最自然的顺序是：
+    1. 把 `PhotoMemoBackgroundStatusService.currentSnapshot` 的展示适配再抽一层
+    2. 再把 share/queue diagnostics 的展示文案从 view 中搬到 presenter/service
+
+## 2026-06-30 V1 Architecture Migration Phase 2
+
+- 本轮完成了 V1 / MVP `Share Workflow` 的第二阶段迁移，但仍严格守住边界：
+  - 不改 UI 行为
+  - 不改输出图
+  - 不改 Share / Export / Photo Library 语义
+  - 不删除旧接口
+- 新增类型：
+  - `Intent/ShareWorkflowIntents.swift`
+    - `ProcessedShareRequest`
+    - `ProcessShareIntent`
+    - `ImportBatchPhotoIntent`
+  - `Repositories/PhotoLibraryRepository.swift`
+- 已落地的 adoption：
+  1. app 侧 share drain
+     - `PhotoMemoAppRuntime.flushExternalRequests()` 不再直接
+       `batchQueueStore.enqueue(...)`
+     - 现在改走：
+       `ProcessShareIntent -> ShareCoordinator.process(...) -> QueueRepository`
+  2. queued task processing
+     - `BatchQueueExecution.processTask(...)` 继续保留旧状态机壳
+     - 但内部四步业务调用已经迁到：
+       - `ImportBatchPhotoIntent`
+       - `BuildPreviewIntent`
+       - `ExportRecordCardIntent`
+       - `SaveRenderedPhotoIntent`
+  3. photo-library save boundary
+     - `ExportCoordinator` 现在通过 `PhotoLibraryRepository` 写回图库
+- 这轮特意保留未删的兼容层：
+  - `PhotoMemoAppRuntime.flushExternalRequests()`
+  - `ExternalPhotoIntakeCenter.submit(...)`
+  - `ExternalPhotoIntakeCenter.drainPendingRequests()`
+  - `BatchQueueStore.enqueue(urls:...)`
+  - `BatchQueueStore.enqueue(payloads:configuration:...)`
+  - `BatchQueueExecution.processTask(at:in:)`
+  - `BatchProcessingCoordinator.importPhoto/buildCard/exportCard/saveRenderedPhoto`
+- 新增/更新测试：
+  - `ShareDrainMigrationRegressionTests`
+    - 锁住 `SubmitExternalURLsIntent` 的配置刷新 + 支持类型/去重语义
+    - 锁住 drained request 入队后的 `launchSource` / snapshot / summary /
+      payload metadata 不变
+    - 锁住 `ProcessShareIntent` 新通路不改 share request 语义
+- 本轮我重新确认通过：
+  - `PhotoMemoTests/ShareDrainMigrationRegressionTests`
+  - `PhotoMemoTests/ArchitectureMigrationFoundationTests`
+  - `PhotoMemoTests/BatchFixtureCoverageTests`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+- 一处本轮中途已修掉的问题：
+  - `PhotoLibraryRepository` 兼容 `String` / `String?` album identifier 的
+    overload 一开始写成了自递归调用
+  - 现已改成显式走 optional 版本
+- 仍需单独补一次确认：
+  - `PhotoMemoShareExtension` generic iOS Debug build
+  - 原因不是明确编译报错，而是一次撞上 derived-data `build.db` lock，
+    另一次 `-quiet` rerun 没有在本轮里返回一个干净的结束信号，所以不要
+    假设它已经确认通过
+- 当前结论：
+  - Phase 1 基础设施 + Phase 2 Share Workflow adoption 现在都已落地
+  - 下一轮如果继续，不该再回头重写这层，而是：
+    1. 单独补上 share extension build 确认
+    2. 再决定是否进入更深的 error/result adoption，或者开始更大范围地
+       清理 legacy direct-call 路径
+
+## 2026-06-30 V1 Architecture Migration Phase 1
+
+- 本轮按“只做基础设施、不改行为”的边界完成了 V1 / MVP 第一阶段架构迁移：
+  - 不改 UI 行为
+  - 不改输出图
+  - 不改 Share / Export / Photo Library 语义
+- 已新增完整的迁移骨架：
+  - `Architecture/PhotoMemoResult.swift`
+  - `Intent/PhotoMemoIntent.swift`
+  - `Intent/BuildPreviewIntent.swift`
+  - `Intent/AppFlowIntents.swift`
+  - `Coordinators/ShareCoordinator.swift`
+  - `Coordinators/QueueCoordinator.swift`
+  - `Coordinators/PreviewCoordinator.swift`
+  - `Coordinators/ExportCoordinator.swift`
+  - `Coordinators/ConfigurationCoordinator.swift`
+  - `Repositories/SettingsRepository.swift`
+  - `Repositories/QueueRepository.swift`
+  - `Repositories/DiagnosticsRepository.swift`
+  - `Repositories/PhotoRepository.swift`
+  - `Repositories/ConfigurationRepository.swift`
+  - `Architecture/AppEnvironment.swift`
+- 已对接的现有入口：
+  - `PhotoMemoAppRuntime` 现在支持通过 `AppEnvironment` 注入
+  - `ExternalPhotoIntakeCenter` 新增注入式 init，但保留原有零参行为
+  - `BatchProcessingCoordinator` 新增注入式 init，但保留原有零参行为
+- 本轮实际发现并修掉的一个直接问题：
+  - `Intent/BuildPreviewIntent.swift` 最初只把首个 intent 放进
+    `#if !PHOTOMEMO_SHARE_EXTENSION`
+  - 导致 `PhotoMemoiOSMVP` 构建时，share extension target 会看到
+    `ExportCoordinator` / `ConfigurationCoordinator` 等 app-only 类型并编译失败
+  - 现已把整个文件都收进 guard，恢复 target 边界
+- 新增验证：
+  - `Tests/PhotoMemoTests/ArchitectureTests/ArchitectureMigrationFoundationTests.swift`
+  - 锁住两件事：
+    1. `PhotoMemoResult.map` 的 success/failure 语义
+    2. `BuildPreviewIntent` 通过 `AppEnvironment.live(...)` 执行后，不改变
+       `RecordCardBuildService` 的 card 输出
+- 本轮我亲自重新跑过的验证：
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+  - `PhotoMemoTests/ArchitectureMigrationFoundationTests`
+  - `PhotoMemoTests/RecordCardBuildServiceTests`
+  - `PhotoMemoTests/ClassicWhiteSnapshotTests`
+- 结论要点：
+  - 架构迁移层当前已经能编译、能通过新增基础测试
+  - 这轮 Phase 1 可以视为“基础设施完成”
+  - 但“全面采用新链路”还没做，后续仍需要继续把高价值路径逐步迁到
+    `View -> Intent -> Coordinator -> Repository`
+- 两个旧的基线失败项，本轮再次单独复现，确认不是这次迁移引入：
+  1. `RecordCardBuildServiceTests.buildsTemplate1WithProfileRelationshipAndBabyAgePhrasing`
+     - 期望：`拍摄于2026.04.11 10:13:05`
+     - 实际：`记录于2026.04.11 10:13:05`
+  2. `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable`
+     - mismatch: `93 / 768000` pixels
+     - `maxChannelDelta = 212`
+- 已补充正式报告：
+  - `Docs/ArchitectureMigrationReport.md`
+  - 里面包含：
+    - 当前完成内容
+    - 所有新增类型说明
+    - 后续迁移建议
+    - 已知验证阻塞
+    - Phase 1 与后续 adoption 的边界
+  - 下一窗口如果要继续，最合适的顺序是：
+    1. 先决定怎么处理上面两个旧失败项
+    2. 再开始把真正的高频主链路迁到 intent/coordinator 入口
+    3. 不要把 adoption 和大文件拆分、UI 改造、renderer 重写混在同一轮
+
+## 2026-06-30 Additional Hot-Path Performance Follow-Up
+
+- 本轮继续严格沿“提速但不改功能”的边界推进：
+  - 不改 UI
+  - 不改输出图
+  - 不改 Share / Export / Photo Library / 通知内容语义
+- 已落实 4 个很小但直接命中热路径的优化：
+  1. `BatchQueueExecution` 成功链路里，移除了 4 个空转的 progress
+     notification await
+     - RAW 准备完成
+     - metadata 完成
+     - rendering 开始
+     - 写入系统图库开始
+     - 这些调用当前本来就是 no-op，所以去掉后只减少 async hop /
+       job lookup，不改变任何通知结果
+  2. `BatchQueueHistory.trimTerminalJobHistoryIfNeeded(...)` 增加了超便宜
+     的早退
+     - 当总 job 数已经 `<= 120` 时，直接返回
+     - 避免每次 `persistJobs()` 前都无意义全表扫描
+  3. `PhotoMetadataReader` 新增 data-backed 读取：
+     - `properties(from data: Data)`
+     - `read(from data: Data)`
+  4. `PhotoImportService.importPhoto(from data: ...)` 现在会在 data 输入路径里
+     复用一次 data-backed `CGImageSource`
+     - 既用于 metadata properties
+     - 也用于 display image
+     - 这样 share/data 型导入不再必须“先写临时文件，再立刻从磁盘重新打开同一份内容”
+  5. `TemplateVariableEngine.render(...)` 对不含 `{{` 的纯文本模板直接早退
+     - 跳过 placeholder 扫描
+- 新增测试：
+  - `BatchQueueHistoryTests`
+  - `TemplateVariableEngineTests`
+  - `PhotoMetadataReaderTests`
+  - `PhotoImportServiceTests`
+- 本轮我亲自重新跑过的验证：
+  - `BatchQueueHistoryTests`
+  - `BatchQueueStorePersistenceTests`
+  - `BatchQueueRecoveryTests`
+  - `TemplateVariableEngineTests`
+  - `RecordCardBuildServiceTests`
+  - `git diff --check`
+  - `PhotoMemo` macOS Debug build
+  - `PhotoMemoiOSMVP` generic iOS Debug build
+- 另外并行 agent 已验证通过：
+  - `PhotoMetadataReaderTests`
+  - `PhotoImportServiceTests`
+- 额外说明：
+  - `RecordCardBuildServiceTests` 首次在并发测试时出现过一次失败，但单独串行复跑已通过，判断不是这轮提速改动引入的问题，更像是并发测试/结果包噪音。
+- 当前最值得继续、但尚未落地的下一刀：
+  1. `.inAppPreview` 的 start/final notification 路径前移短路
+     - 当前逻辑最终也不会发通知
+     - 但仍会走一层 start/final 的调度或 async 路径
+     - 这一步比本轮更靠近状态语义，建议下一轮单独做并补一组 routing 测试
+
+## 2026-06-30 Photo Import ImageSource Reuse
+
+- 本轮继续沿“提速但不改功能”的同一条线推进：
+  - 不改 UI
+  - 不改输出图
+  - 不改 Share / Export / Photo Library 语义
+- 已落实：
+  - `PhotoMetadataReader` 新增 `properties(from source: CGImageSource)`。
+  - `PhotoImportService` 在单次导入里会先创建一次 `CGImageSource`，然后复用给：
+    - metadata properties 读取
+    - ImageIO display image 生成
+  - 也就是说，普通图片导入不再为了 metadata 和预览图各自重新打开一次 source。
+- 实际收益：
+  - 单张导入主路径减少了一次重复的 `CGImageSourceCreateWithURL` 和对应的源文件解析。
+  - 这条优化命中每次照片导入，属于单张处理热路径，比前两轮更接近“每张都能吃到”的收益。
+- 新增测试：
+  - `PhotoMetadataReaderTests`
+    - 新增 “reads properties from an existing image source”
+- 已验证：
+  - `PhotoMetadataReaderTests` 通过。
+  - `PhotoImportServiceTests` 通过。
+  - `git diff --check` 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+- 特意未改：
+  - metadata 解析规则
+  - RAW fallback 语义
+  - output/export/save-to-library 行为
+  - diagnostics / queue / notification 规则
+- 下一轮如果继续只盯速度，最值得优先看的位置：
+  1. `PhotoImportService` 的 RAW 路径是否还存在可安全复用的 decode/source
+  2. `BatchQueuePersistence.persistJobs(...)` 的同步策略是否能继续细分
+  3. `RecordCardBuildService` / token resolver 是否有重复计算热点
+
+## 2026-06-30 Batch Queue Persistence Write Reduction Follow-Up
+
+- 本轮继续沿“速度优先、功能不动”的同一条线推进：
+  - 不改 UI
+  - 不改输出结果
+  - 不改用户可见工作流
+- 已落实：
+  - `BatchQueueExecution` 的 `metadataReady` 现在也改成 deferred persist。
+  - 也就是：
+    - `metadataReady`
+    - `previewReady`
+    两个连续中间态都只先更新内存，等到 `exporting` 再统一写回。
+- 实际收益更新：
+  - 单张任务成功链路的队列持久化写入，现在从最初的 7 次降到了 4 次。
+  - 累计每张成功照片少了 3 次 `JSONEncoder + UserDefaults.set + synchronize`。
+  - 这仍然不改变最终任务状态、通知、输出图、写回图库语义。
+- 新增测试：
+  - `BatchQueueStorePersistenceTests`
+    - 新增 “multiple deferred task updates flush the latest state once”
+- 已验证：
+  - `BatchQueueStorePersistenceTests` 通过。
+  - `BatchQueueRecoveryTests` 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+- 特意未改：
+  - Renderer / Export / Photo Library / Share Extension 行为
+  - 队列 JSON 格式
+  - 恢复、重试、通知规则
+- 下一轮如果继续提速，最值得优先排查的是：
+  1. `PhotoImportService` 是否存在可复用的 metadata/image 读取路径
+  2. `BatchQueuePersistence.persistJobs(...)` 是否需要更细粒度节流
+     - 但这一步比当前更敏感，必须先补更多 shared-state / resume 测试
+
+## 2026-06-30 Batch Queue Persistence Write Reduction
+
+- 本轮目标收紧为：
+  - 不动当前 UI
+  - 不动输出内容与导出结果
+  - 不改用户可见功能路径
+  - 只做共享队列热路径里的低风险提速
+- 已落实：
+  - `BatchQueueStore.updateTask(...)` 新增 `persist` 开关，允许个别阶段先只更新内存，再在下一次稳定状态统一落盘。
+  - `BatchQueueExecution` 的 `previewReady -> exporting` 之间，不再做中间那次持久化写入。
+  - 成功路径完成后，移除了重复的 `store.persistJobs()`。
+- 实际收益：
+  - 单张任务成功链路里，队列持久化写入从原来的 7 次降到 5 次。
+  - 也就是每张成功照片少了 2 次 `JSONEncoder + UserDefaults.set + synchronize`。
+  - 这条优化只命中热路径，不改变最终任务状态、通知、输出图、写回图库语义。
+- 新增测试：
+  - `BatchQueueStorePersistenceTests`
+    - 锁住“deferred task update 不会立即重写 persisted jobs，直到显式 flush”为止
+- 已验证：
+  - `BatchQueueStorePersistenceTests` 通过。
+  - `BatchQueueRecoveryTests` 通过。
+  - `git diff --check` 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+- 特意未改：
+  - Renderer / Export / Photo Library 行为
+  - Share Extension 行为
+  - 队列 JSON 存储格式
+  - 失败恢复与 resume 语义
+- 下一轮如果继续沿“速度但不改功能”这条线，最值得看的位置：
+  1. `metadataReady` 之后是否还存在可安全合并的同步落盘点
+  2. `BatchQueuePersistence.persistJobs(...)` 是否需要更细粒度的写入节流，但这一步风险更高，必须先补更多恢复/共享状态测试
+  3. `PhotoImportService` 的 metadata/image 双次读取是否能做纯内部复用
+     - 这一条收益可能更大，但也比本轮风险高得多
+## 2026-06-30 External Intake Persistence Diagnostics Consumption
+
+- 本轮继续做“稳定优先的精简拆分”，第五刀仍然严格保持边界：
+  - 不做 UI 重设计
+  - 不做 Renderer / Export 逻辑重写
+  - 不改预期输出结果
+- 已落实：
+  - `ExternalPhotoIntakeStore` 新增 typed `loadRequestsResult()`。
+  - 外部接单持久化现在内部可区分：
+    - 没有接单记录
+    - 接单记录正常解码
+    - 接单记录损坏 / 不可读
+  - 同时保留原本兼容语义：
+    - `loadRequests()` 在缺失 / 损坏时仍返回 `[]`
+  - `PhotoMemoiOSProcessingDiagnosticsSnapshot` 现在除了 share diagnostics、
+    shared queue snapshot 之外，也一起消费 external intake persisted state。
+  - 因此 iOS MVP `处理进度` 卡片的 warning 现在可以覆盖三类共享持久化损坏：
+    - 共享进度记录
+    - 共享队列快照
+    - 共享接单记录
+- 新增测试：
+  - `ExternalPhotoIntakeStoreDiagnosticsTests`
+    - 补充 empty vs corrupted persisted requests 区分
+  - `PhotoMemoiOSProcessingDiagnosticsSnapshotTests`
+    - 补充 corrupted external intake payload surfaced
+- 已验证：
+  - 聚焦测试通过：
+    - `ExternalPhotoIntakeStoreDiagnosticsTests`
+    - `PhotoMemoiOSProcessingDiagnosticsSnapshotTests`
+  - `git diff --check` 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+- 特意未改：
+  - 接单成功/失败语义
+  - Share handoff / queue execution / export / Photo Library 行为
+  - persisted external intake request 的 JSON 格式
+- 这一步的真实意义：
+  - 又拿下一处真实主链路里的“静默坏状态”。
+  - 现在如果共享接单记录损坏，主程序仍然安全回退，但不再完全不可见。
+  - 给后面继续做 `SettingsService`、或者开始从 `PhotoMemoiOSMVPTestView`
+    里抽更独立的 processing/share coordinator helper，提供了更稳的地基。
+
+## 2026-06-30 MVP Processing Diagnostics Snapshot Consumption
+
+- 本轮继续做“稳定优先的精简拆分”，第四刀仍然严格保持边界：
+  - 不做 UI 重设计
+  - 不做 Renderer / Export 逻辑重写
+  - 不改预期输出结果
+- 已落实：
+  - 新增 `PhotoMemoiOSProcessingDiagnosticsSnapshot`。
+  - 这层是一个很薄的 shared-defaults 适配器，统一消费：
+    - `PhotoMemoShareDiagnostics.loadEventsResult(...)`
+    - `SharedBatchQueueSnapshotService.loadJobsResult()`
+  - 现在 iOS MVP `处理进度` 面板内部可以区分：
+    - 共享诊断为空
+    - 共享诊断可读
+    - 共享诊断损坏
+    - 共享队列为空
+    - 共享队列可读
+    - 共享队列损坏
+  - `PhotoMemoiOSMVPTestView` 刷新处理进度时，不再只把 shared defaults
+    读成“空数组”，而是先经过这层 typed snapshot。
+  - 当共享进度记录或共享队列快照损坏时，MVP `处理进度` 卡片现在会显示
+    一个轻量 warning，但仍保持原来的安全回退：
+    - 不崩溃
+    - 不改变处理流程
+    - 继续按空状态运行
+- 新增测试：
+  - `PhotoMemoiOSProcessingDiagnosticsSnapshotTests`
+  - 覆盖：
+    - empty vs corrupted combined state
+    - diagnostics 可读但 queue payload 损坏时，事件仍保留
+- 已验证：
+  - 聚焦测试通过：
+    - `PhotoMemoiOSProcessingDiagnosticsSnapshotTests`
+    - `PhotoMemoShareDiagnosticsTests`
+    - `SharedBatchQueueSnapshotServiceTests`
+  - `git diff --check` 通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+- 特意未改：
+  - Share / Queue / Export 的真实执行语义
+  - Renderer、底部边框、布局、Photo Library 保存行为
+  - shared defaults 持久化格式
+- 这一步的真实意义：
+  - 终于把“共享记录损坏”和“真的还没有任何记录”在一个真实 UI caller
+    上分开了。
+  - 后面继续做 Settings / External Intake 的静默失败收口，或者开始从 MVP
+    大文件里抽更薄的 coordinator/helper，会更稳。
+
+## 2026-06-30 Shared Persistence Result Foundation
+
+- 本轮继续做“稳定优先的精简拆分”，第三刀仍然严格保持边界：
+  - 不做 UI 重设计
+  - 不做 Renderer / Export 逻辑重写
+  - 不改预期输出结果
+- 已落实：
+  - 新增共享持久化结果模型：
+    - `PhotoMemoSharedDefaultsReadResult`
+    - `PhotoMemoSharedDefaultsWriteResult`
+    - 对应 failure payload
+  - `SharedBatchQueueSnapshotService` 现在内部可区分：
+    - 没有持久化队列数据
+    - 队列数据正常解码
+    - 队列数据损坏/不可读
+  - `PhotoMemoShareDiagnostics` 现在内部可区分：
+    - 没有持久化诊断数据
+    - 诊断数据正常解码
+    - 诊断数据损坏
+    - 诊断事件编码失败
+  - 同时保留原本对外兼容语义：
+    - `loadJobs()` 仍在缺失/损坏时返回空数组
+    - `loadEvents()` 仍在缺失/损坏时返回空数组
+    - `record(...)` 仍然不抛错，不改变现有产品流程
+- 新增测试：
+  - `SharedBatchQueueSnapshotServiceTests` 补充 empty vs corrupted 区分
+  - `PhotoMemoShareDiagnosticsTests` 补充：
+    - empty vs corrupted 区分
+    - diagnostics 编码失败 surfaced 结果
+- 已验证：
+  - 聚焦测试通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOS` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+  - `PhotoMemoTests` 全套仍只有仓库里已知的两处旧失败：
+    - `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable`
+    - `RecordCardBuildServiceTests.buildsTemplate1WithProfileRelationshipAndBabyAgePhrasing`
+- 特意未改：
+  - diagnostics UI 呈现逻辑
+  - Share / Queue / Export 的实际处理行为
+  - Renderer、底部边框、布局、写回图库语义
+- 这一步的真实意义：
+  - 先把“空状态”和“持久化损坏”从内部语义上分开。
+  - 给后续继续改静默失败、补诊断可见性、拆大 View / Coordinator 提供稳定基础，
+    但不提前改动用户路径。
+
+## 2026-06-30 Typed Share Diagnostics Stage Foundation
+
+- 本轮继续做“稳定优先的精简拆分”，第二刀仍然严格保持边界：
+  - 不做 UI 重设计
+  - 不做 Renderer / Export 逻辑重写
+  - 不改预期输出结果
+- 已落实：
+  - 新增 `PhotoMemoShareDiagnosticStage`，采用 typed wrapper + raw string
+    兼容方案。
+  - `PhotoMemoShareDiagnosticEvent` 现在对外暴露 typed `stage`，但持久化
+    时仍写回原来的 `"stage": "..."` 字符串格式。
+  - `PhotoMemoRootSceneView`、`PhotoMemoAppRuntime`、
+    `PhotoMemoiOSLiveActivityDriverService`、
+    `PhotoMemoShareExtensionViewController`、
+    `PhotoMemoShareExtensionIntakeService`、
+    `PhotoMemoiOSMVPTestView` 已从 share diagnostics 的裸字符串比较迁移到
+    typed stage 常量。
+- 新增测试：
+  - `PhotoMemoShareDiagnosticsTests`
+  - 覆盖：
+    - 已知 stage raw value 映射
+    - 未知/历史 stage 保持 round-trip
+    - 旧持久化 JSON 事件解码兼容
+- 已验证：
+  - 新测试通过。
+  - `PhotoMemo` macOS Debug build 通过。
+  - `PhotoMemoiOS` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoShareExtension` generic iOS Debug build 通过。
+  - `PhotoMemoTests` 全套仍只有仓库里已知的两处旧失败：
+    - `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable`
+    - `RecordCardBuildServiceTests.buildsTemplate1WithProfileRelationshipAndBabyAgePhrasing`
+- 特意未改：
+  - Share / Queue / Export 的实际处理行为。
+  - 诊断持久化格式。
+  - Renderer、底部边框、布局、保存回图库语义。
+- 这一步的真实意义：
+  - 把一批 `stage == "..."` 的业务分支从“能编译但可能拼错”的状态收成类型化常量。
+  - 为下一步继续收口静默失败和拆 MVP / Share 协调层做准备，而不先动输出主链路。
+
+## 2026-06-30 Typed iOS Temporary Entry Foundation
+
+- 本轮开始进入“稳定优先的精简拆分”第一刀，但严格保持边界：
+  - 不做 UI 重设计
+  - 不做 Renderer / Export 逻辑重写
+  - 不改预期输出结果
+- 已落实：
+  - 新增 `PhotoMemoiOSTemporaryEntry` 与
+    `PhotoMemoiOSTemporaryEntryConfiguration`。
+  - `PhotoMemoiOSHomeView`、`PhotoMemoRootSceneView`、
+    `PhotoMemoiOSTemporaryEntryView` 不再各自传 raw string 形式的：
+    - storage key
+    - default entry
+  - `PhotoMemoiOSMVPApp` 现在显式使用 `.mvp` 配置，继续保持独立 MVP App
+    默认进入 `MVP 测试页`。
+  - `PhotoMemoiOSTemporaryEntryView` 的 Picker / 切页逻辑改为 enum 驱动，
+    不再直接对 `"configurationCenter"` / `"mvpTest"` 做字符串分支。
+- 新增测试：
+  - `PhotoMemoiOSTemporaryEntryTests`
+  - 覆盖：
+    - 已存 raw value 兼容
+    - 非法值回退到默认入口
+    - 正式 iOS 与 MVP 的存储 key / 默认入口隔离
+- 已验证：
+  - 新测试通过。
+  - `PhotoMemoiOS` generic iOS Debug build 通过。
+  - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
+  - `PhotoMemoTests` 全套仍只有仓库里已知的两处旧失败：
+    - `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable`
+    - `RecordCardBuildServiceTests.buildsTemplate1WithProfileRelationshipAndBabyAgePhrasing`
+- 特意未改：
+  - Share/Queue/Export 逻辑。
+  - Renderer、底部边框、布局、保存回图库行为。
+  - MVP / 正式 iOS 的实际入口默认语义。
+- 这一步的真实意义：
+  - 先把一类“能编译但走错页”的 raw string 状态隐患收掉。
+  - 给后续更大的 MVP View / Share coordinator 拆分准备一个低风险基础。
+
 ## 2026-06-30 iCloud Source Readiness Guard For Share Intake
 
 - 用户反馈：

@@ -23,4 +23,22 @@ struct TemplateVariableEngineTests {
 
         #expect(rendered == "iPhone 17 Pro · 2026.06.20 · ")
     }
+
+    @Test("Returns plain text templates without token scanning changes")
+    func returnsPlainTextTemplatesWithoutTokenScanningChanges() {
+
+        let engine = TemplateVariableEngine()
+        let context = MetadataContext(
+            values: [
+                "model": "iPhone 17 Pro"
+            ]
+        )
+
+        let rendered = engine.render(
+            "右下默认说明",
+            context: context
+        )
+
+        #expect(rendered == "右下默认说明")
+    }
 }

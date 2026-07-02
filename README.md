@@ -231,6 +231,20 @@ Current source and project structure:
 
 Existing source files remain under `Source/PhotoMemo/` until a reviewed migration slice moves them safely.
 
+## Repository Lines
+
+PhotoMemo should preserve historical product phases through branches, tags, and releases rather than duplicated version folders.
+
+Current intended line split:
+
+- `main` - long-term V2 / IA-003 / repository source-of-truth line
+- `release/v1` - durable V1 iPhone product line
+- milestone tags and releases - macOS foundation, iOS foundation, MVP, and V1 checkpoints
+
+Repository cleanup should not create root-level copies such as `MacVersion/`, `MVP/`, or `V1/`.
+
+See `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md` for the current repository-line policy.
+
 ## Start Here
 
 For project context, read:
@@ -242,6 +256,7 @@ For project context, read:
 5. `Docs/DOCUMENT_INDEX.md`
 6. `Docs/PROJECT_STRUCTURE.md`
 7. `Docs/CURRENT_STATUS.md`
+8. `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md`
 
 Old documents remain reference material for now. Do not migrate them until the research specifications stabilize.
 

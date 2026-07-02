@@ -1,5 +1,13 @@
 import Foundation
 
+struct ExternalPhotoIntakeDrainResult {
+    let requests:
+        [ExternalPhotoIntakeRequest]
+
+    let clearPersistedRequestsResult:
+        PhotoMemoSharedDefaultsWriteResult?
+}
+
 final class ExternalPhotoIntakeStore {
 
     static let shared =
@@ -94,14 +102,35 @@ final class ExternalPhotoIntakeStore {
 
     func drainRequests() -> [ExternalPhotoIntakeRequest] {
 
+        drainRequestsResult()
+            .requests
+    }
+
+    func drainRequestsResult(
+        encode:
+            ([ExternalPhotoIntakeRequest]) throws
+            -> Data = {
+                try JSONEncoder().encode($0)
+            }
+    ) -> ExternalPhotoIntakeDrainResult {
+
         let requests = loadRequests()
 
         guard !requests.isEmpty else {
-            return []
+            return ExternalPhotoIntakeDrainResult(
+                requests: [],
+                clearPersistedRequestsResult: nil
+            )
         }
 
-        _ = saveRequests([])
-        return requests
+        return ExternalPhotoIntakeDrainResult(
+            requests: requests,
+            clearPersistedRequestsResult:
+                saveRequestsResult(
+                    [],
+                    encode: encode
+                )
+        )
     }
 
     func cleanupManagedSourceIfNeeded(
@@ -169,6 +198,42 @@ final class ExternalPhotoIntakeStore {
             preferredBaseName:
                 preferredBaseName
         ).managedURL
+    }
+
+    func loadRequestsResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        [ExternalPhotoIntakeRequest]
+    > {
+
+        guard
+            let data = defaults.data(
+                forKey: storageKey
+            )
+        else {
+            return .noValue
+        }
+
+        do {
+            let requests =
+                try JSONDecoder().decode(
+                    [ExternalPhotoIntakeRequest].self,
+                    from: data
+                )
+            return .success(requests)
+        } catch {
+            return .decodingFailed(
+                PhotoMemoSharedDefaultsReadFailure(
+                    storageKey:
+                        storageKey,
+                    payloadByteCount:
+                        data.count,
+                    underlyingDescription:
+                        String(
+                            describing: error
+                        )
+                )
+            )
+        }
     }
 
     func createManagedCopyDetailed(
@@ -731,20 +796,13 @@ private extension ExternalPhotoIntakeStore {
 
     func loadRequests() -> [ExternalPhotoIntakeRequest] {
 
-        guard
-            let data = defaults.data(
-                forKey: storageKey
-            ),
-            let requests =
-                try? JSONDecoder().decode(
-                    [ExternalPhotoIntakeRequest].self,
-                    from: data
-                )
-        else {
+        switch loadRequestsResult() {
+        case .success(let requests):
+            return requests
+        case .noValue,
+             .decodingFailed:
             return []
         }
-
-        return requests
     }
 
     @discardableResult
@@ -752,13 +810,42 @@ private extension ExternalPhotoIntakeStore {
         _ requests: [ExternalPhotoIntakeRequest]
     ) -> Bool {
 
-        guard
-            let data =
-                try? JSONEncoder().encode(
-                    requests
-                )
-        else {
+        switch saveRequestsResult(
+            requests
+        ) {
+        case .success:
+            return true
+        case .encodingFailed:
             return false
+        }
+    }
+
+    func saveRequestsResult(
+        _ requests: [ExternalPhotoIntakeRequest],
+        encode:
+            ([ExternalPhotoIntakeRequest]) throws
+            -> Data = {
+                try JSONEncoder().encode($0)
+            }
+    ) -> PhotoMemoSharedDefaultsWriteResult {
+
+        let data: Data
+
+        do {
+            data = try encode(
+                requests
+            )
+        } catch {
+            return .encodingFailed(
+                PhotoMemoSharedDefaultsWriteFailure(
+                    storageKey:
+                        storageKey,
+                    underlyingDescription:
+                        String(
+                            describing: error
+                        )
+                )
+            )
         }
 
         defaults.set(
@@ -766,7 +853,7 @@ private extension ExternalPhotoIntakeStore {
             forKey: storageKey
         )
         defaults.synchronize()
-        return true
+        return .success
     }
 
     func saveRequestsFailureContext(

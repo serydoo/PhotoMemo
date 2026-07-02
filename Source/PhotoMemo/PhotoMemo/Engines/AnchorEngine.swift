@@ -73,7 +73,7 @@ final class AnchorEngine {
                 summaryText:
                     anchor.title.isEmpty
                     ? ageText
-                    : "\(anchor.title)今天\(ageText)",
+                    : "\(anchor.title)今天\(ageText)啦！",
                 ageText: ageText,
                 durationText: durationText,
                 countdownText: "",

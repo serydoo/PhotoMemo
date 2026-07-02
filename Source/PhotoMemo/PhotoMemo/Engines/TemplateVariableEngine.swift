@@ -12,6 +12,10 @@ final class TemplateVariableEngine {
         context: MetadataContext
     ) -> String {
 
+        guard template.contains("{{") else {
+            return template
+        }
+
         var result = template
 
         guard let regex = Self.tokenRegex else {

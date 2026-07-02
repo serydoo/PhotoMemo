@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 @Suite("PhotoProcessingInputPolicy")
 struct PhotoProcessingInputPolicyTests {
 
-    @Test("Supports the still-image formats used by the MVP pipeline")
-    func supportsMVPStillImageFormats() {
+    @Test("Supports the still-image formats used by the V1 pipeline")
+    func supportsV1StillImageFormats() {
 
         let policy = PhotoProcessingInputPolicy.standard
 

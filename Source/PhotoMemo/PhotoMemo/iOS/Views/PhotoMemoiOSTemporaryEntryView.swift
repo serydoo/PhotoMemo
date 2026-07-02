@@ -10,25 +10,37 @@ struct PhotoMemoiOSTemporaryEntryView: View {
     let refreshExternalIntake:
         () -> Void
 
+    private let environment:
+        AppEnvironment?
+
     @AppStorage
-    private var selectedEntry: String
+    private var selectedEntryRawValue: String
+
+    private let configuration:
+        PhotoMemoiOSTemporaryEntryConfiguration
 
     init(
         backgroundStatusService:
             PhotoMemoBackgroundStatusService,
         refreshExternalIntake:
             @escaping () -> Void = {},
-        storageKey: String = "photomemo.ios.temporaryEntry",
-        defaultEntry: String = "configurationCenter"
+        environment: AppEnvironment? = nil,
+        configuration:
+            PhotoMemoiOSTemporaryEntryConfiguration = .standard
     ) {
         self.backgroundStatusService =
             backgroundStatusService
         self.refreshExternalIntake =
             refreshExternalIntake
-        _selectedEntry =
+        self.environment =
+            environment
+        self.configuration =
+            configuration
+        _selectedEntryRawValue =
             AppStorage(
-                wrappedValue: defaultEntry,
-                storageKey
+                wrappedValue:
+                    configuration.defaultEntry.rawValue,
+                configuration.storageKey
             )
     }
 
@@ -37,11 +49,18 @@ struct PhotoMemoiOSTemporaryEntryView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
-                        Picker("临时入口", selection: $selectedEntry) {
-                            Text("当前配置中心")
-                                .tag("configurationCenter")
-                            Text("MVP 测试页")
-                                .tag("mvpTest")
+                        Picker(
+                            "临时入口",
+                            selection: selectedEntryBinding
+                        ) {
+                            ForEach(
+                                PhotoMemoiOSTemporaryEntry
+                                    .allCases,
+                                id: \.self
+                            ) { entry in
+                                Text(entry.displayTitle)
+                                    .tag(entry)
+                            }
                         }
                     } label: {
                         Label("临时入口", systemImage: "square.grid.2x2")
@@ -53,16 +72,61 @@ struct PhotoMemoiOSTemporaryEntryView: View {
     @ViewBuilder
     private var content: some View {
         switch selectedEntry {
-        case "mvpTest":
-            PhotoMemoiOSMVPTestView(
+        case .v1Preview:
+            PhotoMemoiOSV1View(
                 backgroundStatusService:
                     backgroundStatusService,
                 refreshExternalIntake:
-                    refreshExternalIntake
+                    refreshExternalIntake,
+                previewCoordinator:
+                    environment?
+                    .coordinators
+                    .preview,
+                exportCoordinator:
+                    environment?
+                    .coordinators
+                    .export,
+                queueCoordinator:
+                    environment?
+                    .coordinators
+                    .queue,
+                configurationCoordinator:
+                    environment?
+                    .coordinators
+                    .configuration,
+                diagnosticsRepository:
+                    environment?
+                    .repositories
+                    .diagnostics
             )
-        default:
+        case .configurationCenter:
             ConfigurationCenteriOSView()
         }
+    }
+
+    private var selectedEntry:
+        PhotoMemoiOSTemporaryEntry {
+
+        PhotoMemoiOSTemporaryEntry.resolve(
+            storedValue:
+                selectedEntryRawValue,
+            defaultEntry:
+                configuration.defaultEntry
+        )
+    }
+
+    private var selectedEntryBinding:
+        Binding<PhotoMemoiOSTemporaryEntry> {
+
+        Binding(
+            get: {
+                selectedEntry
+            },
+            set: { newEntry in
+                selectedEntryRawValue =
+                    newEntry.rawValue
+            }
+        )
     }
 }
 #endif

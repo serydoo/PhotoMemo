@@ -124,7 +124,7 @@ private extension PhotoMemoiOSLiveActivityDriverService {
         guard ActivityAuthorizationInfo()
             .areActivitiesEnabled else {
             PhotoMemoShareDiagnostics.record(
-                stage: "liveActivity.disabled",
+                stage: .liveActivityDisabled,
                 message: "ActivityAuthorizationInfo.areActivitiesEnabled=false"
             )
             await endAllTrackedActivities(
@@ -169,7 +169,7 @@ private extension PhotoMemoiOSLiveActivityDriverService {
 
         if payload.isTerminal {
             PhotoMemoShareDiagnostics.record(
-                stage: "liveActivity.payload.terminal",
+                stage: .liveActivityPayloadTerminal,
                 message:
                     "\(payload.contentState.presentationStateRawValue), progress=\(payload.contentState.progressPercent)",
                 jobID:
@@ -340,7 +340,7 @@ private extension PhotoMemoiOSLiveActivityDriverService {
             ] = payload
 
             PhotoMemoShareDiagnostics.record(
-                stage: "liveActivity.request.created",
+                stage: .liveActivityRequestCreated,
                 message:
                     "activityID=\(activity.id), progress=\(payload.contentState.progressPercent)",
                 jobID:
@@ -352,7 +352,7 @@ private extension PhotoMemoiOSLiveActivityDriverService {
             let nsError =
                 error as NSError
             PhotoMemoShareDiagnostics.record(
-                stage: "liveActivity.request.failed",
+                stage: .liveActivityRequestFailed,
                 message:
                     "\(nsError.domain) / \(nsError.code): \(nsError.localizedDescription)",
                 jobID:

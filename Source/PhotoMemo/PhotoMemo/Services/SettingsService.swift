@@ -157,6 +157,23 @@ struct WorkspaceConfigurationSlot:
     }
 }
 
+struct V1ConfigurationBootstrapReadState {
+
+    let subjectResult:
+        PhotoMemoSharedDefaultsReadResult<
+            MemorySubject
+        >
+
+    let badgeResult:
+        PhotoMemoSharedDefaultsReadResult<
+            Badge
+        >
+
+    let selectedAlbumIdentifier: String
+
+    let selectedAlbumTitle: String
+}
+
 @MainActor
 final class SettingsService: ObservableObject {
 
@@ -200,6 +217,9 @@ final class SettingsService: ObservableObject {
 
         static let selectedAlbumTitle =
             "photomemo.selectedAlbumTitle"
+
+        static let selectedMemorySubject =
+            "photomemo.selectedMemorySubject"
 
         static let activeConfigurationSlotID =
             "photomemo.activeConfigurationSlotID"
@@ -362,6 +382,29 @@ final class SettingsService: ObservableObject {
         )
     }
 
+    func saveSelectedMemorySubject(
+        _ subject: MemorySubject?
+    ) {
+
+        guard let subject else {
+            defaults.removeObject(
+                forKey: Keys.selectedMemorySubject
+            )
+            return
+        }
+
+        guard let data =
+            try? JSONEncoder().encode(subject)
+        else {
+            return
+        }
+
+        defaults.set(
+            data,
+            forKey: Keys.selectedMemorySubject
+        )
+    }
+
     func savePhotoDescriptionSettings() {
 
         defaults.set(
@@ -436,6 +479,40 @@ final class SettingsService: ObservableObject {
         defaults.set(
             self.selectedAlbumTitle,
             forKey: Keys.selectedAlbumTitle
+        )
+    }
+
+    func reloadV1BootstrapState() {
+        loadBadge()
+        loadEditorState()
+    }
+
+    func loadV1SelectedSubjectResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        MemorySubject
+    > {
+
+        decodeValueResult(
+            MemorySubject.self,
+            forKey: Keys.selectedMemorySubject
+        )
+    }
+
+    func loadV1BootstrapReadState()
+    -> V1ConfigurationBootstrapReadState {
+
+        loadEditorState()
+
+        return V1ConfigurationBootstrapReadState(
+            subjectResult:
+                loadV1SelectedSubjectResult(),
+            badgeResult:
+                snapshotProvider
+                .loadBadgeResult(),
+            selectedAlbumIdentifier:
+                selectedAlbumIdentifier,
+            selectedAlbumTitle:
+                selectedAlbumTitle
         )
     }
 
@@ -682,6 +759,42 @@ final class SettingsService: ObservableObject {
             WorkspaceConfigurationSlot.normalized(
                 decodedSlots
             )
+    }
+
+    func decodeValueResult<Value: Decodable>(
+        _ valueType: Value.Type,
+        forKey storageKey: String
+    ) -> PhotoMemoSharedDefaultsReadResult<
+        Value
+    > {
+
+        guard
+            let data = defaults.data(
+                forKey: storageKey
+            )
+        else {
+            return .noValue
+        }
+
+        do {
+            return .success(
+                try JSONDecoder().decode(
+                    valueType,
+                    from: data
+                )
+            )
+        } catch {
+            return .decodingFailed(
+                PhotoMemoSharedDefaultsReadFailure(
+                    storageKey: storageKey,
+                    payloadByteCount: data.count,
+                    underlyingDescription:
+                        String(
+                            describing: error
+                        )
+                )
+            )
+        }
     }
 }
 
