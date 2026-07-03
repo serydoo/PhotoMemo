@@ -5,6 +5,31 @@ import Testing
 @Suite("Batch queue store persistence")
 struct BatchQueueStorePersistenceTests {
 
+    private struct EncodingFailure:
+        Error {}
+
+    private struct SaveFailure:
+        Error {}
+
+    private struct FailingSaveBackend:
+        BatchQueuePersistenceBackend {
+
+        func loadData(
+            forKey key: String
+        ) throws -> Data? {
+
+            nil
+        }
+
+        func saveData(
+            _ data: Data,
+            forKey key: String
+        ) throws {
+
+            throw SaveFailure()
+        }
+    }
+
     @MainActor
     @Test("Deferred task updates do not rewrite persisted jobs until flush")
     func deferredTaskUpdatesDoNotRewritePersistedJobsUntilFlush() throws {
@@ -233,5 +258,149 @@ struct BatchQueueStorePersistenceTests {
         defaults.removePersistentDomain(
             forName: suiteName
         )
+    }
+
+    @MainActor
+    @Test("Batch queue persistence reports encoding failures without overwriting existing payload")
+    func batchQueuePersistenceReportsEncodingFailuresWithoutOverwritingExistingPayload() throws {
+
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.EncodingFailure.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let store =
+            BatchQueueStore(
+                defaults: defaults,
+                settingsService:
+                    SettingsService(
+                        defaults: defaults
+                    )
+            )
+        let job =
+            try #require(
+                store.enqueue(
+                    urls: [
+                        URL(
+                            fileURLWithPath:
+                                "/tmp/encoding-failure-persist.jpg"
+                        )
+                    ]
+                )
+            )
+        let existingPayload =
+            Data("previous-payload".utf8)
+        defaults.set(
+            existingPayload,
+            forKey:
+                "photomemo.batchQueue.jobs"
+        )
+
+        let persistence =
+            BatchQueuePersistence(
+                defaults: defaults,
+                encodeJobs: { _ in
+                    throw EncodingFailure()
+                }
+            )
+        let result =
+            persistence
+            .persistJobs(
+                [job]
+            )
+
+        switch result {
+        case .success:
+            Issue.record("Expected persistence write failure")
+        case .failure(let error):
+            #expect(error.code == .persistenceWriteFailed)
+            #expect(
+                error.underlyingDescription?
+                .contains("EncodingFailure") == true
+            )
+        }
+
+        #expect(
+            defaults.data(
+                forKey:
+                    "photomemo.batchQueue.jobs"
+            )
+            == existingPayload
+        )
+    }
+
+    @MainActor
+    @Test("Batch queue persistence reports backend save failures")
+    func batchQueuePersistenceReportsBackendSaveFailures() throws {
+
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.SaveFailure.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let store =
+            BatchQueueStore(
+                defaults: defaults,
+                settingsService:
+                    SettingsService(
+                        defaults: defaults
+                    )
+            )
+        let job =
+            try #require(
+                store.enqueue(
+                    urls: [
+                        URL(
+                            fileURLWithPath:
+                                "/tmp/save-failure-persist.jpg"
+                        )
+                    ]
+                )
+            )
+        let persistence =
+            BatchQueuePersistence(
+                backend: FailingSaveBackend()
+            )
+
+        let result =
+            persistence
+            .persistJobs(
+                [job]
+            )
+
+        switch result {
+        case .success:
+            Issue.record("Expected backend save failure")
+        case .failure(let error):
+            #expect(error.code == .persistenceWriteFailed)
+            #expect(
+                error.underlyingDescription?
+                .contains("SaveFailure") == true
+            )
+        }
     }
 }

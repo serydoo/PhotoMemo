@@ -731,10 +731,12 @@ private extension BatchQueueExecution {
                 isDirectory: true
             )
 
-        guard PhotoMemoSharedContainer
-            .ensureDirectory(
-                at: directory
-            ) else {
+        do {
+            try PhotoMemoSharedContainer
+                .ensureDirectory(
+                    at: directory
+                )
+        } catch {
             return nil
         }
 

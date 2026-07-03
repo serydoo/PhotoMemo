@@ -1,27 +1,92 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
+protocol BatchQueuePersistenceBackend {
+
+    func loadData(
+        forKey key: String
+    ) throws -> Data?
+
+    func saveData(
+        _ data: Data,
+        forKey key: String
+    ) throws
+}
+
+struct UserDefaultsBatchQueuePersistenceBackend:
+    BatchQueuePersistenceBackend {
+
+    let defaults: UserDefaults
+
+    func loadData(
+        forKey key: String
+    ) throws -> Data? {
+
+        defaults.data(
+            forKey: key
+        )
+    }
+
+    func saveData(
+        _ data: Data,
+        forKey key: String
+    ) throws {
+
+        defaults.set(
+            data,
+            forKey: key
+        )
+    }
+}
+
 struct BatchQueuePersistence {
 
     private let storageKey =
         "photomemo.batchQueue.jobs"
 
-    private let defaults:
-        UserDefaults
+    private let backend:
+        BatchQueuePersistenceBackend
+
+    private let encodeJobs:
+        ([BatchJob]) throws -> Data
 
     init(
-        defaults: UserDefaults? = nil
+        defaults: UserDefaults? = nil,
+        encodeJobs:
+            @escaping ([BatchJob]) throws -> Data = {
+                try JSONEncoder().encode($0)
+            }
     ) {
-        self.defaults =
-            defaults
-            ?? PhotoMemoSharedContainer
-            .sharedUserDefaults
+        self.init(
+            backend:
+                UserDefaultsBatchQueuePersistenceBackend(
+                    defaults:
+                        defaults
+                        ?? PhotoMemoSharedContainer
+                        .sharedUserDefaults
+                ),
+            encodeJobs: encodeJobs
+        )
+    }
+
+    init(
+        backend: BatchQueuePersistenceBackend,
+        encodeJobs:
+            @escaping ([BatchJob]) throws -> Data = {
+                try JSONEncoder().encode($0)
+            }
+    ) {
+        self.backend =
+            backend
+        self.encodeJobs =
+            encodeJobs
     }
 
     func loadPersistedJobs() -> [BatchJob] {
 
         guard
-            let data = defaults.data(
+            let data =
+                try? backend.loadData(
                 forKey: storageKey
             ),
             let decodedJobs =
@@ -116,22 +181,44 @@ struct BatchQueuePersistence {
         return changed
     }
 
+    @discardableResult
     func persistJobs(
         _ jobs: [BatchJob]
-    ) {
+    ) -> PhotoMemoResult<Void> {
 
-        guard let data =
-            try? JSONEncoder().encode(
-                jobs
-            ) else {
-            return
+        let data: Data
+        do {
+            data =
+                try encodeJobs(
+                    jobs
+                )
+        } catch {
+            return .failure(
+                PhotoMemoError.wrapped(
+                    error,
+                    code: .persistenceWriteFailed,
+                    message:
+                        "无法保存批处理队列。"
+                )
+            )
         }
 
-        defaults.set(
-            data,
-            forKey: storageKey
-        )
-        defaults.synchronize()
+        do {
+            try backend.saveData(
+                data,
+                forKey: storageKey
+            )
+            return .success(())
+        } catch {
+            return .failure(
+                PhotoMemoError.wrapped(
+                    error,
+                    code: .persistenceWriteFailed,
+                    message:
+                        "无法保存批处理队列。"
+                )
+            )
+        }
     }
 }
 

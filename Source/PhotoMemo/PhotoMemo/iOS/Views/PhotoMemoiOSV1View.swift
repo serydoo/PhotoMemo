@@ -906,7 +906,9 @@ struct PhotoMemoiOSV1View: View {
             refreshDynamicPreview()
         }
 
-        if patch.shouldEnableSubjectLibraryPersistence {
+        if patch.events.contains(
+            .reopenSubjectLibraryPersistence
+        ) {
             shouldSaveSubjectLibrary = true
         }
 

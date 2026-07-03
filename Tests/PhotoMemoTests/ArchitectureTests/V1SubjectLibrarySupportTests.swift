@@ -216,7 +216,11 @@ struct V1SubjectLibrarySupportTests {
         #expect(patch.birthdayDate == school.date)
         #expect(patch.activeConfigurationMessage == "记忆对象已同步")
         #expect(patch.shouldRefreshPreview == false)
-        #expect(patch.shouldEnableSubjectLibraryPersistence == false)
+        #expect(
+            !patch.events.contains(
+                .reopenSubjectLibraryPersistence
+            )
+        )
     }
 
     @Test("adding default subject keeps editing enabled without reopening corrupt-library persistence")
@@ -254,10 +258,55 @@ struct V1SubjectLibrarySupportTests {
             )
 
         #expect(patch.shouldCloseOverview)
-        #expect(patch.shouldEnableSubjectLibraryPersistence == false)
+        #expect(
+            !patch.events.contains(
+                .reopenSubjectLibraryPersistence
+            )
+        )
         #expect(patch.activeConfigurationMessage == "记忆对象已同步")
         #expect(patch.flowState != nil)
         #expect(session.state.subjects.count == 2)
+    }
+
+    @Test("adding default subject emits reopen event when library persistence is already enabled")
+    @MainActor
+    func addingDefaultSubjectEmitsReopenEventWhenPersistenceIsEnabled() throws {
+        let existingSubject = makeSubject(
+            displayName: "途途成长记录",
+            shortName: "途途",
+            relationship: "成长记录",
+            anchorTitle: "生日",
+            anchorDate: Date(timeIntervalSince1970: 0)
+        )
+        let session = ConfigurationSession(
+            state: ConfigurationCenterState(
+                subjects: [existingSubject],
+                selectedSubjectID: existingSubject.id,
+                memoryPresets: [],
+                selectedMemoryPresetID: nil,
+                cardSelection: .init(selectedRegion: .subject),
+                selectedBlockID: nil,
+                tokenLibrary: .init(),
+                availableDecorations: [],
+                regionPreviewTexts: [:]
+            )
+        )
+
+        let patch =
+            V1SubjectOverviewActionCoordinator
+            .addDefaultSubject(
+                referenceDate: Date(timeIntervalSince1970: 86_400),
+                to: session,
+                shouldSaveSubjectLibrary: true,
+                configurationCoordinator: nil,
+                onPersistedSubject: { _ in }
+            )
+
+        #expect(
+            patch.events.contains(
+                .reopenSubjectLibraryPersistence
+            )
+        )
     }
 
     @Test("adding subject after corrupt-library bootstrap preserves raw payload while keeping UI editable")
@@ -333,7 +382,11 @@ struct V1SubjectLibrarySupportTests {
 
         #expect(patch.flowState != nil)
         #expect(session.state.subjects.count == 2)
-        #expect(patch.shouldEnableSubjectLibraryPersistence == false)
+        #expect(
+            !patch.events.contains(
+                .reopenSubjectLibraryPersistence
+            )
+        )
         #expect(
             defaults.data(
                 forKey: "photomemo.v1.subjectLibrary"

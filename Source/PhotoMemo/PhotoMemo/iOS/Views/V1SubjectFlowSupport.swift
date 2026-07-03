@@ -1,12 +1,21 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
+enum V1SubjectFlowEvent:
+    Hashable {
+
+    case reopenSubjectLibraryPersistence
+}
+
 struct V1SubjectFlowPatch {
 
     let birthdayDate: Date?
     let shouldRefreshPreview: Bool
     let activeConfigurationMessage: String
-    let shouldEnableSubjectLibraryPersistence: Bool
+
+    // One-shot commands consumed when the patch is applied.
+    let events: [V1SubjectFlowEvent]
+
     let shouldCloseOverview: Bool
     let flowState: V1IOSSubjectConfigurationFlowState?
 }
@@ -133,7 +142,7 @@ enum V1SubjectOverviewActionCoordinator {
             birthdayDate: anchor.date,
             shouldRefreshPreview: false,
             activeConfigurationMessage: "记忆对象已同步",
-            shouldEnableSubjectLibraryPersistence: false,
+            events: [],
             shouldCloseOverview: false,
             flowState: nil
         )
@@ -169,7 +178,7 @@ enum V1SubjectOverviewActionCoordinator {
             birthdayDate: nil,
             shouldRefreshPreview: false,
             activeConfigurationMessage: "记忆对象已同步",
-            shouldEnableSubjectLibraryPersistence: false,
+            events: [],
             shouldCloseOverview: false,
             flowState: nil
         )
@@ -207,8 +216,10 @@ enum V1SubjectOverviewActionCoordinator {
             birthdayDate: nil,
             shouldRefreshPreview: false,
             activeConfigurationMessage: "记忆对象已同步",
-            shouldEnableSubjectLibraryPersistence:
-                shouldPersistLibrary,
+            events:
+                shouldPersistLibrary
+                ? [.reopenSubjectLibraryPersistence]
+                : [],
             shouldCloseOverview: true,
             flowState:
                 makeConfigurationFlowState(
@@ -256,7 +267,7 @@ enum V1SubjectOverviewActionCoordinator {
             birthdayDate: nil,
             shouldRefreshPreview: true,
             activeConfigurationMessage: "记忆对象已同步",
-            shouldEnableSubjectLibraryPersistence: false,
+            events: [],
             shouldCloseOverview: false,
             flowState: nil
         )
@@ -293,8 +304,7 @@ enum V1SubjectOverviewActionCoordinator {
                             shouldRefreshPreview: true,
                             activeConfigurationMessage:
                                 savedMessage,
-                            shouldEnableSubjectLibraryPersistence:
-                                false,
+                            events: [],
                             shouldCloseOverview: false,
                             flowState: nil
                         )

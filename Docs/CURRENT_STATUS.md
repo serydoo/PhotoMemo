@@ -2,6 +2,47 @@
 
 Last updated: 2026-07-03
 
+## 2026-07-04 V1 boundary hardening follow-up
+
+After the V1 maintenance baseline freeze, a focused code-review follow-up
+closed three boundary clarity issues without reopening V1 architecture:
+
+- `V1SubjectFlowPatch` now separates state from event semantics by carrying
+  explicit one-shot `V1SubjectFlowEvent` values. Reopening Subject Library
+  persistence is now an event consumed when the patch is applied, not a
+  misleading boolean state.
+- `PhotoMemoSharedContainer.ensureDirectory(at:)` now throws instead of
+  swallowing directory-creation failures, and wraps failures in
+  `SharedContainerError`. All current production call sites have been updated
+  to handle the throwing contract.
+- `BatchQueuePersistence` now separates encoding from persistence through a
+  small `BatchQueuePersistenceBackend` seam, returns `PhotoMemoResult<Void>` for
+  persistence writes, reports encoding/save failures, and no longer calls
+  `UserDefaults.synchronize()` on each queue save.
+
+Verification completed:
+
+- focused tests passed:
+  - `PhotoMemoSharedContainerTests`
+  - `BatchQueueStorePersistenceTests`
+  - `V1SubjectLibrarySupportTests`
+- related tests passed:
+  - `BatchQueueRecoveryTests`
+  - `ExternalPhotoIntakeStoreDiagnosticsTests`
+  - `PhotoMemoiOSV1PhotoIntakeTests`
+- `PhotoMemoiOSV1` generic iOS Simulator build passed
+- `git diff --check` passed
+
+Not manually verified in this follow-up:
+
+- real-device reinstall
+- export/share/photo-library runtime
+
+Recommended next documentation slice:
+
+- create a dedicated V1 Boundary Freeze record for state/event/persistence
+  boundaries instead of continuing ad hoc review.
+
 ## 2026-07-03 V1 Maintenance Baseline frozen
 
 The High Finding Closure Sprint has been completed and archived:
