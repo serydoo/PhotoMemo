@@ -9,6 +9,21 @@ struct PhotoMemoSharedDefaultsReadFailure:
     let payloadByteCount: Int
 
     let underlyingDescription: String
+
+    let rawPayload: Data?
+
+    nonisolated init(
+        storageKey: String,
+        payloadByteCount: Int,
+        underlyingDescription: String,
+        rawPayload: Data? = nil
+    ) {
+        self.storageKey = storageKey
+        self.payloadByteCount = payloadByteCount
+        self.underlyingDescription =
+            underlyingDescription
+        self.rawPayload = rawPayload
+    }
 }
 
 enum PhotoMemoSharedDefaultsReadResult<Value> {

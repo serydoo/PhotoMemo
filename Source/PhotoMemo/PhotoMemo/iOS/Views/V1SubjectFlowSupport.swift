@@ -11,6 +11,12 @@ struct V1SubjectFlowPatch {
     let flowState: V1IOSSubjectConfigurationFlowState?
 }
 
+struct V1SubjectLibraryRecoveryReceipt:
+    Hashable {
+
+    let preservedRawPayload: Data
+}
+
 enum V1SubjectLibraryPersistenceCoordinator {
 
     static func persistSelectedSubject(
@@ -63,6 +69,32 @@ enum V1SubjectLibraryPersistenceCoordinator {
                 selectedSubjectID: selectedSubjectID,
                 coordinator: configurationCoordinator
             )
+    }
+}
+
+enum V1SubjectLibraryRecoveryCoordinator {
+
+    static func recoverCorruptLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?,
+        readFailure: PhotoMemoSharedDefaultsReadFailure,
+        configurationCoordinator: ConfigurationCoordinator?
+    ) -> V1SubjectLibraryRecoveryReceipt? {
+        guard let rawPayload =
+            readFailure.rawPayload else {
+            return nil
+        }
+
+        V1SubjectLibraryResolver
+            .persist(
+                subjects: subjects,
+                selectedSubjectID: selectedSubjectID,
+                coordinator: configurationCoordinator
+            )
+
+        return V1SubjectLibraryRecoveryReceipt(
+            preservedRawPayload: rawPayload
+        )
     }
 }
 
@@ -151,7 +183,8 @@ enum V1SubjectOverviewActionCoordinator {
         onPersistedSubject:
             @escaping (V1SubjectFlowPatch) -> Void
     ) -> V1SubjectFlowPatch {
-        let shouldPersistLibrary = true
+        let shouldPersistLibrary =
+            shouldSaveSubjectLibrary
         let subject =
             V1SubjectLibraryMutationCoordinator
             .addDefaultSubject(

@@ -1,5 +1,17 @@
 # RFC-001: Memory Enters the Production Pipeline
 
+## Historical Record Notice
+
+This RFC is preserved as a historical architecture record.
+
+Do not treat the closed / achieved status below as the current live-repository
+truth without checking `Docs/CURRENT_STATUS.md` first. `CURRENT_STATUS.md` is
+the single source of truth for the active repository state.
+
+Current follow-up reference:
+
+- `Docs/02_Architecture/V1_Release_Readiness_Review_2026-07-03.md`
+
 ## Status
 
 Closed

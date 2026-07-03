@@ -2,6 +2,69 @@
 
 Last updated: 2026-07-03
 
+## 2026-07-03 V1 Maintenance Baseline frozen
+
+The High Finding Closure Sprint has been completed and archived:
+
+- [Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md)
+- [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
+
+Decision:
+
+- V1 Functional Baseline: accepted
+- V1 long-term Maintenance Baseline: accepted
+
+Current Truth:
+
+- `CURRENT_STATUS.md` is the single source of truth for the active repository state.
+- RFC documents are historical architecture records unless this file explicitly says their conclusions have been revalidated for the current live HEAD.
+
+Closure:
+
+- HF-001 Subject Library Data Protection is closed.
+- HF-002 Documentation Consistency is closed.
+- The corrupt-library protection contract is now explicit:
+  - implicit library persistence stays disabled after corrupt-library bootstrap
+  - normal Subject edits do not re-enable library persistence
+  - only explicit Recovery / Reset behavior may re-enable persistence
+  - recovery preserves the original raw payload before overwrite
+  - UI editing remains available while disk writes are frozen
+
+Verification completed:
+
+- HF-001 focused tests passed
+- related bootstrap / configuration / migration tests passed
+- `PhotoMemoiOSV1` generic iOS Simulator build passed
+- `git diff --check` passed
+- global persistence-gate search found no normal-edit path that bypasses the corrupt-library gate
+
+Not manually verified in this closure:
+
+- new real-device install after HF closure
+- export/share/photo-library runtime
+
+## 2026-07-03 V1 Release Readiness Review archived
+
+The V1 Release Readiness Review for checkpoint `2218878d` has been archived:
+
+- [Docs/02_Architecture/V1_Release_Readiness_Review_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Release_Readiness_Review_2026-07-03.md)
+
+Historical note:
+
+- The decision below was the review-time decision.
+- It is superseded by the High Finding Closure Sprint and Maintenance Baseline Freeze recorded above.
+
+Decision:
+
+- V1 Functional Baseline: accepted
+- V1 long-term Maintenance Baseline: not yet accepted
+
+Why:
+
+- the current checkpoint remains suitable for continued V1 development, validation, and bug-fix work
+- the subject-library corrupt-payload recovery risk must be resolved before the checkpoint becomes a durable maintenance baseline
+- active architecture/status documentation still needs historical/current-state normalization before the next V2 or RFC slice treats it as source-of-truth input
+
 ## 2026-07-03 V1 usable device checkpoint confirmed on iPhone7
 
 The current `/Users/rui/Desktop/PhotoMemo` working tree was built, installed, launched, and accepted as the latest usable V1 version after one bug-fix pass.
@@ -16,6 +79,11 @@ Device verification:
 - user check result: accepted as the latest fixed V1 build
 
 This checkpoint confirms that the current local working tree contains required product state that is not yet represented by the remote branch. It should be preserved as the maintenance baseline before any cleanup, splitting, or branch-line simplification continues.
+
+Historical wording note:
+
+- The sentence above predated the High Finding Closure Sprint.
+- The current maintenance-baseline decision is the frozen baseline section at the top of this file.
 
 ## 2026-07-03 V1 Render Contract review baseline rebuilt in ~/Desktop/PhotoMemo
 

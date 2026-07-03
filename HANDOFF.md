@@ -1,8 +1,20 @@
 # PhotoMemo Handoff
 
+## Current Truth
+
+- `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
+- RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
+- The current V1 checkpoint is accepted as a functional baseline.
+- The V1 long-term maintenance baseline is accepted after the High Finding Closure Sprint.
+
+References:
+
+- [Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md)
+- [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
+
 ## 2026-07-03 iPhone7 usable V1 checkpoint
 
-- The current `/Users/rui/Desktop/PhotoMemo` working tree is the accepted latest V1 maintenance baseline.
+- The current `/Users/rui/Desktop/PhotoMemo` working tree is the accepted latest V1 functional baseline.
 - It was built for the connected `iPhone7`, installed, launched, and then accepted by user inspection.
 - Installed bundle id:
   - `com.serydoo.PhotoMemo.iOS`

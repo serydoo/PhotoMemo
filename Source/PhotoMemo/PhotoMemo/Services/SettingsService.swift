@@ -855,7 +855,8 @@ final class SettingsService: ObservableObject {
                     underlyingDescription:
                         String(
                             describing: error
-                        )
+                        ),
+                    rawPayload: data
                 )
             )
         }
