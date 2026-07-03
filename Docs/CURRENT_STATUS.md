@@ -1,11 +1,17 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 
 ## 2026-07-04 V1 boundary hardening follow-up
 
 After the V1 maintenance baseline freeze, a focused code-review follow-up
 closed three boundary clarity issues without reopening V1 architecture:
+
+- latest V1 source branch: `v1-checkpoint-20260702` HEAD
+- boundary hardening code checkpoint: `5f583093`
+- maintenance freeze checkpoint: `e48508e9`
+- boundary inventory:
+  - [Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md)
 
 - `V1SubjectFlowPatch` now separates state from event semantics by carrying
   explicit one-shot `V1SubjectFlowEvent` values. Reopening Subject Library
@@ -38,10 +44,11 @@ Not manually verified in this follow-up:
 - real-device reinstall
 - export/share/photo-library runtime
 
-Recommended next documentation slice:
+Recommended next review focus:
 
-- create a dedicated V1 Boundary Freeze record for state/event/persistence
-  boundaries instead of continuing ad hoc review.
+- Photo Intake boundary
+- Render Pipeline boundary
+- Export Pipeline boundary
 
 ## 2026-07-03 V1 Maintenance Baseline frozen
 
@@ -54,7 +61,7 @@ Decision:
 
 - V1 Functional Baseline: accepted
 - V1 long-term Maintenance Baseline: accepted
-- latest V1 source/package checkpoint: `e48508e9`
+- maintenance freeze checkpoint: `e48508e9`
 - functional device checkpoint: `2218878d`
 
 Current Truth:
@@ -96,7 +103,7 @@ Historical note:
 
 - The decision below was the review-time decision.
 - It is superseded by the High Finding Closure Sprint and Maintenance Baseline Freeze recorded above.
-- For packaging the complete current V1 source, use checkpoint `e48508e9`, not this review-time checkpoint.
+- For packaging the complete current V1 source, use the latest V1 source checkpoint recorded at the top of this file, not this review-time checkpoint.
 
 Decision:
 

@@ -8,7 +8,7 @@ Baseline ID: `V1-MAINTENANCE-BASELINE-2026-07-03`
 
 Functional device checkpoint: `2218878d`
 
-Maintenance/package checkpoint: `e48508e9`
+Maintenance freeze checkpoint: `e48508e9`
 
 Repository: `/Users/rui/Desktop/PhotoMemo`
 
@@ -25,7 +25,8 @@ V1 long-term Maintenance Baseline: accepted
 
 Accepted means this commit is a durable V1 maintenance starting point because
 the known High findings from the Release Readiness Review have been closed.
-Use `e48508e9` as the latest V1 source/package checkpoint.
+Later V1 source checkpoints may supersede this for packaging, but this remains
+the first accepted V1 maintenance freeze.
 
 Included:
 

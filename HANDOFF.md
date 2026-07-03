@@ -6,13 +6,16 @@
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
 - The current V1 checkpoint is accepted as a functional baseline.
 - The V1 long-term maintenance baseline is accepted after the High Finding Closure Sprint.
-- Use `e48508e9` as the latest V1 source/package checkpoint.
+- Use the HEAD of `v1-checkpoint-20260702` as the latest V1 source/package checkpoint.
+- `5f583093` is the V1 boundary hardening code checkpoint.
+- `e48508e9` remains the first accepted V1 maintenance freeze checkpoint.
 - `2218878d` remains the functional device checkpoint that preceded the maintenance freeze.
 
 References:
 
 - [Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md)
 - [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
+- [Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md)
 
 ## 2026-07-03 iPhone7 usable V1 checkpoint
 
