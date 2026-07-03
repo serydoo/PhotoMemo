@@ -2,6 +2,28 @@
 
 Last updated: 2026-07-04
 
+## 2026-07-04 V1 app icon replacement and testing IPA
+
+The V1 app icon has been replaced across the active app icon asset catalog and
+the V1 release icon asset bundle.
+
+- source image:
+  - `/Users/rui/Pictures/Photos Library.photoslibrary/resources/derivatives/F/F2648987-5AB9-4DE0-98F3-9CE4F1264043_1_105_c.jpeg`
+- updated app icon catalog:
+  - `Source/PhotoMemo/PhotoMemo/Assets.xcassets/AppIcon.appiconset`
+- updated release icon assets:
+  - `Docs/07_Releases/V1.0/IconAssets/PhotoMemo-V1-AppIcon-1024.png`
+  - `Docs/07_Releases/V1.0/IconAssets/PhotoMemo-V1-AppIcon.appiconset.zip`
+- generated testing IPA:
+  - `/Users/rui/Desktop/photomemo过程中测试版本软件/v1-7-4.ipa`
+
+Verification completed:
+
+- all app icon PNG dimensions match `Contents.json`
+- `PhotoMemoiOSV1` generic iOS Simulator build passed
+- `PhotoMemoiOSV1` generic iOS archive passed
+- `PhotoMemoiOSV1` testing IPA export passed
+
 ## 2026-07-04 V1 boundary hardening follow-up
 
 After the V1 maintenance baseline freeze, a focused code-review follow-up
