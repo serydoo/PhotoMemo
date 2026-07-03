@@ -196,6 +196,26 @@ Installed skills available for this workflow:
 - `code-review-and-quality`
 - `frontend-ui-engineering`
 
+RFC guidance:
+
+- `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md`
+  is the canonical PhotoMemo RFC reference
+- new RFCs should default to its structure and closure discipline unless there
+  is an explicit reason to diverge
+- RFC follow-up work should be driven by real architectural need, not by the
+  existence of a prewritten next step
+
+Dual-loop guidance:
+
+- PhotoMemo now operates with two distinct development loops:
+  - `Product Loop`
+  - `Engineering Loop`
+- issue intake should classify one primary source before implementation begins
+- if an item appears to belong to both loops, the problem has not yet been
+  framed clearly enough
+- Product Loop work should begin from observation and scenario
+- Engineering Loop work should begin from fact and evidence
+
 ## Release Rhythm
 
 Starting from the Memory Engine phase, prefer versioned release labels in project-facing docs and changelogs.
@@ -254,5 +274,8 @@ Preferred targets:
 
 - `Docs/CURRENT_STATUS.md`
 - `HANDOFF.md`
+
+`Docs/CURRENT_STATUS.md` should now be treated as the repository chronicle for
+major engineering events and milestones, not as a general daily dev log.
 
 If the work changes long-term repository rules, update `AGENTS.md` too.

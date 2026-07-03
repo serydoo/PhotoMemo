@@ -1,6 +1,641 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-07-02
+Repository Chronicle:
+This document records major engineering events, validated migrations, and
+repository milestones. It should prefer durable project-history entries over
+routine daily implementation notes.
+
+Last updated: 2026-07-03
+
+## 2026-07-03 V1 contract convergence milestone closed
+
+The V1 Preview contract P0 has now reached a closed architecture milestone.
+
+What changed:
+
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift`
+  - removes public `composeText`
+  - keeps `resolvedDisplayValue` private to render-model construction
+  - renames the old module-value helper to private `moduleDisplayText`
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift`
+  - routes module display through single-module render-model construction
+  - no longer calls a public preview `moduleValue` entry point
+- Updated
+  `Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterPreviewCompositionHelper.swift`
+  - renames `moduleValue` to `moduleDisplayText`
+  - keeps this helper as a configuration-center display helper rather than a
+    production render authority
+- Updated
+  `Tests/PhotoMemoTests/ArchitectureTests/ConfigurationCenterPreviewCompositionHelperTests.swift`
+  - removes ambient `ConfigurationSession()` subject dependence
+  - uses a deterministic subject fixture for smart-module display tests
+- Updated
+  `Docs/02_Architecture/V1_Render_Contract_Freeze_2026-07-03.md`
+  - adds `FC-009 Renderer output specification is the V1 visual authority`
+
+Architecture result:
+
+- `singleLineTemplateText` is locked to template-source semantics
+- `resolvedSingleLineText` and `displayText` are locked to display semantics
+- Preview behavior is now validated through render-model output
+- old external `composeText`, `resolvedDisplayValue`, and `moduleValue`
+  authority entry points are no longer available
+- Renderer is the V1 visual output specification authority for preview/export
+  fidelity, while semantic resolution remains outside renderer ownership
+
+P0 status:
+
+- Closed:
+  - Template Source / Display Text semantic freeze
+  - Draft contract convergence
+  - Preview render-model migration
+  - Compose/Resolve seam deletion
+  - public module-value authority removal
+  - V1 renderer visual-authority rule
+- Remaining work is reclassified as runtime stabilization:
+  - Bootstrap lifecycle review
+  - Export lifecycle review
+  - physical-device UI regression verification
+
+Verification:
+
+- passed:
+  - `rg -n "composeText|resolvedDisplayValue|moduleValue" Source/PhotoMemo/PhotoMemo Tests/PhotoMemoTests`
+    - no `composeText` or `moduleValue` residuals
+    - `resolvedDisplayValue` remains only as private
+      `V1PreviewCompositionEngine` internals
+  - `rg -n "singleLineTemplateText|resolvedSingleLineText" Source/PhotoMemo/PhotoMemo Tests/PhotoMemoTests`
+    - usage remains aligned with template/display semantics
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests -only-testing:PhotoMemoTests/V1PreviewSyncCoordinatorTests -only-testing:PhotoMemoTests/V1DraftOrchestrationCoordinatorTests -only-testing:PhotoMemoTests/ConfigurationCenterPreviewCompositionHelperTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationCenterPreviewCompositionHelperTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build`
+  - `git diff --check`
+- note:
+  - physical-device UI verification has not been performed in this slice
+
+## 2026-07-03 V1 minimal preview render-model consumer slice verified
+
+The second code-level stabilization slice for the V1 render-contract freeze is
+now validated.
+
+What changed:
+
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift`
+  - adds `V1PreviewRenderModel`
+  - adds `renderModel(for:context:)`
+  - keeps `composeText(for:context:)` as a compatibility wrapper over
+    `renderModel(...).displayText`
+- Updated `Source/PhotoMemo/PhotoMemo/Intent/V1PreviewIntents.swift`
+  - adds `BuildV1PreviewRenderModelIntent`
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewSyncCoordinator.swift`
+  - changes preview-sync entry points to consume `V1PreviewRenderModel`
+  - syncs preview text from `model.displayText` instead of accepting a local
+    compose closure
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift`
+  - builds preview render models before calling the preview sync coordinator
+  - centralizes this path through `previewRenderModel(for:)` and
+    `previewRenderModels(for:)`
+- Updated `Tests/PhotoMemoTests/ArchitectureTests/PreviewCompositionMigrationTests.swift`
+  - removes ambient `ConfigurationSession` dependence from the migration tests
+  - uses an explicit subject fixture and explicit empty template IDs for stable
+    bootstrap expectations
+- Updated `Tests/PhotoMemoTests/ArchitectureTests/V1PreviewSyncCoordinatorTests.swift`
+  - verifies preview sync uses render-model display text for both single-region
+    and multi-region refresh paths
+
+Why this matters:
+
+- Preview sync is now a consumer on the migrated text path instead of accepting
+  locally produced composed strings
+- the repository now has a minimal canonical seam:
+  `V1PreviewDraft -> V1PreviewRenderModel -> PreviewSyncCoordinator`
+- this reduces preview-side rendering authority without widening into Renderer
+  or Export work
+- the contract is still not fully converged: `V1PreviewCompositionEngine`
+  remains the local producer of preview render models, so the P0 dual-pipeline
+  issue is reduced but not yet closed
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1PreviewSyncCoordinatorTests -only-testing:PhotoMemoTests/V1DraftOrchestrationCoordinatorTests -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests test`
+- note:
+  - this slice validates the minimal consumer migration only
+  - Preview still owns local render-model production and remains the next
+    contract-convergence target
+
+## 2026-07-03 V1 preview compose-resolve seam removed
+
+The next V1 contract-convergence slice has now removed the old preview
+compose/resolve seam from production-facing usage.
+
+What changed:
+
+- Updated `Tests/PhotoMemoTests/ArchitectureTests/PreviewCompositionMigrationTests.swift`
+  - stops asserting preview behavior through `ComposeV1PreviewTextIntent`
+  - stops asserting token resolution through
+    `ResolveV1PreviewDisplayValueIntent`
+  - now verifies bootstrap and token behavior directly through
+    `BuildV1PreviewRenderModelIntent`
+  - explicitly checks both `templateSourceText` and `displayText`
+- Updated `Source/PhotoMemo/PhotoMemo/Intent/V1PreviewIntents.swift`
+  - removes `ComposeV1PreviewTextIntent`
+  - removes `ResolveV1PreviewDisplayValueIntent`
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift`
+  - removes the public `composeText(for:context:)` seam
+  - narrows `resolvedDisplayValue(for:context:)` to private engine internals
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift`
+  - removes the unused local `resolvedDisplayValue(for:)` helper
+
+Why this matters:
+
+- Preview no longer exposes parallel contract entry points for
+  `compose -> string` and `resolve -> string` on this migrated path
+- the remaining external preview contract is now centered on
+  `BuildV1PreviewRenderModelIntent`
+- this reduces the risk that later code reintroduces a second text-production
+  path by calling a legacy seam that no longer reflects the frozen contract
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests -only-testing:PhotoMemoTests/V1PreviewSyncCoordinatorTests -only-testing:PhotoMemoTests/V1DraftOrchestrationCoordinatorTests test`
+- note:
+  - `V1PreviewCompositionEngine` still produces `V1PreviewRenderModel`
+    locally
+  - the remaining P0 is now further narrowed to moving that last producer
+    responsibility out of Preview-owned composition code
+
+## 2026-07-03 V1 template-source vs display-text first code split
+
+The first code-level stabilization slice for the V1 render-contract freeze has
+now landed.
+
+What changed:
+
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift`
+  - adds `V1PreviewDraft.resolvedSingleLineText`
+  - keeps `singleLineTemplateText` as token-preserving template source
+- Updated `Tests/PhotoMemoTests/ArchitectureTests/V1DraftOrchestrationCoordinatorTests.swift`
+  - reclassifies the orchestration expectation against the frozen contract
+  - verifies `singleLineTemplateText == "记录{{memory_summary}}"`
+  - verifies expanded display text separately through
+    `resolvedSingleLineText`
+
+Why this matters:
+
+- the first semantic split is now enforced in code, not only in architecture
+  documents
+- the Draft orchestration regression no longer forces template source and
+  display text to share one field
+- this creates a stable base for later Preview authority reduction work
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1DraftOrchestrationCoordinatorTests -only-testing:PhotoMemoTests/V1PreviewSyncCoordinatorTests test`
+- note:
+  - this slice does not yet introduce a shared contract builder
+  - preview-local composition logic still exists and remains the next P0
+    stabilization target
+
+## 2026-07-03 V1 render contract freeze captured
+
+The repository now has an explicit V1 render-contract freeze document for the
+current stabilization phase.
+
+What landed:
+
+- Added
+  `Docs/02_Architecture/V1_Render_Contract_Freeze_2026-07-03.md`
+  - freezes `singleLineTemplateText` as template source only
+  - requires expanded preview text to use a separate field name
+  - states that Preview is not a second rendering authority
+  - states that Renderer consumes production contract, not Draft/editor state
+  - adds `Contract Immutability` as a hard rule for downstream consumers
+  - records the current `MemoryModule -> memory_summary` bridge as an interim
+    compatibility seam
+  - records `BatchConfigurationSnapshot` as a known V1 limitation rather than a
+    true semantic snapshot guarantee
+- Updated `Docs/02_Architecture/README.md`
+  - adds the new contract-freeze document to active architecture artifacts
+- Updated `Docs/DOCUMENT_INDEX.md`
+  - adds the contract-review and contract-freeze documents to current reference
+    lists
+
+Why this matters:
+
+- Draft test repair can now be evaluated against a frozen semantic baseline
+- Bootstrap and later stabilization work now have a contract reference point
+- future fixes in Preview, Renderer, and Export can be judged against one field
+  classification model instead of local interpretation
+
+Verification:
+
+- documentation-only slice
+- `git diff --check`
+
+## 2026-07-03 V1 preview-renderer-export contract review captured
+
+The repository now has a dedicated architecture review for the current V1
+preview, renderer, and export text contract.
+
+What landed:
+
+- Added
+  `Docs/02_Architecture/V1_Preview_Renderer_Export_Contract_Review_2026-07-03.md`
+  - maps the current `Preview -> Renderer -> Export` contract flow
+  - classifies the active contract layers:
+    - `V1EditorDraft`
+    - `V1PreviewDraft`
+    - `ConfigurationSnapshot`
+    - `MemoryModule`
+    - `BatchConfigurationSnapshot`
+    - `RecordCard`
+  - records the current split points as `CR-001` through `CR-004`
+  - explicitly treats the failing Draft orchestration test as a likely contract
+    symptom, not a safe first-fix target
+
+Why this matters:
+
+- the current V1 renderer/export path is cleaner than the preview/editor path
+- the main drift is now documented at the preview composition layer and the
+  persisted production snapshot layer
+- the repository has an architecture review artifact to anchor any later Draft
+  regression fix
+- future V1 stabilization can now target contract convergence instead of local
+  test patching
+
+Verification:
+
+- code-path review only
+- no build or test run was performed in this documentation slice
+
+## 2026-07-03 V1 P1 configuration simplification slice
+
+The first V1 simplification pass has now landed on the current iOS V1 path.
+
+What changed:
+
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift`
+  - keeps Memory Subject identity as the first overview line
+  - turns the current active time anchor into the main highlighted status block
+  - removes time-anchor count from the iOS overview path
+  - removes `关系类型` from the identity detail surface
+- Updated `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift`
+  - removes `关系类型` from the current configuration form
+  - removes the `对象定义` section from the current configuration form
+  - removes the `行为映射` information block
+  - removes non-decision helper copy around anchor selection
+  - renames the editable anchor title field to `自定义锚点名称`
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSTimeAnchorPresentation.swift`
+  - adds a stable date-label formatter for current-anchor presentation
+  - removes locale drift from overview anchor-date output
+- Updated `Docs/01_Product/V1_UX_Feedback_Iteration_001.md`
+  - marks Issues `2`, `3`, `4`, `5`, and `8` as implemented
+  - records Issues `6` and `7` as not present in the current V1 iOS path
+
+Why this matters:
+
+- the current V1 configuration path now spends less space on reference data and
+  more space on current state
+- the active anchor is visually promoted without introducing any new workflow
+- the simplification slice stayed inside the Product Loop and did not widen into
+  expression-language or architecture work
+- current-anchor date presentation is now deterministic across environments
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSSubjectOverviewPresenterTests -only-testing:PhotoMemoTests/V1IOSTimeAnchorPresentationTests -only-testing:PhotoMemoTests/V1IOSHomeProjectionTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build`
+  - `git diff --check`
+- note:
+  - the original presenter test failure was caused by locale-sensitive date formatting and is now fixed by a stable `yyyy.MM.dd` formatter
+  - `PhotoMemo` remains the macOS scheme; iOS build readiness is verified through `PhotoMemoiOSV1`
+  - paired physical devices are visible via `xcrun devicectl list devices`, but they were not in a connected state during this slice
+  - this slice was not manually verified in the live iPhone UI
+
+## 2026-07-03 V1 P0 time-anchor title refresh fix
+
+The first V1 UX feedback P0 issue has now been implemented and verified.
+
+What changed:
+
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSTimeAnchorPresentation.swift`
+  - adds a single presentation helper for the active time-anchor title
+  - prefers the current primary anchor title over stale subject text
+  - falls back to `session.currentTimeAnchorTitle` and then `时间锚点`
+- Updated `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift`
+  - removes the hard-coded `途途生日` editor label
+  - makes the anchor editor and the rest of the V1 view read from the same
+    time-anchor title source
+- Added `Tests/PhotoMemoTests/ArchitectureTests/V1IOSTimeAnchorPresentationTests.swift`
+  - verifies the current primary anchor title is used after Memory Subject
+    changes
+  - verifies the title falls back cleanly when no usable anchor exists
+- Updated `Docs/01_Product/V1_UX_Feedback_Iteration_001.md`
+  - marks Issue 1 as `Implemented`
+
+Why this matters:
+
+- switching Memory Subject now refreshes the time-anchor title from the active
+  anchor context instead of leaving stale subject wording on screen
+- the editor label and the applied V1 title source are now aligned
+- this resolves the first must-fix V1 usage bug without widening scope into the
+  rest of the simplification backlog
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSTimeAnchorPresentationTests -only-testing:PhotoMemoTests/V1ConfigurationApplyCoordinatorTests -only-testing:PhotoMemoTests/V1IOSHomeProjectionTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO build`
+  - `git diff --check`
+- note:
+  - the `PhotoMemo` scheme is not configured for the `test` action
+  - UI verification in this slice ran through the `PhotoMemoTests` scheme
+  - this slice was not manually verified in the live V1 UI
+
+## 2026-07-03 V1 UX Feedback Iteration 001 captured
+
+The repository now has its first dedicated V1 UX feedback iteration document.
+
+What landed:
+
+- Added `Docs/01_Product/V1_UX_Feedback_Iteration_001.md`
+  - records the first real-usage V1 feedback batch
+  - keeps UX polish work separate from architecture RFC work
+  - captures one key product signal:
+    - the Configuration Center should become lighter, not fuller
+- Updated `Docs/01_Product/README.md`
+  - clarifies that real-usage UX feedback iterations belong in the product
+    layer
+- Updated `Docs/DOCUMENT_INDEX.md`
+  - adds the new UX feedback iteration document to current product references
+
+Why this matters:
+
+- the repository now separates architecture migration from product-polish
+  feedback
+- Product Line can now advance through scenario-driven iterations while
+  Engineering Line continues through evidence-driven RFC work
+- issue intake can now classify one primary source before implementation begins
+- RFC work can stay scoped to architectural facts while UX feedback can evolve
+  through iterative product refinement
+- this begins a reusable `V1 UX Feedback / Iteration N` line instead of letting
+  usage feedback disappear into ad hoc TODO lists
+
+Verification:
+
+- documentation-only slice
+- `git diff --check`
+
+## 2026-07-03 RFC-001 closed after final validation
+
+RFC-001 is now closed.
+
+RFC-001 became the first completed architecture migration validated under the
+PhotoMemo Development Method.
+
+What changed:
+
+- Updated `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md`
+  - status is now `Closed`
+  - records:
+    - architectural fact status: `Achieved`
+    - implementation status: `Completed`
+    - verification status: `Completed`
+  - adds an RFC closing checklist
+- Updated `Docs/02_Architecture/RFC-001-Implementation-Plan.md`
+  - marks Task 4 complete
+  - marks RFC-001 completion checkpoints complete
+  - records that any further production-pipeline change now requires a new RFC
+
+Why this matters:
+
+- RFC-001 changed exactly one architectural fact and then stopped
+- final validation did not introduce any new production behavior or new design
+  scope
+- the RFC lifecycle is now governed by its own success criteria instead of by
+  opportunistic follow-up implementation
+- this is the first full
+  `Frozen Baseline -> RFC -> Implementation -> Verification -> RFC Closed`
+  engineering loop completed in the repository
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ProductionMemoryResolverTests -only-testing:PhotoMemoTests/MemoryEngineTests -only-testing:PhotoMemoTests/RecordCardBuildServiceTests -only-testing:PhotoMemoTests/ArchitectureMigrationFoundationTests -only-testing:PhotoMemoTests/PreviewMigrationTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO build`
+  - `git diff --check`
+- note:
+  - `PhotoMemo` still has no configured `test` action
+  - test execution continues through the `PhotoMemoTests` scheme
+
+## 2026-07-03 RFC-001 Task 3 variable-system projection
+
+Task 3 of RFC-001 has now landed as the compatibility bridge that lets the
+existing production variable flow consume production-carried Memory.
+
+What landed:
+
+- Updated `Source/PhotoMemo/PhotoMemo/Models/CardVariableProvider.swift`
+  - keeps the legacy `MemoryVariableProvider` path intact
+  - projects `RecordCard.memoryModule.renderedText` into the existing
+    `memorySummary` compatibility slot when production Memory is present
+  - keeps the route unchanged:
+    - `RecordCard -> CardVariableProvider -> TemplateVariableEngine -> Renderer`
+- Updated `Tests/PhotoMemoTests/MemoryEngineTests/MemoryEngineTests.swift`
+  - adds a bridge test with explicit `memoryModule` and no legacy anchor/story
+    dependency
+- Updated `Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift`
+  - verifies the production build path now projects resolved Memory into the
+    existing variable/template flow
+- Updated `Tests/PhotoMemoTests/ArchitectureTests/ArchitectureMigrationFoundationTests.swift`
+  - verifies the existing
+    `BuildPreviewIntent -> PreviewCoordinator -> RecordCardBuildService`
+    route can drive template output from projected production Memory
+
+Why this matters:
+
+- Memory now participates in the production variable system without introducing
+  a new renderer path
+- the bridge is at `CardVariableProvider`, not `Renderer`, so renderer/export
+  boundaries remain unchanged
+- RFC-001's architectural fact is now materially achieved in implementation:
+  Memory is resolved, carried by `RecordCard`, and consumed by the production
+  variable flow
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/MemoryEngineTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/RecordCardBuildServiceTests -only-testing:PhotoMemoTests/ArchitectureMigrationFoundationTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO build`
+- note:
+  - the `PhotoMemo` scheme is not configured for the `test` action
+  - test execution continues through the `PhotoMemoTests` scheme
+- no renderer, export, or second production-path changes were introduced in
+  Task 3
+
+## 2026-07-03 RFC-001 Task 2 production card-build integration
+
+Task 2 of RFC-001 has now landed on top of the production Memory seam.
+
+What landed:
+
+- Updated `Source/PhotoMemo/PhotoMemo/Models/RecordCard.swift`
+  - adds optional `memoryModule` as an additive production-carried field
+- Updated `Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift`
+  - resolves `ProductionMemoryResolver` inside the existing production card-build path
+  - attaches the resolved `MemoryModule` to `RecordCard`
+  - keeps the route unchanged:
+    - `BuildPreviewIntent -> PreviewCoordinator -> RecordCardBuildService -> RecordCard`
+- Updated `Tests/PhotoMemoTests/ExportTests/RecordCardBuildServiceTests.swift`
+  - adds verification that production card build now resolves `MemoryModule`
+  - refreshes stale template-output expectations to match the current repository truth
+- Updated `Tests/PhotoMemoTests/ArchitectureTests/ArchitectureMigrationFoundationTests.swift`
+  - verifies the existing preview/build intent route carries Memory through the same production path
+
+Why this matters:
+
+- Memory now participates in the production card-build path instead of remaining preview/configuration-only
+- RFC-001 still changes one architectural fact without creating a second production route
+- renderer and export behavior remain unchanged while production now carries Memory forward
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/RecordCardBuildServiceTests -only-testing:PhotoMemoTests/ArchitectureMigrationFoundationTests -only-testing:PhotoMemoTests/ProductionMemoryResolverTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `git diff --check`
+- note:
+  - the `PhotoMemo` scheme is not configured for the `test` action
+  - production verification uses the `PhotoMemoTests` scheme for test execution
+- no renderer, export, or production-path routing changes were introduced in Task 2
+
+## 2026-07-03 RFC-001 Task 1 production Memory seam
+
+Task 1 of RFC-001 has now landed as an additive code slice.
+
+What landed:
+
+- Added `Source/PhotoMemo/PhotoMemo/MemoryEngine/ProductionMemoryResolver.swift`
+  - introduces `ProductionMemoryPayload`
+  - introduces `ProductionMemoryResolver`
+  - resolves:
+    - `MemorySubject`
+    - `ConfigurationSnapshot`
+    - `MemoryModule`
+    from production inputs:
+    - `SelectedPhoto`
+    - `BatchConfigurationSnapshot`
+    - persisted `PersonalProfile` defaults
+- Added `Tests/PhotoMemoTests/ArchitectureTests/ProductionMemoryResolverTests.swift`
+  - verifies capture-time Memory resolution from production inputs
+  - verifies fallback resolution without preview-only state
+
+Why this matters:
+
+- production Memory now has an additive seam that does not depend on `ConfigurationSession`
+- the seam is defined before any attempt to alter the production build path
+- RFC-001 has started implementation without yet changing renderer or export behavior
+
+Verification:
+
+- passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ProductionMemoryResolverTests test`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- note:
+  - the `PhotoMemo` scheme is not configured for the `test` action
+  - production verification uses the `PhotoMemoTests` scheme for test execution
+- no renderer, export, or production-path routing changes were introduced in Task 1
+
+## 2026-07-03 RFC-001 implementation planning
+
+RFC-001 now has an implementation plan before any runtime code changes.
+
+What landed:
+
+- Added `Docs/02_Architecture/RFC-001-Implementation-Plan.md`
+  - defines the narrowest intended production seam:
+    - `BuildPreviewIntent -> PreviewCoordinator -> RecordCardBuildService -> RecordCard`
+  - keeps RFC-001 scoped to one architecture fact:
+    - Memory enters the production pipeline
+  - breaks implementation into three phases:
+    - production Memory seam
+    - compatibility projection
+    - verification
+  - ends with one explicit next step:
+    - implement Task 1 only
+
+Why this matters:
+
+- implementation still does not bypass decision artifacts
+- the team now has a concrete, verifiable path from RFC to code
+- RFC-001 remains additive and narrow instead of turning into a rewrite
+
+Verification:
+
+- documentation-only slice
+- no runtime code changed
+- plan keeps renderer, export behavior, and configuration-source unification out of scope
+
+## 2026-07-03 RFC-001 kickoff
+
+PhotoMemo V2 has now entered its first architecture-migration RFC.
+
+What landed:
+
+- Added `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md`
+  - status is `Draft`
+  - references the frozen `V1.0 Baseline`
+  - defines exactly one architectural fact change:
+    - current:
+      - `Memory participates only in configuration and preview`
+    - target:
+      - `Memory participates in the production pipeline`
+  - explicitly freezes non-goals so this RFC does not absorb renderer, formula, configuration unification, or export redesign work
+
+Why this matters:
+
+- this is the first time PhotoMemo uses its frozen engineering method to target one real architecture fact
+- the baseline now has a concrete migration consumer
+- V2 work is no longer only describing architecture; it has started changing it through a bounded RFC process
+
+Verification:
+
+- documentation-only slice
+- no runtime code changed
+- baseline remains the fact source and was not edited as part of RFC kickoff
+
+## 2026-07-03 PhotoMemo Engineering Baseline Day
+
+This slice added the first formal engineering baseline for the retained V1 line:
+
+- Added `Docs/02_Architecture/PhotoMemo_V1_Engineering_Baseline.md`
+  - freezes the observed repository state at commit `5dd162f0f0b0d8e4649ebad595bec66cf4a09e91`
+  - uses the five decision surfaces:
+    - `PFL`
+    - `Architecture`
+    - `Implementation`
+    - `Verification`
+    - `Traceability`
+  - separates `Fact Report`, `Decision`, `Open Questions`, and `Proposal`
+  - includes an evidence index, confidence summary, and definition of done
+
+Why this matters:
+
+- it establishes the first durable engineering reference point for V1
+- it records the real current-state relationship between the legacy production path and the newer Memory/Configuration Center path
+- it creates a stable citation target for future RFC, ADR, and migration work
+
+Verification:
+
+- documentation-only slice
+- no runtime code was changed during the assessment
+- the baseline explicitly records the observed commit, branch, and assessment window
 
 ## 2026-07-02 Repository line cleanup baseline
 
@@ -8743,3 +9378,56 @@ Next three most valuable areas after this slice:
 1. selective access-control tightening after the refactor settles
 2. badge/output/workspace bindings that can move beside their related panels
 3. manual regression coverage for caret routing, slot switching, and export feedback now that the coordinator shell is structurally stable
+
+## 2026-07-03 Project-local external skills for RFC-001 and V1 follow-up work
+
+This repository now includes an additional set of project-local skills under:
+
+- `/Users/rui/Desktop/PhotoMemo-main-archive-20260702/.codex/skills`
+
+Newly added external skills:
+
+- `karpathy-guidelines`
+- `verification-loop`
+- `code-reviewer`
+- `swift-actor-persistence`
+- `swift-protocol-di-testing`
+- `architecture-decision-records`
+
+Why these were added:
+
+- `karpathy-guidelines`
+  - reinforces surgical, low-assumption, minimum-scope implementation behavior
+- `verification-loop`
+  - adds a stronger end-of-slice verification discipline around build, test, and diff review
+- `code-reviewer`
+  - adds a reusable code-review pass for Swift-heavy changes and migration-risk scanning
+- `swift-actor-persistence`
+  - provides useful local-first persistence patterns for actor-safe Swift code
+- `swift-protocol-di-testing`
+  - provides practical DI/testing patterns for file, service, and external-boundary seams
+- `architecture-decision-records`
+  - supports documenting V1/V2 boundary and RFC-level architecture decisions
+
+Why this matters now:
+
+- current work is no longer only UI cleanup
+- the repository is now in additive architecture migration through `RFC-001`
+- the most useful new support is not more generic feature ideation, but:
+  - tighter execution discipline
+  - stronger verification
+  - better Swift seam testability
+  - clearer architecture traceability
+
+Project guidance added with this installation:
+
+- see `.codex/skills/README.md`
+- it maps the current skill set to:
+  - RFC / architecture migration work
+  - SwiftUI/editor-surface work
+  - review and release-closing work
+
+Operational note:
+
+- the skills are present on disk now
+- an already-open Codex session may need a restart or fresh session before all newly added project-local skills appear in the runtime registry

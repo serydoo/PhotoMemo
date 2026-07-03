@@ -79,40 +79,10 @@ struct MemorySubjectEditorView: View {
                 }
 
                 InspectorSectionView(
-                    "定义",
-                    systemImage: "text.alignleft"
-                ) {
-                    definitionEditor
-                }
-
-                InspectorSectionView(
                     "时间锚点",
                     systemImage: "calendar.badge.clock"
                 ) {
                     timeWindowEditor
-                }
-
-                InspectorSectionView(
-                    "行为映射",
-                    systemImage: "switch.2"
-                ) {
-                    InspectorPropertyRow(
-                        title: "当前生效时间",
-                        value:
-                            subject.primaryTimeAnchor?.title
-                            ?? subject.behavior.primaryAnchor,
-                        systemImage: "flag.fill"
-                    )
-                    InspectorPropertyRow(
-                        title: "图标策略",
-                        value: subject.behavior.iconStrategy.displayTitle,
-                        systemImage: "person.crop.circle.fill"
-                    )
-                    InspectorPropertyRow(
-                        title: "徽标策略",
-                        value: subject.behavior.badgeStrategy.displayTitle,
-                        systemImage: "camera.fill"
-                    )
                 }
 
                 Button {
@@ -193,32 +163,12 @@ struct MemorySubjectEditorView: View {
             )
 
             labeledTextField(
-                "关系类型",
-                text: $relationshipRole,
-                systemImage: "person.2",
-                focus: .relationshipRole,
-                subjectSource: .relationshipRole
-            )
-
-            labeledTextField(
                 "关系备注",
                 text: $relationshipLabel,
                 systemImage: "heart.text.square",
                 focus: .relationshipLabel,
                 subjectSource: .relationshipLabel
             )
-
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 16)
-
-                Text("记忆引擎默认使用当前勾选的一行作为表述主体；如果没有可用值，会自动回退到显示名称。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
     }
 
@@ -268,27 +218,6 @@ struct MemorySubjectEditorView: View {
         .configurationPanelChrome(isSelected: true)
     }
 
-    private var definitionEditor: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("对象定义")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            TextField(
-                "补充这个记忆对象的定义",
-                text: $definition,
-                axis: .vertical
-            )
-                .font(.subheadline)
-                .textFieldStyle(.plain)
-                .lineLimit(1...4)
-                .focused($focusedField, equals: .definition)
-                .configurationFieldChrome(
-                    isActive: focusedField == .definition
-                )
-        }
-    }
-
     private var timeWindowEditor: some View {
         VStack(alignment: .leading, spacing: 12) {
             if timeAnchors.isEmpty {
@@ -296,19 +225,6 @@ struct MemorySubjectEditorView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("当前生效时间锚点")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.primary)
-
-                    Text("选择当前真正参与记忆表达和后台计算的时间锚点。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(12)
-                .configurationPanelChrome(isSelected: true)
-
                 HStack(spacing: 8) {
                     Picker(
                         "当前生效时间锚点",
@@ -364,7 +280,7 @@ struct MemorySubjectEditorView: View {
                     .configurationPanelChrome()
 
                     labeledTextField(
-                        "名称",
+                        "自定义锚点名称",
                         text: anchorBinding.title,
                         systemImage: "tag",
                         focus: .timeTitle

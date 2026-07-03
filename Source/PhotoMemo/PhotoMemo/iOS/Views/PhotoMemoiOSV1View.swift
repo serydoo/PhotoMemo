@@ -210,9 +210,7 @@ struct PhotoMemoiOSV1View: View {
         V1PreviewSyncCoordinator {
         V1PreviewSyncCoordinator(
             session: session,
-            coordinator: previewCoordinator,
-            context: previewCompositionContext,
-            engine: previewCompositionEngine
+            coordinator: previewCoordinator
         )
     }
 
@@ -775,7 +773,7 @@ struct PhotoMemoiOSV1View: View {
             IOSCompactEntryDisclosureRow(
                 title: "时间锚点",
                 subtitle: timeAnchorTitle,
-                value: moduleValue(.smartTime),
+                value: moduleDisplayText(.smartTime),
                 detail: birthdaySummaryText,
                 systemImage: "calendar.badge.clock",
                 showsDivider: false,
@@ -850,7 +848,7 @@ struct PhotoMemoiOSV1View: View {
     private var anchorEditorContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             DatePicker(
-                "途途生日",
+                timeAnchorTitle,
                 selection: $birthdayDate,
                 displayedComponents: [.date]
             )
@@ -869,7 +867,7 @@ struct PhotoMemoiOSV1View: View {
                         .textCase(.uppercase)
 
                     Text(
-                        moduleValue(
+                        moduleDisplayText(
                             .smartTime
                         )
                     )
@@ -1106,7 +1104,7 @@ struct PhotoMemoiOSV1View: View {
                                             .foregroundStyle(.tertiary)
                                             .textCase(.uppercase)
 
-                                        Text(moduleValue(module))
+                                        Text(moduleDisplayText(module))
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                             .lineLimit(1)
@@ -1317,9 +1315,12 @@ struct PhotoMemoiOSV1View: View {
             .isEmpty {
             previewSyncCoordinator
                 .refreshDynamicPreview(
-                    draftsByRegion:
-                        application
-                        .previewDraftsByRegion
+                    modelsByRegion:
+                        previewRenderModels(
+                            for:
+                                application
+                                .previewDraftsByRegion
+                        )
                 )
         }
     }
@@ -1328,12 +1329,15 @@ struct PhotoMemoiOSV1View: View {
         previewSyncCoordinator
             .refreshPreview(
                 for: region,
-                draft:
-                    V1DraftBridge
-                    .previewDraft(
-                        from: draft(
-                            for: region
-                        )
+                model:
+                    previewRenderModel(
+                        for:
+                            V1DraftBridge
+                            .previewDraft(
+                                from: draft(
+                                    for: region
+                                )
+                            )
                     )
             )
     }
@@ -1341,18 +1345,57 @@ struct PhotoMemoiOSV1View: View {
     private func refreshDynamicPreview() {
         previewSyncCoordinator
             .refreshDynamicPreview(
-                draftsByRegion:
-                    V1DraftOrchestrationCoordinator
-                    .dynamicPreviewDrafts(
+                modelsByRegion:
+                    previewRenderModels(
                         for:
-                            CardRegion
-                            .memoryCardRegions,
-                        viewState:
-                            draftOrchestrationState,
-                        makeDefaultDraft:
-                            makeDefaultDraft
+                            V1DraftOrchestrationCoordinator
+                            .dynamicPreviewDrafts(
+                                for:
+                                    CardRegion
+                                    .memoryCardRegions,
+                                viewState:
+                                    draftOrchestrationState,
+                                makeDefaultDraft:
+                                    makeDefaultDraft
+                            )
                     )
             )
+    }
+
+    private func previewRenderModels(
+        for draftsByRegion: [CardRegion: V1PreviewDraft]
+    ) -> [CardRegion: V1PreviewRenderModel] {
+        Dictionary(
+            uniqueKeysWithValues:
+                draftsByRegion.map {
+                    region, draft in
+                    (
+                        region,
+                        previewRenderModel(for: draft)
+                    )
+                }
+        )
+    }
+
+    private func previewRenderModel(
+        for draft: V1PreviewDraft
+    ) -> V1PreviewRenderModel {
+        switch BuildV1PreviewRenderModelIntent(
+            draft: draft,
+            context: previewCompositionContext,
+            engine: previewCompositionEngine
+        )
+        .executeSynchronously() {
+        case .success(let model):
+            return model
+        case .failure:
+            return V1PreviewRenderModel(
+                templateSourceText:
+                    draft.singleLineTemplateText,
+                displayText:
+                    draft.resolvedSingleLineText
+            )
+        }
     }
 
     private func previewText(
@@ -1413,7 +1456,7 @@ struct PhotoMemoiOSV1View: View {
             ) else {
             return .token(
                 module.title,
-                value: moduleValue(module),
+                value: moduleDisplayText(module),
                 templateValue:
                     module.rendererToken,
                 systemImage:
@@ -1550,21 +1593,14 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var timeAnchorTitle: String {
-        let subjectName =
-            alignedSelectedSubject()?
-            .resolvedExpressionSubjectText
-            ?? session.state.selectedSubject?
-            .resolvedExpressionSubjectText
-            ?? "记忆对象"
-
-        let trimmedName =
-            subjectName.trimmingCharacters(
-                in: .whitespacesAndNewlines
+        V1IOSTimeAnchorPresentation
+            .title(
+                subject:
+                    alignedSelectedSubject()
+                    ?? session.state.selectedSubject,
+                fallback:
+                    session.currentTimeAnchorTitle
             )
-
-        return trimmedName.isEmpty
-            ? "记忆对象"
-            : trimmedName
     }
 
     @MainActor
@@ -1720,28 +1756,6 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private func resolvedDisplayValue(
-        for item: V1ContentItem
-    ) -> String {
-        switch ResolveV1PreviewDisplayValueIntent(
-            item:
-                V1DraftBridge
-                .previewItem(
-                    from: item
-                ),
-            context:
-                previewCompositionContext,
-            engine:
-                previewCompositionEngine
-        )
-        .executeSynchronously() {
-        case .success(let value):
-            return value
-        case .failure:
-            return item.displayValue
-        }
-    }
-
     private func modules(for region: CardRegion) -> [IOSInsertableModule] {
         V1ModuleLibraryPresenter
             .modules(
@@ -1760,7 +1774,7 @@ struct PhotoMemoiOSV1View: View {
             )
     }
 
-    private func moduleValue(
+    private func moduleDisplayText(
         _ module: IOSInsertableModule
     ) -> String {
         guard let previewModule =
@@ -1770,12 +1784,22 @@ struct PhotoMemoiOSV1View: View {
             return module.title
         }
 
-        return previewCompositionEngine
-            .moduleValue(
-                previewModule,
-                context:
-                    previewCompositionContext
+        let draft =
+            V1PreviewDraft(
+                items: [
+                    previewCompositionEngine
+                        .makeModuleItem(
+                            previewModule,
+                            context:
+                                previewCompositionContext
+                        )
+                ]
             )
+
+        return previewRenderModel(
+            for: draft
+        )
+        .displayText
     }
 
     private var previewCompositionContext:

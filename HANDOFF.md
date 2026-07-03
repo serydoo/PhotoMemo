@@ -1,5 +1,123 @@
 # PhotoMemo Handoff
 
+## 2026-07-03 V1 contract convergence closed
+
+- 这一轮把 V1 Preview Contract P0 正式收成一个可验证里程碑。
+- 已完成的代码收口：
+  - [V1PreviewCompositionEngine.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift)
+    - public `composeText` 已删除
+    - `resolvedDisplayValue` 只保留为 private 内部实现
+    - 旧 `moduleValue` 改为 private `moduleDisplayText`
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - 模块显示值现在通过单模块 `V1PreviewRenderModel.displayText`
+      获得
+    - 外层不再直接调用 preview engine 的模块值生产入口
+  - [ConfigurationCenterPreviewCompositionHelper.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterPreviewCompositionHelper.swift)
+    - `moduleValue` 重命名为 `moduleDisplayText`
+  - [ConfigurationCenterPreviewCompositionHelperTests.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Tests/PhotoMemoTests/ArchitectureTests/ConfigurationCenterPreviewCompositionHelperTests.swift)
+    - 去掉 `ConfigurationSession()` 环境态依赖
+    - 改为显式 deterministic subject fixture
+- 已完成的架构冻结：
+  - [V1_Render_Contract_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/02_Architecture/V1_Render_Contract_Freeze_2026-07-03.md)
+    - 新增 `FC-009 Renderer output specification is the V1 visual authority`
+    - 明确 Renderer 是 V1 预览/输出 fidelity 的视觉规范权威
+    - 同时明确 Renderer 不拥有 Draft、Token、Memory Subject、Metadata
+      语义计算，也不抢未来 V2 Layout Engine 职责
+- 当前 P0 判断：
+  - Contract 类 P0 已关闭
+  - 剩余工作重新分类为 Runtime stabilization：
+    - Bootstrap 生命周期审查
+    - Export 生命周期审查
+    - 真机 UI 回归验证
+- 已验证：
+  - 旧标识搜索：
+    - `composeText` 无残留
+    - `moduleValue` 无残留
+    - `resolvedDisplayValue` 只剩 private engine internals
+  - 语义字段搜索：
+    - `singleLineTemplateText` 仍是 template source
+    - `resolvedSingleLineText` 仍是 display text
+  - 测试通过：
+    - `PreviewCompositionMigrationTests`
+    - `V1PreviewSyncCoordinatorTests`
+    - `V1DraftOrchestrationCoordinatorTests`
+    - `ConfigurationCenterPreviewCompositionHelperTests`
+  - iOS build 通过：
+    - `PhotoMemoiOSV1`
+  - `git diff --check` 通过
+- 未验证：
+  - 真机 UI 手动回归还没有跑
+
+下一步建议：
+
+1. Bootstrap lifecycle review
+2. Export lifecycle review
+3. 真机 UI 回归
+4. 再决定是否打 tag / commit 作为 V1 Contract Convergence checkpoint
+
+## 2026-07-03 V1 preview compose-resolve seam deletion
+
+- 这一刀继续严格沿着 `Contract Convergence` 推进，没有扩到 renderer /
+  export / bootstrap 收尾。
+- 已完成：
+  - [PreviewCompositionMigrationTests.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Tests/PhotoMemoTests/ArchitectureTests/PreviewCompositionMigrationTests.swift)
+    - 不再通过 `ComposeV1PreviewTextIntent` 或
+      `ResolveV1PreviewDisplayValueIntent` 断言行为
+    - 改为直接断言 `BuildV1PreviewRenderModelIntent`
+      产出的：
+      - `templateSourceText`
+      - `displayText`
+  - [V1PreviewIntents.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Intent/V1PreviewIntents.swift)
+    - 已删除：
+      - `ComposeV1PreviewTextIntent`
+      - `ResolveV1PreviewDisplayValueIntent`
+  - [V1PreviewCompositionEngine.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift)
+    - 已删除 public `composeText(for:context:)`
+    - `resolvedDisplayValue(for:context:)` 已收回为 private
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - 已删除无调用的本地 `resolvedDisplayValue(for:)` helper
+- 验证结果：
+  - `rg` 已确认生产/测试侧不再有
+    `ComposeV1PreviewTextIntent` /
+    `ResolveV1PreviewDisplayValueIntent` 外部调用残留
+  - 通过：
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests -only-testing:PhotoMemoTests/V1PreviewSyncCoordinatorTests -only-testing:PhotoMemoTests/V1DraftOrchestrationCoordinatorTests test`
+- 当前剩余 P0：
+  - Preview 的外部旧 seam 已经切掉
+  - 但 `V1PreviewCompositionEngine` 仍然是 `V1PreviewRenderModel` 的本地 producer
+  - 下一刀最值的是继续把 producer ownership 往更 canonical 的
+    contract builder / factory 方向迁，直到 Preview 真正只剩 consumer 身份
+
+## 2026-07-03 V1 preview render-model consumer validation
+
+- 这一轮继续严格停留在 V1 render-contract convergence，不扩到
+  bootstrap / renderer / export。
+- 已确认上一轮最小迁移切片成立：
+  - `singleLineTemplateText` 继续只代表 template source
+  - `resolvedSingleLineText` 继续承担 expanded display 语义
+  - `V1PreviewRenderModel` 已成为 PreviewSync 这一条路径上的消费合同
+- 已验证的代码边界：
+  - [V1PreviewCompositionEngine.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift)
+    - 提供 `renderModel(for:context:)`
+    - `composeText` 只是兼容包装
+  - [V1PreviewSyncCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewSyncCoordinator.swift)
+    - 单区和多区刷新现在都消费 `V1PreviewRenderModel.displayText`
+  - [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+    - 先构建 model，再刷新 preview
+  - [PreviewCompositionMigrationTests.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Tests/PhotoMemoTests/ArchitectureTests/PreviewCompositionMigrationTests.swift)
+    - 已去掉依赖环境态的 `ConfigurationSession()` 引用，改为确定性 subject fixture
+- 本轮通过：
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1PreviewSyncCoordinatorTests -only-testing:PhotoMemoTests/V1DraftOrchestrationCoordinatorTests -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests test`
+- 当前真实状态：
+  - P0 没有完全关闭
+  - PreviewSync 已从“接收 compose 结果”变成“消费 render model”
+  - 但 `V1PreviewCompositionEngine` 仍然本地生产 preview model，所以 Preview 还没有完全退出 producer 角色
+- 下一刀最合理的目标仍然是：
+  1. 扩大 `Canonical RenderModel` 的字段定义
+  2. 逐步让更多 Preview path 直接消费它
+  3. 每迁移一块就删除对应的本地 `composeText` / `resolvedDisplayValue` 权威分支
+  4. 再回头评估 Draft / Bootstrap 收口
+
 ## 2026-07-02 repository line cleanup baseline
 
 - 这一轮没有做旧文档大迁移，也没有开始复制版本目录。

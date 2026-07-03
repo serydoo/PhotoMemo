@@ -10,11 +10,22 @@ final class RecordCardBuildService {
 
     private let defaults: UserDefaults
 
+#if !PHOTOMEMO_SHARE_EXTENSION
+    private let productionMemoryResolver:
+        ProductionMemoryResolver
+#endif
+
     init(
         defaults: UserDefaults =
             PhotoMemoSharedContainer.sharedUserDefaults
     ) {
         self.defaults = defaults
+#if !PHOTOMEMO_SHARE_EXTENSION
+        self.productionMemoryResolver =
+            ProductionMemoryResolver(
+                defaults: defaults
+            )
+#endif
     }
 
     func buildCard(
@@ -75,7 +86,15 @@ private extension RecordCardBuildService {
                 )
             }
 
-        return RecordCard(
+#if !PHOTOMEMO_SHARE_EXTENSION
+        let memoryPayload =
+            productionMemoryResolver.resolve(
+                photo: selectedPhoto,
+                configuration: configuration
+            )
+#endif
+
+        var card = RecordCard(
             template: configuration.template,
             metadata: selectedPhoto.metadata,
             context: buildContext(
@@ -92,6 +111,13 @@ private extension RecordCardBuildService {
             ),
             exportDescriptionOverride: nil
         )
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+        card.memoryModule =
+            memoryPayload.module
+#endif
+
+        return card
     }
 
     func resolvedTitle(

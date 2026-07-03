@@ -85,7 +85,7 @@ struct ConfigurationCenterPreviewCompositionHelper {
         currentModules.append(
             IOSInsertedModule(
                 title: module.title,
-                value: moduleValue(module),
+                value: moduleDisplayText(module),
                 systemImage: module.systemImage
             )
         )
@@ -172,7 +172,7 @@ struct ConfigurationCenterPreviewCompositionHelper {
         )
     }
 
-    func moduleValue(
+    func moduleDisplayText(
         _ module: IOSInsertableModule
     ) -> String {
         switch module {

@@ -6,20 +6,20 @@ import Testing
 @Suite("V1 preview sync coordinator")
 struct V1PreviewSyncCoordinatorTests {
 
-    @Test("refreshPreview composes text before syncing a single region")
-    func refreshPreviewComposesTextBeforeSyncingASingleRegion() {
-        let draft =
-            V1PreviewDraft(
-                items: [.text("记录")]
+    @Test("refreshPreview syncs the render model display text for a single region")
+    func refreshPreviewSyncsTheRenderModelDisplayTextForASingleRegion() {
+        let model =
+            V1PreviewRenderModel(
+                templateSourceText:
+                    "记录{{memory_summary}}",
+                displayText:
+                    "记录iPhone 17 Pro Max"
             )
         var receivedRegion: CardRegion?
         var receivedText = ""
 
         let coordinator =
             V1PreviewSyncCoordinator(
-                composeText: { _ in
-                    "记录iPhone 17 Pro Max"
-                },
                 syncRegionPreview: { region, text in
                     receivedRegion = region
                     receivedText = text
@@ -30,22 +30,19 @@ struct V1PreviewSyncCoordinatorTests {
 
         coordinator.refreshPreview(
             for: .slotA,
-            draft: draft
+            model: model
         )
 
         #expect(receivedRegion == .slotA)
         #expect(receivedText == "记录iPhone 17 Pro Max")
     }
 
-    @Test("refreshDynamicPreview composes each region and syncs them together")
-    func refreshDynamicPreviewComposesEachRegionAndSyncsThemTogether() {
+    @Test("refreshDynamicPreview syncs each region using render model display text")
+    func refreshDynamicPreviewSyncsEachRegionUsingRenderModelDisplayText() {
         var receivedPreviews: [CardRegion: String] = [:]
 
         let coordinator =
             V1PreviewSyncCoordinator(
-                composeText: { draft in
-                    draft.singleLineTemplateText.uppercased()
-                },
                 syncRegionPreview: { _, _ in },
                 syncRegionPreviews: {
                     receivedPreviews = $0
@@ -54,9 +51,15 @@ struct V1PreviewSyncCoordinatorTests {
             )
 
         coordinator.refreshDynamicPreview(
-            draftsByRegion: [
-                .slotA: .init(items: [.text("记录")]),
-                .slotD: .init(items: [.text("记忆")])
+            modelsByRegion: [
+                .slotA: .init(
+                    templateSourceText: "记录",
+                    displayText: "记录"
+                ),
+                .slotD: .init(
+                    templateSourceText: "{{memory_summary}}",
+                    displayText: "记忆"
+                )
             ]
         )
 
@@ -74,7 +77,6 @@ struct V1PreviewSyncCoordinatorTests {
     func previewTextDelegatesToTheConfiguredLoader() {
         let coordinator =
             V1PreviewSyncCoordinator(
-                composeText: { _ in "" },
                 syncRegionPreview: { _, _ in },
                 syncRegionPreviews: { _ in },
                 loadPreviewText: {

@@ -400,7 +400,8 @@ private extension CardVariableProvider {
         from card: RecordCard
     ) -> MemoryCalculationResult {
 
-        MemoryVariableProvider().build(
+        let legacyValues =
+            MemoryVariableProvider().build(
             from: MemoryContext(
                 metadata: card.metadata,
                 anchor: card.anchor,
@@ -408,5 +409,27 @@ private extension CardVariableProvider {
                 story: card.story
             )
         )
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+        let projectedSummary =
+            card.memoryModule?
+            .renderedText
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        if !projectedSummary.isEmpty {
+            return MemoryCalculationResult(
+                daysSince: legacyValues.daysSince,
+                yearsSince: legacyValues.yearsSince,
+                monthsSince: legacyValues.monthsSince,
+                weeksSince: legacyValues.weeksSince,
+                babyAge: legacyValues.babyAge,
+                memorySummary: projectedSummary
+            )
+        }
+#endif
+
+        return legacyValues
     }
 }

@@ -3,9 +3,6 @@ import Foundation
 
 struct V1PreviewSyncCoordinator {
 
-    private let composeText:
-        (V1PreviewDraft) -> String
-
     private let syncRegionPreview:
         (CardRegion, String) -> Void
 
@@ -16,13 +13,10 @@ struct V1PreviewSyncCoordinator {
         (CardRegion) -> String
 
     init(
-        composeText: @escaping (V1PreviewDraft) -> String,
         syncRegionPreview: @escaping (CardRegion, String) -> Void,
         syncRegionPreviews: @escaping ([CardRegion: String]) -> Void,
         loadPreviewText: @escaping (CardRegion) -> String
     ) {
-        self.composeText =
-            composeText
         self.syncRegionPreview =
             syncRegionPreview
         self.syncRegionPreviews =
@@ -33,36 +27,9 @@ struct V1PreviewSyncCoordinator {
 
     init(
         session: ConfigurationSession,
-        coordinator: PreviewCoordinator?,
-        context: V1PreviewCompositionContext,
-        engine: V1PreviewCompositionEngine
+        coordinator: PreviewCoordinator?
     ) {
         self.init(
-            composeText: {
-                draft in
-                switch ComposeV1PreviewTextIntent(
-                    draft: draft,
-                    context: context,
-                    engine: engine
-                )
-                .executeSynchronously() {
-                case .success(let text):
-                    return text
-                case .failure:
-                    return InlineContentTextComposer.compose(
-                        draft.items.map { item in
-                            InlineContentTextComposer.Piece(
-                                kind:
-                                    Self.inlineComposerKind(
-                                        for: item.kind
-                                    ),
-                                value:
-                                    item.displayValue
-                            )
-                        }
-                    )
-                }
-            },
             syncRegionPreview: {
                 region, text in
                 if let coordinator {
@@ -132,26 +99,26 @@ struct V1PreviewSyncCoordinator {
 
     func refreshPreview(
         for region: CardRegion,
-        draft: V1PreviewDraft
+        model: V1PreviewRenderModel
     ) {
         syncRegionPreview(
             region,
-            composeText(draft)
+            model.displayText
         )
     }
 
     func refreshDynamicPreview(
-        draftsByRegion:
-            [CardRegion: V1PreviewDraft]
+        modelsByRegion:
+            [CardRegion: V1PreviewRenderModel]
     ) {
         let previews =
             Dictionary(
                 uniqueKeysWithValues:
-                    draftsByRegion.map {
-                        region, draft in
+                    modelsByRegion.map {
+                        region, model in
                         (
                             region,
-                            composeText(draft)
+                            model.displayText
                         )
                     }
             )
@@ -165,21 +132,6 @@ struct V1PreviewSyncCoordinator {
         for region: CardRegion
     ) -> String {
         loadPreviewText(region)
-    }
-
-    private static func inlineComposerKind(
-        for kind: V1PreviewDraftItem.Kind
-    ) -> InlineContentTextComposer.PieceKind {
-        switch kind {
-        case .text:
-            return .text
-        case .token:
-            return .token
-        case .separator:
-            return .separator
-        case .lineBreak:
-            return .lineBreak
-        }
     }
 }
 #endif

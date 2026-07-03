@@ -108,7 +108,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.leftBottom })?.value
-            == "拍摄于2026.04.11 10:13:05"
+            == "记录于2026.04.11 10:13:05"
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightTop })?.value
@@ -116,7 +116,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "途途今天9个月14天啦！"
+            == "途途今天9个月14天啦"
         )
     }
 
@@ -210,6 +210,224 @@ struct RecordCardBuildServiceTests {
 
         #expect(card.exportDescriptionOverride == "My export note")
         #expect(CardVariableProvider.exportDescription(from: card) == "My export note")
+    }
+
+    @Test("Resolves memory module during production card build")
+    func resolvesMemoryModuleDuringProductionCardBuild() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.MemoryModule.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let profile =
+            PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "妈妈",
+                babyNickname: "乐乐"
+            )
+        let profileData =
+            try #require(
+                try? JSONEncoder().encode(profile)
+            )
+        defaults.set(
+            profileData,
+            forKey: "photomemo.personalProfile"
+        )
+
+        let captureDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+        let birthday =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 5,
+                        day: 15
+                    )
+                )
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL: URL(
+                    fileURLWithPath: "/tmp/memory-build.jpg"
+                ),
+                image: NSImage(
+                    size: NSSize(
+                        width: 100,
+                        height: 100
+                    )
+                ),
+                metadata: PhotoMetadata(
+                    captureDate: captureDate,
+                    deviceBrand: "Apple",
+                    deviceModel: "iPhone 17 Pro",
+                    imageWidth: 4032,
+                    imageHeight: 3024
+                )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: .template1.normalizedForEditing,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "生日",
+                    date: birthday,
+                    isCountdown: false
+                ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService(
+                defaults: defaults
+            )
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+
+        let module =
+            try #require(
+                card.memoryModule
+            )
+        #expect(module.sourceAnchor?.title == "生日")
+        #expect(module.renderedText.contains("乐乐"))
+    }
+
+    @Test("Projects resolved memory into production variable context")
+    func projectsResolvedMemoryIntoProductionVariableContext() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.MemoryProjection.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let profile =
+            PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "妈妈",
+                babyNickname: "乐乐"
+            )
+        let profileData =
+            try #require(
+                try? JSONEncoder().encode(profile)
+            )
+        defaults.set(
+            profileData,
+            forKey: "photomemo.personalProfile"
+        )
+
+        let captureDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL: URL(
+                    fileURLWithPath: "/tmp/memory-projection.jpg"
+                ),
+                image: NSImage(
+                    size: NSSize(
+                        width: 100,
+                        height: 100
+                    )
+                ),
+                metadata: PhotoMetadata(
+                    captureDate: captureDate,
+                    deviceBrand: "Apple",
+                    deviceModel: "iPhone 17 Pro",
+                    imageWidth: 4032,
+                    imageHeight: 3024
+                )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: memorySummaryTemplate(),
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService(
+                defaults: defaults
+            )
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let module =
+            try #require(card.memoryModule)
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+        let blocks =
+            CardTextBlockEngine()
+            .build(from: card)
+
+        #expect(
+            context[MetadataContext.Key.memorySummary]
+            == module.renderedText
+        )
+        #expect(
+            blocks.first(where: { $0.area == .rightBottom })?.value
+            == module.renderedText
+        )
+        #expect(module.renderedText == "乐乐")
     }
 
     @MainActor
@@ -457,6 +675,31 @@ struct RecordCardBuildServiceTests {
 }
 
 private extension RecordCardBuildServiceTests {
+
+    func memorySummaryTemplate() -> Template {
+
+        Template(
+            preset: .template1,
+            name: "Memory Summary",
+            leftTopArea: .leftTop,
+            leftBottomArea: .leftBottom,
+            rightTopArea: TemplateArea(
+                name: "Right Top",
+                items: [.cameraSummary]
+            ),
+            rightBottomArea: TemplateArea(
+                name: "Right Bottom",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "Memory Summary",
+                        value: "{{memory_summary}}"
+                    )
+                ]
+            ),
+            badgeArea: .badge
+        ).normalizedForEditing
+    }
 
     func temporaryExportFolder() -> URL {
 

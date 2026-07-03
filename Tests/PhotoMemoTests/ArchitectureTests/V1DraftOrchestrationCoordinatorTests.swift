@@ -84,6 +84,12 @@ struct V1DraftOrchestrationCoordinatorTests {
             application.previewDraftsByRegion[
                 .slotA
             ]?.singleLineTemplateText
+            == "记录{{memory_summary}}"
+        )
+        #expect(
+            application.previewDraftsByRegion[
+                .slotA
+            ]?.resolvedSingleLineText
             == "记录途途今天11个月28天啦！"
         )
     }

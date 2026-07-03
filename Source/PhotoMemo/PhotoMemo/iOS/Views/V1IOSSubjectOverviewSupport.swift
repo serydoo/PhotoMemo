@@ -55,13 +55,8 @@ enum V1IOSSubjectOverviewPresenter {
                     ?? currentTimeAnchorTitle
                 ),
             anchorDateLabel:
-                anchor?.date.formatted(
-                    .dateTime
-                        .year()
-                        .month()
-                        .day()
-                )
-                ?? "未设置",
+                V1IOSTimeAnchorPresentation
+                .dateLabel(anchor?.date),
             anchorCountLabel:
                 "\(subject?.timeAnchors.count ?? 0) 个时间锚点",
             anchorDescription:
@@ -438,30 +433,22 @@ struct V1IOSSubjectOverviewCard: View {
 
     var body: some View {
         V1CardSurface(title: "概览") {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 overviewRow(
                     title: "当前记忆对象",
-                    value: presentation.title
+                    value: presentation.title,
+                    detail: presentation.subtitle
                 )
-                overviewRow(
-                    title: "记录身份",
-                    value: presentation.subtitle
-                )
-                overviewRow(
-                    title: "当前生效时间锚点",
-                    value: presentation.anchorTitle
-                )
-                overviewRow(
-                    title: "锚点日期",
-                    value: presentation.anchorDateLabel
-                )
+
+                activeAnchorHighlight
             }
         }
     }
 
     private func overviewRow(
         title: String,
-        value: String
+        value: String,
+        detail: String? = nil
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(title)
@@ -470,10 +457,45 @@ struct V1IOSSubjectOverviewCard: View {
 
             Spacer(minLength: 0)
 
-            Text(value)
-                .font(.subheadline.weight(.medium))
-                .multilineTextAlignment(.trailing)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(value)
+                    .font(.subheadline.weight(.medium))
+                    .multilineTextAlignment(.trailing)
+
+                if let detail,
+                   !detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
         }
+    }
+
+    private var activeAnchorHighlight: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("当前生效时间锚点")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            Text(presentation.anchorTitle)
+                .font(.headline.weight(.semibold))
+
+            Text(presentation.anchorDateLabel)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .fill(Color(.secondarySystemBackground))
+        )
     }
 }
 
@@ -500,15 +522,6 @@ private struct V1IOSSubjectIdentitySection: View {
                         normalized(
                             subject?
                             .identity.shortName
-                        )
-                        ?? "未设置"
-                )
-                identityRow(
-                    title: "身份类型",
-                    value:
-                        normalized(
-                            subject?
-                            .relationship.role
                         )
                         ?? "未设置"
                 )
@@ -585,24 +598,14 @@ private struct V1IOSSubjectAnchorSection: View {
                             .font(.subheadline.weight(.semibold))
 
                         Text(
-                            selectedAnchor?.date.formatted(
-                                .dateTime
-                                    .year()
-                                    .month()
-                                    .day()
-                            )
-                            ?? presentation.anchorDateLabel
+                            V1IOSTimeAnchorPresentation
+                            .dateLabel(selectedAnchor?.date)
                         )
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
                     Spacer(minLength: 0)
-
-                    V1IOSHomeStatusBadge(
-                        text: presentation.anchorCountLabel,
-                        tone: .accent
-                    )
                 }
 
                 Text(

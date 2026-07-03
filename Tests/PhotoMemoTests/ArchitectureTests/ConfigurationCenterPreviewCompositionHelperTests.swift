@@ -9,12 +9,12 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
     @MainActor
     @Test("insertModule seeds the region draft and appends a projected module value")
     func insertModuleSeedsTheRegionDraftAndAppendsAProjectedModuleValue() {
-        let session =
-            ConfigurationSession()
+        let subject =
+            previewSubject()
         let helper =
             ConfigurationCenterPreviewCompositionHelper(
                 context: .init(
-                    subject: session.state.selectedSubject
+                    subject: subject
                 )
             )
         let initialStore =
@@ -30,7 +30,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
         #expect(
             update.store.text(
                 for: .slotA,
-                subject: session.state.selectedSubject
+                subject: subject
             ) == "记录 iPhone 17 Pro Max"
         )
         #expect(
@@ -58,12 +58,10 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
     @MainActor
     @Test("removeInsertedModule recomposes the preview without the removed module")
     func removeInsertedModuleRecomposesThePreviewWithoutTheRemovedModule() {
-        let session =
-            ConfigurationSession()
         let helper =
             ConfigurationCenterPreviewCompositionHelper(
                 context: .init(
-                    subject: session.state.selectedSubject
+                    subject: previewSubject()
                 )
             )
         var store =
@@ -118,12 +116,10 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
     @MainActor
     @Test("composedPreviewText trims whitespace around base and continuation text while preserving full smart-module projection")
     func composedPreviewTextTrimsWhitespaceAroundBaseAndContinuationText() {
-        let session =
-            ConfigurationSession()
         let helper =
             ConfigurationCenterPreviewCompositionHelper(
                 context: .init(
-                    subject: session.state.selectedSubject
+                    subject: previewSubject()
                 )
             )
         var store =
@@ -161,14 +157,14 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
     }
 
     @MainActor
-    @Test("moduleValue and smartTimeResult preserve subject-aware smart-module projection")
-    func moduleValueAndSmartTimeResultPreserveCurrentLocalFallbackProjection() {
-        let session =
-            ConfigurationSession()
+    @Test("moduleDisplayText and smartTimeResult preserve subject-aware smart-module projection")
+    func moduleDisplayTextAndSmartTimeResultPreserveCurrentLocalFallbackProjection() {
+        let subject =
+            previewSubject()
         let helper =
             ConfigurationCenterPreviewCompositionHelper(
                 context: .init(
-                    subject: session.state.selectedSubject
+                    subject: subject
                 )
             )
         let fallbackHelper =
@@ -177,19 +173,15 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
             )
 
         #expect(
-            helper.moduleValue(.subjectNickname)
-            == (
-                session.state.selectedSubject?.identity.shortName
-                ?? session.state.selectedSubject?.identity.displayName
-                ?? "途途"
-            )
+            helper.moduleDisplayText(.subjectNickname)
+            == subject.identity.shortName
         )
         #expect(
-            helper.moduleValue(.smartTime)
+            helper.moduleDisplayText(.smartTime)
             == "途途今天11个月28天啦！"
         )
         #expect(
-            helper.moduleValue(.location)
+            helper.moduleDisplayText(.location)
             == "河南 · 商丘"
         )
         #expect(
@@ -197,5 +189,49 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
             == "未设置时间"
         )
     }
+}
+
+private func previewSubject() -> MemorySubject {
+    let birthday =
+        Calendar.current.date(
+            from: DateComponents(
+                year: 2025,
+                month: 5,
+                day: 26
+            )
+        ) ?? Date()
+
+    return MemorySubject(
+        identity: .init(
+            displayName: "王途途",
+            shortName: "途途"
+        ),
+        relationship: .init(
+            role: "宝宝",
+            label: "妈妈眼里的宝宝"
+        ),
+        definition: "测试对象",
+        referenceDate: birthday,
+        timeAnchors: [
+            .init(
+                title: "生日",
+                date: birthday,
+                note: "出生日期",
+                anchorType: .birthday
+            )
+        ],
+        activeTimeAnchorID: nil,
+        expressionSubjectSource: .shortName,
+        behavior: MemoryBehavior(
+            primaryAnchor: "生日",
+            iconStrategy: .autoMatch,
+            badgeStrategy: .autoMatch,
+            memoryExpression: MemoryExpression(
+                title: "生日记忆",
+                blocks: [.text("生日智能模块")]
+            )
+        ),
+        decorations: []
+    )
 }
 #endif

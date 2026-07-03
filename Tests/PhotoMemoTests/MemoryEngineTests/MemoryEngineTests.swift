@@ -184,6 +184,50 @@ struct MemoryEngineTests {
         #expect(context[MetadataContext.Key.memorySummary] == anchorResult.summaryText)
     }
 
+    @Test("Projects explicit memory module into variable and template flow when legacy memory inputs are absent")
+    func projectsExplicitMemoryModuleIntoVariableAndTemplateFlow() throws {
+
+        let metadata = PhotoMetadata(
+            captureDate: try date(
+                year: 2026,
+                month: 7,
+                day: 2,
+                hour: 8,
+                minute: 30,
+                timeZoneOffsetSeconds: 8 * 3600
+            ),
+            captureTimezoneOffsetSeconds: 8 * 3600
+        )
+        var card = RecordCard(
+            template: memorySummaryTemplate(),
+            metadata: metadata,
+            context: MetadataContext.build(from: metadata)
+        )
+        card.memoryModule =
+            MemoryModule(
+                title: "Memory",
+                blocks: [
+                    .text("乐乐")
+                ],
+                renderedText: "乐乐",
+                sourceAnchor: nil,
+                preferredRegion: .slotD
+            )
+
+        let context = CardVariableProvider.build(
+            from: card
+        )
+        let blocks =
+            CardTextBlockEngine()
+            .build(from: card)
+
+        #expect(context[MetadataContext.Key.memorySummary] == "乐乐")
+        #expect(
+            blocks.first(where: { $0.area == .rightBottom })?.value
+            == "乐乐"
+        )
+    }
+
     @Test("Exposes new memory variables through the public catalog")
     func exposesNewMemoryVariablesThroughPublicCatalog() {
 
@@ -225,5 +269,30 @@ struct MemoryEngineTests {
         return try #require(
             calendar.date(from: components)
         )
+    }
+
+    private func memorySummaryTemplate() -> Template {
+
+        Template(
+            preset: .template1,
+            name: "Memory Summary",
+            leftTopArea: .leftTop,
+            leftBottomArea: .leftBottom,
+            rightTopArea: TemplateArea(
+                name: "Right Top",
+                items: [.cameraSummary]
+            ),
+            rightBottomArea: TemplateArea(
+                name: "Right Bottom",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "Memory Summary",
+                        value: "{{memory_summary}}"
+                    )
+                ]
+            ),
+            badgeArea: .badge
+        ).normalizedForEditing
     }
 }

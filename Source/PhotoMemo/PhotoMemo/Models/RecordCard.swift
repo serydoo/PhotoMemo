@@ -20,6 +20,10 @@ struct RecordCard: Identifiable, Hashable {
 
     var story: String
 
+#if !PHOTOMEMO_SHARE_EXTENSION
+    var memoryModule: MemoryModule? = nil
+#endif
+
     var tags: [String]
 
     var exportDescriptionOverride: String?

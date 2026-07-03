@@ -1,6 +1,6 @@
 # PhotoMemo Document Index
 
-Last updated: 2026-07-02
+Last updated: 2026-07-03
 
 This index explains which project documents should be treated as current working references, which documents are topic-specific, and which documents are mostly historical notes.
 
@@ -52,6 +52,7 @@ Use these when deciding what to build next:
 - `Docs/ProductModel.md` - product model notes
 - `Docs/ProductDirection.md` - direction and positioning
 - `Docs/ProductBacklog.md` - now / next / later backlog
+- `Docs/01_Product/V1_UX_Feedback_Iteration_001.md` - first dedicated V1 real-usage UX feedback batch, separate from RFC work
 - `Docs/ROADMAP.md` - roadmap view
 - `Docs/UX_PRINCIPLES.md` - UX principles
 - `Docs/Interaction/IA-001_Interaction_Architecture.md` - interaction architecture
@@ -72,6 +73,10 @@ Use these when deciding what to build next:
 Use these when changing boundaries, ownership, or shared flows:
 
 - `Docs/ARCHITECTURE.md` - architecture overview
+- `Docs/02_Architecture/PhotoMemo_V1_Engineering_Baseline.md` - factual V1 engineering baseline
+- `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md` - closed RFC for Memory entering the production path
+- `Docs/02_Architecture/V1_Preview_Renderer_Export_Contract_Review_2026-07-03.md` - V1 preview, renderer, and export contract drift review
+- `Docs/02_Architecture/V1_Render_Contract_Freeze_2026-07-03.md` - accepted V1 contract freeze for template text, display text, renderer input, and export input semantics
 - `Docs/PDR/PDR_INDEX.md` - product design review index
 - `Docs/PDR/PDR-003_Interaction_Architecture.md` - interaction architecture PDR
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - Configuration Center architecture PDR
@@ -89,6 +94,7 @@ Use these when changing boundaries, ownership, or shared flows:
 
 Use these when changing preview, renderer, export sizing, typography, or template behavior:
 
+- `Docs/02_Architecture/V1_Render_Contract_Freeze_2026-07-03.md` - V1 render-contract freeze and field semantics
 - `Docs/RENDER_SPEC.md` - renderer and output spec
 - `Docs/PM-003_Content_Layout_System.md` - PM-003 semantic content layout system
 - `Docs/ClassicWhiteVisualQA.md` - Classic White snapshot QA workflow
