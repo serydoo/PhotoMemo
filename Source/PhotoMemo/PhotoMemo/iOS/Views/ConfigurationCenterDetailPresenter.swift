@@ -44,7 +44,7 @@ struct ConfigurationCenterDetailPresenter {
                 content: .subject,
                 title: "记忆对象",
                 systemImage: "person.fill",
-                subtitle: "身份、关系、时间锚点与行为映射"
+                subtitle: "身份与时间锚点"
             )
 
         case .card:

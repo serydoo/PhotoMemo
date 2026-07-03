@@ -4,8 +4,7 @@ import Foundation
 struct V1TimeAnchorEntryPresentation: Hashable {
     let rowSubtitle: String
     let rowValue: String
-    let currentFormulaTitle: String
-    let currentFormulaValue: String
+    let anchorPickerTitle: String
     let formulaTitle: String
     let formulaPreviewText: String
 }
@@ -48,9 +47,7 @@ enum V1TimeAnchorEntryPresenter {
             rowSubtitle: "主体与当前生效锚点",
             rowValue:
                 "\(resolvedSubject) · \(resolvedAnchorTitle)",
-            currentFormulaTitle: "当前表述公式",
-            currentFormulaValue:
-                resolvedStyle.displayTitle,
+            anchorPickerTitle: resolvedAnchorTitle,
             formulaTitle: "本锚点对应输出公式如下",
             formulaPreviewText:
                 formulaPreviewText

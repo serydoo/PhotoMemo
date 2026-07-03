@@ -159,6 +159,11 @@ struct WorkspaceConfigurationSlot:
 
 struct V1ConfigurationBootstrapReadState {
 
+    let subjectLibraryResult:
+        PhotoMemoSharedDefaultsReadResult<
+            V1SubjectLibraryRecord
+        >
+
     let subjectResult:
         PhotoMemoSharedDefaultsReadResult<
             MemorySubject
@@ -223,6 +228,9 @@ final class SettingsService: ObservableObject {
 
         static let selectedMemorySubjectText =
             "photomemo.selectedMemorySubjectText"
+
+        static let subjectLibrary =
+            "photomemo.v1.subjectLibrary"
 
         static let activeConfigurationSlotID =
             "photomemo.activeConfigurationSlotID"
@@ -418,6 +426,36 @@ final class SettingsService: ObservableObject {
         )
     }
 
+    func saveV1SubjectLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?
+    ) {
+        let record =
+            V1SubjectLibraryRecord(
+                subjects: subjects,
+                selectedSubjectID: selectedSubjectID
+            )
+
+        guard let data =
+            try? JSONEncoder().encode(record)
+        else {
+            return
+        }
+
+        defaults.set(
+            data,
+            forKey: Keys.subjectLibrary
+        )
+
+        let selectedSubject =
+            subjects.first {
+                $0.id == selectedSubjectID
+            }
+            ?? subjects.first
+
+        saveSelectedMemorySubject(selectedSubject)
+    }
+
     func savePhotoDescriptionSettings() {
 
         defaults.set(
@@ -511,12 +549,25 @@ final class SettingsService: ObservableObject {
         )
     }
 
+    func loadV1SubjectLibraryResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        V1SubjectLibraryRecord
+    > {
+
+        decodeValueResult(
+            V1SubjectLibraryRecord.self,
+            forKey: Keys.subjectLibrary
+        )
+    }
+
     func loadV1BootstrapReadState()
     -> V1ConfigurationBootstrapReadState {
 
         loadEditorState()
 
         return V1ConfigurationBootstrapReadState(
+            subjectLibraryResult:
+                loadV1SubjectLibraryResult(),
             subjectResult:
                 loadV1SelectedSubjectResult(),
             badgeResult:

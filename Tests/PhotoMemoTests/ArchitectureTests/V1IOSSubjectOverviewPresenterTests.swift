@@ -68,7 +68,8 @@ struct V1IOSSubjectOverviewPresenterTests {
 
         #expect(presentation.title == "途途")
         #expect(presentation.subtitle == "成长记录")
-        #expect(presentation.definition == "围绕成长阶段持续记录。")
+        #expect(presentation.expressionSubjectTitle == "显示名称")
+        #expect(presentation.expressionSubjectValue == "途途成长记录")
         #expect(presentation.anchorTitle == "生日")
         #expect(
             presentation.anchorDateLabel
@@ -90,7 +91,8 @@ struct V1IOSSubjectOverviewPresenterTests {
 
         #expect(presentation.title == "记忆对象")
         #expect(presentation.subtitle == "补充主角信息")
-        #expect(presentation.definition == "用于生成照片底部信息卡。")
+        #expect(presentation.expressionSubjectTitle == "显示名称")
+        #expect(presentation.expressionSubjectValue == "记忆对象")
         #expect(presentation.anchorTitle == "未设置")
         #expect(presentation.anchorDateLabel == "未设置")
         #expect(presentation.anchorCountLabel == "0 个时间锚点")

@@ -68,7 +68,7 @@ struct V1SubjectHomeSummaryPresenterTests {
         )
         #expect(
             presentation.description
-            == "用于生成照片底部信息卡。"
+            == "团团出生"
         )
         #expect(
             presentation.statusText
@@ -122,15 +122,15 @@ struct V1SubjectHomeSummaryPresenterTests {
 
         #expect(
             presentation.configurationTitle
-            == "记忆对象"
+            == "当前记忆对象"
         )
         #expect(
             presentation.subjectTitle
-            == "记忆对象"
+            == "当前记忆对象"
         )
         #expect(
             presentation.relationshipSummary
-            == "未设置"
+            == "补充主角与时间锚点"
         )
         #expect(
             presentation.anchorSummary
@@ -151,6 +151,28 @@ struct V1SubjectHomeSummaryPresenterTests {
         #expect(
             presentation.statusTone
             == .warning
+        )
+    }
+
+    @Test("subject library synced status uses accent tone")
+    func subjectLibrarySyncedStatusUsesAccentTone() {
+        let presentation =
+            V1SubjectHomeSummaryPresenter
+            .presentation(
+                subject: nil,
+                currentConfigurationLabel: "",
+                activeConfigurationMessage: "记忆对象已同步",
+                currentTimeAnchorTitle: "",
+                currentTimeAnchorDescription: ""
+            )
+
+        #expect(
+            presentation.statusText
+            == "记忆对象已同步"
+        )
+        #expect(
+            presentation.statusTone
+            == .accent
         )
     }
 }

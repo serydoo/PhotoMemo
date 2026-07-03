@@ -21,6 +21,9 @@ struct V1ConfigurationSaveRequest:
     }
 
     let subject: MemorySubject?
+    let subjects: [MemorySubject]
+    let selectedSubjectID: MemorySubject.ID?
+    let shouldSaveSubjectLibrary: Bool
     let template: Template
 
     let badge: Badge?
@@ -35,6 +38,9 @@ struct V1ConfigurationSaveRequest:
 
     init(
         subject: MemorySubject? = nil,
+        subjects: [MemorySubject] = [],
+        selectedSubjectID: MemorySubject.ID? = nil,
+        shouldSaveSubjectLibrary: Bool = true,
         template: Template,
         badge: Badge?,
         shouldWritePhotoDescription: Bool,
@@ -43,6 +49,11 @@ struct V1ConfigurationSaveRequest:
         albumSelection: AlbumSelection
     ) {
         self.subject = subject
+        self.subjects = subjects
+        self.selectedSubjectID =
+            selectedSubjectID
+        self.shouldSaveSubjectLibrary =
+            shouldSaveSubjectLibrary
         self.template = template
         self.badge = badge
         self.shouldWritePhotoDescription =
@@ -63,7 +74,11 @@ struct V1ConfigurationSaveReceipt:
 struct V1ConfigurationBootstrapState:
     Hashable {
 
+    let subjects: [MemorySubject]?
+    let selectedSubjectID: MemorySubject.ID?
     let selectedSubject: MemorySubject?
+    let subjectLibraryReadFailure:
+        PhotoMemoSharedDefaultsReadFailure?
     let customLogoBadge:
         Badge?
 
@@ -80,14 +95,23 @@ struct V1ConfigurationBootstrapState:
         String?
 
     init(
+        subjects: [MemorySubject]? = nil,
+        selectedSubjectID: MemorySubject.ID? = nil,
         selectedSubject: MemorySubject? = nil,
+        subjectLibraryReadFailure:
+            PhotoMemoSharedDefaultsReadFailure? = nil,
         customLogoBadge: Badge?,
         logoMode: V1LogoMode,
         outputTarget: V1IOSOutputTarget,
         selectedExistingAlbumIdentifier: String,
         suggestedNewAlbumName: String?
     ) {
+        self.subjects = subjects
+        self.selectedSubjectID =
+            selectedSubjectID
         self.selectedSubject = selectedSubject
+        self.subjectLibraryReadFailure =
+            subjectLibraryReadFailure
         self.customLogoBadge = customLogoBadge
         self.logoMode = logoMode
         self.outputTarget = outputTarget

@@ -10,13 +10,13 @@ struct PreviewCompositionMigrationTests {
     @Test("BootstrapV1PreviewDraftsIntent preserves the current default V1 preview texts")
     func bootstrapIntentPreservesCurrentDefaultV1PreviewTexts() throws {
 
-        let session =
-            ConfigurationSession()
         let engine =
             V1PreviewCompositionEngine()
+        let subject =
+            previewSubject()
         let context =
             V1PreviewCompositionContext(
-                subject: session.state.selectedSubject,
+                subject: subject,
                 birthdayDate: try #require(
                     Calendar.current.date(
                         from: DateComponents(
@@ -38,9 +38,7 @@ struct PreviewCompositionMigrationTests {
                             .map { region in
                                 (
                                     region,
-                                    session.activeTemplateID(
-                                        for: region
-                                    ) ?? ""
+                                    ""
                                 )
                             }
                     ),
@@ -51,33 +49,62 @@ struct PreviewCompositionMigrationTests {
 
         switch result {
         case .success(let drafts):
-            #expect(
-                composedText(
+            let slotAModel =
+                renderModel(
                     for: try #require(drafts[.slotA]),
                     context: context,
                     engine: engine
-                ) == "记录iPhone 17 Pro Max"
-            )
-            #expect(
-                composedText(
+                )
+            let slotBModel =
+                renderModel(
                     for: try #require(drafts[.slotB]),
                     context: context,
                     engine: engine
-                ) == "记录于2026.05.24 14:33:00"
-            )
-            #expect(
-                composedText(
+                )
+            let slotCModel =
+                renderModel(
                     for: try #require(drafts[.slotC]),
                     context: context,
                     engine: engine
-                ) == "20mm f/1.9 1/117s ISO80"
-            )
-            #expect(
-                composedText(
+                )
+            let slotDModel =
+                renderModel(
                     for: try #require(drafts[.slotD]),
                     context: context,
                     engine: engine
-                ) == "途途今天11个月28天啦！"
+                )
+
+            #expect(
+                slotAModel.templateSourceText
+                == "记录{{model}}"
+            )
+            #expect(
+                slotAModel.displayText
+                == "记录iPhone 17 Pro Max"
+            )
+            #expect(
+                slotBModel.templateSourceText
+                == "记录于{{capture_date_short}} {{capture_time_short}}"
+            )
+            #expect(
+                slotBModel.displayText
+                == "记录于2026.05.24 14:33:00"
+            )
+            #expect(
+                slotCModel.templateSourceText
+                == "{{camera_summary}}"
+            )
+            #expect(
+                slotCModel.displayText
+                == "20mm f/1.9 1/117s ISO80"
+            )
+            #expect(
+                slotDModel.templateSourceText
+                == "{{memory_summary}}"
+            )
+            #expect(
+                slotDModel.displayText
+                == "途途今天11个月28天啦！"
             )
         case .failure(let error):
             Issue.record(
@@ -87,16 +114,14 @@ struct PreviewCompositionMigrationTests {
     }
 
     @MainActor
-    @Test("ResolveV1PreviewDisplayValueIntent resolves renderer tokens and keeps unknown token values unchanged")
-    func resolveDisplayValueIntentResolvesRendererTokensAndKeepsUnknownValues() {
+    @Test("BuildV1PreviewRenderModelIntent resolves renderer tokens and keeps unknown token values unchanged")
+    func buildRenderModelIntentResolvesRendererTokensAndKeepsUnknownTokenValues() {
 
-        let session =
-            ConfigurationSession()
         let engine =
             V1PreviewCompositionEngine()
         let context =
             V1PreviewCompositionContext(
-                subject: session.state.selectedSubject,
+                subject: previewSubject(),
                 birthdayDate:
                     Calendar.current.date(
                         from: DateComponents(
@@ -129,33 +154,50 @@ struct PreviewCompositionMigrationTests {
                 systemImage: "questionmark.circle"
             )
 
-        #expect(
-            resolvedDisplayValue(
-                for: captureDateItem,
+        let captureDateModel =
+            renderModel(
+                for: V1PreviewDraft(
+                    items: [captureDateItem]
+                ),
                 context: context,
                 engine: engine
-            ) == "2026.05.24"
+            )
+        let unknownItemModel =
+            renderModel(
+                for: V1PreviewDraft(
+                    items: [unknownItem]
+                ),
+                context: context,
+                engine: engine
+            )
+
+        #expect(
+            captureDateModel.templateSourceText
+            == "{{capture_date_short}}"
         )
         #expect(
-            resolvedDisplayValue(
-                for: unknownItem,
-                context: context,
-                engine: engine
-            ) == "保持原样"
+            captureDateModel.displayText
+            == "2026.05.24"
+        )
+        #expect(
+            unknownItemModel.templateSourceText
+            == "{{not_mapped}}"
+        )
+        #expect(
+            unknownItemModel.displayText
+            == "保持原样"
         )
     }
 
     @MainActor
-    @Test("ComposeV1PreviewTextIntent preserves the current slot B and slot D wording")
-    func composeIntentPreservesCurrentSlotBWordingAndSmartTimeWording() {
+    @Test("BuildV1PreviewRenderModelIntent preserves the current slot B and slot D wording")
+    func buildRenderModelIntentPreservesCurrentSlotBWordingAndSmartTimeWording() {
 
-        let session =
-            ConfigurationSession()
         let engine =
             V1PreviewCompositionEngine()
         let context =
             V1PreviewCompositionContext(
-                subject: session.state.selectedSubject,
+                subject: previewSubject(),
                 birthdayDate:
                     Calendar.current.date(
                         from: DateComponents(
@@ -190,18 +232,20 @@ struct PreviewCompositionMigrationTests {
             )
 
         #expect(
-            composedText(
+            renderModel(
                 for: slotBDraft,
                 context: context,
                 engine: engine
-            ) == "记录于2026.05.24 14:33:00"
+            )
+            .displayText == "记录于2026.05.24 14:33:00"
         )
         #expect(
-            composedText(
+            renderModel(
                 for: slotDDraft,
                 context: context,
                 engine: engine
-            ) == "途途今天11个月28天啦！"
+            )
+            .displayText == "途途今天11个月28天啦！"
         )
     }
 
@@ -269,56 +313,82 @@ struct PreviewCompositionMigrationTests {
             )
 
         #expect(
-            composedText(
+            renderModel(
                 for: slotADraft,
                 context: context,
                 engine: engine
-            ) == "记录途途11个月28天"
+            )
+            .displayText == "记录途途11个月28天"
         )
     }
 }
 
-private func composedText(
+private func renderModel(
     for draft: V1PreviewDraft,
     context: V1PreviewCompositionContext,
     engine: V1PreviewCompositionEngine
-) -> String {
+) -> V1PreviewRenderModel {
 
-    switch ComposeV1PreviewTextIntent(
+    switch BuildV1PreviewRenderModelIntent(
         draft: draft,
         context: context,
         engine: engine
     )
     .executeSynchronously() {
-    case .success(let text):
-        return text
+    case .success(let model):
+        return model
     case .failure(let error):
         Issue.record(
-            "Expected preview composition to succeed, got \(error.message)"
+            "Expected preview render-model build to succeed, got \(error.message)"
         )
-        return ""
+        return V1PreviewRenderModel(
+            templateSourceText: "",
+            displayText: ""
+        )
     }
 }
 
-private func resolvedDisplayValue(
-    for item: V1PreviewDraftItem,
-    context: V1PreviewCompositionContext,
-    engine: V1PreviewCompositionEngine
-) -> String {
+private func previewSubject() -> MemorySubject {
+    let birthday =
+        Calendar.current.date(
+            from: DateComponents(
+                year: 2025,
+                month: 5,
+                day: 26
+            )
+        ) ?? Date()
 
-    switch ResolveV1PreviewDisplayValueIntent(
-        item: item,
-        context: context,
-        engine: engine
+    return MemorySubject(
+        identity: .init(
+            displayName: "王途途",
+            shortName: "途途"
+        ),
+        relationship: .init(
+            role: "宝宝",
+            label: "妈妈眼里的宝宝"
+        ),
+        definition: "测试对象",
+        referenceDate: birthday,
+        timeAnchors: [
+            .init(
+                title: "生日",
+                date: birthday,
+                note: "出生日期",
+                anchorType: .birthday
+            )
+        ],
+        activeTimeAnchorID: nil,
+        expressionSubjectSource: .shortName,
+        behavior: MemoryBehavior(
+            primaryAnchor: "生日",
+            iconStrategy: .autoMatch,
+            badgeStrategy: .autoMatch,
+            memoryExpression: MemoryExpression(
+                title: "生日记忆",
+                blocks: [.text("生日智能模块")]
+            )
+        ),
+        decorations: []
     )
-    .executeSynchronously() {
-    case .success(let text):
-        return text
-    case .failure(let error):
-        Issue.record(
-            "Expected preview display resolution to succeed, got \(error.message)"
-        )
-        return ""
-    }
 }
 #endif

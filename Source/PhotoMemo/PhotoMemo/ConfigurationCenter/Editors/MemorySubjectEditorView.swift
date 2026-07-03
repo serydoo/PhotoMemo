@@ -79,40 +79,10 @@ struct MemorySubjectEditorView: View {
                 }
 
                 InspectorSectionView(
-                    "定义",
-                    systemImage: "text.alignleft"
-                ) {
-                    definitionEditor
-                }
-
-                InspectorSectionView(
                     "时间锚点",
                     systemImage: "calendar.badge.clock"
                 ) {
                     timeWindowEditor
-                }
-
-                InspectorSectionView(
-                    "行为映射",
-                    systemImage: "switch.2"
-                ) {
-                    InspectorPropertyRow(
-                        title: "当前生效时间",
-                        value:
-                            subject.primaryTimeAnchor?.title
-                            ?? subject.behavior.primaryAnchor,
-                        systemImage: "flag.fill"
-                    )
-                    InspectorPropertyRow(
-                        title: "图标策略",
-                        value: subject.behavior.iconStrategy.displayTitle,
-                        systemImage: "person.crop.circle.fill"
-                    )
-                    InspectorPropertyRow(
-                        title: "徽标策略",
-                        value: subject.behavior.badgeStrategy.displayTitle,
-                        systemImage: "camera.fill"
-                    )
                 }
 
                 Button {
@@ -193,32 +163,12 @@ struct MemorySubjectEditorView: View {
             )
 
             labeledTextField(
-                "关系类型",
-                text: $relationshipRole,
-                systemImage: "person.2",
-                focus: .relationshipRole,
-                subjectSource: .relationshipRole
-            )
-
-            labeledTextField(
                 "关系备注",
                 text: $relationshipLabel,
                 systemImage: "heart.text.square",
                 focus: .relationshipLabel,
                 subjectSource: .relationshipLabel
             )
-
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 16)
-
-                Text("记忆引擎默认使用当前勾选的一行作为表述主体；如果没有可用值，会自动回退到显示名称。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
     }
 
@@ -268,27 +218,6 @@ struct MemorySubjectEditorView: View {
         .configurationPanelChrome(isSelected: true)
     }
 
-    private var definitionEditor: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("对象定义")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            TextField(
-                "补充这个记忆对象的定义",
-                text: $definition,
-                axis: .vertical
-            )
-                .font(.subheadline)
-                .textFieldStyle(.plain)
-                .lineLimit(1...4)
-                .focused($focusedField, equals: .definition)
-                .configurationFieldChrome(
-                    isActive: focusedField == .definition
-                )
-        }
-    }
-
     private var timeWindowEditor: some View {
         VStack(alignment: .leading, spacing: 12) {
             if timeAnchors.isEmpty {
@@ -323,26 +252,6 @@ struct MemorySubjectEditorView: View {
                     expressionStyleEditor(
                         anchorBinding
                     )
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("锚点说明")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        TextField(
-                            "例如：途途出生日期",
-                            text: anchorBinding.note,
-                            axis: .vertical
-                        )
-                            .font(.subheadline)
-                            .textFieldStyle(.plain)
-                            .lineLimit(1...3)
-                            .focused($focusedField, equals: .timeNote)
-                            .disabled(!isEditingTimeAnchor)
-                            .configurationFieldChrome(
-                                isActive: focusedField == .timeNote
-                            )
-                    }
                 }
             }
         }
@@ -355,7 +264,7 @@ struct MemorySubjectEditorView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text("选择当前真正参与记忆表达和后台计算的时间锚点，也可以在这里直接调整当前锚点名称。")
+                Text("选择当前真正参与记忆表达和后台计算的时间锚点。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -393,16 +302,12 @@ struct MemorySubjectEditorView: View {
 
             if let anchorBinding {
                 labeledTextField(
-                    "当前锚点名称",
+                    "自定义锚点名称",
                     text: anchorBinding.title,
                     systemImage: "tag",
                     focus: .timeTitle
                 )
                 .disabled(!isEditingTimeAnchor)
-
-                currentExpressionStyleSummary(
-                    anchorBinding.wrappedValue
-                )
             }
         }
         .padding(12)
@@ -462,19 +367,6 @@ struct MemorySubjectEditorView: View {
             .configurationPanelChrome(
                 isSelected: isEditingTimeAnchor
             )
-
-            Text(
-                anchorBinding
-                    .wrappedValue
-                    .resolvedAnchorType
-                    .helperText
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(
-                horizontal: false,
-                vertical: true
-            )
         }
     }
 
@@ -482,95 +374,42 @@ struct MemorySubjectEditorView: View {
         _ anchorBinding: Binding<MemorySubject.TimeAnchor>
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("当前表述公式")
+            HStack(alignment: .center, spacing: 12) {
+                Text("请选择表达公式")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.primary)
-
-                Text("默认采用该类别的第一个公式；下拉切换后会立即作为当前锚点的生效公式，并同步影响智能模块预览。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("当前已选")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Text(
-                        anchorBinding
-                            .wrappedValue
-                            .resolvedExpressionStyle
-                            .displayTitle
-                    )
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.primary)
-                }
 
                 Spacer(minLength: 0)
+
+                Picker(
+                    "请选择表达公式",
+                    selection: anchorBinding.expressionStyle
+                ) {
+                    ForEach(
+                        MemoryAnchorExpressionStyle
+                            .availableStyles(
+                                for: anchorBinding
+                                    .wrappedValue
+                                    .resolvedAnchorType
+                            ),
+                        id: \.self
+                    ) { style in
+                        Text(style.displayTitle)
+                            .tag(style)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .disabled(!isEditingTimeAnchor)
             }
             .padding(12)
-            .configurationPanelChrome()
-
-            Picker(
-                "锚点表述方式",
-                selection: anchorBinding.expressionStyle
-            ) {
-                ForEach(
-                    MemoryAnchorExpressionStyle
-                        .availableStyles(
-                            for: anchorBinding
-                                .wrappedValue
-                                .resolvedAnchorType
-                        ),
-                    id: \.self
-                ) { style in
-                    Text(style.displayTitle)
-                        .tag(style)
-                }
-            }
-            .pickerStyle(.menu)
-            .disabled(!isEditingTimeAnchor)
-            .padding(10)
-            .configurationPanelChrome(
-                isSelected: isEditingTimeAnchor
-            )
+            .configurationPanelChrome(isSelected: isEditingTimeAnchor)
 
             timeAnchorFormulaPreview(
                 anchorBinding
                     .wrappedValue
             )
         }
-    }
-
-    private func currentExpressionStyleSummary(
-        _ anchor: MemorySubject.TimeAnchor
-    ) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "text.quote")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 16)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text("当前表述公式")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text(
-                    anchor
-                        .resolvedExpressionStyle
-                        .displayTitle
-                )
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.primary)
-            }
-        }
-        .padding(12)
-        .configurationPanelChrome()
     }
 
     private func timeAnchorFormulaPreview(

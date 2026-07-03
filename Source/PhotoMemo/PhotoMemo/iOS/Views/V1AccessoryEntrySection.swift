@@ -125,41 +125,11 @@ struct V1AccessoryEntrySection: View {
     private var anchorEditorContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             DatePicker(
-                "途途生日",
+                timeAnchorPresentation.anchorPickerTitle,
                 selection: $birthdayDate,
                 displayedComponents: [.date]
             )
             .datePickerStyle(.compact)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(
-                    timeAnchorPresentation
-                        .currentFormulaTitle
-                )
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-                Text(
-                    timeAnchorPresentation
-                        .currentFormulaValue
-                )
-                .font(.subheadline.weight(.semibold))
-
-                Text("当前表述公式由记忆对象配置中的时间锚点选择决定，保存后会同步影响智能模块预览。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.82))
-            )
 
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "sparkles")
@@ -181,6 +151,14 @@ struct V1AccessoryEntrySection: View {
                             .formulaPreviewText
                     )
                         .font(.subheadline.weight(.semibold))
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+
+                    Text("当前表达结果由记忆对象里的时间锚点设置决定，保存后会同步影响智能模块预览。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .fixedSize(
                             horizontal: false,
                             vertical: true

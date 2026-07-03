@@ -86,6 +86,19 @@ final class ConfigurationCoordinator {
         return .success(())
     }
 
+    func saveV1SubjectLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?
+    ) -> PhotoMemoResult<Void> {
+
+        settingsRepository
+            .saveV1SubjectLibrary(
+                subjects: subjects,
+                selectedSubjectID: selectedSubjectID
+            )
+        return .success(())
+    }
+
     func saveV1Configuration(
         _ request:
             V1ConfigurationSaveRequest
@@ -116,6 +129,15 @@ final class ConfigurationCoordinator {
             .saveSelectedMemorySubject(
                 request.subject
             )
+        if request.shouldSaveSubjectLibrary,
+           !request.subjects.isEmpty {
+            settingsRepository
+                .saveV1SubjectLibrary(
+                    subjects: request.subjects,
+                    selectedSubjectID:
+                        request.selectedSubjectID
+                )
+        }
         settingsRepository
             .savePhotoDescriptionSettings(
                 shouldWrite:

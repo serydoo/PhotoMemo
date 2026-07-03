@@ -43,6 +43,17 @@ struct V1PreviewDraft: Hashable {
 
     var items: [V1PreviewDraftItem]
 
+    var resolvedSingleLineText: String {
+        InlineContentTextComposer.compose(
+            items.map { item in
+                InlineContentTextComposer.Piece(
+                    kind: item.kind.inlineComposerKind,
+                    value: item.displayValue
+                )
+            }
+        )
+    }
+
     var singleLineTemplateText: String {
         InlineContentTextComposer.compose(
             items.map { item in
@@ -53,6 +64,13 @@ struct V1PreviewDraft: Hashable {
             }
         )
     }
+}
+
+struct V1PreviewRenderModel: Hashable {
+
+    var templateSourceText: String
+
+    var displayText: String
 }
 
 struct V1PreviewDraftItem:
@@ -428,22 +446,74 @@ struct V1PreviewCompositionEngine {
         )
     }
 
-    func composeText(
+    func renderModel(
+        for draft: V1PreviewDraft,
+        context: V1PreviewCompositionContext
+    ) -> V1PreviewRenderModel {
+
+        V1PreviewRenderModel(
+            templateSourceText:
+                draft.singleLineTemplateText,
+            displayText:
+                InlineContentTextComposer.compose(
+                    draft.items.map { item in
+                        InlineContentTextComposer.Piece(
+                            kind: item.kind.inlineComposerKind,
+                            value: resolvedDisplayValue(
+                                for: item,
+                                context: context
+                            )
+                        )
+                    }
+                )
+        )
+    }
+
+    func displayText(
         for draft: V1PreviewDraft,
         context: V1PreviewCompositionContext
     ) -> String {
 
-        InlineContentTextComposer.compose(
-            draft.items.map { item in
-                InlineContentTextComposer.Piece(
-                    kind: item.kind.inlineComposerKind,
-                    value: resolvedDisplayValue(
-                        for: item,
-                        context: context
-                    )
-                )
-            }
+        renderModel(
+            for: draft,
+            context: context
         )
+        .displayText
+    }
+
+    func displayText(
+        for item: V1PreviewDraftItem,
+        context: V1PreviewCompositionContext
+    ) -> String {
+
+        renderModel(
+            for:
+                V1PreviewDraft(
+                    items: [item]
+                ),
+            context: context
+        )
+        .displayText
+    }
+
+    func displayText(
+        for module: V1PreviewCompositionModule,
+        context: V1PreviewCompositionContext
+    ) -> String {
+
+        renderModel(
+            for:
+                V1PreviewDraft(
+                    items: [
+                        makeModuleItem(
+                            module,
+                            context: context
+                        )
+                    ]
+                ),
+            context: context
+        )
+        .displayText
     }
 
     func templateText(
@@ -526,7 +596,7 @@ struct V1PreviewCompositionEngine {
 
         .token(
             module.title,
-            value: moduleValue(
+            value: moduleDisplayText(
                 module,
                 context: context
             ),
@@ -538,7 +608,7 @@ struct V1PreviewCompositionEngine {
         )
     }
 
-    func resolvedDisplayValue(
+    private func resolvedDisplayValue(
         for item: V1PreviewDraftItem,
         context: V1PreviewCompositionContext
     ) -> String {
@@ -556,13 +626,13 @@ struct V1PreviewCompositionEngine {
             return item.displayValue
         }
 
-        return moduleValue(
+        return moduleDisplayText(
             module,
             context: context
         )
     }
 
-    func moduleValue(
+    private func moduleDisplayText(
         _ module: V1PreviewCompositionModule,
         context: V1PreviewCompositionContext
     ) -> String {
@@ -636,7 +706,7 @@ struct V1PreviewCompositionEngine {
         let token = module.rendererToken
 
         return token == module.token
-            ? moduleValue(
+            ? moduleDisplayText(
                 module,
                 context: context
             )

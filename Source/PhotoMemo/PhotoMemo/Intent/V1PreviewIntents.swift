@@ -94,7 +94,7 @@ struct LoadRegionPreviewTextIntent:
     }
 }
 
-struct ComposeV1PreviewTextIntent:
+struct BuildV1PreviewRenderModelIntent:
     PhotoMemoIntent {
 
     let draft: V1PreviewDraft
@@ -106,7 +106,7 @@ struct ComposeV1PreviewTextIntent:
 
     func execute()
     async -> PhotoMemoResult<
-        String
+        V1PreviewRenderModel
     > {
 
         executeSynchronously()
@@ -114,44 +114,12 @@ struct ComposeV1PreviewTextIntent:
 
     func executeSynchronously()
     -> PhotoMemoResult<
-        String
+        V1PreviewRenderModel
     > {
 
         .success(
-            engine.composeText(
+            engine.renderModel(
                 for: draft,
-                context: context
-            )
-        )
-    }
-}
-
-struct ResolveV1PreviewDisplayValueIntent:
-    PhotoMemoIntent {
-
-    let item: V1PreviewDraftItem
-
-    let context: V1PreviewCompositionContext
-
-    let engine:
-        V1PreviewCompositionEngine
-
-    func execute()
-    async -> PhotoMemoResult<
-        String
-    > {
-
-        executeSynchronously()
-    }
-
-    func executeSynchronously()
-    -> PhotoMemoResult<
-        String
-    > {
-
-        .success(
-            engine.resolvedDisplayValue(
-                for: item,
                 context: context
             )
         )

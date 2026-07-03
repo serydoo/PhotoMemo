@@ -68,6 +68,18 @@ final class SettingsRepository {
             )
     }
 
+    func saveV1SubjectLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?
+    ) {
+
+        settingsService
+            .saveV1SubjectLibrary(
+                subjects: subjects,
+                selectedSubjectID: selectedSubjectID
+            )
+    }
+
     func savePhotoDescriptionSettings(
         shouldWrite: Bool,
         override: String
@@ -106,6 +118,23 @@ final class SettingsRepository {
         let bootstrapReadState =
             settingsService
             .loadV1BootstrapReadState()
+        let subjectLibrary: V1SubjectLibraryRecord?
+        let subjectLibraryReadFailure:
+            PhotoMemoSharedDefaultsReadFailure?
+
+        switch bootstrapReadState.subjectLibraryResult {
+        case .success(let record):
+            subjectLibrary = record
+            subjectLibraryReadFailure = nil
+
+        case .noValue:
+            subjectLibrary = nil
+            subjectLibraryReadFailure = nil
+
+        case .decodingFailed(let failure):
+            subjectLibrary = nil
+            subjectLibraryReadFailure = failure
+        }
         let savedSubject: MemorySubject?
 
         switch bootstrapReadState.subjectResult {
@@ -176,8 +205,14 @@ final class SettingsRepository {
             : trimmedAlbumTitle
 
         return V1ConfigurationBootstrapState(
+            subjects:
+                subjectLibrary?.subjects,
+            selectedSubjectID:
+                subjectLibrary?.selectedSubjectID,
             selectedSubject:
                 savedSubject,
+            subjectLibraryReadFailure:
+                subjectLibraryReadFailure,
             customLogoBadge:
                 logoMode == .customUpload
                 ? savedBadge

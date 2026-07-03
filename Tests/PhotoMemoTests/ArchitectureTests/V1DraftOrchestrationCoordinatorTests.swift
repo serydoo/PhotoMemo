@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import PhotoMemo
 
-@Suite("V1 draft orchestration coordinator")
+@Suite("V1 draft orchestration coordinator", .serialized)
 struct V1DraftOrchestrationCoordinatorTests {
 
     @Test("draft(for:) falls back to the provided default editor draft when no local region draft exists")
@@ -84,6 +84,12 @@ struct V1DraftOrchestrationCoordinatorTests {
             application.previewDraftsByRegion[
                 .slotA
             ]?.singleLineTemplateText
+            == "记录{{memory_summary}}"
+        )
+        #expect(
+            application.previewDraftsByRegion[
+                .slotA
+            ]?.resolvedSingleLineText
             == "记录途途今天11个月28天啦！"
         )
     }

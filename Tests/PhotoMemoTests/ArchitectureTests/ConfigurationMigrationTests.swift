@@ -864,6 +864,161 @@ struct ConfigurationMigrationTests {
             == "成长记录"
         )
     }
+
+    @MainActor
+    @Test("LoadV1ConfigurationBootstrapIntent preserves subject-library decode failure diagnostics")
+    func loadV1ConfigurationBootstrapIntentPreservesSubjectLibraryDecodeFailureDiagnostics() async throws {
+
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.subjectLibraryFailure.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        defaults.set(
+            Data("corrupted-subject-library".utf8),
+            forKey: "photomemo.v1.subjectLibrary"
+        )
+
+        let coordinator =
+            Self.makeConfigurationCoordinator(
+                defaults: defaults
+            )
+        let bootstrap =
+            try Self.requireSuccess(
+                await LoadV1ConfigurationBootstrapIntent(
+                    coordinator: coordinator
+                )
+                .execute(),
+                failurePrefix:
+                    "Expected bootstrap to surface corrupted subject-library diagnostics"
+            )
+
+        #expect(bootstrap.subjects == nil)
+        #expect(bootstrap.selectedSubjectID == nil)
+        #expect(
+            bootstrap.subjectLibraryReadFailure?
+                .storageKey
+            == "photomemo.v1.subjectLibrary"
+        )
+        #expect(
+            bootstrap.subjectLibraryReadFailure?
+                .payloadByteCount
+            == Data("corrupted-subject-library".utf8).count
+        )
+    }
+
+    @MainActor
+    @Test("SaveV1ConfigurationIntent can preserve an existing subject library when requested")
+    func saveV1ConfigurationIntentCanPreserveExistingSubjectLibraryWhenRequested() async throws {
+
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.preserveSubjectLibrary.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let originalSubject =
+            try #require(
+                ConfigurationCenterState
+                    .mock
+                    .selectedSubject
+            )
+        let originalRecord =
+            V1SubjectLibraryRecord(
+                subjects: [originalSubject],
+                selectedSubjectID:
+                    originalSubject.id
+            )
+        defaults.set(
+            try JSONEncoder().encode(
+                originalRecord
+            ),
+            forKey: "photomemo.v1.subjectLibrary"
+        )
+
+        var replacementSubject =
+            originalSubject
+        replacementSubject.identity.displayName =
+            "不应覆盖对象库"
+
+        let coordinator =
+            Self.makeConfigurationCoordinator(
+                defaults: defaults
+            )
+        let request =
+            V1ConfigurationSaveRequest(
+                subject: replacementSubject,
+                subjects: [replacementSubject],
+                selectedSubjectID:
+                    replacementSubject.id,
+                shouldSaveSubjectLibrary: false,
+                template: .template1,
+                badge: nil,
+                shouldWritePhotoDescription: true,
+                photoDescriptionOverride: "",
+                timeAnchor:
+                    .init(
+                        title: "生日",
+                        date: Date(
+                            timeIntervalSince1970:
+                                1_725_206_400
+                        )
+                    ),
+                albumSelection:
+                    .init(
+                        identifier: "",
+                        title: ""
+                    )
+            )
+
+        _ =
+            try Self.requireSuccess(
+                await SaveV1ConfigurationIntent(
+                    request: request,
+                    coordinator: coordinator
+                )
+                .execute(),
+                failurePrefix:
+                    "Expected save to succeed while preserving existing subject library"
+            )
+
+        let reloadedRecord =
+            try JSONDecoder().decode(
+                V1SubjectLibraryRecord.self,
+                from:
+                    try #require(
+                        defaults.data(
+                            forKey:
+                                "photomemo.v1.subjectLibrary"
+                        )
+                    )
+            )
+
+        #expect(reloadedRecord == originalRecord)
+    }
 }
 
 private extension ConfigurationMigrationTests {

@@ -51,16 +51,12 @@ struct V1TimeAnchorEntryPresenterTests {
             == "妈妈眼里的宝宝 · 生日"
         )
         #expect(
+            presentation.anchorPickerTitle
+            == "生日"
+        )
+        #expect(
             presentation.formulaTitle
             == "本锚点对应输出公式如下"
-        )
-        #expect(
-            presentation.currentFormulaTitle
-            == "当前表述公式"
-        )
-        #expect(
-            presentation.currentFormulaValue
-            == "自然（默认）"
         )
         #expect(
             presentation.formulaPreviewText
@@ -107,6 +103,10 @@ struct V1TimeAnchorEntryPresenterTests {
         #expect(
             presentation.rowValue
             == "记忆对象 · 时间锚点"
+        )
+        #expect(
+            presentation.anchorPickerTitle
+            == "时间锚点"
         )
         #expect(
             presentation.formulaPreviewText
@@ -163,8 +163,8 @@ struct V1TimeAnchorEntryPresenterTests {
             == "锚点前：期待第一次见面，还有倒计时结果｜锚点后：关于第一次见面的故事已有时长结果"
         )
         #expect(
-            presentation.currentFormulaValue
-            == "温馨"
+            presentation.anchorPickerTitle
+            == "第一次见面"
         )
     }
 }
