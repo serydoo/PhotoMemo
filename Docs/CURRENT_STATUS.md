@@ -13,6 +13,8 @@ Decision:
 
 - V1 Functional Baseline: accepted
 - V1 long-term Maintenance Baseline: accepted
+- latest V1 source/package checkpoint: `e48508e9`
+- functional device checkpoint: `2218878d`
 
 Current Truth:
 
@@ -53,6 +55,7 @@ Historical note:
 
 - The decision below was the review-time decision.
 - It is superseded by the High Finding Closure Sprint and Maintenance Baseline Freeze recorded above.
+- For packaging the complete current V1 source, use checkpoint `e48508e9`, not this review-time checkpoint.
 
 Decision:
 

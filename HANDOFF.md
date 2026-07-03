@@ -6,6 +6,8 @@
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
 - The current V1 checkpoint is accepted as a functional baseline.
 - The V1 long-term maintenance baseline is accepted after the High Finding Closure Sprint.
+- Use `e48508e9` as the latest V1 source/package checkpoint.
+- `2218878d` remains the functional device checkpoint that preceded the maintenance freeze.
 
 References:
 
