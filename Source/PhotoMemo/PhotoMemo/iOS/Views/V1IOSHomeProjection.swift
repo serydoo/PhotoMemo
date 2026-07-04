@@ -6,7 +6,6 @@ struct V1IOSHomeSubjectSummaryProjection: Equatable {
     let subtitle: String
     let anchorTitle: String
     let anchorCountLabel: String
-    let definition: String
 }
 
 struct V1IOSHomeOutputSummaryProjection: Equatable {
@@ -55,18 +54,12 @@ enum V1IOSHomeProjection {
             .timeAnchors
             .count ?? 0
 
-        let definition =
-            normalizedDefinition(
-                subject
-            )
-
         return V1IOSHomeSubjectSummaryProjection(
             title: title,
             subtitle: subtitle,
             anchorTitle: anchorTitle,
             anchorCountLabel:
-                "\(anchorCount) 个时间锚点",
-            definition: definition
+                "\(anchorCount) 个时间锚点"
         )
     }
 
@@ -188,24 +181,6 @@ enum V1IOSHomeProjection {
         }
 
         return "补充主角与时间锚点"
-    }
-
-    private static func normalizedDefinition(
-        _ subject: MemorySubject?
-    ) -> String {
-
-        let definition =
-            subject?
-            .definition
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        if !definition.isEmpty {
-            return definition
-        }
-
-        return "用于生成照片底部信息卡。"
     }
 
     private static func normalizedAnchorTitle(

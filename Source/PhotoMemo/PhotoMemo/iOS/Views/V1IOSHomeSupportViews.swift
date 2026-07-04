@@ -16,6 +16,51 @@ extension PhotoMemoBackgroundPresentationState {
     }
 }
 
+struct V1IOSHomeQuickAction:
+    Equatable,
+    Identifiable {
+
+    enum Destination:
+        Hashable {
+        case processPhotos
+        case configurationCenter
+        case timeAnchor
+        case usageGuide
+    }
+
+    let id: Destination
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    static let defaultActions: [Self] = [
+        .init(
+            id: .processPhotos,
+            title: "处理照片",
+            subtitle: "直接从系统图库选择照片并开始处理",
+            systemImage: "photo.badge.plus"
+        ),
+        .init(
+            id: .configurationCenter,
+            title: "配置中心",
+            subtitle: "继续校准当前配置",
+            systemImage: "slider.horizontal.3"
+        ),
+        .init(
+            id: .timeAnchor,
+            title: "时间锚点",
+            subtitle: "查看当前对象与生效锚点",
+            systemImage: "calendar.badge.clock"
+        ),
+        .init(
+            id: .usageGuide,
+            title: "使用说明",
+            subtitle: "重新查看欢迎说明与使用流程",
+            systemImage: "questionmark.circle"
+        )
+    ]
+}
+
 struct V1IOSHomeRecentProcessingPresentation:
     Equatable {
 
@@ -101,11 +146,13 @@ private extension V1IOSHomeRecentProcessingPresenter {
 
 struct V1IOSHomeQuickActionsContent: View {
 
-    let openOutput: () -> Void
+    let openPhotoPicker: () -> Void
 
     let openEditor: () -> Void
 
-    let openSettings: () -> Void
+    let openTimeAnchor: () -> Void
+
+    let openUsageGuide: () -> Void
 
     var body: some View {
         V1IOSHomeInsetGroup {
@@ -115,75 +162,34 @@ struct V1IOSHomeQuickActionsContent: View {
 
     @ViewBuilder
     private var actionButtons: some View {
-        V1IOSHomeNavigationRowButton(
-            title: "处理照片",
-            subtitle: "查看默认输出与保存位置",
-            systemImage: "arrow.up.circle.fill",
-            action: openOutput
-        )
-
-        V1IOSHomeNavigationRowButton(
-            title: "配置中心",
-            subtitle: "继续校准当前配置",
-            systemImage: "slider.horizontal.3",
-            action: openEditor
-        )
-
-        V1IOSHomeNavigationRowButton(
-            title: "最近处理",
-            subtitle: "查看后台处理状态",
-            systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
-            showsDivider: false,
-            action: openSettings
-        )
+        ForEach(
+            Array(V1IOSHomeQuickAction.defaultActions.enumerated()),
+            id: \.offset
+        ) { index, action in
+            V1IOSHomeNavigationRowButton(
+                title: action.title,
+                subtitle: action.subtitle,
+                systemImage: action.systemImage,
+                showsDivider: index != V1IOSHomeQuickAction.defaultActions.count - 1,
+                action: {
+                    perform(action.id)
+                }
+            )
+        }
     }
-}
 
-struct V1IOSHomeDefaultOutputSummaryContent: View {
-
-    let summary:
-        V1IOSHomeOutputSummaryProjection
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("下一次从 Apple Photos 分享进入 PhotoMemo 时，会默认沿用这套输出设置。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(
-                    horizontal: false,
-                    vertical: true
-                )
-
-            V1IOSHomeInsetGroup {
-                V1IOSHomeSemanticRow(
-                    title: "输出方式",
-                    value: summary.title,
-                    detail: summary.targetNote,
-                    systemImage:
-                        "square.and.arrow.down"
-                )
-
-                V1IOSHomeSemanticRow(
-                    title: "保存位置",
-                    value: summary.detail,
-                    detail: "完成后回到 Apple Photos",
-                    systemImage:
-                        "photo.on.rectangle.angled"
-                )
-
-                V1IOSHomeSemanticRow(
-                    title: "记忆说明",
-                    value:
-                        summary
-                        .memoryWriteLabel,
-                    detail:
-                        summary
-                        .memoryWriteDetail,
-                    systemImage:
-                        "text.badge.checkmark",
-                    showsDivider: false
-                )
-            }
+    private func perform(
+        _ destination: V1IOSHomeQuickAction.Destination
+    ) {
+        switch destination {
+        case .processPhotos:
+            openPhotoPicker()
+        case .configurationCenter:
+            openEditor()
+        case .timeAnchor:
+            openTimeAnchor()
+        case .usageGuide:
+            openUsageGuide()
         }
     }
 }

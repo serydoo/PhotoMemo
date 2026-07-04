@@ -94,6 +94,10 @@ struct PhotoMemoiOSTemporaryEntryView: View {
                     environment?
                     .coordinators
                     .configuration,
+                externalIntakeCenter:
+                    environment?
+                    .externalIntakeCenter
+                    ?? .shared,
                 diagnosticsRepository:
                     environment?
                     .repositories

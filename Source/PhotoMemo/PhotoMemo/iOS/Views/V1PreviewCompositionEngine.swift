@@ -469,6 +469,53 @@ struct V1PreviewCompositionEngine {
         )
     }
 
+    func displayText(
+        for draft: V1PreviewDraft,
+        context: V1PreviewCompositionContext
+    ) -> String {
+
+        renderModel(
+            for: draft,
+            context: context
+        )
+        .displayText
+    }
+
+    func displayText(
+        for item: V1PreviewDraftItem,
+        context: V1PreviewCompositionContext
+    ) -> String {
+
+        renderModel(
+            for:
+                V1PreviewDraft(
+                    items: [item]
+                ),
+            context: context
+        )
+        .displayText
+    }
+
+    func displayText(
+        for module: V1PreviewCompositionModule,
+        context: V1PreviewCompositionContext
+    ) -> String {
+
+        renderModel(
+            for:
+                V1PreviewDraft(
+                    items: [
+                        makeModuleItem(
+                            module,
+                            context: context
+                        )
+                    ]
+                ),
+            context: context
+        )
+        .displayText
+    }
+
     func templateText(
         for draft: V1PreviewDraft
     ) -> String {

@@ -212,6 +212,8 @@ struct BatchConfigurationSnapshot:
 
     var anchor: Anchor?
 
+    var memorySubjectText: String?
+
     var shouldWritePhotoDescription: Bool
 
     var photoDescriptionOverride: String
@@ -224,6 +226,7 @@ struct BatchConfigurationSnapshot:
         template: Template,
         badge: Badge?,
         anchor: Anchor?,
+        memorySubjectText: String? = nil,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
         selectedAlbumIdentifier: String
@@ -233,6 +236,8 @@ struct BatchConfigurationSnapshot:
         self.template = template
         self.badge = badge
         self.anchor = anchor
+        self.memorySubjectText =
+            memorySubjectText
         self.shouldWritePhotoDescription =
             shouldWritePhotoDescription
         self.photoDescriptionOverride =

@@ -9,6 +9,9 @@ Assessment Scope:
 - Branch: `main`
 - Assessment window: `2026-07-03`
 
+Repository Note:
+This baseline was originally produced against the earlier archive snapshot line and was restored into `~/Desktop/PhotoMemo` on `2026-07-03` so the engineering record remains in one canonical repository. It should be treated as a preserved engineering artifact until a fresh baseline is created against the live `~/Desktop/PhotoMemo` worktree.
+
 Method:
 - `PFL Decision`
 - `Architecture Decision`

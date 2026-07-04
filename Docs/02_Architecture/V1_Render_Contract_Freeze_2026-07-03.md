@@ -267,6 +267,11 @@ Any intentional change to renderer visual output must update renderer-facing
 tests, preview/export parity expectations, and this contract record when the
 change affects V1 release behavior.
 
+Consistency repair rule:
+Any preview/export consistency repair should first modify RenderModel or the
+Renderer Contract. It must not add Preview-specific special logic that creates
+a second production interpretation path.
+
 ## Required Contract Flow
 
 ```text
@@ -303,7 +308,31 @@ BatchConfigurationSnapshot
     -> CardTextBlockEngine
 ```
 
-## Current Known Violations
+## 2026-07-03 Contract Convergence Closure
+
+Status:
+Contract-class P0 is closed for V1 stabilization.
+
+Closure basis:
+
+- `singleLineTemplateText` is template source
+- `resolvedSingleLineText` and `displayText` are display text
+- PreviewSync consumes `V1PreviewRenderModel.displayText`
+- public `composeText` has been removed
+- external `moduleValue` production access has been removed
+- `resolvedDisplayValue` remains only as private engine internals
+- Contract tests, Preview migration tests, Draft tests, helper tests, iOS
+  build, `git diff --check`, and global identifier searches passed
+
+Remaining work is no longer classified as Contract P0. It is Runtime Review:
+Bootstrap lifecycle, Export lifecycle, metadata fidelity, physical-device UI
+behavior, temporary-file cleanup, notification lifecycle, and long-running
+stability.
+
+## Known Violations At Freeze Time
+
+The following list records the conditions this document was created to close.
+It is retained as historical context for the Contract Convergence milestone.
 
 1. Preview still expands and composes text locally in multiple places.
 2. `singleLineTemplateText` is currently expected as expanded text in at least
@@ -312,7 +341,10 @@ BatchConfigurationSnapshot
    projection.
 4. Saved batch configuration is not yet a true replayable semantic snapshot.
 
-## Immediate Work Order
+## Original Immediate Work Order
+
+The contract-facing items in this order have been completed or reclassified by
+the 2026-07-03 closure note above.
 
 1. Unify model semantics around template source vs expanded display text.
 2. Remove any remaining display-text use of `singleLineTemplateText`.

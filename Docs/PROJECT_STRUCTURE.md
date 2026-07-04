@@ -1,6 +1,6 @@
 # PhotoMemo Project Structure
 
-Last updated: 2026-07-02
+Last updated: 2026-07-01
 
 This document maps the current source tree at a practical level. It is meant to help new sessions find the right file quickly, not to replace architecture or workflow docs.
 
@@ -41,20 +41,6 @@ The V2 target structure is now represented non-destructively at the repository r
 - `Tests/`
 
 Existing source files remain under `Source/PhotoMemo/` until a reviewed migration slice moves them safely.
-
-## Repository Line Management
-
-Historical PhotoMemo phases should be preserved through Git lines, not duplicated source folders.
-
-Current intended split:
-
-- `main` - V2 reset, IA-003, and repository source-of-truth line
-- `release/v1` - ongoing V1 iPhone product line
-- tags / releases - macOS foundation, iOS foundation, MVP, and V1 checkpoints
-
-Do not create parallel root trees such as `MacVersion/`, `MVP/`, or `V1/` to archive history.
-
-See `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md` for the repository cleanup policy.
 
 ## Xcode Workspace
 

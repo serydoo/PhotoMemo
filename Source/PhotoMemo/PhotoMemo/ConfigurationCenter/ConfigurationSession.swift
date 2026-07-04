@@ -236,6 +236,122 @@ final class ConfigurationSession:
         }
     }
 
+    func restoreSubjectLibrary(
+        _ subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?
+    ) {
+        guard !subjects.isEmpty else {
+            return
+        }
+
+        let previousSubject = state.selectedSubject
+        let previousDefaultMemory =
+            Self.defaultPreviewText(
+                for: .slotD,
+                subject: previousSubject
+            )
+
+        state.subjects = subjects
+        state.selectedSubjectID =
+            subjects.contains {
+                $0.id == selectedSubjectID
+            }
+            ? selectedSubjectID
+            : subjects.first?.id
+
+        let selectedSubject =
+            state.selectedSubject
+
+        state.regionPreviewTexts[.subject] =
+            Self.defaultPreviewText(
+                for: .subject,
+                subject: selectedSubject
+            )
+
+        if state.regionPreviewTexts[.slotD] == nil
+            || state.regionPreviewTexts[.slotD] == previousDefaultMemory {
+            state.regionPreviewTexts[.slotD] =
+                Self.defaultPreviewText(
+                    for: .slotD,
+                    subject: selectedSubject
+                )
+        }
+    }
+
+    func appendSubject(
+        _ subject: MemorySubject,
+        selectAfterInsert: Bool = true
+    ) {
+        state.subjects.append(subject)
+
+        guard selectAfterInsert else {
+            return
+        }
+
+        selectSubject(subject)
+    }
+
+    func removeSubject(
+        id: MemorySubject.ID
+    ) {
+        guard
+            state.subjects.count > 1,
+            let subjectIndex =
+                state.subjects.firstIndex(
+                    where: { $0.id == id }
+                )
+        else {
+            return
+        }
+
+        let previousSubject = state.selectedSubject
+        let previousDefaultMemory =
+            Self.defaultPreviewText(
+                for: .slotD,
+                subject: previousSubject
+            )
+
+        state.subjects.remove(at: subjectIndex)
+
+        let selectedSubjectStillExists: Bool
+
+        if let selectedSubjectID =
+            state.selectedSubjectID {
+            selectedSubjectStillExists =
+                state.subjects.contains {
+                    $0.id == selectedSubjectID
+                }
+        } else {
+            selectedSubjectStillExists = false
+        }
+
+        if state.selectedSubjectID == id
+            || !selectedSubjectStillExists {
+            let fallbackIndex =
+                min(subjectIndex, state.subjects.count - 1)
+            state.selectedSubjectID =
+                state.subjects[fallbackIndex].id
+        }
+
+        let selectedSubject =
+            state.selectedSubject
+
+        state.regionPreviewTexts[.subject] =
+            Self.defaultPreviewText(
+                for: .subject,
+                subject: selectedSubject
+            )
+
+        if state.regionPreviewTexts[.slotD] == nil
+            || state.regionPreviewTexts[.slotD] == previousDefaultMemory {
+            state.regionPreviewTexts[.slotD] =
+                Self.defaultPreviewText(
+                    for: .slotD,
+                    subject: selectedSubject
+                )
+        }
+    }
+
     func updateRegionPreview(
         region: CardRegion,
         text: String

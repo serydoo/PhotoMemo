@@ -11,16 +11,21 @@ struct MemoryContext {
 
     let story: String
 
+    let subjectText: String?
+
     init(
         metadata: PhotoMetadata,
         anchor: Anchor? = nil,
         anchorResult: AnchorResult? = nil,
-        story: String = ""
+        story: String = "",
+        subjectText: String? = nil
     ) {
         self.metadata = metadata
         self.anchor = anchor
         self.anchorResult = anchorResult
         self.story = story
+        self.subjectText =
+            subjectText
     }
 
     var photoDate: Date? {
@@ -38,6 +43,21 @@ struct MemoryContext {
         story.trimmingCharacters(
             in: .whitespacesAndNewlines
         )
+    }
+
+    var trimmedSubjectText: String? {
+        guard let subjectText else {
+            return nil
+        }
+
+        let trimmed =
+            subjectText.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmed.isEmpty
+            ? nil
+            : trimmed
     }
 }
 #endif

@@ -54,7 +54,9 @@ struct MemorySubjectAdapter {
                         title: $0.title,
                         date: $0.date,
                         note: $0.type.displayName,
-                        anchorType: $0.type
+                        anchorType: $0.type,
+                        expressionStyle:
+                            $0.expressionStyle
                     )
                 },
             activeTimeAnchorID:

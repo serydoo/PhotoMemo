@@ -122,56 +122,14 @@ struct ConfigurationCenteriOSView: View {
     }
 
     private var profilePresetMenu: some View {
-        Menu {
-            ForEach(session.state.memoryPresets) { preset in
-                Button {
-                    session.selectMemoryPreset(preset)
-                } label: {
-                    HStack {
-                        Text(preset.title)
-
-                        if ConfigurationCenterPresetSelectionPresenter
-                            .isSelectedPreset(
-                                preset,
-                                selectedPreset:
-                                    session.state.selectedMemoryPreset
-                            ) {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
+        ConfigurationCenterPresetMenu(
+            presets: session.state.memoryPresets,
+            selectedPreset: session.state.selectedMemoryPreset,
+            currentTitle: session.currentMemoryPresetTitle,
+            onSelectPreset: { preset in
+                session.selectMemoryPreset(preset)
             }
-        } label: {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("配置组合")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-
-                HStack(spacing: 6) {
-                    Text(session.currentMemoryPresetTitle)
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .background(ConfigurationUI.selectedBackground)
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: ConfigurationUI.smallCornerRadius,
-                    style: .continuous
-                )
-            )
-        }
+        )
     }
 
     @ViewBuilder
@@ -192,45 +150,42 @@ struct ConfigurationCenteriOSView: View {
             cardDetail
 
         case .memoryModule:
-            IOSDetailPanel(
+            ConfigurationCenterDetailPanelSection(
                 title: presentation.title ?? "",
                 systemImage:
-                    presentation.systemImage ?? ""
-            ) {
-                ConfigurationCenterMemoryWritePanel(
+                    presentation.systemImage ?? "",
+                content: .memoryModule(
                     model: memoryWritePanelModel,
                     usesCustomText:
                         memoryWriteToggleBinding,
                     customText:
                         memoryWriteTextBinding
                 )
-            }
+            )
 
         case .output:
-            IOSDetailPanel(
+            ConfigurationCenterDetailPanelSection(
                 title: presentation.title ?? "",
                 systemImage:
-                    presentation.systemImage ?? ""
-            ) {
-                ConfigurationCenterOutputSelectionPanel(
+                    presentation.systemImage ?? "",
+                content: .output(
                     model:
                         outputSelectionPanelModel,
                     storageOption:
                         storageOptionBinding
                 )
-            }
+            )
 
         case .configurationGuide:
-            IOSDetailPanel(
+            ConfigurationCenterDetailPanelSection(
                 title: presentation.title ?? "",
                 systemImage:
-                    presentation.systemImage ?? ""
-            ) {
-                ConfigurationCenterGuidePanel(
+                    presentation.systemImage ?? "",
+                content: .configurationGuide(
                     items:
                         configurationGuideCards
                 )
-            }
+            )
         }
     }
 
@@ -916,43 +871,17 @@ struct ConfigurationCenteriOSView: View {
 
     @ToolbarContentBuilder
     private var configurationToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(pageChromePresentation.sectionTitle)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.primary)
-
-                Text(pageChromePresentation.statusText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            Button(pageChromePresentation.resetActionTitle) {
+        ConfigurationCenterToolbarContent(
+            presentation: pageChromePresentation,
+            onReset: {
                 dismissKeyboard()
                 session.resetSelectedMemoryPreset()
-            }
-            .font(.caption.weight(.semibold))
-
-            Button {
+            },
+            onApply: {
                 dismissKeyboard()
                 session.applySelectedMemoryPreset()
-            } label: {
-                Label(
-                    pageChromePresentation
-                        .primaryActionTitle,
-                    systemImage:
-                        pageChromePresentation
-                        .primaryActionSystemImage
-                )
             }
-            .font(.caption.weight(.semibold))
-            .disabled(
-                !pageChromePresentation
-                    .canApplyChanges
-            )
-        }
+        )
     }
 
     private func dismissKeyboard() {

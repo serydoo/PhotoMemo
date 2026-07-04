@@ -42,12 +42,8 @@ enum V1SubjectHomeSummaryPresenter {
 
         let description =
             normalizedText(
-                subjectProjection.definition,
-                fallback:
-                    normalizedText(
-                        currentTimeAnchorDescription,
-                        fallback: "用于生成照片底部信息卡。"
-                    )
+                currentTimeAnchorDescription,
+                fallback: "用于生成照片底部信息卡。"
             )
 
         return V1SubjectHomeSummaryPresentation(
@@ -68,6 +64,7 @@ enum V1SubjectHomeSummaryPresenter {
             statusText: statusText,
             statusTone:
                 statusText == "已保存为分享配置"
+                || statusText == "记忆对象已同步"
                 ? .accent
                 : .warning
         )

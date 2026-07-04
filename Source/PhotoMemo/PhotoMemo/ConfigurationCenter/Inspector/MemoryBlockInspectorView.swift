@@ -46,7 +46,10 @@ struct MemoryBlockInspectorView: View {
                 "概览",
                 systemImage: "rectangle.and.text.magnifyingglass"
             ) {
-                overview
+                MemoryBlockInspectorOverviewSection(
+                    title: selectedRegion.semanticTitle,
+                    summary: currentTemplate.summary
+                )
             }
 
             collapsibleSection(
@@ -101,68 +104,27 @@ struct MemoryBlockInspectorView: View {
         _ section: BlockInspectorSection,
         title: String,
         systemImage: String,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 11) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    if expandedSections.contains(section) {
-                        expandedSections.remove(section)
-                    } else {
+        MemoryBlockInspectorCollapsibleSection(
+            title: title,
+            systemImage: systemImage,
+            isExpanded: Binding(
+                get: {
+                    expandedSections.contains(section)
+                },
+                set: { isExpanded in
+                    if isExpanded {
                         expandedSections.insert(section)
+                    } else {
+                        expandedSections.remove(section)
                     }
                 }
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: systemImage)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 16)
-
-                    Text(title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Spacer(minLength: 0)
-
-                    Image(
-                        systemName:
-                            expandedSections.contains(section)
-                            ? "chevron.down"
-                            : "chevron.right"
-                    )
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.tertiary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            if expandedSections.contains(section) {
+            ),
+            content: {
                 content()
-                    .transition(
-                        .opacity
-                            .combined(with: .move(edge: .top))
-                    )
             }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.bottom, 2)
-    }
-
-    private var overview: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(selectedRegion.semanticTitle)
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.primary)
-
-            Text(currentTemplate.summary)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .configurationPanelChrome()
+        )
     }
 
     private var configurationPicker: some View {

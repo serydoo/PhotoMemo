@@ -246,7 +246,17 @@ private extension PersonalProfileStore {
                     type: .birthday,
                     title: anchorTitle,
                     date: babyBirthday,
-                    isCountdown: false
+                    isCountdown: false,
+                    expressionStyle:
+                        MemoryAnchorExpressionStyle
+                        .resolvedStyle(
+                            for: .birthday,
+                            candidate:
+                                settings.anchors[
+                                    existingIndex
+                                ]
+                                .expressionStyle
+                        )
                 )
 
             settings.selectedAnchorIDString =
@@ -264,7 +274,12 @@ private extension PersonalProfileStore {
                 type: .birthday,
                 title: anchorTitle,
                 date: babyBirthday,
-                isCountdown: false
+                isCountdown: false,
+                expressionStyle:
+                    MemoryAnchorExpressionStyle
+                    .defaultStyle(
+                        for: .birthday
+                    )
             )
 
         settings.anchors.append(anchor)

@@ -26,6 +26,8 @@ struct RecordCard: Identifiable, Hashable {
 
     var tags: [String]
 
+    var memorySubjectText: String?
+
     var exportDescriptionOverride: String?
 
     init(
@@ -39,6 +41,7 @@ struct RecordCard: Identifiable, Hashable {
         title: String = "",
         story: String = "",
         tags: [String] = [],
+        memorySubjectText: String? = nil,
         exportDescriptionOverride: String? = nil
     ) {
         self.id = id
@@ -51,6 +54,8 @@ struct RecordCard: Identifiable, Hashable {
         self.title = title
         self.story = story
         self.tags = tags
+        self.memorySubjectText =
+            memorySubjectText
         self.exportDescriptionOverride =
             exportDescriptionOverride
     }

@@ -406,7 +406,9 @@ private extension CardVariableProvider {
                 metadata: card.metadata,
                 anchor: card.anchor,
                 anchorResult: card.anchorResult,
-                story: card.story
+                story: card.story,
+                subjectText:
+                    card.memorySubjectText
             )
         )
 

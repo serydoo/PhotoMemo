@@ -212,222 +212,93 @@ struct RecordCardBuildServiceTests {
         #expect(CardVariableProvider.exportDescription(from: card) == "My export note")
     }
 
-    @Test("Resolves memory module during production card build")
-    func resolvesMemoryModuleDuringProductionCardBuild() throws {
+    @Test("Build chain keeps raw anchor expression-style payloads available to downstream output")
+    func buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput() throws {
 
-        let suiteName =
-            "RecordCardBuildServiceTests.MemoryModule.\(UUID().uuidString)"
-        let defaults =
-            try #require(
-                UserDefaults(
-                    suiteName: suiteName
-                )
-            )
-        defaults.removePersistentDomain(
-            forName: suiteName
-        )
-
-        defer {
-            defaults.removePersistentDomain(
-                forName: suiteName
-            )
-        }
-
-        let profile =
-            PersonalProfile(
-                relationshipRole: .custom,
-                customRelationshipLabel: "妈妈",
-                babyNickname: "乐乐"
-            )
-        let profileData =
-            try #require(
-                try? JSONEncoder().encode(profile)
-            )
-        defaults.set(
-            profileData,
-            forKey: "photomemo.personalProfile"
-        )
-
-        let captureDate =
-            try #require(
-                Calendar(identifier: .gregorian)
-                .date(
-                    from: DateComponents(
-                        year: 2026,
-                        month: 7,
-                        day: 2,
-                        hour: 8,
-                        minute: 30
-                    )
-                )
-            )
+        let service = RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
         let birthday =
             try #require(
-                Calendar(identifier: .gregorian)
-                .date(
+                calendar.date(
                     from: DateComponents(
                         year: 2025,
                         month: 5,
-                        day: 15
+                        day: 26
                     )
                 )
             )
-        let photo =
-            SelectedPhoto(
-                sourceURL: URL(
-                    fileURLWithPath: "/tmp/memory-build.jpg"
-                ),
-                image: NSImage(
-                    size: NSSize(
-                        width: 100,
-                        height: 100
-                    )
-                ),
-                metadata: PhotoMetadata(
-                    captureDate: captureDate,
-                    deviceBrand: "Apple",
-                    deviceModel: "iPhone 17 Pro",
-                    imageWidth: 4032,
-                    imageHeight: 3024
-                )
-            )
-        let configuration =
-            BatchConfigurationSnapshot(
-                template: .template1.normalizedForEditing,
-                badge: nil,
-                anchor: Anchor(
-                    type: .birthday,
-                    title: "生日",
-                    date: birthday,
-                    isCountdown: false
-                ),
-                shouldWritePhotoDescription: false,
-                photoDescriptionOverride: "",
-                selectedAlbumIdentifier: ""
-            )
-
-        let card =
-            RecordCardBuildService(
-                defaults: defaults
-            )
-            .buildCard(
-                from: photo,
-                configuration: configuration
-            )
-
-        let module =
-            try #require(
-                card.memoryModule
-            )
-        #expect(module.sourceAnchor?.title == "生日")
-        #expect(module.renderedText.contains("乐乐"))
-    }
-
-    @Test("Projects resolved memory into production variable context")
-    func projectsResolvedMemoryIntoProductionVariableContext() throws {
-
-        let suiteName =
-            "RecordCardBuildServiceTests.MemoryProjection.\(UUID().uuidString)"
-        let defaults =
-            try #require(
-                UserDefaults(
-                    suiteName: suiteName
-                )
-            )
-        defaults.removePersistentDomain(
-            forName: suiteName
-        )
-
-        defer {
-            defaults.removePersistentDomain(
-                forName: suiteName
-            )
-        }
-
-        let profile =
-            PersonalProfile(
-                relationshipRole: .custom,
-                customRelationshipLabel: "妈妈",
-                babyNickname: "乐乐"
-            )
-        let profileData =
-            try #require(
-                try? JSONEncoder().encode(profile)
-            )
-        defaults.set(
-            profileData,
-            forKey: "photomemo.personalProfile"
-        )
-
         let captureDate =
             try #require(
-                Calendar(identifier: .gregorian)
-                .date(
+                calendar.date(
                     from: DateComponents(
-                        year: 2026,
-                        month: 7,
-                        day: 2,
-                        hour: 8,
-                        minute: 30
+                        year: 2025,
+                        month: 6,
+                        day: 13,
+                        hour: 10,
+                        minute: 13,
+                        second: 5
                     )
                 )
-            )
-        let photo =
-            SelectedPhoto(
-                sourceURL: URL(
-                    fileURLWithPath: "/tmp/memory-projection.jpg"
-                ),
-                image: NSImage(
-                    size: NSSize(
-                        width: 100,
-                        height: 100
-                    )
-                ),
-                metadata: PhotoMetadata(
-                    captureDate: captureDate,
-                    deviceBrand: "Apple",
-                    deviceModel: "iPhone 17 Pro",
-                    imageWidth: 4032,
-                    imageHeight: 3024
-                )
-            )
-        let configuration =
-            BatchConfigurationSnapshot(
-                template: memorySummaryTemplate(),
-                badge: nil,
-                anchor: nil,
-                shouldWritePhotoDescription: false,
-                photoDescriptionOverride: "",
-                selectedAlbumIdentifier: ""
             )
 
-        let card =
-            RecordCardBuildService(
-                defaults: defaults
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_5668.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                iso: "125",
+                aperture: "1.78",
+                shutterSpeed: "1/98",
+                focalLength35mm: "24",
+                imageWidth: 4032,
+                imageHeight: 2268
             )
-            .buildCard(
-                from: photo,
-                configuration: configuration
+        )
+
+        let snapshot =
+            try injectedExpressionStyleSnapshot(
+                base:
+                    BatchConfigurationSnapshot(
+                        template:
+                            .template1
+                            .normalizedForEditing,
+                        badge: nil,
+                        anchor: Anchor(
+                            type: .birthday,
+                            title: "途途",
+                            date: birthday,
+                            isCountdown: false
+                        ),
+                        shouldWritePhotoDescription:
+                            false,
+                        photoDescriptionOverride: "",
+                        selectedAlbumIdentifier: ""
+                    ),
+                expressionStyle:
+                    "birthdayAgeToday"
             )
-        let module =
-            try #require(card.memoryModule)
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
         let context =
             CardVariableProvider.build(
                 from: card
             )
-        let blocks =
-            CardTextBlockEngine()
-            .build(from: card)
 
         #expect(
             context[MetadataContext.Key.memorySummary]
-            == module.renderedText
+            == "途途今天18天啦！"
         )
         #expect(
-            blocks.first(where: { $0.area == .rightBottom })?.value
-            == module.renderedText
+            try encodedExpressionStyle(
+                from: card.anchor
+            ) == "birthdayNatural"
         )
-        #expect(module.renderedText == "乐乐")
     }
 
     @MainActor
@@ -676,31 +547,6 @@ struct RecordCardBuildServiceTests {
 
 private extension RecordCardBuildServiceTests {
 
-    func memorySummaryTemplate() -> Template {
-
-        Template(
-            preset: .template1,
-            name: "Memory Summary",
-            leftTopArea: .leftTop,
-            leftBottomArea: .leftBottom,
-            rightTopArea: TemplateArea(
-                name: "Right Top",
-                items: [.cameraSummary]
-            ),
-            rightBottomArea: TemplateArea(
-                name: "Right Bottom",
-                items: [
-                    TemplateItem(
-                        type: .text,
-                        name: "Memory Summary",
-                        value: "{{memory_summary}}"
-                    )
-                ]
-            ),
-            badgeArea: .badge
-        ).normalizedForEditing
-    }
-
     func temporaryExportFolder() -> URL {
 
         FileManager.default.temporaryDirectory
@@ -716,5 +562,58 @@ private extension RecordCardBuildServiceTests {
             at:
                 temporaryExportFolder()
         )
+    }
+
+    func injectedExpressionStyleSnapshot(
+        base: BatchConfigurationSnapshot,
+        expressionStyle: String
+    ) throws -> BatchConfigurationSnapshot {
+
+        let data =
+            try JSONEncoder().encode(base)
+        guard
+            var payload =
+                try JSONSerialization
+                .jsonObject(with: data)
+                as? [String: Any],
+            var anchorPayload =
+                payload["anchor"]
+                as? [String: Any]
+        else {
+            throw CocoaError(.coderInvalidValue)
+        }
+
+        anchorPayload["expressionStyle"] =
+            expressionStyle
+        payload["anchor"] =
+            anchorPayload
+
+        let mutatedData =
+            try JSONSerialization.data(
+                withJSONObject: payload
+            )
+
+        return try JSONDecoder().decode(
+            BatchConfigurationSnapshot.self,
+            from: mutatedData
+        )
+    }
+
+    func encodedExpressionStyle(
+        from anchor: Anchor?
+    ) throws -> String? {
+
+        guard let anchor else {
+            return nil
+        }
+
+        let data =
+            try JSONEncoder().encode(anchor)
+
+        return (
+            try JSONSerialization
+            .jsonObject(with: data)
+            as? [String: Any]
+        )?["expressionStyle"] as? String
     }
 }

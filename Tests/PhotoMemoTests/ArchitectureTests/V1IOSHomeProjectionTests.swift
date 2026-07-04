@@ -61,7 +61,6 @@ struct V1IOSHomeProjectionTests {
         #expect(projection.subtitle == "成长记录")
         #expect(projection.anchorTitle == "生日")
         #expect(projection.anchorCountLabel == "2 个时间锚点")
-        #expect(projection.definition == "围绕宝宝成长时间线展开。")
     }
 
     @Test("subject summary falls back when no subject is available")

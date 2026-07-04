@@ -225,41 +225,7 @@ struct MemorySubjectEditorView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                HStack(spacing: 8) {
-                    Picker(
-                        "当前生效时间锚点",
-                        selection: Binding(
-                            get: {
-                                selectedTimeAnchorID
-                                ?? timeAnchors.first?.id
-                                ?? UUID()
-                            },
-                            set: {
-                                selectedTimeAnchorID = $0
-                            }
-                        )
-                    ) {
-                        ForEach(timeAnchors) { anchor in
-                            Text(anchor.title)
-                                .tag(anchor.id)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-
-                    Button {
-                        isEditingTimeAnchor.toggle()
-                    } label: {
-                        Label(
-                            isEditingTimeAnchor ? "完成" : "编辑",
-                            systemImage:
-                                isEditingTimeAnchor
-                                ? "checkmark.circle"
-                                : "pencil"
-                        )
-                    }
-                    .buttonStyle(.borderless)
-                }
+                timeAnchorSelectionCard
 
                 if let anchorBinding {
                     HStack {
@@ -279,36 +245,73 @@ struct MemorySubjectEditorView: View {
                     .padding(10)
                     .configurationPanelChrome()
 
-                    labeledTextField(
-                        "自定义锚点名称",
-                        text: anchorBinding.title,
-                        systemImage: "tag",
-                        focus: .timeTitle
+                    anchorTypeEditor(
+                        anchorBinding
                     )
-                    .disabled(!isEditingTimeAnchor)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("锚点说明")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        TextField(
-                            "例如：途途出生日期",
-                            text: anchorBinding.note,
-                            axis: .vertical
-                        )
-                            .font(.subheadline)
-                            .textFieldStyle(.plain)
-                            .lineLimit(1...3)
-                            .focused($focusedField, equals: .timeNote)
-                            .disabled(!isEditingTimeAnchor)
-                            .configurationFieldChrome(
-                                isActive: focusedField == .timeNote
-                            )
-                    }
+                    expressionStyleEditor(
+                        anchorBinding
+                    )
                 }
             }
         }
+    }
+
+    private var timeAnchorSelectionCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("当前生效时间锚点")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+
+                Text("选择当前真正参与记忆表达和后台计算的时间锚点。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 8) {
+                Picker(
+                    "当前生效时间锚点",
+                    selection: Binding(
+                        get: {
+                            selectedTimeAnchorID
+                            ?? timeAnchors.first?.id
+                            ?? UUID()
+                        },
+                        set: {
+                            selectedTimeAnchorID = $0
+                        }
+                    )
+                ) {
+                    ForEach(timeAnchors) { anchor in
+                        Text(anchor.title)
+                            .tag(anchor.id)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+
+                Label(
+                    "可直接编辑",
+                    systemImage: "slider.horizontal.3"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+            }
+
+            if let anchorBinding {
+                labeledTextField(
+                    "自定义锚点名称",
+                    text: anchorBinding.title,
+                    systemImage: "tag",
+                    focus: .timeTitle
+                )
+                .disabled(!isEditingTimeAnchor)
+            }
+        }
+        .padding(12)
+        .configurationPanelChrome(isSelected: true)
     }
 
     private var anchorBinding: Binding<MemorySubject.TimeAnchor>? {
@@ -322,6 +325,184 @@ struct MemorySubjectEditorView: View {
         }
 
         return $timeAnchors[index]
+    }
+
+    private func anchorTypeEditor(
+        _ anchorBinding: Binding<MemorySubject.TimeAnchor>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("锚点类型")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Picker(
+                "锚点类型",
+                selection: Binding(
+                    get: {
+                        anchorBinding
+                            .wrappedValue
+                            .resolvedAnchorType
+                    },
+                    set: { newType in
+                        anchorBinding
+                            .wrappedValue
+                            .anchorType = newType
+                        anchorBinding
+                            .wrappedValue
+                            .expressionStyle =
+                            .defaultStyle(
+                                for: newType
+                            )
+                    }
+                )
+            ) {
+                ForEach(AnchorType.allCases, id: \.self) { type in
+                    Text(type.displayName)
+                        .tag(type)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(!isEditingTimeAnchor)
+            .padding(10)
+            .configurationPanelChrome(
+                isSelected: isEditingTimeAnchor
+            )
+        }
+    }
+
+    private func expressionStyleEditor(
+        _ anchorBinding: Binding<MemorySubject.TimeAnchor>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 12) {
+                Text("请选择表达公式")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+
+                Spacer(minLength: 0)
+
+                Picker(
+                    "请选择表达公式",
+                    selection: anchorBinding.expressionStyle
+                ) {
+                    ForEach(
+                        MemoryAnchorExpressionStyle
+                            .availableStyles(
+                                for: anchorBinding
+                                    .wrappedValue
+                                    .resolvedAnchorType
+                            ),
+                        id: \.self
+                    ) { style in
+                        Text(style.displayTitle)
+                            .tag(style)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .disabled(!isEditingTimeAnchor)
+            }
+            .padding(12)
+            .configurationPanelChrome(isSelected: isEditingTimeAnchor)
+
+            timeAnchorFormulaPreview(
+                anchorBinding
+                    .wrappedValue
+            )
+        }
+    }
+
+    private func timeAnchorFormulaPreview(
+        _ anchor: MemorySubject.TimeAnchor
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("当前公式预览")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text(
+                anchor
+                    .resolvedExpressionStyle
+                    .formulaPreview(
+                        subjectText:
+                            resolvedExpressionSubjectPreview,
+                        anchorTitle:
+                            resolvedAnchorTitlePreview(
+                                for: anchor
+                            )
+                    )
+            )
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.primary)
+            .fixedSize(
+                horizontal: false,
+                vertical: true
+            )
+        }
+        .padding(12)
+        .configurationPanelChrome()
+    }
+
+    private var resolvedExpressionSubjectPreview:
+        String {
+        let draftSubject = MemorySubject(
+            identity: .init(
+                displayName: displayName,
+                shortName: shortName,
+                avatarImagePath: avatarImagePath,
+                avatarBadgeImagePath:
+                    avatarBadgeImagePath,
+                avatarPreviewImagePath:
+                    avatarPreviewImagePath
+            ),
+            relationship: .init(
+                role: relationshipRole,
+                label: relationshipLabel
+            ),
+            definition: definition,
+            referenceDate:
+                timeAnchors.first?.date
+                ?? Date(),
+            timeAnchors: timeAnchors,
+            activeTimeAnchorID:
+                selectedTimeAnchorID,
+            expressionSubjectSource:
+                expressionSubjectSource,
+            behavior: MemoryBehavior(
+                primaryAnchor:
+                    timeAnchors.first(
+                        where: {
+                            $0.id
+                            == selectedTimeAnchorID
+                        }
+                    )?.title ?? "",
+                iconStrategy: .autoMatch,
+                badgeStrategy: .autoMatch,
+                memoryExpression:
+                    MemoryExpression(
+                        title: "",
+                        blocks: []
+                    )
+            ),
+            decorations: []
+        )
+
+        return draftSubject
+            .resolvedExpressionSubjectText
+    }
+
+    private func resolvedAnchorTitlePreview(
+        for anchor: MemorySubject.TimeAnchor
+    ) -> String {
+        let trimmedTitle =
+            anchor.title
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmedTitle.isEmpty
+            ? "时间锚点"
+            : trimmedTitle
     }
 
     private func labeledTextField(
@@ -401,20 +582,22 @@ struct MemorySubjectEditorView: View {
                 from: subject.identity.avatarImagePath
             )
         definition = subject.definition
-        timeAnchors = subject.timeAnchors
+        timeAnchors = subject.timeAnchors.map {
+            $0.normalizedForEditing
+        }
         expressionSubjectSource =
             subject.expressionSubjectSource
         selectedTimeAnchorID =
             subject.primaryTimeAnchor?.id
             ?? subject.timeAnchors.first?.id
-        isEditingTimeAnchor = false
+        isEditingTimeAnchor = true
     }
 
     private func saveSubject(
         _ subject: MemorySubject
     ) {
         syncDraftToSession(subject)
-        isEditingTimeAnchor = false
+        isEditingTimeAnchor = true
         focusedField = nil
     }
 
@@ -593,6 +776,35 @@ private extension Binding where Value == MemorySubject.TimeAnchor {
             },
             set: {
                 wrappedValue.note = $0
+            }
+        )
+    }
+
+    var anchorType: Binding<AnchorType> {
+        Binding<AnchorType>(
+            get: {
+                wrappedValue.resolvedAnchorType
+            },
+            set: {
+                wrappedValue.anchorType = $0
+                wrappedValue.expressionStyle =
+                    MemoryAnchorExpressionStyle
+                    .defaultStyle(
+                        for: $0
+                    )
+            }
+        )
+    }
+
+    var expressionStyle:
+        Binding<MemoryAnchorExpressionStyle> {
+        Binding<MemoryAnchorExpressionStyle>(
+            get: {
+                wrappedValue
+                    .resolvedExpressionStyle
+            },
+            set: {
+                wrappedValue.expressionStyle = $0
             }
         )
     }

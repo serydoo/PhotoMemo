@@ -1,5 +1,21 @@
 import Foundation
 
+enum SharedContainerError:
+    LocalizedError {
+
+    case createDirectoryFailed(
+        URL,
+        underlying: Error
+    )
+
+    var errorDescription: String? {
+        switch self {
+        case .createDirectoryFailed(let url, let error):
+            return "无法创建共享目录：\(url.path)。\(String(describing: error))"
+        }
+    }
+}
+
 enum PhotoMemoSharedContainer {
 
     nonisolated static let appGroupIdentifier =
@@ -58,19 +74,21 @@ enum PhotoMemoSharedContainer {
             )
     }
 
-    @discardableResult
     nonisolated static func ensureDirectory(
         at url: URL
-    ) -> Bool {
+    ) throws {
 
         do {
             try FileManager.default.createDirectory(
                 at: url,
                 withIntermediateDirectories: true
             )
-            return true
         } catch {
-            return false
+            throw SharedContainerError
+                .createDirectoryFailed(
+                    url,
+                    underlying: error
+                )
         }
     }
 

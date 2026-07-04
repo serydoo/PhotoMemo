@@ -9,6 +9,7 @@ struct V1SettingsPageSurface: View {
     let displayEvents: [PhotoMemoiOSQueueDiagnosticEventProjection]
     let onRefresh: () -> Void
     let onClearCompletedHistory: () -> Void
+    let onShowWelcome: () -> Void
     let onDismissKeyboard: () -> Void
 
     var body: some View {
@@ -17,9 +18,20 @@ struct V1SettingsPageSurface: View {
                 diagnosticsSection
 
                 V1CardSurface(title: "设置") {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("当前版本会继续向更稳定的 V1.0 配置体验收口。此阶段优先整理首页、记忆对象入口与默认输出层级，后台处理与生成规范保持不变。")
                             .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Button(action: onShowWelcome) {
+                            Label("重新查看欢迎说明", systemImage: "sparkles")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Text("如果需要重新了解 PhotoMemo 是什么、推荐怎么用，或者查看 Apple Photos -> Share -> PhotoMemo 的流程，可以从这里再次打开。")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }

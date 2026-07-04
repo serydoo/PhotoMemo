@@ -1,5 +1,12 @@
 # Implementation Plan: RFC-001 Memory Enters the Production Pipeline
 
+## Historical Record Notice
+
+This implementation plan is preserved as a historical architecture record for
+RFC-001. Do not use its completed task list as the current live-repository truth
+without checking `Docs/CURRENT_STATUS.md` first. `CURRENT_STATUS.md` is the
+single source of truth for the active repository state.
+
 ## Overview
 
 This plan implements RFC-001 by changing exactly one architectural fact:
@@ -13,6 +20,9 @@ Memory participates in the production pipeline.
 ```
 
 The plan keeps the existing production pipeline singular and additive. It does not redesign renderer inputs, replace `BatchConfigurationSnapshot`, or broaden into formula, location, weather, or configuration-source unification.
+
+Repository Note:
+This implementation plan was restored into `~/Desktop/PhotoMemo` on `2026-07-03` together with the canonical RFC/Baseline set after the repository line was corrected back to the live working tree.
 
 ## References
 

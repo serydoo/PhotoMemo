@@ -5,6 +5,9 @@ struct V1ConfigurationApplyRequest:
     Hashable {
 
     let subject: MemorySubject?
+    let subjects: [MemorySubject]
+    let selectedSubjectID: MemorySubject.ID?
+    let shouldSaveSubjectLibrary: Bool
     let template: Template
     let badge: Badge?
     let shouldWritePhotoDescription: Bool
@@ -15,6 +18,42 @@ struct V1ConfigurationApplyRequest:
     let availableAlbums: [PhotoAlbumOption]
     let selectedExistingAlbumIdentifier: String
     let newAlbumName: String
+
+    init(
+        subject: MemorySubject?,
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?,
+        shouldSaveSubjectLibrary: Bool = true,
+        template: Template,
+        badge: Badge?,
+        shouldWritePhotoDescription: Bool,
+        photoDescriptionOverride: String,
+        timeAnchorTitle: String,
+        timeAnchorDate: Date,
+        outputTarget: V1IOSOutputTarget,
+        availableAlbums: [PhotoAlbumOption],
+        selectedExistingAlbumIdentifier: String,
+        newAlbumName: String
+    ) {
+        self.subject = subject
+        self.subjects = subjects
+        self.selectedSubjectID = selectedSubjectID
+        self.shouldSaveSubjectLibrary =
+            shouldSaveSubjectLibrary
+        self.template = template
+        self.badge = badge
+        self.shouldWritePhotoDescription =
+            shouldWritePhotoDescription
+        self.photoDescriptionOverride =
+            photoDescriptionOverride
+        self.timeAnchorTitle = timeAnchorTitle
+        self.timeAnchorDate = timeAnchorDate
+        self.outputTarget = outputTarget
+        self.availableAlbums = availableAlbums
+        self.selectedExistingAlbumIdentifier =
+            selectedExistingAlbumIdentifier
+        self.newAlbumName = newAlbumName
+    }
 }
 
 struct V1ConfigurationApplyReceipt:
@@ -77,7 +116,7 @@ struct V1ConfigurationApplyCoordinator {
                     return .failure(
                         PhotoMemoError(
                             code:
-                                .configurationUnavailable,
+                                PhotoMemoErrorCode.configurationUnavailable,
                             message:
                                 "Unable to save the current V1 configuration without an active configuration coordinator."
                         )
@@ -120,6 +159,11 @@ struct V1ConfigurationApplyCoordinator {
             let saveRequest =
                 V1ConfigurationSaveRequest(
                     subject: request.subject,
+                    subjects: request.subjects,
+                    selectedSubjectID:
+                        request.selectedSubjectID,
+                    shouldSaveSubjectLibrary:
+                        request.shouldSaveSubjectLibrary,
                     template: request.template,
                     badge: request.badge,
                     shouldWritePhotoDescription:

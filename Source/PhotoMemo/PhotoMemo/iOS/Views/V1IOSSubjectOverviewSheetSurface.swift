@@ -1,0 +1,151 @@
+#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+import SwiftUI
+
+struct V1IOSSubjectOverviewSheet: View {
+
+    let presentation:
+        V1IOSSubjectOverviewPresentation
+
+    let subjects: [MemorySubject]
+
+    let subject: MemorySubject?
+
+    let selectedSubjectID: MemorySubject.ID?
+
+    let onSelectSubject: (MemorySubject.ID) -> Void
+
+    let onConfirmActiveAnchor: (UUID) -> Void
+
+    let onAddSubject: () -> Void
+
+    let onDeleteCurrentSubject: () -> Void
+
+    let onOpenEditor: () -> Void
+
+    @State
+    private var pendingActiveAnchorID: UUID?
+
+    @State
+    private var showsDeleteConfirmation = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    V1IOSSubjectOverviewSubjectRail(
+                        subjects: subjects,
+                        selectedSubjectID:
+                            selectedSubjectID,
+                        onSelectSubject: {
+                            subjectID in
+                            onSelectSubject(subjectID)
+                            pendingActiveAnchorID = nil
+                        },
+                        onAddSubject: onAddSubject
+                    )
+
+                    V1IOSSubjectOverviewCard(
+                        presentation:
+                            presentation
+                    )
+
+                    V1IOSSubjectIdentitySection(
+                        presentation:
+                            presentation,
+                        subject: subject
+                    )
+
+                    V1IOSSubjectAnchorSection(
+                        presentation:
+                            presentation,
+                        subject: subject,
+                        selectedAnchorID:
+                            Binding(
+                                get: {
+                                    pendingActiveAnchorID
+                                    ?? subject?
+                                    .primaryTimeAnchor?
+                                    .id
+                                },
+                                set: {
+                                    pendingActiveAnchorID = $0
+                                }
+                            )
+                    )
+
+                    V1IOSSubjectOverviewFooter(
+                        hasAnchors:
+                            subject?.timeAnchors.isEmpty == false,
+                        resolvedPendingAnchorID:
+                            resolvedPendingAnchorID,
+                        hasAnchorSelectionChange:
+                            hasAnchorSelectionChange,
+                        onConfirmActiveAnchor:
+                            onConfirmActiveAnchor,
+                        onOpenEditor: onOpenEditor
+                    )
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 16)
+                .padding(.bottom, 34)
+            }
+            .background(
+                ConfigurationUI.appBackground
+                    .ignoresSafeArea()
+            )
+            .navigationTitle("当前记忆对象")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if subjects.count > 1 {
+                        Button(
+                            "删除",
+                            role: .destructive
+                        ) {
+                            showsDeleteConfirmation = true
+                        }
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: onAddSubject) {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("新增记忆对象")
+                }
+            }
+            .confirmationDialog(
+                "删除当前记忆对象？",
+                isPresented:
+                    $showsDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(
+                    "删除当前对象",
+                    role: .destructive
+                ) {
+                    onDeleteCurrentSubject()
+                }
+
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("删除后会立即切换到仍然保留的记忆对象，并同步首页当前对象。")
+            }
+            .onAppear {
+                pendingActiveAnchorID =
+                    subject?.primaryTimeAnchor?.id
+            }
+        }
+    }
+
+    private var resolvedPendingAnchorID: UUID? {
+        pendingActiveAnchorID
+        ?? subject?.primaryTimeAnchor?.id
+    }
+
+    private var hasAnchorSelectionChange: Bool {
+        resolvedPendingAnchorID
+        != subject?.primaryTimeAnchor?.id
+    }
+}
+#endif

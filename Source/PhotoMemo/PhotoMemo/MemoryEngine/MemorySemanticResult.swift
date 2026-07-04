@@ -7,6 +7,11 @@ enum MemorySemanticKind:
     Hashable {
 
     case birthdayAge
+    case relationshipDuration
+    case marriageDuration
+    case examDuration
+    case customDuration
+    case countdown
 }
 
 struct MemorySemanticResult:
@@ -15,5 +20,7 @@ struct MemorySemanticResult:
 
     let kind: MemorySemanticKind
     let displayText: String
+    let relativeSnapshot:
+        MemoryAnchorRelativeSnapshot
 }
 #endif

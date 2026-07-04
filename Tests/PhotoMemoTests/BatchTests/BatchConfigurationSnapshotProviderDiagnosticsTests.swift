@@ -110,4 +110,115 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
             )
         }
     }
+
+    @Test("Default and shared snapshot loading keep raw anchor expression-style payloads through round-trip re-encoding")
+    func defaultAndSharedSnapshotLoadingKeepRawAnchorExpressionStylePayloadsThroughRoundTripReEncoding() throws {
+
+        let suiteName =
+            "PhotoMemo.BatchConfigurationSnapshotProviderDiagnosticsTests.expressionStyle.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let anchor =
+            Anchor(
+                id: UUID(),
+                type: .birthday,
+                title: "生日",
+                date: Date(
+                    timeIntervalSince1970:
+                        1_725_206_400
+                )
+            )
+
+        defaults.set(
+            try anchorsPayloadData(
+                for: [anchor],
+                expressionStyle:
+                    "birthdayAgeToday"
+            ),
+            forKey: "photomemo.anchors"
+        )
+        defaults.set(
+            anchor.id.uuidString,
+            forKey: "photomemo.selectedAnchorID"
+        )
+
+        let provider =
+            BatchConfigurationSnapshotProvider(
+                defaults: defaults
+            )
+        let sharedService =
+            SharedBatchConfigurationSnapshotService(
+                defaults: defaults
+            )
+
+        #expect(
+            try encodedExpressionStyle(
+                from: provider.loadSnapshot().anchor
+            ) == "birthdayNatural"
+        )
+        #expect(
+            try encodedExpressionStyle(
+                from: sharedService.loadSnapshot().anchor
+            ) == "birthdayNatural"
+        )
+    }
+}
+
+private extension BatchConfigurationSnapshotProviderDiagnosticsTests {
+
+    func anchorsPayloadData(
+        for anchors: [Anchor],
+        expressionStyle: String
+    ) throws -> Data {
+
+        let data =
+            try JSONEncoder().encode(anchors)
+        guard
+            var payload =
+                try JSONSerialization
+                .jsonObject(with: data)
+                as? [[String: Any]],
+            !payload.isEmpty
+        else {
+            throw CocoaError(.coderInvalidValue)
+        }
+
+        payload[0]["expressionStyle"] =
+            expressionStyle
+
+        return try JSONSerialization.data(
+            withJSONObject: payload
+        )
+    }
+
+    func encodedExpressionStyle(
+        from anchor: Anchor?
+    ) throws -> String? {
+
+        guard let anchor else {
+            return nil
+        }
+
+        let data =
+            try JSONEncoder().encode(anchor)
+
+        return (
+            try JSONSerialization
+            .jsonObject(with: data)
+            as? [String: Any]
+        )?["expressionStyle"] as? String
+    }
 }

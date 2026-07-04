@@ -17,13 +17,14 @@ struct V1HomePageSurface<
     let memoryPresetTitleDraft: Binding<String>
     let memoryPresetTitleFieldFocused: FocusState<Bool>.Binding
     let isSavingConfiguration: Bool
-    let outputSummary: V1IOSHomeOutputSummaryProjection
     let recentProcessingPresentation: V1IOSHomeRecentProcessingPresentation
     let onOpenSubject: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onApplyCurrentConfiguration: () -> Void
-    let onOpenOutput: () -> Void
+    let onOpenPhotoPicker: () -> Void
     let onOpenEditor: () -> Void
+    let onOpenTimeAnchor: () -> Void
+    let onOpenUsageGuide: () -> Void
     let onOpenSettings: () -> Void
     let onDismissKeyboard: () -> Void
     let presetPicker: PresetPicker
@@ -33,13 +34,14 @@ struct V1HomePageSurface<
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
+                topHeaderSection
+
                 profileSection
                     .background(profileTrackingBackground)
 
                 currentPresetSection
                 quickActionsSection
                 recentProcessingSection
-                defaultOutputSummarySection
             }
             .padding(.horizontal, 18)
             .padding(.top, 16)
@@ -56,8 +58,82 @@ struct V1HomePageSurface<
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
         )
-        .navigationTitle("PhotoMemo")
+        .navigationTitle("首页")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var topHeaderSection: some View {
+        HStack(alignment: .top, spacing: 14) {
+            V1HomeAppMark()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PhotoMemo")
+                    .font(.title2.weight(.semibold))
+
+                Text("记录人生，珍藏记忆")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    V1HomeHeaderPill(
+                        systemImage: "person.crop.circle",
+                        title: subjectSummary.title
+                    )
+
+                    V1HomeHeaderPill(
+                        systemImage: "sparkles",
+                        title: "V1.0"
+                    )
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Button(action: onOpenSettings) {
+                Image(systemName: "gearshape")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(width: 38, height: 38)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.94))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(ConfigurationUI.faintHairline)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("打开设置")
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 26,
+                style: .continuous
+            )
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.white,
+                        Color.white.opacity(0.92)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 26,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+        .shadow(
+            color: Color.black.opacity(0.04),
+            radius: 14,
+            y: 6
+        )
     }
 
     private var profileSection: some View {
@@ -195,9 +271,10 @@ struct V1HomePageSurface<
     private var quickActionsSection: some View {
         V1CardSurface(title: "快捷操作") {
             V1IOSHomeQuickActionsContent(
-                openOutput: onOpenOutput,
+                openPhotoPicker: onOpenPhotoPicker,
                 openEditor: onOpenEditor,
-                openSettings: onOpenSettings
+                openTimeAnchor: onOpenTimeAnchor,
+                openUsageGuide: onOpenUsageGuide
             )
         }
     }
@@ -210,13 +287,69 @@ struct V1HomePageSurface<
             )
         }
     }
+}
 
-    private var defaultOutputSummarySection: some View {
-        V1CardSurface(title: "默认输出") {
-            V1IOSHomeDefaultOutputSummaryContent(
-                summary: outputSummary
+private struct V1HomeAppMark: View {
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(
+                cornerRadius: 22,
+                style: .continuous
             )
+            .fill(Color.white)
+            .shadow(
+                color: Color.black.opacity(0.05),
+                radius: 12,
+                y: 6
+            )
+
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .stroke(Color.black, lineWidth: 4)
+            .frame(width: 40, height: 46)
+            .offset(x: -5, y: -1)
+
+            RoundedRectangle(
+                cornerRadius: 11,
+                style: .continuous
+            )
+            .stroke(Color.black.opacity(0.92), lineWidth: 3)
+            .frame(width: 34, height: 38)
+            .offset(x: 9, y: 6)
+
+            Circle()
+                .fill(Color.blue)
+                .frame(width: 8, height: 8)
+                .offset(x: 15, y: -13)
         }
+        .frame(width: 68, height: 68)
+    }
+}
+
+private struct V1HomeHeaderPill: View {
+
+    let systemImage: String
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(Color.blue)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            Capsule(style: .continuous)
+                .fill(Color.blue.opacity(0.08))
+        )
     }
 }
 #endif

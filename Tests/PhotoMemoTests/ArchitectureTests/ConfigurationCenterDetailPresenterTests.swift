@@ -20,8 +20,8 @@ struct ConfigurationCenterDetailPresenterTests {
         #expect(presentation.subtitle == nil)
     }
 
-    @Test("subject panel keeps the existing identity subtitle")
-    func subjectPanelKeepsExistingIdentitySubtitle() {
+    @Test("subject panel subtitle reflects the simplified V1 subject surface")
+    func subjectPanelSubtitleReflectsSimplifiedV1SubjectSurface() {
         let presentation =
             ConfigurationCenterDetailPresenter
             .panelPresentation(
@@ -33,7 +33,7 @@ struct ConfigurationCenterDetailPresenterTests {
         #expect(presentation.systemImage == "person.fill")
         #expect(
             presentation.subtitle
-            == "身份、关系、时间锚点与行为映射"
+            == "身份与时间锚点"
         )
     }
 

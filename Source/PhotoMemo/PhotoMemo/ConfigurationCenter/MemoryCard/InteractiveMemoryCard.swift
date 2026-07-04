@@ -232,81 +232,13 @@ struct InteractiveMemoryCard: View {
     }
 
     private var regionStrip: some View {
-        HStack(spacing: 0) {
-            regionStripButton(
-                .slotA,
-                title: "记录",
-                systemImage: "camera.fill"
-            )
-
-            regionStripButton(
-                .slotB,
-                title: "时间线",
-                systemImage: "calendar"
-            )
-
-            regionStripButton(
-                .slotC,
-                title: "拍摄参数",
-                systemImage: "scope"
-            )
-
-            regionStripButton(
-                .slotD,
-                title: "记忆",
-                systemImage: "text.quote"
-            )
-        }
-        .padding(4)
-        .frame(width: 590)
-        .background(Color.white.opacity(0.86))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(ConfigurationUI.hairline)
-        )
-    }
-
-    private func regionStripButton(
-        _ region: CardRegion,
-        title: String,
-        systemImage: String
-    ) -> some View {
-        Button {
-            session.select(
-                CardRegionBehavior(region: region)
-            )
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .font(.caption.weight(.semibold))
-                    .symbolRenderingMode(.hierarchical)
-
-                Text(title)
-                    .font(.caption2.weight(.semibold))
-                    .lineLimit(1)
+        InteractiveMemoryCardRegionStrip(
+            selectedRegion: selectedRegion,
+            onSelectRegion: { region in
+                session.select(
+                    CardRegionBehavior(region: region)
+                )
             }
-            .foregroundStyle(
-                region == selectedRegion
-                ? Color.accentColor
-                : Color.secondary
-            )
-            .frame(maxWidth: .infinity, minHeight: 38)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(
-                        region == selectedRegion
-                        ? ConfigurationUI.selectedBackground
-                        : Color.clear
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(
-            "\(region.accessibilityIdentifier).strip"
-        )
-        .accessibilityLabel(
-            "\(title), \(region.semanticTitle)"
         )
     }
 

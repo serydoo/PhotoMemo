@@ -986,10 +986,14 @@ private extension ExternalPhotoIntakeStore {
         requestID: UUID
     ) -> [URL] {
 
-        PhotoMemoSharedContainer
-            .ensureDirectory(
-                at: intakeDirectoryURL
-            )
+        do {
+            try PhotoMemoSharedContainer
+                .ensureDirectory(
+                    at: intakeDirectoryURL
+                )
+        } catch {
+            return []
+        }
 
         return urls.enumerated().compactMap {
             index,
@@ -1050,12 +1054,12 @@ private extension ExternalPhotoIntakeStore {
                 isDirectory: true
             )
 
-        guard
-            PhotoMemoSharedContainer
-            .ensureDirectory(
-                at: requestDirectoryURL
-            )
-        else {
+        do {
+            try PhotoMemoSharedContainer
+                .ensureDirectory(
+                    at: requestDirectoryURL
+                )
+        } catch {
             return nil
         }
 

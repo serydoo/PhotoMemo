@@ -231,34 +231,94 @@ struct PreviewCompositionMigrationTests {
                 ]
             )
 
-        let slotBModel =
+        #expect(
             renderModel(
                 for: slotBDraft,
                 context: context,
                 engine: engine
             )
-        let slotDModel =
+            .displayText == "记录于2026.05.24 14:33:00"
+        )
+        #expect(
             renderModel(
                 for: slotDDraft,
                 context: context,
                 engine: engine
             )
+            .displayText == "途途今天11个月28天啦！"
+        )
+    }
+
+    @MainActor
+    @Test("smart module inserted into slot A follows the selected anchor formula style")
+    func smartModuleInsertedIntoSlotAFollowsSelectedAnchorFormulaStyle() {
+        let birthday =
+            Calendar.current.date(
+                from: DateComponents(
+                    year: 2025,
+                    month: 5,
+                    day: 26
+                )
+            ) ?? Date()
+        let subject =
+            MemorySubject(
+                identity: .init(
+                    displayName: "王途途",
+                    shortName: "途途"
+                ),
+                relationship: .init(
+                    role: "宝宝",
+                    label: "妈妈眼里的宝宝"
+                ),
+                definition: "测试对象",
+                referenceDate: birthday,
+                timeAnchors: [
+                    .init(
+                        title: "生日",
+                        date: birthday,
+                        note: "出生日期",
+                        anchorType: .birthday,
+                        expressionStyle: .birthdayMinimal
+                    )
+                ],
+                activeTimeAnchorID: nil,
+                expressionSubjectSource: .shortName,
+                behavior: .init(
+                    primaryAnchor: "生日",
+                    iconStrategy: .autoMatch,
+                    badgeStrategy: .autoMatch,
+                    memoryExpression: .init(
+                        title: "生日记忆",
+                        blocks: []
+                    )
+                ),
+                decorations: []
+            )
+        let engine =
+            V1PreviewCompositionEngine()
+        let context =
+            V1PreviewCompositionContext(
+                subject: subject,
+                birthdayDate: birthday
+            )
+        let slotADraft =
+            V1PreviewDraft(
+                items: [
+                    .text("记录"),
+                    engine.makeModuleItem(
+                        .smartTime,
+                        context: context
+                    )
+                ]
+            )
 
         #expect(
-            slotBModel.templateSourceText
-            == "记录于{{capture_date_short}} {{capture_time_short}}"
-        )
-        #expect(
-            slotBModel.displayText
-            == "记录于2026.05.24 14:33:00"
-        )
-        #expect(
-            slotDModel.templateSourceText
-            == "{{memory_summary}}"
-        )
-        #expect(
-            slotDModel.displayText
-            == "途途今天11个月28天啦！"
+            renderModel(
+                for: slotADraft,
+                context: context,
+                engine: engine
+            )
+            .displayText == "记录途途11个月28天"
         )
     }
 }

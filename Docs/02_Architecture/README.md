@@ -2,6 +2,13 @@
 
 Architecture overview, RFCs, ADRs, workflow boundaries, and engine ownership documents belong here.
 
+Canonical architecture artifacts in the current repository line:
+
+- `PhotoMemo_V1_Engineering_Baseline.md`
+- `RFC-001-Memory-Enters-the-Production-Pipeline.md`
+- `RFC-001-Implementation-Plan.md`
+- `V1_Render_Contract_Freeze_2026-07-03.md`
+
 The V2 target architecture is:
 
 ```text

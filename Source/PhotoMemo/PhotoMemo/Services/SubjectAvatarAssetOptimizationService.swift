@@ -78,7 +78,7 @@ final class SubjectAvatarAssetOptimizationService {
                 isDirectory: true
             )
 
-        PhotoMemoSharedContainer
+        try PhotoMemoSharedContainer
             .ensureDirectory(at: folderURL)
 
         return try await Task.detached(priority: .utility) {

@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import PhotoMemo
 
-@Suite("V1 draft orchestration coordinator")
+@Suite("V1 draft orchestration coordinator", .serialized)
 struct V1DraftOrchestrationCoordinatorTests {
 
     @Test("draft(for:) falls back to the provided default editor draft when no local region draft exists")

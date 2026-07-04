@@ -4,14 +4,6 @@ import PhotosUI
 import UIKit
 
 struct PhotoMemoiOSV1View: View {
-
-    private enum V1Tab: Hashable {
-        case home
-        case editor
-        case output
-        case settings
-    }
-
     @Environment(\.scenePhase)
     private var scenePhase
 
@@ -37,6 +29,9 @@ struct PhotoMemoiOSV1View: View {
     private let diagnosticsRepository:
         DiagnosticsRepository?
 
+    private let externalIntakeCenter:
+        ExternalPhotoIntakeCenter
+
     @StateObject
     private var session = ConfigurationSession()
 
@@ -54,14 +49,11 @@ struct PhotoMemoiOSV1View: View {
         Set<PhotoMemoiOSV1EntrySection> = []
 
     @State
-    private var selectedTab: V1Tab = .home
+    private var entryFlowState =
+        V1EntryFlowState()
 
     @State
-    private var showsSubjectOverview = false
-
-    @State
-    private var subjectConfigurationFlowState:
-        V1IOSSubjectConfigurationFlowState?
+    private var selectedProcessingItems: [PhotosPickerItem] = []
 
     @State
     private var logoMode: V1LogoMode = .appleMini
@@ -124,6 +116,9 @@ struct PhotoMemoiOSV1View: View {
     private var isApplyingBootstrapState = false
 
     @State
+    private var shouldSaveSubjectLibrary = true
+
+    @State
     private var activeConfigurationMessage = "尚未保存为默认配置"
 
     @State
@@ -152,14 +147,14 @@ struct PhotoMemoiOSV1View: View {
     @AppStorage("photomemo.v1.moduleUsageCounts")
     private var moduleUsageCountsStorage = "{}"
 
+    @AppStorage("photomemo.v1.welcomeSeen")
+    private var hasSeenWelcome = false
+
     private let currentBorderStyleName =
         "Classic White"
 
     private let currentBorderStyleDescription =
         "当前唯一公开边框，预览与生成保持同一套锁定规范。"
-
-    private let logoOptimizer =
-        LogoAssetOptimizationService()
 
     private let previewCompositionEngine =
         V1PreviewCompositionEngine()
@@ -188,14 +183,6 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private var configurationBootstrapCoordinator:
-        V1ConfigurationBootstrapCoordinator {
-        V1ConfigurationBootstrapCoordinator(
-            configurationCoordinator:
-                configurationCoordinator
-        )
-    }
-
     private var configurationApplyCoordinator:
         V1ConfigurationApplyCoordinator {
         V1ConfigurationApplyCoordinator(
@@ -203,6 +190,36 @@ struct PhotoMemoiOSV1View: View {
                 configurationCoordinator,
             exportCoordinator:
                 exportCoordinator
+        )
+    }
+
+    private var configurationApplyRuntimeCoordinator:
+        V1ConfigurationApplyRuntimeCoordinator {
+        V1ConfigurationApplyRuntimeCoordinator(
+            coordinator:
+                configurationApplyCoordinator,
+            reloadAlbums: {
+                await loadAlbumOptions()
+            },
+            setSelectedExistingAlbumIdentifier: {
+                selectedExistingAlbumIdentifier in
+                self.selectedExistingAlbumIdentifier =
+                    selectedExistingAlbumIdentifier
+            },
+            restoreSubject: { subject in
+                session.restoreSelectedSubject(
+                    subject
+                )
+            },
+            applySelectedMemoryPreset: {
+                session.applySelectedMemoryPreset()
+            },
+            updateStatus: { status in
+                activeConfigurationMessage =
+                    status.message
+                isSavingConfiguration =
+                    status.isSaving
+            }
         )
     }
 
@@ -214,12 +231,97 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private var draftBootstrapCoordinator:
-        V1DraftBootstrapCoordinator {
-        V1DraftBootstrapCoordinator(
+    private var draftRuntimeCoordinator:
+        V1DraftRuntimeCoordinator {
+        V1DraftRuntimeCoordinator(
+            loadViewState: {
+                draftOrchestrationState
+            },
+            updateViewState: {
+                applyDraftOrchestrationState(
+                    $0
+                )
+            },
+            makeDefaultDraft:
+                makeDefaultDraft(for:),
+            previewSyncCoordinator:
+                previewSyncCoordinator,
+            renderModel:
+                previewRenderModel(for:)
+        )
+    }
+
+    private var bootstrapFlowCoordinator:
+        V1BootstrapFlowCoordinator {
+        V1BootstrapFlowCoordinator(
+            configurationBootstrapCoordinator:
+                V1ConfigurationBootstrapCoordinator(
+                    configurationCoordinator:
+                        configurationCoordinator
+                ),
             session: session,
-            context: previewCompositionContext,
-            engine: previewCompositionEngine
+                engine: previewCompositionEngine
+        )
+    }
+
+    private var bootstrapRuntimeCoordinator:
+        V1BootstrapRuntimeCoordinator {
+        V1BootstrapRuntimeCoordinator(
+            setApplyingBootstrapState: {
+                isApplyingBootstrapState = $0
+            },
+            updateProjection: { projection in
+                shouldSaveSubjectLibrary =
+                    projection.shouldSaveSubjectLibrary
+                customLogoBadge =
+                    projection.customLogoBadge
+                logoMode = projection.logoMode
+
+                if let logoStatusMessage =
+                    projection.logoStatusMessage {
+                    self.logoStatusMessage =
+                        logoStatusMessage
+                }
+
+                outputTarget =
+                    projection.outputTarget
+                selectedExistingAlbumIdentifier =
+                    projection
+                    .selectedExistingAlbumIdentifier
+
+                if let suggestedNewAlbumName =
+                    projection
+                    .suggestedNewAlbumName {
+                    newAlbumName =
+                        suggestedNewAlbumName
+                }
+
+                if let birthdayDate =
+                    projection.birthdayDate {
+                    self.birthdayDate =
+                        birthdayDate
+                }
+
+                regionDrafts =
+                    projection.regionDrafts
+            },
+            restoreSubjectLibrary: {
+                subjects,
+                selectedSubjectID in
+                session.restoreSubjectLibrary(
+                    subjects,
+                    selectedSubjectID:
+                        selectedSubjectID
+                )
+            },
+            restoreSelectedSubject: { subject in
+                session.restoreSelectedSubject(
+                    subject
+                )
+            },
+            applyWelcomeState: applyWelcomeFlowState,
+            refreshDynamicPreview:
+                refreshDynamicPreview
         )
     }
 
@@ -236,6 +338,8 @@ struct PhotoMemoiOSV1View: View {
             QueueCoordinator? = nil,
         configurationCoordinator:
             ConfigurationCoordinator? = nil,
+        externalIntakeCenter:
+            ExternalPhotoIntakeCenter? = nil,
         diagnosticsRepository:
             DiagnosticsRepository? = nil
     ) {
@@ -254,36 +358,39 @@ struct PhotoMemoiOSV1View: View {
             queueCoordinator
         self.configurationCoordinator =
             configurationCoordinator
+        self.externalIntakeCenter =
+            externalIntakeCenter
+            ?? .shared
         self.diagnosticsRepository =
             diagnosticsRepository
     }
 
     var body: some View {
         NavigationStack {
-            TabView(selection: $selectedTab) {
+            TabView(selection: $entryFlowState.selectedTab) {
                 homePage
                     .tabItem {
                         Label("首页", systemImage: "house.fill")
                     }
-                    .tag(V1Tab.home)
+                    .tag(V1EntryTab.home)
 
                 editorPage
                     .tabItem {
                         Label("配置中心", systemImage: "slider.horizontal.3")
                     }
-                    .tag(V1Tab.editor)
+                    .tag(V1EntryTab.editor)
 
                 outputPage
                     .tabItem {
                         Label("输出", systemImage: "square.and.arrow.down")
                     }
-                    .tag(V1Tab.output)
+                    .tag(V1EntryTab.output)
 
                 settingsPage
                     .tabItem {
                         Label("设置", systemImage: "gearshape")
                     }
-                    .tag(V1Tab.settings)
+                    .tag(V1EntryTab.settings)
             }
         }
         .preferredColorScheme(.light)
@@ -291,44 +398,191 @@ struct PhotoMemoiOSV1View: View {
             await loadAlbumOptions()
         }
         .sheet(
+            isPresented: $entryFlowState.showsWelcomePage
+        ) {
+            V1WelcomePageSurface(
+                presentation: .default,
+                onStart: {
+                    completeWelcomeFlow()
+                },
+                onShowWorkflow: {
+                    showWorkflowGuideFromWelcome()
+                }
+            )
+            .interactiveDismissDisabled(!hasSeenWelcome)
+        }
+        .sheet(
+            isPresented: $entryFlowState.showsWorkflowGuide
+        ) {
+            V1WorkflowGuideSurface(
+                steps: V1WelcomePresentation.default.workflowSteps
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(
             isPresented: moduleSheetPresented
         ) {
             if let region = activeModuleRegion {
-                moduleLibrarySheet(region: region)
+                V1ModuleLibrarySurface(
+                    region: region,
+                    modules: modules(for: region),
+                    categoryTitle: moduleCategoryTitle,
+                    valueText: moduleDisplayText,
+                    onSelectModule: { module in
+                        applyModulePanelState(
+                            V1ModulePanelCoordinator
+                                .selectModule(
+                                    module,
+                                    state:
+                                        modulePanelState
+                                )
+                        )
+                        insert(module, into: region)
+                    },
+                    onClose: {
+                        applyModulePanelState(
+                            V1ModulePanelCoordinator
+                                .setSheetPresented(
+                                    false,
+                                    state:
+                                        modulePanelState
+                                )
+                        )
+                    }
+                )
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
         }
         .sheet(
-            isPresented: $showsSubjectOverview
+            isPresented: $entryFlowState.showsSubjectOverview
         ) {
             V1IOSSubjectOverviewSheet(
                 presentation:
                     subjectOverviewPresentation,
+                subjects: session.state.subjects,
                 subject:
                     session.state.selectedSubject,
+                selectedSubjectID:
+                    session.state.selectedSubjectID,
+                onSelectSubject: {
+                    subjectID in
+                    guard let patch =
+                        V1SubjectOverviewActionCoordinator
+                        .selectSubject(
+                            subjectID,
+                            in: session,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
+                            configurationCoordinator:
+                                configurationCoordinator
+                        ) else {
+                        return
+                    }
+
+                    applySubjectFlowPatch(patch)
+                },
                 onConfirmActiveAnchor: {
                     anchorID in
-                    applyActiveSubjectAnchor(anchorID)
-                    showsSubjectOverview = false
+                    guard let patch =
+                        V1SubjectOverviewActionCoordinator
+                        .activateAnchor(
+                            anchorID,
+                            in: session,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
+                            configurationCoordinator:
+                                configurationCoordinator
+                        ) else {
+                        return
+                    }
+
+                    applySubjectFlowPatch(patch)
+                    entryFlowState =
+                        V1EntryFlowCoordinator
+                        .closeSubjectOverview(
+                            from:
+                                entryFlowState
+                        )
+                },
+                onAddSubject: {
+                    let patch =
+                        V1SubjectOverviewActionCoordinator
+                        .addDefaultSubject(
+                            referenceDate:
+                                birthdayDate,
+                            to: session,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
+                            configurationCoordinator:
+                                configurationCoordinator,
+                            onPersistedSubject: {
+                                patch in
+                                applySubjectFlowPatch(
+                                    patch
+                                )
+                            }
+                        )
+                    applySubjectFlowPatch(patch)
+                },
+                onDeleteCurrentSubject: {
+                    guard let patch =
+                        V1SubjectOverviewActionCoordinator
+                        .deleteCurrentSubject(
+                            from: session,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
+                            configurationCoordinator:
+                                configurationCoordinator
+                        ) else {
+                        return
+                    }
+
+                    applySubjectFlowPatch(patch)
                 },
                 onOpenEditor: {
-                    showsSubjectOverview = false
-                    subjectConfigurationFlowState =
-                        V1IOSSubjectConfigurationFlowPresenter
-                        .makeFlowState(from: session)
+                    let flowState =
+                        V1SubjectOverviewActionCoordinator
+                        .makeConfigurationFlowState(
+                            from: session,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
+                            configurationCoordinator:
+                                configurationCoordinator,
+                            savedMessage:
+                                "有未保存修改",
+                            onPersistedSubject: {
+                                patch in
+                                applySubjectFlowPatch(
+                                    patch
+                                )
+                            }
+                        )
+                    entryFlowState =
+                        V1EntryFlowCoordinator
+                        .openSubjectConfiguration(
+                            flowState,
+                            from:
+                                entryFlowState
+                        )
                 }
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
         .sheet(
-            item: $subjectConfigurationFlowState
+            item: $entryFlowState.subjectConfigurationFlowState
         ) { flowState in
             V1IOSSubjectConfigurationFlow(
                 flowState: flowState,
                 onClose: {
-                    subjectConfigurationFlowState = nil
+                    entryFlowState =
+                        V1EntryFlowCoordinator
+                        .closeSubjectConfiguration(
+                            from:
+                                entryFlowState
+                        )
                 }
             )
         }
@@ -353,6 +607,14 @@ struct PhotoMemoiOSV1View: View {
             bootstrapIfNeeded()
             refreshProcessingState()
         }
+        .photosPicker(
+            isPresented:
+                $entryFlowState
+                .showsProcessingPhotoPicker,
+            selection: $selectedProcessingItems,
+            maxSelectionCount: 24,
+            matching: .images
+        )
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else {
                 return
@@ -371,7 +633,8 @@ struct PhotoMemoiOSV1View: View {
         }
         .onChange(of: session.state.selectedSubject) { _, subject in
             if let subjectAnchorDate =
-                subject?.primaryTimeAnchor?.date {
+                subject?.primaryTimeAnchor?.date
+                ?? subject?.timeAnchors.first?.date {
                 birthdayDate = subjectAnchorDate
             }
 
@@ -402,6 +665,15 @@ struct PhotoMemoiOSV1View: View {
         .onChange(of: newAlbumName) { _, _ in
             activeConfigurationMessage = "有未保存修改"
         }
+        .onChange(of: selectedProcessingItems) { _, items in
+            guard !items.isEmpty else {
+                return
+            }
+
+            Task {
+                await importPickedPhotos(items)
+            }
+        }
     }
 
     private var homePage: some View {
@@ -416,10 +688,14 @@ struct PhotoMemoiOSV1View: View {
             memoryPresetTitleDraft: $memoryPresetTitleDraft,
             memoryPresetTitleFieldFocused: $memoryPresetTitleFieldFocused,
             isSavingConfiguration: isSavingConfiguration,
-            outputSummary: currentOutputSummaryProjection,
             recentProcessingPresentation: recentProcessingPresentation,
             onOpenSubject: {
-                showsSubjectOverview = true
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openSubjectOverview(
+                        from:
+                            entryFlowState
+                    )
             },
             onCommitMemoryPresetTitle: commitMemoryPresetTitle,
             onApplyCurrentConfiguration: {
@@ -427,14 +703,45 @@ struct PhotoMemoiOSV1View: View {
                     await applyCurrentV1Configuration()
                 }
             },
-            onOpenOutput: {
-                selectedTab = .output
+            onOpenPhotoPicker: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openProcessingPhotoPicker(
+                        from:
+                            entryFlowState
+                    )
             },
             onOpenEditor: {
-                selectedTab = .editor
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openEditorTab(
+                        from:
+                            entryFlowState
+                    )
+            },
+            onOpenTimeAnchor: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openSubjectOverview(
+                        from:
+                            entryFlowState
+                    )
+            },
+            onOpenUsageGuide: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .showWelcomePage(
+                        from:
+                            entryFlowState
+                    )
             },
             onOpenSettings: {
-                selectedTab = .settings
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openSettingsTab(
+                        from:
+                            entryFlowState
+                    )
             },
             onDismissKeyboard: dismissKeyboard,
             presetPicker: presetPicker,
@@ -444,60 +751,21 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var editorPage: some View {
-        GeometryReader { _ in
-            ZStack(alignment: .top) {
-                ScrollView {
-                    VStack(spacing: 18) {
-                        previewSection
-                            .background(
-                                offsetReader(
-                                    for: .preview
-                                )
-                            )
-                            .opacity(
-                                max(
-                                    1 - previewPinProgress,
-                                    0
-                                )
-                            )
-
-                        editorCluster
-                            .opacity(
-                                max(editorRevealProgress, 0.26)
-                            )
-                            .offset(
-                                y: (1 - editorRevealProgress) * 12
-                            )
-
-                        accessoryEntryCluster
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.top, 16)
-                    .padding(.bottom, 34)
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .simultaneousGesture(
-                    TapGesture()
-                        .onEnded {
-                            dismissKeyboard()
-                        }
+        V1EditorPageSurface(
+            previewPinProgress: previewPinProgress,
+            editorRevealProgress: editorRevealProgress,
+            onDismissKeyboard: dismissKeyboard
+        ) {
+            previewSection
+                .background(
+                    offsetReader(
+                        for: .preview
+                    )
                 )
-
-                if previewPinProgress > 0.01 {
-                    previewSection
-                        .padding(.horizontal, 18)
-                        .padding(.top, 12)
-                        .opacity(previewPinProgress)
-                        .allowsHitTesting(false)
-                }
-            }
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity,
-                alignment: .top
-            )
-            .background(ConfigurationUI.appBackground.ignoresSafeArea())
-            .coordinateSpace(name: "v1-scroll")
+        } editorContent: {
+            editorCluster
+        } accessoryContent: {
+            accessoryEntryCluster
         }
         .navigationTitle("配置中心")
         .navigationBarTitleDisplayMode(.inline)
@@ -513,7 +781,7 @@ struct PhotoMemoiOSV1View: View {
             albumStatusMessage: albumStatusMessage,
             usesCustomMemoryWriteText: $session.usesCustomMemoryWriteText,
             customMemoryWriteText: $session.customMemoryWriteText,
-            resolvedMemoryWriteText: session.resolvedMemoryWriteText,
+            resolvedMemoryWriteText: resolvedMemoryWriteText,
             onDismissKeyboard: dismissKeyboard
         )
     }
@@ -526,6 +794,14 @@ struct PhotoMemoiOSV1View: View {
             displayEvents: shareDiagnosticDisplayEvents,
             onRefresh: refreshProcessingState,
             onClearCompletedHistory: clearCompletedQueueHistory,
+            onShowWelcome: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .showWelcomePage(
+                        from:
+                            entryFlowState
+                    )
+            },
             onDismissKeyboard: dismissKeyboard
         )
     }
@@ -543,24 +819,14 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var presetOperationsMenu: some View {
-        Menu {
-            Button("重命名配置组合") {
-                beginEditingMemoryPresetTitle()
-            }
-
-            Button("恢复默认内容") {
+        V1PresetOperationsMenu(
+            onRename: beginEditingMemoryPresetTitle,
+            onRestoreDefaults: {
                 session.resetSelectedMemoryPreset()
                 bootstrapDrafts()
                 activeConfigurationMessage = "有未保存修改"
             }
-        } label: {
-            Image(systemName: "ellipsis.circle")
-                .font(.body.weight(.semibold))
-                .frame(width: 28, height: 28)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .accessibilityLabel("更多配置操作")
+        )
     }
 
     private var homePresetSummaryProjection:
@@ -629,28 +895,48 @@ struct PhotoMemoiOSV1View: View {
         memoryPresetTitleFieldFocused = false
     }
 
-    private func applyActiveSubjectAnchor(
-        _ anchorID: UUID
+    private func applySubjectFlowPatch(
+        _ patch: V1SubjectFlowPatch
     ) {
-        guard
-            var subject =
-                session.state.selectedSubject,
-            let anchor =
-                subject.timeAnchor(id: anchorID)
-        else {
-            return
+        if let birthdayDate = patch.birthdayDate {
+            self.birthdayDate = birthdayDate
         }
 
-        subject.activeTimeAnchorID = anchor.id
-        subject.behavior.primaryAnchor = anchor.title
-        subject.referenceDate = anchor.date
-        session.updateSelectedSubject(subject)
-        birthdayDate = anchor.date
-        activeConfigurationMessage = "有未保存修改"
+        if patch.shouldRefreshPreview {
+            refreshDynamicPreview()
+        }
+
+        if patch.events.contains(
+            .reopenSubjectLibraryPersistence
+        ) {
+            shouldSaveSubjectLibrary = true
+        }
+
+        activeConfigurationMessage =
+            patch.activeConfigurationMessage
+
+        if patch.shouldCloseOverview {
+            entryFlowState =
+                V1EntryFlowCoordinator
+                .closeSubjectOverview(
+                    from:
+                        entryFlowState
+                )
+        }
+
+        if let flowState = patch.flowState {
+            entryFlowState =
+                V1EntryFlowCoordinator
+                .openSubjectConfiguration(
+                    flowState,
+                    from:
+                        entryFlowState
+                )
+        }
     }
 
     private var previewSection: some View {
-        V1PreviewCard(
+        V1PreviewSection(
             logoMode: logoMode,
             customLogoImagePath:
                 customLogoBadge?.imagePath,
@@ -671,7 +957,8 @@ struct PhotoMemoiOSV1View: View {
             memoryText:
                 previewText(
                     for: CardRegion.region(for: .rightSecondary)
-                )
+                ),
+            onTap: dismissKeyboard
         )
     }
 
@@ -755,126 +1042,33 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var accessoryEntryCluster: some View {
-        IOSCompactEntryListGroup {
-            IOSCompactEntryDisclosureRow(
-                title: "Logo 标识",
-                subtitle: "Apple 标识 / 自选标识 / 使用对象头像",
-                value: logoMode.title,
-                detail: logoRowDetail,
-                systemImage: "seal.fill",
-                isExpanded:
-                    expansionBinding(
-                        for: .logo
-                    )
-            ) {
-                logoEditorContent
-            }
-
-            IOSCompactEntryDisclosureRow(
-                title: "时间锚点",
-                subtitle: timeAnchorTitle,
-                value: moduleDisplayText(.smartTime),
-                detail: birthdaySummaryText,
-                systemImage: "calendar.badge.clock",
-                showsDivider: false,
-                isExpanded:
-                    expansionBinding(
-                        for: .anchor
-                    )
-            ) {
-                anchorEditorContent
-            }
-        }
-    }
-
-    private var logoEditorContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Picker("Logo 标识", selection: $logoMode) {
-                ForEach(V1LogoMode.allCases) { mode in
-                    Text(mode.title).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            HStack(alignment: .center, spacing: 12) {
-                logoPreview
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("当前状态")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Text(logoMode.title)
-                        .font(.subheadline.weight(.semibold))
-
-                    Text(resolvedLogoStatusMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            if logoMode == .customUpload {
-                PhotosPicker(
-                    selection: $selectedLogoItem,
-                    matching: .images
-                ) {
-                    Label(
-                        isOptimizingLogo
-                        ? "正在优化"
-                        : "选择 Logo",
-                        systemImage:
-                            isOptimizingLogo
-                            ? "hourglass"
-                            : "photo.badge.plus"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
-                .disabled(isOptimizingLogo)
-            } else if logoMode == .subjectAvatar {
-                Text("对象头像来自当前记忆对象配置，会自动按头像、标识和预览三种用途准备资源。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
-    private var anchorEditorContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            DatePicker(
-                timeAnchorTitle,
-                selection: $birthdayDate,
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.compact)
-
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 16)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("时间结果")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Text(
-                        moduleDisplayText(
-                            .smartTime
-                        )
-                    )
-                        .font(.subheadline.weight(.semibold))
-                }
-            }
-        }
+        V1AccessoryEntrySection(
+            logoMode: $logoMode,
+            selectedLogoItem: $selectedLogoItem,
+            birthdayDate: $birthdayDate,
+            logoStatusMessage: resolvedLogoStatusMessage,
+            logoRowDetail: logoRowDetail,
+            logoPersistenceHint:
+                resolvedLogoPersistenceHint,
+            subjectAvatarLogoImagePath:
+                resolvedSubjectAvatarLogoImagePath,
+            subjectAvatarPreviewImagePath:
+                resolvedSubjectAvatarPreviewImagePath,
+            customLogoImagePath:
+                customLogoBadge?.imagePath,
+            isOptimizingLogo: isOptimizingLogo,
+            timeAnchorPresentation:
+                timeAnchorEntryPresentation,
+            birthdaySummaryText: birthdaySummaryText,
+            logoExpanded:
+                expansionBinding(
+                    for: .logo
+                ),
+            anchorExpanded:
+                expansionBinding(
+                    for: .anchor
+                )
+        )
     }
 
     private var logoRowDetail: String {
@@ -905,6 +1099,30 @@ struct PhotoMemoiOSV1View: View {
         }
     }
 
+    private var resolvedLogoPersistenceHint: String? {
+        guard
+            activeConfigurationMessage
+            == V1DraftMutationCoordinator
+            .dirtyStateMessage
+        else {
+            return nil
+        }
+
+        return "预览区已经切换，点击“保存为默认配置”后，实际输出才会同步到当前标识。"
+    }
+
+    private var timeAnchorEntryPresentation:
+        V1TimeAnchorEntryPresentation {
+
+        V1TimeAnchorEntryPresenter
+            .presentation(
+                subject:
+                    alignedSelectedSubject()
+                    ?? session.state.selectedSubject,
+                anchorTitle: timeAnchorTitle
+            )
+    }
+
     private var resolvedSubjectAvatarLogoImagePath: String? {
         session.state.selectedSubject?
             .identity.avatarBadgeImagePath
@@ -929,7 +1147,19 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var birthdaySummaryText: String {
-        birthdayDate.formatted(
+        let anchorDate =
+            alignedSelectedSubject()?
+            .primaryTimeAnchor?
+            .date
+            ?? session.state.selectedSubject?
+            .primaryTimeAnchor?
+            .date
+            ?? session.state.selectedSubject?
+            .timeAnchors.first?
+            .date
+            ?? birthdayDate
+
+        return anchorDate.formatted(
             .dateTime
                 .year()
                 .month()
@@ -937,17 +1167,18 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private var currentOutputSummaryProjection:
-        V1IOSHomeOutputSummaryProjection {
-
-        V1IOSHomeProjection
-            .outputSummary(
-                outputTarget: outputTarget,
-                selectedExistingAlbumTitle:
-                    selectedExistingAlbumTitle,
-                newAlbumName: newAlbumName,
-                writesMemoryDescription:
-                    session.usesCustomMemoryWriteText
+    private var resolvedMemoryWriteText: String {
+        V1ResolvedMemoryWriteTextPresenter
+            .resolvedText(
+                subject:
+                    alignedSelectedSubject()
+                    ?? session.state.selectedSubject,
+                usesCustomText:
+                    session.usesCustomMemoryWriteText,
+                customText:
+                    session.customMemoryWriteText,
+                smartModuleCarrierRegion:
+                    session.smartModuleCarrierRegion
             )
     }
 
@@ -968,31 +1199,11 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var presetPicker: some View {
-        Menu {
-            Picker("当前配置组合", selection: selectedPresetBinding) {
-                ForEach(session.state.memoryPresets) { preset in
-                    Text(preset.title).tag(preset.id)
-                }
-            }
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "rectangle.stack.fill")
-                    .font(.caption.weight(.semibold))
-                Text(session.currentMemoryPresetTitle)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.accentColor.opacity(0.10))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.accentColor.opacity(0.18))
-            )
-        }
+        V1PresetPicker(
+            currentTitle: session.currentMemoryPresetTitle,
+            presets: session.state.memoryPresets,
+            selectedPresetID: selectedPresetBinding
+        )
     }
 
     private var moduleSheetPresented: Binding<Bool> {
@@ -1017,176 +1228,20 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private var logoPreview: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
-                .frame(width: 74, height: 54)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
-                        .foregroundStyle(Color.black.opacity(0.10))
-                )
-
-            switch logoMode {
-            case .appleMini:
-                Image(systemName: "apple.logo")
-                    .font(.title2.weight(.semibold))
-            case .customUpload:
-                if let imagePath = customLogoBadge?.imagePath,
-                   let image = UIImage(contentsOfFile: imagePath) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .padding(8)
-                } else {
-                    VStack(spacing: 4) {
-                    Image(systemName: "photo.badge.plus")
-                        .font(.title3.weight(.semibold))
-                    Text("上传")
-                        .font(.caption2.weight(.semibold))
-                    }
-                    .foregroundStyle(.secondary)
-                }
-            case .subjectAvatar:
-                if let imagePath = resolvedSubjectAvatarPreviewImagePath,
-                   let image = UIImage(contentsOfFile: imagePath) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .clipShape(Circle())
-                        .frame(width: 38, height: 38)
-                } else {
-                    VStack(spacing: 4) {
-                        Image(systemName: "person.crop.circle.badge.plus")
-                            .font(.title3.weight(.semibold))
-                        Text("头像")
-                            .font(.caption2.weight(.semibold))
-                    }
-                    .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private func moduleLibrarySheet(
-        region: CardRegion
-    ) -> some View {
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(modules(for: region)) { module in
-                        Button {
-                            applyModulePanelState(
-                                V1ModulePanelCoordinator
-                                    .selectModule(
-                                        module,
-                                        state:
-                                            modulePanelState
-                                    )
-                            )
-                            insert(module, into: region)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: module.systemImage)
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 24)
-
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(module.title)
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-
-                                    HStack(spacing: 6) {
-                                        Text(moduleCategoryTitle(module))
-                                            .font(.caption2.weight(.semibold))
-                                            .foregroundStyle(.tertiary)
-                                            .textCase(.uppercase)
-
-                                        Text(moduleDisplayText(module))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-                                }
-
-                                Spacer(minLength: 0)
-                            }
-                        }
-                    }
-                } header: {
-                    Text("常用与模块")
-                }
-            }
-            .navigationTitle(region.semanticTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("完成") {
-                        applyModulePanelState(
-                            V1ModulePanelCoordinator
-                                .setSheetPresented(
-                                    false,
-                                    state:
-                                        modulePanelState
-                                )
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     private func draft(for region: CardRegion) -> V1EditorDraft {
-        V1DraftOrchestrationCoordinator
-            .draft(
-                for: region,
-                viewState:
-                    draftOrchestrationState,
-                makeDefaultDraft:
-                    makeDefaultDraft
-            )
-    }
-
-    private func updateDraft(
-        for region: CardRegion,
-        transform: (inout V1EditorDraft) -> Void
-    ) {
-        let update =
-            V1DraftMutationCoordinator
-            .updateDraft(
-                for: region,
-                in: draftMutationState,
-                makeDefaultDraft:
-                    makeDefaultMutationDraft
-            ) { draft in
-                var editorDraft =
-                    V1DraftBridge
-                    .editorDraft(from: draft)
-                transform(&editorDraft)
-                draft =
-                    V1DraftBridge
-                    .mutationDraft(
-                        from: editorDraft
-                    )
-            }
-
-        applyDraftMutationUpdate(update)
+        draftRuntimeCoordinator
+            .draft(for: region)
     }
 
     private func setActiveTextItem(
         _ itemID: UUID?,
         for region: CardRegion
     ) {
-        applyDraftMutationState(
-            V1DraftMutationCoordinator
+        draftRuntimeCoordinator
             .setActiveTextItem(
                 itemID,
-                for: region,
-                in: draftMutationState
+                for: region
             )
-        )
     }
 
     private func updateTextItem(
@@ -1194,74 +1249,45 @@ struct PhotoMemoiOSV1View: View {
         text: String,
         for region: CardRegion
     ) {
-        applyDraftMutationUpdate(
-            V1DraftMutationCoordinator
+        draftRuntimeCoordinator
             .updateTextItem(
-                id: itemID,
+                itemID,
                 text: text,
-                for: region,
-                in: draftMutationState,
-                makeDefaultDraft:
-                    makeDefaultMutationDraft
+                for: region
             )
-        )
     }
 
     private func prependText(
         _ text: String,
         to region: CardRegion
     ) {
-        applyDraftMutationUpdate(
-            V1DraftMutationCoordinator
+        draftRuntimeCoordinator
             .prependText(
                 text,
-                for: region,
-                in: draftMutationState,
-                makeDefaultDraft:
-                    makeDefaultMutationDraft
+                to: region
             )
-        )
     }
 
     private func appendText(
         _ text: String,
         to region: CardRegion
     ) {
-        applyDraftMutationUpdate(
-            V1DraftMutationCoordinator
+        draftRuntimeCoordinator
             .appendText(
                 text,
-                for: region,
-                in: draftMutationState,
-                makeDefaultDraft:
-                    makeDefaultMutationDraft
+                to: region
             )
-        )
     }
 
     private func removeItem(
         _ itemID: UUID,
         from region: CardRegion
     ) {
-        applyDraftMutationUpdate(
-            V1DraftMutationCoordinator
+        draftRuntimeCoordinator
             .removeItem(
-                id: itemID,
-                from: region,
-                in: draftMutationState,
-                makeDefaultDraft:
-                    makeDefaultMutationDraft
+                itemID,
+                from: region
             )
-        )
-    }
-
-    private var draftMutationState:
-        V1DraftMutationCoordinator.State {
-        V1DraftOrchestrationCoordinator
-            .mutationState(
-                from:
-                    draftOrchestrationState
-        )
     }
 
     private var draftOrchestrationState:
@@ -1276,18 +1302,6 @@ struct PhotoMemoiOSV1View: View {
             )
     }
 
-    private func applyDraftMutationState(
-        _ state:
-            V1DraftMutationCoordinator.State
-    ) {
-        let viewState =
-            V1DraftOrchestrationCoordinator
-            .viewState(from: state)
-        applyDraftOrchestrationState(
-            viewState
-        )
-    }
-
     private func applyDraftOrchestrationState(
         _ state:
             V1DraftOrchestrationCoordinator.ViewState
@@ -1300,81 +1314,40 @@ struct PhotoMemoiOSV1View: View {
             state.activeConfigurationMessage
     }
 
-    private func applyDraftMutationUpdate(
-        _ update:
-            V1DraftMutationCoordinator.Update
-    ) {
-        let application =
-            V1DraftOrchestrationCoordinator
-            .applyMutationUpdate(update)
-        applyDraftOrchestrationState(
-            application.viewState
-        )
-        if !application
-            .previewDraftsByRegion
-            .isEmpty {
-            previewSyncCoordinator
-                .refreshDynamicPreview(
-                    modelsByRegion:
-                        previewRenderModels(
-                            for:
-                                application
-                                .previewDraftsByRegion
-                        )
-                )
-        }
-    }
-
     private func refreshPreview(for region: CardRegion) {
-        previewSyncCoordinator
+        draftRuntimeCoordinator
             .refreshPreview(
-                for: region,
-                model:
-                    previewRenderModel(
-                        for:
-                            V1DraftBridge
-                            .previewDraft(
-                                from: draft(
-                                    for: region
-                                )
-                            )
-                    )
+                for: region
             )
     }
 
     private func refreshDynamicPreview() {
+        draftRuntimeCoordinator
+            .refreshDynamicPreview()
+    }
+
+    private func previewText(
+        for region: CardRegion
+    ) -> String {
         previewSyncCoordinator
-            .refreshDynamicPreview(
-                modelsByRegion:
-                    previewRenderModels(
-                        for:
-                            V1DraftOrchestrationCoordinator
-                            .dynamicPreviewDrafts(
-                                for:
-                                    CardRegion
-                                    .memoryCardRegions,
-                                viewState:
-                                    draftOrchestrationState,
-                                makeDefaultDraft:
-                                    makeDefaultDraft
-                            )
-                    )
+            .previewText(
+                for: region
             )
     }
 
-    private func previewRenderModels(
-        for draftsByRegion: [CardRegion: V1PreviewDraft]
-    ) -> [CardRegion: V1PreviewRenderModel] {
-        Dictionary(
-            uniqueKeysWithValues:
-                draftsByRegion.map {
-                    region, draft in
-                    (
-                        region,
-                        previewRenderModel(for: draft)
-                    )
-                }
+    private func templateText(for draft: V1EditorDraft) -> String {
+        draft.singleLineTemplateText
+    }
+
+    private func composedText(
+        for draft: V1EditorDraft
+    ) -> String {
+        previewRenderModel(
+            for:
+                V1DraftBridge
+                .previewDraft(from: draft)
         )
+        .displayText
     }
 
     private func previewRenderModel(
@@ -1398,25 +1371,6 @@ struct PhotoMemoiOSV1View: View {
         }
     }
 
-    private func previewText(
-        for region: CardRegion
-    ) -> String {
-        previewSyncCoordinator
-            .previewText(
-                for: region
-            )
-    }
-
-    private func templateText(for draft: V1EditorDraft) -> String {
-        draft.singleLineTemplateText
-    }
-
-    private func composedText(
-        for draft: V1EditorDraft
-    ) -> String {
-        draft.singleLineText
-    }
-
     private func makeDefaultDraft(
         for region: CardRegion
     ) -> V1EditorDraft {
@@ -1432,17 +1386,6 @@ struct PhotoMemoiOSV1View: View {
                         ),
                     context:
                         previewCompositionContext
-                )
-        )
-    }
-
-    private func makeDefaultMutationDraft(
-        for region: CardRegion
-    ) -> V1DraftMutationDraft {
-        V1DraftBridge.mutationDraft(
-            from:
-                makeDefaultDraft(
-                    for: region
                 )
         )
     }
@@ -1479,128 +1422,108 @@ struct PhotoMemoiOSV1View: View {
         _ module: IOSInsertableModule,
         into region: CardRegion
     ) {
-        applyDraftMutationUpdate(
-            V1DraftMutationCoordinator
+        draftRuntimeCoordinator
             .insert(
-                V1DraftBridge
-                .mutationItem(
-                    from: moduleItem(module)
-                ),
-                into: region,
-                in: draftMutationState,
-                makeDefaultDraft:
-                    makeDefaultMutationDraft
+                moduleItem(module),
+                into: region
             )
-        )
     }
 
+    @discardableResult
     @MainActor
-    private func applyCurrentV1Configuration() async {
+    private func applyCurrentV1Configuration() async -> Bool {
         guard !isSavingConfiguration else {
-            return
+            return false
         }
 
-        isSavingConfiguration = true
-        activeConfigurationMessage = "正在保存"
-
-        let template =
-            Template(
-                preset: .immersWhite,
-                name: session.currentMemoryPresetTitle,
-                leftTopArea: templateArea(
-                    name: "Recorder",
-                    region: .slotA
-                ),
-                leftBottomArea: templateArea(
-                    name: "Timeline",
-                    region: .slotB
-                ),
-                rightTopArea: templateArea(
-                    name: "Capture Summary",
-                    region: .slotC
-                ),
-                rightBottomArea: templateArea(
-                    name: "Memory",
-                    region: .slotD
-                ),
-                badgeArea: .badge
+        let request =
+            V1ConfigurationApplyRequestBuilder
+            .buildRequest(
+                from:
+                    V1ConfigurationApplyBuildInput(
+                        selectedSubject:
+                            session
+                            .state
+                            .selectedSubject,
+                        subjects:
+                            session
+                            .state
+                            .subjects,
+                        selectedSubjectID:
+                            session
+                            .state
+                            .selectedSubjectID,
+                        shouldSaveSubjectLibrary:
+                            shouldSaveSubjectLibrary,
+                        presetTitle:
+                            session
+                            .currentMemoryPresetTitle,
+                        templateTextsByRegion:
+                            Dictionary(
+                                uniqueKeysWithValues:
+                                    CardRegion
+                                    .memoryCardRegions
+                                    .map { region in
+                                        (
+                                            region,
+                                            templateText(
+                                                for: draft(
+                                                    for: region
+                                                )
+                                            )
+                                        )
+                                    }
+                            ),
+                        badge:
+                            selectedBadgeForSaving,
+                        usesCustomMemoryWriteText:
+                            session
+                            .usesCustomMemoryWriteText,
+                        customMemoryWriteText:
+                            session
+                            .customMemoryWriteText,
+                        birthdayDate:
+                            birthdayDate,
+                        outputTarget:
+                            outputTarget,
+                        availableAlbums:
+                            availableAlbums,
+                        selectedExistingAlbumIdentifier:
+                            selectedExistingAlbumIdentifier,
+                        newAlbumName:
+                            newAlbumName
+                    )
             )
-        let subjectForSaving =
-            alignedSelectedSubject()
 
-        let result =
-            await configurationApplyCoordinator
+        return await configurationApplyRuntimeCoordinator
             .apply(
-                V1ConfigurationApplyRequest(
-                    subject: subjectForSaving,
-                    template: template,
-                    badge:
-                        selectedBadgeForSaving,
-                    shouldWritePhotoDescription:
-                        session
-                        .usesCustomMemoryWriteText,
-                    photoDescriptionOverride:
-                        session
-                        .usesCustomMemoryWriteText
-                        ? session
-                        .customMemoryWriteText
-                        : "",
-                    timeAnchorTitle:
-                        timeAnchorTitle,
-                    timeAnchorDate:
-                        birthdayDate,
-                    outputTarget:
-                        outputTarget,
-                    availableAlbums:
-                        availableAlbums,
-                    selectedExistingAlbumIdentifier:
-                        selectedExistingAlbumIdentifier,
-                    newAlbumName:
-                        newAlbumName
-                )
+                request,
+                outputTarget: outputTarget
             )
-
-        let receipt: V1ConfigurationApplyReceipt
-
-        switch result {
-        case .success(let applyReceipt):
-            receipt = applyReceipt
-        case .failure(let error):
-            activeConfigurationMessage =
-                error.message
-            isSavingConfiguration = false
-            return
-        }
-
-        if outputTarget == .newAlbum,
-           let pickerSelectionIdentifier =
-            receipt.albumSelection
-            .pickerSelectionIdentifier {
-            await loadAlbumOptions()
-            selectedExistingAlbumIdentifier =
-                pickerSelectionIdentifier
-        }
-
-        if let subjectForSaving {
-            session.restoreSelectedSubject(
-                subjectForSaving
-            )
-        }
-
-        session.applySelectedMemoryPreset()
-        activeConfigurationMessage = "已保存为分享配置"
-        isSavingConfiguration = false
     }
 
     private var timeAnchorTitle: String {
-        V1IOSTimeAnchorPresentation
-            .title(
-                subject:
-                    alignedSelectedSubject()
-                    ?? session.state.selectedSubject,
-                fallback:
-                    session.currentTimeAnchorTitle
+        let anchorTitle =
+            alignedSelectedSubject()?
+            .primaryTimeAnchor?
+            .title
+            ?? alignedSelectedSubject()?
+            .behavior.primaryAnchor
+            ?? session.state.selectedSubject?
+            .primaryTimeAnchor?
+            .title
+            ?? session.state.selectedSubject?
+            .behavior.primaryAnchor
+            ?? "时间锚点"
+
+        let trimmedTitle =
+            anchorTitle.trimmingCharacters(
+                in: .whitespacesAndNewlines
             )
+
+        return trimmedTitle.isEmpty
+            ? "时间锚点"
+            : trimmedTitle
     }
 
     @MainActor
@@ -1639,85 +1562,43 @@ struct PhotoMemoiOSV1View: View {
         isOptimizingLogo = true
         logoStatusMessage = "正在优化 Logo"
 
-        do {
-            guard
-                let data =
-                    try await item.loadTransferable(
-                        type: Data.self
-                    )
-            else {
-                throw LogoAssetOptimizationError.invalidImage
-            }
-
-            let optimizedAsset =
-                try await logoOptimizer.optimize(
-                    data: data
-                )
-
-            customLogoBadge = optimizedAsset.badge
-            logoMode = .customUpload
-            logoStatusMessage =
-                "\(optimizedAsset.pixelSize) × \(optimizedAsset.pixelSize) PNG 已优化"
-            activeConfigurationMessage = "有未保存修改"
-        } catch {
-            logoStatusMessage =
-                error.localizedDescription
-        }
+        let update =
+            await V1LogoSelectionCoordinator
+            .optimize(item)
+        applyLogoSelectionUpdate(update)
 
         isOptimizingLogo = false
     }
 
-    private func bootstrapSavedSettings() {
-        applyBootstrapState(
-            configurationBootstrapCoordinator
-                .loadState()
-        )
+    private func applyLogoSelectionUpdate(
+        _ update: V1LogoSelectionUpdate
+    ) {
+        if let customLogoBadge =
+            update.customLogoBadge {
+            self.customLogoBadge =
+                customLogoBadge
+        }
+
+        if let logoMode =
+            update.logoMode {
+            self.logoMode = logoMode
+        }
+
+        logoStatusMessage =
+            update.logoStatusMessage
+
+        if let activeConfigurationMessage =
+            update.activeConfigurationMessage {
+            self.activeConfigurationMessage =
+                activeConfigurationMessage
+        }
     }
 
-    private func applyBootstrapState(
-        _ state:
-            V1ConfigurationBootstrapState
+    private func applyBootstrapFlowPatch(
+        _ patch: V1BootstrapFlowPatch
     ) {
-        isApplyingBootstrapState = true
-        let projection =
-            V1ConfigurationBootstrapPresenter
-            .projection(from: state)
-
-        customLogoBadge =
-            projection.customLogoBadge
-        logoMode = projection.logoMode
-
-        if projection.logoMode == .customUpload,
-           projection.customLogoBadge != nil {
-            logoStatusMessage = "已使用自选 Logo。"
-        }
-
-        outputTarget =
-            projection.outputTarget
-        selectedExistingAlbumIdentifier =
-            projection
-            .selectedExistingAlbumIdentifier
-
-        if let suggestedNewAlbumName =
-            projection
-            .suggestedNewAlbumName {
-            newAlbumName =
-                suggestedNewAlbumName
-        }
-
-        if let selectedSubject =
-            state.selectedSubject {
-            session.restoreSelectedSubject(
-                selectedSubject
-            )
-
-            if let anchorDate =
-                selectedSubject.primaryTimeAnchor?.date {
-                birthdayDate = anchorDate
-            }
-        }
-
-        isApplyingBootstrapState = false
+        bootstrapRuntimeCoordinator
+            .apply(patch)
     }
 
     private var selectedBadgeForSaving: Badge {
@@ -1729,31 +1610,6 @@ struct PhotoMemoiOSV1View: View {
         case .subjectAvatar:
             return subjectAvatarBadge
         }
-    }
-
-    private func templateArea(
-        name: String,
-        region: CardRegion
-    ) -> TemplateArea {
-        let text =
-            templateText(
-                for: draft(for: region)
-            )
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        return TemplateArea(
-            name: name,
-            items: [
-                TemplateItem(
-                    type: .variable,
-                    name: name,
-                    value: text,
-                    isEnabled: !text.isEmpty
-                )
-            ]
-        )
     }
 
     private func modules(for region: CardRegion) -> [IOSInsertableModule] {
@@ -1784,22 +1640,11 @@ struct PhotoMemoiOSV1View: View {
             return module.title
         }
 
-        let draft =
-            V1PreviewDraft(
-                items: [
-                    previewCompositionEngine
-                        .makeModuleItem(
-                            previewModule,
-                            context:
-                                previewCompositionContext
-                        )
-                ]
+        return previewCompositionEngine
+            .displayText(
+                for: previewModule,
+                context: previewCompositionContext
             )
-
-        return previewRenderModel(
-            for: draft
-        )
-        .displayText
     }
 
     private var previewCompositionContext:
@@ -1815,44 +1660,15 @@ struct PhotoMemoiOSV1View: View {
 
     private func alignedSelectedSubject()
     -> MemorySubject? {
-        guard
-            var subject =
-                session.state.selectedSubject
-        else {
-            return nil
-        }
-
-        if let activeAnchorID =
-            subject.activeTimeAnchorID,
-           let activeAnchorIndex =
-            subject.timeAnchors.firstIndex(
-                where: {
-                    $0.id == activeAnchorID
-                }
-            ) {
-            subject.timeAnchors[activeAnchorIndex].date =
-                birthdayDate
-            subject.behavior.primaryAnchor =
-                subject.timeAnchors[activeAnchorIndex]
-                .title
-            subject.referenceDate = birthdayDate
-            return subject
-        }
-
-        if let primaryAnchorIndex =
-            subject.timeAnchors.firstIndex(
-                where: {
-                    $0.title == subject.behavior.primaryAnchor
-                }
-            ) {
-            subject.timeAnchors[primaryAnchorIndex].date =
-                birthdayDate
-            subject.referenceDate = birthdayDate
-            return subject
-        }
-
-        subject.referenceDate = birthdayDate
-        return subject
+        V1ConfigurationApplyRequestBuilder
+            .alignedSelectedSubject(
+                from:
+                    session
+                    .state
+                    .selectedSubject,
+                birthdayDate:
+                    birthdayDate
+            )
     }
 
     private var shareDiagnosticsHeaderProjection:
@@ -1877,15 +1693,6 @@ struct PhotoMemoiOSV1View: View {
             .eventDisplayProjections(
                 from: shareDiagnosticEvents
             )
-    }
-
-    private var selectedExistingAlbumTitle: String {
-
-        availableAlbums.first(where: {
-            $0.id == selectedExistingAlbumIdentifier
-        })?
-        .title
-        ?? ""
     }
 
     private func previewModule(
@@ -1978,8 +1785,17 @@ struct PhotoMemoiOSV1View: View {
         }
 
         didBootstrap = true
-        bootstrapSavedSettings()
-        bootstrapDrafts()
+        applyBootstrapFlowPatch(
+            bootstrapFlowCoordinator
+                .bootstrap(
+                    hasSeenWelcome:
+                        hasSeenWelcome,
+                    fallbackBirthdayDate:
+                        birthdayDate,
+                    makeDefaultDraft:
+                        makeDefaultDraft(for:)
+                )
+        )
     }
 
     private func dismissKeyboard() {
@@ -1992,15 +1808,104 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
+    private func completeWelcomeFlow() {
+        let update =
+            V1EntryFlowCoordinator
+            .completeWelcome(
+                from: entryFlowState,
+                hasSeenWelcome:
+                    hasSeenWelcome
+            )
+        applyEntryWelcomeUpdate(update)
+    }
+
+    private func showWorkflowGuideFromWelcome() {
+        let update =
+            V1EntryFlowCoordinator
+            .showWorkflowFromWelcome(
+                from: entryFlowState,
+                hasSeenWelcome:
+                    hasSeenWelcome
+            )
+        applyEntryWelcomeUpdate(update)
+    }
+
+    private func applyEntryWelcomeUpdate(
+        _ update: V1EntryWelcomeFlowUpdate
+    ) {
+        hasSeenWelcome = update.hasSeenWelcome
+        entryFlowState = update.flowState
+    }
+
+    private func applyWelcomeFlowState(
+        _ state: V1WelcomeFlowState
+    ) {
+        hasSeenWelcome = state.hasSeenWelcome
+        entryFlowState =
+            V1EntryFlowCoordinator
+            .applyWelcomeState(
+                state,
+                to: entryFlowState
+            )
+    }
+
     private func bootstrapDrafts() {
-        regionDrafts =
-            draftBootstrapCoordinator
+        draftRuntimeCoordinator
             .bootstrapDrafts(
-                makeDefaultDraft:
-                    makeDefaultDraft(for:)
+                using:
+                    V1DraftBootstrapCoordinator(
+                        session: session,
+                        context:
+                            previewCompositionContext,
+                        engine:
+                            previewCompositionEngine
+                    )
+            )
+    }
+
+    @MainActor
+    private func importPickedPhotos(
+        _ items: [PhotosPickerItem]
+    ) async {
+        defer {
+            selectedProcessingItems = []
+        }
+
+        let result =
+            await V1PhotoProcessingQuickActionCoordinator
+            .processPickedPhotos(
+                saveCurrentConfiguration: {
+                    await applyCurrentV1Configuration()
+                },
+                importURLs: {
+                    await V1PhotoIntakeImporter
+                        .importURLs(from: items)
+                },
+                submit: { resolvedURLs in
+                    externalIntakeCenter.submit(
+                        urls: resolvedURLs,
+                        source: .quickAction
+                    )
+                }
             )
 
-        refreshDynamicPreview()
+        switch result.status {
+        case .configurationSaveFailed:
+            return
+        case .noSupportedPhotos:
+            activeConfigurationMessage =
+                "未找到可处理的照片"
+        case .submitted:
+            refreshExternalIntake()
+            refreshProcessingState()
+        }
+
+        entryFlowState =
+            V1EntryFlowCoordinator
+            .applyQuickActionResult(
+                result,
+                to: entryFlowState
+            )
     }
 
     private var selectedPresetBinding: Binding<MemoryPreset.ID> {
@@ -2109,6 +2014,9 @@ private struct V1ScrollOffsetPreferenceKey:
             runtime.environment
             .coordinators
             .configuration,
+        externalIntakeCenter:
+            runtime.environment
+            .externalIntakeCenter,
         diagnosticsRepository:
             runtime.environment
             .repositories

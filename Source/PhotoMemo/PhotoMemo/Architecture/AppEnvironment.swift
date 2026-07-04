@@ -316,7 +316,18 @@ final class AppEnvironment {
                             .settings,
                         configurationRepository:
                             repositories
-                            .configuration
+                            .configuration,
+                        applyLiveDefaultConfiguration: {
+                            snapshot in
+                            resolvedBatchQueueStore
+                                .updateDefaultConfiguration(
+                                    snapshot
+                                )
+                            resolvedExternalIntakeCenter
+                                .updateDefaultConfiguration(
+                                    snapshot
+                                )
+                        }
                     )
             )
 

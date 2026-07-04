@@ -10,16 +10,23 @@ final class ConfigurationCoordinator {
     private let configurationRepository:
         ConfigurationRepository
 
+    private let applyLiveDefaultConfiguration:
+        (BatchConfigurationSnapshot) -> Void
+
     init(
         settingsRepository:
             SettingsRepository,
         configurationRepository:
-            ConfigurationRepository
+            ConfigurationRepository,
+        applyLiveDefaultConfiguration:
+            @escaping (BatchConfigurationSnapshot) -> Void = { _ in }
     ) {
         self.settingsRepository =
             settingsRepository
         self.configurationRepository =
             configurationRepository
+        self.applyLiveDefaultConfiguration =
+            applyLiveDefaultConfiguration
     }
 
     func loadDefaultBatchConfigurationSnapshot()
@@ -68,6 +75,30 @@ final class ConfigurationCoordinator {
         return .success(())
     }
 
+    func saveSelectedMemorySubject(
+        _ subject: MemorySubject?
+    ) -> PhotoMemoResult<Void> {
+
+        settingsRepository
+            .saveSelectedMemorySubject(
+                subject
+            )
+        return .success(())
+    }
+
+    func saveV1SubjectLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?
+    ) -> PhotoMemoResult<Void> {
+
+        settingsRepository
+            .saveV1SubjectLibrary(
+                subjects: subjects,
+                selectedSubjectID: selectedSubjectID
+            )
+        return .success(())
+    }
+
     func saveV1Configuration(
         _ request:
             V1ConfigurationSaveRequest
@@ -77,10 +108,11 @@ final class ConfigurationCoordinator {
 
         let anchor =
             configurationRepository
-            .upsertBirthdayAnchor(
-                title:
+            .syncAnchors(
+                from: request.subject,
+                fallbackTitle:
                     request.timeAnchor.title,
-                date:
+                fallbackDate:
                     request.timeAnchor.date
             )
 
@@ -97,6 +129,15 @@ final class ConfigurationCoordinator {
             .saveSelectedMemorySubject(
                 request.subject
             )
+        if request.shouldSaveSubjectLibrary,
+           !request.subjects.isEmpty {
+            settingsRepository
+                .saveV1SubjectLibrary(
+                    subjects: request.subjects,
+                    selectedSubjectID:
+                        request.selectedSubjectID
+                )
+        }
         settingsRepository
             .savePhotoDescriptionSettings(
                 shouldWrite:
@@ -119,6 +160,10 @@ final class ConfigurationCoordinator {
                     .albumSelection
                     .title
             )
+        applyLiveDefaultConfiguration(
+            configurationRepository
+            .loadDefaultBatchConfigurationSnapshot()
+        )
 
         return .success(
             V1ConfigurationSaveReceipt(
