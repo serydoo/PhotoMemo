@@ -31,8 +31,10 @@ Verification completed:
   - `V1IOSHomeProjectionTests`
   - `SettingsServiceTests`
 - `PhotoMemoiOSV1` generic iOS build passed with signing disabled.
-- generated unified testing IPA:
-  - `/Users/rui/Desktop/photomemo过程中测试版本软件/PhotoMemoiOSV1-main-unified-20260704190048.ipa`
+- generated unified testing IPA policy:
+  - use `/Users/rui/Desktop/photomemo过程中测试版本软件`
+  - keep only the latest `.ipa` and matching `.sha256` in that folder
+  - name packages with `PhotoMemoiOSV1-main-<commit>-<timestamp>.ipa`
 - IPA metadata verified:
   - bundle id: `com.serydoo.PhotoMemo.iOS`
   - bundle version: `20260704190048`
