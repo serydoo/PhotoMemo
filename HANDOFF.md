@@ -4,15 +4,15 @@
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
-- `main` is now the active V1 source line after merging the latest
+- `main` is now the active V1 source line after merging the former latest
   `v1-checkpoint-20260702` checkpoint into it.
 - Future V1 builds and IPA packages should come from `main`, not from a
   temporary checkout or a separate V1 branch.
 - The current V1 checkpoint is accepted as a functional baseline and now lives
   inside `main`.
 - The V1 long-term maintenance baseline is accepted after the High Finding Closure Sprint.
-- Keep `v1-checkpoint-20260702` as a historical reference/checkpoint branch,
-  not as the normal working source.
+- The previous local and remote `v1-checkpoint-20260702` branch lines have
+  been merged into `main` and removed as active build sources.
 - `5f583093` is the V1 boundary hardening code checkpoint.
 - `e48508e9` remains the first accepted V1 maintenance freeze checkpoint.
 - `2218878d` remains the functional device checkpoint that preceded the maintenance freeze.
@@ -124,7 +124,7 @@ References:
 ## 2026-07-03 V1 UX feedback re-landed in the correct repository
 
 - 这次最重要的结论不是代码，而是仓库定位纠正了：
-  - 刚开始安装到手机上的版本来自 `PhotoMemo-main-archive-20260702`
+  - 刚开始安装到手机上的版本来自旧归档目录，而不是当时最新的 V1 主线
   - 后来确认真正持续演进的 V1 在 `~/Desktop/PhotoMemo`
   - 因此这轮 UX 修复已经全部重新落在原始 V1 工作树，而不是旧归档副本
 

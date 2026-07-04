@@ -22,7 +22,7 @@
 
 文件：
 
-- [PhotoMetadata.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/PhotoMetadata.swift)
+- [PhotoMetadata.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/PhotoMetadata.swift)
 
 #### 角色
 
@@ -33,7 +33,7 @@
 
 文件：
 
-- [MetadataContext.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/MetadataContext.swift)
+- [MetadataContext.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/MetadataContext.swift)
 
 #### 角色
 
@@ -44,7 +44,7 @@
 
 文件：
 
-- [SelectedPhoto.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/SelectedPhoto.swift)
+- [SelectedPhoto.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/SelectedPhoto.swift)
 
 #### 角色
 
@@ -57,7 +57,7 @@
 
 文件：
 
-- [RecordCard.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/RecordCard.swift)
+- [RecordCard.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/RecordCard.swift)
 
 #### 角色
 
@@ -68,7 +68,7 @@
 
 文件：
 
-- [Anchor.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/Anchor.swift)
+- [Anchor.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/Anchor.swift)
 
 #### 角色
 
@@ -78,7 +78,7 @@
 
 文件：
 
-- [AnchorResult.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/AnchorResult.swift)
+- [AnchorResult.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/AnchorResult.swift)
 
 #### 角色
 
@@ -90,7 +90,7 @@
 
 文件：
 
-- [BatchProcessing.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/BatchProcessing.swift)
+- [BatchProcessing.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/BatchProcessing.swift)
 
 #### 角色
 
@@ -114,7 +114,7 @@
 
 文件：
 
-- [Template.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Models/Template.swift)
+- [Template.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Models/Template.swift)
 
 #### 角色
 
@@ -162,7 +162,7 @@
 
 目录：
 
-- [/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models)
+- [/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models)
 
 关键对象包括：
 

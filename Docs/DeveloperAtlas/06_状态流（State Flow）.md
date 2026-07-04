@@ -16,11 +16,11 @@ PhotoMemo 当前的状态流不是单一 store 架构。
 
 ### 核心文件
 
-- [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
-- [V1DraftMutationCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1DraftMutationCoordinator.swift)
-- [V1DraftOrchestrationCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1DraftOrchestrationCoordinator.swift)
-- [V1PreviewSyncCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewSyncCoordinator.swift)
-- [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
+- [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+- [V1DraftMutationCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1DraftMutationCoordinator.swift)
+- [V1DraftOrchestrationCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1DraftOrchestrationCoordinator.swift)
+- [V1PreviewSyncCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewSyncCoordinator.swift)
+- [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
 
 ### 主要状态分层
 
@@ -98,10 +98,10 @@ PhotoMemoiOSV1View @State
 
 ### 核心文件
 
-- [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
-- [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
-- [ConfigurationCenterState.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterState.swift)
-- [ConfigurationCenterRegionDraftStore.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterRegionDraftStore.swift)
+- [ConfigurationCenteriOSView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift)
+- [ConfigurationSession.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationSession.swift)
+- [ConfigurationCenterState.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterState.swift)
+- [ConfigurationCenterRegionDraftStore.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterRegionDraftStore.swift)
 
 ### 状态核心
 
@@ -156,9 +156,9 @@ ConfigurationCenterRegionDraftStore
 
 ### 核心文件
 
-- [BatchQueueStore.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/BatchQueueStore.swift)
-- [PhotoMemoAppRuntime.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/App/PhotoMemoAppRuntime.swift)
-- [PhotoMemoiOSHomeView.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSHomeView.swift)
+- [BatchQueueStore.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/BatchQueueStore.swift)
+- [PhotoMemoAppRuntime.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/App/PhotoMemoAppRuntime.swift)
+- [PhotoMemoiOSHomeView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSHomeView.swift)
 
 ### 核心状态
 

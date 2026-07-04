@@ -24,17 +24,17 @@ source URL / batch task
 
 关键文件：
 
-- [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift)
-- [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift)
-- [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift)
-- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
-- [PhotoLibraryExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift)
+- [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift)
+- [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift)
+- [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift)
+- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
+- [PhotoLibraryExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift)
 
 ## 各阶段职责
 
 ### 1. Import
 
-由 [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift) 负责。
+由 [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift) 负责。
 
 它做的事包括：
 
@@ -46,7 +46,7 @@ source URL / batch task
 
 ### 2. Metadata
 
-由 [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift) 负责。
+由 [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift) 负责。
 
 它主要从：
 
@@ -58,7 +58,7 @@ source URL / batch task
 
 ### 3. Card Build
 
-由 [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift) 负责。
+由 [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift) 负责。
 
 它会组合：
 
@@ -82,9 +82,9 @@ source URL / batch task
 
 ### 5. Export / Render
 
-由 [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift) 负责主要输出逻辑。
+由 [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift) 负责主要输出逻辑。
 
-再由 [PhotoLibraryExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift) 写回系统相册。
+再由 [PhotoLibraryExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift) 写回系统相册。
 
 ## 以后新增功能怎么判断落点
 
@@ -117,4 +117,4 @@ source URL / batch task
 
 ## 相关图
 
-- [04_Render_Pipeline.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/diagrams/04_Render_Pipeline.md)
+- [04_Render_Pipeline.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/diagrams/04_Render_Pipeline.md)

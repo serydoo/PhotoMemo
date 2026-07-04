@@ -17,7 +17,7 @@
 
 文件：
 
-- [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift)
+- [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift)
 
 ### 职责
 
@@ -40,7 +40,7 @@
 
 文件：
 
-- [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift)
+- [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift)
 
 ### 职责
 
@@ -64,7 +64,7 @@
 
 文件：
 
-- [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift)
+- [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift)
 
 ### 职责
 
@@ -87,7 +87,7 @@
 
 文件：
 
-- [BatchProcessingCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/BatchProcessingCoordinator.swift)
+- [BatchProcessingCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/BatchProcessingCoordinator.swift)
 
 ### 职责
 
@@ -111,7 +111,7 @@
 
 文件：
 
-- [BatchQueueStore.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/BatchQueueStore.swift)
+- [BatchQueueStore.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/BatchQueueStore.swift)
 
 ### 职责
 
@@ -132,7 +132,7 @@
 
 文件：
 
-- [SettingsService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift)
+- [SettingsService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift)
 
 ### 职责
 

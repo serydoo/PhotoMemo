@@ -18,36 +18,36 @@
 
 更新：
 
-- [19_开发入口（Developer GPS）.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/19_开发入口（Developer%20GPS）.md)
-- [20_扩展点（Extension Points）.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/20_扩展点（Extension%20Points）.md)
-- [24_代码索引（按主题查文件）.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/24_代码索引（按主题查文件）.md)
+- [19_开发入口（Developer GPS）.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/19_开发入口（Developer%20GPS）.md)
+- [20_扩展点（Extension Points）.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/20_扩展点（Extension%20Points）.md)
+- [24_代码索引（按主题查文件）.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/24_代码索引（按主题查文件）.md)
 
 ### 新增测试
 
 更新：
 
-- [25_测试索引（按功能查验证）.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/25_测试索引（按功能查验证）.md)
+- [25_测试索引（按功能查验证）.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/25_测试索引（按功能查验证）.md)
 
 ### 改变数据流或状态流
 
 更新：
 
-- [05_数据流（Data Flow）.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/05_数据流（Data%20Flow）.md)
-- [06_状态流（State Flow）.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/06_状态流（State%20Flow）.md)
+- [05_数据流（Data Flow）.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/05_数据流（Data%20Flow）.md)
+- [06_状态流（State Flow）.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/06_状态流（State%20Flow）.md)
 - `diagrams/` 下对应图
 
 ### 改变对象模型
 
 更新：
 
-- [18_所有Model说明.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/18_所有Model说明.md)
-- [diagrams/10_模型分层图.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/diagrams/10_模型分层图.md)
+- [18_所有Model说明.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/18_所有Model说明.md)
+- [diagrams/10_模型分层图.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/diagrams/10_模型分层图.md)
 
 ### 改变术语
 
 更新：
 
-- [23_术语词典（中英文）.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/23_术语词典（中英文）.md)
+- [23_术语词典（中英文）.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/23_术语词典（中英文）.md)
 
 ## 写法规则
 

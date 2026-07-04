@@ -15,7 +15,7 @@
 
 文件：
 
-- [SettingsRepository.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Repositories/SettingsRepository.swift)
+- [SettingsRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/SettingsRepository.swift)
 
 ### 负责什么
 
@@ -38,7 +38,7 @@
 
 文件：
 
-- [QueueRepository.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Repositories/QueueRepository.swift)
+- [QueueRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/QueueRepository.swift)
 
 ### 负责什么
 
@@ -62,7 +62,7 @@
 
 文件：
 
-- [ConfigurationRepository.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Repositories/ConfigurationRepository.swift)
+- [ConfigurationRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/ConfigurationRepository.swift)
 
 ### 负责什么
 
@@ -84,7 +84,7 @@
 
 文件：
 
-- [PhotoRepository.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Repositories/PhotoRepository.swift)
+- [PhotoRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/PhotoRepository.swift)
 
 ### 负责什么
 
@@ -105,7 +105,7 @@
 
 文件：
 
-- [PhotoLibraryRepository.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Repositories/PhotoLibraryRepository.swift)
+- [PhotoLibraryRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/PhotoLibraryRepository.swift)
 
 ### 负责什么
 
@@ -126,7 +126,7 @@
 
 文件：
 
-- [DiagnosticsRepository.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Repositories/DiagnosticsRepository.swift)
+- [DiagnosticsRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/DiagnosticsRepository.swift)
 
 ### 负责什么
 

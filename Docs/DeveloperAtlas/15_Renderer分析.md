@@ -16,13 +16,13 @@ RecordCard
 
 ## 核心文件
 
-- [RecordCardRenderer.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/RecordCardRenderer.swift)
-- [ClassicWhiteCardRenderer.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteCardRenderer.swift)
-- [ClassicWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteRenderer.swift)
-- [ImmersWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift)
-- [RenderTheme.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/RenderTheme.swift)
-- [RendererConstants.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/RendererConstants.swift)
-- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
+- [RecordCardRenderer.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/RecordCardRenderer.swift)
+- [ClassicWhiteCardRenderer.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteCardRenderer.swift)
+- [ClassicWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteRenderer.swift)
+- [ImmersWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift)
+- [RenderTheme.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/RenderTheme.swift)
+- [RendererConstants.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/RendererConstants.swift)
+- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
 
 ## 1. `RecordCardRenderer`
 
@@ -47,9 +47,9 @@ RecordCard
 
 ### 关键文件
 
-- [ClassicWhiteCardRenderer.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteCardRenderer.swift)
-- [ClassicWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteRenderer.swift)
-- [RenderTheme.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/RenderTheme.swift)
+- [ClassicWhiteCardRenderer.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteCardRenderer.swift)
+- [ClassicWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteRenderer.swift)
+- [RenderTheme.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/RenderTheme.swift)
 
 ### 它负责什么
 
@@ -78,7 +78,7 @@ Classic White 当前仍然有 renderer 内的布局计算。
 
 ### 关键文件
 
-- [ImmersWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift)
+- [ImmersWhiteRenderer.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift)
 
 ### 它负责什么
 
@@ -139,7 +139,7 @@ Classic White 当前仍然有 renderer 内的布局计算。
 
 ### 关键文件
 
-- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
+- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
 
 ### 调用关系
 

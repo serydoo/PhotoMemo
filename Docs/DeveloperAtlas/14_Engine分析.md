@@ -13,7 +13,7 @@
 
 目录：
 
-- [/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Engines](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Engines)
+- [/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Engines](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Engines)
 
 主要包括：
 
@@ -34,7 +34,7 @@
 
 目录：
 
-- [/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/MemoryEngine](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/MemoryEngine)
+- [/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine)
 
 主要包括：
 
@@ -59,7 +59,7 @@
 
 文件：
 
-- [AnchorEngine.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Engines/AnchorEngine.swift)
+- [AnchorEngine.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Engines/AnchorEngine.swift)
 
 #### 负责什么
 
@@ -90,7 +90,7 @@
 
 文件：
 
-- [MemorySubjectAdapter.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemorySubjectAdapter.swift)
+- [MemorySubjectAdapter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemorySubjectAdapter.swift)
 
 #### 负责什么
 
@@ -106,7 +106,7 @@
 
 文件：
 
-- [ProductionMemoryResolver.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/MemoryEngine/ProductionMemoryResolver.swift)
+- [ProductionMemoryResolver.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/ProductionMemoryResolver.swift)
 
 #### 负责什么
 
@@ -127,7 +127,7 @@ PersonalProfile / Anchor / captureDate
 
 文件：
 
-- [MemoryExpressionEngine.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryExpressionEngine.swift)
+- [MemoryExpressionEngine.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryExpressionEngine.swift)
 
 #### 负责什么
 
@@ -147,7 +147,7 @@ PersonalProfile / Anchor / captureDate
 
 文件：
 
-- [MemoryExpressionPreviewResolver.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryExpressionPreviewResolver.swift)
+- [MemoryExpressionPreviewResolver.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/MemoryEngine/MemoryExpressionPreviewResolver.swift)
 
 #### 负责什么
 

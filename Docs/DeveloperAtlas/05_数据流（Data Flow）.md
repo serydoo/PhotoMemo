@@ -36,10 +36,10 @@ PhotoMemoiOSV1View state
 
 关键文件：
 
-- [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
-- [V1DraftOrchestrationCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1DraftOrchestrationCoordinator.swift)
-- [V1PreviewCompositionEngine.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift)
-- [V1PreviewSyncCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewSyncCoordinator.swift)
+- [PhotoMemoiOSV1View.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift)
+- [V1DraftOrchestrationCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1DraftOrchestrationCoordinator.swift)
+- [V1PreviewCompositionEngine.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift)
+- [V1PreviewSyncCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewSyncCoordinator.swift)
 
 ## 数据流二：默认配置保存流
 
@@ -60,10 +60,10 @@ PhotoMemoiOSV1View
 
 关键文件：
 
-- [V1ConfigurationApplyCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationApplyCoordinator.swift)
-- [ConfigurationCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Coordinators/ConfigurationCoordinator.swift)
-- [SettingsRepository.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Repositories/SettingsRepository.swift)
-- [SettingsService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift)
+- [V1ConfigurationApplyCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationApplyCoordinator.swift)
+- [ConfigurationCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Coordinators/ConfigurationCoordinator.swift)
+- [SettingsRepository.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Repositories/SettingsRepository.swift)
+- [SettingsService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/SettingsService.swift)
 
 ## 数据流三：系统分享接单流
 
@@ -84,10 +84,10 @@ system share / open url
 
 关键文件：
 
-- [PhotoMemoRootSceneView.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/App/PhotoMemoRootSceneView.swift)
-- [ExternalPhotoIntakeCenter.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/App/ExternalPhotoIntakeCenter.swift)
-- [ShareCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Coordinators/ShareCoordinator.swift)
-- [BatchQueueStore.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/BatchQueueStore.swift)
+- [PhotoMemoRootSceneView.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/App/PhotoMemoRootSceneView.swift)
+- [ExternalPhotoIntakeCenter.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/App/ExternalPhotoIntakeCenter.swift)
+- [ShareCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Coordinators/ShareCoordinator.swift)
+- [BatchQueueStore.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/BatchQueueStore.swift)
 
 ## 数据流四：生产构建与导出流
 
@@ -109,12 +109,12 @@ Batch task / SelectedPhoto
 
 关键文件：
 
-- [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift)
-- [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift)
-- [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift)
-- [BatchProcessingCoordinator.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/BatchProcessingCoordinator.swift)
-- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
-- [PhotoLibraryExportService.swift](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift)
+- [PhotoImportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoImportService.swift)
+- [PhotoMetadataReader.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoMetadataReader.swift)
+- [RecordCardBuildService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift)
+- [BatchProcessingCoordinator.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/BatchProcessingCoordinator.swift)
+- [RecordCardExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/RecordCardExportService.swift)
+- [PhotoLibraryExportService.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift)
 
 ## 目前最值得记住的判断
 
@@ -134,5 +134,5 @@ V1 页面负责很多配置和预览，但最终生产流更多由 `Queue / Impo
 
 ## 相关图
 
-- [03_数据流总图.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/diagrams/03_数据流总图.md)
-- [04_Render_Pipeline.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/DeveloperAtlas/diagrams/04_Render_Pipeline.md)
+- [03_数据流总图.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/diagrams/03_数据流总图.md)
+- [04_Render_Pipeline.md](/Users/rui/Desktop/PhotoMemo/Docs/DeveloperAtlas/diagrams/04_Render_Pipeline.md)
