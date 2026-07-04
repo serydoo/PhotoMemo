@@ -1,6 +1,6 @@
 # PhotoMemo Document Index
 
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 
 This index explains which project documents should be treated as current working references, which documents are topic-specific, and which documents are mostly historical notes.
 
@@ -77,6 +77,7 @@ Use these when changing boundaries, ownership, or shared flows:
 - `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md` - closed RFC for Memory entering the production path
 - `Docs/02_Architecture/V1_Preview_Renderer_Export_Contract_Review_2026-07-03.md` - V1 preview, renderer, and export contract drift review
 - `Docs/02_Architecture/V1_Render_Contract_Freeze_2026-07-03.md` - accepted V1 contract freeze for template text, display text, renderer input, and export input semantics
+- `Docs/02_Architecture/V1_Configuration_State_Boundary.md` - accepted V1 configuration state contract for Production, Recoverable, Workspace, and Transient UI state boundaries
 - `Docs/PDR/PDR_INDEX.md` - product design review index
 - `Docs/PDR/PDR-003_Interaction_Architecture.md` - interaction architecture PDR
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - Configuration Center architecture PDR

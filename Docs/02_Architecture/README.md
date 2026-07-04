@@ -25,8 +25,31 @@ Renderer draws.
 
 Current active architecture artifacts:
 
+## ADR
+
+Architecture Decision Records explain why a design direction was chosen.
+
+- `ADR/`
+
+## Freeze
+
+Architecture Freeze documents define decisions that should not be reopened
+without an explicit review.
+
 - `PhotoMemo_V1_Engineering_Baseline.md`
 - `RFC-001-Memory-Enters-the-Production-Pipeline.md`
 - `RFC-001-Implementation-Plan.md`
-- `V1_Preview_Renderer_Export_Contract_Review_2026-07-03.md`
 - `V1_Render_Contract_Freeze_2026-07-03.md`
+
+## Contract
+
+Architecture Contract documents define rules that production code must obey.
+
+- `V1_Configuration_State_Boundary.md`
+
+## Inventory
+
+Boundary Inventory and review documents map current system seams, drift, and
+follow-up risks.
+
+- `V1_Preview_Renderer_Export_Contract_Review_2026-07-03.md`

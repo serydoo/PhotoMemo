@@ -20,10 +20,6 @@ struct V1IOSSubjectConfigurationFlow: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    V1IOSSubjectOverviewCard(
-                        presentation: overviewPresentation
-                    )
-
                     V1CardSurface(title: "基本资料") {
                         Text("以下信息会作为当前记忆对象的长期身份资料，并同步影响时间锚点与记忆卡预览。")
                             .font(.caption)
@@ -80,17 +76,6 @@ struct V1IOSSubjectConfigurationFlow: View {
             to: nil,
             from: nil,
             for: nil
-        )
-    }
-
-    private var overviewPresentation:
-        V1IOSSubjectOverviewPresentation {
-        V1IOSSubjectOverviewPresenter.presentation(
-            subject: flowState.draftSession.state.selectedSubject,
-            currentTimeAnchorTitle:
-                flowState.draftSession.currentTimeAnchorTitle,
-            currentTimeAnchorDescription:
-                flowState.draftSession.currentTimeAnchorDescription
         )
     }
 }

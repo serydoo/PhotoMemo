@@ -34,6 +34,22 @@ struct ConfigurationCenterSessionBindingPresenterTests {
         #expect(session.currentMemoryPresetTitle == "记忆预设")
     }
 
+    @Test("profile title limits normalized names to twenty four characters")
+    func profileTitleLimitsNormalizedNames() {
+        let session = ConfigurationSession()
+
+        ConfigurationCenterSessionBindingPresenter
+            .setProfileTitle(
+                "  123456789012345678901234567890  ",
+                session: session
+            )
+
+        #expect(
+            session.currentMemoryPresetTitle
+            == "123456789012345678901234"
+        )
+    }
+
     @Test("storage option reads and writes through the session")
     func storageOptionReadWrite() {
         let session = ConfigurationSession()

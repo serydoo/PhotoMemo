@@ -178,16 +178,14 @@ struct V1HomePageSurface<
                     .fixedSize(horizontal: false, vertical: true)
 
                 V1IOSHomeInsetGroup {
-                    V1IOSHomeSemanticRow(
-                        title: "配置组合",
-                        value: presetSummary.title,
-                        detail: presetSummary.subtitle,
-                        systemImage: "slider.horizontal.below.rectangle"
-                    )
-
                     HStack(alignment: .center, spacing: 12) {
+                        Image(systemName: "slider.horizontal.below.rectangle")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 18)
+
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("切换配置组合")
+                            Text("配置组合")
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)

@@ -70,7 +70,7 @@ struct MemorySubjectEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
-            if let subject = session.state.selectedSubject {
+            if session.state.selectedSubject != nil {
                 InspectorSectionView(
                     "身份",
                     systemImage: "person.fill"
@@ -84,14 +84,6 @@ struct MemorySubjectEditorView: View {
                 ) {
                     timeWindowEditor
                 }
-
-                Button {
-                    saveSubject(subject)
-                } label: {
-                    Label("保存记忆对象", systemImage: "checkmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
             }
         }
         .onAppear {
@@ -591,14 +583,6 @@ struct MemorySubjectEditorView: View {
             subject.primaryTimeAnchor?.id
             ?? subject.timeAnchors.first?.id
         isEditingTimeAnchor = true
-    }
-
-    private func saveSubject(
-        _ subject: MemorySubject
-    ) {
-        syncDraftToSession(subject)
-        isEditingTimeAnchor = true
-        focusedField = nil
     }
 
     private func syncDraftToSession(

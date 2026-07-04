@@ -4,9 +4,15 @@
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
-- The current V1 checkpoint is accepted as a functional baseline.
+- `main` is now the active V1 source line after merging the latest
+  `v1-checkpoint-20260702` checkpoint into it.
+- Future V1 builds and IPA packages should come from `main`, not from a
+  temporary checkout or a separate V1 branch.
+- The current V1 checkpoint is accepted as a functional baseline and now lives
+  inside `main`.
 - The V1 long-term maintenance baseline is accepted after the High Finding Closure Sprint.
-- Use the HEAD of `v1-checkpoint-20260702` as the latest V1 source/package checkpoint.
+- Keep `v1-checkpoint-20260702` as a historical reference/checkpoint branch,
+  not as the normal working source.
 - `5f583093` is the V1 boundary hardening code checkpoint.
 - `e48508e9` remains the first accepted V1 maintenance freeze checkpoint.
 - `2218878d` remains the functional device checkpoint that preceded the maintenance freeze.

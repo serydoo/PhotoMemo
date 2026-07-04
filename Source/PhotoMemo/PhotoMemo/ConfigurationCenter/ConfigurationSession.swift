@@ -14,6 +14,8 @@ final class ConfigurationSession:
         ConfigurationSessionPresentationState
         = .init()
 
+    private static let maximumMemoryPresetTitleLength = 24
+
     init(
         state: ConfigurationCenterState? = nil
     ) {
@@ -501,11 +503,15 @@ final class ConfigurationSession:
 
         let trimmed =
             title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedTitle =
+            String(
+                trimmed.prefix(Self.maximumMemoryPresetTitleLength)
+            )
 
         state.memoryPresets[presetIndex].title =
-            trimmed.isEmpty
+            normalizedTitle.isEmpty
             ? "记忆预设"
-            : trimmed
+            : normalizedTitle
         markSelectedMemoryPresetNeedsApply()
     }
 

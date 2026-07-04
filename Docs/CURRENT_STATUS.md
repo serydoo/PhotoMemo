@@ -2,6 +2,43 @@
 
 Last updated: 2026-07-04
 
+## 2026-07-04 V1 source line unified into main
+
+The V1 source split has been closed for active development.
+
+- `main` now contains the latest V1 checkpoint from `v1-checkpoint-20260702`,
+  including Subject Library management, the welcome flow, V1 runtime
+  coordinators, the current app icon assets, and the focused V1 test set.
+- The previous packaging mistake was caused by building from `origin/main`
+  before these V1 files were present there. Future V1 builds should use the
+  current `main` worktree after this unification, not a separate temporary
+  checkout.
+- `origin/v1-checkpoint-20260702` and the local `v1-checkpoint-20260702`
+  branch are now historical reference/checkpoint lines. They should not be the
+  normal source for new V1 test packages.
+- P1 UI / IA convergence has been reapplied on top of the unified V1 code:
+  duplicate Memory Subject save semantics remain removed, the repeated subject
+  overview is removed, the current-configuration row stays compact, and Profile
+  names continue to normalize with trim, empty fallback, and a 24-character
+  maximum.
+- P1.5 remains the state-boundary contract:
+  [V1_Configuration_State_Boundary.md](/Users/rui/Desktop/PhotoMemo-main-archive-20260702/Docs/02_Architecture/V1_Configuration_State_Boundary.md)
+
+Verification completed:
+
+- focused V1 tests passed:
+  - `ConfigurationCenterSessionBindingPresenterTests`
+  - `V1IOSSubjectOverviewPresenterTests`
+  - `V1IOSHomeProjectionTests`
+  - `SettingsServiceTests`
+- `PhotoMemoiOSV1` generic iOS build passed with signing disabled.
+- generated unified testing IPA:
+  - `/Users/rui/Desktop/photomemo过程中测试版本软件/PhotoMemoiOSV1-main-unified-20260704190048.ipa`
+- IPA metadata verified:
+  - bundle id: `com.serydoo.PhotoMemo.iOS`
+  - bundle version: `20260704190048`
+  - short version: `1.0`
+
 ## 2026-07-04 V1 app icon replacement and testing IPA
 
 The V1 app icon has been replaced across the active app icon asset catalog and

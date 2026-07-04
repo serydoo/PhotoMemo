@@ -3,3 +3,10 @@ xcuserdata/
 .DS_Store
 .autosync/
 Source/PhotoMemo/build/
+.codex/skills/README.md
+.codex/skills/architecture-decision-records/
+.codex/skills/code-reviewer/
+.codex/skills/karpathy-guidelines/
+.codex/skills/swift-actor-persistence/
+.codex/skills/swift-protocol-di-testing/
+.codex/skills/verification-loop/
