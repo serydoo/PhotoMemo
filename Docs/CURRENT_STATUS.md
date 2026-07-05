@@ -113,7 +113,7 @@ Stage status:
 | Stage | Status | Notes |
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
-| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`. |
+| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`. |
 
 PI-1 completed checkpoints:
 
@@ -215,6 +215,52 @@ Known verification note:
   an order-sensitive text antialiasing/truncation mismatch in that case. This
   was not fixed in PI-2 because snapshot stability work is outside the
   approved seam and no renderer behavior change is allowed.
+
+## 2026-07-06 PI-3 Memory Provider Compilation frozen
+
+PI-3 has completed the second canonical provider validation without changing
+platform contracts.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-3_Memory_Provider_Boundary_Scan.md`
+
+Checkpoints:
+
+- `aeacae1` freezes the approved PI-3 seam:
+  `MemoryExpressionContext -> MemoryExpressionEngine ->
+  MemoryResultPresentationAdapter -> MemoryModule.renderedText`.
+- `da775c7` adds `MemoryProvider`, which compiles the completed Memory
+  presentation output into a provider-neutral `ExpressionValue`.
+
+Architectural delta:
+
+```text
+Memory expression compilation: MemoryModule.renderedText -> ExpressionValue
+```
+
+Scope review:
+
+- PI-3 supports only the canonical `memory` token.
+- The provider consumes existing Memory pipeline output and does not implement
+  Memory calculation or formatting rules itself.
+- `MemoryResult`, `MemoryExpressionEngine`, `MemoryResultPresentationAdapter`,
+  Renderer, Export, Share Extension, batch processing, `RecordCard`,
+  `RecordCardBuildService`, `CardVariableProvider`, and production output were
+  not changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+
+Verification:
+
+- `MemoryProviderTests` passed.
+- Memory / Expression contract tests passed:
+  - `MemoryExpressionEngineTests`
+  - `MemoryResultContractTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
+  - `ExpressionSystemSmokeTests`
+- `PhotoMemo` Debug build passed.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
