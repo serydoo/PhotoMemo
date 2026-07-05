@@ -113,7 +113,7 @@ Stage status:
 | Stage | Status | Notes |
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
-| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`. |
+| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
 
 PI-1 completed checkpoints:
 
@@ -260,6 +260,53 @@ Verification:
   - `ExpressionValueContractTests`
   - `ExpressionContextContractTests`
   - `ExpressionSystemSmokeTests`
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-4 Metadata Provider Compilation frozen
+
+PI-4 has completed legacy metadata fact compiler validation without changing
+platform contracts or production metadata acquisition.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-4_Metadata_Provider_Boundary_Scan.md`
+
+Checkpoints:
+
+- `942811d` freezes the approved PI-4 seam:
+  `PhotoMetadata -> MetadataContext.build(from:) -> MetadataContext[model]`.
+- `dcdc257` adds `MetadataProvider`, which compiles the existing normalized
+  metadata model fact into a provider-neutral `ExpressionValue`.
+
+Architectural delta:
+
+```text
+Metadata fact compilation: MetadataContext[model] -> ExpressionValue
+```
+
+Scope review:
+
+- PI-4 supports only the canonical `model` token.
+- The provider consumes the existing `MetadataContext.build(from:)` projection
+  and does not implement EXIF acquisition, production template lookup, or
+  renderer behavior.
+- `PhotoMetadataReader`, `MetadataContext.build(from:)`,
+  `CardVariableProvider`, `TemplateVariableLibrary`, Renderer, Export, Share
+  Extension, batch processing, preview, and Photo Library behavior were not
+  changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+
+Verification:
+
+- `MetadataProviderTests` passed.
+- Metadata / Expression contract tests passed:
+  - `MetadataContextTests`
+  - `PhotoMetadataNormalizationTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
+  - `ExpressionSystemSmokeTests`
+- `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
