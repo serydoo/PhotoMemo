@@ -250,6 +250,65 @@ struct PreviewCompositionMigrationTests {
     }
 
     @MainActor
+    @Test("V1 preview location module keeps legacy token while sourcing display value from ExpressionContext")
+    func v1PreviewLocationModuleKeepsLegacyTokenWhileSourcingDisplayValueFromExpressionContext() {
+
+        let engine =
+            V1PreviewCompositionEngine()
+        let subject =
+            previewSubject()
+        let context =
+            V1PreviewCompositionContext(
+                subject: subject,
+                birthdayDate: subject.referenceDate
+            )
+
+        let model =
+            renderModel(
+                for:
+                    V1PreviewDraft(
+                        items: [
+                            engine.makeModuleItem(
+                                .location,
+                                context: context
+                            )
+                        ]
+                    ),
+                context: context,
+                engine: engine
+            )
+
+        #expect(
+            model.templateSourceText
+            == "{{location_display}}"
+        )
+        #expect(
+            model.displayText
+            == "河南 · 商丘"
+        )
+    }
+
+    @Test("Boundary V1 preview location source uses ExpressionContext instead of direct rendered demo string")
+    func boundaryV1PreviewLocationSourceUsesExpressionContextInsteadOfDirectRenderedDemoString() throws {
+        let source =
+            try String(
+                contentsOfFile:
+                    "/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1PreviewCompositionEngine.swift",
+                encoding: .utf8
+            )
+
+        #expect(source.contains("ExpressionContext"))
+        #expect(source.contains("LocationExpressionProvider"))
+        #expect(source.contains("LocationContextBuilder"))
+        #expect(!source.contains("return \"河南 · 商丘\""))
+        #expect(!source.contains("PreviewExpressionContext"))
+        #expect(!source.contains("ConfigurationCenterPreviewCompositionHelper"))
+        #expect(!source.contains("CardVariableProvider"))
+        #expect(!source.contains("RecordCardBuildService"))
+        #expect(!source.contains("RecordCardRenderer"))
+    }
+
+    @MainActor
     @Test("smart module inserted into slot A follows the selected anchor formula style")
     func smartModuleInsertedIntoSlotAFollowsSelectedAnchorFormulaStyle() {
         let birthday =
