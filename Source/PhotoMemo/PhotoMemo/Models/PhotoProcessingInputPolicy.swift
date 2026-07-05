@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 struct PhotoProcessingInputPolicy: Hashable {
 
-    enum RejectionReason: String, Hashable {
+    enum RejectionReason: String, Hashable, Codable {
         case unsupportedFormat
         case livePhoto
         case missingPixelSize

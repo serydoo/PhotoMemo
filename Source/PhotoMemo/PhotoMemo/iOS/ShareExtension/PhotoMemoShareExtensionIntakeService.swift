@@ -126,30 +126,51 @@ struct PhotoMemoShareExtensionError:
 
     var diagnosticSummaryLine: String? {
 
-        guard let failureContext =
-            resolvedFailureContext
+        if let failureContext =
+            resolvedFailureContext {
+
+            var parts = [
+                "失败阶段：\(failureContext.stage.title)"
+            ]
+
+            if let errorSummary =
+                failureContext.errorSummary {
+                parts.append(
+                    "\(errorSummary.domain) / \(errorSummary.code)"
+                )
+            }
+
+            return parts.joined(
+                separator: " · "
+            )
+        }
+
+        guard let rejectionReport =
+            importResult?
+            .firstUnsupportedRejectionReport
         else {
             return nil
         }
 
-        var parts = [
-            "失败阶段：\(failureContext.stage.title)"
+        return [
+            "拒绝原因：\(rejectionReport.title)",
+            rejectionReport.reasonRawValue
         ]
-
-        if let errorSummary =
-            failureContext.errorSummary {
-            parts.append(
-                "\(errorSummary.domain) / \(errorSummary.code)"
-            )
-        }
-
-        return parts.joined(
+        .compactMap { $0 }
+        .joined(
             separator: " · "
         )
     }
 
     var diagnosticsDescription: String? {
-        resolvedFailureContext?
+        if let failureContext =
+            resolvedFailureContext {
+            return failureContext
+                .debugDescription
+        }
+
+        return importResult?
+            .firstUnsupportedRejectionReport?
             .debugDescription
     }
 }
@@ -219,6 +240,8 @@ final class PhotoMemoShareExtensionIntakeService {
         var seenSourceKeys = Set<String>()
         var skippedCount = 0
         var failedCount = 0
+        var unsupportedRejectionReports:
+            [PhotoMemoMediaIntakeRejectionReport] = []
         var lastFailureContext:
             PhotoMemoShareIntakeFailureContext?
 
@@ -263,11 +286,15 @@ final class PhotoMemoShareExtensionIntakeService {
                         requestID
                 )
 
-            case .skippedUnsupported:
+            case .skippedUnsupported(let report):
                 skippedCount += 1
+                unsupportedRejectionReports.append(
+                    report
+                )
                 PhotoMemoShareDiagnostics.record(
                     stage: .extensionItemSkipped,
-                    message: "unsupported",
+                    message:
+                        "unsupported:\(report.reasonRawValue ?? "unknown")",
                     requestID:
                         requestID
                 )
@@ -318,7 +345,9 @@ final class PhotoMemoShareExtensionIntakeService {
                         lastFailureContext?
                         .stage,
                     failureContext:
-                        lastFailureContext
+                        lastFailureContext,
+                    unsupportedRejectionReports:
+                        unsupportedRejectionReports
                 )
 
             logImportResult(
@@ -391,7 +420,9 @@ final class PhotoMemoShareExtensionIntakeService {
                         .stage,
                     failureContext:
                         persistResult
-                        .failureContext
+                        .failureContext,
+                    unsupportedRejectionReports:
+                        unsupportedRejectionReports
                 )
 
             if let failureContext =
@@ -447,7 +478,9 @@ final class PhotoMemoShareExtensionIntakeService {
                     lastFailureContext?
                     .stage,
                 failureContext:
-                    lastFailureContext
+                    lastFailureContext,
+                unsupportedRejectionReports:
+                    unsupportedRejectionReports
             )
 
         logImportResult(
@@ -479,7 +512,9 @@ private extension PhotoMemoShareExtensionIntakeService {
 
         case skippedDuplicate
 
-        case skippedUnsupported
+        case skippedUnsupported(
+            PhotoMemoMediaIntakeRejectionReport
+        )
 
         case failed(
             PhotoMemoShareIntakeFailureContext
@@ -1246,7 +1281,27 @@ private extension PhotoMemoShareExtensionIntakeService {
             """
         )
 
-        return .skippedUnsupported
+        let rejectionReport =
+            PhotoMemoMediaIntakeRejectionReport(
+                verdict: verdict,
+                fileName:
+                    importRecord
+                    .managedURL
+                    .lastPathComponent,
+                contentTypeIdentifier:
+                    importRecord.item
+                    .contentTypeIdentifier,
+                pixelSize:
+                    MediaPixelSize(
+                        fileURL:
+                            importRecord
+                            .managedURL
+                    )
+            )
+
+        return .skippedUnsupported(
+            rejectionReport
+        )
     }
 
     func preferredImageTypeIdentifier(

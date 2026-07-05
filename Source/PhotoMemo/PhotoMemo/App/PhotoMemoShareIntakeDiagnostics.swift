@@ -1,6 +1,85 @@
 import Foundation
 import OSLog
 
+struct PhotoMemoMediaIntakeRejectionReport:
+    Codable,
+    Hashable {
+
+    let reason:
+        PhotoProcessingInputPolicy.RejectionReason?
+
+    let reasonRawValue: String?
+
+    let title: String
+
+    let message: String
+
+    let fileName: String?
+
+    let contentTypeIdentifier: String?
+
+    let pixelSize: MediaPixelSize?
+
+    init(
+        verdict:
+            PhotoProcessingInputPolicy.Verdict,
+        fileName: String?,
+        contentTypeIdentifier: String?,
+        pixelSize: MediaPixelSize?
+    ) {
+        self.reason =
+            verdict.reason
+        self.reasonRawValue =
+            verdict.reason?.rawValue
+        self.title =
+            verdict.title
+        self.message =
+            verdict.message
+        self.fileName =
+            fileName
+        self.contentTypeIdentifier =
+            contentTypeIdentifier
+        self.pixelSize =
+            pixelSize
+    }
+
+    var debugDescription: String {
+
+        debugLines.joined(
+            separator: "\n"
+        )
+    }
+
+    var debugLines: [String] {
+
+        var lines = [
+            "rejectionReason: \(reasonRawValue ?? "unknown")",
+            "title: \(title)",
+            "message: \(message)"
+        ]
+
+        if let fileName {
+            lines.append(
+                "fileName: \(fileName)"
+            )
+        }
+
+        if let contentTypeIdentifier {
+            lines.append(
+                "contentTypeIdentifier: \(contentTypeIdentifier)"
+            )
+        }
+
+        if let pixelSize {
+            lines.append(
+                "pixelSize: \(pixelSize.width)x\(pixelSize.height)"
+            )
+        }
+
+        return lines
+    }
+}
+
 enum PhotoMemoShareIntakeFailureStage:
     String,
     Codable,

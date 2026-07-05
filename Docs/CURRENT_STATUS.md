@@ -98,6 +98,10 @@ Completed checkpoints:
   - `PhotoImportService` now rejects unsupported or oversized media through
     `PhotoProcessingInputPolicy` before preview decode, and surfaces the
     policy title, message, and rejection reason through `PhotoImportError`.
+  - Share Extension unsupported skips now preserve policy rejection facts in
+    `PhotoMemoMediaIntakeRejectionReport` and carry them through
+    `PhotoMemoShareExtensionImportResult` for diagnostic summaries without
+    turning skipped unsupported media into failed imports.
 - Single Decode Entry foundation:
   - `MediaDecodeService` is now the app-side media decode layer for
     `PhotoImportService` preview image preparation.
@@ -139,6 +143,8 @@ Latest decode convergence verification:
 - `MediaIntakeFileFirstContractTests`
 - `PhotoImportServiceTests`
 - policy-backed unsupported format / oversized dimension import rejection
+- `PhotoMemoShareIntakeDiagnosticsTests` coverage for codable rejection
+  reports and Share Extension unsupported skip report preservation
 - `git diff --check`
 - `PhotoMemo` Debug build
 - `PhotoMemoShareExtension` iOS Simulator build
