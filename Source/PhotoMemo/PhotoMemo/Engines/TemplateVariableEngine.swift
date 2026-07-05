@@ -12,6 +12,19 @@ final class TemplateVariableEngine {
         context: MetadataContext
     ) -> String {
 
+        render(
+            template,
+            lookup: MetadataContextExpressionLookup(
+                metadataContext: context
+            )
+        )
+    }
+
+    func render(
+        _ template: String,
+        lookup: any ExpressionLookup
+    ) -> String {
+
         guard template.contains("{{") else {
             return template
         }
@@ -46,7 +59,14 @@ final class TemplateVariableEngine {
             )
 
             let replacement =
-                context[key]
+                lookup
+                .value(
+                    for: ExpressionToken(
+                        rawValue: key
+                    )
+                )?
+                .resolvedText
+                ?? ""
 
             guard
                 let fullRange = Range(

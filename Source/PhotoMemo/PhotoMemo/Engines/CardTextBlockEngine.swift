@@ -16,8 +16,12 @@ final class CardTextBlockEngine {
         from card: RecordCard
     ) -> [CardTextBlock] {
 
-        let context = CardVariableProvider
-            .build(from: card)
+        let lookup =
+            MetadataContextExpressionLookup(
+                metadataContext:
+                    CardVariableProvider
+                    .build(from: card)
+            )
 
         var blocks: [CardTextBlock] = []
 
@@ -25,7 +29,7 @@ final class CardTextBlockEngine {
             contentsOf: buildBlocks(
                 area: .leftTop,
                 items: card.template.leftTopArea.items,
-                context: context
+                lookup: lookup
             )
         )
 
@@ -33,7 +37,7 @@ final class CardTextBlockEngine {
             contentsOf: buildBlocks(
                 area: .leftBottom,
                 items: card.template.leftBottomArea.items,
-                context: context
+                lookup: lookup
             )
         )
 
@@ -41,7 +45,7 @@ final class CardTextBlockEngine {
             contentsOf: buildBlocks(
                 area: .rightTop,
                 items: card.template.rightTopArea.items,
-                context: context
+                lookup: lookup
             )
         )
 
@@ -49,7 +53,7 @@ final class CardTextBlockEngine {
             contentsOf: buildBlocks(
                 area: .rightBottom,
                 items: card.template.rightBottomArea.items,
-                context: context
+                lookup: lookup
             )
         )
 
@@ -57,7 +61,7 @@ final class CardTextBlockEngine {
             contentsOf: buildBlocks(
                 area: .badge,
                 items: card.template.badgeArea.items,
-                context: context
+                lookup: lookup
             )
         )
 
@@ -67,7 +71,7 @@ final class CardTextBlockEngine {
     private func buildBlocks(
         area: CardTextArea,
         items: [TemplateItem],
-        context: MetadataContext
+        lookup: any ExpressionLookup
     ) -> [CardTextBlock] {
 
         resolvedItems(
@@ -80,7 +84,7 @@ final class CardTextBlockEngine {
                 let renderedValue =
                     variableEngine.render(
                         item.value,
-                        context: context
+                        lookup: lookup
                     )
                     .trimmingCharacters(
                         in: .whitespacesAndNewlines
