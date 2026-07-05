@@ -1,7 +1,6 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import UIKit
 import UniformTypeIdentifiers
-import ImageIO
 
 final class PhotoMemoShareExtensionViewController:
     UIViewController {
@@ -2480,38 +2479,11 @@ private extension PhotoMemoShareExtensionViewController {
         from url: URL
     ) -> UIImage? {
 
-        guard let source =
-            CGImageSourceCreateWithURL(
-                url as CFURL,
-                [
-                    kCGImageSourceShouldCache:
-                        false
-                ] as CFDictionary
-            ) else {
-            return nil
-        }
-
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageIfAbsent:
-                true,
-            kCGImageSourceCreateThumbnailWithTransform:
-                true,
-            kCGImageSourceShouldCacheImmediately:
-                true,
-            kCGImageSourceThumbnailMaxPixelSize:
-                640
-        ]
-
-        guard let cgImage =
-            CGImageSourceCreateThumbnailAtIndex(
-                source,
-                0,
-                options as CFDictionary
-            ) else {
-            return nil
-        }
-
-        return UIImage(cgImage: cgImage)
+        MediaDecodeService()
+            .thumbnailImage(
+                from: url,
+                maxPixelDimension: 640
+            )
     }
 
     func detailedFailureMessage(

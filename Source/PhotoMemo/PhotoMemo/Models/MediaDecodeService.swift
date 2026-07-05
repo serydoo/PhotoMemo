@@ -6,7 +6,10 @@ import CoreImage
 
 final class MediaDecodeService {
 
-    func previewImage(
+    nonisolated init() {
+    }
+
+    nonisolated func previewImage(
         for mediaAsset: MediaAsset
     ) throws -> PlatformImage {
 
@@ -38,7 +41,19 @@ final class MediaDecodeService {
         return image
     }
 
-    private func rawDisplayImage(
+    nonisolated func thumbnailImage(
+        from url: URL,
+        maxPixelDimension: Int
+    ) -> PlatformImage? {
+
+        imageIODisplayImage(
+            from: url,
+            maxPixelDimension:
+                maxPixelDimension
+        )
+    }
+
+    private nonisolated func rawDisplayImage(
         from url: URL
     ) throws -> PlatformImage {
 
@@ -69,8 +84,12 @@ final class MediaDecodeService {
             .rawDisplayRenderFailed
     }
 
-    private func imageIODisplayImage(
-        from url: URL
+    private nonisolated func imageIODisplayImage(
+        from url: URL,
+        maxPixelDimension: Int =
+            PhotoProcessingInputPolicy
+            .standard
+            .maximumPixelDimension
     ) -> PlatformImage? {
 
         guard let source =
@@ -85,9 +104,10 @@ final class MediaDecodeService {
         }
 
         let maxPixelSize =
-            PhotoProcessingInputPolicy
-            .standard
-            .maximumPixelDimension
+            max(
+                maxPixelDimension,
+                1
+            )
 
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageIfAbsent:
@@ -115,7 +135,7 @@ final class MediaDecodeService {
     }
 
 #if canImport(CoreImage)
-    private func coreImageDisplayImage(
+    private nonisolated func coreImageDisplayImage(
         from url: URL
     ) -> PlatformImage? {
 

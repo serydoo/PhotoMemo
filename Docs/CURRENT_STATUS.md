@@ -99,8 +99,14 @@ Completed checkpoints:
     platform-image fallback, or thumbnail decode details.
   - `PhotoSourceInfo` now lives with the shared media model so `MediaAsset`
     remains buildable in the Share Extension target.
-  - Share Extension preview thumbnail decode has not yet been migrated to
-    `MediaDecodeService`; that remains the next decode convergence slice.
+  - `MediaDecodeService` now lives in the shared media model layer so the Share
+    Extension can use the same decode boundary without importing the app
+    service graph.
+  - `PlatformImage` helpers and `PhotoImportError` are now shared thin model
+    utilities instead of being owned by `SelectedPhoto` / `PhotoImportService`.
+  - Share Extension file-preview thumbnails now delegate to
+    `MediaDecodeService.thumbnailImage(from:maxPixelDimension:)`; the share
+    controller no longer contains direct ImageIO thumbnail decode calls.
 
 Verification completed:
 
@@ -110,6 +116,14 @@ Verification completed:
 - full `PhotoImportServiceTests`
 - focused RAW-like import report encode/decode test
 - `BatchFixtureCoverageTests`
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+Latest decode convergence verification:
+
+- `MediaDecodeLayerContractTests`
+- `PhotoImportServiceTests`
 - `git diff --check`
 - `PhotoMemo` Debug build
 - `PhotoMemoShareExtension` iOS Simulator build

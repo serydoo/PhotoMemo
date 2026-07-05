@@ -39,6 +39,36 @@ struct MediaDecodeLayerContractTests {
             )
         )
     }
+
+    @Test("Share Extension delegates preview image decoding to media decode layer")
+    func shareExtensionDelegatesPreviewImageDecodingToMediaDecodeLayer() throws {
+        let source =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+            )
+
+        let forbiddenDecodeDetails = [
+            "CGImageSourceCreateWithURL(",
+            "CGImageSourceCreateThumbnailAtIndex(",
+        ]
+
+        let leakedDecodeDetails =
+            forbiddenDecodeDetails
+            .filter {
+                source.contains($0)
+            }
+
+        #expect(
+            leakedDecodeDetails.isEmpty,
+            "Share Extension still contains preview decode details: \(leakedDecodeDetails)"
+        )
+        #expect(
+            source.contains(
+                "MediaDecodeService"
+            )
+        )
+    }
 }
 
 private extension MediaDecodeLayerContractTests {
