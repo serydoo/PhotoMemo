@@ -2348,7 +2348,10 @@ private extension PhotoMemoShareExtensionViewController {
                 }
 
                 if let data = item as? Data,
-                   let image = UIImage(data: data) {
+                   let image =
+                    self.thumbnailImage(
+                        from: data
+                    ) {
                     continuation.resume(
                         returning: image
                     )
@@ -2482,6 +2485,18 @@ private extension PhotoMemoShareExtensionViewController {
         MediaDecodeService()
             .thumbnailImage(
                 from: url,
+                maxPixelDimension: 640
+            )
+    }
+
+    nonisolated
+    func thumbnailImage(
+        from data: Data
+    ) -> UIImage? {
+
+        MediaDecodeService()
+            .thumbnailImage(
+                from: data,
                 maxPixelDimension: 640
             )
     }

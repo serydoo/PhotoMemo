@@ -51,6 +51,7 @@ struct MediaDecodeLayerContractTests {
         let forbiddenDecodeDetails = [
             "CGImageSourceCreateWithURL(",
             "CGImageSourceCreateThumbnailAtIndex(",
+            "UIImage(data:",
         ]
 
         let leakedDecodeDetails =
@@ -65,7 +66,7 @@ struct MediaDecodeLayerContractTests {
         )
         #expect(
             source.contains(
-                "MediaDecodeService"
+                "thumbnailImage(\n                from: data"
             )
         )
     }

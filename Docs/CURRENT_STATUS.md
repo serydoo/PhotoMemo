@@ -117,6 +117,10 @@ Completed checkpoints:
   - Share Extension file-preview thumbnails now delegate to
     `MediaDecodeService.thumbnailImage(from:maxPixelDimension:)`; the share
     controller no longer contains direct ImageIO thumbnail decode calls.
+  - Share Extension preview `Data` fallback now also delegates to
+    `MediaDecodeService.thumbnailImage(from:maxPixelDimension:)` so fallback
+    previews stay downsampled and do not decode provider data directly in the
+    view controller.
 - Renderer Isolation contract:
   - `MediaDecodeLayerContractTests` now scans renderer sources for source-media
     format decisions such as RAW / DNG / HEIC / TIFF, `UTType`, ImageIO, or
@@ -139,6 +143,7 @@ Verification completed:
 Latest decode convergence verification:
 
 - `MediaDecodeLayerContractTests`
+- Share Extension preview file and data fallback decode isolation
 - renderer source media-format isolation contract
 - `MediaIntakeFileFirstContractTests`
 - `PhotoImportServiceTests`

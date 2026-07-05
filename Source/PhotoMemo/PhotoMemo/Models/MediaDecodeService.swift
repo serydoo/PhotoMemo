@@ -53,6 +53,18 @@ final class MediaDecodeService {
         )
     }
 
+    nonisolated func thumbnailImage(
+        from data: Data,
+        maxPixelDimension: Int
+    ) -> PlatformImage? {
+
+        imageIODisplayImage(
+            from: data,
+            maxPixelDimension:
+                maxPixelDimension
+        )
+    }
+
     private nonisolated func rawDisplayImage(
         from url: URL
     ) throws -> PlatformImage {
@@ -95,6 +107,53 @@ final class MediaDecodeService {
         guard let source =
             CGImageSourceCreateWithURL(
                 url as CFURL,
+                [
+                    kCGImageSourceShouldCache:
+                        false
+                ] as CFDictionary
+            ) else {
+            return nil
+        }
+
+        let maxPixelSize =
+            max(
+                maxPixelDimension,
+                1
+            )
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageIfAbsent:
+                true,
+            kCGImageSourceCreateThumbnailWithTransform:
+                true,
+            kCGImageSourceShouldCacheImmediately:
+                true,
+            kCGImageSourceThumbnailMaxPixelSize:
+                maxPixelSize
+        ]
+
+        guard let cgImage =
+            CGImageSourceCreateThumbnailAtIndex(
+                source,
+                0,
+                options as CFDictionary
+            ) else {
+            return nil
+        }
+
+        return PlatformImage.photoMemoImage(
+            cgImage: cgImage
+        )
+    }
+
+    private nonisolated func imageIODisplayImage(
+        from data: Data,
+        maxPixelDimension: Int
+    ) -> PlatformImage? {
+
+        guard let source =
+            CGImageSourceCreateWithData(
+                data as CFData,
                 [
                     kCGImageSourceShouldCache:
                         false
