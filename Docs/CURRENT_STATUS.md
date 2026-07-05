@@ -69,6 +69,9 @@ Completed checkpoints:
     representations before falling back to `Data`.
   - Picked RAW-like file representations are copied into an app-owned
     temporary location before import.
+  - `MediaIntakeFileFirstContractTests` now guards the ordering contract for
+    Main App PhotosPicker, V1 Quick Action PhotosPicker, and Share Extension
+    intake so `Data` / `loadItem` paths remain fallback-only.
 - Thin canonical media representation:
   - `MediaAsset`, `MediaRepresentation`, and `DecodePurpose` now exist as the
     first internal media facts model.
@@ -130,6 +133,7 @@ Latest decode convergence verification:
 
 - `MediaDecodeLayerContractTests`
 - renderer source media-format isolation contract
+- `MediaIntakeFileFirstContractTests`
 - `PhotoImportServiceTests`
 - `git diff --check`
 - `PhotoMemo` Debug build
