@@ -24,6 +24,10 @@ struct ConfigurationSnapshotBuilderTests {
             == session.state.selectedSubject?.id
         )
         #expect(
+            snapshot.memorySubject
+            == session.state.selectedSubject
+        )
+        #expect(
             snapshot.primaryAnchor?.title
             == session.state.selectedSubject?.primaryTimeAnchor?.title
         )

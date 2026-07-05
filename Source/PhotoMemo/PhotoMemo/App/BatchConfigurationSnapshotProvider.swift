@@ -31,6 +31,12 @@ struct BatchConfigurationSnapshotProvider {
 
         static let selectedMemorySubjectText =
             "photomemo.selectedMemorySubjectText"
+
+        static let selectedMemorySubject =
+            "photomemo.selectedMemorySubject"
+
+        static let personalProfile =
+            "photomemo.personalProfile"
     }
 
     init(
@@ -134,8 +140,34 @@ struct BatchConfigurationSnapshotProvider {
         photoDescriptionOverride: String,
         selectedAlbumIdentifier: String
     ) -> BatchConfigurationSnapshot {
+        let resolvedAnchor =
+            resolvedAnchor(
+                identifierString:
+                    selectedAnchorIDString,
+                anchors: anchors
+            )
+#if !PHOTOMEMO_SHARE_EXTENSION
+        let frozenMemorySubject =
+            makeFrozenMemorySubject(
+                anchors: anchors,
+                selectedAnchorID:
+                    resolvedAnchor?.id
+            )
+        let frozenConfigurationSnapshot =
+            ConfigurationSnapshotBuilder
+            .build(from: frozenMemorySubject)
+        let resolvedMemorySubjectText =
+            frozenMemorySubject
+            .resolvedExpressionSubjectText
+#else
+        let resolvedMemorySubjectText =
+            normalizedSubjectText(
+                memorySubjectText
+            )
+#endif
 
-        BatchConfigurationSnapshot(
+        let snapshot =
+            BatchConfigurationSnapshot(
             template:
                 (template ?? .template1)
                 .normalizedForEditing,
@@ -143,15 +175,9 @@ struct BatchConfigurationSnapshotProvider {
                 badge?.type == BadgeType.none
                 ? nil
                 : badge,
-            anchor: resolvedAnchor(
-                identifierString:
-                    selectedAnchorIDString,
-                anchors: anchors
-            ),
+            anchor: resolvedAnchor,
             memorySubjectText:
-                normalizedSubjectText(
-                    memorySubjectText
-                ),
+                resolvedMemorySubjectText,
             shouldWritePhotoDescription:
                 shouldWritePhotoDescription,
             photoDescriptionOverride:
@@ -161,6 +187,15 @@ struct BatchConfigurationSnapshotProvider {
                     selectedAlbumIdentifier
                 )
         )
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+        return snapshot
+            .withCanonicalProductionSnapshot(
+                frozenConfigurationSnapshot
+            )
+#else
+        return snapshot
+#endif
     }
 
     func normalizedAlbumIdentifier(
@@ -247,6 +282,56 @@ private extension BatchConfigurationSnapshotProvider {
             return nil
         }
     }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+    func makeFrozenMemorySubject(
+        anchors: [Anchor],
+        selectedAnchorID: UUID?
+    ) -> MemorySubject {
+        if let selectedSubject =
+            loadSelectedMemorySubject() {
+            return selectedSubject
+        }
+
+        return MemorySubjectAdapter.adapt(
+            profile:
+                loadPersonalProfile()
+                ?? PersonalProfile(),
+            anchors: anchors,
+            selectedAnchorID: selectedAnchorID
+        )
+    }
+
+    func loadSelectedMemorySubject() -> MemorySubject? {
+        guard
+            let data = defaults.data(
+                forKey: Keys.selectedMemorySubject
+            )
+        else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(
+            MemorySubject.self,
+            from: data
+        )
+    }
+
+    func loadPersonalProfile() -> PersonalProfile? {
+        guard
+            let data = defaults.data(
+                forKey: Keys.personalProfile
+            )
+        else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(
+            PersonalProfile.self,
+            from: data
+        )
+    }
+#endif
 
     func normalizedSubjectText(
         _ text: String?

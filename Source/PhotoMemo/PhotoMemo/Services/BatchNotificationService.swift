@@ -518,10 +518,9 @@ private extension BatchNotificationService {
             )
 
         let anchorName =
-            job.configuration.anchor?.title
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
+            job.configuration
+            .resolvedProductionAnchorTitle
+            ?? ""
 
         let summary =
             "已接收 \(job.totalTaskCount) 张照片，会按当前风格在后台自动处理。"

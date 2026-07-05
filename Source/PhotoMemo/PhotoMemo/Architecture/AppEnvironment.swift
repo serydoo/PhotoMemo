@@ -143,9 +143,7 @@ final class AppEnvironment {
         let photoImportService =
             PhotoImportService()
         let recordCardBuildService =
-            RecordCardBuildService(
-                defaults: defaults
-            )
+            RecordCardBuildService()
         let recordCardExportService =
             RecordCardExportService()
         let photoLibraryExportService =

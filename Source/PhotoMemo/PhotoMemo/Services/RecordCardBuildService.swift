@@ -8,25 +8,21 @@ final class RecordCardBuildService {
     private let templateVariableEngine =
         TemplateVariableEngine()
 
-    private let defaults: UserDefaults
-
 #if !PHOTOMEMO_SHARE_EXTENSION
     private let productionMemoryResolver:
         ProductionMemoryResolver
 #endif
 
-    init(
-        defaults: UserDefaults =
-            PhotoMemoSharedContainer.sharedUserDefaults
-    ) {
-        self.defaults = defaults
+#if PHOTOMEMO_SHARE_EXTENSION
+    init() {}
+#else
+    init() {
 #if !PHOTOMEMO_SHARE_EXTENSION
         self.productionMemoryResolver =
-            ProductionMemoryResolver(
-                defaults: defaults
-            )
+            ProductionMemoryResolver()
 #endif
     }
+#endif
 
     func buildCard(
         from selectedPhoto: SelectedPhoto,
@@ -76,45 +72,79 @@ private extension RecordCardBuildService {
         configuration: BatchConfigurationSnapshot
     ) -> RecordCard {
 
-        let anchorResult =
-            configuration.anchor.map {
-                anchorEngine.build(
-                    from: $0,
-                    photoDate:
-                        selectedPhoto.metadata.captureDate
-                        ?? Date()
-                )
-            }
-
 #if !PHOTOMEMO_SHARE_EXTENSION
         let memoryPayload =
-            productionMemoryResolver.resolve(
-                photo: selectedPhoto,
+            resolvedMemoryPayload(
+                from: selectedPhoto,
                 configuration: configuration
             )
+        let anchor =
+            resolvedAnchor(
+                from: memoryPayload,
+                fallbackConfiguration:
+                    configuration
+            )
+        let anchorResult =
+            resolvedAnchorResult(
+                from: anchor,
+                photo: selectedPhoto
+            )
+        let context =
+            buildContext(
+                from: selectedPhoto.metadata,
+                memorySubject:
+                    memoryPayload.subject
+            )
+        let title =
+            resolvedTitle(
+                from: memoryPayload,
+                fallbackConfiguration:
+                    configuration
+            )
+        let memorySubjectText =
+            resolvedMemorySubjectText(
+                from: memoryPayload
+            )
+#else
+        let context =
+            buildContext(
+                from: selectedPhoto.metadata,
+                configuration: configuration
+            )
+        let anchor =
+            configuration.legacyAnchor
+        let anchorResult =
+            resolvedAnchorResult(
+                from: anchor,
+                photo: selectedPhoto
+            )
+        let title =
+            resolvedTitle(
+                from: configuration
+            )
+        let memorySubjectText =
+            configuration.legacyMemorySubjectText
 #endif
 
         var card = RecordCard(
             template: configuration.template,
             metadata: selectedPhoto.metadata,
-            context: buildContext(
-                from: selectedPhoto.metadata
-            ),
-            anchor: configuration.anchor,
+            context: context,
+            anchor: anchor,
             anchorResult: anchorResult,
             badge: configuration.badge,
-            title: resolvedTitle(
-                from: configuration
-            ),
+            title: title,
             story: resolvedStory(
                 from: configuration
             ),
             memorySubjectText:
-                configuration.memorySubjectText,
+                memorySubjectText,
             exportDescriptionOverride: nil
         )
 
 #if !PHOTOMEMO_SHARE_EXTENSION
+        card.memoryResult =
+            memoryPayload.result
         card.memoryModule =
             memoryPayload.module
 #endif
@@ -126,8 +156,123 @@ private extension RecordCardBuildService {
         from configuration: BatchConfigurationSnapshot
     ) -> String {
 
-        return configuration.anchor?.title ?? ""
+        return configuration.legacyAnchor?.title ?? ""
     }
+
+    func resolvedAnchorResult(
+        from anchor: Anchor?,
+        photo selectedPhoto: SelectedPhoto
+    ) -> AnchorResult? {
+
+        anchor.map {
+            anchorEngine.build(
+                from: $0,
+                photoDate:
+                    selectedPhoto.metadata.captureDate
+                    ?? Date()
+            )
+        }
+    }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+    func resolvedMemoryPayload(
+        from selectedPhoto: SelectedPhoto,
+        configuration: BatchConfigurationSnapshot
+    ) -> ProductionMemoryPayload {
+
+        if
+            let snapshot =
+                configuration
+                .canonicalProductionSnapshot,
+            let payload =
+                productionMemoryResolver.resolve(
+                    photo: selectedPhoto,
+                    frozenSnapshot: snapshot
+                ) {
+
+            return payload
+        }
+
+        return productionMemoryResolver.resolveLegacyBatchConfiguration(
+            photo: selectedPhoto,
+            configuration: configuration
+        )
+    }
+
+    func resolvedAnchor(
+        from payload: ProductionMemoryPayload,
+        fallbackConfiguration configuration:
+            BatchConfigurationSnapshot
+    ) -> Anchor? {
+
+        guard
+            let frozenAnchor =
+                payload
+                .snapshot
+                .primaryAnchor
+        else {
+            if configuration
+                .canonicalProductionSnapshot != nil {
+                return nil
+            }
+
+            return configuration.legacyAnchor
+        }
+
+        guard let anchorType =
+            frozenAnchor.anchorType
+        else {
+            return nil
+        }
+
+        return Anchor(
+            id: frozenAnchor.id,
+            type: anchorType,
+            title: frozenAnchor.title,
+            date: frozenAnchor.date,
+            isCountdown:
+                anchorType.defaultCountdown,
+            expressionStyle:
+                frozenAnchor.expressionStyle
+        )
+    }
+
+    func resolvedTitle(
+        from payload: ProductionMemoryPayload,
+        fallbackConfiguration configuration:
+            BatchConfigurationSnapshot
+    ) -> String {
+
+        let frozenTitle =
+            payload.snapshot.primaryAnchor?
+            .title
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        if
+            frozenTitle.isEmpty,
+            configuration
+                .canonicalProductionSnapshot != nil {
+            return ""
+        }
+
+        return frozenTitle.isEmpty
+            ? resolvedTitle(
+                from: configuration
+            )
+            : frozenTitle
+    }
+
+    func resolvedMemorySubjectText(
+        from payload: ProductionMemoryPayload
+    ) -> String {
+
+        payload
+            .subject
+            .resolvedExpressionSubjectText
+    }
+#endif
 
     func resolvedStory(
         from configuration: BatchConfigurationSnapshot
@@ -176,8 +321,10 @@ private extension RecordCardBuildService {
         ?? ""
     }
 
+#if !PHOTOMEMO_SHARE_EXTENSION
     func buildContext(
-        from metadata: PhotoMetadata
+        from metadata: PhotoMetadata,
+        memorySubject: MemorySubject
     ) -> MetadataContext {
 
         var context =
@@ -186,7 +333,11 @@ private extension RecordCardBuildService {
             )
 
         if let relationshipLabel =
-            loadPersonalRelationshipLabel() {
+            normalizedRelationshipLabel(
+                memorySubject
+                    .relationship
+                    .label
+            ) {
             context.set(
                 relationshipLabel,
                 for: MetadataContext.Key.relationshipLabel
@@ -195,29 +346,29 @@ private extension RecordCardBuildService {
 
         return context
     }
+#else
+    func buildContext(
+        from metadata: PhotoMetadata,
+        configuration: BatchConfigurationSnapshot
+    ) -> MetadataContext {
 
-    func loadPersonalRelationshipLabel() -> String? {
+        return MetadataContext.build(
+            from: metadata
+        )
+    }
+#endif
 
-        guard
-            let data = defaults.data(
-                forKey: "photomemo.personalProfile"
-            ),
-            let profile =
-                try? JSONDecoder().decode(
-                    PersonalProfile.self,
-                    from: data
-                )
-        else {
-            return nil
-        }
+    func normalizedRelationshipLabel(
+        _ label: String?
+    ) -> String? {
 
-        let label =
-            profile.normalized
-            .resolvedRelationshipLabel
+        let trimmed =
+            label?
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
-            )
+            ) ?? ""
 
-        return label.isEmpty ? nil : label
+        return trimmed.isEmpty ? nil : trimmed
     }
+
 }

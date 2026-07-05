@@ -9,6 +9,7 @@ struct ConfigurationSnapshot:
     let id: UUID
     let createdAt: Date
     var subjectID: MemorySubject.ID
+    var memorySubject: MemorySubject?
     var expression: MemoryExpression
     var decorations: [DecorationAsset]
     var primaryAnchor: MemoryAnchor?
@@ -18,6 +19,7 @@ struct ConfigurationSnapshot:
         id: UUID = UUID(),
         createdAt: Date = Date(),
         subjectID: MemorySubject.ID,
+        memorySubject: MemorySubject? = nil,
         expression: MemoryExpression,
         decorations: [DecorationAsset],
         primaryAnchor: MemoryAnchor? = nil,
@@ -26,6 +28,7 @@ struct ConfigurationSnapshot:
         self.id = id
         self.createdAt = createdAt
         self.subjectID = subjectID
+        self.memorySubject = memorySubject
         self.expression = expression
         self.decorations = decorations
         self.primaryAnchor = primaryAnchor

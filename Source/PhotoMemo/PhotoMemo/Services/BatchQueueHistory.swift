@@ -67,11 +67,8 @@ struct BatchQueueHistory {
             ) + completedCount
 
             if let anchorTitle =
-                job.configuration.anchor?.title
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                ),
-               !anchorTitle.isEmpty {
+                job.configuration
+                .resolvedProductionAnchorTitle {
                 anchorCounts[anchorTitle] = (
                     anchorCounts[
                         anchorTitle
@@ -223,12 +220,6 @@ struct BatchQueueHistory {
                         .template.preset.displayName
                     : trimmedTemplateName
 
-                let trimmedAnchorTitle =
-                    job.configuration.anchor?.title
-                    .trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                    ) ?? ""
-
                 return ExternalIntakeSummary(
                     jobID: job.id,
                     title: job.title,
@@ -240,9 +231,8 @@ struct BatchQueueHistory {
                     templateName:
                         templateName,
                     anchorTitle:
-                        trimmedAnchorTitle.isEmpty
-                        ? nil
-                        : trimmedAnchorTitle,
+                        job.configuration
+                        .resolvedProductionAnchorTitle,
                     importSummary:
                         job.intakeSummary,
                     updatedAt: job.updatedAt

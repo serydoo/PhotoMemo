@@ -26,6 +26,7 @@ enum ConfigurationSnapshotBuilder {
     ) -> ConfigurationSnapshot {
         ConfigurationSnapshot(
             subjectID: subject.id,
+            memorySubject: subject,
             expression:
                 subject.behavior.memoryExpression,
             decorations: subject.decorations,

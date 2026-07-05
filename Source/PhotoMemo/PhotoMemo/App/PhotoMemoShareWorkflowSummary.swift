@@ -27,7 +27,19 @@ struct PhotoMemoShareWorkflowSummaryBuilder {
         from snapshot: BatchConfigurationSnapshot
     ) -> PhotoMemoShareWorkflowSummary {
 
-        PhotoMemoShareWorkflowSummary(
+#if !PHOTOMEMO_SHARE_EXTENSION
+        let memoryDateTitle =
+            resolvedProductionMemoryDateTitle(
+                from: snapshot
+            )
+#else
+        let memoryDateTitle =
+            resolvedMemoryDateTitle(
+                from: snapshot.legacyAnchor
+            )
+#endif
+
+        return PhotoMemoShareWorkflowSummary(
             styleTitle:
                 resolvedConfigurationTitle(
                     from: snapshot.template
@@ -37,9 +49,7 @@ struct PhotoMemoShareWorkflowSummaryBuilder {
                     from: snapshot.selectedAlbumIdentifier
                 ),
             memoryDateTitle:
-                resolvedMemoryDateTitle(
-                    from: snapshot.anchor
-                )
+                memoryDateTitle
         )
     }
 }
@@ -61,6 +71,59 @@ private extension PhotoMemoShareWorkflowSummaryBuilder {
 
         return trimmedName
     }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+    func resolvedProductionMemoryDateTitle(
+        from snapshot: BatchConfigurationSnapshot
+    ) -> String? {
+
+        if let frozenSnapshot =
+            snapshot
+            .canonicalProductionSnapshot {
+            return resolvedMemoryDateTitle(
+                from: frozenSnapshot
+                    .primaryAnchor
+            )
+        }
+
+        return resolvedMemoryDateTitle(
+            from: snapshot.legacyAnchor
+        )
+    }
+
+    func resolvedMemoryDateTitle(
+        from anchor: MemoryAnchor?
+    ) -> String? {
+
+        guard let anchor else {
+            return nil
+        }
+
+        let trimmedTitle =
+            anchor.title.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        let fallbackTitle =
+            anchor.anchorType?
+            .displayName ?? ""
+
+        let baseTitle =
+            trimmedTitle.isEmpty
+            ? fallbackTitle
+            : trimmedTitle
+
+        guard !baseTitle.isEmpty else {
+            return nil
+        }
+
+        if anchor.anchorType?
+            .defaultCountdown == true {
+            return "\(baseTitle) · 倒计时"
+        }
+
+        return baseTitle
+    }
+#endif
 
     func resolvedMemoryDateTitle(
         from anchor: Anchor?

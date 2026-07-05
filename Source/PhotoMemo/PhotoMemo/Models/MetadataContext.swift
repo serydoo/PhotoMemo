@@ -227,6 +227,15 @@ struct MetadataContext: Hashable, Codable {
 
         values[key] = "\(value)"
     }
+
+    mutating func removeValue(
+        for key: String
+    ) {
+
+        values.removeValue(
+            forKey: key
+        )
+    }
 }
 
 extension MetadataContext {

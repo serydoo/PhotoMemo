@@ -19,13 +19,9 @@ struct MemoryExpressionEngineTests {
             )
 
         let module =
-            MemoryExpressionEngine()
-            .generateModule(
-                context:
-                    MemoryExpressionContext(
-                        subject: subject,
-                        snapshot: snapshot
-                    )
+            generatedModule(
+                subject: subject,
+                snapshot: snapshot
             )
 
         #expect(module.title == "生日记忆")
@@ -98,14 +94,10 @@ struct MemoryExpressionEngineTests {
                 smartModuleCarrierRegion: .slotD
             )
         let module =
-            MemoryExpressionEngine()
-            .generateModule(
-                context:
-                    MemoryExpressionContext(
-                        subject: subject,
-                        snapshot: snapshot,
-                        captureDate: captureDate
-                    )
+            generatedModule(
+                subject: subject,
+                snapshot: snapshot,
+                captureDate: captureDate
             )
 
         #expect(module.renderedText == "途途今天18天啦！")
@@ -173,14 +165,10 @@ struct MemoryExpressionEngineTests {
                 from: subject
             )
         let module =
-            MemoryExpressionEngine()
-            .generateModule(
-                context:
-                    MemoryExpressionContext(
-                        subject: subject,
-                        snapshot: snapshot,
-                        captureDate: captureDate
-                    )
+            generatedModule(
+                subject: subject,
+                snapshot: snapshot,
+                captureDate: captureDate
             )
 
         #expect(module.renderedText == "安安今天1年2个月8天啦！")
@@ -246,14 +234,10 @@ struct MemoryExpressionEngineTests {
                 smartModuleCarrierRegion: .slotD
             )
         let module =
-            MemoryExpressionEngine()
-            .generateModule(
-                context:
-                    MemoryExpressionContext(
-                        subject: subject,
-                        snapshot: snapshot,
-                        captureDate: captureDate
-                    )
+            generatedModule(
+                subject: subject,
+                snapshot: snapshot,
+                captureDate: captureDate
             )
 
         #expect(module.renderedText == "距离途途出生还有18天")
@@ -462,6 +446,33 @@ struct MemoryExpressionEngineTests {
                 )
             == "自毕业旅行起已有2年1个月6天"
         )
+    }
+}
+
+private extension MemoryExpressionEngineTests {
+
+    func generatedModule(
+        subject: MemorySubject,
+        snapshot: ConfigurationSnapshot,
+        captureDate: Date? = nil
+    ) -> MemoryModule {
+        let context =
+            MemoryExpressionContext(
+                subject: subject,
+                snapshot: snapshot,
+                captureDate: captureDate
+            )
+        let result =
+            MemoryExpressionEngine()
+            .generateResult(
+                context: context
+            )
+
+        return MemoryResultPresentationAdapter()
+            .makeModule(
+                result: result,
+                context: context
+            )
     }
 }
 #endif

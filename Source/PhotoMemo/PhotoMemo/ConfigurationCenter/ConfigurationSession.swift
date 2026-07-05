@@ -443,16 +443,25 @@ final class ConfigurationSession:
             return nil
         }
 
-        return MemoryExpressionEngine()
-            .generateModule(
-                context:
-                    MemoryExpressionContext(
-                        subject: subject,
-                        snapshot: snapshot,
-                        captureDate:
-                            MemoryExpressionPreviewResolver
-                            .defaultCaptureDate
-                    )
+        let context =
+            MemoryExpressionContext(
+                subject: subject,
+                snapshot: snapshot,
+                captureDate:
+                    MemoryExpressionPreviewResolver
+                    .defaultCaptureDate
+            )
+
+        let result =
+            MemoryExpressionEngine()
+            .generateResult(
+                context: context
+            )
+
+        return MemoryResultPresentationAdapter()
+            .makeModule(
+                result: result,
+                context: context
             )
     }
 

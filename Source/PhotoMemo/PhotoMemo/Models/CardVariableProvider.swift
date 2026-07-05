@@ -135,6 +135,13 @@ struct CardVariableProvider {
             )
         }
 
+#if !PHOTOMEMO_SHARE_EXTENSION
+        projectMemoryResultAnchorValues(
+            from: card,
+            into: &context
+        )
+#endif
+
         if !card.tags.isEmpty {
 
             context.set(
@@ -413,6 +420,16 @@ private extension CardVariableProvider {
         )
 
 #if !PHOTOMEMO_SHARE_EXTENSION
+        let hasMemoryResult =
+            card.memoryResult != nil
+        let memoryResultStatus =
+            card.memoryResult?
+            .primaryAnchorResult?
+            .status
+        let semanticValues =
+            memoryResultValues(
+                from: card
+            )
         let projectedSummary =
             card.memoryModule?
             .renderedText
@@ -421,17 +438,525 @@ private extension CardVariableProvider {
             ) ?? ""
 
         if !projectedSummary.isEmpty {
+            if hasMemoryResult {
+                if memoryResultStatus != .resolved {
+                    return MemoryCalculationResult(
+                        memorySummary:
+                            projectedSummary
+                    )
+                }
+
+                return MemoryCalculationResult(
+                    daysSince:
+                        semanticValues.daysSince,
+                    yearsSince:
+                        semanticValues.yearsSince,
+                    monthsSince:
+                        semanticValues.monthsSince,
+                    weeksSince:
+                        semanticValues.weeksSince,
+                    babyAge:
+                        semanticValues.babyAge,
+                    memorySummary:
+                        projectedSummary
+                )
+            }
+
             return MemoryCalculationResult(
-                daysSince: legacyValues.daysSince,
-                yearsSince: legacyValues.yearsSince,
-                monthsSince: legacyValues.monthsSince,
-                weeksSince: legacyValues.weeksSince,
-                babyAge: legacyValues.babyAge,
+                daysSince:
+                    legacyValues.daysSince,
+                yearsSince:
+                    legacyValues.yearsSince,
+                monthsSince:
+                    legacyValues.monthsSince,
+                weeksSince:
+                    legacyValues.weeksSince,
+                babyAge:
+                    legacyValues.babyAge,
                 memorySummary: projectedSummary
             )
+        }
+
+        if hasMemoryResult,
+           memoryResultStatus != .resolved {
+            return MemoryCalculationResult()
+        }
+
+        if semanticValues != MemoryCalculationResult() {
+            return semanticValues
         }
 #endif
 
         return legacyValues
     }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+    static func projectMemoryResultAnchorValues(
+        from card: RecordCard,
+        into context: inout MetadataContext
+    ) {
+
+        guard
+            let memoryResult =
+                card.memoryResult
+        else {
+            return
+        }
+
+        removeAnchorDisplayCopyValues(
+            from: &context
+        )
+
+        guard
+            let anchorResult =
+                memoryResult
+                .primaryAnchorResult
+        else {
+            removeAnchorTitle(
+                from: &context
+            )
+            removeAnchorTimeResultValues(
+                from: &context
+            )
+            return
+        }
+
+        context.set(
+            anchorResult.anchorTitle,
+            for: MetadataContext.Key.anchorTitle
+        )
+
+        guard anchorResult.status == .resolved else {
+            removeAnchorTimeResultValues(
+                from: &context
+            )
+            return
+        }
+
+        let elapsed =
+            anchorResult.elapsed
+        let totalDaysText =
+            rawDayText(
+                from: elapsed.totalDays
+            )
+
+        context.set(
+            smartAnchorText(
+                from: anchorResult
+            ),
+            for: MetadataContext.Key.anchorSmartText
+        )
+        context.set(
+            elapsed.isFutureRelative
+            ? totalDaysText
+            : durationText(
+                from: elapsed
+            ),
+            for:
+                MetadataContext
+                .Key
+                .anchorDurationText
+        )
+        context.set(
+            totalDaysText,
+            for:
+                MetadataContext
+                .Key
+                .anchorTotalDaysText
+        )
+        context.set(
+            elapsed.years,
+            for: MetadataContext.Key.anchorYears
+        )
+        context.set(
+            elapsed.months,
+            for: MetadataContext.Key.anchorMonths
+        )
+        context.set(
+            elapsed.days,
+            for: MetadataContext.Key.anchorDays
+        )
+        context.set(
+            elapsed.totalDays,
+            for: MetadataContext.Key.anchorTotalDays
+        )
+        removeAnchorMilestoneText(
+            from: &context
+        )
+        removeAnchorSubDayValues(
+            from: &context
+        )
+
+        if elapsed.isFutureRelative {
+            removePastAnchorResultValues(
+                from: &context
+            )
+            context.set(
+                countdownText(
+                    from: elapsed.totalDays
+                ),
+                for:
+                    MetadataContext
+                    .Key
+                    .anchorCountdownText
+            )
+            return
+        }
+
+        removeFutureAnchorResultValues(
+            from: &context
+        )
+        context.set(
+            babyAgeText(
+                from: elapsed
+            ),
+            for:
+                MetadataContext
+                .Key
+                .anchorAgeText
+        )
+        context.set(
+            elapsedText(
+                from: elapsed.totalDays
+            ),
+            for:
+                MetadataContext
+                .Key
+                .anchorElapsedText
+        )
+        context.set(
+            dayIndexText(
+                from: elapsed.totalDays
+            ),
+            for:
+                MetadataContext
+                .Key
+                .anchorDayIndexText
+        )
+        context.set(
+            weekText(
+                from: elapsed.totalDays
+            ),
+            for:
+                MetadataContext
+                .Key
+                .anchorWeekText
+        )
+        context.set(
+            "\(elapsed.totalMonths)个月",
+            for:
+                MetadataContext
+                .Key
+                .anchorMonthAgeText
+        )
+    }
+
+    static func removeAnchorTimeResultValues(
+        from context: inout MetadataContext
+    ) {
+
+        [
+            MetadataContext.Key.anchorSmartText,
+            MetadataContext.Key.anchorCountdownText,
+            MetadataContext.Key.anchorAgeText,
+            MetadataContext.Key.anchorDurationText,
+            MetadataContext.Key.anchorTotalDaysText,
+            MetadataContext.Key.anchorElapsedText,
+            MetadataContext.Key.anchorDayIndexText,
+            MetadataContext.Key.anchorWeekText,
+            MetadataContext.Key.anchorMonthAgeText,
+            MetadataContext.Key.anchorMilestoneText,
+            MetadataContext.Key.anchorYears,
+            MetadataContext.Key.anchorMonths,
+            MetadataContext.Key.anchorDays,
+            MetadataContext.Key.anchorHours,
+            MetadataContext.Key.anchorMinutes,
+            MetadataContext.Key.anchorSeconds,
+            MetadataContext.Key.anchorTotalDays
+        ]
+        .forEach {
+            context.removeValue(
+                for: $0
+            )
+        }
+    }
+
+    static func removeAnchorDisplayCopyValues(
+        from context: inout MetadataContext
+    ) {
+
+        [
+            MetadataContext.Key.anchorPrimary,
+            MetadataContext.Key.anchorSecondary,
+            MetadataContext.Key.anchorSummary
+        ]
+        .forEach {
+            context.removeValue(
+                for: $0
+            )
+        }
+    }
+
+    static func removeAnchorTitle(
+        from context: inout MetadataContext
+    ) {
+
+        context.removeValue(
+            for: MetadataContext.Key.anchorTitle
+        )
+    }
+
+    static func removeAnchorSubDayValues(
+        from context: inout MetadataContext
+    ) {
+
+        [
+            MetadataContext.Key.anchorHours,
+            MetadataContext.Key.anchorMinutes,
+            MetadataContext.Key.anchorSeconds
+        ]
+        .forEach {
+            context.removeValue(
+                for: $0
+            )
+        }
+    }
+
+    static func removeAnchorMilestoneText(
+        from context: inout MetadataContext
+    ) {
+
+        context.removeValue(
+            for:
+                MetadataContext
+                .Key
+                .anchorMilestoneText
+        )
+    }
+
+    static func removeFutureAnchorResultValues(
+        from context: inout MetadataContext
+    ) {
+
+        context.removeValue(
+            for:
+                MetadataContext
+                .Key
+                .anchorCountdownText
+        )
+    }
+
+    static func removePastAnchorResultValues(
+        from context: inout MetadataContext
+    ) {
+
+        [
+            MetadataContext.Key.anchorAgeText,
+            MetadataContext.Key.anchorElapsedText,
+            MetadataContext.Key.anchorDayIndexText,
+            MetadataContext.Key.anchorWeekText,
+            MetadataContext.Key.anchorMonthAgeText,
+            MetadataContext.Key.anchorMilestoneText
+        ]
+        .forEach {
+            context.removeValue(
+                for: $0
+            )
+        }
+    }
+
+    static func memoryResultValues(
+        from card: RecordCard
+    ) -> MemoryCalculationResult {
+
+        guard
+            let anchorResult =
+                card.memoryResult?
+                .primaryAnchorResult,
+            anchorResult.status == .resolved
+        else {
+            return MemoryCalculationResult()
+        }
+
+        let elapsed =
+            anchorResult.elapsed
+        let isFutureRelative =
+            elapsed.isFutureRelative
+        let babyAge =
+            anchorResult.anchorType == .birthday
+            && !isFutureRelative
+            ? babyAgeText(from: elapsed)
+            : ""
+
+        return MemoryCalculationResult(
+            daysSince:
+                isFutureRelative
+                ? "0"
+                : "\(elapsed.totalDays)",
+            yearsSince:
+                isFutureRelative
+                ? "0"
+                : "\(elapsed.years)",
+            monthsSince:
+                isFutureRelative
+                ? "0"
+                : "\(elapsed.totalMonths)",
+            weeksSince:
+                isFutureRelative
+                ? "0"
+                : "\(elapsed.weeks)",
+            babyAge: babyAge,
+            memorySummary: ""
+        )
+    }
+
+    static func babyAgeText(
+        from elapsed: MemoryElapsedTime
+    ) -> String {
+
+        if elapsed.years > 0 {
+            return [
+                "\(elapsed.years)岁",
+                elapsed.months > 0
+                    ? "\(elapsed.months)个月"
+                    : nil,
+                elapsed.days > 0
+                    ? "\(elapsed.days)天"
+                    : nil
+            ]
+            .compactMap { $0 }
+            .joined()
+        }
+
+        if elapsed.months > 0 {
+            return [
+                "\(elapsed.months)个月",
+                elapsed.days > 0
+                    ? "\(elapsed.days)天"
+                    : nil
+            ]
+            .compactMap { $0 }
+            .joined()
+        }
+
+        return "\(elapsed.days)天"
+    }
+
+    static func smartAnchorText(
+        from anchorResult:
+            MemoryAnchorResult
+    ) -> String {
+
+        let elapsed =
+            anchorResult.elapsed
+
+        if elapsed.isFutureRelative {
+            return countdownText(
+                from: elapsed.totalDays
+            )
+        }
+
+        switch anchorResult.anchorType {
+
+        case .birthday:
+            return firstNonEmpty(
+                babyAgeText(from: elapsed),
+                durationText(from: elapsed)
+            )
+
+        case .marriage:
+            return durationText(from: elapsed)
+
+        case .relationship,
+             .exam,
+             .custom:
+            return elapsed.totalDays < 100
+                ? elapsedText(
+                    from: elapsed.totalDays
+                )
+                : durationText(from: elapsed)
+
+        case nil:
+            return durationText(from: elapsed)
+        }
+    }
+
+    static func durationText(
+        from elapsed: MemoryElapsedTime
+    ) -> String {
+
+        let parts =
+            [
+                elapsed.years > 0
+                    ? "\(elapsed.years)年"
+                    : nil,
+                elapsed.months > 0
+                    ? "\(elapsed.months)个月"
+                    : nil,
+                elapsed.days > 0
+                    ? "\(elapsed.days)天"
+                    : nil
+            ]
+            .compactMap { $0 }
+
+        if parts.isEmpty {
+            return rawDayText(
+                from: elapsed.totalDays
+            )
+        }
+
+        return parts.joined()
+    }
+
+    static func rawDayText(
+        from totalDays: Int
+    ) -> String {
+
+        "\(max(totalDays, 0))天"
+    }
+
+    static func elapsedText(
+        from totalDays: Int
+    ) -> String {
+
+        "已过\(max(totalDays, 0))天"
+    }
+
+    static func countdownText(
+        from totalDays: Int
+    ) -> String {
+
+        "还有\(max(totalDays, 0))天"
+    }
+
+    static func dayIndexText(
+        from totalDays: Int
+    ) -> String {
+
+        "第\(max(totalDays, 1))天"
+    }
+
+    static func weekText(
+        from totalDays: Int
+    ) -> String {
+
+        let safeTotalDays =
+            max(totalDays, 0)
+        let weeks =
+            safeTotalDays / 7
+        let days =
+            safeTotalDays % 7
+
+        if weeks == 0,
+           days == 0 {
+            return "0周"
+        }
+
+        if days == 0 {
+            return "\(weeks)周"
+        }
+
+        return "\(weeks)周\(days)天"
+    }
+#endif
 }

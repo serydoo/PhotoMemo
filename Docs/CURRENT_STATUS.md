@@ -1,6 +1,2272 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-07-04
+Last updated: 2026-07-05
+
+## Architecture Progress
+
+IA-003 is treated as Production Pipeline Convergence. Its goal is not to create
+new architecture, but to complete the convergence of the accepted architecture
+around one frozen production input path.
+The V1 Architecture Review document is now frozen unless a new ADR is accepted
+or IA-003 Completion Criteria change.
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Renderer Contract | ✅ Frozen | Renderer remains the locked V1 output contract. |
+| Production Freeze Line | ✅ Phase 1 Complete | Production now prefers frozen Memory input over live defaults. |
+| Frozen MemorySubject | ✅ Complete | App production snapshots freeze the saved Configuration Center `MemorySubject`. |
+| Frozen ConfigurationSnapshot | ✅ Complete (App Pipeline) | App production snapshots carry a frozen `ConfigurationSnapshot`. |
+| Structured MemoryResult | ✅ Engine Boundary Complete | `MemoryExpressionEngine` now exposes `MemoryResult` as its output boundary. |
+| Snapshot Convergence | ✅ Production Converged | New app snapshots embed MemorySubject in `ConfigurationSnapshot`; production paths consume `canonicalProductionSnapshot`; legacy DTO fields and frozen compatibility writes are behind named projections/helpers. |
+| Live Defaults Cleanup | ✅ Production Pipeline Closed | App and Share Extension `RecordCardBuildService` plus `ProductionMemoryResolver` no longer read runtime `UserDefaults`; legacy fallback uses only DTO input plus safe defaults. |
+| Naming Freeze | ⬜ Post IA-003 | Engineering hygiene after IA-003 completion. |
+| Legacy Cleanup | ⬜ Post IA-003 | Old DTOs, stubs, and naming cleanup remain maintenance work, not IA-003 exit criteria. |
+| Testing Infrastructure | 🟡 Remaining | Full-suite parallel run still has two independently passing flaky/order-sensitive tests. |
+
+## IA-003 Milestones
+
+| Milestone | Status |
+| --- | --- |
+| Production Freeze Line Phase 1 | ✅ Complete |
+| Structured `MemoryResult` | ✅ Engine Boundary Complete |
+| Snapshot Convergence | ✅ Production Converged |
+| Production Runtime Cleanup | ✅ Complete |
+| IA-003 Completion | ✅ Complete |
+
+## IA-003 Completion Criteria
+
+| Criterion | Status |
+| --- | --- |
+| Production Pipeline consumes only frozen input | ✅ Complete |
+| Memory Engine outputs structured `MemoryResult` | ✅ Complete |
+| `ConfigurationSnapshot` is the single production Snapshot | ✅ Complete for Memory Production |
+| `BatchConfigurationSnapshot` is Legacy / Transport DTO only | ✅ Complete for Memory Production |
+| Production Pipeline no longer depends on runtime configuration | ✅ Complete |
+| Naming Freeze is complete | ⬜ Post IA-003 |
+| Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
+
+## 2026-07-05 IA-003 Production Pipeline Convergence complete
+
+IA-003 is now complete for the V1 Memory production pipeline.
+
+Completion summary:
+
+- `ConfigurationSnapshot` is the canonical production Memory model.
+- `BatchConfigurationSnapshot` remains as a transport / legacy DTO and is not
+  the place for new Memory production semantics.
+- App production snapshots carry frozen `ConfigurationSnapshot` input through
+  `canonicalProductionSnapshot`.
+- App and Share Extension build services no longer read runtime
+  `UserDefaults` or `photomemo.personalProfile` during production build.
+- `ProductionMemoryResolver` consumes frozen input first and has no live
+  defaults dependency.
+- `MemoryExpressionEngine` outputs structured `MemoryResult`; presentation
+  adapters own final text projection.
+- Preview/export Memory Expression WYSIWYG is regression-tested through the
+  frozen MemoryResult path.
+
+Boundaries maintained:
+
+- Renderer remains the locked V1 Output Contract.
+- No Layout Engine, Photo Library, Metadata, or renderer evolution was added.
+- Naming Freeze, broad legacy cleanup, helper cleanup, and stub removal are
+  post-IA-003 engineering hygiene.
+
+Verification completed:
+
+- IA-003 focused test group
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 Batch DTO frozen writes isolated
+
+IA-003 Snapshot Convergence tightened the remaining mutable DTO boundary.
+
+Scope:
+
+- `BatchConfigurationSnapshot.frozenMemorySubject` and
+  `frozenConfigurationSnapshot` are now `private(set)` compatibility fields.
+- Canonical production input is written through
+  `withCanonicalProductionSnapshot(_:)`.
+- Historical paired-subject compatibility is written only through explicitly
+  named legacy helpers:
+  - `withLegacyPairedFrozenMemoryConfiguration(...)`
+  - `withLegacyFrozenMemorySubject(_:)`
+- Removed the lower-signal `withFrozenConfigurationSnapshot(_:)` writer.
+- Updated resolver, build-service, batch-history, and share-summary tests away
+  from direct DTO frozen-field mutation.
+- Strengthened `MemoryResultContractTests` so production source cannot call the
+  legacy frozen-subject writers and so frozen DTO fields remain write-protected.
+
+Why this matters:
+
+- `BatchConfigurationSnapshot` remains Codable-compatible as a transport /
+  legacy DTO.
+- New production semantics are harder to add accidentally to the DTO because
+  direct frozen-field mutation is no longer available outside the model.
+- `ConfigurationSnapshot` remains the canonical production model while legacy
+  migration paths stay explicit and reviewable.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- IA-003 focused tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 Production resolver runtime defaults removed
+
+IA-003 Stage 3 closed the remaining resolver-level runtime configuration
+dependency.
+
+Scope:
+
+- Removed `ProductionMemoryResolver(legacyDefaults:)`.
+- Removed `ProductionMemoryResolver` storage and reads of `UserDefaults`.
+- Legacy runtime fallback now uses only `BatchConfigurationSnapshot` DTO input
+  plus a safe default `PersonalProfile`.
+- Updated resolver and BuildService tests away from runtime defaults injection.
+- Strengthened `MemoryResultContractTests` so `ProductionMemoryResolver` cannot
+  regain `UserDefaults`, `legacyDefaults`, or direct personal profile defaults
+  reads.
+
+Why this matters:
+
+- The production Memory resolver is now independent of running app state.
+- Submit-time freeze remains the only path for user-specific Memory
+  configuration to enter production.
+- Legacy DTO compatibility still exists, but it can no longer refill production
+  semantics from live defaults.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+- `MemoryResultContractTests`
+- IA-003 focused tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 App BuildService runtime defaults entry closed
+
+IA-003 Stage 3 moved from named fallback to app production closure for
+`RecordCardBuildService`.
+
+Scope:
+
+- Removed the app-side `RecordCardBuildService(legacyDefaults:)` initializer.
+- App `RecordCardBuildService` now constructs `ProductionMemoryResolver()`
+  without any runtime defaults dependency.
+- Updated BuildService tests to use frozen Memory input instead of injecting
+  runtime profile defaults.
+- At this point, `ProductionMemoryResolver(legacyDefaults:)` still existed as a
+  direct compatibility fallback; it was removed in the follow-up resolver
+  closure recorded above.
+- Strengthened `MemoryResultContractTests` so the app BuildService cannot
+  regain a `legacyDefaults` parameter.
+
+Why this matters:
+
+- The normal app production build path no longer has a runtime configuration
+  injection point.
+- Runtime profile defaults are no longer available to production through
+  `RecordCardBuildService`.
+- The remaining `legacyDefaults` access was isolated below the production
+  service boundary at this step, then removed in the resolver closure recorded
+  above.
+
+Verification completed:
+
+- IA-003 focused tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 Canonical production snapshot projection named
+
+IA-003 Stage 1/2 convergence moved another step toward a single production
+model.
+
+Scope:
+
+- Added `BatchConfigurationSnapshot.canonicalProductionSnapshot` as the
+  production-facing projection for the frozen `ConfigurationSnapshot`.
+- Production paths now consume the canonical projection in:
+  - `ProductionMemoryResolver`
+  - `RecordCardBuildService`
+  - `PhotoMemoShareWorkflowSummaryBuilder`
+- Kept `completedFrozenConfigurationSnapshot` as a compatibility alias instead
+  of deleting it.
+- Added `withCanonicalProductionSnapshot(_:)` and moved app snapshot creation
+  to that naming.
+- Removed the app-side `RecordCardBuildService` stored defaults reference.
+- At this point, the remaining explicit compatibility injection point was
+  renamed to `legacyDefaults`; the follow-up resolver closure above removed it
+  entirely.
+- Extended `MemoryResultContractTests` to guard canonical production snapshot
+  use and prevent production paths from returning to the old completed-snapshot
+  naming.
+
+Why this matters:
+
+- `ConfigurationSnapshot` is now named as the canonical production input at the
+  production read boundary.
+- `BatchConfigurationSnapshot` remains a transport / compatibility DTO without
+  becoming the place for new production semantics.
+- The app build service no longer carries runtime configuration state, and the
+  remaining resolver fallback is named as legacy compatibility.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- IA-003 focused tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 IA-003 testing IPA packaged
+
+Generated a new signed `PhotoMemoiOSV1` testing IPA from the current working
+tree after IA-003 Production Pipeline Convergence completion.
+
+Output:
+
+- `/Users/rui/Desktop/photomemo过程中测试版本软件/PhotoMemoiOSV1-main-6fee4d45-20260705143030.ipa`
+- `/Users/rui/Desktop/photomemo过程中测试版本软件/PhotoMemoiOSV1-main-6fee4d45-20260705143030.ipa.sha256`
+
+Packaging policy maintained:
+
+- The desktop testing folder keeps only the latest `.ipa` and matching
+  `.sha256`.
+- Package name follows
+  `PhotoMemoiOSV1-main-<commit>-<timestamp>.ipa`.
+
+IPA metadata verified:
+
+- bundle id: `com.serydoo.PhotoMemo.iOS`
+- short version: `1.0`
+- bundle version: `1`
+- embedded extensions:
+  - `PhotoMemoShareExtension.appex`
+  - `PhotoMemoWidgetExtension.appex`
+- sha256:
+  `c66f201b9ce6e83cb88078f6f0729df7e3bff674959a2049351851768b7271cf`
+
+Verification completed:
+
+- `PhotoMemoiOSV1` generic iOS build with signing disabled
+- `PhotoMemoiOSV1` signed generic iOS archive
+- testing IPA export via `scripts/export_options_v1_testing.plist`
+- exported IPA metadata / embedded extension inspection
+
+## 2026-07-05 Legacy DTO anchor and subject text projections named
+
+The remaining app production paths no longer read legacy
+`BatchConfigurationSnapshot.anchor` and `memorySubjectText` fields directly.
+
+Scope:
+
+- Added named legacy projections:
+  - `BatchConfigurationSnapshot.legacyAnchor`
+  - `BatchConfigurationSnapshot.legacyMemorySubjectText`
+- `ProductionMemoryResolver` legacy runtime fallback now reads the old anchor
+  through `legacyAnchor`.
+- `RecordCardBuildService` legacy fallback now reads the old anchor and subject
+  text through the named projections.
+- `PhotoMemoShareWorkflowSummaryBuilder` uses the same legacy anchor projection
+  after the frozen snapshot path is unavailable.
+- `MainView` memory progress summary now uses
+  `resolvedProductionAnchorTitle`, aligning its displayed anchor title with
+  the frozen production snapshot rule.
+- `MemoryResultContractTests` guards that production paths use named legacy DTO
+  projections instead of direct field reads.
+
+Why this matters:
+
+- `BatchConfigurationSnapshot` remains compatible as a transport DTO, but
+  production code now has explicit legacy access points.
+- This reduces the chance that legacy fields are mistaken for canonical
+  production truth while preserving old snapshot compatibility.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- IA-003 focused tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 Share workflow summary follows frozen production anchor
+
+The app-side share workflow summary now uses the same completed frozen snapshot
+authority as the production build and batch status surfaces.
+
+Scope:
+
+- `PhotoMemoShareWorkflowSummaryBuilder` now prefers
+  `BatchConfigurationSnapshot.completedFrozenConfigurationSnapshot` for the
+  Memory Date summary in the app target.
+- A frozen `ConfigurationSnapshot.primaryAnchor` overrides the legacy
+  `BatchConfigurationSnapshot.anchor` summary.
+- A complete frozen `ConfigurationSnapshot` with no `primaryAnchor` keeps
+  "no Memory Date" authoritative instead of refilling from the legacy batch
+  anchor.
+- Share Extension summary behavior is preserved through conditional
+  compilation; the extension continues using its legacy-compatible snapshot
+  fields.
+
+Why this matters:
+
+- External/share intake surfaces no longer display legacy Memory Date text that
+  disagrees with the frozen production input.
+- `BatchConfigurationSnapshot.anchor` is further reduced to compatibility /
+  transport fallback instead of acting as a second production truth.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `PhotoMemoShareWorkflowSummaryTests`
+- IA-003 focused tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 App build service default path no longer injects live defaults
+
+The app-side `RecordCardBuildService` default path now starts without a live
+`UserDefaults` dependency.
+
+Scope:
+
+- `RecordCardBuildService()` now defaults to `defaults: nil` for the app target.
+- `AppEnvironment.live` no longer injects shared defaults into the app
+  production build service.
+- Share Extension behavior is preserved with its existing shared-defaults
+  default initializer.
+- Legacy runtime defaults fallback remains available only through an explicit
+  `RecordCardBuildService(defaults:)` or `ProductionMemoryResolver(defaults:)`
+  injection.
+
+Why this matters:
+
+- Normal app preview, queue, batch, and export build paths are pushed further
+  toward frozen-input-only consumption.
+- Runtime defaults are no longer carried by the default production build
+  service merely because the service was constructed.
+- Legacy fallback stays possible for compatibility tests and historical inputs,
+  but it is now an explicit opt-in dependency.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- IA-003 focused tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+## 2026-07-05 ProductionMemoryResolver default path no longer captures live defaults
+
+`ProductionMemoryResolver` now defaults to a frozen-input-first resolver with
+no implicit shared `UserDefaults` dependency.
+
+Scope:
+
+- `ProductionMemoryResolver.defaults` is optional.
+- The default initializer now uses `defaults: nil`.
+- Legacy runtime defaults are still supported only when a caller explicitly
+  injects `UserDefaults`.
+- `RecordCardBuildService` continues injecting its existing defaults so legacy
+  batch fallback behavior remains compatible while frozen paths stay isolated.
+
+Why this matters:
+
+- Direct frozen `ConfigurationSnapshot` resolution can now be used without
+  carrying live runtime state.
+- The remaining live defaults dependency is easier to audit because it is an
+  explicit legacy fallback dependency rather than resolver construction
+  behavior.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `ProductionMemoryResolverTests`
+- IA-003 focused tests
+
+## 2026-07-05 Preview and Export Memory Expression contract guarded
+
+A device feedback item reported that Configuration Preview could show the
+correct Memory Expression while final export fell back to legacy subject /
+anchor wording.
+
+Current code review result:
+
+- Preview and export now both resolve Memory through:
+
+```text
+MemoryExpressionEngine.generateResult
+    ↓
+MemoryResultPresentationAdapter
+```
+
+- App production freezes the current `MemorySubject` and
+  `ConfigurationSnapshot` before build/export.
+- `RecordCardBuildService` publishes the resolved `MemoryResult` and
+  `MemoryModule` into `RecordCard`.
+- `CardVariableProvider` uses `RecordCard.memoryModule.renderedText` for
+  `{{memory_summary}}` when frozen Memory input exists.
+
+Regression guard added:
+
+- `RecordCardBuildServiceTests.previewAndExportShareTheSameFrozenMemoryExpression`
+  now verifies that Preview text and export `{{memory_summary}}` are identical
+  for the same frozen `MemorySubject`, capture date, and expression style.
+
+Boundary:
+
+- Export does not reuse the preview object's in-memory instance. It consumes
+  the frozen input and resolves the same `MemoryResult` shape through the same
+  presentation adapter.
+- This matches the current IA-003 `Submit -> Freeze -> Consume` contract.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests`
+
+## 2026-07-05 BuildService completed frozen snapshot authority
+
+`RecordCardBuildService` no longer treats raw
+`BatchConfigurationSnapshot.frozenConfigurationSnapshot` presence as production
+authority.
+
+Scope:
+
+- `resolvedAnchor(...)` now suppresses legacy batch fallback only when
+  `completedFrozenConfigurationSnapshot` exists.
+- `resolvedTitle(...)` now treats an empty frozen primary anchor title as
+  authoritative only when `completedFrozenConfigurationSnapshot` exists.
+- Incomplete frozen snapshots without an embedded or paired `MemorySubject`
+  continue through the legacy fallback path instead of suppressing legacy
+  anchor/title data.
+
+Why this matters:
+
+- BuildService, ProductionMemoryResolver, and batch status projections now share
+  the same completed frozen snapshot rule.
+- This keeps partially migrated historical inputs compatible while preventing
+  raw DTO fields from acting as a second production truth.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests
+
+## 2026-07-05 New snapshots stop dual-writing frozen MemorySubject
+
+New app production snapshots no longer populate
+`BatchConfigurationSnapshot.frozenMemorySubject` when a complete frozen
+`ConfigurationSnapshot` is available.
+
+Scope:
+
+- `BatchConfigurationSnapshotProvider` now writes the frozen Memory input as:
+
+```text
+ConfigurationSnapshot.memorySubject
+```
+
+- `BatchConfigurationSnapshot.frozenMemorySubject` remains available only as a
+  legacy paired-subject compatibility field for older snapshots.
+- `completedFrozenConfigurationSnapshot` still completes old paired snapshots by
+  embedding `frozenMemorySubject` when the snapshot lacks an embedded subject.
+
+Why this matters:
+
+- Newly submitted production input now has one Memory truth inside
+  `ConfigurationSnapshot`.
+- `BatchConfigurationSnapshot` moves one step closer to being a transport /
+  compatibility DTO instead of carrying parallel domain state.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests`
+- `BatchQueueHistoryTests`
+
+## 2026-07-05 Legacy paired frozen subject isolated behind named projection
+
+The remaining paired `frozenMemorySubject` path is now explicitly marked as
+legacy compatibility instead of appearing as a normal production write/read
+API.
+
+Scope:
+
+- Renamed `withFrozenMemoryConfiguration(...)` to
+  `withLegacyPairedFrozenMemoryConfiguration(...)`.
+- Added `BatchConfigurationSnapshot.legacyFrozenMemorySubject` as the only
+  production resolver projection for older snapshots that contain a frozen
+  subject without a complete frozen `ConfigurationSnapshot`.
+- `ProductionMemoryResolver` no longer reads
+  `BatchConfigurationSnapshot.frozenMemorySubject` directly.
+- `MemoryResultContractTests` now guards that production source does not call
+  the legacy paired writer and that new app snapshots use
+  `withFrozenConfigurationSnapshot(...)`.
+
+Why this matters:
+
+- New production input continues to have a single Memory truth inside
+  `ConfigurationSnapshot`.
+- The old paired subject field remains available for Codable compatibility and
+  historical tests, but production code now treats it as a legacy projection.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- IA-003 focused tests
+
+## 2026-07-05 Batch status completed frozen snapshot authority
+
+Batch status surfaces now use the same completed frozen snapshot rule as the
+production resolver path.
+
+Scope:
+
+- `BatchConfigurationSnapshot.resolvedProductionAnchorTitle` now reads
+  `completedFrozenConfigurationSnapshot` instead of raw
+  `frozenConfigurationSnapshot`.
+- Complete frozen snapshots still override legacy batch anchor titles.
+- Complete frozen snapshots with no primary anchor still keep "no anchor" as an
+  authoritative production decision.
+- Incomplete frozen snapshots without an embedded or paired `MemorySubject` no
+  longer suppress the legacy batch anchor on queue/external-intake status
+  surfaces.
+
+Why this matters:
+
+- Status projections now follow the same "completed frozen input first" rule as
+  `RecordCardBuildService` and `ProductionMemoryResolver`.
+- `BatchConfigurationSnapshot` continues moving toward a compatibility DTO
+  instead of acting as a second production truth.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `BatchQueueHistoryTests`
+- IA-003 focused tests
+
+## 2026-07-05 Paired frozen snapshot completion moved before legacy adapter
+
+BuildService and ProductionMemoryResolver now share the same completed frozen
+snapshot projection:
+
+```text
+BatchConfigurationSnapshot.frozenConfigurationSnapshot
+    + frozenMemorySubject
+    ↓
+completedFrozenConfigurationSnapshot
+    ↓
+resolve(photo:frozenSnapshot:)
+```
+
+Scope:
+
+- Added `BatchConfigurationSnapshot.completedFrozenConfigurationSnapshot`.
+- The helper embeds paired `frozenMemorySubject` into older frozen snapshots
+  whose `ConfigurationSnapshot.memorySubject` is missing.
+- `RecordCardBuildService` now tries the completed frozen snapshot before
+  falling back to `resolveLegacyBatchConfiguration(...)`.
+- `ProductionMemoryResolver` also reuses the completed frozen snapshot helper
+  instead of hand-writing paired snapshot completion logic.
+
+Why this matters:
+
+- Older paired frozen inputs can now enter the direct frozen
+  `ConfigurationSnapshot` resolver path.
+- The legacy batch adapter remains for compatibility, but its real work surface
+  is smaller and more explicit.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `BatchQueueHistoryTests`
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests
+
+## 2026-07-05 Production resolver legacy batch adapter naming complete
+
+`ProductionMemoryResolver` now names the batch DTO entry as a legacy adapter:
+
+```text
+resolveLegacyBatchConfiguration(...)
+```
+
+Scope:
+
+- The direct frozen `ConfigurationSnapshot` resolver entry remains the primary
+  production-facing path.
+- The `BatchConfigurationSnapshot` resolver entry has been renamed from the
+  generic `resolve(photo:configuration:)` shape to an explicit legacy adapter
+  name.
+- `RecordCardBuildService` still prefers the direct frozen snapshot entry and
+  uses the legacy adapter only as fallback.
+- Existing compatibility behavior is unchanged for old or incomplete snapshots.
+
+Why this matters:
+
+- `BatchConfigurationSnapshot` is now represented in resolver code as a
+  compatibility transport input, not as the core production model.
+- This continues Snapshot Convergence without deleting old queue/share
+  compatibility paths prematurely.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+- `MemoryResultContractTests`
+
+## 2026-07-05 Frozen status anchor absence authority complete
+
+Batch status surfaces now treat a frozen `ConfigurationSnapshot` with no
+`primaryAnchor` as authoritative instead of refilling the missing title from
+the legacy `BatchConfigurationSnapshot.anchor`.
+
+Scope:
+
+- `BatchConfigurationSnapshot.resolvedProductionAnchorTitle` now falls back to
+  the legacy batch anchor only when no frozen `ConfigurationSnapshot` exists.
+- Queue usage snapshots no longer count a legacy anchor when the frozen
+  production snapshot explicitly has no primary anchor.
+- External intake summaries and queued notification text use the same helper,
+  so their anchor labels follow the frozen production snapshot consistently.
+
+Why this matters:
+
+- Frozen "no anchor" now remains "no anchor" across production-adjacent status
+  surfaces.
+- This closes another edge where legacy DTO fields could still override frozen
+  production input.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `BatchQueueHistoryTests`
+
+## 2026-07-05 MemoryResult Contract Freeze accepted
+
+The next IA-003 convergence step has been started as a contract-first slice:
+
+- [Docs/02_Architecture/MemoryResult_Contract_Freeze_2026-07-05.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/MemoryResult_Contract_Freeze_2026-07-05.md)
+
+Decision:
+
+- `MemoryResult` is the structured semantic output boundary for Memory Engine.
+- Memory Engine answers what it knows about frozen Memory input and capture time.
+- Presentation owns final sentence composition, localization, expression style,
+  and compatibility projection to current rendered text.
+- `displayText`, `renderedText`, `fullSentence`, and similar final-copy fields
+  are explicitly excluded from the target `MemoryResult` contract.
+
+This is a contract freeze only. No Memory Engine implementation code has been
+changed in this slice.
+
+Implementation rule:
+
+- Do not change the frozen `MemoryResult` contract for a single caller's display
+  need. Display needs should be handled by Presentation or a compatibility
+  adapter.
+- Change the contract only when a new domain semantic is accepted, and update
+  the contract freeze document in the same reviewed slice.
+- Migration should remain one-way:
+
+```text
+Old Resolver
+    ↓
+MemoryResult
+    ↓
+Presentation Adapter
+    ↓
+Current UI / output path
+```
+
+Avoid long-term parallel outputs where Memory Engine directly maintains both
+structured semantic output and final strings.
+
+## 2026-07-05 ConfigurationSession MemoryResult projection slice complete
+
+`ConfigurationSession.generatedMemoryModule` now follows the frozen
+`MemoryResult` migration path internally:
+
+```text
+MemoryExpressionEngine.generateResult
+    ↓
+MemoryResultPresentationAdapter
+    ↓
+MemoryModule
+```
+
+Scope:
+
+- Configuration Center still exposes the same `MemoryModule` compatibility
+  output to existing preview/UI callers.
+- The session no longer directly asks `MemoryExpressionEngine` for a final
+  module string.
+- A contract test now guards this migration boundary so the session path does
+  not regress to direct `generateModule(...)` use.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+- This is a caller migration slice only; `generateModule(...)` remains as a
+  compatibility API while remaining callers are migrated.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+
+## 2026-07-05 Preview resolver MemoryResult projection slice complete
+
+`MemoryExpressionPreviewResolver` now follows the same one-way migration path
+as production and Configuration Session callers:
+
+```text
+MemoryExpressionEngine.generateResult
+    ↓
+MemoryResultPresentationAdapter
+    ↓
+Preview text
+```
+
+Scope:
+
+- Preview resolver output remains unchanged: callers still receive the trimmed
+  rendered preview text they used before.
+- Source code no longer directly calls `MemoryExpressionEngine.generateModule`.
+- Remaining `.generateModule(...)` references are compatibility tests around
+  the legacy API.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+
+## 2026-07-05 MemoryExpressionEngine output boundary completed
+
+`MemoryExpressionEngine` now exposes structured `MemoryResult` as its output
+boundary.
+
+Scope:
+
+- Removed the legacy `generateModule(...)` API from `MemoryExpressionEngine`.
+- Existing module projection tests now use the same production shape:
+
+```text
+MemoryExpressionEngine.generateResult
+    ↓
+MemoryResultPresentationAdapter
+    ↓
+MemoryModule compatibility projection
+```
+
+- Source callers no longer ask Memory Engine to generate final module strings.
+
+Why this matters:
+
+- The Memory Engine no longer owns final presentation copy.
+- Presentation compatibility is explicitly handled by
+  `MemoryResultPresentationAdapter`.
+- The IA-003 criterion "Memory Engine outputs structured `MemoryResult`" is now
+  complete at the engine boundary.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `MemoryExpressionEngineTests`
+
+## 2026-07-05 Frozen anchor status projection slice complete
+
+Batch status surfaces now prefer the frozen production anchor title over the
+legacy batch anchor title.
+
+Scope:
+
+- Added `BatchConfigurationSnapshot.resolvedProductionAnchorTitle`.
+- `BatchQueueHistory.usageSnapshot(...)` now counts anchor usage from the
+  frozen `ConfigurationSnapshot.primaryAnchor` when available.
+- `BatchQueueHistory.latestExternalIntakeSummary(...)` now reports the frozen
+  anchor title when available.
+- Batch queued notification text now uses the same frozen-first anchor helper.
+
+Why this matters:
+
+- Queue history, external intake summaries, and notifications no longer mix a
+  frozen Memory calculation with a stale legacy batch anchor label.
+- This continues Snapshot Convergence without changing renderer/export output.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `BatchQueueHistoryTests`
+
+## 2026-07-05 ProductionMemoryResolver direct snapshot entry slice complete
+
+`ProductionMemoryResolver` now has a direct frozen `ConfigurationSnapshot`
+entry point:
+
+```text
+ConfigurationSnapshot(memorySubject embedded)
+    ↓
+ProductionMemoryResolver
+    ↓
+MemoryResult
+```
+
+Scope:
+
+- Added `resolve(photo:frozenSnapshot:)`.
+- The direct entry requires an embedded `MemorySubject`; snapshots without an
+  embedded subject are treated as incomplete frozen input.
+- The legacy `resolve(photo:configuration:)` entry remains as an adapter for
+  `BatchConfigurationSnapshot`, older frozen subject payloads, and final
+  compatibility fallback.
+- The batch adapter now delegates to the direct snapshot entry when possible.
+
+Why this matters:
+
+- The resolver's core production path no longer needs to understand the legacy
+  batch DTO when a complete frozen `ConfigurationSnapshot` is present.
+- This is a concrete step toward making `ConfigurationSnapshot` the single
+  production Snapshot while preserving compatibility for older snapshots.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+
+## 2026-07-05 BuildService direct frozen snapshot consumption complete
+
+`RecordCardBuildService` now prefers the direct frozen
+`ConfigurationSnapshot` resolver entry when complete frozen input exists:
+
+```text
+BatchConfigurationSnapshot.frozenConfigurationSnapshot
+    ↓
+ProductionMemoryResolver.resolve(photo:frozenSnapshot:)
+    ↓
+RecordCard
+```
+
+Scope:
+
+- Added a narrow BuildService helper that tries
+  `resolve(photo:frozenSnapshot:)` before falling back to the legacy
+  `resolve(photo:configuration:)` adapter.
+- Older or incomplete snapshots still use the existing compatibility adapter.
+- Added a contract test so BuildService cannot silently regress to only using
+  the legacy batch DTO entry.
+
+Why this matters:
+
+- App production assembly now consumes complete frozen `ConfigurationSnapshot`
+  input directly instead of always entering through the legacy batch adapter.
+- This continues Snapshot Convergence while preserving old snapshot
+  compatibility.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `MemoryExpressionEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+  - `BatchQueueHistoryTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Production live defaults fallback isolated
+
+`ProductionMemoryResolver` now keeps its runtime `UserDefaults` profile read
+behind an explicit legacy fallback helper:
+
+```text
+Frozen Snapshot
+    ↓
+Frozen Subject
+    ↓
+Legacy Runtime Defaults Fallback
+```
+
+Scope:
+
+- Moved the final runtime profile fallback into
+  `resolveLegacyRuntimeDefaultsFallback(...)`.
+- Existing behavior is unchanged: old snapshots without frozen Memory input can
+  still resolve through legacy defaults.
+- Added a contract test so live defaults fallback remains visibly isolated
+  while IA-003 continues toward production-path purity.
+
+Why this matters:
+
+- Runtime defaults are no longer visually mixed into the primary production
+  resolver flow.
+- The remaining cleanup target is now explicit: remove or retire the legacy
+  runtime fallback once all production submissions carry frozen input.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `MemoryExpressionEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+  - `BatchQueueHistoryTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Frozen snapshot empty-anchor authority complete
+
+`RecordCardBuildService` now treats a complete frozen
+`ConfigurationSnapshot` without a primary anchor as authoritative.
+
+Scope:
+
+- When `ProductionMemoryPayload.snapshot.primaryAnchor` is absent and the batch
+  configuration carries a frozen `ConfigurationSnapshot`, app production no
+  longer refills `RecordCard.anchor`, `RecordCard.anchorResult`, or title from
+  legacy `BatchConfigurationSnapshot.anchor`.
+- Legacy batch anchor fallback remains available only for inputs that do not
+  carry a frozen `ConfigurationSnapshot`.
+- Added BuildService regression coverage for a mixed snapshot where the legacy
+  batch DTO has an anchor but the frozen production snapshot intentionally has
+  none.
+
+Why this matters:
+
+- "No frozen primary anchor" is now treated as a frozen production decision,
+  not as missing data to repair from the legacy DTO.
+- This closes another Snapshot Convergence drift point before retiring
+  `BatchConfigurationSnapshot` domain semantics.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `MemoryExpressionEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+  - `BatchQueueHistoryTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Legacy paired frozen snapshot completion complete
+
+`ProductionMemoryResolver` now completes legacy paired frozen inputs before
+publishing the production payload.
+
+Scope:
+
+- Older compatibility inputs can still carry:
+  - `BatchConfigurationSnapshot.frozenConfigurationSnapshot`
+  - `BatchConfigurationSnapshot.frozenMemorySubject`
+- When the frozen snapshot is missing its embedded `MemorySubject`, resolver
+  output now returns a completed `ConfigurationSnapshot` with the frozen subject
+  embedded.
+- The direct `resolve(photo:frozenSnapshot:)` entry still requires a complete
+  frozen snapshot and returns `nil` for incomplete direct input.
+
+Why this matters:
+
+- Downstream production code can rely on `ProductionMemoryPayload.snapshot`
+  being closer to the future single production Snapshot shape.
+- The paired legacy subject remains a compatibility input, but it is no longer
+  leaked forward as an incomplete production snapshot.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `MemoryExpressionEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+  - `BatchQueueHistoryTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Snapshot Convergence phase 1 started
+
+Snapshot Convergence has started as a narrow compatibility-preserving slice.
+
+Scope:
+
+- `ConfigurationSnapshot` now carries an embedded frozen `MemorySubject`.
+- `ConfigurationSnapshotBuilder` freezes the selected `MemorySubject` into the
+  snapshot it builds.
+- `BatchConfigurationSnapshot.withFrozenMemoryConfiguration(...)` now ensures
+  the stored `ConfigurationSnapshot` also carries the frozen subject.
+- `ProductionMemoryResolver` now prefers:
+
+```text
+ConfigurationSnapshot.memorySubject
+    ↓
+MemoryExpressionContext
+    ↓
+MemoryResult
+```
+
+before falling back to the legacy paired `frozenMemorySubject`.
+
+Why this matters:
+
+- Production can now resolve Memory from the frozen `ConfigurationSnapshot`
+  itself when that embedded subject is available.
+- This is the first code step toward making `ConfigurationSnapshot` the single
+  production Snapshot.
+- `BatchConfigurationSnapshot` remains a compatibility / transport layer and
+  has not been removed.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- The legacy `frozenMemorySubject` path remains available for older snapshots.
+- This does not complete Snapshot Convergence; it starts the migration by
+  moving frozen Memory subject ownership into `ConfigurationSnapshot`.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+- `ConfigurationSnapshotBuilderTests.buildsSnapshotFromSession` passed when run
+  alone; it remains listed as a known order-sensitive full-suite test.
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Live Defaults cleanup compatibility slice complete
+
+The production relationship-label path now prefers frozen compatibility input
+before falling back to live defaults.
+
+Scope:
+
+- `RecordCardBuildService` already preferred
+  `ConfigurationSnapshot.memorySubject.relationship.label`.
+- It now also prefers legacy `BatchConfigurationSnapshot.frozenMemorySubject`
+  when an older frozen `ConfigurationSnapshot` does not yet embed a
+  `MemorySubject`.
+- The live `PersonalProfile` defaults fallback remains only for snapshots that
+  do not carry frozen Memory input.
+
+Why this matters:
+
+- App production output now keeps relationship-label context aligned with the
+  same frozen input consumed by `ProductionMemoryResolver`.
+- Older compatibility snapshots no longer mix a frozen Memory calculation with
+  a live relationship label.
+- This reduces, but does not eliminate, production fallback dependence on
+  runtime `UserDefaults`.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- Share Extension compatibility fallback was not changed.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 BuildService Memory context ownership narrowed
+
+`RecordCardBuildService` now receives app production relationship context from
+`ProductionMemoryResolver` output instead of resolving Memory relationship
+state directly.
+
+Scope:
+
+- App production builds now derive `MetadataContext.relationship_label` from
+  `ProductionMemoryPayload.subject`.
+- The resolver remains the app production entry point for frozen Memory input.
+- The direct `PersonalProfile` defaults fallback in `RecordCardBuildService`
+  is now compiled only for the Share Extension compatibility path.
+
+Why this matters:
+
+- BuildService no longer duplicates app production Memory input resolution.
+- App production relationship context now follows the same frozen / legacy /
+  compatibility order as `ProductionMemoryResolver`.
+- This is another small step toward production purity: remaining runtime
+  defaults fallback is concentrated in the resolver / submit-freeze boundary
+  instead of being repeated in the build coordinator.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+- Share Extension fallback behavior remains available behind its existing
+  compatibility boundary.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Frozen primary anchor title projection complete
+
+Production card title projection now prefers the frozen production snapshot
+primary anchor over the legacy batch anchor.
+
+Scope:
+
+- App production builds now derive `RecordCard.title` from
+  `ProductionMemoryPayload.snapshot.primaryAnchor.title` when available.
+- Legacy `BatchConfigurationSnapshot.anchor.title` remains the fallback for
+  older snapshots and Share Extension compatibility.
+- `CardVariableProvider` therefore projects `MetadataContext.title` from the
+  same frozen primary anchor that drives `MemoryResult`.
+
+Why this matters:
+
+- Mixed-input production cards no longer combine frozen Memory semantics with a
+  legacy title variable.
+- This is a Snapshot Convergence slice: production output moves one more
+  display-adjacent value from `BatchConfigurationSnapshot` toward
+  `ConfigurationSnapshot`.
+- `BatchConfigurationSnapshot` still carries the legacy anchor and has not yet
+  been reduced to a transport DTO.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+- The change is limited to production input selection before existing variable
+  and template rendering.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Frozen production card input projection complete
+
+App production card input projection now consumes more of the frozen production
+payload before falling back to legacy batch fields.
+
+Scope:
+
+- `RecordCard.memorySubjectText` now derives from
+  `ProductionMemoryPayload.subject.resolvedExpressionSubjectText`.
+- `RecordCard.anchor` and `RecordCard.anchorResult` now prefer
+  `ProductionMemoryPayload.snapshot.primaryAnchor` when it can be converted to
+  the existing compatibility `Anchor`.
+- Legacy `BatchConfigurationSnapshot.memorySubjectText` and
+  `BatchConfigurationSnapshot.anchor` remain fallback inputs for older snapshots
+  and Share Extension compatibility.
+
+Why this matters:
+
+- App production cards no longer mix a frozen `MemoryResult` with legacy
+  subject text or legacy card anchor payload when frozen inputs are available.
+- This continues Snapshot Convergence without changing the Renderer, Export, or
+  Share Extension contracts.
+- `BatchConfigurationSnapshot` still exists as a compatibility / transport DTO;
+  this slice only reduces app production's dependence on its domain fields.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+- Final Memory wording remains owned by Presentation compatibility projection
+  and existing user-controlled template variables.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Frozen input fallback narrowing complete
+
+Two additional IA-003 convergence edges were closed.
+
+Scope:
+
+- When a frozen `ConfigurationSnapshot.primaryAnchor` exists but cannot be
+  converted to the legacy compatibility `Anchor` shape, app production no
+  longer refills `RecordCard.anchor` / `RecordCard.anchorResult` from
+  `BatchConfigurationSnapshot.anchor`.
+- When an older app production snapshot carries `frozenMemorySubject` but does
+  not yet carry `frozenConfigurationSnapshot`, `ProductionMemoryResolver` now
+  rebuilds a compatibility `ConfigurationSnapshot` from the frozen subject
+  instead of falling through to live defaults.
+
+Why this matters:
+
+- Unsupported frozen anchor semantics stay authoritative and do not silently
+  mix with legacy batch anchor values.
+- Older frozen inputs now remain frozen inputs even before full Snapshot
+  Convergence metadata is present.
+- This reduces production runtime `UserDefaults` fallback surface without
+  changing Share Extension behavior.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 Frozen provider subject-text alignment complete
+
+The app-side batch snapshot provider now keeps its legacy subject-text
+compatibility field aligned with the frozen `MemorySubject`.
+
+Scope:
+
+- `BatchConfigurationSnapshotProvider` still freezes:
+  - `frozenMemorySubject`
+  - `frozenConfigurationSnapshot`
+- On the app pipeline, `BatchConfigurationSnapshot.memorySubjectText` now uses
+  `frozenMemorySubject.resolvedExpressionSubjectText`.
+- The Share Extension compile path keeps its existing shared-defaults
+  compatibility behavior.
+
+Why this matters:
+
+- A submitted app production snapshot no longer carries two different subject
+  texts: one from the frozen `MemorySubject`, and another from the old
+  `selectedMemorySubjectText` default.
+- This is another small Snapshot Convergence step: legacy DTO fields remain for
+  compatibility, but their app-side values are derived from the frozen input.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension behavior, Photo Library behavior, Layout
+  Engine, and UI architecture were not modified.
+
+Verification completed:
+
+- `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+
+## 2026-07-05 MemoryResult implementation slice 1 complete
+
+The first structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- Added structured semantic result types:
+  - `MemoryResult`
+  - `MemoryAnchorResult`
+  - `MemoryElapsedTime`
+  - `MemoryResultDirection`
+  - `MemoryResultPrecision`
+  - `MemoryAnchorResultStatus`
+  - `MemoryResultSource`
+- Added `MemoryExpressionEngine.generateResult(context:)` as the first
+  structured Memory Engine output path.
+- Added `MemoryResultPresentationAdapter` as the only compatibility projection
+  from `MemoryResult` back to current `MemoryModule.renderedText`.
+- Updated `MemoryExpressionEngine.generateModule(context:)` to flow through:
+
+```text
+MemoryResult
+    ↓
+Presentation Adapter
+    ↓
+MemoryModule
+```
+
+- Removed the old `OutputStrategy` projection hook so Memory Engine does not
+  maintain parallel structured and final-string output paths.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- Existing rendered text behavior is preserved through the Presentation adapter.
+- This is not full IA-003 completion; broader caller migration and legacy
+  removal remain.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `MemoryExpressionEngineTests`
+- `ProductionMemoryResolverTests`
+- `PhotoMemo` Debug build
+
+## 2026-07-05 MemoryResult implementation slice 2 complete
+
+The second structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `ProductionMemoryPayload` now exposes:
+  - `result: MemoryResult`
+  - existing `module: MemoryModule`
+- `ProductionMemoryResolver` now resolves production Memory through one
+  structured result and one Presentation projection:
+
+```text
+Frozen / legacy production input
+    ↓
+MemoryResult
+    ↓
+Presentation Adapter
+    ↓
+MemoryModule
+```
+
+- Production tests now assert both structured semantic output and preserved
+  rendered text.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- This remains a migration slice. Existing callers may continue consuming
+  `MemoryModule` while later IA-003 slices migrate toward `MemoryResult`.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+- `MemoryResultContractTests`
+- `MemoryExpressionEngineTests`
+- `PhotoMemo` Debug build
+
+## 2026-07-05 MemoryResult implementation slice 3 complete
+
+The third structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `RecordCard` now carries optional structured Memory output:
+  - `memoryResult: MemoryResult?`
+  - existing `memoryModule: MemoryModule?`
+- `RecordCardBuildService` now transfers `ProductionMemoryPayload.result` onto
+  the built `RecordCard`.
+- Build-service tests now assert that downstream cards retain structured
+  semantic Memory output while existing variable/rendered-text behavior remains
+  unchanged.
+
+Current migration path:
+
+```text
+ProductionMemoryResolver
+    ↓
+ProductionMemoryPayload.result
+    ↓
+RecordCard.memoryResult
+```
+
+Compatibility path retained:
+
+```text
+ProductionMemoryPayload.module
+    ↓
+RecordCard.memoryModule
+    ↓
+Current variable/render output
+```
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- `CardVariableProvider` still consumes the existing compatibility
+  `MemoryModule` projection; it has not been migrated to read `MemoryResult`.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests.buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput`
+- `ProductionMemoryResolverTests`
+- `MemoryResultContractTests`
+- `MemoryEngineTests.projectsExplicitMemoryModuleIntoVariableAndTemplateFlow`
+- `PhotoMemo` Debug build
+
+## 2026-07-05 MemoryResult implementation slice 4 complete
+
+The fourth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `MemoryExpressionEngine.generateResult(context:)` now preserves anchor-level
+  semantic status when capture time is missing.
+- If a frozen primary anchor exists but capture date is unavailable,
+  `MemoryResult` now returns a primary `MemoryAnchorResult` with:
+  - `status: .missingCaptureDate`
+  - `precision: .missingCaptureDate`
+  - zero elapsed values
+- The Presentation adapter continues to preserve existing compatibility text
+  behavior for missing capture-date cases.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests.buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput`
+- `PhotoMemo` Debug build
+
+## 2026-07-05 MemoryResult implementation slice 5 complete
+
+The fifth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `MemoryAnchorResultStatus` now includes:
+  - `.disabledAnchor`
+- `MemoryExpressionEngine.generateResult(context:)` now preserves anchor-level
+  semantic status when the frozen primary anchor is disabled.
+- Disabled anchors produce a primary `MemoryAnchorResult` with zero elapsed
+  values and `status: .disabledAnchor`.
+- The Presentation adapter continues to preserve existing compatibility text
+  behavior for disabled-anchor cases.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+- Configuration Center behavior was not changed; this slice only defines the
+  lower-level Memory Engine semantic response when a disabled anchor reaches the
+  engine.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests.buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput`
+- `PhotoMemo` Debug build
+
+## 2026-07-05 MemoryResult implementation slice 6 complete
+
+The sixth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `MemoryExpressionEngine.generateResult(context:)` now preserves anchor-level
+  semantic status when the frozen primary anchor has no supported anchor type.
+- Unsupported anchors produce a primary `MemoryAnchorResult` with:
+  - `status: .unsupportedAnchor`
+  - zero elapsed values
+- The Presentation adapter continues to preserve existing compatibility text
+  behavior for unsupported-anchor cases.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+- This slice preserves the previous behavior that unsupported anchors should not
+  be silently treated as birthday anchors.
+
+Verification completed:
+
+- `MemoryResultContractTests`
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests.buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput`
+- `PhotoMemo` Debug build
+
+## 2026-07-05 MemoryResult implementation slice 7 complete
+
+The seventh structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now projects resolved `RecordCard.memoryResult`
+  elapsed values into existing memory variables:
+  - `daysSince`
+  - `yearsSince`
+  - `monthsSince`
+  - `weeksSince`
+  - `babyAge`
+- `memorySummary` remains on the Presentation compatibility path through
+  `MemoryModule.renderedText`.
+- Existing legacy `anchorResult` projection remains as fallback while caller
+  migration continues.
+
+Current migration path:
+
+```text
+RecordCard.memoryResult
+    ↓
+CardVariableProvider semantic variable projection
+    ↓
+Existing variable/template flow
+```
+
+Compatibility path retained:
+
+```text
+RecordCard.memoryModule
+    ↓
+memorySummary
+```
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+- This slice migrates elapsed semantic variables only; final wording remains
+  Presentation/user controlled.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests`
+- `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests.buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput`
+- `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+
+## 2026-07-05 MemoryResult variable projection boundary coverage added
+
+The `MemoryResult` variable projection boundary now has focused regression
+coverage.
+
+Scope:
+
+- Future-relative resolved `MemoryResult` values continue to project existing
+  variable semantics:
+  - `daysSince = 0`
+  - `yearsSince = 0`
+  - `monthsSince = 0`
+  - `weeksSince = 0`
+  - empty `babyAge`
+- Unresolved `MemoryResult` values, such as disabled anchors, do not project
+  elapsed values into the variable flow.
+- `memorySummary` remains on the Presentation compatibility path through
+  `MemoryModule.renderedText`.
+
+Boundaries maintained:
+
+- No production code behavior was changed in this coverage slice.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+
+Verification completed:
+
+- `MemoryEngineTests`
+
+## 2026-07-05 MemoryResult implementation slice 8 complete
+
+The eighth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now projects resolved `RecordCard.memoryResult` into
+  anchor time-result variables when legacy `RecordCard.anchorResult` is absent.
+- Covered past anchor time-result variables include:
+  - `anchorTitle`
+  - `anchorSmartText`
+  - `anchorAgeText`
+  - `anchorDurationText`
+  - `anchorTotalDaysText`
+  - `anchorElapsedText`
+  - `anchorDayIndexText`
+  - `anchorWeekText`
+  - `anchorMonthAgeText`
+  - numeric anchor year/month/day/day-total values
+- Covered future anchor variables include countdown-oriented values:
+  - `anchorCountdownText`
+  - raw day duration
+  - raw total days
+
+Boundaries maintained:
+
+- The new projection only runs when the legacy `anchorResult` path is absent.
+- Unresolved `MemoryResult` values still do not project elapsed values.
+- No full sentence / summary projection was added from `MemoryResult`; final
+  wording remains Presentation/user controlled.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+
+Verification completed:
+
+- `MemoryEngineTests`
+
+## 2026-07-05 MemoryResult implementation slice 9 complete
+
+The ninth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now prefers resolved `RecordCard.memoryResult` for
+  anchor time-result variables even when legacy `RecordCard.anchorResult` is
+  still present.
+- This moves production-style cards closer to the frozen semantic source while
+  preserving legacy compatibility during migration.
+- Legacy `anchorResult` remains responsible for full summary/primary/secondary
+  compatibility fields that are still outside the pure `MemoryResult` contract.
+
+Boundaries maintained:
+
+- The projection still requires `MemoryAnchorResultStatus.resolved`.
+- No full sentence / summary projection was added from `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- `ProductionMemoryResolverTests`
+- `RecordCardBuildServiceTests`
+- `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+
+## 2026-07-05 MemoryResult implementation slice 10 complete
+
+The tenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now clears stale legacy anchor time-result values when
+  a resolved `MemoryResult` changes anchor direction.
+- Future-relative `MemoryResult` projection removes legacy past-only values:
+  - `anchorAgeText`
+  - `anchorElapsedText`
+  - `anchorDayIndexText`
+  - `anchorWeekText`
+  - `anchorMonthAgeText`
+  - `anchorMilestoneText`
+- Past-relative `MemoryResult` projection removes legacy future-only values:
+  - `anchorCountdownText`
+- This keeps frozen semantic Memory input from mixing with legacy
+  compatibility values during the one-way migration.
+
+Boundaries maintained:
+
+- The projection still requires `MemoryAnchorResultStatus.resolved`.
+- `MemoryResult` still projects only time-result variables, not final
+  sentence, summary, primary, or secondary display copy.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- No final display-copy fields were added to `MemoryResult`.
+
+Verification completed:
+
+- `MemoryEngineTests`
+
+## 2026-07-05 MemoryResult implementation slice 11 complete
+
+The eleventh structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now treats an explicitly unresolved frozen
+  `MemoryResult` as authoritative for anchor time-result variables.
+- When a primary `MemoryResult` exists but its anchor status is not
+  `.resolved`, legacy `anchorResult` time-result variables are removed from the
+  output context.
+- Cleared legacy time-result variables include smart text, countdown, age,
+  duration, elapsed/day-index/week/month-age/milestone values, and numeric
+  anchor time components.
+- Legacy `anchorSummary`, `anchorPrimary`, and `anchorSecondary` remain on the
+  compatibility path until Presentation migration removes those fields.
+
+Boundaries maintained:
+
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 12 complete
+
+The twelfth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider.memoryValues(from:)` now treats an explicitly
+  unresolved frozen `MemoryResult` as authoritative for elapsed semantic
+  variables.
+- When a primary `MemoryResult` exists but is not `.resolved`, legacy
+  `MemoryVariableProvider` elapsed values no longer refill:
+  - `daysSince`
+  - `yearsSince`
+  - `monthsSince`
+  - `weeksSince`
+  - `babyAge`
+- Presentation compatibility summary from `MemoryModule.renderedText` is still
+  preserved while those elapsed semantic variables remain empty.
+
+Boundaries maintained:
+
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 13 complete
+
+The thirteenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now treats the presence of a frozen `MemoryResult` as
+  authoritative even when it has no primary anchor result.
+- If `MemoryResult.primaryAnchorResultID` is absent or cannot resolve to a
+  primary anchor, legacy `anchorResult` time-result variables are removed from
+  the output context instead of being reused.
+- `memoryValues(from:)` no longer refills elapsed semantic variables from
+  legacy `MemoryVariableProvider` when a frozen `MemoryResult` exists without a
+  primary anchor.
+- Presentation compatibility summary from `MemoryModule.renderedText` remains
+  preserved for the current output path.
+
+Boundaries maintained:
+
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 14 complete
+
+The fourteenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider.memoryValues(from:)` now treats resolved
+  `MemoryResult` elapsed semantic values as authoritative as a group.
+- Empty semantic fields from a resolved `MemoryResult` are preserved as valid
+  domain output rather than interpreted as missing values.
+- This prevents legacy `MemoryVariableProvider` values from refilling fields
+  such as `babyAge` when the frozen primary anchor is not a birthday anchor.
+- Legacy fallback remains available only when no frozen `MemoryResult` exists.
+- Presentation compatibility summary from `MemoryModule.renderedText` remains
+  preserved for the current output path.
+
+Boundaries maintained:
+
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 15 complete
+
+The fifteenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- Added production-path regression coverage in `RecordCardBuildServiceTests`
+  for frozen `MemoryResult` variable authority.
+- The new test covers a mixed-input production card where:
+  - legacy `BatchConfigurationSnapshot.anchor` is a birthday anchor;
+  - frozen `ConfigurationSnapshot.primaryAnchor` is a relationship anchor;
+  - production output must preserve the frozen relationship `MemoryResult`
+    semantics.
+- `babyAge` remains empty in the final production variable context and export
+  description when the frozen primary anchor is not a birthday anchor.
+- This locks the Slice 14 behavior at the build-service boundary, where legacy
+  `anchorResult` is still created for compatibility during migration.
+
+Boundaries maintained:
+
+- No production behavior was changed in this coverage slice.
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 16 complete
+
+The sixteenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now treats a present frozen `MemoryResult` as
+  authoritative for legacy Anchor display-copy variables.
+- When `MemoryResult` is present, the variable context clears:
+  - `anchorPrimary`
+  - `anchorSecondary`
+  - `anchorSummary`
+- This prevents old `AnchorResult` sentence/display-copy fields from leaking
+  into the production variable context after frozen Memory semantics have been
+  resolved.
+- Structured `MemoryResult` still projects only semantic time-result values;
+  it does not add display text, final sentence, subtitle, badge text, or other
+  Presentation-owned copy fields.
+- Added production-path regression coverage ensuring templates that still
+  reference legacy Anchor display-copy variables do not refill those values
+  from the legacy `BatchConfigurationSnapshot.anchor` once frozen
+  `MemoryResult` exists.
+
+Boundaries maintained:
+
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+- Existing legacy fallback remains available when no frozen `MemoryResult`
+  exists.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 17 complete
+
+The seventeenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now treats frozen `MemoryResult` as authoritative for
+  `anchorTitle`.
+- When a primary `MemoryResult` anchor exists, `anchorTitle` is projected from
+  `MemoryAnchorResult.anchorTitle` even if the result status is unresolved
+  such as `.disabledAnchor`.
+- When a frozen `MemoryResult` has no primary anchor, legacy `anchorTitle` is
+  removed from the output context instead of being refilled from legacy
+  `AnchorResult`.
+- Added production-path regression coverage for a mixed snapshot where:
+  - legacy `BatchConfigurationSnapshot.anchor.title` is `旧生日`;
+  - frozen `ConfigurationSnapshot.primaryAnchor.title` is `冻结生日`;
+  - frozen primary anchor is disabled;
+  - production output must keep `冻结生日` and must not refill old time-result
+    values from the legacy birthday anchor.
+
+Boundaries maintained:
+
+- `anchorTitle` remains anchor identity metadata, not final sentence copy.
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- Existing legacy fallback remains available when no frozen `MemoryResult`
+  exists.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 19 complete
+
+The nineteenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now treats frozen resolved `MemoryResult` as
+  authoritative over legacy milestone projection.
+- After projecting `MemoryResult` day-level values, the variable context clears:
+  - `anchorMilestoneText`
+- This prevents old `AnchorResult.milestoneText` values from leaking into
+  templates once frozen `MemoryResult` has become the source of anchor time
+  semantics.
+- Added production-path regression coverage for templates that still reference
+  `{{anchor_milestone_text}}` while production is consuming frozen Memory
+  input.
+
+Boundaries maintained:
+
+- No milestone semantic field was added to `MemoryResult`; milestone remains
+  outside the frozen Contract until accepted as a domain semantic.
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- Existing legacy fallback remains available when no frozen `MemoryResult`
+  exists.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-05 MemoryResult implementation slice 18 complete
+
+The eighteenth structured `MemoryResult` implementation slice is complete.
+
+Scope:
+
+- `CardVariableProvider` now treats frozen resolved `MemoryResult` day
+  precision as authoritative for anchor numeric projection.
+- After projecting `MemoryResult` day-level values, the variable context clears
+  legacy sub-day anchor components:
+  - `anchorHours`
+  - `anchorMinutes`
+  - `anchorSeconds`
+- This prevents old `AnchorResult` hour/minute/second values from leaking into
+  templates once frozen `MemoryResult` has become the source of anchor time
+  semantics.
+- Added production-path regression coverage for templates that still reference
+  `{{anchor_hours}}`, `{{anchor_minutes}}`, and `{{anchor_seconds}}`.
+
+Boundaries maintained:
+
+- `MemoryResult` remains day precision; no sub-day semantic fields were added.
+- No final display-copy fields were added to `MemoryResult`.
+- Renderer, Export, Share Extension, Photo Library behavior, Layout Engine, and
+  UI architecture were not modified.
+- Existing legacy fallback remains available when no frozen `MemoryResult`
+  exists.
+- This remains Structured `MemoryResult` migration work, not Snapshot
+  Convergence.
+
+Verification completed:
+
+- `MemoryEngineTests`
+- `RecordCardBuildServiceTests`
+- IA-003 focused tests:
+  - `MemoryEngineTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `MemoryResultContractTests`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+- `git diff --check`
+- `MemoryResult` final-display-field keyword scan
+
+## 2026-07-04 IA-003 production freeze slice started
+
+The first code slice from the accepted V1 Architecture Review Final has landed
+against the IA-003 production freeze line.
+
+Scope:
+
+- `BatchConfigurationSnapshot` now carries frozen Memory configuration in app
+  targets:
+  - `MemorySubject`
+  - `ConfigurationSnapshot`
+- `BatchConfigurationSnapshotProvider` freezes Memory configuration when
+  loading the current/default batch configuration.
+  - Saved `MemorySubject` from the Configuration Center is preferred as the
+    frozen source.
+  - Legacy `PersonalProfile` adaptation remains the fallback when no saved
+    `MemorySubject` exists.
+- `ProductionMemoryResolver` now prefers frozen Memory configuration over live
+  `UserDefaults` profile state.
+- Legacy fallback remains in place for old snapshots without frozen Memory
+  configuration.
+- Share Extension compatibility is preserved by keeping the new Memory fields
+  out of `PHOTOMEMO_SHARE_EXTENSION` builds.
+
+This is a P0 production-freeze step, not full IA-003 completion. Remaining IA-003
+work still includes structured `MemoryResult` semantics and later snapshot
+convergence.
+
+Verification completed:
+
+- `ProductionMemoryResolverTests`
+- `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- `RecordCardBuildServiceTests.buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput`
+- `ConfigurationSnapshotBuilderTests.buildsSnapshotFromSession`
+- `PhotoMemo` Debug build
+- `PhotoMemoiOSV1` generic iOS Simulator build
+- `PhotoMemoShareExtension` generic iOS Simulator build
+
+## 2026-07-04 V1 Architecture Review Final accepted
+
+The V1 closure and IA-003 migration architecture review has been accepted as
+the governance baseline through IA-003 completion:
+
+- [Docs/02_Architecture/V1_Architecture_Review_Final_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Architecture_Review_Final_2026-07-04.md)
+
+Decision:
+
+- Renderer remains the locked V1 output contract and is not reopened for
+  architecture polish during V1 closure.
+- The architecture focus moves to the IA-003 production freeze line:
+  `Submit -> Freeze -> Build -> Render -> Export`.
+- Submitted Memory configuration should become the production pipeline's single
+  source of truth.
+- Future capabilities should extend existing contracts instead of introducing
+  new runtime state sources.
+
+Architecture checklist:
+
+- Submit: configuration is frozen at submission time.
+- Freeze: there is one single source of truth.
+- Consume: production consumes only frozen input.
 
 ## 2026-07-04 V1 source line unified into main
 

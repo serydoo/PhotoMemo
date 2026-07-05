@@ -25,15 +25,4 @@ protocol SubjectStrategy {
         from subject: MemorySubject
     ) -> String
 }
-
-protocol OutputStrategy {
-
-    func makeModule(
-        title: String,
-        blocks: [MemoryBlock],
-        renderedText: String,
-        sourceAnchor: MemoryAnchor?,
-        preferredRegion: CardRegion?
-    ) -> MemoryModule
-}
 #endif

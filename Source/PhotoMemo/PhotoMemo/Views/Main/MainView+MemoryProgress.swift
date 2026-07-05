@@ -271,10 +271,8 @@ struct MainMemoryProgressPanel: View {
             {
                 let trimmedTitle =
                     defaultConfigurationSnapshot
-                    .anchor?.title
-                    .trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                    ) ?? ""
+                    .resolvedProductionAnchorTitle
+                    ?? ""
 
                 return trimmedTitle.isEmpty
                     ? "未设置时间点"

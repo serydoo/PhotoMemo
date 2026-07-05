@@ -21,6 +21,8 @@ struct RecordCard: Identifiable, Hashable {
     var story: String
 
 #if !PHOTOMEMO_SHARE_EXTENSION
+    var memoryResult: MemoryResult? = nil
+
     var memoryModule: MemoryModule? = nil
 #endif
 

@@ -6,111 +6,197 @@ struct MemoryExpressionEngine {
     private let subjectStrategy:
         any SubjectStrategy
 
-    private let outputStrategy:
-        any OutputStrategy
-
     init(
         subjectStrategy:
-            any SubjectStrategy = ConfiguredSubjectStrategy(),
-        outputStrategy:
-            any OutputStrategy = DefaultMemoryOutputStrategy()
+            any SubjectStrategy = ConfiguredSubjectStrategy()
     ) {
         self.subjectStrategy =
             subjectStrategy
-        self.outputStrategy =
-            outputStrategy
     }
 
-    func generateModule(
+    func generateResult(
         context: MemoryExpressionContext
-    ) -> MemoryModule {
-        let sourceAnchor =
+    ) -> MemoryResult {
+        guard let sourceAnchor =
             context.snapshot.primaryAnchor
-        let resolvedText =
-            resolvedRenderedText(
-                subject: context.subject,
-                snapshot: context.snapshot,
+        else {
+            return MemoryResult(
+                subjectID:
+                    context.subject.id,
                 captureDate:
-                    context.captureDate
+                    context.captureDate,
+                primaryAnchorResultID: nil,
+                anchorResults: []
             )
-
-        let renderedText: String
-
-        if let sourceAnchor,
-           let definition =
-            MemoryAnchorTypeRegistry
-            .definition(
-                for: sourceAnchor.anchorType
-            ),
-           let semanticResult =
-            definition.calculator
-            .calculate(
-                context: context,
-                anchor: sourceAnchor
-            ) {
-            renderedText =
-                definition.expressionProvider
-                .renderedText(
-                    subjectText:
-                        subjectStrategy
-                        .resolveSubjectText(
-                            from: context.subject
-                        ),
-                    semanticResult:
-                        semanticResult,
-                    anchor: sourceAnchor,
-                    context: context
-                )
-        } else {
-            renderedText = resolvedText
         }
 
-        return outputStrategy.makeModule(
-            title: context.snapshot.expression.title,
-            blocks: context.snapshot.expression.blocks,
-            renderedText: renderedText,
-            sourceAnchor: sourceAnchor,
-            preferredRegion: context.snapshot.smartModuleCarrierRegion
+        if !sourceAnchor.isEnabled {
+            let anchorResult =
+                unresolvedAnchorResult(
+                    anchor: sourceAnchor,
+                    status:
+                        .disabledAnchor,
+                    precision: .day
+                )
+
+            return MemoryResult(
+                subjectID:
+                    context.subject.id,
+                captureDate:
+                    context.captureDate,
+                primaryAnchorResultID:
+                    anchorResult.id,
+                anchorResults: [
+                    anchorResult
+                ]
+            )
+        }
+
+        if sourceAnchor.anchorType == nil {
+            let anchorResult =
+                unresolvedAnchorResult(
+                    anchor: sourceAnchor,
+                    status:
+                        .unsupportedAnchor,
+                    precision: .day
+                )
+
+            return MemoryResult(
+                subjectID:
+                    context.subject.id,
+                captureDate:
+                    context.captureDate,
+                primaryAnchorResultID:
+                    anchorResult.id,
+                anchorResults: [
+                    anchorResult
+                ]
+            )
+        }
+
+        guard let captureDate =
+            context.captureDate
+        else {
+            let anchorResult =
+                unresolvedAnchorResult(
+                    anchor: sourceAnchor,
+                    status:
+                        .missingCaptureDate,
+                    precision:
+                        .missingCaptureDate
+                )
+
+            return MemoryResult(
+                subjectID:
+                    context.subject.id,
+                captureDate: nil,
+                primaryAnchorResultID:
+                    anchorResult.id,
+                anchorResults: [
+                    anchorResult
+                ]
+            )
+        }
+
+        let relativeSnapshot =
+            MemoryAnchorRelativeSnapshot
+            .resolve(
+                anchorDate:
+                    sourceAnchor.date,
+                captureDate:
+                    captureDate,
+                calendar:
+                    Calendar.current
+            )
+        let anchorResult =
+            MemoryAnchorResult(
+                id: UUID(),
+                anchorID:
+                    sourceAnchor.id,
+                anchorType:
+                    sourceAnchor.anchorType,
+                anchorTitle:
+                    sourceAnchor.title,
+                anchorDate:
+                    sourceAnchor.date,
+                direction:
+                    direction(
+                        relativeSnapshot:
+                            relativeSnapshot
+                    ),
+                elapsed:
+                    MemoryElapsedTime(
+                        relativeSnapshot:
+                            relativeSnapshot
+                    ),
+                precision: .day,
+                status: .resolved,
+                source:
+                    .frozenConfiguration
+            )
+
+        return MemoryResult(
+            subjectID:
+                context.subject.id,
+            captureDate:
+                captureDate,
+            primaryAnchorResultID:
+                anchorResult.id,
+            anchorResults: [
+                anchorResult
+            ]
         )
     }
 }
 
 private extension MemoryExpressionEngine {
 
-    func resolvedRenderedText(
-        subject: MemorySubject,
-        snapshot: ConfigurationSnapshot,
-        captureDate: Date?
-    ) -> String {
-        let expressionText =
-            snapshot.expression.displayText
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
+    func unresolvedAnchorResult(
+        anchor: MemoryAnchor,
+        status: MemoryAnchorResultStatus,
+        precision: MemoryResultPrecision
+    ) -> MemoryAnchorResult {
+        MemoryAnchorResult(
+            id: UUID(),
+            anchorID: anchor.id,
+            anchorType:
+                anchor.anchorType,
+            anchorTitle:
+                anchor.title,
+            anchorDate:
+                anchor.date,
+            direction:
+                .onAnchor,
+            elapsed:
+                MemoryElapsedTime(
+                    years: 0,
+                    months: 0,
+                    days: 0,
+                    totalDays: 0,
+                    weeks: 0,
+                    totalMonths: 0,
+                    isFutureRelative:
+                        false
+                ),
+            precision: precision,
+            status: status,
+            source:
+                .frozenConfiguration
+        )
+    }
 
-        if !expressionText.isEmpty {
-            return expressionText
+    func direction(
+        relativeSnapshot:
+            MemoryAnchorRelativeSnapshot
+    ) -> MemoryResultDirection {
+
+        if relativeSnapshot.isFutureRelative {
+            return .beforeAnchor
         }
 
-        let subjectName =
-            subject.resolvedExpressionSubjectText
-
-        if let captureDate {
-            let formattedDate =
-                captureDate.formatted(
-                    .dateTime
-                        .year()
-                        .month()
-                        .day()
-                )
-            return "\(subjectName) · \(formattedDate)"
-        }
-
-        if let anchor = snapshot.primaryAnchor {
-            return "\(subjectName) · \(anchor.title)"
-        }
-
-        return subjectName
+        return relativeSnapshot.totalDays == 0
+            ? .onAnchor
+            : .afterAnchor
     }
 }
 #endif

@@ -175,6 +175,236 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
             ) == "birthdayNatural"
         )
     }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+    @Test("Loaded batch snapshot embeds memory subject in frozen configuration snapshot")
+    func loadedBatchSnapshotEmbedsMemorySubjectInFrozenConfigurationSnapshot() throws {
+        let suiteName =
+            "PhotoMemo.BatchConfigurationSnapshotProviderDiagnosticsTests.frozenMemory.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let profile =
+            PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "妈妈",
+                babyNickname: "途途"
+            )
+        defaults.set(
+            try JSONEncoder().encode(profile),
+            forKey: "photomemo.personalProfile"
+        )
+
+        let anchor =
+            Anchor(
+                id: UUID(),
+                type: .birthday,
+                title: "生日",
+                date: Date(
+                    timeIntervalSince1970:
+                        1_725_206_400
+                )
+            )
+
+        defaults.set(
+            try JSONEncoder().encode([anchor]),
+            forKey: "photomemo.anchors"
+        )
+        defaults.set(
+            anchor.id.uuidString,
+            forKey: "photomemo.selectedAnchorID"
+        )
+
+        let snapshot =
+            BatchConfigurationSnapshotProvider(
+                defaults: defaults
+            )
+            .loadSnapshot()
+
+        #expect(
+            snapshot.frozenMemorySubject
+            == nil
+        )
+
+        let configurationSnapshot =
+            try #require(
+                snapshot.frozenConfigurationSnapshot
+            )
+        let subject =
+            try #require(
+                configurationSnapshot.memorySubject
+            )
+
+        #expect(
+            subject.identity.displayName
+            == "途途"
+        )
+        #expect(
+            subject.primaryTimeAnchor?.title
+            == "生日"
+        )
+        #expect(
+            configurationSnapshot.subjectID
+            == subject.id
+        )
+        #expect(
+            configurationSnapshot.memorySubject
+            == subject
+        )
+        #expect(
+            configurationSnapshot.primaryAnchor?.title
+            == "生日"
+        )
+    }
+
+    @Test("Loaded batch snapshot prefers saved MemorySubject over legacy personal profile")
+    func loadedBatchSnapshotPrefersSavedMemorySubjectOverLegacyPersonalProfile() throws {
+        let suiteName =
+            "PhotoMemo.BatchConfigurationSnapshotProviderDiagnosticsTests.selectedMemorySubject.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let profile =
+            PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "妈妈",
+                babyNickname: "旧Profile对象"
+            )
+        defaults.set(
+            try JSONEncoder().encode(profile),
+            forKey: "photomemo.personalProfile"
+        )
+
+        let anchorDate =
+            Date(
+                timeIntervalSince1970:
+                    1_725_206_400
+            )
+        let selectedSubject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "配置中心对象",
+                        shortName: "中心对象"
+                    ),
+                relationship:
+                    .init(
+                        role: "家庭",
+                        label: "爸爸"
+                    ),
+                referenceDate: anchorDate,
+                timeAnchors: [
+                    .init(
+                        title: "配置中心生日",
+                        date: anchorDate,
+                        note: "生日",
+                        anchorType: .birthday,
+                        expressionStyle:
+                            .birthdayAgeToday
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor:
+                            "配置中心生日",
+                        iconStrategy:
+                            .autoMatch,
+                        badgeStrategy:
+                            .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "配置中心表达",
+                                blocks: [
+                                    .text(
+                                        "配置中心对象"
+                                    )
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+
+        defaults.set(
+            try JSONEncoder().encode(selectedSubject),
+            forKey: "photomemo.selectedMemorySubject"
+        )
+        defaults.set(
+            "旧兼容对象",
+            forKey: "photomemo.selectedMemorySubjectText"
+        )
+
+        let snapshot =
+            BatchConfigurationSnapshotProvider(
+                defaults: defaults
+            )
+            .loadSnapshot()
+        #expect(
+            snapshot.frozenMemorySubject
+            == nil
+        )
+
+        let configurationSnapshot =
+            try #require(
+                snapshot.frozenConfigurationSnapshot
+            )
+        let subject =
+            try #require(
+                configurationSnapshot.memorySubject
+            )
+
+        #expect(
+            subject.identity.displayName
+            == "配置中心对象"
+        )
+        #expect(
+            snapshot.memorySubjectText
+            == "中心对象"
+        )
+        #expect(
+            subject.primaryTimeAnchor?.title
+            == "配置中心生日"
+        )
+        #expect(
+            configurationSnapshot.expression.title
+            == "配置中心表达"
+        )
+        #expect(
+            configurationSnapshot.memorySubject
+            == subject
+        )
+        #expect(
+            configurationSnapshot.primaryAnchor?
+                .expressionStyle
+            == .birthdayAgeToday
+        )
+    }
+#endif
 }
 
 private extension BatchConfigurationSnapshotProviderDiagnosticsTests {

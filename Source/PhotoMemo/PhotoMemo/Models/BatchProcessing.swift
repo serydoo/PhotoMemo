@@ -202,6 +202,9 @@ struct BatchConfigurationSnapshot:
     Codable,
     Hashable {
 
+    // Transport/compatibility DTO only. New production semantics belong in
+    // ConfigurationSnapshot.
+
     let id: UUID
 
     let createdAt: Date
@@ -213,6 +216,14 @@ struct BatchConfigurationSnapshot:
     var anchor: Anchor?
 
     var memorySubjectText: String?
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+    private(set) var frozenMemorySubject:
+        MemorySubject?
+
+    private(set) var frozenConfigurationSnapshot:
+        ConfigurationSnapshot?
+#endif
 
     var shouldWritePhotoDescription: Bool
 
@@ -244,6 +255,113 @@ struct BatchConfigurationSnapshot:
             photoDescriptionOverride
         self.selectedAlbumIdentifier =
             selectedAlbumIdentifier
+    }
+}
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+extension BatchConfigurationSnapshot {
+
+    var resolvedProductionAnchorTitle: String? {
+#if !PHOTOMEMO_SHARE_EXTENSION
+        if let canonicalProductionSnapshot {
+            return normalizedAnchorTitle(
+                canonicalProductionSnapshot
+                    .primaryAnchor?
+                    .title
+            )
+        }
+#endif
+
+        return normalizedAnchorTitle(
+            legacyAnchor?.title
+        )
+    }
+
+    var canonicalProductionSnapshot:
+        ConfigurationSnapshot? {
+        guard var snapshot =
+            frozenConfigurationSnapshot
+        else {
+            return nil
+        }
+
+        if snapshot.memorySubject == nil,
+           let frozenMemorySubject {
+            snapshot.memorySubject =
+                frozenMemorySubject
+        }
+
+        guard snapshot.memorySubject != nil else {
+            return nil
+        }
+
+        return snapshot
+    }
+
+    var completedFrozenConfigurationSnapshot:
+        ConfigurationSnapshot? {
+        canonicalProductionSnapshot
+    }
+
+    var legacyFrozenMemorySubject:
+        MemorySubject? {
+        frozenMemorySubject
+    }
+
+    func withLegacyPairedFrozenMemoryConfiguration(
+        subject: MemorySubject,
+        snapshot: ConfigurationSnapshot
+    ) -> BatchConfigurationSnapshot {
+        var copy = self
+        var frozenSnapshot = snapshot
+        if frozenSnapshot.memorySubject == nil {
+            frozenSnapshot.memorySubject = subject
+        }
+        copy.frozenMemorySubject = subject
+        copy.frozenConfigurationSnapshot = frozenSnapshot
+        return copy
+    }
+
+    func withLegacyFrozenMemorySubject(
+        _ subject: MemorySubject
+    ) -> BatchConfigurationSnapshot {
+        var copy = self
+        copy.frozenMemorySubject = subject
+        return copy
+    }
+
+    func withCanonicalProductionSnapshot(
+        _ snapshot: ConfigurationSnapshot
+    ) -> BatchConfigurationSnapshot {
+        var copy = self
+        copy.frozenConfigurationSnapshot = snapshot
+        return copy
+    }
+
+    private func normalizedAnchorTitle(
+        _ title: String?
+    ) -> String? {
+        let trimmed =
+            title?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        return trimmed.isEmpty
+            ? nil
+            : trimmed
+    }
+}
+#endif
+
+extension BatchConfigurationSnapshot {
+
+    var legacyAnchor: Anchor? {
+        anchor
+    }
+
+    var legacyMemorySubjectText: String? {
+        memorySubjectText
     }
 }
 

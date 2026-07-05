@@ -120,9 +120,7 @@ struct ArchitectureMigrationFoundationTests {
             .loadDefaultBatchConfigurationSnapshot()
 
         let expectedCard =
-            RecordCardBuildService(
-                defaults: defaults
-            )
+            RecordCardBuildService()
             .buildCard(
                 from: photo,
                 configuration:

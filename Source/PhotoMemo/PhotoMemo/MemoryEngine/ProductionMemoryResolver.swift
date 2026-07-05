@@ -6,29 +6,78 @@ struct ProductionMemoryPayload:
 
     var subject: MemorySubject
     var snapshot: ConfigurationSnapshot
+    var result: MemoryResult
     var module: MemoryModule
 }
 
 struct ProductionMemoryResolver {
 
-    private let defaults: UserDefaults
+    func resolve(
+        photo: SelectedPhoto,
+        frozenSnapshot snapshot: ConfigurationSnapshot
+    ) -> ProductionMemoryPayload? {
+        guard let subject =
+            snapshot.memorySubject
+        else {
+            return nil
+        }
 
-    init(
-        defaults: UserDefaults =
-            PhotoMemoSharedContainer.sharedUserDefaults
-    ) {
-        self.defaults = defaults
+        return resolve(
+            photo: photo,
+            subject: subject,
+            snapshot: snapshot
+        )
     }
 
-    func resolve(
+    func resolveLegacyBatchConfiguration(
+        photo: SelectedPhoto,
+        configuration: BatchConfigurationSnapshot
+    ) -> ProductionMemoryPayload {
+        if let snapshot =
+            configuration
+            .canonicalProductionSnapshot {
+            if let payload =
+                resolve(
+                    photo: photo,
+                    frozenSnapshot: snapshot
+                ) {
+                return payload
+            }
+        }
+
+        if let subject =
+            configuration
+            .legacyFrozenMemorySubject {
+            let snapshot =
+                ConfigurationSnapshotBuilder
+                .build(from: subject)
+
+            return resolve(
+                photo: photo,
+                subject: subject,
+                snapshot: snapshot
+            )
+        }
+
+        return resolveLegacyRuntimeDefaultsFallback(
+            photo: photo,
+            configuration: configuration
+        )
+    }
+}
+
+private extension ProductionMemoryResolver {
+
+    func resolveLegacyRuntimeDefaultsFallback(
         photo: SelectedPhoto,
         configuration: BatchConfigurationSnapshot
     ) -> ProductionMemoryPayload {
         let profile =
-            loadProfile()
-            ?? PersonalProfile()
+            PersonalProfile()
+        let legacyAnchor =
+            configuration.legacyAnchor
         let anchors =
-            configuration.anchor.map {
+            legacyAnchor.map {
                 [$0]
             } ?? []
         let subject =
@@ -36,48 +85,92 @@ struct ProductionMemoryResolver {
                 profile: profile,
                 anchors: anchors,
                 selectedAnchorID:
-                    configuration.anchor?.id,
+                    legacyAnchor?.id,
                 referenceDate:
                     photo.metadata.captureDate
             )
         let snapshot =
             ConfigurationSnapshotBuilder
             .build(from: subject)
-        let module =
-            MemoryExpressionEngine()
-            .generateModule(
-                context:
-                    MemoryExpressionContext(
-                        subject: subject,
-                        snapshot: snapshot,
-                        captureDate:
-                            photo.metadata.captureDate
-                    )
+
+        return resolve(
+            photo: photo,
+            subject: subject,
+            snapshot: snapshot
+        )
+    }
+
+    func resolve(
+        photo: SelectedPhoto,
+        subject: MemorySubject,
+        snapshot: ConfigurationSnapshot
+    ) -> ProductionMemoryPayload {
+        let completedSnapshot =
+            snapshot.withMemorySubject(
+                subject
+            )
+        let resolved =
+            resolvedMemory(
+                subject: subject,
+                snapshot: completedSnapshot,
+                captureDate:
+                    photo.metadata
+                    .captureDate
             )
 
         return ProductionMemoryPayload(
             subject: subject,
-            snapshot: snapshot,
-            module: module
+            snapshot: completedSnapshot,
+            result: resolved.result,
+            module: resolved.module
         )
     }
+
+    func resolvedMemory(
+        subject: MemorySubject,
+        snapshot: ConfigurationSnapshot,
+        captureDate: Date?
+    ) -> (
+        result: MemoryResult,
+        module: MemoryModule
+    ) {
+        let context =
+            MemoryExpressionContext(
+                subject: subject,
+                snapshot: snapshot,
+                captureDate: captureDate
+            )
+        let engine =
+            MemoryExpressionEngine()
+        let result =
+            engine.generateResult(
+                context: context
+            )
+        let module =
+            MemoryResultPresentationAdapter()
+            .makeModule(
+                result: result,
+                context: context
+            )
+
+        return (
+            result,
+            module
+        )
+    }
+
 }
 
-private extension ProductionMemoryResolver {
+private extension ConfigurationSnapshot {
 
-    func loadProfile() -> PersonalProfile? {
-        guard
-            let data = defaults.data(
-                forKey: "photomemo.personalProfile"
-            )
-        else {
-            return nil
+    func withMemorySubject(
+        _ subject: MemorySubject
+    ) -> ConfigurationSnapshot {
+        var copy = self
+        if copy.memorySubject == nil {
+            copy.memorySubject = subject
         }
-
-        return try? JSONDecoder().decode(
-            PersonalProfile.self,
-            from: data
-        )
+        return copy
     }
 }
 #endif

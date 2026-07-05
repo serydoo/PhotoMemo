@@ -25,22 +25,29 @@ enum MemoryExpressionPreviewResolver {
             return nil
         }
 
-        let renderedText =
+        let context =
+            MemoryExpressionContext(
+                subject: subject,
+                snapshot:
+                    ConfigurationSnapshotBuilder
+                    .build(
+                        from: subject,
+                        smartModuleCarrierRegion:
+                            smartModuleCarrierRegion
+                    ),
+                captureDate:
+                    captureDate
+            )
+        let result =
             MemoryExpressionEngine()
-            .generateModule(
-                context:
-                    MemoryExpressionContext(
-                        subject: subject,
-                        snapshot:
-                            ConfigurationSnapshotBuilder
-                            .build(
-                                from: subject,
-                                smartModuleCarrierRegion:
-                                    smartModuleCarrierRegion
-                            ),
-                        captureDate:
-                            captureDate
-                    )
+            .generateResult(
+                context: context
+            )
+        let renderedText =
+            MemoryResultPresentationAdapter()
+            .makeModule(
+                result: result,
+                context: context
             )
             .renderedText
             .trimmingCharacters(
