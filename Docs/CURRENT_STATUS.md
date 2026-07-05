@@ -95,6 +95,9 @@ Completed checkpoints:
     size, memory tier, preview downsample facts, and decode purpose.
   - The report does not persist or copy image bytes, and remains a derived model
     instead of a new diagnostics service in this slice.
+  - `PhotoImportService` now rejects unsupported or oversized media through
+    `PhotoProcessingInputPolicy` before preview decode, and surfaces the
+    policy title, message, and rejection reason through `PhotoImportError`.
 - Single Decode Entry foundation:
   - `MediaDecodeService` is now the app-side media decode layer for
     `PhotoImportService` preview image preparation.
@@ -135,6 +138,7 @@ Latest decode convergence verification:
 - renderer source media-format isolation contract
 - `MediaIntakeFileFirstContractTests`
 - `PhotoImportServiceTests`
+- policy-backed unsupported format / oversized dimension import rejection
 - `git diff --check`
 - `PhotoMemo` Debug build
 - `PhotoMemoShareExtension` iOS Simulator build

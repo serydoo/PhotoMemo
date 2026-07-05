@@ -153,6 +153,10 @@ final class PhotoImportService {
                     )
             )
 
+        try validateInputPolicy(
+            for: mediaAsset
+        )
+
         let image =
             try mediaDecodeService
             .previewImage(
@@ -207,6 +211,28 @@ final class PhotoImportService {
 
         PhotoProcessingInputPolicy.standard
             .isSupportedContentType(contentType)
+    }
+
+    private func validateInputPolicy(
+        for mediaAsset: MediaAsset
+    ) throws {
+
+        let verdict =
+            PhotoProcessingInputPolicy
+            .standard
+            .verdict(
+                contentType:
+                    mediaAsset.contentType,
+                pixelWidth:
+                    mediaAsset.pixelSize?.width,
+                pixelHeight:
+                    mediaAsset.pixelSize?.height
+            )
+
+        guard verdict.isSupported else {
+            throw PhotoImportError
+                .unsupportedInput(verdict)
+        }
     }
 
     private func resolvedImportContentType(
