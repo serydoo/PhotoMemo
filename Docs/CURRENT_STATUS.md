@@ -103,7 +103,7 @@ Guardrail:
 - Phase 4-D Provider code is isolated compiler validation only and does not
   connect any production renderer path to `ExpressionContext`.
 
-## 2026-07-06 Platform Integration PI-1 ExpressionLookup complete
+## 2026-07-06 Platform Integration PI-1 ExpressionLookup frozen
 
 Expression Platform work has moved from Stage 1 baseline creation into Stage 2
 platform integration.
@@ -113,12 +113,14 @@ Stage status:
 | Stage | Status | Notes |
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
-| Stage 2: Platform Integration | ▶ In Progress | PI-1 establishes renderer-facing lookup capability without wiring production renderer paths. |
+| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; next work should validate renderer dependency isolation through PI-2. |
 
 PI-1 completed checkpoints:
 
 - `ExpressionLookup` defines the renderer dependency as pure lookup capability:
   `value(for:)`.
+- PI-1 freezes the platform principle: Renderers depend on lookup capability
+  rather than expression storage.
 - `ExpressionContext` now conforms to `ExpressionLookup` and becomes the
   default lookup adapter, not the required renderer dependency.
 - `ExpressionLookupContractTests` enforce that lookup exposes no enumeration
@@ -134,6 +136,9 @@ Guardrail:
 - Future renderer work should depend on `ExpressionLookup` capability, not
   concrete `ExpressionContext` storage.
 - Renderer must treat lookup as read-only and per-render-cycle input.
+- PI-2 should migrate renderer dependency only. It must not change layout,
+  typography, drawing, color, modules, Export, Share Extension, Metadata
+  adapter, UI, or Photo Library behavior.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
