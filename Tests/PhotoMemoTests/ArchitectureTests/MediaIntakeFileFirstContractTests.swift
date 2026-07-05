@@ -44,6 +44,16 @@ struct MediaIntakeFileFirstContractTests {
                 "PhotoProcessingInputPolicy"
             )
         )
+        #expect(
+            source.contains(
+                "importErrorMessage("
+            )
+        )
+        #expect(
+            source.contains(
+                "failureReason"
+            )
+        )
     }
 
     @Test("V1 Quick Action PhotosPicker attempts file representation before Data fallback")

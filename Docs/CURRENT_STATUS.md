@@ -101,6 +101,9 @@ Completed checkpoints:
   - Main App PhotosPicker and File Import unsupported preflight messages now
     use `PhotoProcessingInputPolicy` verdict title/message instead of a generic
     unsupported-format string.
+  - Main App import error presentation now includes `LocalizedError.failureReason`
+    so policy rejections can show both the diagnostic title and the concrete
+    reason.
   - Share Extension unsupported skips now preserve policy rejection facts in
     `PhotoMemoMediaIntakeRejectionReport` and carry them through
     `PhotoMemoShareExtensionImportResult` for diagnostic summaries without
@@ -151,6 +154,7 @@ Latest decode convergence verification:
 - `MediaIntakeFileFirstContractTests`
 - Main App intake policy-diagnostics contract for unsupported preflight
   messages
+- Main App import error diagnostic reason contract
 - `PhotoImportServiceTests`
 - policy-backed unsupported format / oversized dimension import rejection
 - `PhotoMemoShareIntakeDiagnosticsTests` coverage for codable rejection

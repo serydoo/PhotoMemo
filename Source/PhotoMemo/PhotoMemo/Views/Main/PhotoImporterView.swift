@@ -227,9 +227,7 @@ private extension PhotoImporterView {
 
             await MainActor.run {
                 errorMessage =
-                    (error as? LocalizedError)?
-                    .errorDescription
-                    ?? error.localizedDescription
+                    importErrorMessage(error)
                 selectedPhotoItem = nil
             }
         }
@@ -281,9 +279,7 @@ private extension PhotoImporterView {
                     await MainActor.run {
 
                         errorMessage =
-                            (error as? LocalizedError)?
-                            .errorDescription
-                            ?? error.localizedDescription
+                            importErrorMessage(error)
                     }
                 }
             }
@@ -369,6 +365,34 @@ private extension PhotoImporterView {
             verdict.title,
             verdict.message
         ]
+        .filter {
+            !$0.isEmpty
+        }
+        .joined(
+            separator: "\n"
+        )
+    }
+
+    func importErrorMessage(
+        _ error: Error
+    ) -> String {
+
+        guard let localizedError =
+            error as? LocalizedError else {
+            return error.localizedDescription
+        }
+
+        let title =
+            localizedError.errorDescription
+            ?? error.localizedDescription
+        let reason =
+            localizedError.failureReason
+
+        return [
+            title,
+            reason
+        ]
+        .compactMap { $0 }
         .filter {
             !$0.isEmpty
         }
