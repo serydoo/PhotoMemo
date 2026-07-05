@@ -1,9 +1,5 @@
 import Foundation
-import ImageIO
 import UniformTypeIdentifiers
-#if canImport(CoreImage)
-import CoreImage
-#endif
 
 enum PhotoImportError: LocalizedError {
 
@@ -32,6 +28,7 @@ enum PhotoImportError: LocalizedError {
 final class PhotoImportService {
 
     private let metadataReader = PhotoMetadataReader()
+    private let mediaDecodeService = MediaDecodeService()
 
     func importPhoto(
         from url: URL,
@@ -71,20 +68,13 @@ final class PhotoImportService {
                     assetLocalIdentifier:
                         assetLocalIdentifier
                 )
-            let imageSource =
-                makeImageSource(
+            let sourceProperties =
+                metadataReader.properties(
                     from: data
                 )
-            let sourceProperties =
-                imageSource.flatMap {
-                    metadataReader.properties(
-                        from: $0
-                    )
-                }
 
             return try importPhotoSync(
                 from: temporaryURL,
-                imageSource: imageSource,
                 sourceProperties: sourceProperties,
                 sourceInfo: sourceInfo
             )
@@ -135,7 +125,6 @@ final class PhotoImportService {
 
     private func importPhotoSync(
         from url: URL,
-        imageSource: CGImageSource? = nil,
         sourceProperties: [CFString: Any]? = nil,
         sourceInfo: PhotoSourceInfo? = nil
     ) throws -> SelectedPhoto {
@@ -156,18 +145,11 @@ final class PhotoImportService {
             throw PhotoImportError.imageLoadFailed
         }
 
-        let resolvedImageSource =
-            imageSource
-            ?? makeImageSource(
-                from: url
-            )
         let resolvedSourceProperties =
             sourceProperties
-            ?? resolvedImageSource.flatMap {
-                metadataReader.properties(
-                    from: $0
-                )
-            }
+            ?? metadataReader.properties(
+                from: url
+            )
             ?? [:]
 
         let resolvedSourceInfo =
@@ -196,9 +178,9 @@ final class PhotoImportService {
             )
 
         let image =
-            try loadDisplayImage(
-                for: mediaAsset,
-                imageSource: resolvedImageSource
+            try mediaDecodeService
+            .previewImage(
+                for: mediaAsset
             )
             .removingPhotoMemoLeftEdgeArtifact()
         let previewRepresentation =
@@ -250,214 +232,6 @@ final class PhotoImportService {
         PhotoProcessingInputPolicy.standard
             .isSupportedContentType(contentType)
     }
-
-    private func loadDisplayImage(
-        for mediaAsset: MediaAsset,
-        imageSource: CGImageSource? = nil,
-    ) throws -> PlatformImage {
-
-        if mediaAsset.isRAW {
-            return try loadRAWDisplayImage(
-                from: mediaAsset.fileURL,
-                imageSource: imageSource
-            )
-        }
-
-        if let image =
-            imageIODisplayImage(
-                from: mediaAsset.fileURL,
-                imageSource: imageSource
-            ) {
-            return image
-        }
-
-        guard let data = try? Data(contentsOf: mediaAsset.fileURL),
-              let image =
-            PlatformImage.loadPhotoMemoImage(
-                from: data
-            ) else {
-
-            throw PhotoImportError.imageLoadFailed
-        }
-
-        return image
-    }
-
-    private func loadRAWDisplayImage(
-        from url: URL,
-        imageSource: CGImageSource? = nil
-    ) throws -> PlatformImage {
-
-        if let image =
-            PlatformImage.loadPhotoMemoImage(
-                contentsOfFile: url.path
-            ) {
-            return image
-        }
-
-        if let image =
-            imageIODisplayImage(
-                from: url,
-                imageSource: imageSource
-            ) {
-            return image
-        }
-
-#if canImport(CoreImage)
-        if let image =
-            coreImageDisplayImage(
-                from: url
-            ) {
-            return image
-        }
-#endif
-
-        throw PhotoImportError
-            .rawDisplayRenderFailed
-    }
-
-    private func imageIODisplayImage(
-        from url: URL,
-        imageSource: CGImageSource? = nil
-    ) -> PlatformImage? {
-
-        guard let source =
-            imageSource
-            ?? makeImageSource(
-                from: url
-            ) else {
-            return nil
-        }
-
-        let maxPixelSize =
-            PhotoProcessingInputPolicy
-            .standard
-            .maximumPixelDimension
-
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageIfAbsent:
-                true,
-            kCGImageSourceCreateThumbnailWithTransform:
-                true,
-            kCGImageSourceShouldCacheImmediately:
-                true,
-            kCGImageSourceThumbnailMaxPixelSize:
-                maxPixelSize
-        ]
-
-        guard let cgImage =
-            CGImageSourceCreateThumbnailAtIndex(
-                source,
-                0,
-                options as CFDictionary
-            ) else {
-            return nil
-        }
-
-        return PlatformImage.photoMemoImage(
-            cgImage: cgImage
-        )
-    }
-
-    private func makeImageSource(
-        from url: URL
-    ) -> CGImageSource? {
-
-        CGImageSourceCreateWithURL(
-            url as CFURL,
-            [
-                kCGImageSourceShouldCache:
-                    false
-            ] as CFDictionary
-        )
-    }
-
-    private func makeImageSource(
-        from data: Data
-    ) -> CGImageSource? {
-
-        CGImageSourceCreateWithData(
-            data as CFData,
-            [
-                kCGImageSourceShouldCache:
-                    false
-            ] as CFDictionary
-        )
-    }
-
-#if canImport(CoreImage)
-    private func coreImageDisplayImage(
-        from url: URL
-    ) -> PlatformImage? {
-
-        guard let ciImage =
-            CIImage(
-                contentsOf: url,
-                options: [
-                    .applyOrientationProperty:
-                        true
-                ]
-            ) else {
-            return nil
-        }
-
-        let maxPixelSize =
-            CGFloat(
-                PhotoProcessingInputPolicy
-                    .standard
-                    .maximumPixelDimension
-            )
-        let extent =
-            ciImage.extent.integral
-
-        guard extent.width > 0,
-              extent.height > 0 else {
-            return nil
-        }
-
-        let scale =
-            min(
-                maxPixelSize
-                    / max(
-                        extent.width,
-                        extent.height
-                    ),
-                1
-            )
-
-        let displayImage =
-            scale < 1
-            ? ciImage.transformed(
-                by: CGAffineTransform(
-                    scaleX: scale,
-                    y: scale
-                )
-            )
-            : ciImage
-
-        let context =
-            CIContext(
-                options: [
-                    .cacheIntermediates:
-                        false
-                ]
-            )
-
-        guard let cgImage =
-            context.createCGImage(
-                displayImage,
-                from:
-                    displayImage.extent
-                    .integral
-            ) else {
-            return nil
-        }
-
-        return PlatformImage.photoMemoImage(
-            cgImage: cgImage
-        )
-    }
-#endif
 
     private func resolvedImportContentType(
         fileURL: URL,

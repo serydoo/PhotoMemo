@@ -92,15 +92,27 @@ Completed checkpoints:
     size, memory tier, preview downsample facts, and decode purpose.
   - The report does not persist or copy image bytes, and remains a derived model
     instead of a new diagnostics service in this slice.
+- Single Decode Entry foundation:
+  - `MediaDecodeService` is now the app-side media decode layer for
+    `PhotoImportService` preview image preparation.
+  - `PhotoImportService` no longer owns direct ImageIO, CoreImage, data-backed
+    platform-image fallback, or thumbnail decode details.
+  - `PhotoSourceInfo` now lives with the shared media model so `MediaAsset`
+    remains buildable in the Share Extension target.
+  - Share Extension preview thumbnail decode has not yet been migrated to
+    `MediaDecodeService`; that remains the next decode convergence slice.
 
 Verification completed:
 
 - focused intake/import/policy tests
 - `MediaMemoryBudgetTests`
+- `MediaDecodeLayerContractTests`
+- full `PhotoImportServiceTests`
 - focused RAW-like import report encode/decode test
 - `BatchFixtureCoverageTests`
 - `git diff --check`
 - `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
 
 ## 2026-07-05 IA-003 Production Pipeline Convergence complete
 
