@@ -380,6 +380,38 @@ struct PhotoImportServiceTests {
             (previewRepresentation.pixelSize?.longSide ?? 0)
             <= PhotoProcessingInputPolicy.standard.maximumPixelDimension
         )
+
+        let report =
+            importedPhoto.importReport
+
+        #expect(report.fileName == "IMG_9001.DNG")
+        #expect(report.contentTypeIdentifier == dngType.identifier)
+        #expect(report.pixelSize == importedPhoto.mediaAsset.pixelSize)
+        #expect(report.isRAW)
+        #expect(!report.isLivePhoto)
+        #expect(report.memoryTier == .normal)
+        #expect(report.requiresExtendedPreviewPreparation)
+        #expect(report.representationKind == .preview)
+        #expect(report.decodePurpose == .preview)
+        #expect(
+            report.representationPixelSize
+            == previewRepresentation.pixelSize
+        )
+        #expect(
+            report.representationMaxPixelDimension
+            == PhotoProcessingInputPolicy.standard.maximumPixelDimension
+        )
+        #expect(!report.isRepresentationDownsampled)
+
+        let encodedReport =
+            try JSONEncoder().encode(report)
+        let decodedReport =
+            try JSONDecoder().decode(
+                MediaImportReport.self,
+                from: encodedReport
+            )
+
+        #expect(decodedReport == report)
     }
 
     @Test("Removes narrow black left edge artifact while preserving size")

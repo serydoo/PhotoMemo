@@ -85,11 +85,19 @@ Completed checkpoints:
     branch.
   - Queue behavior remains serial in this increment; no renderer, export
     contract, Memory Pipeline, or Photo Library behavior was changed.
+- Diagnostics & Import Report:
+  - `MediaImportReport` now derives support-safe import facts from
+    `MediaAsset`, preview `MediaRepresentation`, and `MediaMemoryBudget`.
+  - The report is `Codable` and contains media identity, format facts, pixel
+    size, memory tier, preview downsample facts, and decode purpose.
+  - The report does not persist or copy image bytes, and remains a derived model
+    instead of a new diagnostics service in this slice.
 
 Verification completed:
 
 - focused intake/import/policy tests
 - `MediaMemoryBudgetTests`
+- focused RAW-like import report encode/decode test
 - `BatchFixtureCoverageTests`
 - `git diff --check`
 - `PhotoMemo` Debug build

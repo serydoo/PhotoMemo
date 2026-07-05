@@ -301,3 +301,64 @@ struct MediaMemoryBudget: Hashable, Codable {
     private static let criticalPixelCountThreshold =
         48_000_000
 }
+
+struct MediaImportReport: Hashable, Codable {
+
+    let fileName: String
+    let sourceIdentifier: String?
+    let contentTypeIdentifier: String?
+    let pixelSize: MediaPixelSize?
+    let isRAW: Bool
+    let isLivePhoto: Bool
+    let memoryTier: MediaMemoryBudget.Tier
+    let requiresExtendedPreviewPreparation: Bool
+    let estimatedDecodedByteCount: Int
+    let representationKind: MediaRepresentation.Kind?
+    let decodePurpose: DecodePurpose?
+    let representationPixelSize: MediaPixelSize?
+    let representationMaxPixelDimension: Int?
+    let isRepresentationDownsampled: Bool
+
+    init(
+        asset: MediaAsset,
+        representation: MediaRepresentation?
+    ) {
+        let cost =
+            MediaCost(
+                asset: asset
+            )
+        let budget =
+            MediaMemoryBudget(
+                cost: cost
+            )
+
+        self.fileName =
+            asset.fileURL.lastPathComponent
+        self.sourceIdentifier =
+            asset.sourceIdentifier
+        self.contentTypeIdentifier =
+            asset.contentType?.identifier
+        self.pixelSize =
+            asset.pixelSize
+        self.isRAW =
+            asset.isRAW
+        self.isLivePhoto =
+            asset.isLivePhoto
+        self.memoryTier =
+            budget.tier
+        self.requiresExtendedPreviewPreparation =
+            budget.requiresExtendedPreviewPreparation
+        self.estimatedDecodedByteCount =
+            cost.estimatedDecodedByteCount
+        self.representationKind =
+            representation?.kind
+        self.decodePurpose =
+            representation?.decodePurpose
+        self.representationPixelSize =
+            representation?.pixelSize
+        self.representationMaxPixelDimension =
+            representation?.maxPixelDimension
+        self.isRepresentationDownsampled =
+            representation?.isDownsampled ?? false
+    }
+}

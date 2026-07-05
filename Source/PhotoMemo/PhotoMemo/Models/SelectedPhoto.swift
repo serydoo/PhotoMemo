@@ -404,6 +404,14 @@ struct SelectedPhoto: Identifiable {
 
     var previewRepresentation: MediaRepresentation?
 
+    var importReport: MediaImportReport {
+        MediaImportReport(
+            asset: mediaAsset,
+            representation:
+                previewRepresentation
+        )
+    }
+
     init(
         id: UUID = UUID(),
         sourceURL: URL,
