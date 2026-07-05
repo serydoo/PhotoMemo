@@ -140,6 +140,32 @@ Guardrail:
   typography, drawing, color, modules, Export, Share Extension, Metadata
   adapter, UI, or Photo Library behavior.
 
+## 2026-07-06 PI-2 Renderer Dependency Boundary Scan frozen
+
+PI-2 has completed discovery before implementation.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-2_Renderer_Dependency_Isolation_Boundary_Scan.md`
+
+Scan conclusion:
+
+- The approved PI-2 seam is the renderer text-block lookup path:
+  `CardTextBlockEngine -> TemplateVariableEngine.render(...) ->
+  MetadataContext lookup`.
+- PI-2 should replace only this text lookup dependency with
+  `ExpressionLookup` capability.
+- `RecordCardRenderer(image:card:)`, `RecordCard`, Export, Share Extension,
+  batch processing, preview call sites, provider integration, layout,
+  typography, drawing, color, and module behavior remain out of scope.
+
+Freeze rule:
+
+- Only one renderer integration seam is approved for PI-2.
+- PI-2 must choose the seam with the smallest architectural surface, not the
+  smallest line count.
+- Renderer output change is not allowed.
+
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
 The RAW / high-resolution media work has started as a bounded intake

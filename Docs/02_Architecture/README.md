@@ -60,4 +60,5 @@ Architecture Contract documents define rules that production code must obey.
 Boundary Inventory and review documents map current system seams, drift, and
 follow-up risks.
 
+- `PI-2_Renderer_Dependency_Isolation_Boundary_Scan.md`
 - `V1_Preview_Renderer_Export_Contract_Review_2026-07-03.md`
