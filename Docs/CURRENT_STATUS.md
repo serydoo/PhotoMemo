@@ -107,6 +107,12 @@ Completed checkpoints:
   - Share Extension file-preview thumbnails now delegate to
     `MediaDecodeService.thumbnailImage(from:maxPixelDimension:)`; the share
     controller no longer contains direct ImageIO thumbnail decode calls.
+- Renderer Isolation contract:
+  - `MediaDecodeLayerContractTests` now scans renderer sources for source-media
+    format decisions such as RAW / DNG / HEIC / TIFF, `UTType`, ImageIO, or
+    CoreImage usage.
+  - This keeps high-resolution media complexity on the intake/decode side and
+    prevents future RAW work from adding renderer-facing format branches.
 
 Verification completed:
 
@@ -123,6 +129,7 @@ Verification completed:
 Latest decode convergence verification:
 
 - `MediaDecodeLayerContractTests`
+- renderer source media-format isolation contract
 - `PhotoImportServiceTests`
 - `git diff --check`
 - `PhotoMemo` Debug build
