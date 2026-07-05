@@ -114,7 +114,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | ▶ In Progress | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`. |
+| Stage 3: Legacy Compatibility Adoption | ▶ In Progress | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`. |
 
 PI-1 completed checkpoints:
 
@@ -394,6 +394,57 @@ Verification:
   - `ExpressionLookupContractTests`
   - `TemplateVariableEngineTests`
   - `MetadataContextTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-6 V1 Preview Expression Source frozen
+
+PI-6 has completed the first preview Expression Language adoption seam without
+changing platform contracts, production rendering, or Configuration Center
+module insertion behavior.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-6_V1_Preview_Expression_Source_Boundary_Scan.md`
+
+Checkpoints:
+
+- `5398c89` freezes the approved PI-6 seam:
+  `V1PreviewCompositionEngine.moduleDisplayText(.location) -> preview sample
+  facts -> LocationExpressionProvider -> ExpressionContext[location]`.
+- `06dd0a2` changes the V1 preview location module source from a
+  preview-local rendered string to a provider-produced `ExpressionValue`
+  stored in `ExpressionContext`.
+
+Architectural delta:
+
+```text
+V1 preview location source: preview-local string -> ExpressionContext[location]
+```
+
+Scope review:
+
+- PI-6 supports only the approved `location` preview token.
+- V1 preview output text remains `河南 · 商丘`.
+- V1 preview template token remains `{{location_display}}`.
+- No `PreviewExpressionContext` model was introduced.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider`, `ExpressionContextMetadataAdapter`,
+  `ConfigurationCenterPreviewCompositionHelper`, `PhotoMemoiOSModuleCatalog`,
+  `CardVariableProvider`, `TemplateVariableEngine`, `RecordCard`,
+  `RecordCardBuildService`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and production preview behavior were not
+  changed.
+
+Verification:
+
+- `PreviewCompositionMigrationTests` passed.
+- Expression / Location / legacy adapter regression tests passed:
+  - `LocationExpressionPhase4DTests`
+  - `ExpressionContextMetadataAdapterTests`
+  - `ExpressionContextContractTests`
+  - `ExpressionValueContractTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
 
