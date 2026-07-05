@@ -94,6 +94,45 @@ struct PhotoMemoiOSV1PhotoIntakeTests {
         )
     }
 
+    @Test("V1 quick action unsupported message uses input policy diagnostics")
+    func v1QuickActionUnsupportedMessageUsesInputPolicyDiagnostics() {
+        let message =
+            V1PhotoIntakeUnsupportedMessagePresenter
+            .message(
+                for: [
+                    .gif
+                ]
+            )
+
+        let verdict =
+            PhotoProcessingInputPolicy
+            .standard
+            .verdict(
+                contentType: .gif,
+                pixelWidth: 1,
+                pixelHeight: 1
+            )
+
+        #expect(message.contains(verdict.title))
+        #expect(message.contains(verdict.message))
+    }
+
+    @Test("V1 quick action unsupported message keeps fallback when no rejection is known")
+    func v1QuickActionUnsupportedMessageKeepsFallbackWhenNoRejectionIsKnown() {
+        #expect(
+            V1PhotoIntakeUnsupportedMessagePresenter
+            .message(for: [])
+            == V1PhotoIntakeUnsupportedMessagePresenter
+            .fallbackMessage
+        )
+        #expect(
+            V1PhotoIntakeUnsupportedMessagePresenter
+            .message(for: [.heic])
+            == V1PhotoIntakeUnsupportedMessagePresenter
+            .fallbackMessage
+        )
+    }
+
     @Test("saves current configuration before submitting picked photos")
     func savesCurrentConfigurationBeforeSubmittingPickedPhotos() async {
         var events: [String] = []

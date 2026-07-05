@@ -1894,7 +1894,14 @@ struct PhotoMemoiOSV1View: View {
             return
         case .noSupportedPhotos:
             activeConfigurationMessage =
-                "未找到可处理的照片"
+                V1PhotoIntakeUnsupportedMessagePresenter
+                .message(
+                    for:
+                        items
+                        .flatMap(
+                            \.supportedContentTypes
+                        )
+                )
         case .submitted:
             refreshExternalIntake()
             refreshProcessingState()

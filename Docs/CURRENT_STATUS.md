@@ -104,6 +104,10 @@ Completed checkpoints:
   - Main App import error presentation now includes `LocalizedError.failureReason`
     so policy rejections can show both the diagnostic title and the concrete
     reason.
+  - V1 Quick Action no-supported-photo feedback now uses
+    `PhotoProcessingInputPolicy` diagnostics when the selected providers expose
+    unsupported content types, while preserving the existing fallback when no
+    concrete rejection is known.
   - Share Extension unsupported skips now preserve policy rejection facts in
     `PhotoMemoMediaIntakeRejectionReport` and carry them through
     `PhotoMemoShareExtensionImportResult` for diagnostic summaries without
@@ -155,6 +159,8 @@ Latest decode convergence verification:
 - Main App intake policy-diagnostics contract for unsupported preflight
   messages
 - Main App import error diagnostic reason contract
+- `PhotoMemoiOSV1PhotoIntakeTests` coverage for V1 Quick Action unsupported
+  policy diagnostic messages
 - `PhotoImportServiceTests`
 - policy-backed unsupported format / oversized dimension import rejection
 - `PhotoMemoShareIntakeDiagnosticsTests` coverage for codable rejection
