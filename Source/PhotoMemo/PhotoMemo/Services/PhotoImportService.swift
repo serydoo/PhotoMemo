@@ -170,31 +170,60 @@ final class PhotoImportService {
             }
             ?? [:]
 
+        let resolvedSourceInfo =
+            sourceInfo
+            ?? resolvedSourceInfo(
+                fileURL: url,
+                contentType: nil,
+                assetLocalIdentifier: nil
+            )
         let metadata =
             metadataReader.read(
                 from: resolvedSourceProperties
             )
+        let mediaAsset =
+            MediaAsset(
+                fileURL: url,
+                sourceInfo: resolvedSourceInfo,
+                sourceProperties:
+                    resolvedSourceProperties,
+                contentType:
+                    resolvedImportContentType(
+                        fileURL: url,
+                        sourceInfo:
+                            resolvedSourceInfo
+                    )
+            )
 
         let image =
             try loadDisplayImage(
-                from: url,
-                imageSource: resolvedImageSource,
-                sourceInfo: sourceInfo
+                for: mediaAsset,
+                imageSource: resolvedImageSource
             )
             .removingPhotoMemoLeftEdgeArtifact()
+        let previewRepresentation =
+            MediaRepresentation.preview(
+                asset: mediaAsset,
+                pixelSize:
+                    MediaPixelSize(
+                        size:
+                            image.photoMemoSize
+                    ),
+                maxPixelDimension:
+                    PhotoProcessingInputPolicy
+                    .standard
+                    .maximumPixelDimension
+            )
 
         return SelectedPhoto(
             sourceURL: url,
             sourceProperties: resolvedSourceProperties,
             image: image,
             metadata: metadata,
-            sourceInfo:
-                sourceInfo
-                ?? resolvedSourceInfo(
-                    fileURL: url,
-                    contentType: nil,
-                    assetLocalIdentifier: nil
-                )
+            sourceInfo: resolvedSourceInfo,
+            mediaAsset: mediaAsset,
+            previewRepresentation:
+                previewRepresentation
         )
     }
 
@@ -223,39 +252,26 @@ final class PhotoImportService {
     }
 
     private func loadDisplayImage(
-        from url: URL,
+        for mediaAsset: MediaAsset,
         imageSource: CGImageSource? = nil,
-        sourceInfo: PhotoSourceInfo?
     ) throws -> PlatformImage {
 
-        let contentType =
-            resolvedImportContentType(
-                fileURL: url,
-                sourceInfo: sourceInfo
-            )
-
-        let isRAW =
-            PhotoProcessingInputPolicy
-            .isRawContentType(contentType)
-            || PhotoProcessingInputPolicy
-            .isRawFileURL(url)
-
-        if isRAW {
+        if mediaAsset.isRAW {
             return try loadRAWDisplayImage(
-                from: url,
+                from: mediaAsset.fileURL,
                 imageSource: imageSource
             )
         }
 
         if let image =
             imageIODisplayImage(
-                from: url,
+                from: mediaAsset.fileURL,
                 imageSource: imageSource
             ) {
             return image
         }
 
-        guard let data = try? Data(contentsOf: url),
+        guard let data = try? Data(contentsOf: mediaAsset.fileURL),
               let image =
             PlatformImage.loadPhotoMemoImage(
                 from: data

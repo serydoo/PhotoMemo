@@ -271,6 +271,117 @@ struct PhotoImportServiceTests {
         )
     }
 
+    @Test("Builds canonical media asset and preview representation for RAW-like files")
+    func buildsCanonicalMediaAssetAndPreviewRepresentationForRAWLikeFiles() async throws {
+
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let temporaryDirectory =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoImportServiceMediaAssetTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+
+        try FileManager.default.createDirectory(
+            at: temporaryDirectory,
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(
+                at: temporaryDirectory
+            )
+        }
+
+        let rawLikeURL =
+            temporaryDirectory
+            .appendingPathComponent("IMG_9001")
+            .appendingPathExtension("DNG")
+
+        try FileManager.default.copyItem(
+            at: sourceURL,
+            to: rawLikeURL
+        )
+
+        let dngType =
+            try #require(
+                UTType(filenameExtension: "dng")
+            )
+        let importedPhoto =
+            try await PhotoImportService()
+            .importPhoto(
+                from: rawLikeURL,
+                sourceInfo:
+                    PhotoSourceInfo(
+                        originalFileName:
+                            rawLikeURL.lastPathComponent,
+                        assetLocalIdentifier:
+                            "asset-raw-9001",
+                        contentTypeIdentifier:
+                            dngType.identifier
+                    )
+            )
+
+        #expect(
+            importedPhoto.mediaAsset.fileURL
+            == rawLikeURL
+        )
+        #expect(
+            importedPhoto.mediaAsset.contentType?.identifier
+            == dngType.identifier
+        )
+        #expect(
+            importedPhoto.mediaAsset.isRAW
+        )
+        #expect(
+            !importedPhoto.mediaAsset.isLivePhoto
+        )
+        #expect(
+            importedPhoto.mediaAsset.sourceIdentifier
+            == "asset-raw-9001"
+        )
+        #expect(
+            importedPhoto.mediaAsset.pixelSize?.width
+            == importedPhoto.sourceProperties[
+                kCGImagePropertyPixelWidth
+            ] as? Int
+        )
+        #expect(
+            importedPhoto.mediaAsset.pixelSize?.height
+            == importedPhoto.sourceProperties[
+                kCGImagePropertyPixelHeight
+            ] as? Int
+        )
+
+        let previewRepresentation =
+            try #require(
+                importedPhoto.previewRepresentation
+            )
+
+        #expect(
+            previewRepresentation.kind
+            == .preview
+        )
+        #expect(
+            previewRepresentation.decodePurpose
+            == .preview
+        )
+        #expect(
+            previewRepresentation.asset.fileURL
+            == rawLikeURL
+        )
+        #expect(
+            previewRepresentation.maxPixelDimension
+            == PhotoProcessingInputPolicy.standard.maximumPixelDimension
+        )
+        #expect(
+            (previewRepresentation.pixelSize?.longSide ?? 0)
+            <= PhotoProcessingInputPolicy.standard.maximumPixelDimension
+        )
+    }
+
     @Test("Removes narrow black left edge artifact while preserving size")
     func removesNarrowBlackLeftEdgeArtifact() throws {
 

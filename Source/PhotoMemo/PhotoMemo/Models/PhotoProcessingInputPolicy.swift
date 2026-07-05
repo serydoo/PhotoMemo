@@ -54,7 +54,7 @@ struct PhotoProcessingInputPolicy: Hashable {
             return false
         }
 
-        guard !isLivePhotoContentType(contentType) else {
+        guard !Self.isLivePhotoContentType(contentType) else {
             return false
         }
 
@@ -73,7 +73,7 @@ struct PhotoProcessingInputPolicy: Hashable {
             return unsupportedFormatVerdict()
         }
 
-        if isLivePhotoContentType(contentType) {
+        if Self.isLivePhotoContentType(contentType) {
             return Verdict(
                 isSupported: false,
                 reason: .livePhoto,
@@ -207,6 +207,23 @@ extension PhotoProcessingInputPolicy {
         )
     }
 
+    nonisolated static func isLivePhotoContentType(
+        _ contentType: UTType?
+    ) -> Bool {
+
+        guard
+            let contentType,
+            let livePhotoType =
+                UTType("com.apple.live-photo")
+        else {
+            return false
+        }
+
+        return contentType.conforms(to: livePhotoType)
+            || contentType.identifier
+                == livePhotoType.identifier
+    }
+
     nonisolated static let rawFileExtensions: Set<String> = [
         "dng",
         "raw",
@@ -239,21 +256,6 @@ private extension PhotoProcessingInputPolicy {
         )
     }
 
-    nonisolated func isLivePhotoContentType(
-        _ contentType: UTType
-    ) -> Bool {
-
-        guard let livePhotoType =
-            UTType("com.apple.live-photo")
-        else {
-            return false
-        }
-
-        return contentType.conforms(to: livePhotoType)
-            || contentType.identifier
-                == livePhotoType.identifier
-    }
-
     nonisolated func resolvedContentType(
         fileURL: URL,
         declaredContentTypeIdentifier: String?
@@ -264,7 +266,7 @@ private extension PhotoProcessingInputPolicy {
             .flatMap(UTType.init)
 
         if let declaredType,
-            isLivePhotoContentType(declaredType) {
+           Self.isLivePhotoContentType(declaredType) {
             return declaredType
         }
 

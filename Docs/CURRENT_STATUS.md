@@ -45,6 +45,44 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-05 High-Resolution Media Intake Foundation started
+
+The RAW / high-resolution media work has started as a bounded intake
+foundation sprint, not as renderer or export-quality work.
+
+Scope frozen for this sprint:
+
+- establish canonical, memory-safe, file-first media intake for high-resolution
+  assets
+- keep RAW / DNG / HEIC / TIFF complexity before the rendering pipeline
+- preserve Renderer, Export Contract, Memory Pipeline, Photo Library behavior,
+  and Live Photo output boundaries
+
+Completed checkpoints:
+
+- Media Intake Convergence:
+  - `ExternalPhotoIntakeCenter` and V1 Quick Action URL filtering now use
+    `PhotoProcessingInputPolicy` instead of local extension lists.
+  - RAW / DNG policy support is covered by focused tests.
+- File-first PhotosPicker import:
+  - Main App PhotosPicker now prefers `CoreTransferable` file
+    representations before falling back to `Data`.
+  - Picked RAW-like file representations are copied into an app-owned
+    temporary location before import.
+- Thin canonical media representation:
+  - `MediaAsset`, `MediaRepresentation`, and `DecodePurpose` now exist as the
+    first internal media facts model.
+  - `PhotoImportService` attaches a canonical `MediaAsset` and preview
+    representation to `SelectedPhoto`.
+  - RAW detection and Live Photo detection remain routed through
+    `PhotoProcessingInputPolicy`.
+
+Verification completed:
+
+- focused intake/import/policy tests
+- `git diff --check`
+- `PhotoMemo` Debug build
+
 ## 2026-07-05 IA-003 Production Pipeline Convergence complete
 
 IA-003 is now complete for the V1 Memory production pipeline.
