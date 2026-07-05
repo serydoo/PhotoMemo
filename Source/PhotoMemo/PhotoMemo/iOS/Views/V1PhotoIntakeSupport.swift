@@ -7,22 +7,19 @@ enum V1PhotoIntakeURLResolver {
     nonisolated static func resolve(
         _ urls: [URL]
     ) -> [URL] {
-        let supportedExtensions = Set([
-            "jpg",
-            "jpeg",
-            "png",
-            "heic",
-            "heif",
-            "tif",
-            "tiff"
-        ])
-
         return urls.reduce(into: [URL]()) { result, url in
             let normalized = url.standardizedFileURL
-            let pathExtension =
-                normalized.pathExtension.lowercased()
+            let contentType =
+                UTType(
+                    filenameExtension:
+                        normalized.pathExtension
+                        .lowercased()
+                )
 
-            guard supportedExtensions.contains(pathExtension) else {
+            guard PhotoProcessingInputPolicy.standard
+                .isSupportedContentType(
+                    contentType
+                ) else {
                 return
             }
 

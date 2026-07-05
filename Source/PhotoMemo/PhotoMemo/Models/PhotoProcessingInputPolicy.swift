@@ -19,7 +19,7 @@ struct PhotoProcessingInputPolicy: Hashable {
         let title: String
         let message: String
 
-        static let supported = Verdict(
+        nonisolated static let supported = Verdict(
             isSupported: true,
             reason: nil,
             title: "可以处理",
@@ -27,7 +27,7 @@ struct PhotoProcessingInputPolicy: Hashable {
         )
     }
 
-    static let standard = PhotoProcessingInputPolicy()
+    nonisolated static let standard = PhotoProcessingInputPolicy()
 
     let maximumPixelDimension: Int
     let maximumPixelCount: Int
@@ -46,7 +46,7 @@ struct PhotoProcessingInputPolicy: Hashable {
             max(maximumAspectRatio, 1)
     }
 
-    func isSupportedContentType(
+    nonisolated func isSupportedContentType(
         _ contentType: UTType?
     ) -> Bool {
 
@@ -63,7 +63,7 @@ struct PhotoProcessingInputPolicy: Hashable {
         }
     }
 
-    func verdict(
+    nonisolated func verdict(
         contentType: UTType?,
         pixelWidth: Int?,
         pixelHeight: Int?
@@ -139,7 +139,7 @@ struct PhotoProcessingInputPolicy: Hashable {
         return .supported
     }
 
-    func verdict(
+    nonisolated func verdict(
         fileURL: URL,
         declaredContentTypeIdentifier: String?
     ) -> Verdict {
@@ -163,7 +163,7 @@ struct PhotoProcessingInputPolicy: Hashable {
 
 extension PhotoProcessingInputPolicy {
 
-    static let supportedImageTypes: [UTType] = [
+    nonisolated static let supportedImageTypes: [UTType] = [
         .jpeg,
         .heic,
         .heif,
@@ -171,7 +171,7 @@ extension PhotoProcessingInputPolicy {
         .tiff
     ] + rawImageTypes
 
-    static let rawImageTypes: [UTType] = [
+    nonisolated static let rawImageTypes: [UTType] = [
         UTType("public.camera-raw-image"),
         UTType("com.adobe.raw-image"),
         UTType("com.adobe.digital-negative"),
@@ -179,7 +179,7 @@ extension PhotoProcessingInputPolicy {
     ]
     .compactMap { $0 }
 
-    static func isRawContentType(
+    nonisolated static func isRawContentType(
         _ contentType: UTType?
     ) -> Bool {
 
@@ -197,7 +197,7 @@ extension PhotoProcessingInputPolicy {
         )
     }
 
-    static func isRawFileURL(
+    nonisolated static func isRawFileURL(
         _ fileURL: URL
     ) -> Bool {
 
@@ -207,7 +207,7 @@ extension PhotoProcessingInputPolicy {
         )
     }
 
-    static let rawFileExtensions: Set<String> = [
+    nonisolated static let rawFileExtensions: Set<String> = [
         "dng",
         "raw",
         "arw",
@@ -223,13 +223,13 @@ extension PhotoProcessingInputPolicy {
         "pef"
     ]
 
-    static let supportedFormatDescription =
+    nonisolated static let supportedFormatDescription =
         "JPEG/JPG、HEIC/HEIF、PNG、TIFF、RAW/DNG"
 }
 
 private extension PhotoProcessingInputPolicy {
 
-    func unsupportedFormatVerdict() -> Verdict {
+    nonisolated func unsupportedFormatVerdict() -> Verdict {
 
         Verdict(
             isSupported: false,
@@ -239,7 +239,7 @@ private extension PhotoProcessingInputPolicy {
         )
     }
 
-    func isLivePhotoContentType(
+    nonisolated func isLivePhotoContentType(
         _ contentType: UTType
     ) -> Bool {
 
@@ -254,7 +254,7 @@ private extension PhotoProcessingInputPolicy {
                 == livePhotoType.identifier
     }
 
-    func resolvedContentType(
+    nonisolated func resolvedContentType(
         fileURL: URL,
         declaredContentTypeIdentifier: String?
     ) -> UTType? {
@@ -294,7 +294,7 @@ private extension PhotoProcessingInputPolicy {
         return extensionType ?? declaredType
     }
 
-    func imagePixelSize(
+    nonisolated func imagePixelSize(
         from fileURL: URL
     ) -> (width: Int, height: Int)? {
 

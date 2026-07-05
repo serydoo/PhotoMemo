@@ -13,15 +13,16 @@ struct PhotoMemoiOSV1PhotoIntakeTests {
             URL(fileURLWithPath: "/tmp/a.heic"),
             URL(fileURLWithPath: "/tmp/a.heic"),
             URL(fileURLWithPath: "/tmp/b.jpeg"),
+            URL(fileURLWithPath: "/tmp/c.dng"),
             URL(fileURLWithPath: "/tmp/c.txt")
         ]
 
         let resolved = V1PhotoIntakeURLResolver.resolve(urls)
 
-        #expect(resolved.count == 2)
+        #expect(resolved.count == 3)
         #expect(
             resolved.map(\.lastPathComponent)
-            == ["a.heic", "b.jpeg"]
+            == ["a.heic", "b.jpeg", "c.dng"]
         )
     }
 
