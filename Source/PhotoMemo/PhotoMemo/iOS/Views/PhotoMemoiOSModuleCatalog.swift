@@ -5,10 +5,25 @@ struct IOSInsertedModule:
     Identifiable,
     Hashable {
 
-    let id = UUID()
+    let id: UUID
     let title: String
     let value: String
     let systemImage: String
+    let expressionConfiguration: ExpressionModuleConfiguration?
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        value: String,
+        systemImage: String,
+        expressionConfiguration: ExpressionModuleConfiguration? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.value = value
+        self.systemImage = systemImage
+        self.expressionConfiguration = expressionConfiguration
+    }
 }
 
 enum IOSInsertableModule:
