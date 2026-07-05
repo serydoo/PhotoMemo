@@ -113,7 +113,7 @@ Stage status:
 | Stage | Status | Notes |
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
-| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
+| Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
 
 PI-1 completed checkpoints:
 
@@ -308,6 +308,39 @@ Verification:
   - `ExpressionSystemSmokeTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
+
+## 2026-07-06 Stage 2 Platform Integration frozen
+
+Stage 2 is complete as an Architecture-Governed Refactoring stage.
+
+Completed checkpoints:
+
+- PI-1 established `ExpressionLookup` as the renderer dependency capability.
+- PI-2 isolated renderer text lookup at the approved
+  `CardTextBlockEngine -> ExpressionLookup` seam without changing renderer
+  output.
+- PI-3 validated the second canonical provider through Memory provider
+  compilation.
+- PI-4 validated legacy metadata facts entering Expression Language through
+  Metadata provider compilation.
+
+Stage 2 completion criteria:
+
+- Renderer text resolution depends on `ExpressionLookup` capability rather
+  than concrete `ExpressionContext` storage.
+- At least two canonical providers are validated without platform contract
+  changes. Stage 2 now has Location, Memory, and Metadata provider compiler
+  validation.
+- No Stage 2 implementation changed `ExpressionLookup`, `ExpressionValue`,
+  `ExpressionContext`, `Expression_System_Contract.md`, or ADR-007.
+- No Stage 2 implementation changed Renderer layout, typography, drawing,
+  Export, Share Extension, Photo Library behavior, or metadata acquisition.
+
+Guardrail:
+
+- No PI-5 seam is currently approved.
+- Any further Platform Integration work must begin with a new Boundary Scan
+  before implementation.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
