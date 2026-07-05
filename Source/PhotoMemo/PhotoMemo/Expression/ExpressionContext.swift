@@ -2,7 +2,8 @@ import Foundation
 
 nonisolated struct ExpressionContext:
     Hashable,
-    Codable {
+    Codable,
+    ExpressionLookup {
 
     let valuesByToken: [ExpressionToken: ExpressionValue]
 
