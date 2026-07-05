@@ -114,6 +114,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
+| Stage 3: Legacy Compatibility Adoption | ▶ In Progress | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`. |
 
 PI-1 completed checkpoints:
 
@@ -338,9 +339,63 @@ Stage 2 completion criteria:
 
 Guardrail:
 
-- No PI-5 seam is currently approved.
-- Any further Platform Integration work must begin with a new Boundary Scan
-  before implementation.
+- At the time of Stage 2 freeze, no PI-5 seam was approved.
+- PI-5 was later opened through its own frozen Boundary Scan before
+  implementation.
+- Any further Platform Adoption work after PI-5 must begin with a new Boundary
+  Scan before implementation.
+
+## 2026-07-06 PI-5 Legacy Metadata Adapter frozen
+
+PI-5 has completed the first legacy compatibility adapter without changing
+platform contracts or production rendering.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-5_Legacy_Metadata_Adapter_Boundary_Scan.md`
+
+Checkpoints:
+
+- `fd51a03` freezes the approved PI-5 seam:
+  `ExpressionContext -> ExpressionContextMetadataAdapter ->
+  MetadataContext[location_display]`.
+- `1b20bdb` adds `ExpressionContextMetadataAdapter`, which projects the
+  completed Expression Language `location` value into a legacy
+  `MetadataContext` copy for existing template consumers.
+
+Architectural delta:
+
+```text
+Legacy metadata compatibility projection: ExpressionContext[location] -> MetadataContext[location_display]
+```
+
+Scope review:
+
+- PI-5 supports only the approved `location -> location_display` projection.
+- The adapter consumes `ExpressionContext` and produces a `MetadataContext`
+  projection or copy.
+- The adapter does not mutate `ExpressionContext`, does not make
+  `MetadataContext` own Expression semantics, and does not connect production
+  rendering.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider`, `PhotoMetadataReader`,
+  `MetadataContext.build(from:)`, `CardVariableProvider`,
+  `TemplateVariableEngine`, `RecordCard`, `RecordCardBuildService`, Renderer,
+  Export, Share Extension, batch processing, preview, and Photo Library
+  behavior were not changed.
+
+Verification:
+
+- `ExpressionContextMetadataAdapterTests` passed.
+- Expression / legacy template regression tests passed:
+  - `ExpressionContextContractTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionLookupContractTests`
+  - `TemplateVariableEngineTests`
+  - `MetadataContextTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
