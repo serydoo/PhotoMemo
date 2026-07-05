@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import Photos
 import UniformTypeIdentifiers
+import CoreTransferable
 
 struct PhotoImporterView: View {
 
@@ -120,17 +121,65 @@ private extension PhotoImporterView {
         do {
 
             let contentType =
-                item.supportedContentTypes.first
+                resolvedSupportedContentType(
+                    for: item
+                )
 
-            if let contentType,
-               !importService.isSupported(
-                contentType
-               ) {
+            if contentType == nil,
+               !item.supportedContentTypes.isEmpty {
 
                 await MainActor.run {
                     errorMessage =
-                        "Unsupported image format"
+                        unsupportedInputMessage(
+                            contentType:
+                                item
+                                .supportedContentTypes
+                                .first
+                        )
                     selectedPhotoItem = nil
+                }
+                return
+            }
+
+            if let fileRepresentation =
+                try? await item.loadTransferable(
+                    type:
+                        PhotoImporterPickedFileRepresentation
+                        .self
+                ) {
+                let photo =
+                    try await importService.importPhoto(
+                        from:
+                            fileRepresentation.url,
+                        sourceInfo:
+                            PhotoSourceInfo(
+                                originalFileName:
+                                    resolvedSuggestedFileName(
+                                        for: item,
+                                        contentType:
+                                            contentType
+                                    )
+                                    ?? fileRepresentation
+                                    .url
+                                    .lastPathComponent,
+                                assetLocalIdentifier:
+                                    item.itemIdentifier,
+                                contentTypeIdentifier:
+                                    contentType?.identifier
+                                    ?? UTType(
+                                        filenameExtension:
+                                            fileRepresentation
+                                            .url
+                                            .pathExtension
+                                            .lowercased()
+                                    )?.identifier
+                            )
+                    )
+
+                await MainActor.run {
+                    errorMessage = nil
+                    selectedPhotoItem = nil
+                    onImport(photo)
                 }
                 return
             }
@@ -178,9 +227,7 @@ private extension PhotoImporterView {
 
             await MainActor.run {
                 errorMessage =
-                    (error as? LocalizedError)?
-                    .errorDescription
-                    ?? error.localizedDescription
+                    importErrorMessage(error)
                 selectedPhotoItem = nil
             }
         }
@@ -204,7 +251,9 @@ private extension PhotoImporterView {
             else {
 
                 errorMessage =
-                    "Unsupported image format"
+                    unsupportedInputMessage(
+                        fileURL: url
+                    )
 
                 return
             }
@@ -230,9 +279,7 @@ private extension PhotoImporterView {
                     await MainActor.run {
 
                         errorMessage =
-                            (error as? LocalizedError)?
-                            .errorDescription
-                            ?? error.localizedDescription
+                            importErrorMessage(error)
                     }
                 }
             }
@@ -278,6 +325,92 @@ private extension PhotoImporterView {
         return "PhotoMemo Import.\(fileExtension)"
     }
 
+    func unsupportedInputMessage(
+        contentType: UTType?
+    ) -> String {
+
+        unsupportedInputMessage(
+            for:
+                PhotoProcessingInputPolicy
+                .standard
+                .verdict(
+                    contentType: contentType,
+                    pixelWidth: 1,
+                    pixelHeight: 1
+                )
+        )
+    }
+
+    func unsupportedInputMessage(
+        fileURL: URL
+    ) -> String {
+
+        unsupportedInputMessage(
+            for:
+                PhotoProcessingInputPolicy
+                .standard
+                .verdict(
+                    fileURL: fileURL,
+                    declaredContentTypeIdentifier: nil
+                )
+        )
+    }
+
+    func unsupportedInputMessage(
+        for verdict:
+            PhotoProcessingInputPolicy.Verdict
+    ) -> String {
+
+        [
+            verdict.title,
+            verdict.message
+        ]
+        .filter {
+            !$0.isEmpty
+        }
+        .joined(
+            separator: "\n"
+        )
+    }
+
+    func importErrorMessage(
+        _ error: Error
+    ) -> String {
+
+        guard let localizedError =
+            error as? LocalizedError else {
+            return error.localizedDescription
+        }
+
+        let title =
+            localizedError.errorDescription
+            ?? error.localizedDescription
+        let reason =
+            localizedError.failureReason
+
+        return [
+            title,
+            reason
+        ]
+        .compactMap { $0 }
+        .filter {
+            !$0.isEmpty
+        }
+        .joined(
+            separator: "\n"
+        )
+    }
+
+    func resolvedSupportedContentType(
+        for item: PhotosPickerItem
+    ) -> UTType? {
+        item.supportedContentTypes.first {
+            importService.isSupported(
+                $0
+            )
+        }
+    }
+
     func originalPhotoLibraryFileName(
         for itemIdentifier: String
     ) -> String? {
@@ -321,6 +454,125 @@ private extension PhotoImporterView {
             .sanitizedSuggestedFileName(
                 fileName
             )
+    }
+}
+
+struct PhotoImporterPickedFileRepresentation:
+    Transferable {
+
+    let url: URL
+
+    static var transferRepresentation:
+        some TransferRepresentation {
+
+        FileRepresentation(
+            importedContentType: .image
+        ) { receivedFile in
+            let copiedURL =
+                try PhotoImporterFileRepresentationResolver
+                .copyTemporaryFileRepresentation(
+                    from:
+                        receivedFile.file
+                )
+
+            return PhotoImporterPickedFileRepresentation(
+                url: copiedURL
+            )
+        }
+    }
+}
+
+enum PhotoImporterFileRepresentationResolver {
+
+    nonisolated static func copyTemporaryFileRepresentation(
+        from sourceURL: URL,
+        contentType: UTType? = nil,
+        fileManager: FileManager = .default
+    ) throws -> URL {
+        let temporaryURL =
+            try makeTemporaryURL(
+                sourceURL:
+                    sourceURL,
+                contentType:
+                    contentType,
+                fileManager:
+                    fileManager
+            )
+
+        if fileManager.fileExists(
+            atPath: temporaryURL.path
+        ) {
+            try fileManager.removeItem(
+                at: temporaryURL
+            )
+        }
+
+        try fileManager.copyItem(
+            at: sourceURL,
+            to: temporaryURL
+        )
+
+        return temporaryURL.standardizedFileURL
+    }
+
+    private nonisolated static func makeTemporaryURL(
+        sourceURL: URL,
+        contentType: UTType?,
+        fileManager: FileManager
+    ) throws -> URL {
+        let baseDirectory =
+            fileManager.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoPickerFileRepresentations",
+                isDirectory: true
+            )
+
+        try fileManager.createDirectory(
+            at: baseDirectory,
+            withIntermediateDirectories: true
+        )
+
+        let sanitizedFileName =
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                sourceURL.lastPathComponent
+            )
+        let baseName =
+            sanitizedFileName
+            .map {
+                URL(fileURLWithPath: $0)
+                    .deletingPathExtension()
+                    .lastPathComponent
+            }
+            .flatMap { value in
+                let trimmed =
+                    value.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                return trimmed.isEmpty ? nil : trimmed
+            }
+            ?? "PhotoMemo Picked Photo"
+        let fileExtension =
+            sanitizedFileName
+            .map {
+                URL(fileURLWithPath: $0)
+                    .pathExtension
+            }
+            .flatMap { value in
+                let trimmed =
+                    value.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                return trimmed.isEmpty ? nil : trimmed.lowercased()
+            }
+            ?? contentType?.preferredFilenameExtension
+            ?? "jpg"
+
+        return baseDirectory
+            .appendingPathComponent(
+                "\(baseName)-\(UUID().uuidString)"
+            )
+            .appendingPathExtension(fileExtension)
     }
 }
 

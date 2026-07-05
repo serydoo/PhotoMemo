@@ -21,15 +21,6 @@ final class ExternalPhotoIntakeCenter:
     private let intakeStore:
         ExternalPhotoIntakeStore
 
-    private let supportedTypes:
-        [UTType] = [
-            .jpeg,
-            .png,
-            .heic,
-            .heif,
-            .tiff
-        ]
-
     init() {
 
         self.intakeStore =
@@ -181,6 +172,7 @@ private extension ExternalPhotoIntakeCenter {
             return false
         }
 
-        return supportedTypes.contains(type)
+        return PhotoProcessingInputPolicy.standard
+            .isSupportedContentType(type)
     }
 }

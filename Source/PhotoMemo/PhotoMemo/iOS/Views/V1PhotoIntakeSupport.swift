@@ -7,22 +7,19 @@ enum V1PhotoIntakeURLResolver {
     nonisolated static func resolve(
         _ urls: [URL]
     ) -> [URL] {
-        let supportedExtensions = Set([
-            "jpg",
-            "jpeg",
-            "png",
-            "heic",
-            "heif",
-            "tif",
-            "tiff"
-        ])
-
         return urls.reduce(into: [URL]()) { result, url in
             let normalized = url.standardizedFileURL
-            let pathExtension =
-                normalized.pathExtension.lowercased()
+            let contentType =
+                UTType(
+                    filenameExtension:
+                        normalized.pathExtension
+                        .lowercased()
+                )
 
-            guard supportedExtensions.contains(pathExtension) else {
+            guard PhotoProcessingInputPolicy.standard
+                .isSupportedContentType(
+                    contentType
+                ) else {
                 return
             }
 
@@ -180,6 +177,54 @@ enum V1PhotoProcessingQuickActionCoordinator {
         return Result(
             status: .submitted,
             submittedURLs: resolvedURLs
+        )
+    }
+}
+
+enum V1PhotoIntakeUnsupportedMessagePresenter {
+
+    nonisolated static let fallbackMessage =
+        "未找到可处理的照片"
+
+    nonisolated static func message(
+        for contentTypes: [UTType]
+    ) -> String {
+
+        let policy =
+            PhotoProcessingInputPolicy.standard
+
+        guard !contentTypes.isEmpty,
+              !contentTypes.contains(
+                where:
+                    policy.isSupportedContentType
+              ) else {
+            return fallbackMessage
+        }
+
+        guard let verdict =
+            contentTypes
+            .map({
+                policy.verdict(
+                    contentType: $0,
+                    pixelWidth: 1,
+                    pixelHeight: 1
+                )
+            })
+            .first(where: {
+                !$0.isSupported
+            }) else {
+            return fallbackMessage
+        }
+
+        return [
+            verdict.title,
+            verdict.message
+        ]
+        .filter {
+            !$0.isEmpty
+        }
+        .joined(
+            separator: "\n"
         )
     }
 }

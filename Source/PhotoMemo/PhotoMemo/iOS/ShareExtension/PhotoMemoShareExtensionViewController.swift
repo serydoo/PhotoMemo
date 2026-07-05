@@ -1,7 +1,6 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import UIKit
 import UniformTypeIdentifiers
-import ImageIO
 
 final class PhotoMemoShareExtensionViewController:
     UIViewController {
@@ -2349,7 +2348,10 @@ private extension PhotoMemoShareExtensionViewController {
                 }
 
                 if let data = item as? Data,
-                   let image = UIImage(data: data) {
+                   let image =
+                    self.thumbnailImage(
+                        from: data
+                    ) {
                     continuation.resume(
                         returning: image
                     )
@@ -2480,38 +2482,23 @@ private extension PhotoMemoShareExtensionViewController {
         from url: URL
     ) -> UIImage? {
 
-        guard let source =
-            CGImageSourceCreateWithURL(
-                url as CFURL,
-                [
-                    kCGImageSourceShouldCache:
-                        false
-                ] as CFDictionary
-            ) else {
-            return nil
-        }
+        MediaDecodeService()
+            .thumbnailImage(
+                from: url,
+                maxPixelDimension: 640
+            )
+    }
 
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageIfAbsent:
-                true,
-            kCGImageSourceCreateThumbnailWithTransform:
-                true,
-            kCGImageSourceShouldCacheImmediately:
-                true,
-            kCGImageSourceThumbnailMaxPixelSize:
-                640
-        ]
+    nonisolated
+    func thumbnailImage(
+        from data: Data
+    ) -> UIImage? {
 
-        guard let cgImage =
-            CGImageSourceCreateThumbnailAtIndex(
-                source,
-                0,
-                options as CFDictionary
-            ) else {
-            return nil
-        }
-
-        return UIImage(cgImage: cgImage)
+        MediaDecodeService()
+            .thumbnailImage(
+                from: data,
+                maxPixelDimension: 640
+            )
     }
 
     func detailedFailureMessage(

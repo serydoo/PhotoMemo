@@ -13,15 +13,16 @@ struct PhotoMemoiOSV1PhotoIntakeTests {
             URL(fileURLWithPath: "/tmp/a.heic"),
             URL(fileURLWithPath: "/tmp/a.heic"),
             URL(fileURLWithPath: "/tmp/b.jpeg"),
+            URL(fileURLWithPath: "/tmp/c.dng"),
             URL(fileURLWithPath: "/tmp/c.txt")
         ]
 
         let resolved = V1PhotoIntakeURLResolver.resolve(urls)
 
-        #expect(resolved.count == 2)
+        #expect(resolved.count == 3)
         #expect(
             resolved.map(\.lastPathComponent)
-            == ["a.heic", "b.jpeg"]
+            == ["a.heic", "b.jpeg", "c.dng"]
         )
     }
 
@@ -90,6 +91,45 @@ struct PhotoMemoiOSV1PhotoIntakeTests {
 
         try? FileManager.default.removeItem(
             at: copiedURL
+        )
+    }
+
+    @Test("V1 quick action unsupported message uses input policy diagnostics")
+    func v1QuickActionUnsupportedMessageUsesInputPolicyDiagnostics() {
+        let message =
+            V1PhotoIntakeUnsupportedMessagePresenter
+            .message(
+                for: [
+                    .gif
+                ]
+            )
+
+        let verdict =
+            PhotoProcessingInputPolicy
+            .standard
+            .verdict(
+                contentType: .gif,
+                pixelWidth: 1,
+                pixelHeight: 1
+            )
+
+        #expect(message.contains(verdict.title))
+        #expect(message.contains(verdict.message))
+    }
+
+    @Test("V1 quick action unsupported message keeps fallback when no rejection is known")
+    func v1QuickActionUnsupportedMessageKeepsFallbackWhenNoRejectionIsKnown() {
+        #expect(
+            V1PhotoIntakeUnsupportedMessagePresenter
+            .message(for: [])
+            == V1PhotoIntakeUnsupportedMessagePresenter
+            .fallbackMessage
+        )
+        #expect(
+            V1PhotoIntakeUnsupportedMessagePresenter
+            .message(for: [.heic])
+            == V1PhotoIntakeUnsupportedMessagePresenter
+            .fallbackMessage
         )
     }
 

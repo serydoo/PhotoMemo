@@ -20,6 +20,40 @@ struct PhotoMemoShareExtensionImportResult {
     let failureContext:
         PhotoMemoShareIntakeFailureContext?
 
+    let unsupportedRejectionReports:
+        [PhotoMemoMediaIntakeRejectionReport]
+
+    init(
+        requestID: UUID,
+        itemProviderCount: Int,
+        supportedProviderCount: Int,
+        requestedCount: Int,
+        summary: ExternalPhotoImportSummary,
+        failureStage:
+            PhotoMemoShareIntakeFailureStage?,
+        failureContext:
+            PhotoMemoShareIntakeFailureContext?,
+        unsupportedRejectionReports:
+            [PhotoMemoMediaIntakeRejectionReport] = []
+    ) {
+        self.requestID =
+            requestID
+        self.itemProviderCount =
+            itemProviderCount
+        self.supportedProviderCount =
+            supportedProviderCount
+        self.requestedCount =
+            requestedCount
+        self.summary =
+            summary
+        self.failureStage =
+            failureStage
+        self.failureContext =
+            failureContext
+        self.unsupportedRejectionReports =
+            unsupportedRejectionReports
+    }
+
     var importedCount: Int {
         summary.importedCount
     }
@@ -34,6 +68,12 @@ struct PhotoMemoShareExtensionImportResult {
 
     var hasWarnings: Bool {
         summary.hasWarnings
+    }
+
+    var firstUnsupportedRejectionReport:
+        PhotoMemoMediaIntakeRejectionReport? {
+
+        unsupportedRejectionReports.first
     }
 }
 #endif

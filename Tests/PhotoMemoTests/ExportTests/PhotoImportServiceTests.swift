@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import ImageIO
 import Testing
 import UniformTypeIdentifiers
 @testable import PhotoMemo
@@ -11,6 +12,128 @@ import UIKit
 
 @Suite("PhotoImportService")
 struct PhotoImportServiceTests {
+
+    @Test("Rejects unsupported declared media types with input policy reason")
+    func rejectsUnsupportedDeclaredMediaTypesWithPolicyReason() async throws {
+
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let sourceData =
+            try Data(contentsOf: sourceURL)
+
+        do {
+            _ =
+                try await PhotoImportService()
+                .importPhoto(
+                    from: sourceData,
+                    suggestedFileName:
+                        "animated.gif",
+                    contentType: .gif
+                )
+
+            Issue.record(
+                "Expected PhotoImportService to reject unsupported media before decode."
+            )
+
+        } catch let error as PhotoImportError {
+            guard case let .unsupportedInput(verdict) = error else {
+                Issue.record(
+                    "Expected unsupported input policy error, got \(error)."
+                )
+                return
+            }
+
+            #expect(verdict.reason == .unsupportedFormat)
+            #expect(
+                error.inputPolicyReason
+                == .unsupportedFormat
+            )
+            #expect(
+                error.errorDescription
+                == verdict.title
+            )
+            #expect(
+                error.failureReason
+                == verdict.message
+            )
+
+        } catch {
+            Issue.record(
+                "Expected PhotoImportError, got \(error)."
+            )
+        }
+    }
+
+    @Test("Rejects oversized media dimensions with input policy reason")
+    func rejectsOversizedMediaDimensionsWithPolicyReason() async throws {
+
+        let temporaryDirectory =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoImportServicePolicyTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+
+        try FileManager.default.createDirectory(
+            at: temporaryDirectory,
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(
+                at: temporaryDirectory
+            )
+        }
+
+        let oversizedURL =
+            temporaryDirectory
+            .appendingPathComponent("OversizedDimension")
+            .appendingPathExtension("jpg")
+
+        try writeSolidJPEG(
+            width:
+                PhotoProcessingInputPolicy
+                .standard
+                .maximumPixelDimension
+                + 1,
+            height: 8,
+            to: oversizedURL
+        )
+
+        do {
+            _ =
+                try await PhotoImportService()
+                .importPhoto(from: oversizedURL)
+
+            Issue.record(
+                "Expected PhotoImportService to reject oversized media before decode."
+            )
+
+        } catch let error as PhotoImportError {
+            guard case let .unsupportedInput(verdict) = error else {
+                Issue.record(
+                    "Expected unsupported input policy error, got \(error)."
+                )
+                return
+            }
+
+            #expect(verdict.reason == .oversizedPixelDimension)
+            #expect(
+                error.inputPolicyReason
+                == .oversizedPixelDimension
+            )
+            #expect(
+                error.failureReason
+                == verdict.message
+            )
+
+        } catch {
+            Issue.record(
+                "Expected PhotoImportError, got \(error)."
+            )
+        }
+    }
 
     @Test("Preserves explicit suggested file names for data imports")
     func preservesExplicitSuggestedFileNames() async throws {
@@ -269,6 +392,149 @@ struct PhotoImportServiceTests {
             dataImport.sourceProperties[kCGImagePropertyPixelHeight] as? Int
             == fileImport.sourceProperties[kCGImagePropertyPixelHeight] as? Int
         )
+    }
+
+    @Test("Builds canonical media asset and preview representation for RAW-like files")
+    func buildsCanonicalMediaAssetAndPreviewRepresentationForRAWLikeFiles() async throws {
+
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let temporaryDirectory =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoImportServiceMediaAssetTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+
+        try FileManager.default.createDirectory(
+            at: temporaryDirectory,
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(
+                at: temporaryDirectory
+            )
+        }
+
+        let rawLikeURL =
+            temporaryDirectory
+            .appendingPathComponent("IMG_9001")
+            .appendingPathExtension("DNG")
+
+        try FileManager.default.copyItem(
+            at: sourceURL,
+            to: rawLikeURL
+        )
+
+        let dngType =
+            try #require(
+                UTType(filenameExtension: "dng")
+            )
+        let importedPhoto =
+            try await PhotoImportService()
+            .importPhoto(
+                from: rawLikeURL,
+                sourceInfo:
+                    PhotoSourceInfo(
+                        originalFileName:
+                            rawLikeURL.lastPathComponent,
+                        assetLocalIdentifier:
+                            "asset-raw-9001",
+                        contentTypeIdentifier:
+                            dngType.identifier
+                    )
+            )
+
+        #expect(
+            importedPhoto.mediaAsset.fileURL
+            == rawLikeURL
+        )
+        #expect(
+            importedPhoto.mediaAsset.contentType?.identifier
+            == dngType.identifier
+        )
+        #expect(
+            importedPhoto.mediaAsset.isRAW
+        )
+        #expect(
+            !importedPhoto.mediaAsset.isLivePhoto
+        )
+        #expect(
+            importedPhoto.mediaAsset.sourceIdentifier
+            == "asset-raw-9001"
+        )
+        #expect(
+            importedPhoto.mediaAsset.pixelSize?.width
+            == importedPhoto.sourceProperties[
+                kCGImagePropertyPixelWidth
+            ] as? Int
+        )
+        #expect(
+            importedPhoto.mediaAsset.pixelSize?.height
+            == importedPhoto.sourceProperties[
+                kCGImagePropertyPixelHeight
+            ] as? Int
+        )
+
+        let previewRepresentation =
+            try #require(
+                importedPhoto.previewRepresentation
+            )
+
+        #expect(
+            previewRepresentation.kind
+            == .preview
+        )
+        #expect(
+            previewRepresentation.decodePurpose
+            == .preview
+        )
+        #expect(
+            previewRepresentation.asset.fileURL
+            == rawLikeURL
+        )
+        #expect(
+            previewRepresentation.maxPixelDimension
+            == PhotoProcessingInputPolicy.standard.maximumPixelDimension
+        )
+        #expect(
+            (previewRepresentation.pixelSize?.longSide ?? 0)
+            <= PhotoProcessingInputPolicy.standard.maximumPixelDimension
+        )
+
+        let report =
+            importedPhoto.importReport
+
+        #expect(report.fileName == "IMG_9001.DNG")
+        #expect(report.contentTypeIdentifier == dngType.identifier)
+        #expect(report.pixelSize == importedPhoto.mediaAsset.pixelSize)
+        #expect(report.isRAW)
+        #expect(!report.isLivePhoto)
+        #expect(report.memoryTier == .normal)
+        #expect(report.requiresExtendedPreviewPreparation)
+        #expect(report.representationKind == .preview)
+        #expect(report.decodePurpose == .preview)
+        #expect(
+            report.representationPixelSize
+            == previewRepresentation.pixelSize
+        )
+        #expect(
+            report.representationMaxPixelDimension
+            == PhotoProcessingInputPolicy.standard.maximumPixelDimension
+        )
+        #expect(!report.isRepresentationDownsampled)
+
+        let encodedReport =
+            try JSONEncoder().encode(report)
+        let decodedReport =
+            try JSONDecoder().decode(
+                MediaImportReport.self,
+                from: encodedReport
+            )
+
+        #expect(decodedReport == report)
     }
 
     @Test("Removes narrow black left edge artifact while preserving size")
@@ -587,6 +853,83 @@ struct PhotoImportServiceTests {
 
         return try #require(
             context.makeImage()
+        )
+    }
+
+    private func writeSolidJPEG(
+        width: Int,
+        height: Int,
+        to url: URL
+    ) throws {
+
+        let bytesPerPixel = 4
+        let bytesPerRow =
+            width * bytesPerPixel
+        var pixels =
+            [UInt8](
+                repeating: 0,
+                count:
+                    bytesPerRow
+                    * height
+            )
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset =
+                    y * bytesPerRow
+                    + x * bytesPerPixel
+
+                pixels[offset] = 94
+                pixels[offset + 1] = 111
+                pixels[offset + 2] = 126
+                pixels[offset + 3] = 255
+            }
+        }
+
+        let context =
+            try #require(
+                CGContext(
+                    data: &pixels,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space:
+                        CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo:
+                        CGImageAlphaInfo
+                        .premultipliedLast
+                        .rawValue
+                )
+            )
+        let image =
+            try #require(
+                context.makeImage()
+            )
+        let data = NSMutableData()
+        let destination =
+            try #require(
+                CGImageDestinationCreateWithData(
+                    data,
+                    UTType.jpeg.identifier as CFString,
+                    1,
+                    nil
+                )
+            )
+
+        CGImageDestinationAddImage(
+            destination,
+            image,
+            nil
+        )
+        #expect(
+            CGImageDestinationFinalize(
+                destination
+            )
+        )
+
+        try (data as Data).write(
+            to: url
         )
     }
 

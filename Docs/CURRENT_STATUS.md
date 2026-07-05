@@ -45,6 +45,130 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-05 High-Resolution Media Intake Foundation started
+
+The RAW / high-resolution media work has started as a bounded intake
+foundation sprint, not as renderer or export-quality work.
+
+Scope frozen for this sprint:
+
+- establish canonical, memory-safe, file-first media intake for high-resolution
+  assets
+- keep RAW / DNG / HEIC / TIFF complexity before the rendering pipeline
+- preserve Renderer, Export Contract, Memory Pipeline, Photo Library behavior,
+  and Live Photo output boundaries
+
+Completed checkpoints:
+
+- Media Intake Convergence:
+  - `ExternalPhotoIntakeCenter` and V1 Quick Action URL filtering now use
+    `PhotoProcessingInputPolicy` instead of local extension lists.
+  - RAW / DNG policy support is covered by focused tests.
+- File-first PhotosPicker import:
+  - Main App PhotosPicker now prefers `CoreTransferable` file
+    representations before falling back to `Data`.
+  - Picked RAW-like file representations are copied into an app-owned
+    temporary location before import.
+  - `MediaIntakeFileFirstContractTests` now guards the ordering contract for
+    Main App PhotosPicker, V1 Quick Action PhotosPicker, and Share Extension
+    intake so `Data` / `loadItem` paths remain fallback-only.
+- Thin canonical media representation:
+  - `MediaAsset`, `MediaRepresentation`, and `DecodePurpose` now exist as the
+    first internal media facts model.
+  - `PhotoImportService` attaches a canonical `MediaAsset` and preview
+    representation to `SelectedPhoto`.
+  - RAW detection and Live Photo detection remain routed through
+    `PhotoProcessingInputPolicy`.
+- Memory Budget thin policy:
+  - `MediaCost` and `MediaMemoryBudget` now classify normal, high, and
+    critical media work from canonical media facts or file-backed ImageIO
+    properties.
+  - `BatchQueueExecution` now derives RAW / high-resolution preview
+    preparation progress from `MediaMemoryBudget` instead of a local RAW-only
+    branch.
+  - Queue behavior remains serial in this increment; no renderer, export
+    contract, Memory Pipeline, or Photo Library behavior was changed.
+- Diagnostics & Import Report:
+  - `MediaImportReport` now derives support-safe import facts from
+    `MediaAsset`, preview `MediaRepresentation`, and `MediaMemoryBudget`.
+  - The report is `Codable` and contains media identity, format facts, pixel
+    size, memory tier, preview downsample facts, and decode purpose.
+  - The report does not persist or copy image bytes, and remains a derived model
+    instead of a new diagnostics service in this slice.
+  - `PhotoImportService` now rejects unsupported or oversized media through
+    `PhotoProcessingInputPolicy` before preview decode, and surfaces the
+    policy title, message, and rejection reason through `PhotoImportError`.
+  - Main App PhotosPicker and File Import unsupported preflight messages now
+    use `PhotoProcessingInputPolicy` verdict title/message instead of a generic
+    unsupported-format string.
+  - Main App import error presentation now includes `LocalizedError.failureReason`
+    so policy rejections can show both the diagnostic title and the concrete
+    reason.
+  - V1 Quick Action no-supported-photo feedback now uses
+    `PhotoProcessingInputPolicy` diagnostics when the selected providers expose
+    unsupported content types, while preserving the existing fallback when no
+    concrete rejection is known.
+  - Share Extension unsupported skips now preserve policy rejection facts in
+    `PhotoMemoMediaIntakeRejectionReport` and carry them through
+    `PhotoMemoShareExtensionImportResult` for diagnostic summaries without
+    turning skipped unsupported media into failed imports.
+- Single Decode Entry foundation:
+  - `MediaDecodeService` is now the app-side media decode layer for
+    `PhotoImportService` preview image preparation.
+  - `PhotoImportService` no longer owns direct ImageIO, CoreImage, data-backed
+    platform-image fallback, or thumbnail decode details.
+  - `PhotoSourceInfo` now lives with the shared media model so `MediaAsset`
+    remains buildable in the Share Extension target.
+  - `MediaDecodeService` now lives in the shared media model layer so the Share
+    Extension can use the same decode boundary without importing the app
+    service graph.
+  - `PlatformImage` helpers and `PhotoImportError` are now shared thin model
+    utilities instead of being owned by `SelectedPhoto` / `PhotoImportService`.
+  - Share Extension file-preview thumbnails now delegate to
+    `MediaDecodeService.thumbnailImage(from:maxPixelDimension:)`; the share
+    controller no longer contains direct ImageIO thumbnail decode calls.
+  - Share Extension preview `Data` fallback now also delegates to
+    `MediaDecodeService.thumbnailImage(from:maxPixelDimension:)` so fallback
+    previews stay downsampled and do not decode provider data directly in the
+    view controller.
+- Renderer Isolation contract:
+  - `MediaDecodeLayerContractTests` now scans renderer sources for source-media
+    format decisions such as RAW / DNG / HEIC / TIFF, `UTType`, ImageIO, or
+    CoreImage usage.
+  - This keeps high-resolution media complexity on the intake/decode side and
+    prevents future RAW work from adding renderer-facing format branches.
+
+Verification completed:
+
+- focused intake/import/policy tests
+- `MediaMemoryBudgetTests`
+- `MediaDecodeLayerContractTests`
+- full `PhotoImportServiceTests`
+- focused RAW-like import report encode/decode test
+- `BatchFixtureCoverageTests`
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
+Latest decode convergence verification:
+
+- `MediaDecodeLayerContractTests`
+- Share Extension preview file and data fallback decode isolation
+- renderer source media-format isolation contract
+- `MediaIntakeFileFirstContractTests`
+- Main App intake policy-diagnostics contract for unsupported preflight
+  messages
+- Main App import error diagnostic reason contract
+- `PhotoMemoiOSV1PhotoIntakeTests` coverage for V1 Quick Action unsupported
+  policy diagnostic messages
+- `PhotoImportServiceTests`
+- policy-backed unsupported format / oversized dimension import rejection
+- `PhotoMemoShareIntakeDiagnosticsTests` coverage for codable rejection
+  reports and Share Extension unsupported skip report preservation
+- `git diff --check`
+- `PhotoMemo` Debug build
+- `PhotoMemoShareExtension` iOS Simulator build
+
 ## 2026-07-05 IA-003 Production Pipeline Convergence complete
 
 IA-003 is now complete for the V1 Memory production pipeline.
