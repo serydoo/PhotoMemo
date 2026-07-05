@@ -114,7 +114,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | ⏸ Blocked at PI-7 | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-8 Contract Boundary Frozen | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`. |
 
 PI-1 completed checkpoints:
 
@@ -490,6 +490,51 @@ Where does provider-neutral Expression Module Configuration live?
 
 Until that question is answered through a focused scan or ADR, Stage 3 should
 not continue with Location module configuration implementation.
+
+## 2026-07-06 PI-8 Expression Module Configuration Boundary Scan frozen
+
+PI-8 answered the follow-up ownership question without implementation.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-8_Expression_Module_Configuration_Boundary_Scan.md`
+
+Checkpoint:
+
+- `72cfff6` freezes the PI-8 scan conclusion:
+  provider-neutral Expression Module Configuration should live on the inserted
+  module instance.
+
+Architectural delta:
+
+```text
+Expression module configuration ownership: unowned -> inserted module instance
+```
+
+Scope review:
+
+- No implementation was performed for PI-8.
+- The recommended owner is the inserted module instance because presentation
+  configuration belongs to one concrete module insertion.
+- The carrier must be provider-neutral, token-addressed, `Codable`, and
+  `Hashable`.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider` token support remains unchanged; Location still
+  supports only the canonical `location` token.
+- Renderer, Template, `MetadataContext`, `ExpressionContext`, and
+  `ExpressionLookup` must not read or infer presentation strategy.
+
+Next implementation boundary:
+
+```text
+Inserted module instance -> provider-neutral expression module configuration carrier
+```
+
+Any implementation must remain scoped to the inserted-module ownership
+boundary and must not jump directly into Renderer, Template, Provider,
+ExpressionContext, live session, snapshot, export, share, photo-library, or
+production behavior.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
