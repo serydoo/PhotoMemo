@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-07-05
+Last updated: 2026-07-06
 
 ## Architecture Progress
 
@@ -44,6 +44,64 @@ or IA-003 Completion Criteria change.
 | Production Pipeline no longer depends on runtime configuration | ✅ Complete |
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
+
+## 2026-07-06 Location Expression architecture candidate through Phase 4-D
+
+The Location Expression work is isolated on the `codex/地址模块` branch as a
+post-IA-003 architecture candidate.
+
+Completed checkpoints:
+
+- `Location_Expression_Pipeline.md` records the Provider-Based Expression
+  Architecture proposal and is treated as architecture scope only.
+- `Location_Expression_Implementation_Plan.md` records the migration plan and
+  Phase 0-9 rollout checkpoints.
+- Phase 0 code skeleton exists for the new Expression and LocationExpression
+  boundaries without wiring into production rendering, export, metadata, share,
+  or photo-library behavior.
+- Phase 1 maps normalized `PhotoMetadata` location facts into an independent
+  `LocationContext` through `LocationContextBuilder`, including GPS,
+  altitude, address hierarchy, and location name availability.
+- Phase 2 adds pure `LocationFormatter` presentation string shaping for
+  Province + City, City + District, Province + City + District, and Coordinate
+  without fallback, Provider, Renderer, or UI dependencies.
+- Phase 3 adds deterministic `LocationResolver` strategy resolution with
+  immutable request-scoped `LocationResolution`, downgrade / coordinate
+  fallback / empty policies, and Formatter-owned final text representation.
+- Phase 4-A is now scoped as Expression System contract work before Provider
+  integration. `Expression_System_Contract.md` defines the provider-neutral
+  flow, hard rules, and extension rules that future Providers must follow.
+- Phase 4-B starts code verification with provider-neutral `ExpressionValue`:
+  it carries `ExpressionToken` plus resolved text, is `Hashable` / `Codable`,
+  and is tested as a non-bare-string, provider-neutral value object.
+- Phase 4-C adds `ExpressionContext` as the only current aggregation container
+  for expression values: it stores `ExpressionValue` by semantic token and
+  rejects duplicate tokens at construction.
+- Phase 4-D entry is guarded by `ExpressionSystemSmokeTests`, which validates
+  fake provider-like sources -> `ExpressionValue` -> `ExpressionContext` ->
+  mock renderer without introducing a production Provider API.
+- Phase 4-D adds the first real Canonical Provider compiler validation:
+  `LocationExpressionProvider` consumes `LocationContext`,
+  `LocationResolver`, and `LocationFormatter` output to produce a
+  provider-neutral `ExpressionValue` for the `location` token.
+- Phase 4-D intentionally supports only `location`; raw `latitude`,
+  `longitude`, and `altitude` output remain future Location Provider expansion
+  work.
+- `LocationExpressionPhase4DTests` covers the full isolated chain from
+  `PhotoMetadata` to `LocationContextBuilder`, `LocationExpressionProvider`,
+  and `ExpressionContext` without connecting Renderer, UI, Export, Share
+  Extension, Metadata mutation, or Photo Library behavior.
+
+Guardrail:
+
+- The two Location proposal documents are considered responsibility-complete;
+  future rationale should move into ADRs or platform-level constitution docs
+  instead of expanding those files.
+- Phase 3 remains isolated internals only; no Provider, `ExpressionContext`,
+  Renderer, UI, Export, Share Extension, Metadata mutation, or Photo Library
+  production wiring was added.
+- Phase 4-D Provider code is isolated compiler validation only and does not
+  connect any production renderer path to `ExpressionContext`.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 

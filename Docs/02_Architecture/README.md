@@ -31,6 +31,13 @@ Architecture Decision Records explain why a design direction was chosen.
 
 - `ADR/`
 
+## Proposal
+
+Architecture Proposal documents define candidate directions before they become
+ADRs or Freeze documents.
+
+- `Proposal/`
+
 ## Freeze
 
 Architecture Freeze documents define decisions that should not be reopened
@@ -45,6 +52,7 @@ without an explicit review.
 
 Architecture Contract documents define rules that production code must obey.
 
+- `Contract/Expression_System_Contract.md`
 - `V1_Configuration_State_Boundary.md`
 
 ## Inventory
