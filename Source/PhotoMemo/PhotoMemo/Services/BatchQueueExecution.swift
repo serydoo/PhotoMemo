@@ -253,12 +253,15 @@ final class BatchQueueExecution {
             return
         }
 
-        let isRAWTask =
-            taskUsesRAWDisplayRepresentation(
-                initialTask
+        let memoryBudget =
+            mediaMemoryBudget(
+                for: initialTask
             )
+        let requiresExtendedPreviewPreparation =
+            memoryBudget
+            .requiresExtendedPreviewPreparation
         let totalProgressUnits =
-            isRAWTask ? 6 : 5
+            requiresExtendedPreviewPreparation ? 6 : 5
 
         store.setActiveProcessingReference(
             reference
@@ -272,9 +275,9 @@ final class BatchQueueExecution {
                 currentUnit: 1,
                 totalUnits: totalProgressUnits,
                 statusMessage:
-                    isRAWTask
-                    ? "正在准备 RAW 照片"
-                    : "正在读取原图"
+                    initialPreparationStatusMessage(
+                        for: memoryBudget
+                    )
             )
             task.failure = nil
         }
@@ -316,13 +319,13 @@ final class BatchQueueExecution {
                 task.phase = .metadataReady
                 task.progress = BatchTaskProgress(
                     currentUnit:
-                        isRAWTask ? 3 : 2,
+                        requiresExtendedPreviewPreparation ? 3 : 2,
                     totalUnits:
                         totalProgressUnits,
                     statusMessage:
-                        isRAWTask
-                        ? "已生成 RAW 显示版本"
-                        : "已读取 EXIF 和拍摄时间"
+                        completedPreparationStatusMessage(
+                            for: memoryBudget
+                        )
                 )
             }
 
@@ -352,7 +355,7 @@ final class BatchQueueExecution {
                 task.phase = .previewReady
                 task.progress = BatchTaskProgress(
                     currentUnit:
-                        isRAWTask ? 4 : 3,
+                        requiresExtendedPreviewPreparation ? 4 : 3,
                     totalUnits:
                         totalProgressUnits,
                     statusMessage:
@@ -366,7 +369,7 @@ final class BatchQueueExecution {
                 task.phase = .exporting
                 task.progress = BatchTaskProgress(
                     currentUnit:
-                        isRAWTask ? 5 : 4,
+                        requiresExtendedPreviewPreparation ? 5 : 4,
                     totalUnits:
                         totalProgressUnits,
                     statusMessage:
@@ -406,7 +409,7 @@ final class BatchQueueExecution {
                 task.phase = .savingToPhotoLibrary
                 task.progress = BatchTaskProgress(
                     currentUnit:
-                        isRAWTask ? 6 : 5,
+                        requiresExtendedPreviewPreparation ? 6 : 5,
                     totalUnits:
                         totalProgressUnits,
                     statusMessage:
@@ -643,6 +646,23 @@ final class BatchQueueExecution {
     }
 }
 
+extension BatchQueueExecution {
+
+    func mediaMemoryBudget(
+        for task: BatchTask
+    ) -> MediaMemoryBudget {
+
+        MediaMemoryBudget(
+            cost:
+                MediaCost(
+                    fileURL: task.sourceURL,
+                    contentTypeIdentifier:
+                        task.contentTypeIdentifier
+                )
+        )
+    }
+}
+
 private extension BatchQueueExecution {
 
     struct IntentExecutionError:
@@ -864,18 +884,34 @@ private extension BatchQueueExecution {
         return true
     }
 
-    func taskUsesRAWDisplayRepresentation(
-        _ task: BatchTask
-    ) -> Bool {
+    func initialPreparationStatusMessage(
+        for budget: MediaMemoryBudget
+    ) -> String {
 
-        let contentType =
-            task.contentTypeIdentifier
-            .flatMap(UTType.init)
+        if budget.cost.isRAW {
+            return "正在准备 RAW 照片"
+        }
 
-        return PhotoProcessingInputPolicy
-            .isRawContentType(contentType)
-            || PhotoProcessingInputPolicy
-            .isRawFileURL(task.sourceURL)
+        if budget.requiresExtendedPreviewPreparation {
+            return "正在准备高分辨率照片"
+        }
+
+        return "正在读取原图"
+    }
+
+    func completedPreparationStatusMessage(
+        for budget: MediaMemoryBudget
+    ) -> String {
+
+        if budget.cost.isRAW {
+            return "已生成 RAW 显示版本"
+        }
+
+        if budget.requiresExtendedPreviewPreparation {
+            return "已生成高分辨率预览版本"
+        }
+
+        return "已读取 EXIF 和拍摄时间"
     }
 
     func resolvedJobTitle(

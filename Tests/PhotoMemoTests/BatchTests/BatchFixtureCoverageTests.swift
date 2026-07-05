@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UniformTypeIdentifiers
 @testable import PhotoMemo
 
 @Suite("BatchFixtureCoverage", .serialized)
@@ -298,6 +299,35 @@ struct BatchFixtureCoverageTests {
             importedPhoto.sourceInfo.contentTypeIdentifier
             == "public.heic"
         )
+    }
+
+    @MainActor
+    @Test("Queue media budget treats RAW intake tasks as extended preview preparation")
+    func queueMediaBudgetTreatsRAWIntakeTasksAsExtendedPreviewPreparation() throws {
+
+        let execution =
+            BatchQueueExecution(
+                externalIntakeStore:
+                    makeExternalIntakeStore()
+            )
+        let rawType =
+            try #require(
+                UTType(filenameExtension: "dng")
+            )
+
+        let budget =
+            execution.mediaMemoryBudget(
+                for:
+                    BatchTask(
+                        sourceURL:
+                            URL(fileURLWithPath: "/tmp/IMG_9001.DNG"),
+                        contentTypeIdentifier:
+                            rawType.identifier
+                    )
+            )
+
+        #expect(budget.cost.isRAW)
+        #expect(budget.requiresExtendedPreviewPreparation)
     }
 
     @MainActor

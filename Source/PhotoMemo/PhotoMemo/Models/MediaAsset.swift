@@ -40,6 +40,34 @@ struct MediaPixelSize: Hashable, Codable {
         )
     }
 
+    init?(
+        fileURL: URL
+    ) {
+        guard
+            let source =
+                CGImageSourceCreateWithURL(
+                    fileURL as CFURL,
+                    [
+                        kCGImageSourceShouldCache:
+                            false
+                    ] as CFDictionary
+                ),
+            let properties =
+                CGImageSourceCopyPropertiesAtIndex(
+                    source,
+                    0,
+                    nil
+                ) as? [CFString: Any]
+        else {
+            return nil
+        }
+
+        self.init(
+            sourceProperties:
+                properties
+        )
+    }
+
     init(
         size: CGSize
     ) {
@@ -145,4 +173,131 @@ struct MediaRepresentation {
             maxPixelDimension: maxPixelDimension
         )
     }
+}
+
+struct MediaCost: Hashable, Codable {
+
+    let pixelSize: MediaPixelSize?
+    let isRAW: Bool
+
+    init(
+        pixelSize: MediaPixelSize?,
+        isRAW: Bool
+    ) {
+        self.pixelSize = pixelSize
+        self.isRAW = isRAW
+    }
+
+    init(
+        asset: MediaAsset
+    ) {
+        self.init(
+            pixelSize: asset.pixelSize,
+            isRAW: asset.isRAW
+        )
+    }
+
+    init(
+        fileURL: URL,
+        contentTypeIdentifier: String?
+    ) {
+        let contentType =
+            contentTypeIdentifier
+            .flatMap(UTType.init)
+
+        self.init(
+            pixelSize:
+                MediaPixelSize(
+                    fileURL: fileURL
+                ),
+            isRAW:
+                PhotoProcessingInputPolicy
+                .isRawContentType(contentType)
+                || PhotoProcessingInputPolicy
+                .isRawFileURL(fileURL)
+        )
+    }
+
+    var pixelCount: Int {
+        guard let pixelSize else {
+            return 0
+        }
+
+        return pixelSize.width * pixelSize.height
+    }
+
+    var estimatedDecodedByteCount: Int {
+        pixelCount * 4
+    }
+}
+
+struct MediaMemoryBudget: Hashable, Codable {
+
+    enum Tier: String, Hashable, Codable {
+        case normal
+        case high
+        case critical
+    }
+
+    let cost: MediaCost
+
+    init(
+        cost: MediaCost
+    ) {
+        self.cost = cost
+    }
+
+    var tier: Tier {
+        if cost.isRAW,
+           cost.pixelCount >= Self.highPixelCountThreshold {
+            return .critical
+        }
+
+        if cost.pixelCount >= Self.criticalPixelCountThreshold {
+            return .critical
+        }
+
+        if cost.pixelCount >= Self.highPixelCountThreshold {
+            return .high
+        }
+
+        return .normal
+    }
+
+    var maxConcurrentDecodes: Int {
+        switch tier {
+        case .normal:
+            return 2
+
+        case .high,
+             .critical:
+            return 1
+        }
+    }
+
+    var maxConcurrentRenders: Int {
+        switch tier {
+        case .normal:
+            return 2
+
+        case .high,
+             .critical:
+            return 1
+        }
+    }
+
+    var maxConcurrentExports: Int {
+        1
+    }
+
+    var requiresExtendedPreviewPreparation: Bool {
+        tier == .critical
+            || cost.isRAW
+    }
+
+    private static let highPixelCountThreshold =
+        24_000_000
+
+    private static let criticalPixelCountThreshold =
+        48_000_000
 }

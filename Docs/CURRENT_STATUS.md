@@ -76,10 +76,21 @@ Completed checkpoints:
     representation to `SelectedPhoto`.
   - RAW detection and Live Photo detection remain routed through
     `PhotoProcessingInputPolicy`.
+- Memory Budget thin policy:
+  - `MediaCost` and `MediaMemoryBudget` now classify normal, high, and
+    critical media work from canonical media facts or file-backed ImageIO
+    properties.
+  - `BatchQueueExecution` now derives RAW / high-resolution preview
+    preparation progress from `MediaMemoryBudget` instead of a local RAW-only
+    branch.
+  - Queue behavior remains serial in this increment; no renderer, export
+    contract, Memory Pipeline, or Photo Library behavior was changed.
 
 Verification completed:
 
 - focused intake/import/policy tests
+- `MediaMemoryBudgetTests`
+- `BatchFixtureCoverageTests`
 - `git diff --check`
 - `PhotoMemo` Debug build
 
