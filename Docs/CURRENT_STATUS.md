@@ -113,7 +113,7 @@ Stage status:
 | Stage | Status | Notes |
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
-| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; next work should validate renderer dependency isolation through PI-2. |
+| Stage 2: Platform Integration | ▶ In Progress | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`. |
 
 PI-1 completed checkpoints:
 
@@ -165,6 +165,56 @@ Freeze rule:
 - PI-2 must choose the seam with the smallest architectural surface, not the
   smallest line count.
 - Renderer output change is not allowed.
+
+## 2026-07-06 PI-2 Renderer Dependency Isolation frozen
+
+PI-2 has completed the approved implementation seam.
+
+Implementation checkpoint:
+
+- `0fec6bb` replaces the `CardTextBlockEngine` text dependency from
+  `MetadataContext` lookup to `ExpressionLookup` capability.
+
+Architectural delta:
+
+```text
+Renderer text dependency: MetadataContext -> ExpressionLookup
+```
+
+Scope review:
+
+- The approved seam was the only architectural surface modified:
+  `CardTextBlockEngine -> TemplateVariableEngine.render(...)`.
+- `MetadataContextExpressionLookup` is a local engine-side compatibility
+  adapter for the approved seam; it is not a platform contract.
+- `RecordCardRenderer`, `RecordCard`, Export, Share Extension, batch
+  processing, preview call sites, provider integration, layout, typography,
+  drawing, color, and module behavior were not changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+
+Verification:
+
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+- PI-2 focused tests passed:
+  - `RendererDependencyIsolationTests`
+  - `TemplateVariableEngineTests`
+  - `ExpressionLookupContractTests`
+- Renderer regression tests passed:
+  - `ClassicWhiteCardRendererLayoutTests`
+  - `ClassicWhiteRendererThemeTests`
+  - `ImmersWhiteRendererLayoutTests`
+  - `RecordCardRendererRoutingTests`
+  - `TemplatePresetRenderLayoutTests`
+
+Known verification note:
+
+- `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable()` passes
+  when run alone, but the full `ClassicWhiteSnapshotTests` suite still shows
+  an order-sensitive text antialiasing/truncation mismatch in that case. This
+  was not fixed in PI-2 because snapshot stability work is outside the
+  approved seam and no renderer behavior change is allowed.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
