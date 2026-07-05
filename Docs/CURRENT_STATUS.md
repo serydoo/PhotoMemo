@@ -98,6 +98,9 @@ Completed checkpoints:
   - `PhotoImportService` now rejects unsupported or oversized media through
     `PhotoProcessingInputPolicy` before preview decode, and surfaces the
     policy title, message, and rejection reason through `PhotoImportError`.
+  - Main App PhotosPicker and File Import unsupported preflight messages now
+    use `PhotoProcessingInputPolicy` verdict title/message instead of a generic
+    unsupported-format string.
   - Share Extension unsupported skips now preserve policy rejection facts in
     `PhotoMemoMediaIntakeRejectionReport` and carry them through
     `PhotoMemoShareExtensionImportResult` for diagnostic summaries without
@@ -146,6 +149,8 @@ Latest decode convergence verification:
 - Share Extension preview file and data fallback decode isolation
 - renderer source media-format isolation contract
 - `MediaIntakeFileFirstContractTests`
+- Main App intake policy-diagnostics contract for unsupported preflight
+  messages
 - `PhotoImportServiceTests`
 - policy-backed unsupported format / oversized dimension import rejection
 - `PhotoMemoShareIntakeDiagnosticsTests` coverage for codable rejection

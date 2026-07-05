@@ -130,7 +130,12 @@ private extension PhotoImporterView {
 
                 await MainActor.run {
                     errorMessage =
-                        "Unsupported image format"
+                        unsupportedInputMessage(
+                            contentType:
+                                item
+                                .supportedContentTypes
+                                .first
+                        )
                     selectedPhotoItem = nil
                 }
                 return
@@ -248,7 +253,9 @@ private extension PhotoImporterView {
             else {
 
                 errorMessage =
-                    "Unsupported image format"
+                    unsupportedInputMessage(
+                        fileURL: url
+                    )
 
                 return
             }
@@ -320,6 +327,54 @@ private extension PhotoImporterView {
         }
 
         return "PhotoMemo Import.\(fileExtension)"
+    }
+
+    func unsupportedInputMessage(
+        contentType: UTType?
+    ) -> String {
+
+        unsupportedInputMessage(
+            for:
+                PhotoProcessingInputPolicy
+                .standard
+                .verdict(
+                    contentType: contentType,
+                    pixelWidth: 1,
+                    pixelHeight: 1
+                )
+        )
+    }
+
+    func unsupportedInputMessage(
+        fileURL: URL
+    ) -> String {
+
+        unsupportedInputMessage(
+            for:
+                PhotoProcessingInputPolicy
+                .standard
+                .verdict(
+                    fileURL: fileURL,
+                    declaredContentTypeIdentifier: nil
+                )
+        )
+    }
+
+    func unsupportedInputMessage(
+        for verdict:
+            PhotoProcessingInputPolicy.Verdict
+    ) -> String {
+
+        [
+            verdict.title,
+            verdict.message
+        ]
+        .filter {
+            !$0.isEmpty
+        }
+        .joined(
+            separator: "\n"
+        )
     }
 
     func resolvedSupportedContentType(

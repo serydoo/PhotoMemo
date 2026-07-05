@@ -21,6 +21,31 @@ struct MediaIntakeFileFirstContractTests {
         )
     }
 
+    @Test("Main App intake surfaces policy diagnostics instead of generic unsupported text")
+    func mainAppIntakeSurfacesPolicyDiagnosticsInsteadOfGenericUnsupportedText() throws {
+        let source =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/Views/Main/PhotoImporterView.swift"
+            )
+
+        #expect(
+            !source.contains(
+                "\"Unsupported image format\""
+            )
+        )
+        #expect(
+            source.contains(
+                "unsupportedInputMessage"
+            )
+        )
+        #expect(
+            source.contains(
+                "PhotoProcessingInputPolicy"
+            )
+        )
+    }
+
     @Test("V1 Quick Action PhotosPicker attempts file representation before Data fallback")
     func v1QuickActionPhotosPickerAttemptsFileRepresentationBeforeDataFallback() throws {
         let source =
