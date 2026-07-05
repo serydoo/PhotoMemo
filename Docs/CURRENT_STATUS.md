@@ -114,7 +114,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-8 Contract Boundary Frozen | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-9 Carrier Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`. |
 
 PI-1 completed checkpoints:
 
@@ -535,6 +535,58 @@ Any implementation must remain scoped to the inserted-module ownership
 boundary and must not jump directly into Renderer, Template, Provider,
 ExpressionContext, live session, snapshot, export, share, photo-library, or
 production behavior.
+
+## 2026-07-06 PI-9 Expression Module Configuration Carrier frozen
+
+PI-9 completed the approved carrier implementation seam without wiring behavior.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-9_Expression_Module_Configuration_Carrier_Boundary_Scan.md`
+
+Checkpoints:
+
+- `8a9ef96` freezes the approved PI-9 seam:
+  `ExpressionModuleConfiguration` plus
+  `IOSInsertedModule.expressionConfiguration`.
+- `c866fdc` adds the provider-neutral `ExpressionModuleConfiguration` carrier
+  and attaches it as optional inserted-module data.
+
+Architectural delta:
+
+```text
+Expression module configuration carrier: absent -> optional inserted-module data
+```
+
+Scope review:
+
+- The approved carrier seam was the only implementation surface modified.
+- `ExpressionModuleConfiguration` is `Codable`, `Hashable`, keyed by
+  `ExpressionToken`, and provider-neutral.
+- `IOSInsertedModule` keeps legacy construction working through a nil default.
+- No Location-specific fields were added to the generic carrier.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider`, `LocationResolver`, `LocationFormatter`,
+  `ConfigurationSession`, `ConfigurationSnapshot`, `MemoryBlock`,
+  `MemoryTokenBlock`, `MemoryExpression`, `MemoryBlockInspectorView`,
+  `V1PreviewCompositionEngine`, `ConfigurationCenterPreviewCompositionHelper`,
+  `CardVariableProvider`, `RecordCardBuildService`, Renderer, Export, Share
+  Extension, batch processing, Photo Library behavior, and production behavior
+  were not changed.
+
+Verification:
+
+- `ExpressionModuleConfigurationContractTests` passed.
+- Expression / inserted-module regression tests passed:
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `ConfigurationCenterRegionEditCoordinatorTests`
+  - `ConfigurationCenterRegionDraftStoreTests`
+  - `ConfigurationCenterRegionBindingAdapterTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
