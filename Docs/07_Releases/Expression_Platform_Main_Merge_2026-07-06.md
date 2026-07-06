@@ -71,6 +71,10 @@ Post-merge simulator smoke:
 - Local sample inspection found that `/Users/rui/Downloads/IMG_0537.jpeg`
   has no GPS latitude / longitude, so it cannot serve as the Location Module
   acceptance fixture.
+- Follow-up local acceptance used the Photos render
+  `0194231B-1F96-4A84-A5D7-B32200353811_1_201_a.jpeg`; the real PhotoMemo
+  metadata, Location provider, configuration adapter, and `ExpressionContext`
+  lookup sources resolved `33.930355, 116.444153`.
 
 ## Known Issues
 
@@ -79,7 +83,7 @@ Post-merge simulator smoke:
   environment exposes the simulator through `simctl` screenshots/logs but not a
   foreground `Simulator.app` window for tapping the system Photos permission
   dialog.
-- Location Module Product Acceptance is blocked until a GPS-bearing local photo
-  or real-device interaction path is available.
+- Location Module Product Acceptance remains blocked only for full manual
+  interaction and real export validation.
 - Historical snapshot flakiness remains tracked separately and was not treated
   as caused by this merge.

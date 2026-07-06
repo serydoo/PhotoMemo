@@ -140,9 +140,12 @@ Post-main-merge verification:
 - Post-merge simulator smoke passed for app install and launch:
   `PhotoMemoiOSV1.app` launched as `com.serydoo.PhotoMemo.iOS` and reached the
   system Photos permission dialog without a main-app crash.
-- Product Acceptance Gate is blocked for full Location Module validation:
-  local sample `/Users/rui/Downloads/IMG_0537.jpeg` has no GPS latitude /
-  longitude, so it cannot verify Location output from real photo data.
+- Location data acceptance passed with a GPS-bearing Photos render:
+  `0194231B-1F96-4A84-A5D7-B32200353811_1_201_a.jpeg` resolved to
+  `33.930355, 116.444153` through the real PhotoMemo metadata, Location
+  provider, configuration adapter, and `ExpressionContext` lookup sources.
+- Product Acceptance Gate remains blocked only for full manual interaction and
+  real export validation.
 - Release event:
   `Docs/07_Releases/Expression_Platform_Main_Merge_2026-07-06.md`.
 
