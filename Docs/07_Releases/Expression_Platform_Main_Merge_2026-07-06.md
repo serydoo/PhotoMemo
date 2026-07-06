@@ -61,8 +61,20 @@ Passed before merge to `main`:
 - `PhotoMemoiOSV1` generic iOS Simulator build.
 - `PhotoMemoShareExtension` generic iOS Simulator build.
 
+Post-merge simulator smoke:
+
+- Installed `PhotoMemoiOSV1.app` on iPhone 17 Pro simulator
+  `95A87461-1623-469A-8F06-3159CC12B1CC`.
+- Launched bundle `com.serydoo.PhotoMemo.iOS` successfully.
+- Launch logs show the app in `running-active-Visible` state.
+- First-run flow reached the system Photos permission dialog.
+
 ## Known Issues
 
 - Manual device acceptance was not performed in this release event.
+- Full simulator interaction acceptance was not completed because this
+  environment exposes the simulator through `simctl` screenshots/logs but not a
+  foreground `Simulator.app` window for tapping the system Photos permission
+  dialog.
 - Historical snapshot flakiness remains tracked separately and was not treated
   as caused by this merge.

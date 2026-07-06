@@ -137,6 +137,9 @@ Post-main-merge verification:
   - `PhotoMemo` Debug
   - `PhotoMemoiOSV1` generic iOS Simulator
   - `PhotoMemoShareExtension` generic iOS Simulator
+- Post-merge simulator smoke passed for app install and launch:
+  `PhotoMemoiOSV1.app` launched as `com.serydoo.PhotoMemo.iOS` and reached the
+  system Photos permission dialog without a main-app crash.
 - Release event:
   `Docs/07_Releases/Expression_Platform_Main_Merge_2026-07-06.md`.
 
