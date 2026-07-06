@@ -150,7 +150,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-16 Production Expression Carrier Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-17 Memory Provider Adoption Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`; PI-17 implementation is frozen at commit `2686649`. |
 
 PI-1 completed checkpoints:
 
@@ -941,6 +941,62 @@ Verification:
   - `RecordCardBuildServiceTests`
   - `RendererDependencyIsolationTests`
 - Memory / provider regression tests passed:
+  - `MemoryProviderTests`
+  - `MemoryResultContractTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-17 Memory Provider Production Adoption frozen
+
+PI-17 completed the approved memory-only production adoption seam.
+The parity-proven and carried `MemoryProvider[memory]` value now projects into
+legacy `MetadataContext[memory_summary]` at the text lookup seam.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-17_Memory_Provider_Production_Adoption_Boundary_Scan.md`
+
+Checkpoints:
+
+- `1d073a2` freezes the approved memory-only adoption seam.
+- `2686649` adopts the carried Memory provider value at the text lookup seam.
+
+Architectural delta:
+
+```text
+Production memory authority: legacy MetadataContext[memory_summary] -> parity-proven MemoryProvider[memory] projected into legacy lookup
+```
+
+Scope review:
+
+- Only the approved `memory` token was adopted.
+- `ExpressionContextMetadataAdapter` now projects
+  `ExpressionContext[memory] -> MetadataContext[memory_summary]`.
+- `CardTextBlockEngine` overlays `RecordCard.productionExpressionContext`
+  through the legacy adapter after the existing model overlay.
+- `CardTextBlockEngine` does not call `MemoryProvider`; it consumes carried
+  provider-neutral values only.
+- `RecordCardBuildService` remains forwarding-only and does not own provider
+  policy.
+- `location` production adoption remains blocked.
+- `MemoryProvider`, `ProductionMemoryResolver`, `CardVariableProvider`,
+  `RecordCard`, `RecordCardBuildService`, Renderer, Export, Share Extension,
+  batch processing, Photo Library behavior, and Layout Engine behavior were
+  not changed in PI-17.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+
+Verification:
+
+- RED confirmed PI-17 adapter and text-seam tests failed before
+  implementation.
+- PI-17 focused tests passed:
+  - `ExpressionContextMetadataAdapterTests`
+  - `RendererDependencyIsolationTests`
+- Production Memory regression tests passed:
+  - `RecordCardBuildServiceTests`
+  - `ProductionMemoryResolverTests`
   - `MemoryProviderTests`
   - `MemoryResultContractTests`
 - `git diff --check` passed.
