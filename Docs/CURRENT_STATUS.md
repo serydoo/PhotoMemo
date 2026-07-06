@@ -150,7 +150,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-11 Persistence Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-13D Model Provider Adoption Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`. |
 
 PI-1 completed checkpoints:
 
@@ -733,6 +733,67 @@ Verification:
 - Expression / Location configuration tests passed:
   - `ExpressionModuleConfigurationContractTests`
   - `LocationConfigurationAdapterTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-13D Model Provider Production Adoption frozen
+
+PI-13D completed the approved model-only production adoption seam without
+changing platform contracts, renderer layout/drawing, export behavior, share
+extension behavior, photo-library behavior, or provider token support.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-13D_Model_Provider_Production_Adoption_Boundary_Scan.md`
+
+Prerequisite checkpoints:
+
+- `e10fc1ff` freezes the PI-13 production lookup scan with no direct
+  implementation seam approved.
+- `2506c378` freezes the production `ExpressionLookup` source definition.
+- `36330b66` freezes the token-level production provider parity gate.
+- `18b7c342` proves `MetadataProvider[model]` parity with the current legacy
+  production lookup value.
+- `dce18405` freezes the PI-13D model-only production adoption seam.
+
+Implementation checkpoint:
+
+- `0aca215` adopts `MetadataProvider[model]` at the text lookup seam by
+  projecting provider output through `ExpressionContextMetadataAdapter` into
+  the legacy `MetadataContext[model]` lookup used by `CardTextBlockEngine`.
+
+Architectural delta:
+
+```text
+Production model authority: legacy MetadataContext[model] -> parity-proven MetadataProvider[model] projected into legacy lookup
+```
+
+Scope review:
+
+- Only the approved `model` token was adopted.
+- `ExpressionContextMetadataAdapter` now projects
+  `ExpressionContext[model] -> MetadataContext[model]`.
+- `CardTextBlockEngine` still builds the legacy `CardVariableProvider` base
+  context, overlays the parity-proven provider model projection, and continues
+  to pass `ExpressionLookup` into `TemplateVariableEngine`.
+- `location` and `memory` production adoption remain blocked.
+- `MetadataProvider` token support was not expanded.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- `CardVariableProvider`, `RecordCard`, `RecordCardBuildService`,
+  `TemplateVariableEngine`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and Layout Engine behavior were not
+  changed.
+
+Verification:
+
+- RED confirmed PI-13D adapter and approved-seam tests failed before
+  implementation.
+- PI-13D focused tests passed:
+  - `ExpressionContextMetadataAdapterTests`
+  - `RendererDependencyIsolationTests`
+  - `MetadataProviderTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
 
