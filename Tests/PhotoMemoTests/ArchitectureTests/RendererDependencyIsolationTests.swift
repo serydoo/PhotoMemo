@@ -41,6 +41,27 @@ struct RendererDependencyIsolationTests {
         #expect(!recordCardBuildServiceSource.contains("MetadataProvider"))
     }
 
+    @Test("PI-16 Boundary production expression carrier is not consumed by text lookup or legacy projection")
+    func pi16BoundaryProductionExpressionCarrierIsNotConsumedByTextLookupOrLegacyProjection() throws {
+        let cardTextBlockEngineSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Engines/CardTextBlockEngine.swift"
+            )
+        let cardVariableProviderSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Models/CardVariableProvider.swift"
+            )
+        let rendererSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Renderers/RecordCardRenderer.swift"
+            )
+
+        #expect(!cardTextBlockEngineSource.contains("MemoryProvider"))
+        #expect(!cardTextBlockEngineSource.contains("productionExpressionContext"))
+        #expect(!cardVariableProviderSource.contains("productionExpressionContext"))
+        #expect(!rendererSource.contains("productionExpressionContext"))
+    }
+
     @Test("Boundary concrete renderers do not learn expression storage")
     func boundaryConcreteRenderersDoNotLearnExpressionStorage() throws {
         let rendererFiles = [

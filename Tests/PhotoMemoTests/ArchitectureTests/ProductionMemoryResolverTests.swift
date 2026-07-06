@@ -95,6 +95,15 @@ struct ProductionMemoryResolverTests {
             == "这一天，直接Snapshot对象18天"
         )
         #expect(
+            payload
+                .productionExpressionContext?
+                .value(
+                    for: MemoryProvider.memoryToken
+                )?
+                .resolvedText
+            == "这一天，直接Snapshot对象18天"
+        )
+        #expect(
             payload.result.primaryAnchorResult?
                 .anchorTitle
             == "直接Snapshot生日"

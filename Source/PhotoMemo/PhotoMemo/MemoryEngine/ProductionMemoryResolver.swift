@@ -8,6 +8,7 @@ struct ProductionMemoryPayload:
     var snapshot: ConfigurationSnapshot
     var result: MemoryResult
     var module: MemoryModule
+    var productionExpressionContext: ExpressionContext?
 }
 
 struct ProductionMemoryResolver {
@@ -109,37 +110,37 @@ private extension ProductionMemoryResolver {
             snapshot.withMemorySubject(
                 subject
             )
-        let resolved =
-            resolvedMemory(
+        let context =
+            MemoryExpressionContext(
                 subject: subject,
                 snapshot: completedSnapshot,
                 captureDate:
                     photo.metadata
                     .captureDate
             )
+        let resolved =
+            resolvedMemory(
+                context: context
+            )
 
         return ProductionMemoryPayload(
             subject: subject,
             snapshot: completedSnapshot,
             result: resolved.result,
-            module: resolved.module
+            module: resolved.module,
+            productionExpressionContext:
+                productionExpressionContext(
+                    from: context
+                )
         )
     }
 
     func resolvedMemory(
-        subject: MemorySubject,
-        snapshot: ConfigurationSnapshot,
-        captureDate: Date?
+        context: MemoryExpressionContext
     ) -> (
         result: MemoryResult,
         module: MemoryModule
     ) {
-        let context =
-            MemoryExpressionContext(
-                subject: subject,
-                snapshot: snapshot,
-                captureDate: captureDate
-            )
         let engine =
             MemoryExpressionEngine()
         let result =
@@ -156,6 +157,26 @@ private extension ProductionMemoryResolver {
         return (
             result,
             module
+        )
+    }
+
+    func productionExpressionContext(
+        from context: MemoryExpressionContext
+    ) -> ExpressionContext? {
+        guard let memoryValue =
+            MemoryProvider()
+            .expressionValue(
+                for: MemoryProvider.memoryToken,
+                context: context
+            )
+        else {
+            return nil
+        }
+
+        return try? ExpressionContext(
+            values: [
+                memoryValue
+            ]
         )
     }
 

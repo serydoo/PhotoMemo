@@ -24,6 +24,8 @@ struct RecordCard: Identifiable, Hashable {
     var memoryResult: MemoryResult? = nil
 
     var memoryModule: MemoryModule? = nil
+
+    var productionExpressionContext: ExpressionContext? = nil
 #endif
 
     var tags: [String]

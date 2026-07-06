@@ -115,6 +115,15 @@ struct RecordCardBuildServiceTests {
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
             == "这一天，途途9个月14天"
         )
+        #expect(
+            card
+                .productionExpressionContext?
+                .value(
+                    for: MemoryProvider.memoryToken
+                )?
+                .resolvedText
+            == "这一天，途途9个月14天"
+        )
     }
 
     @Test("Frozen ConfigurationSnapshot relationship label wins over legacy fallback")

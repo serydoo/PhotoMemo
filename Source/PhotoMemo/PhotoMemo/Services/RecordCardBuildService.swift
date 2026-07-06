@@ -147,6 +147,9 @@ private extension RecordCardBuildService {
             memoryPayload.result
         card.memoryModule =
             memoryPayload.module
+        card.productionExpressionContext =
+            memoryPayload
+            .productionExpressionContext
 #endif
 
         return card
