@@ -113,7 +113,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "途途今天9个月14天啦！"
+            == "这一天，途途9个月14天"
         )
     }
 
@@ -729,7 +729,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             context[MetadataContext.Key.memorySummary]
-            == "途途今天18天啦！"
+            == "这一天，途途18天"
         )
         #expect(
             card.memoryResult?.subjectID
@@ -929,8 +929,8 @@ struct RecordCardBuildServiceTests {
                 from: card
             )
 
-        #expect(previewText.hasPrefix("陪伴小满"))
-        #expect(previewText.contains("1年2个月6天"))
+        #expect(previewText.hasPrefix("陪小满走到"))
+        #expect(previewText.contains("1岁2个月6天"))
         #expect(!previewText.contains("家人"))
         #expect(
             context[MetadataContext.Key.memorySummary]
@@ -1145,11 +1145,11 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             context[MetadataContext.Key.memorySummary]
-            == "途途与相识已有1个月1天"
+            == "相识已经1个月1天"
         )
         #expect(
             card.exportDescriptionOverride
-            == "年龄:|途途与相识已有1个月1天"
+            == "年龄:|相识已经1个月1天"
         )
     }
 

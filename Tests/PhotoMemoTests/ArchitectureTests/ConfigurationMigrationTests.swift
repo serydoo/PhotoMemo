@@ -423,7 +423,7 @@ struct ConfigurationMigrationTests {
                 badge: .family,
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride:
-                    "途途今天18天啦！",
+                    "这一天，途途18天",
                 timeAnchor:
                     .init(
                         title: "生日",
@@ -461,7 +461,7 @@ struct ConfigurationMigrationTests {
         #expect(snapshot.badge == .family)
         #expect(
             snapshot.photoDescriptionOverride
-            == "途途今天18天啦！"
+            == "这一天，途途18天"
         )
         #expect(
             snapshot.selectedAlbumIdentifier

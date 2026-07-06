@@ -244,7 +244,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
             helper.composedPreviewText(
                 for: .slotA,
                 store: store
-            ) == "记录途途今天11个月28天啦！记得那一天"
+            ) == "记录这一天，途途11个月28天记得那一天"
         )
     }
 
@@ -270,7 +270,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
         )
         #expect(
             helper.moduleDisplayText(.smartTime)
-            == "途途今天11个月28天啦！"
+            == "这一天，途途11个月28天"
         )
         #expect(
             helper.moduleDisplayText(.location)
