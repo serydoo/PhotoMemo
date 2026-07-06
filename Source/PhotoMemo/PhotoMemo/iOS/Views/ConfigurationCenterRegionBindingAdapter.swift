@@ -153,6 +153,22 @@ struct ConfigurationCenterRegionBindingAdapter {
         )
     }
 
+    func updateInsertedModule(
+        _ module: IOSInsertedModule,
+        expressionConfiguration:
+            ExpressionModuleConfiguration
+    ) -> ConfigurationCenterRegionBindingMutation {
+        previewMutation(
+            coordinator.updateInsertedModule(
+                module,
+                in: region,
+                store: store,
+                expressionConfiguration:
+                    expressionConfiguration
+            )
+        )
+    }
+
     func refreshPreview() -> ConfigurationCenterRegionBindingMutation {
         previewMutation(
             coordinator.refreshPreview(

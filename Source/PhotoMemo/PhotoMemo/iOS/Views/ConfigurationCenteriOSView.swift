@@ -206,10 +206,24 @@ struct ConfigurationCenteriOSView: View {
         VStack(alignment: .leading, spacing: 14) {
             activeRegionEditor
 
+            locationDisplayInspector
+
             if shouldShowInsertableModules {
                 fixedInsertableModuleLibrary
             }
         }
+    }
+
+    private var locationDisplayInspector: some View {
+        ConfigurationCenterLocationDisplayPanel(
+            presentation:
+                LocationDisplayInspectorPresenter
+                .presentation,
+            locationModule:
+                currentLocationModule,
+            selectedOptionID:
+                locationDisplayOptionBinding
+        )
     }
 
     private var activeRegionEditor: some View {
@@ -699,10 +713,18 @@ struct ConfigurationCenteriOSView: View {
         _ module: IOSInsertableModule
     ) {
         let region = session.state.selectedRegion
+        let expressionConfiguration =
+            defaultExpressionConfiguration(
+                for: module
+            )
 
         guard let mutation =
             regionBindingAdapter(for: region)
-            .insertModule(module)
+            .insertModule(
+                module,
+                expressionConfiguration:
+                    expressionConfiguration
+            )
         else {
             return
         }
@@ -711,6 +733,65 @@ struct ConfigurationCenteriOSView: View {
             mutation,
             for: region
         )
+    }
+
+    private var currentLocationModule:
+        IOSInsertedModule? {
+        regionBindingAdapter(
+            for: session.state.selectedRegion
+        )
+        .modules()
+        .first {
+            $0.title == IOSInsertableModule.location.title
+            && $0.systemImage == IOSInsertableModule.location.systemImage
+        }
+    }
+
+    private var locationDisplayOptionBinding:
+        Binding<String> {
+        Binding(
+            get: {
+                LocationDisplayInspectorPresenter
+                    .selectedOptionID(
+                        from: currentLocationModule
+                    )
+            },
+            set: { optionID in
+                guard let module =
+                    currentLocationModule
+                else {
+                    return
+                }
+
+                applyRegionBindingMutation(
+                    regionBindingAdapter(
+                        for: session.state.selectedRegion
+                    )
+                    .updateInsertedModule(
+                        module,
+                        expressionConfiguration:
+                            LocationDisplayInspectorPresenter
+                            .configuration(
+                                for: optionID
+                            )
+                    ),
+                    for: session.state.selectedRegion
+                )
+            }
+        )
+    }
+
+    private func defaultExpressionConfiguration(
+        for module: IOSInsertableModule
+    ) -> ExpressionModuleConfiguration? {
+        guard module == .location else {
+            return nil
+        }
+
+        return LocationDisplayInspectorPresenter
+            .configuration(
+                for: "legacyDisplay"
+            )
     }
 
     private func removeInsertedModule(

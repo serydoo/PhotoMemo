@@ -136,6 +136,74 @@ struct ConfigurationCenterPreviewCompositionHelper {
         )
     }
 
+    func updateInsertedModule(
+        _ module: IOSInsertedModule,
+        in region: CardRegion,
+        store: ConfigurationCenterRegionDraftStore,
+        expressionConfiguration:
+            ExpressionModuleConfiguration
+    ) -> ConfigurationCenterPreviewCompositionUpdate {
+        var updatedStore = store
+        var currentModules =
+            updatedStore.modules(for: region)
+
+        guard
+            let index =
+                currentModules
+                .firstIndex(where: { $0.id == module.id })
+        else {
+            return .init(
+                store: store,
+                previewText:
+                    composedPreviewText(
+                        for: region,
+                        store: store
+                    )
+            )
+        }
+
+        guard module.representsLocationModule else {
+            return .init(
+                store: store,
+                previewText:
+                    composedPreviewText(
+                        for: region,
+                        store: store
+                    )
+            )
+        }
+
+        let updatedModule =
+            IOSInsertedModule(
+                id: module.id,
+                title: module.title,
+                value:
+                    moduleDisplayText(
+                        .location,
+                        expressionConfiguration:
+                            expressionConfiguration
+                    ),
+                systemImage: module.systemImage,
+                expressionConfiguration:
+                    expressionConfiguration
+            )
+        currentModules[index] =
+            updatedModule
+        updatedStore.setModules(
+            currentModules,
+            for: region
+        )
+
+        return .init(
+            store: updatedStore,
+            previewText:
+                composedPreviewText(
+                    for: region,
+                    store: updatedStore
+                )
+        )
+    }
+
     func composedPreviewText(
         for region: CardRegion,
         store: ConfigurationCenterRegionDraftStore
@@ -304,6 +372,13 @@ struct ConfigurationCenterPreviewCompositionHelper {
                 locationValue
             ]
         )
+    }
+}
+
+private extension IOSInsertedModule {
+    var representsLocationModule: Bool {
+        title == IOSInsertableModule.location.title
+        && systemImage == IOSInsertableModule.location.systemImage
     }
 }
 #endif

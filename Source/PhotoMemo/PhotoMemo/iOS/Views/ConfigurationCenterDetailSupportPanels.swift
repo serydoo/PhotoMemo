@@ -31,6 +31,92 @@ struct ConfigurationCenterGuideCardModel:
     let systemImage: String
 }
 
+struct ConfigurationCenterLocationDisplayPanel:
+    View {
+
+    let presentation:
+        LocationDisplayInspectorPresentation
+
+    let locationModule:
+        IOSInsertedModule?
+
+    @Binding
+    var selectedOptionID: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: presentation.systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(iconColor)
+                    .frame(width: 20)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(presentation.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+
+                    Text(currentValueText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Picker(
+                    presentation.title,
+                    selection: $selectedOptionID
+                ) {
+                    ForEach(presentation.options) { option in
+                        Text(option.title)
+                            .tag(option.id)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .disabled(locationModule == nil)
+            }
+
+            if locationModule != nil,
+               let note = selectedOptionNote {
+                Text(note)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .configurationPanelChrome()
+    }
+
+    private var currentValueText: String {
+        guard let locationModule else {
+            return presentation.unavailableValue
+        }
+
+        return LocationDisplayInspectorPresenter
+            .selectedValue(
+                from: locationModule
+            )
+    }
+
+    private var iconColor: Color {
+        locationModule == nil
+        ? Color.secondary
+        : Color.accentColor
+    }
+
+    private var selectedOptionNote: String? {
+        presentation
+            .options
+            .first {
+                $0.id == selectedOptionID
+            }?
+            .note
+    }
+}
+
 struct ConfigurationCenterMemoryWritePanel: View {
 
     let model: ConfigurationCenterMemoryWritePanelModel

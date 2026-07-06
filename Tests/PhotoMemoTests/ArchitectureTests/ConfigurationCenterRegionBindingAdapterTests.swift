@@ -154,6 +154,119 @@ struct ConfigurationCenterRegionBindingAdapterTests {
         )
     }
 
+    @Test("updateInsertedModule writes location display configuration and recomputes preview")
+    func updateInsertedModuleWritesLocationDisplayConfigurationAndRecomputesPreview() throws {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(subject: subject)
+            )
+        var store =
+            ConfigurationCenterRegionDraftStore()
+        let insertedModule =
+            IOSInsertedModule(
+                title: IOSInsertableModule.location.title,
+                value: "河南 · 商丘",
+                systemImage: IOSInsertableModule.location.systemImage
+            )
+        store.setText("", for: .slotC)
+        store.setModules(
+            [insertedModule],
+            for: .slotC
+        )
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotC,
+                subject: subject,
+                store: store,
+                coordinator:
+                    .init(previewHelper: helper)
+            )
+        let configuration =
+            LocationDisplayInspectorPresenter
+            .configuration(
+                for: "provinceCityDistrict"
+            )
+
+        let mutation =
+            adapter.updateInsertedModule(
+                insertedModule,
+                expressionConfiguration:
+                    configuration
+            )
+        let updatedModule =
+            try #require(
+                mutation.store.modules(for: .slotC).first
+            )
+
+        #expect(
+            updatedModule.expressionConfiguration == configuration
+        )
+        #expect(updatedModule.value == "河南 · 商丘 · 永城")
+        #expect(
+            mutation.previewText
+            == helper.composedPreviewText(
+                for: .slotC,
+                store: mutation.store
+            )
+        )
+    }
+
+    @Test("updateInsertedModule ignores non-location modules")
+    func updateInsertedModuleIgnoresNonLocationModules() throws {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(subject: subject)
+            )
+        var store =
+            ConfigurationCenterRegionDraftStore()
+        let insertedModule =
+            IOSInsertedModule(
+                title: IOSInsertableModule.smartTime.title,
+                value: "1岁2个月18天",
+                systemImage: IOSInsertableModule.smartTime.systemImage
+            )
+        store.setText("", for: .slotD)
+        store.setModules(
+            [insertedModule],
+            for: .slotD
+        )
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotD,
+                subject: subject,
+                store: store,
+                coordinator:
+                    .init(previewHelper: helper)
+            )
+        let configuration =
+            LocationDisplayInspectorPresenter
+            .configuration(
+                for: "provinceCityDistrict"
+            )
+
+        let mutation =
+            adapter.updateInsertedModule(
+                insertedModule,
+                expressionConfiguration:
+                    configuration
+            )
+        let updatedModule =
+            try #require(
+                mutation.store.modules(for: .slotD).first
+            )
+
+        #expect(updatedModule == insertedModule)
+        #expect(
+            mutation.previewText
+            == helper.composedPreviewText(
+                for: .slotD,
+                store: store
+            )
+        )
+    }
+
     @Test("removeInsertedModule recomputes preview text from the updated store")
     func removeInsertedModuleRecomputesPreviewText() {
         let subject = ConfigurationCenterState.mock.selectedSubject

@@ -98,6 +98,22 @@ struct ConfigurationCenterRegionEditCoordinator {
         )
     }
 
+    func updateInsertedModule(
+        _ module: IOSInsertedModule,
+        in region: CardRegion,
+        store: ConfigurationCenterRegionDraftStore,
+        expressionConfiguration:
+            ExpressionModuleConfiguration
+    ) -> ConfigurationCenterPreviewCompositionUpdate {
+        previewHelper.updateInsertedModule(
+            module,
+            in: region,
+            store: store,
+            expressionConfiguration:
+                expressionConfiguration
+        )
+    }
+
     func refreshPreview(
         for region: CardRegion,
         store: ConfigurationCenterRegionDraftStore
