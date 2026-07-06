@@ -150,7 +150,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-17 Memory Provider Adoption Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`; PI-17 implementation is frozen at commit `2686649`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-18 Location Adoption Blocked Pending Product Decision | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`; PI-17 implementation is frozen at commit `2686649`; PI-18 mismatch proof is frozen at commit `6dd9da4`. |
 
 PI-1 completed checkpoints:
 
@@ -999,6 +999,62 @@ Verification:
   - `ProductionMemoryResolverTests`
   - `MemoryProviderTests`
   - `MemoryResultContractTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-18 Location Provider Production Parity frozen
+
+PI-18 completed the Location provider production parity scan and focused
+evidence tests. No production adoption seam is approved.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-18_Location_Provider_Production_Parity_Boundary_Scan.md`
+
+Checkpoints:
+
+- `dbc1313` freezes the PI-18 scan conclusion:
+  `LocationExpressionProvider[location]` is not output-identical to legacy
+  `MetadataContext[location_display]`.
+- `6dd9da4` adds focused mismatch proof tests for full hierarchy, POI /
+  location name, and coordinate fallback cases.
+
+Architectural delta:
+
+```text
+Location provider production adoption: blocked -> mismatch proven, product decision required
+```
+
+Scope review:
+
+- PI-18 performed evidence-only testing after the scan.
+- Location provider output does not become production authority.
+- `model` and `memory` production adoption remain unchanged.
+- `LocationExpressionProvider`, `LocationResolver`, `LocationFormatter`,
+  `PhotoMetadata.locationDisplay`, `MetadataContext.build(from:)`,
+  `ExpressionContextMetadataAdapter`, `CardTextBlockEngine`,
+  `CardVariableProvider`, `RecordCard`, `RecordCardBuildService`, Renderer,
+  Export, Share Extension, batch processing, Photo Library behavior, and
+  Layout Engine behavior were not changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+
+Required product decision:
+
+```text
+Location production authority:
+keep legacy location_display, accept canonical provider output change, or
+approve a legacy-compatible Location provider mode.
+```
+
+Verification:
+
+- `LocationProviderProductionParityTests` passed.
+- Location regression tests passed:
+  - `LocationExpressionPhase4DTests`
+  - `LocationExpressionPhase3Tests`
+  - `LocationConfigurationAdapterTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
 
