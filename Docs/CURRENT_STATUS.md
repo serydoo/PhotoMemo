@@ -114,7 +114,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-10 Adapter Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-11 Persistence Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`. |
 
 PI-1 completed checkpoints:
 
@@ -639,6 +639,64 @@ Verification:
   - `ExpressionModuleConfigurationContractTests`
   - `ExpressionValueContractTests`
   - `ExpressionContextContractTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-11 Configuration Persistence frozen
+
+PI-11 completed the approved insertion-chain persistence seam without disk,
+snapshot, preview-provider, production, or renderer adoption.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-11_Configuration_Persistence_Boundary_Scan.md`
+
+Checkpoints:
+
+- `e22e7e7` freezes the approved PI-11 seam:
+  `ConfigurationCenterRegionBindingAdapter.insertModule(...) ->
+  ConfigurationCenterRegionEditCoordinator.insertModule(...) ->
+  ConfigurationCenterPreviewCompositionHelper.insertModule(...) ->
+  IOSInsertedModule.expressionConfiguration`.
+- `5d122f2` forwards optional `ExpressionModuleConfiguration` through the
+  insertion chain and stores it on the resulting `IOSInsertedModule`.
+
+Architectural delta:
+
+```text
+Expression module configuration persistence: insertion input -> stored inserted module instance
+```
+
+Scope review:
+
+- The approved insertion chain was the only implementation surface modified.
+- Existing module insertion still works with no configuration.
+- Configured insertion stores the configuration on the inserted module instance
+  under the active region configuration ID.
+- Preview text remains derived from the same inserted-module rendered value.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- `LocationExpressionProvider`, `LocationConfigurationAdapter`,
+  `LocationResolver`, `LocationFormatter`, `ConfigurationSnapshot`,
+  `ConfigurationSession`, `MemoryBlock`, `MemoryExpression`,
+  `MemoryBlockInspectorView`, `V1PreviewCompositionEngine`,
+  `CardVariableProvider`, `RecordCardBuildService`, Renderer, Export, Share
+  Extension, batch processing, Photo Library behavior, and production behavior
+  were not changed.
+
+Verification:
+
+- RED confirmed configured insertion failed before the insertion chain accepted
+  `expressionConfiguration`.
+- Configuration insertion regression tests passed:
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `ConfigurationCenterRegionBindingAdapterTests`
+  - `ConfigurationCenterRegionEditCoordinatorTests`
+  - `ConfigurationCenterRegionDraftStoreTests`
+- Expression / Location configuration tests passed:
+  - `ExpressionModuleConfigurationContractTests`
+  - `LocationConfigurationAdapterTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
 
