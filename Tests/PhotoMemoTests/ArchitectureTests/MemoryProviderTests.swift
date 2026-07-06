@@ -1,4 +1,5 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
+import AppKit
 import Foundation
 import Testing
 @testable import PhotoMemo
@@ -64,6 +65,53 @@ struct MemoryProviderTests {
         #expect(value == nil)
     }
 
+    @Test("PI-14 Given same frozen production input When memory resolves through production resolver and provider Then text is identical")
+    func pi14GivenSameFrozenProductionInputWhenMemoryResolvesThroughProductionResolverAndProviderThenTextIsIdentical() throws {
+        let context =
+            memoryExpressionContext()
+        let photo =
+            selectedPhoto(
+                captureDate:
+                    context
+                    .captureDate
+            )
+        let productionPayload =
+            try #require(
+                ProductionMemoryResolver()
+                .resolve(
+                    photo: photo,
+                    frozenSnapshot:
+                        context
+                        .snapshot
+                )
+            )
+        let providerValue =
+            try #require(
+                MemoryProvider()
+                .expressionValue(
+                    for: MemoryProvider.memoryToken,
+                    context:
+                        MemoryExpressionContext(
+                            subject:
+                                productionPayload
+                                .subject,
+                            snapshot:
+                                productionPayload
+                                .snapshot,
+                            captureDate:
+                                photo
+                                .metadata
+                                .captureDate
+                        )
+                )
+            )
+
+        #expect(
+            providerValue.resolvedText
+            == productionPayload.module.renderedText
+        )
+    }
+
     @Test("Boundary Given memory provider When inspected Then it stores only engine and adapter")
     func boundaryGivenMemoryProviderWhenInspectedThenItStoresOnlyEngineAndAdapter() {
         let provider =
@@ -108,6 +156,29 @@ struct MemoryProviderTests {
             ) == nil
         )
     }
+}
+
+private func selectedPhoto(
+    captureDate: Date?
+) -> SelectedPhoto {
+    SelectedPhoto(
+        sourceURL: URL(
+            fileURLWithPath: "/tmp/pi14-memory-provider-test.jpg"
+        ),
+        image: NSImage(
+            size: NSSize(
+                width: 32,
+                height: 32
+            )
+        ),
+        metadata: PhotoMetadata(
+            captureDate: captureDate,
+            deviceBrand: "Apple",
+            deviceModel: "iPhone 17 Pro",
+            imageWidth: 4032,
+            imageHeight: 3024
+        )
+    )
 }
 
 private func memoryExpressionContext() -> MemoryExpressionContext {
