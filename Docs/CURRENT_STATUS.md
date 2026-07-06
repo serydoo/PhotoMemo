@@ -99,7 +99,7 @@ Feature Completion Gate status:
 - Share intake carrier: ✅ shared snapshot test and Share Extension build pass.
 - Manual Product Acceptance: 🟡 not manually exercised on device in this gate.
 - Feature Completion Gate: ✅ PASS.
-- Merge to `main`: 🟡 ready after branch push / merge event.
+- Merge to `main`: ✅ merged and pushed at `35baa64c`.
 
 Verification:
 
@@ -130,12 +130,15 @@ Post-main-merge verification:
 - `origin/main` was merged into `codex/expression-platform-baseline` at
   `9938ba9` and conflicts were resolved by preserving both main-line status
   history and Location Feature regression coverage.
+- `main` was fast-forwarded to `35baa64c` and pushed to GitHub.
 - Focused Location display / preview / save / production / shared snapshot
   tests passed after the merge.
 - Post-merge builds passed:
   - `PhotoMemo` Debug
   - `PhotoMemoiOSV1` generic iOS Simulator
   - `PhotoMemoShareExtension` generic iOS Simulator
+- Release event:
+  `Docs/07_Releases/Expression_Platform_Main_Merge_2026-07-06.md`.
 
 ## 2026-07-06 Location Module Feature Slice A frozen
 
