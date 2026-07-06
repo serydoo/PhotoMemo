@@ -150,7 +150,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-14 Memory Provider Parity Proven | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-15 Memory Adoption Blocked Pending Carrier | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`. |
 
 PI-1 completed checkpoints:
 
@@ -843,6 +843,53 @@ Verification:
   - `MemoryResultContractTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-15 Memory Provider Production Adoption Scan frozen
+
+PI-15 completed the Memory provider production adoption scan after PI-14
+proved text parity. No implementation seam is approved.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-15_Memory_Provider_Production_Adoption_Boundary_Scan.md`
+
+Checkpoint:
+
+- `3467eaa` freezes the scan conclusion:
+  Memory provider production adoption remains blocked until a production
+  Expression value carrier/source decision exists.
+
+Architectural delta:
+
+```text
+Memory provider production adoption: parity proven -> blocked pending production expression value carrier
+```
+
+Scope review:
+
+- PI-15 performed no implementation.
+- `CardTextBlockEngine` cannot run `MemoryProvider` at the approved text seam
+  because it has `RecordCard`, not `MemoryExpressionContext`.
+- Using `RecordCard.memoryModule.renderedText` would preserve text, but would
+  bypass `MemoryProvider` and create a parallel production expression source.
+- Running `MemoryProvider` in `RecordCardBuildService` would require an
+  approved carrier for provider-produced values across the production card
+  boundary.
+- `location` production adoption remains blocked.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- `MemoryProvider`, `ProductionMemoryResolver`,
+  `ExpressionContextMetadataAdapter`, `CardVariableProvider`, `RecordCard`,
+  `RecordCardBuildService`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and Layout Engine behavior were not
+  changed.
+
+Required follow-up:
+
+```text
+Production Expression Value Carrier
+```
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
