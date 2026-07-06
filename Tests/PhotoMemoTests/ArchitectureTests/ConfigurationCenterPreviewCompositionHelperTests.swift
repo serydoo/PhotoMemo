@@ -97,6 +97,57 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
     }
 
     @MainActor
+    @Test("location preview keeps default text while sourcing from Expression Platform")
+    func locationPreviewKeepsDefaultTextWhileSourcingFromExpressionPlatform() {
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(
+                    subject: previewSubject()
+                )
+            )
+
+        #expect(
+            helper.moduleDisplayText(.location)
+            == "河南 · 商丘"
+        )
+    }
+
+    @MainActor
+    @Test("configured location preview uses expression module configuration")
+    func configuredLocationPreviewUsesExpressionModuleConfiguration() {
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(
+                    subject: previewSubject()
+                )
+            )
+        let configuration =
+            ExpressionModuleConfiguration(
+                token: LocationExpressionProvider.locationToken,
+                options: [
+                    "presentationMode": "provinceCityDistrict"
+                ]
+            )
+
+        let update =
+            helper.insertModule(
+                .location,
+                into: .slotC,
+                store: ConfigurationCenterRegionDraftStore(),
+                expressionConfiguration: configuration
+            )
+
+        #expect(
+            update.store.modules(for: .slotC).first?.value
+            == "河南 · 商丘 · 永城"
+        )
+        #expect(
+            update.store.modules(for: .slotC).first?
+                .expressionConfiguration == configuration
+        )
+    }
+
+    @MainActor
     @Test("removeInsertedModule recomposes the preview without the removed module")
     func removeInsertedModuleRecomposesThePreviewWithoutTheRemovedModule() {
         let helper =

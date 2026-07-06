@@ -87,7 +87,11 @@ struct ConfigurationCenterPreviewCompositionHelper {
         currentModules.append(
             IOSInsertedModule(
                 title: module.title,
-                value: moduleDisplayText(module),
+                value: moduleDisplayText(
+                    module,
+                    expressionConfiguration:
+                        expressionConfiguration
+                ),
                 systemImage: module.systemImage,
                 expressionConfiguration:
                     expressionConfiguration
@@ -177,7 +181,9 @@ struct ConfigurationCenterPreviewCompositionHelper {
     }
 
     func moduleDisplayText(
-        _ module: IOSInsertableModule
+        _ module: IOSInsertableModule,
+        expressionConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) -> String {
         switch module {
         case .subjectNickname:
@@ -215,7 +221,15 @@ struct ConfigurationCenterPreviewCompositionHelper {
         case .captureSummary:
             return "20mm f/1.9 1/117s ISO80"
         case .location:
-            return "河南 · 商丘"
+            return previewExpressionContext(
+                expressionConfiguration:
+                    expressionConfiguration
+            )?
+            .value(
+                for: LocationExpressionProvider.locationToken
+            )?
+            .resolvedText
+            ?? ""
         case .altitude:
             return ""
         case .imageSize:
@@ -235,7 +249,61 @@ struct ConfigurationCenterPreviewCompositionHelper {
                 subject: context.subject,
                 captureDate: context.captureDate
             )
-        ?? "未设置时间"
+            ?? "未设置时间"
+    }
+
+    private func previewExpressionContext(
+        expressionConfiguration:
+            ExpressionModuleConfiguration?
+    ) -> ExpressionContext? {
+        let metadata =
+            PhotoMetadata(
+                city: " 商丘 ",
+                district: " 永城 ",
+                province: " 河南 "
+            )
+
+        let locationContext =
+            LocationContextBuilder()
+            .build(
+                from: metadata
+            )
+
+        let providerInput =
+            LocationConfigurationAdapter()
+            .providerInput(
+                from:
+                    expressionConfiguration
+                    ?? ExpressionModuleConfiguration(
+                        token: LocationExpressionProvider.locationToken
+                    )
+            )
+            ?? LocationProviderInput(
+                requestedPresentation: .provinceCity,
+                resolutionConfiguration:
+                    LocationResolutionConfiguration()
+            )
+
+        guard
+            let locationValue =
+                LocationExpressionProvider()
+                .expressionValue(
+                    for: LocationExpressionProvider.locationToken,
+                    context: locationContext,
+                    requestedPresentation:
+                        providerInput.requestedPresentation,
+                    configuration:
+                        providerInput.resolutionConfiguration
+                )
+        else {
+            return nil
+        }
+
+        return try? ExpressionContext(
+            values: [
+                locationValue
+            ]
+        )
     }
 }
 #endif
