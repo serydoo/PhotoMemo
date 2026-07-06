@@ -13,9 +13,32 @@ struct RendererDependencyIsolationTests {
             )
 
         #expect(source.contains("ExpressionLookup"))
+        #expect(source.contains("MetadataProvider"))
+        #expect(source.contains("ExpressionContextMetadataAdapter"))
         #expect(!source.contains("context: MetadataContext"))
         #expect(!source.contains("context = CardVariableProvider"))
         #expect(!source.contains("variableEngine.render(\n                        item.value,\n                        context:"))
+    }
+
+    @Test("PI-13D Boundary model provider adoption stays inside approved text seam")
+    func pi13dBoundaryModelProviderAdoptionStaysInsideApprovedTextSeam() throws {
+        let cardTextBlockEngineSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Engines/CardTextBlockEngine.swift"
+            )
+        let cardVariableProviderSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Models/CardVariableProvider.swift"
+            )
+        let recordCardBuildServiceSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift"
+            )
+
+        #expect(cardTextBlockEngineSource.contains("MetadataProvider"))
+        #expect(cardTextBlockEngineSource.contains("ExpressionContextMetadataAdapter"))
+        #expect(!cardVariableProviderSource.contains("MetadataProvider"))
+        #expect(!recordCardBuildServiceSource.contains("MetadataProvider"))
     }
 
     @Test("Boundary concrete renderers do not learn expression storage")
@@ -116,6 +139,62 @@ struct RendererDependencyIsolationTests {
         #expect(blocks.count == 1)
         #expect(blocks.first?.area == .leftTop)
         #expect(blocks.first?.value == "iPhone 17 Pro ·")
+    }
+
+    @Test("PI-13D Regression CardTextBlockEngine model output matches parity-proven provider value")
+    func pi13dRegressionCardTextBlockEngineModelOutputMatchesParityProvenProviderValue() throws {
+        let template =
+            Template(
+                preset: .template2,
+                name: "PI-13D Regression",
+                leftTopArea: TemplateArea(
+                    name: "Left Top",
+                    items: [
+                        TemplateItem(
+                            type: .variable,
+                            name: "Camera",
+                            value: "{{model}}"
+                        )
+                    ]
+                ),
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea: .empty,
+                badgeArea: .empty
+            )
+        let metadata =
+            PhotoMetadata(
+                deviceBrand: " Apple ",
+                deviceModel: " iPhone 17 Pro "
+            )
+        let card =
+            RecordCard(
+                template: template,
+                metadata: metadata,
+                context:
+                    MetadataContext
+                    .build(
+                        from: metadata
+                    )
+            )
+        let providerValue =
+            try #require(
+                MetadataProvider()
+                    .expressionValue(
+                        for: MetadataProvider.modelToken,
+                        metadata: metadata
+                    )
+            )
+
+        let blocks =
+            CardTextBlockEngine()
+            .build(
+                from: card
+            )
+
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.area == .leftTop)
+        #expect(blocks.first?.value == providerValue.resolvedText)
     }
 }
 

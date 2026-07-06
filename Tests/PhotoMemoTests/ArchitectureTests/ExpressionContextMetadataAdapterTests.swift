@@ -57,6 +57,30 @@ struct ExpressionContextMetadataAdapterTests {
         #expect(rendered == "河南 · 商丘")
     }
 
+    @Test("PI-13D Given model expression value When projected Then legacy model is set")
+    func pi13dGivenModelExpressionValueWhenProjectedThenLegacyModelIsSet() throws {
+        let expressionContext =
+            try ExpressionContext(
+                values: [
+                    ExpressionValue(
+                        token: MetadataProvider.modelToken,
+                        resolvedText: "iPhone 17 Pro"
+                    )
+                ]
+            )
+
+        let metadataContext =
+            ExpressionContextMetadataAdapter()
+            .metadataContext(
+                from: expressionContext
+            )
+
+        #expect(
+            metadataContext[MetadataContext.Key.model]
+                == "iPhone 17 Pro"
+        )
+    }
+
     @Test("Given unsupported expression values When projected Then unsupported legacy keys stay empty")
     func givenUnsupportedExpressionValuesWhenProjectedThenUnsupportedLegacyKeysStayEmpty() throws {
         let expressionContext =
@@ -89,7 +113,7 @@ struct ExpressionContextMetadataAdapterTests {
         )
         #expect(
             metadataContext[MetadataContext.Key.model]
-                .isEmpty
+                == "iPhone 17 Pro"
         )
     }
 
@@ -141,6 +165,7 @@ struct ExpressionContextMetadataAdapterTests {
         #expect(source.contains("ExpressionContext"))
         #expect(source.contains("MetadataContext"))
         #expect(source.contains("MetadataContext.Key.locationDisplay"))
+        #expect(source.contains("MetadataContext.Key.model"))
         #expect(!source.contains("PhotoMetadata"))
         #expect(!source.contains("PhotoMetadataReader"))
         #expect(!source.contains("LocationExpressionProvider"))

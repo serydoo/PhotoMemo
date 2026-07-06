@@ -5,6 +5,9 @@ struct ExpressionContextMetadataAdapter {
     private let locationToken =
         ExpressionToken(rawValue: "location")
 
+    private let modelToken =
+        ExpressionToken(rawValue: "model")
+
     func metadataContext(
         from expressionContext: ExpressionContext,
         base: MetadataContext = MetadataContext()
@@ -20,6 +23,15 @@ struct ExpressionContextMetadataAdapter {
                 )?
                 .resolvedText,
             for: MetadataContext.Key.locationDisplay
+        )
+
+        metadataContext.set(
+            expressionContext
+                .value(
+                    for: modelToken
+                )?
+                .resolvedText,
+            for: MetadataContext.Key.model
         )
 
         return metadataContext

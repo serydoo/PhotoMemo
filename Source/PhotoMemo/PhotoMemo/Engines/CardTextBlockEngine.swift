@@ -16,11 +16,37 @@ final class CardTextBlockEngine {
         from card: RecordCard
     ) -> [CardTextBlock] {
 
+        let baseContext =
+            CardVariableProvider
+            .build(from: card)
+
+        var metadataContext =
+            baseContext
+
+        if let modelExpressionValue =
+            MetadataProvider()
+            .expressionValue(
+                for: MetadataProvider.modelToken,
+                metadata: card.metadata
+            ),
+           let expressionContext =
+            try? ExpressionContext(
+                values: [
+                    modelExpressionValue
+                ]
+            ) {
+
+            metadataContext =
+                ExpressionContextMetadataAdapter()
+                .metadataContext(
+                    from: expressionContext,
+                    base: baseContext
+                )
+        }
+
         let lookup =
             MetadataContextExpressionLookup(
-                metadataContext:
-                    CardVariableProvider
-                    .build(from: card)
+                metadataContext: metadataContext
             )
 
         var blocks: [CardTextBlock] = []
