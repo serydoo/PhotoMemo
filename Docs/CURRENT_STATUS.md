@@ -97,8 +97,9 @@ Feature Completion Gate status:
 - Production render/export path: ✅ focused tests pass through
   `RecordCardBuildService` and `CardTextBlockEngine`.
 - Share intake carrier: ✅ shared snapshot test and Share Extension build pass.
-- Manual Product Acceptance: ⬜ pending.
-- Merge to `main`: ⬜ pending Feature Completion Gate.
+- Manual Product Acceptance: 🟡 not manually exercised on device in this gate.
+- Feature Completion Gate: ✅ PASS.
+- Merge to `main`: 🟡 ready after branch push / merge event.
 
 Verification:
 
@@ -120,6 +121,18 @@ Verification:
   - `SharedBatchConfigurationSnapshotServiceTests`
   - `BatchConfigurationSnapshotProviderDiagnosticsTests`
 - Builds passed:
+  - `PhotoMemo` Debug
+  - `PhotoMemoiOSV1` generic iOS Simulator
+  - `PhotoMemoShareExtension` generic iOS Simulator
+
+Post-main-merge verification:
+
+- `origin/main` was merged into `codex/expression-platform-baseline` at
+  `9938ba9` and conflicts were resolved by preserving both main-line status
+  history and Location Feature regression coverage.
+- Focused Location display / preview / save / production / shared snapshot
+  tests passed after the merge.
+- Post-merge builds passed:
   - `PhotoMemo` Debug
   - `PhotoMemoiOSV1` generic iOS Simulator
   - `PhotoMemoShareExtension` generic iOS Simulator
