@@ -92,7 +92,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "直接Snapshot对象今天18天啦！"
+            == "这一天，直接Snapshot对象18天"
         )
         #expect(
             payload.result.primaryAnchorResult?
@@ -230,7 +230,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "家人今天18天啦！"
+            == "这一天，家人18天"
         )
         #expect(
             payload.result.subjectID
@@ -359,7 +359,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "冻结对象今天18天啦！"
+            == "这一天，冻结对象18天"
         )
         #expect(
             payload.result.subjectID
@@ -488,7 +488,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "Snapshot对象今天18天啦！"
+            == "这一天，Snapshot对象18天"
         )
         #expect(
             payload.result.subjectID
@@ -609,7 +609,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "配对冻结对象今天18天啦！"
+            == "这一天，配对冻结对象18天"
         )
     }
 
@@ -720,7 +720,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "旧冻结对象今天18天啦！"
+            == "这一天，旧冻结对象18天"
         )
         #expect(
             payload.result.subjectID

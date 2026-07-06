@@ -55,7 +55,7 @@ extension Template {
         rightBottomArea: TemplateArea(
             name: "Right Bottom",
             items: [
-                .babyTodayAgeSentence
+                .memorySummary
             ]
         ),
         badgeArea: .badge
@@ -75,7 +75,7 @@ extension Template {
         rightBottomArea: TemplateArea(
             name: "Right Bottom",
             items: [
-                .anchorDurationSentence
+                .memorySummary
             ]
         ),
         badgeArea: .badge
@@ -100,7 +100,7 @@ extension Template {
         rightBottomArea: TemplateArea(
             name: "Right Bottom",
             items: [
-                .anchorCountdownSentence
+                .memorySummary
             ]
         ),
         badgeArea: .badge
@@ -191,13 +191,24 @@ extension Template {
             from: "记录于{{capture_date_display}}",
             to: .captureDateLine
         )
-        migrateArea(
-            &migrated.rightBottomArea,
-            from: "今天{{anchor_age_text}}",
-            to: .babyTodayAgeSentence
-        )
+        legacyAnchorSentenceValues.forEach {
+            migrateArea(
+                &migrated.rightBottomArea,
+                from: $0,
+                to: .memorySummary
+            )
+        }
 
         return migrated
+    }
+
+    private var legacyAnchorSentenceValues: [String] {
+        [
+            "今天{{anchor_age_text}}",
+            "{{anchor_title}}今天{{anchor_age_text}}啦",
+            "已经{{anchor_duration_text}}",
+            "{{anchor_countdown_text}}"
+        ]
     }
 }
 

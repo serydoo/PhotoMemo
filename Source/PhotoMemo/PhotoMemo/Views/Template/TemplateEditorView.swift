@@ -10,7 +10,7 @@ struct TemplateEditorView: View {
 
 {{location}}
 
-{{anchor_primary}}
+{{memory_summary}}
 """
 
     @State
@@ -206,8 +206,8 @@ private extension TemplateEditorView {
                 "location":
                     "Yongcheng",
 
-                "anchor_primary":
-                    "5 Years 22 Days",
+                "memory_summary":
+                    "这一天，途途1岁2个月18天",
 
                 "story":
                     "First Family Trip"

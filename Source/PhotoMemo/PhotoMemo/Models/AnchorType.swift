@@ -99,7 +99,7 @@ extension AnchorType {
             return "常见场景：在一起、第一次见面、第一次旅行、求婚成功。"
 
         case .marriage:
-            return "常见场景：领证、婚礼、结婚纪念日、蜜月出发。"
+            return "常见场景：领证、结婚日、结婚纪念日、蜜月出发。"
 
         case .exam:
             return "常见场景：高考、毕业典礼、入学报到、旅行出发、演唱会、回家倒计时。"

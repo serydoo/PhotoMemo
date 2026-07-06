@@ -45,6 +45,42 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-06 V1 Memory Summary entry cleanup
+
+V1 time-anchor expression entry points now prefer the new Memory layer.
+
+Completed checkpoints:
+
+- Default presets `template1`, `template2`, `template3`, and `immersWhite`
+  now use `{{memory_summary}}` as the right-bottom smart-time entry.
+- Legacy built-in anchor sentence templates are migrated to
+  `{{memory_summary}}` during `Template.normalizedForEditing`.
+- The public intelligent variable catalog no longer exposes legacy
+  `anchor_*` variables as user-selectable smart-expression options.
+- Memory Anchor expression wording now has a refreshed baseline for birthday,
+  marriage, relationship, exam, and custom anchor tones, including `岁`
+  wording after full years and `结婚` wording instead of `婚礼` for countdowns.
+- Birthday, marriage, and relationship anchor expressions now have a local
+  annual-occurrence helper for next birthday / anniversary wording when the
+  caller explicitly requests annual occurrence phrasing.
+- The old `anchor_*` `MetadataContext` keys and `CardVariableProvider`
+  projection path remain as compatibility plumbing so existing saved templates
+  and transport snapshots do not fail abruptly.
+- Renderer, Export, Share Extension, Metadata mutation, Photo Library behavior,
+  and Layout Engine behavior were not changed.
+
+Verification:
+
+- `PhotoMemoTests/PreviewCompositionMigrationTests` passed.
+- `PhotoMemoTests/MemoryExpressionEngineTests` passed.
+- `PhotoMemoTests/MemoryEngineTests` passed.
+- Production/snapshot compatibility group passed:
+  - `RecordCardBuildServiceTests`
+  - `PhotoMemoShareWorkflowSummaryTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+  - `SharedBatchConfigurationSnapshotServiceTests`
+- `PhotoMemo` Debug build passed.
+
 ## 2026-07-06 Location Expression architecture candidate through Phase 4-D
 
 The Location Expression work is isolated on the `codex/地址模块` branch as a

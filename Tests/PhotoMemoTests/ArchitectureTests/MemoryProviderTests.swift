@@ -33,7 +33,7 @@ struct MemoryProviderTests {
                     for: MemoryProvider.memoryToken
                 )?
                 .resolvedText
-            == "途途今天18天啦！"
+            == "这一天，途途18天"
         )
     }
 

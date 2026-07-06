@@ -228,7 +228,7 @@ extension TemplateItem {
     static let immersAgeLine = TemplateItem(
         type: .variable,
         name: "Immers Age Line",
-        value: "今天{{anchor_age_text}}"
+        value: "{{memory_summary}}"
     )
 
     static let gearLine = TemplateItem(
@@ -332,25 +332,25 @@ extension TemplateItem {
     static let anchorAgeSentence = TemplateItem(
         type: .variable,
         name: "成长纪念句",
-        value: "今天{{anchor_age_text}}"
+        value: "{{memory_summary}}"
     )
 
     static let babyTodayAgeSentence = TemplateItem(
         type: .variable,
         name: "宝宝成长句",
-        value: "{{anchor_title}}今天{{anchor_age_text}}啦"
+        value: "{{memory_summary}}"
     )
 
     static let anchorDurationSentence = TemplateItem(
         type: .variable,
         name: "纪念时长句",
-        value: "已经{{anchor_duration_text}}"
+        value: "{{memory_summary}}"
     )
 
     static let anchorCountdownSentence = TemplateItem(
         type: .variable,
         name: "倒计时句",
-        value: "{{anchor_countdown_text}}"
+        value: "{{memory_summary}}"
     )
 
     static let anchorSecondary = TemplateItem(

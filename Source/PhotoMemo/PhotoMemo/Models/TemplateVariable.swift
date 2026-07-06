@@ -297,72 +297,7 @@ extension TemplateVariable {
             key: MetadataContext.Key.altitude
         ),
 
-        // MARK: - Anchor
-
-        intelligent(
-            "主角称呼",
-            key: MetadataContext.Key.anchorTitle
-        ),
-
-        intelligent(
-            "通用结果",
-            key: MetadataContext.Key.anchorPrimary
-        ),
-
-        intelligent(
-            "智能结果（自动匹配场景）",
-            key: MetadataContext.Key.anchorSmartText
-        ),
-
-        intelligent(
-            "锚点日期",
-            key: MetadataContext.Key.anchorSecondary
-        ),
-
-        intelligent(
-            "完整摘要",
-            key: MetadataContext.Key.anchorSummary
-        ),
-
-        intelligent(
-            "纪念时长（X年X个月X天）",
-            key: MetadataContext.Key.anchorDurationText
-        ),
-
-        intelligent(
-            "年岁（过去锚点，X岁X月X天）",
-            key: MetadataContext.Key.anchorAgeText
-        ),
-
-        intelligent(
-            "天数值（XX天）",
-            key: MetadataContext.Key.anchorTotalDaysText
-        ),
-
-        intelligent(
-            "已过天数（过去锚点，已过XX天）",
-            key: MetadataContext.Key.anchorElapsedText
-        ),
-
-        intelligent(
-            "倒计时（未来锚点，还有XX天）",
-            key: MetadataContext.Key.anchorCountdownText
-        ),
-
-        intelligent(
-            "第几天（第XX天）",
-            key: MetadataContext.Key.anchorDayIndexText
-        ),
-
-        intelligent(
-            "周数（XX周X天）",
-            key: MetadataContext.Key.anchorWeekText
-        ),
-
-        intelligent(
-            "月龄（XX个月）",
-            key: MetadataContext.Key.anchorMonthAgeText
-        ),
+        // MARK: - Memory
 
         intelligent(
             "已过天数（数字）",
@@ -390,33 +325,8 @@ extension TemplateVariable {
         ),
 
         intelligent(
-            "里程碑（100天 / 1周年）",
-            key: MetadataContext.Key.anchorMilestoneText
-        ),
-
-        intelligent(
             "记忆摘要",
             key: MetadataContext.Key.memorySummary
-        ),
-
-        intelligent(
-            "年数（数字）",
-            key: MetadataContext.Key.anchorYears
-        ),
-
-        intelligent(
-            "月数（数字）",
-            key: MetadataContext.Key.anchorMonths
-        ),
-
-        intelligent(
-            "天数（数字）",
-            key: MetadataContext.Key.anchorDays
-        ),
-
-        intelligent(
-            "总天数（数字）",
-            key: MetadataContext.Key.anchorTotalDays
         )
     ]
 }

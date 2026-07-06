@@ -189,6 +189,60 @@ struct PreviewCompositionMigrationTests {
         )
     }
 
+    @Test("Default presets use Memory Summary instead of legacy anchor variables")
+    func defaultPresetsUseMemorySummaryInsteadOfLegacyAnchorVariables() {
+        let templates = [
+            Template.template1,
+            Template.template2,
+            Template.template3,
+            Template.immersWhite
+        ]
+
+        for template in templates {
+            #expect(
+                template.rightBottomArea.items.first?.value
+                == "{{memory_summary}}"
+            )
+        }
+    }
+
+    @Test("Legacy built-in anchor sentence items migrate to Memory Summary")
+    func legacyBuiltInAnchorSentenceItemsMigrateToMemorySummary() {
+        let legacyValues = [
+            "今天{{anchor_age_text}}",
+            "{{anchor_title}}今天{{anchor_age_text}}啦",
+            "已经{{anchor_duration_text}}",
+            "{{anchor_countdown_text}}"
+        ]
+
+        for legacyValue in legacyValues {
+            let template = Template(
+                preset: .template1,
+                name: "Legacy Anchor Sentence",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: .rightTop,
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .variable,
+                            name: "Legacy",
+                            value: legacyValue
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+
+            #expect(
+                template.normalizedForEditing
+                    .rightBottomArea.items.first?.value
+                == "{{memory_summary}}"
+            )
+        }
+    }
+
     @MainActor
     @Test("BuildV1PreviewRenderModelIntent preserves the current slot B and slot D wording")
     func buildRenderModelIntentPreservesCurrentSlotBWordingAndSmartTimeWording() {

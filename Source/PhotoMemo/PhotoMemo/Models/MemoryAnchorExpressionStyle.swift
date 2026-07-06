@@ -238,55 +238,55 @@ enum MemoryAnchorExpressionStyle:
     ) -> String {
         switch self {
         case .birthdayNatural:
-            return "锚点前：距离\(subjectText)出生还有倒计时天数｜锚点后：\(subjectText)今天年龄结果啦！"
+            return "锚点前：还有倒计时天数，\(subjectText)就要出生了｜锚点后：这一天，\(subjectText)年龄结果"
         case .birthdayCeremonial:
-            return "锚点前：再过倒计时天数，就是\(subjectText)生日｜锚点后：今天是\(subjectText)年龄结果"
+            return "锚点前：再过倒计时天数，就是\(subjectText)来到世界的日子｜锚点后：今天是\(subjectText)年龄结果"
         case .birthdayGrowth:
-            return "锚点前：\(subjectText)还有倒计时天数迎来新的一岁｜锚点后：\(subjectText)成长到年龄结果"
+            return "锚点前：距离第一次见面还有倒计时天数｜锚点后：\(subjectText)长到年龄结果了"
         case .birthdayWarm:
-            return "锚点前：等待\(subjectText)生日，还有倒计时天数｜锚点后：陪伴\(subjectText)年龄结果"
+            return "锚点前：等待\(subjectText)到来，还有倒计时天数｜锚点后：陪\(subjectText)走到年龄结果"
         case .birthdayMinimal:
-            return "锚点前：\(subjectText)生日倒计时：倒计时天数｜锚点后：\(subjectText)年龄结果"
+            return "锚点前：\(subjectText)出生倒计时：倒计时天数｜锚点后：\(subjectText)｜年龄结果"
         case .marriageNatural:
-            return "锚点前：\(subjectText)结婚还有倒计时结果｜锚点后：\(subjectText)婚后时长结果"
+            return "锚点前：结婚还有倒计时结果｜锚点后：结婚已经时长结果"
         case .marriageCeremonial:
-            return "锚点前：再过倒计时结果，就是结婚纪念日｜锚点后：今天是婚后时长结果"
+            return "锚点前：再过倒计时结果，就是结婚的日子｜锚点后：今天是婚后时长结果"
         case .marriageWarm:
-            return "锚点前：距离结婚纪念日还有倒计时结果｜锚点后：与你相伴时长结果"
+            return "锚点前：距离结婚还有倒计时结果｜锚点后：与你相伴时长结果"
         case .marriageMinimal:
-            return "锚点前：婚礼倒计时：倒计时结果｜锚点后：婚后时长结果"
+            return "锚点前：结婚倒计时：倒计时结果｜锚点后：婚后时长结果"
         case .marriageMemory:
-            return "锚点前：距离人生重要的一天还有倒计时结果｜锚点后：从那一天起已有时长结果"
+            return "锚点前：距离那一天还有倒计时结果｜锚点后：从那一天起，已有时长结果"
         case .relationshipNatural:
-            return "锚点前：\(subjectText)距离\(anchorTitle)还有倒计时结果｜锚点后：\(subjectText)与\(anchorTitle)已有时长结果"
+            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：\(anchorTitle)已经时长结果"
         case .relationshipCeremonial:
             return "锚点前：再过倒计时结果，就是\(anchorTitle)｜锚点后：今天是\(anchorTitle)时长结果"
         case .relationshipMemory:
-            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：自\(anchorTitle)起已有时长结果"
+            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：自\(anchorTitle)起，已有时长结果"
         case .relationshipWarm:
-            return "锚点前：期待\(anchorTitle)，还有倒计时结果｜锚点后：关于\(anchorTitle)的故事已有时长结果"
+            return "锚点前：期待\(anchorTitle)，还有倒计时结果｜锚点后：关于\(anchorTitle)的故事，已有时长结果"
         case .relationshipMinimal:
-            return "锚点前：\(anchorTitle)倒计时：倒计时结果｜锚点后：\(anchorTitle)时长结果"
+            return "锚点前：\(anchorTitle)倒计时：倒计时结果｜锚点后：\(anchorTitle)｜时长结果"
         case .examNatural:
-            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：\(anchorTitle)已经时长结果"
+            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：\(anchorTitle)已经过去时长结果"
         case .examCeremonial:
-            return "锚点前：再过倒计时结果，就是\(anchorTitle)｜锚点后：今天距离\(anchorTitle)时长结果"
+            return "锚点前：再过倒计时结果，就是\(anchorTitle)｜锚点后：从\(anchorTitle)那天起，已经时长结果"
         case .examMotivational:
-            return "锚点前：冲刺\(anchorTitle)还有倒计时结果｜锚点后：\(anchorTitle)圆满结束时长结果"
+            return "锚点前：冲刺\(anchorTitle)，还剩倒计时结果｜锚点后：\(anchorTitle)结束已经时长结果"
         case .examMinimal:
-            return "锚点前：倒计时：倒计时结果｜锚点后：已过时长结果"
+            return "锚点前：\(anchorTitle)倒计时：倒计时结果｜锚点后：已过时长结果"
         case .examRecord:
-            return "锚点前：\(anchorTitle)还有倒计时结果｜锚点后：自\(anchorTitle)以来已有时长结果"
+            return "锚点前：\(anchorTitle)还有倒计时结果｜锚点后：自\(anchorTitle)以来，已有时长结果"
         case .customNatural:
-            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：自\(anchorTitle)起已有时长结果"
+            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：自\(anchorTitle)起，已有时长结果"
         case .customCeremonial:
             return "锚点前：再过倒计时结果，就是\(anchorTitle)｜锚点后：今天是\(anchorTitle)时长结果"
         case .customMemory:
-            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：自\(anchorTitle)起已有时长结果"
+            return "锚点前：距离\(anchorTitle)还有倒计时结果｜锚点后：从\(anchorTitle)那天起，已有时长结果"
         case .customWarm:
-            return "锚点前：期待\(anchorTitle)，还有倒计时结果｜锚点后：关于\(anchorTitle)已有时长结果"
+            return "锚点前：期待\(anchorTitle)，还有倒计时结果｜锚点后：关于\(anchorTitle)，已经时长结果"
         case .customMinimal:
-            return "锚点前：\(anchorTitle)倒计时：倒计时结果｜锚点后：\(anchorTitle)时长结果"
+            return "锚点前：\(anchorTitle)倒计时：倒计时结果｜锚点后：\(anchorTitle)｜时长结果"
         }
     }
 }
