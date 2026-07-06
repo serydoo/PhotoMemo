@@ -34,7 +34,7 @@ struct V1ConfigurationApplyReconciliationTests {
         #expect(patch.selectedExistingAlbumIdentifier == "picker-album-1")
         #expect(patch.subjectToRestore == subject)
         #expect(patch.shouldApplySelectedMemoryPreset == true)
-        #expect(patch.activeConfigurationMessage == "已保存为分享配置")
+        #expect(patch.activeConfigurationStatus == .saved)
         #expect(patch.isSavingConfiguration == false)
     }
 
@@ -51,7 +51,10 @@ struct V1ConfigurationApplyReconciliationTests {
         #expect(patch.selectedExistingAlbumIdentifier == nil)
         #expect(patch.subjectToRestore == nil)
         #expect(patch.shouldApplySelectedMemoryPreset == false)
-        #expect(patch.activeConfigurationMessage == "保存失败")
+        #expect(
+            patch.activeConfigurationStatus
+            == .failure(message: "保存失败")
+        )
         #expect(patch.isSavingConfiguration == false)
     }
 }

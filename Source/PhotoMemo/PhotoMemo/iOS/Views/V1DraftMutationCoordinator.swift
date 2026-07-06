@@ -212,15 +212,14 @@ struct V1DraftMutationCoordinator {
     struct State: Hashable {
         var regionDrafts: [CardRegion: V1DraftMutationDraft] = [:]
         var activeTextItemIDs: [CardRegion: UUID] = [:]
-        var activeConfigurationMessage = ""
+        var activeConfigurationStatus:
+            V1ConfigurationStatus = .idle
     }
 
     struct Update: Hashable {
         var state: State
         var dirtyRegions: Set<CardRegion>
     }
-
-    static let dirtyStateMessage = "有未保存修改"
 
     static func draft(
         for region: CardRegion,
@@ -256,8 +255,8 @@ struct V1DraftMutationCoordinator {
             )
         transform(&draft)
         nextState.regionDrafts[region] = draft
-        nextState.activeConfigurationMessage =
-            dirtyStateMessage
+        nextState.activeConfigurationStatus =
+            .dirty
         return Update(
             state: nextState,
             dirtyRegions: [region]

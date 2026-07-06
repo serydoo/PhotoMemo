@@ -5,7 +5,6 @@ struct V1IOSHomeSubjectSummaryProjection: Equatable {
     let title: String
     let subtitle: String
     let anchorTitle: String
-    let anchorCountLabel: String
 }
 
 struct V1IOSHomeOutputSummaryProjection: Equatable {
@@ -49,17 +48,10 @@ enum V1IOSHomeProjection {
                 ?? selectedAnchorTitle
             )
 
-        let anchorCount =
-            subject?
-            .timeAnchors
-            .count ?? 0
-
         return V1IOSHomeSubjectSummaryProjection(
             title: title,
             subtitle: subtitle,
-            anchorTitle: anchorTitle,
-            anchorCountLabel:
-                "\(anchorCount) 个时间锚点"
+            anchorTitle: anchorTitle
         )
     }
 
@@ -96,14 +88,10 @@ enum V1IOSHomeProjection {
         presetTitle: String,
         configurationLabel: String,
         presetSummary: String,
-        activeConfigurationMessage: String,
+        activeConfigurationStatus:
+            V1ConfigurationStatus,
         isApplied: Bool
     ) -> V1IOSHomePresetSummaryProjection {
-
-        let normalizedStatus =
-            normalizedOptionalText(
-                activeConfigurationMessage
-            )
 
         return V1IOSHomePresetSummaryProjection(
             title:
@@ -123,11 +111,11 @@ enum V1IOSHomeProjection {
                 ?? "当前区域组合",
             statusLabel:
                 isApplied
-                ? "当前生效"
-                : (
-                    normalizedStatus
-                    ?? "尚未生效"
-                ),
+                ? V1ConfigurationStatus
+                    .saved
+                    .message(for: .preset)
+                : activeConfigurationStatus
+                    .message(for: .preset),
             emphasizesAppliedState:
                 isApplied
         )
@@ -180,7 +168,7 @@ enum V1IOSHomeProjection {
             return relationshipLabel
         }
 
-        return "补充主角与时间锚点"
+        return "补充主角信息"
     }
 
     private static func normalizedAnchorTitle(

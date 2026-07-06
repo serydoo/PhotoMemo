@@ -20,7 +20,7 @@ struct V1DraftOrchestrationCoordinatorTests {
                 viewState: .init(
                     regionDrafts: [:],
                     activeTextItemIDs: [:],
-                    activeConfigurationMessage: ""
+                    activeConfigurationStatus: .idle
                 ),
                 makeDefaultDraft: { _ in
                     defaultDraft
@@ -48,9 +48,7 @@ struct V1DraftOrchestrationCoordinatorTests {
                     )
                 ],
                 activeTextItemIDs: [:],
-                activeConfigurationMessage:
-                    V1DraftMutationCoordinator
-                    .dirtyStateMessage
+                activeConfigurationStatus: .dirty
             )
 
         let application =
@@ -70,9 +68,8 @@ struct V1DraftOrchestrationCoordinatorTests {
         )
         #expect(
             application.viewState
-            .activeConfigurationMessage
-            == V1DraftMutationCoordinator
-                .dirtyStateMessage
+            .activeConfigurationStatus
+            == .dirty
         )
         #expect(
             Set(

@@ -10,7 +10,6 @@ struct V1IOSSubjectOverviewPresentation:
     let expressionSubjectValue: String
     let anchorTitle: String
     let anchorDateLabel: String
-    let anchorCountLabel: String
     let anchorDescription: String
 }
 
@@ -62,8 +61,6 @@ enum V1IOSSubjectOverviewPresenter {
                         .day()
                 )
                 ?? "未设置",
-            anchorCountLabel:
-                "\(subject?.timeAnchors.count ?? 0) 个时间锚点",
             anchorDescription:
                 normalizedAnchorDescription(
                     anchor: anchor,

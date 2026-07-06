@@ -11,7 +11,8 @@ struct V1SubjectFlowPatch {
 
     let birthdayDate: Date?
     let shouldRefreshPreview: Bool
-    let activeConfigurationMessage: String
+    let activeConfigurationStatus:
+        V1ConfigurationStatus
 
     // One-shot commands consumed when the patch is applied.
     let events: [V1SubjectFlowEvent]
@@ -141,7 +142,8 @@ enum V1SubjectOverviewActionCoordinator {
         return V1SubjectFlowPatch(
             birthdayDate: anchor.date,
             shouldRefreshPreview: false,
-            activeConfigurationMessage: "记忆对象已同步",
+            activeConfigurationStatus:
+                .subjectSynced,
             events: [],
             shouldCloseOverview: false,
             flowState: nil
@@ -177,7 +179,8 @@ enum V1SubjectOverviewActionCoordinator {
         return V1SubjectFlowPatch(
             birthdayDate: nil,
             shouldRefreshPreview: false,
-            activeConfigurationMessage: "记忆对象已同步",
+            activeConfigurationStatus:
+                .subjectSynced,
             events: [],
             shouldCloseOverview: false,
             flowState: nil
@@ -215,7 +218,8 @@ enum V1SubjectOverviewActionCoordinator {
         return V1SubjectFlowPatch(
             birthdayDate: nil,
             shouldRefreshPreview: false,
-            activeConfigurationMessage: "记忆对象已同步",
+            activeConfigurationStatus:
+                .subjectSynced,
             events:
                 shouldPersistLibrary
                 ? [.reopenSubjectLibraryPersistence]
@@ -228,8 +232,8 @@ enum V1SubjectOverviewActionCoordinator {
                         shouldPersistLibrary,
                     configurationCoordinator:
                         configurationCoordinator,
-                    savedMessage:
-                        "记忆对象已同步",
+                    savedStatus:
+                        .subjectSynced,
                     onPersistedSubject:
                         onPersistedSubject
                 )
@@ -266,7 +270,8 @@ enum V1SubjectOverviewActionCoordinator {
         return V1SubjectFlowPatch(
             birthdayDate: nil,
             shouldRefreshPreview: true,
-            activeConfigurationMessage: "记忆对象已同步",
+            activeConfigurationStatus:
+                .subjectSynced,
             events: [],
             shouldCloseOverview: false,
             flowState: nil
@@ -277,7 +282,7 @@ enum V1SubjectOverviewActionCoordinator {
         from session: ConfigurationSession,
         shouldSaveSubjectLibrary: Bool,
         configurationCoordinator: ConfigurationCoordinator?,
-        savedMessage: String,
+        savedStatus: V1ConfigurationStatus,
         onPersistedSubject:
             @escaping (V1SubjectFlowPatch) -> Void
     ) -> V1IOSSubjectConfigurationFlowState? {
@@ -302,8 +307,8 @@ enum V1SubjectOverviewActionCoordinator {
                                 .primaryTimeAnchor?
                                 .date,
                             shouldRefreshPreview: true,
-                            activeConfigurationMessage:
-                                savedMessage,
+                            activeConfigurationStatus:
+                                savedStatus,
                             events: [],
                             shouldCloseOverview: false,
                             flowState: nil

@@ -28,7 +28,7 @@ struct V1DraftRuntimeCoordinatorTests {
                     )
                 ],
                 activeTextItemIDs: [:],
-                activeConfigurationMessage: ""
+                activeConfigurationStatus: .idle
             )
         var refreshedDrafts: [CardRegion: V1PreviewDraft] = [:]
 
@@ -72,9 +72,8 @@ struct V1DraftRuntimeCoordinatorTests {
             == itemID
         )
         #expect(
-            viewState.activeConfigurationMessage
-            == V1DraftMutationCoordinator
-                .dirtyStateMessage
+            viewState.activeConfigurationStatus
+            == .dirty
         )
         #expect(
             Set(refreshedDrafts.keys)
@@ -101,7 +100,7 @@ struct V1DraftRuntimeCoordinatorTests {
                 activeTextItemIDs: [
                     .slotA: activeID
                 ],
-                activeConfigurationMessage: "已保存"
+                activeConfigurationStatus: .saved
             )
         var refreshedDrafts: [CardRegion: V1PreviewDraft] = [:]
 
@@ -151,8 +150,8 @@ struct V1DraftRuntimeCoordinatorTests {
             == activeID
         )
         #expect(
-            viewState.activeConfigurationMessage
-            == "已保存"
+            viewState.activeConfigurationStatus
+            == .saved
         )
         #expect(
             Set(refreshedDrafts.keys)
@@ -176,7 +175,7 @@ struct V1DraftRuntimeCoordinatorTests {
                     .init(
                         regionDrafts: [:],
                         activeTextItemIDs: [:],
-                        activeConfigurationMessage: ""
+                        activeConfigurationStatus: .idle
                     )
                 },
                 updateViewState: { _ in },

@@ -76,12 +76,10 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         #expect(
             statuses == [
                 V1ConfigurationApplyViewStatus(
-                    message: "正在保存",
-                    isSaving: true
+                    status: .saving
                 ),
                 V1ConfigurationApplyViewStatus(
-                    message: "已保存为分享配置",
-                    isSaving: false
+                    status: .saved
                 )
             ]
         )
@@ -140,12 +138,10 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         #expect(
             statuses == [
                 V1ConfigurationApplyViewStatus(
-                    message: "正在保存",
-                    isSaving: true
+                    status: .saving
                 ),
                 V1ConfigurationApplyViewStatus(
-                    message: "保存失败",
-                    isSaving: false
+                    status: .failure(message: "保存失败")
                 )
             ]
         )

@@ -186,11 +186,6 @@ struct V1IOSSubjectAnchorSection: View {
                     }
 
                     Spacer(minLength: 0)
-
-                    V1IOSHomeStatusBadge(
-                        text: presentation.anchorCountLabel,
-                        tone: .accent
-                    )
                 }
 
                 Text(

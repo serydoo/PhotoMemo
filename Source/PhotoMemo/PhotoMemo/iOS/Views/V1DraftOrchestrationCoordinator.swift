@@ -6,7 +6,8 @@ struct V1DraftOrchestrationCoordinator {
     struct ViewState: Hashable {
         var regionDrafts: [CardRegion: V1EditorDraft]
         var activeTextItemIDs: [CardRegion: UUID]
-        var activeConfigurationMessage: String
+        var activeConfigurationStatus:
+            V1ConfigurationStatus
     }
 
     struct MutationApplication: Hashable {
@@ -97,9 +98,9 @@ struct V1DraftOrchestrationCoordinator {
                 bridgedState.regionDrafts,
             activeTextItemIDs:
                 bridgedState.activeTextItemIDs,
-            activeConfigurationMessage:
+            activeConfigurationStatus:
                 bridgedState
-                .activeConfigurationMessage
+                .activeConfigurationStatus
         )
     }
 
@@ -111,9 +112,9 @@ struct V1DraftOrchestrationCoordinator {
                 viewState.regionDrafts,
             activeTextItemIDs:
                 viewState.activeTextItemIDs,
-            activeConfigurationMessage:
+            activeConfigurationStatus:
                 viewState
-                .activeConfigurationMessage
+                .activeConfigurationStatus
         )
     }
 

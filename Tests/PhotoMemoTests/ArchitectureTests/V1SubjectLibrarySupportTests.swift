@@ -214,7 +214,7 @@ struct V1SubjectLibrarySupportTests {
         )
 
         #expect(patch.birthdayDate == school.date)
-        #expect(patch.activeConfigurationMessage == "记忆对象已同步")
+        #expect(patch.activeConfigurationStatus == .subjectSynced)
         #expect(patch.shouldRefreshPreview == false)
         #expect(
             !patch.events.contains(
@@ -263,7 +263,7 @@ struct V1SubjectLibrarySupportTests {
                 .reopenSubjectLibraryPersistence
             )
         )
-        #expect(patch.activeConfigurationMessage == "记忆对象已同步")
+        #expect(patch.activeConfigurationStatus == .subjectSynced)
         #expect(patch.flowState != nil)
         #expect(session.state.subjects.count == 2)
     }
@@ -512,7 +512,7 @@ struct V1SubjectLibrarySupportTests {
                     from: session,
                     shouldSaveSubjectLibrary: false,
                     configurationCoordinator: nil,
-                    savedMessage: "有未保存修改",
+                    savedStatus: .dirty,
                     onPersistedSubject: { patch in
                         emittedPatch = patch
                     }
@@ -528,7 +528,7 @@ struct V1SubjectLibrarySupportTests {
         flowState.saveChanges()
 
         #expect(session.state.selectedSubject?.identity.displayName == "新的名字")
-        #expect(emittedPatch?.activeConfigurationMessage == "有未保存修改")
+        #expect(emittedPatch?.activeConfigurationStatus == .dirty)
         #expect(emittedPatch?.shouldRefreshPreview == true)
         #expect(emittedPatch?.birthdayDate == updatedSubject.primaryTimeAnchor?.date)
     }

@@ -75,7 +75,6 @@ struct V1IOSSubjectOverviewPresenterTests {
             presentation.anchorDateLabel
             == expectedAnchorDateLabel
         )
-        #expect(presentation.anchorCountLabel == "2 个时间锚点")
         #expect(presentation.anchorDescription == "途途出生日期")
     }
 
@@ -95,7 +94,6 @@ struct V1IOSSubjectOverviewPresenterTests {
         #expect(presentation.expressionSubjectValue == "记忆对象")
         #expect(presentation.anchorTitle == "未设置")
         #expect(presentation.anchorDateLabel == "未设置")
-        #expect(presentation.anchorCountLabel == "0 个时间锚点")
     }
 
     @Test("configuration flow keeps a draft copy until save")

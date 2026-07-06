@@ -27,7 +27,8 @@ struct V1ConfigurationApplyResultPatch: Hashable {
     let selectedExistingAlbumIdentifier: String?
     let subjectToRestore: MemorySubject?
     let shouldApplySelectedMemoryPreset: Bool
-    let activeConfigurationMessage: String
+    let activeConfigurationStatus:
+        V1ConfigurationStatus
     let isSavingConfiguration: Bool
 }
 
@@ -231,8 +232,8 @@ enum V1ConfigurationApplyResultPresenter {
                 subjectForSaving,
             shouldApplySelectedMemoryPreset:
                 true,
-            activeConfigurationMessage:
-                "已保存为分享配置",
+            activeConfigurationStatus:
+                .saved,
             isSavingConfiguration: false
         )
     }
@@ -247,8 +248,11 @@ enum V1ConfigurationApplyResultPresenter {
             subjectToRestore: nil,
             shouldApplySelectedMemoryPreset:
                 false,
-            activeConfigurationMessage:
-                error.message,
+            activeConfigurationStatus:
+                .failure(
+                    message:
+                        error.message
+                ),
             isSavingConfiguration: false
         )
     }

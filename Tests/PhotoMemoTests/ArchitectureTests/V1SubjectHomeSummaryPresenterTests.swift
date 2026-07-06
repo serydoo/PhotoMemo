@@ -41,7 +41,7 @@ struct V1SubjectHomeSummaryPresenterTests {
             .presentation(
                 subject: subject,
                 currentConfigurationLabel: "团团小朋友 · 出生",
-                activeConfigurationMessage: "已保存为分享配置",
+                activeConfigurationStatus: .saved,
                 currentTimeAnchorTitle: "出生",
                 currentTimeAnchorDescription: "团团出生"
             )
@@ -61,10 +61,6 @@ struct V1SubjectHomeSummaryPresenterTests {
         #expect(
             presentation.anchorSummary
             == "出生"
-        )
-        #expect(
-            presentation.anchorCountLabel
-            == "0 个时间锚点"
         )
         #expect(
             presentation.description
@@ -115,7 +111,7 @@ struct V1SubjectHomeSummaryPresenterTests {
             .presentation(
                 subject: subject,
                 currentConfigurationLabel: "   ",
-                activeConfigurationMessage: "  ",
+                activeConfigurationStatus: .idle,
                 currentTimeAnchorTitle: "  ",
                 currentTimeAnchorDescription: "  "
             )
@@ -130,15 +126,11 @@ struct V1SubjectHomeSummaryPresenterTests {
         )
         #expect(
             presentation.relationshipSummary
-            == "补充主角与时间锚点"
+            == "补充主角信息"
         )
         #expect(
             presentation.anchorSummary
             == "未设置"
-        )
-        #expect(
-            presentation.anchorCountLabel
-            == "0 个时间锚点"
         )
         #expect(
             presentation.description
@@ -150,7 +142,7 @@ struct V1SubjectHomeSummaryPresenterTests {
         )
         #expect(
             presentation.statusTone
-            == .warning
+            == .neutral
         )
     }
 
@@ -161,7 +153,7 @@ struct V1SubjectHomeSummaryPresenterTests {
             .presentation(
                 subject: nil,
                 currentConfigurationLabel: "",
-                activeConfigurationMessage: "记忆对象已同步",
+                activeConfigurationStatus: .subjectSynced,
                 currentTimeAnchorTitle: "",
                 currentTimeAnchorDescription: ""
             )

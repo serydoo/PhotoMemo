@@ -7,7 +7,6 @@ struct V1SubjectHomeSummaryPresentation: Equatable {
     let subjectTitle: String
     let relationshipSummary: String
     let anchorSummary: String
-    let anchorCountLabel: String
     let description: String
     let statusText: String
     let statusTone:
@@ -19,7 +18,8 @@ enum V1SubjectHomeSummaryPresenter {
     static func presentation(
         subject: MemorySubject?,
         currentConfigurationLabel: String,
-        activeConfigurationMessage: String,
+        activeConfigurationStatus:
+            V1ConfigurationStatus,
         currentTimeAnchorTitle: String,
         currentTimeAnchorDescription: String
     ) -> V1SubjectHomeSummaryPresentation {
@@ -35,10 +35,8 @@ enum V1SubjectHomeSummaryPresenter {
             subjectProjection.title
 
         let statusText =
-            normalizedText(
-                activeConfigurationMessage,
-                fallback: "尚未保存为分享配置"
-            )
+            activeConfigurationStatus
+            .message(for: .shareConfiguration)
 
         let description =
             normalizedText(
@@ -57,25 +55,12 @@ enum V1SubjectHomeSummaryPresenter {
                 subjectProjection.subtitle,
             anchorSummary:
                 subjectProjection.anchorTitle,
-            anchorCountLabel:
-                subjectProjection
-                .anchorCountLabel,
             description: description,
             statusText: statusText,
             statusTone:
-                statusText == "已保存为分享配置"
-                || statusText == "记忆对象已同步"
-                ? .accent
-                : .warning
+                activeConfigurationStatus
+                .tone
         )
-    }
-
-    private static func normalizedText(
-        _ text: String?,
-        fallback: String
-    ) -> String {
-        normalizedOptionalText(text)
-        ?? fallback
     }
 
     private static func normalizedOptionalText(
@@ -93,6 +78,14 @@ enum V1SubjectHomeSummaryPresenter {
         return trimmed.isEmpty
             ? nil
             : trimmed
+    }
+
+    private static func normalizedText(
+        _ text: String,
+        fallback: String
+    ) -> String {
+        normalizedOptionalText(text)
+        ?? fallback
     }
 }
 
@@ -148,9 +141,6 @@ struct V1SubjectHomeSummaryView: View {
                     value:
                         presentation
                         .anchorSummary,
-                    detail:
-                        presentation
-                        .anchorCountLabel,
                     systemImage:
                         "clock.badge.checkmark"
                 )

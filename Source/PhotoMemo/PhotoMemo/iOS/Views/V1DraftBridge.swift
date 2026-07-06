@@ -6,18 +6,21 @@ struct V1DraftBridge {
     struct ViewState: Hashable {
         var regionDrafts: [CardRegion: V1EditorDraft]
         var activeTextItemIDs: [CardRegion: UUID]
-        var activeConfigurationMessage: String
+        var activeConfigurationStatus:
+            V1ConfigurationStatus
     }
 
     nonisolated static func mutationState(
         regionDrafts: [CardRegion: V1EditorDraft],
         activeTextItemIDs: [CardRegion: UUID],
-        activeConfigurationMessage: String
+        activeConfigurationStatus:
+            V1ConfigurationStatus
     ) -> V1DraftMutationCoordinator.State {
         V1DraftMutationCoordinator.State(
             regionDrafts: regionDrafts.mapValues(mutationDraft(from:)),
             activeTextItemIDs: activeTextItemIDs,
-            activeConfigurationMessage: activeConfigurationMessage
+            activeConfigurationStatus:
+                activeConfigurationStatus
         )
     }
 
@@ -27,7 +30,8 @@ struct V1DraftBridge {
         ViewState(
             regionDrafts: state.regionDrafts.mapValues(editorDraft(from:)),
             activeTextItemIDs: state.activeTextItemIDs,
-            activeConfigurationMessage: state.activeConfigurationMessage
+            activeConfigurationStatus:
+                state.activeConfigurationStatus
         )
     }
 

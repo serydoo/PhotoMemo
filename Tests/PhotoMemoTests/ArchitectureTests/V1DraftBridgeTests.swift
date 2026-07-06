@@ -99,8 +99,8 @@ struct V1DraftBridgeTests {
         #expect(fromMutation == draft)
     }
 
-    @Test("view state projection preserves active ids and dirty message")
-    func viewStateProjectionPreservesActiveIDsAndDirtyMessage() {
+    @Test("view state projection preserves active ids and typed status")
+    func viewStateProjectionPreservesActiveIDsAndTypedStatus() {
         let textID = UUID()
         let state =
             V1DraftBridge.mutationState(
@@ -119,7 +119,7 @@ struct V1DraftBridgeTests {
                     )
                 ],
                 activeTextItemIDs: [.slotA: textID],
-                activeConfigurationMessage: "有未保存修改"
+                activeConfigurationStatus: .dirty
             )
 
         let viewState =
@@ -136,8 +136,8 @@ struct V1DraftBridgeTests {
             == textID
         )
         #expect(
-            viewState.activeConfigurationMessage
-            == "有未保存修改"
+            viewState.activeConfigurationStatus
+            == .dirty
         )
     }
 }

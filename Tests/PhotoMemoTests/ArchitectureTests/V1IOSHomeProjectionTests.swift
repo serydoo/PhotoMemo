@@ -60,7 +60,6 @@ struct V1IOSHomeProjectionTests {
         #expect(projection.title == "途途")
         #expect(projection.subtitle == "成长记录")
         #expect(projection.anchorTitle == "生日")
-        #expect(projection.anchorCountLabel == "2 个时间锚点")
     }
 
     @Test("subject summary falls back when no subject is available")
@@ -73,9 +72,8 @@ struct V1IOSHomeProjectionTests {
             )
 
         #expect(projection.title == "当前记忆对象")
-        #expect(projection.subtitle == "补充主角与时间锚点")
+        #expect(projection.subtitle == "补充主角信息")
         #expect(projection.anchorTitle == "未设置")
-        #expect(projection.anchorCountLabel == "0 个时间锚点")
     }
 
     @Test("output summary uses target title and custom album detail")
@@ -134,7 +132,7 @@ struct V1IOSHomeProjectionTests {
                 presetTitle: "Classic White",
                 configurationLabel: "途途 · 生日",
                 presetSummary: "底栏四槽位",
-                activeConfigurationMessage: "",
+                activeConfigurationStatus: .idle,
                 isApplied: true
             )
 
@@ -153,7 +151,7 @@ struct V1IOSHomeProjectionTests {
                 presetTitle: "",
                 configurationLabel: "",
                 presetSummary: "",
-                activeConfigurationMessage: "有未保存修改",
+                activeConfigurationStatus: .dirty,
                 isApplied: false
             )
 

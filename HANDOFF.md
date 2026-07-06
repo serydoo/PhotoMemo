@@ -23,6 +23,138 @@ References:
 - [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
 - [Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md)
 
+## 2026-07-06 P0 surface convergence landed
+
+- The main iOS runtime no longer exposes the old dual-surface product switch
+  (`V1` vs `Configuration Center`) through `PhotoMemoiOSTemporaryEntryView`
+- `PhotoMemoRootSceneView` now enters `ConfigurationCenteriOSView` directly on
+  iOS, which restores one active runtime product surface
+- V1 is still preserved as code and target for maintenance/testing, but it is
+  no longer part of the main runtime root-scene switch
+
+- The second P0 issue from the latest V1 re-audit also landed:
+  bootstrap/programmatic subject restore no longer shares the same dirtying
+  behavior as user edits
+- `V1SubjectSelectionMutationCoordinator` now distinguishes:
+  - user birthday edits
+  - subject-driven birthday sync that should refresh without dirtying
+  - bootstrap-driven birthday sync that should neither dirty nor trigger an
+    extra refresh
+
+- Focused tests passed:
+  - `IOSRuntimeSurfaceContractTests`
+  - `V1SubjectSelectionMutationCoordinatorTests`
+  - `V1BootstrapRuntimeCoordinatorTests`
+  - `V1DraftRuntimeCoordinatorTests`
+  - `V1SubjectLibrarySupportTests`
+  - `PhotoMemoiOSTemporaryEntryTests`
+- Required repo build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Still not manually verified after this slice:
+  - device/runtime launch now entering Configuration Center directly
+  - standalone V1 target behavior on device
+  - device subject-switch / active-anchor visual behavior after dirty-path split
+
+## 2026-07-06 P1 typed configuration status convergence landed
+
+- The agreed Phase 2 status cleanup is now in place without mixing in the
+  later anchor-language or projection-unification work.
+- V1 configuration state is now modeled by `V1ConfigurationStatus`:
+  - `idle`
+  - `dirty`
+  - `saving`
+  - `saved`
+  - `subjectSynced`
+  - `failure(message:)`
+- UI copy is now derived from status + context instead of driving behavior:
+  - default configuration
+  - share configuration
+  - preset
+- The main migration points are:
+  - `V1DraftMutationCoordinator`
+  - `V1DraftBridge`
+  - `V1DraftOrchestrationCoordinator`
+  - `V1ConfigurationApplySupport`
+  - `V1ConfigurationApplyRuntimeCoordinator`
+  - `V1SubjectFlowSupport`
+  - `V1PresetSelectionCoordinator`
+  - `V1LogoSelectionSupport`
+  - `V1IOSHomeProjection`
+  - `V1SubjectHomeSummarySupport`
+  - `PhotoMemoiOSV1View`
+
+- Focused tests passed:
+  - `V1ConfigurationStatusTests`
+  - `V1DraftBridgeTests`
+  - `V1DraftMutationCoordinatorTests`
+  - `V1DraftRuntimeCoordinatorTests`
+  - `V1DraftOrchestrationCoordinatorTests`
+  - `V1ConfigurationApplyRuntimeCoordinatorTests`
+  - `V1ConfigurationApplyReconciliationTests`
+  - `V1SubjectLibrarySupportTests`
+  - `V1PresetSelectionCoordinatorTests`
+  - `V1IOSHomeProjectionTests`
+  - `V1SubjectHomeSummaryPresenterTests`
+- Required repo build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Still not manually verified after this slice:
+  - device save / sync / failure badge transitions in V1 home/status surfaces
+  - preset switch confirmation/cancel flow on device
+  - subject overview -> editor -> save status callback path on device
+
+## 2026-07-06 Phase 3 homepage language convergence landed
+
+- The first product-language cleanup slice is now in place without jumping
+  ahead into canonical projection sharing.
+- Homepage summary surfaces no longer expose anchor-count language as a primary
+  summary fact.
+- Removed the old homepage `anchorCountLabel` chain from:
+  - `V1IOSHomeProjection`
+  - `V1SubjectHomeSummarySupport`
+  - related homepage-focused tests
+- Homepage fallback guidance now prefers:
+  - `补充主角信息`
+  instead of:
+  - `补充主角与时间锚点`
+
+- Kept intentionally out of scope:
+  - `V1IOSSubjectOverviewPresenter`
+  - subject overview detail-page anchor-count badge / expression
+  - canonical projection extraction / presenter sharing
+
+- Focused tests passed:
+  - `V1IOSHomeProjectionTests`
+  - `V1SubjectHomeSummaryPresenterTests`
+- Required repo build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Still not manually verified after this slice:
+  - homepage subject summary copy on device after subject switching
+  - homepage spacing/visual rhythm after removing the old anchor-count detail
+
+## 2026-07-06 Phase 3 overview anchor-language convergence landed
+
+- The remaining old anchor-count expression inside the V1 subject overview path
+  is now removed.
+- `V1IOSSubjectOverviewPresentation` no longer carries `anchorCountLabel`.
+- `V1IOSSubjectAnchorSection` no longer shows the old `X 个时间锚点` badge.
+- The active-anchor detail card now stays focused on:
+  - active anchor title
+  - active anchor date
+  - active anchor description
+  - active anchor picker
+
+- Focused tests passed:
+  - `V1IOSSubjectOverviewPresenterTests`
+- Required repo build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Still not manually verified after this slice:
+  - overview active-anchor card spacing on device
+  - anchor switching flow in overview after the badge removal
+
 ## 2026-07-06 iPhone7 Location and MemorySubject production fixes installed
 
 - User device testing confirmed Location display configuration worked in

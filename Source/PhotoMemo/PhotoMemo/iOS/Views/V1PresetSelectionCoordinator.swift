@@ -7,7 +7,8 @@ struct V1PresetSelectionUpdate {
 
     let pendingActivationPresetTitle: String
 
-    let activeConfigurationMessage: String
+    let activeConfigurationStatus:
+        V1ConfigurationStatus
 
     let showsPresetActivationConfirmation: Bool
 }
@@ -47,8 +48,8 @@ enum V1PresetSelectionCoordinator {
             preset: preset,
             pendingActivationPresetTitle:
                 preset.title,
-            activeConfigurationMessage:
-                "有未保存修改",
+            activeConfigurationStatus:
+                .dirty,
             showsPresetActivationConfirmation:
                 true
         )

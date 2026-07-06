@@ -45,6 +45,218 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-06 P0 runtime-surface and dirty-path convergence completed
+
+This slice closes two high-priority V1 maintenance findings without mixing in
+the later P1/P2 cleanup work:
+
+1. main iOS runtime no longer exposes dual product surfaces
+2. bootstrap/programmatic subject restore no longer reuses the same dirty
+   pipeline as user edits
+
+What changed:
+
+- `PhotoMemoRootSceneView` now renders `ConfigurationCenteriOSView` directly on
+  iOS instead of routing runtime users through `PhotoMemoiOSTemporaryEntryView`
+- the main runtime path no longer carries
+  `PhotoMemoiOSTemporaryEntryConfiguration`
+- V1 remains present in the repository and its app target still exists for
+  maintenance/testing, but it is no longer the main runtime product switch
+  inside the active iOS root scene
+- V1 subject-selection side effects now flow through
+  `V1SubjectSelectionMutationCoordinator`
+- user birthday edits still refresh preview and mark dirty
+- subject/bootstrap-driven birthday synchronization now supports two non-user
+  behaviors:
+  - refresh without dirtying
+  - suppress both refresh and dirtying during bootstrap
+
+Behavioral result:
+
+```text
+App
+-> Root Scene
+-> Configuration Center
+```
+
+```text
+Bootstrap restore
+-> subject restore
+-> birthday sync
+-> no dirty state
+
+User edit
+-> mutation
+-> preview refresh
+-> dirty state
+```
+
+Verification:
+
+- focused new tests passed:
+  - `IOSRuntimeSurfaceContractTests`
+  - `V1SubjectSelectionMutationCoordinatorTests`
+- focused regression tests passed:
+  - `V1BootstrapRuntimeCoordinatorTests`
+  - `V1DraftRuntimeCoordinatorTests`
+  - `V1SubjectLibrarySupportTests`
+  - `PhotoMemoiOSTemporaryEntryTests`
+- build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed warning:
+  - existing macOS 26 deprecation warnings in `GeocoderService.swift`
+
+Not yet manually verified:
+
+- iOS app launch path now opening directly into Configuration Center on device
+- V1 standalone app target behavior on device after the root-scene change
+- subject switch / active-anchor switch visual behavior on device while editing
+- deep link / external intake behavior on iOS hardware after the single-surface
+  runtime change
+
+## 2026-07-06 P1 typed configuration status convergence completed
+
+This follow-up closes the agreed Phase 2 status-safety slice from the latest
+V1 re-audit without mixing in the later product-language cleanup:
+
+1. V1 configuration state no longer depends on localized status strings
+2. dirty / saving / saved / subject-sync / failure now flow through one typed
+   semantic model
+
+What changed:
+
+- added `V1ConfigurationStatus` and `V1ConfigurationStatusContext` as the
+  canonical V1 configuration-state model
+- V1 draft mutation/orchestration/bridge/runtime paths now carry
+  `activeConfigurationStatus` instead of raw status strings
+- V1 configuration apply success/failure/saving reconciliation now reports
+  semantic state first, then derives user-facing copy from context
+- V1 subject overview / preset selection / logo selection / home summary
+  presentation paths now consume the typed status model
+- `PhotoMemoiOSV1View` no longer keeps the old string-driven dirty marker in
+  the remaining preset reset path
+
+Behavioral result:
+
+```text
+Semantic state
+-> badge tone
+-> context copy
+```
+
+instead of:
+
+```text
+localized copy
+-> behavior / tone / branching
+```
+
+Verification:
+
+- focused tests passed:
+  - `V1ConfigurationStatusTests`
+  - `V1DraftBridgeTests`
+  - `V1DraftMutationCoordinatorTests`
+  - `V1DraftRuntimeCoordinatorTests`
+  - `V1DraftOrchestrationCoordinatorTests`
+  - `V1ConfigurationApplyRuntimeCoordinatorTests`
+  - `V1ConfigurationApplyReconciliationTests`
+  - `V1SubjectLibrarySupportTests`
+  - `V1PresetSelectionCoordinatorTests`
+  - `V1IOSHomeProjectionTests`
+  - `V1SubjectHomeSummaryPresenterTests`
+- required build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed warning:
+  - existing Xcode destination-selection warning only
+
+Not yet manually verified:
+
+- V1 home/status badge transitions on device after save / sync / failure flows
+- preset switch + cancel-confirmation path after typed status migration
+- subject overview -> editor -> save callback visual status behavior on device
+
+## 2026-07-06 Phase 3 home-language convergence completed
+
+This follow-up lands the agreed first product-language cleanup without mixing
+in the later projection-unification work:
+
+1. home summary no longer treats anchor count as a primary homepage concept
+2. the old `X 个时间锚点` expression is removed from the home summary chain
+
+What changed:
+
+- `V1IOSHomeSubjectSummaryProjection` no longer carries `anchorCountLabel`
+- `V1SubjectHomeSummaryPresentation` no longer carries `anchorCountLabel`
+- the homepage subject summary now shows:
+  - current subject
+  - current active time anchor
+  - subject fallback guidance
+- home fallback language now prefers `补充主角信息`
+  instead of `补充主角与时间锚点`
+
+Scope boundary kept in this slice:
+
+- home / subject-home summary language: ✅ converged
+- subject overview detail page anchor-count expression: intentionally left in
+  place for later review, because it still behaves more like an object-detail
+  projection than a homepage summary
+
+Verification:
+
+- focused tests passed:
+  - `V1IOSHomeProjectionTests`
+  - `V1SubjectHomeSummaryPresenterTests`
+- required build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed warning:
+  - existing Xcode destination-selection warning only
+
+Not yet manually verified:
+
+- homepage subject card copy after switching between subjects with and without
+  anchors
+- homepage object summary and status card visual spacing after removing the old
+  count detail
+
+## 2026-07-06 Phase 3 overview anchor-language convergence completed
+
+This follow-up completes the remaining old anchor-count cleanup inside the V1
+subject overview/detail path without expanding into projection unification:
+
+1. subject overview no longer uses anchor count as a primary detail expression
+2. the old `X 个时间锚点` badge is removed from the active-anchor card
+
+What changed:
+
+- `V1IOSSubjectOverviewPresentation` no longer carries `anchorCountLabel`
+- `V1IOSSubjectAnchorSection` no longer renders the old count badge
+- the overview anchor card now focuses on:
+  - current active anchor title
+  - current active anchor date
+  - current active anchor description
+  - active-anchor picker
+
+Behavioral result:
+
+- home summary: no anchor-count language
+- overview/detail card: no anchor-count language
+- remaining anchor content now stays focused on the active anchor itself
+
+Verification:
+
+- focused tests passed:
+  - `V1IOSSubjectOverviewPresenterTests`
+- required build passed:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed warning:
+  - existing Xcode destination-selection warning only
+
+Not yet manually verified:
+
+- subject overview anchor card spacing after removing the count badge
+- subject overview anchor picker behavior on device after switching anchors
+
 ## 2026-07-06 Device acceptance fixes for Location output and MemorySubject production snapshot
 
 Follow-up device testing on `iPhone7` found two preview-to-output mismatches in

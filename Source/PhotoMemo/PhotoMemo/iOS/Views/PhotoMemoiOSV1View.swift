@@ -124,10 +124,15 @@ struct PhotoMemoiOSV1View: View {
     private var isApplyingBootstrapState = false
 
     @State
+    private var birthdayDateChangeBehavior:
+        V1BirthdayDateChangeBehavior = .userInitiated
+
+    @State
     private var shouldSaveSubjectLibrary = true
 
     @State
-    private var activeConfigurationMessage = "尚未保存为默认配置"
+    private var activeConfigurationStatus:
+        V1ConfigurationStatus = .idle
 
     @State
     private var shareDiagnosticEvents:
@@ -223,10 +228,10 @@ struct PhotoMemoiOSV1View: View {
                 session.applySelectedMemoryPreset()
             },
             updateStatus: { status in
-                activeConfigurationMessage =
-                    status.message
+                activeConfigurationStatus =
+                    status.status
                 isSavingConfiguration =
-                    status.isSaving
+                    status.status.isSaving
             }
         )
     }
@@ -561,12 +566,12 @@ struct PhotoMemoiOSV1View: View {
                         V1SubjectOverviewActionCoordinator
                         .makeConfigurationFlowState(
                             from: session,
-                            shouldSaveSubjectLibrary:
-                                shouldSaveSubjectLibrary,
+                                shouldSaveSubjectLibrary:
+                                    shouldSaveSubjectLibrary,
                             configurationCoordinator:
                                 configurationCoordinator,
-                            savedMessage:
-                                "有未保存修改",
+                            savedStatus:
+                                .dirty,
                             onPersistedSubject: {
                                 patch in
                                 applySubjectFlowPatch(
@@ -613,7 +618,7 @@ struct PhotoMemoiOSV1View: View {
             }
 
             Button("仅切换查看", role: .cancel) {
-                activeConfigurationMessage = "有未保存修改"
+                activeConfigurationStatus = .dirty
             }
         } message: {
             Text("已切换到「\(pendingActivationPresetTitle)」。保存后，下一次处理照片时会默认使用这套配置组合、时间锚点和输出设置。")
@@ -643,20 +648,55 @@ struct PhotoMemoiOSV1View: View {
             bootstrapDrafts()
         }
         .onChange(of: birthdayDate) { _, _ in
-            refreshDynamicPreview()
-            activeConfigurationMessage = "有未保存修改"
-        }
-        .onChange(of: session.state.selectedSubject) { _, subject in
-            if let subjectAnchorDate =
-                subject?.primaryTimeAnchor?.date
-                ?? subject?.timeAnchors.first?.date {
-                birthdayDate = subjectAnchorDate
+            let effect =
+                V1SubjectSelectionMutationCoordinator
+                .effect(
+                    for:
+                        birthdayDateChangeBehavior
+                )
+
+            birthdayDateChangeBehavior =
+                .userInitiated
+
+            if effect.shouldRefreshPreview {
+                refreshDynamicPreview()
             }
 
-            refreshDynamicPreview()
+            if effect.shouldMarkDirty {
+                activeConfigurationStatus = .dirty
+            }
+        }
+        .onChange(of: session.state.selectedSubject) { _, subject in
+            let decision =
+                V1SubjectSelectionMutationCoordinator
+                .decision(
+                    subjectAnchorDate:
+                        subject?.primaryTimeAnchor?.date
+                        ?? subject?.timeAnchors.first?.date,
+                    currentBirthdayDate:
+                        birthdayDate,
+                    isApplyingBootstrapState:
+                        isApplyingBootstrapState
+                )
 
-            if !isApplyingBootstrapState {
-                activeConfigurationMessage = "有未保存修改"
+            if let nextBirthdayDateBehavior =
+                decision.nextBirthdayDateBehavior {
+                birthdayDateChangeBehavior =
+                    nextBirthdayDateBehavior
+            }
+
+            if let updatedBirthdayDate =
+                decision.updatedBirthdayDate {
+                birthdayDate =
+                    updatedBirthdayDate
+            }
+
+            if decision.shouldRefreshPreview {
+                refreshDynamicPreview()
+            }
+
+            if decision.shouldMarkDirty {
+                activeConfigurationStatus = .dirty
             }
         }
         .onChange(of: selectedLogoItem) { _, item in
@@ -669,16 +709,16 @@ struct PhotoMemoiOSV1View: View {
             }
         }
         .onChange(of: logoMode) { _, _ in
-            activeConfigurationMessage = "有未保存修改"
+            activeConfigurationStatus = .dirty
         }
         .onChange(of: outputTarget) { _, _ in
-            activeConfigurationMessage = "有未保存修改"
+            activeConfigurationStatus = .dirty
         }
         .onChange(of: selectedExistingAlbumIdentifier) { _, _ in
-            activeConfigurationMessage = "有未保存修改"
+            activeConfigurationStatus = .dirty
         }
         .onChange(of: newAlbumName) { _, _ in
-            activeConfigurationMessage = "有未保存修改"
+            activeConfigurationStatus = .dirty
         }
         .onChange(of: selectedProcessingItems) { _, items in
             guard !items.isEmpty else {
@@ -839,7 +879,7 @@ struct PhotoMemoiOSV1View: View {
             onRestoreDefaults: {
                 session.resetSelectedMemoryPreset()
                 bootstrapDrafts()
-                activeConfigurationMessage = "有未保存修改"
+                activeConfigurationStatus = .dirty
             }
         )
     }
@@ -855,8 +895,8 @@ struct PhotoMemoiOSV1View: View {
                     session.currentConfigurationLabel,
                 presetSummary:
                     session.currentMemoryPresetSummary,
-                activeConfigurationMessage:
-                    activeConfigurationMessage,
+                activeConfigurationStatus:
+                    activeConfigurationStatus,
                 isApplied:
                     session.selectedMemoryPresetIsApplied
             )
@@ -870,12 +910,7 @@ struct PhotoMemoiOSV1View: View {
             return .accent
         }
 
-        if activeConfigurationMessage
-            .contains("未保存") {
-            return .warning
-        }
-
-        return .neutral
+        return activeConfigurationStatus.tone
     }
 
     private var subjectOverviewPresentation:
@@ -905,7 +940,7 @@ struct PhotoMemoiOSV1View: View {
         session.updateSelectedMemoryPresetTitle(
             memoryPresetTitleDraft
         )
-        activeConfigurationMessage = "有未保存修改"
+        activeConfigurationStatus = .dirty
         isEditingMemoryPresetTitle = false
         memoryPresetTitleFieldFocused = false
     }
@@ -927,8 +962,8 @@ struct PhotoMemoiOSV1View: View {
             shouldSaveSubjectLibrary = true
         }
 
-        activeConfigurationMessage =
-            patch.activeConfigurationMessage
+        activeConfigurationStatus =
+            patch.activeConfigurationStatus
 
         if patch.shouldCloseOverview {
             entryFlowState =
@@ -1120,9 +1155,8 @@ struct PhotoMemoiOSV1View: View {
 
     private var resolvedLogoPersistenceHint: String? {
         guard
-            activeConfigurationMessage
-            == V1DraftMutationCoordinator
-            .dirtyStateMessage
+            activeConfigurationStatus
+            .isDirty
         else {
             return nil
         }
@@ -1316,8 +1350,8 @@ struct PhotoMemoiOSV1View: View {
                 regionDrafts: regionDrafts,
                 activeTextItemIDs:
                     activeTextItemIDs,
-                activeConfigurationMessage:
-                    activeConfigurationMessage
+                activeConfigurationStatus:
+                    activeConfigurationStatus
             )
     }
 
@@ -1329,8 +1363,8 @@ struct PhotoMemoiOSV1View: View {
             state.regionDrafts
         activeTextItemIDs =
             state.activeTextItemIDs
-        activeConfigurationMessage =
-            state.activeConfigurationMessage
+        activeConfigurationStatus =
+            state.activeConfigurationStatus
     }
 
     private func refreshPreview(for region: CardRegion) {
@@ -1608,10 +1642,10 @@ struct PhotoMemoiOSV1View: View {
         logoStatusMessage =
             update.logoStatusMessage
 
-        if let activeConfigurationMessage =
-            update.activeConfigurationMessage {
-            self.activeConfigurationMessage =
-                activeConfigurationMessage
+        if let activeConfigurationStatus =
+            update.activeConfigurationStatus {
+            self.activeConfigurationStatus =
+                activeConfigurationStatus
         }
     }
 
@@ -1968,13 +2002,16 @@ struct PhotoMemoiOSV1View: View {
         case .configurationSaveFailed:
             return
         case .noSupportedPhotos:
-            activeConfigurationMessage =
-                V1PhotoIntakeUnsupportedMessagePresenter
-                .message(
-                    for:
-                        items
-                        .flatMap(
-                            \.supportedContentTypes
+            activeConfigurationStatus =
+                .failure(
+                    message:
+                        V1PhotoIntakeUnsupportedMessagePresenter
+                        .message(
+                            for:
+                                items
+                                .flatMap(
+                                    \.supportedContentTypes
+                                )
                         )
                 )
         case .submitted:
@@ -2021,8 +2058,8 @@ struct PhotoMemoiOSV1View: View {
                 bootstrapDrafts()
                 pendingActivationPresetTitle =
                     update.pendingActivationPresetTitle
-                activeConfigurationMessage =
-                    update.activeConfigurationMessage
+                activeConfigurationStatus =
+                    update.activeConfigurationStatus
                 showsPresetActivationConfirmation =
                     update.showsPresetActivationConfirmation
             }

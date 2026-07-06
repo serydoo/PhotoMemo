@@ -11,9 +11,7 @@ struct PhotoMemoiOSV1App: App {
     var body: some Scene {
         WindowGroup {
             PhotoMemoiOSHomeView(
-                runtime: runtime,
-                temporaryEntryConfiguration:
-                    .v1
+                runtime: runtime
             )
         }
     }

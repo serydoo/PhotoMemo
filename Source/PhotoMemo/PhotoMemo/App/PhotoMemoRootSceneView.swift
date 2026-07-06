@@ -8,19 +8,6 @@ struct PhotoMemoRootSceneView: View {
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
-    private let temporaryEntryConfiguration:
-        PhotoMemoiOSTemporaryEntryConfiguration
-
-    init(
-        runtime: PhotoMemoAppRuntime,
-        temporaryEntryConfiguration:
-            PhotoMemoiOSTemporaryEntryConfiguration = .standard
-    ) {
-        self.runtime = runtime
-        self.temporaryEntryConfiguration =
-            temporaryEntryConfiguration
-    }
-
     var body: some View {
 
         rootConfigurationCenter
@@ -75,17 +62,7 @@ struct PhotoMemoRootSceneView: View {
     @ViewBuilder
     private var rootConfigurationCenter: some View {
         #if os(iOS)
-        PhotoMemoiOSTemporaryEntryView(
-            backgroundStatusService:
-                runtime.backgroundStatusService,
-            refreshExternalIntake: {
-                runtime.refreshExternalIntakeState()
-            },
-            environment:
-                runtime.environment,
-            configuration:
-                temporaryEntryConfiguration
-        )
+        ConfigurationCenteriOSView()
         #else
         ConfigurationCenterView()
         #endif

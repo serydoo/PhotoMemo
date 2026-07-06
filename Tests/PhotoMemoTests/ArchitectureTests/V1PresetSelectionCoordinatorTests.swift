@@ -109,8 +109,8 @@ struct V1PresetSelectionCoordinatorTests {
             == "旅行配置"
         )
         #expect(
-            update.activeConfigurationMessage
-            == "有未保存修改"
+            update.activeConfigurationStatus
+            == .dirty
         )
         #expect(
             update.showsPresetActivationConfirmation

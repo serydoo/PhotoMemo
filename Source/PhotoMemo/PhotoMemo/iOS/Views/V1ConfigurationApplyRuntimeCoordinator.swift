@@ -4,8 +4,7 @@ import Foundation
 struct V1ConfigurationApplyViewStatus:
     Equatable {
 
-    let message: String
-    let isSaving: Bool
+    let status: V1ConfigurationStatus
 }
 
 @MainActor
@@ -90,8 +89,7 @@ struct V1ConfigurationApplyRuntimeCoordinator {
     ) async -> Bool {
         updateStatus(
             V1ConfigurationApplyViewStatus(
-                message: "正在保存",
-                isSaving: true
+                status: .saving
             )
         )
 
@@ -145,10 +143,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
 
         updateStatus(
             V1ConfigurationApplyViewStatus(
-                message:
-                    patch.activeConfigurationMessage,
-                isSaving:
-                    patch.isSavingConfiguration
+                status:
+                    patch.activeConfigurationStatus
             )
         )
     }

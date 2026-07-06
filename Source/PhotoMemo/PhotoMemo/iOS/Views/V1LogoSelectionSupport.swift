@@ -11,7 +11,8 @@ struct V1LogoSelectionUpdate {
 
     let logoStatusMessage: String
 
-    let activeConfigurationMessage: String?
+    let activeConfigurationStatus:
+        V1ConfigurationStatus?
 }
 
 enum V1LogoSelectionCoordinator {
@@ -43,9 +44,8 @@ enum V1LogoSelectionCoordinator {
                 logoMode: .customUpload,
                 logoStatusMessage:
                     "\(optimizedAsset.pixelSize) × \(optimizedAsset.pixelSize) PNG 已优化",
-                activeConfigurationMessage:
-                    V1DraftMutationCoordinator
-                    .dirtyStateMessage
+                activeConfigurationStatus:
+                    .dirty
             )
         } catch {
             return V1LogoSelectionUpdate(
@@ -53,7 +53,7 @@ enum V1LogoSelectionCoordinator {
                 logoMode: nil,
                 logoStatusMessage:
                     error.localizedDescription,
-                activeConfigurationMessage: nil
+                activeConfigurationStatus: nil
             )
         }
     }

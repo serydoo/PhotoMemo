@@ -41,7 +41,7 @@ struct V1DraftMutationCoordinatorTests {
             V1DraftMutationCoordinator.State(
                 regionDrafts: [.slotA: initialDraft],
                 activeTextItemIDs: [:],
-                activeConfigurationMessage: "尚未保存为分享配置"
+                activeConfigurationStatus: .idle
             )
 
         let update =
@@ -57,9 +57,8 @@ struct V1DraftMutationCoordinatorTests {
 
         #expect(update.dirtyRegions == [.slotA])
         #expect(
-            update.state.activeConfigurationMessage
-            == V1DraftMutationCoordinator
-                .dirtyStateMessage
+            update.state.activeConfigurationStatus
+            == .dirty
         )
         #expect(draft?.items.map(\.value) == ["前缀", "记录", ""])
 
@@ -158,7 +157,7 @@ struct V1DraftMutationCoordinatorTests {
             V1DraftMutationCoordinator.State(
                 regionDrafts: [.slotD: initialDraft],
                 activeTextItemIDs: [.slotD: leadingText],
-                activeConfigurationMessage: ""
+                activeConfigurationStatus: .idle
             )
 
         let update =
@@ -209,7 +208,7 @@ struct V1DraftMutationCoordinatorTests {
             V1DraftMutationCoordinator.State(
                 regionDrafts: [.slotA: initialDraft],
                 activeTextItemIDs: [.slotA: emptyTail],
-                activeConfigurationMessage: ""
+                activeConfigurationStatus: .idle
             )
 
         let update =
