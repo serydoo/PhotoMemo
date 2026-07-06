@@ -80,6 +80,49 @@ struct MetadataProviderTests {
         #expect(value == nil)
     }
 
+    @Test("PI-13C Given same production input When model resolves through legacy lookup and provider Then text is identical")
+    func pi13cGivenSameProductionInputWhenModelResolvesThroughLegacyLookupAndProviderThenTextIsIdentical() throws {
+        let metadata =
+            PhotoMetadata(
+                deviceBrand: " Apple ",
+                deviceModel: " iPhone 17 Pro "
+            )
+        let card =
+            RecordCard(
+                metadata: metadata,
+                context:
+                    MetadataContext
+                    .build(
+                        from: metadata
+                    )
+            )
+        let legacyLookup =
+            MetadataContextExpressionLookup(
+                metadataContext:
+                    CardVariableProvider
+                    .build(
+                        from: card
+                    )
+            )
+        let providerValue =
+            try #require(
+                MetadataProvider()
+                    .expressionValue(
+                        for: MetadataProvider.modelToken,
+                        metadata: metadata
+                    )
+            )
+
+        #expect(
+            legacyLookup
+                .value(
+                    for: MetadataProvider.modelToken
+                )?
+                .resolvedText
+            == providerValue.resolvedText
+        )
+    }
+
     @Test("Boundary Given metadata provider When inspected Then it stores no dependencies")
     func boundaryGivenMetadataProviderWhenInspectedThenItStoresNoDependencies() {
         let provider =
