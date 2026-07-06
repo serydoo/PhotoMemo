@@ -60,7 +60,7 @@ struct V1TimeAnchorEntryPresenterTests {
         )
         #expect(
             presentation.formulaPreviewText
-            == "锚点前：距离妈妈眼里的宝宝出生还有倒计时天数｜锚点后：妈妈眼里的宝宝今天年龄结果啦！"
+            == "锚点前：还有倒计时天数，妈妈眼里的宝宝就要出生了｜锚点后：这一天，妈妈眼里的宝宝年龄结果"
         )
     }
 
@@ -110,7 +110,7 @@ struct V1TimeAnchorEntryPresenterTests {
         )
         #expect(
             presentation.formulaPreviewText
-            == "锚点前：距离记忆对象出生还有倒计时天数｜锚点后：记忆对象今天年龄结果啦！"
+            == "锚点前：还有倒计时天数，记忆对象就要出生了｜锚点后：这一天，记忆对象年龄结果"
         )
     }
 
@@ -160,7 +160,7 @@ struct V1TimeAnchorEntryPresenterTests {
 
         #expect(
             presentation.formulaPreviewText
-            == "锚点前：期待第一次见面，还有倒计时结果｜锚点后：关于第一次见面的故事已有时长结果"
+            == "锚点前：期待第一次见面，还有倒计时结果｜锚点后：关于第一次见面的故事，已有时长结果"
         )
         #expect(
             presentation.anchorPickerTitle

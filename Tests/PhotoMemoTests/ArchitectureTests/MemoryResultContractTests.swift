@@ -587,7 +587,7 @@ struct MemoryResultContractTests {
                 context: context
             )
 
-        #expect(module.renderedText == "途途今天18天啦！")
+        #expect(module.renderedText == "这一天，途途18天")
         #expect(module.sourceAnchor == snapshot.primaryAnchor)
         #expect(module.preferredRegion == .slotD)
     }

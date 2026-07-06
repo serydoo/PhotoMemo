@@ -45,6 +45,697 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-06 V1 Memory Summary entry cleanup
+
+V1 time-anchor expression entry points now prefer the new Memory layer.
+
+Completed checkpoints:
+
+- Default presets `template1`, `template2`, `template3`, and `immersWhite`
+  now use `{{memory_summary}}` as the right-bottom smart-time entry.
+- Legacy built-in anchor sentence templates are migrated to
+  `{{memory_summary}}` during `Template.normalizedForEditing`.
+- The public intelligent variable catalog no longer exposes legacy
+  `anchor_*` variables as user-selectable smart-expression options.
+- Memory Anchor expression wording now has a refreshed baseline for birthday,
+  marriage, relationship, exam, and custom anchor tones, including `岁`
+  wording after full years and `结婚` wording instead of `婚礼` for countdowns.
+- Birthday, marriage, and relationship anchor expressions now have a local
+  annual-occurrence helper for next birthday / anniversary wording when the
+  caller explicitly requests annual occurrence phrasing.
+- The old `anchor_*` `MetadataContext` keys and `CardVariableProvider`
+  projection path remain as compatibility plumbing so existing saved templates
+  and transport snapshots do not fail abruptly.
+- Renderer, Export, Share Extension, Metadata mutation, Photo Library behavior,
+  and Layout Engine behavior were not changed.
+
+Verification:
+
+- `PhotoMemoTests/PreviewCompositionMigrationTests` passed.
+- `PhotoMemoTests/MemoryExpressionEngineTests` passed.
+- `PhotoMemoTests/MemoryEngineTests` passed.
+- Production/snapshot compatibility group passed:
+  - `RecordCardBuildServiceTests`
+  - `PhotoMemoShareWorkflowSummaryTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+  - `SharedBatchConfigurationSnapshotServiceTests`
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 Location Expression architecture candidate through Phase 4-D
+
+The Location Expression work is isolated on the `codex/地址模块` branch as a
+post-IA-003 architecture candidate.
+
+Completed checkpoints:
+
+- `Location_Expression_Pipeline.md` records the Provider-Based Expression
+  Architecture proposal and is treated as architecture scope only.
+- `Location_Expression_Implementation_Plan.md` records the migration plan and
+  Phase 0-9 rollout checkpoints.
+- Phase 0 code skeleton exists for the new Expression and LocationExpression
+  boundaries without wiring into production rendering, export, metadata, share,
+  or photo-library behavior.
+- Phase 1 maps normalized `PhotoMetadata` location facts into an independent
+  `LocationContext` through `LocationContextBuilder`, including GPS,
+  altitude, address hierarchy, and location name availability.
+- Phase 2 adds pure `LocationFormatter` presentation string shaping for
+  Province + City, City + District, Province + City + District, and Coordinate
+  without fallback, Provider, Renderer, or UI dependencies.
+- Phase 3 adds deterministic `LocationResolver` strategy resolution with
+  immutable request-scoped `LocationResolution`, downgrade / coordinate
+  fallback / empty policies, and Formatter-owned final text representation.
+- Phase 4-A is now scoped as Expression System contract work before Provider
+  integration. `Expression_System_Contract.md` defines the provider-neutral
+  flow, hard rules, and extension rules that future Providers must follow.
+- Phase 4-B starts code verification with provider-neutral `ExpressionValue`:
+  it carries `ExpressionToken` plus resolved text, is `Hashable` / `Codable`,
+  and is tested as a non-bare-string, provider-neutral value object.
+- Phase 4-C adds `ExpressionContext` as the only current aggregation container
+  for expression values: it stores `ExpressionValue` by semantic token and
+  rejects duplicate tokens at construction.
+- Phase 4-D entry is guarded by `ExpressionSystemSmokeTests`, which validates
+  fake provider-like sources -> `ExpressionValue` -> `ExpressionContext` ->
+  mock renderer without introducing a production Provider API.
+- Phase 4-D adds the first real Canonical Provider compiler validation:
+  `LocationExpressionProvider` consumes `LocationContext`,
+  `LocationResolver`, and `LocationFormatter` output to produce a
+  provider-neutral `ExpressionValue` for the `location` token.
+- Phase 4-D intentionally supports only `location`; raw `latitude`,
+  `longitude`, and `altitude` output remain future Location Provider expansion
+  work.
+- `LocationExpressionPhase4DTests` covers the full isolated chain from
+  `PhotoMetadata` to `LocationContextBuilder`, `LocationExpressionProvider`,
+  and `ExpressionContext` without connecting Renderer, UI, Export, Share
+  Extension, Metadata mutation, or Photo Library behavior.
+
+Guardrail:
+
+- The two Location proposal documents are considered responsibility-complete;
+  future rationale should move into ADRs or platform-level constitution docs
+  instead of expanding those files.
+- Phase 3 remains isolated internals only; no Provider, `ExpressionContext`,
+  Renderer, UI, Export, Share Extension, Metadata mutation, or Photo Library
+  production wiring was added.
+- Phase 4-D Provider code is isolated compiler validation only and does not
+  connect any production renderer path to `ExpressionContext`.
+
+## 2026-07-06 Platform Integration PI-1 ExpressionLookup frozen
+
+Expression Platform work has moved from Stage 1 baseline creation into Stage 2
+platform integration.
+
+Stage status:
+
+| Stage | Status | Notes |
+| --- | --- | --- |
+| Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
+| Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-11 Persistence Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`. |
+
+PI-1 completed checkpoints:
+
+- `ExpressionLookup` defines the renderer dependency as pure lookup capability:
+  `value(for:)`.
+- PI-1 freezes the platform principle: Renderers depend on lookup capability
+  rather than expression storage.
+- `ExpressionContext` now conforms to `ExpressionLookup` and becomes the
+  default lookup adapter, not the required renderer dependency.
+- `ExpressionLookupContractTests` enforce that lookup exposes no enumeration
+  or mutation surface.
+- A lookup-only renderer stub proves mock lookup and `ExpressionContext`-
+  backed lookup can produce identical output without renderer knowledge of
+  concrete context storage.
+
+Guardrail:
+
+- PI-1 does not connect the production Renderer, Preview, Export, Share
+  Extension, Metadata adapter, UI, or Photo Library behavior.
+- Future renderer work should depend on `ExpressionLookup` capability, not
+  concrete `ExpressionContext` storage.
+- Renderer must treat lookup as read-only and per-render-cycle input.
+- PI-2 should migrate renderer dependency only. It must not change layout,
+  typography, drawing, color, modules, Export, Share Extension, Metadata
+  adapter, UI, or Photo Library behavior.
+
+## 2026-07-06 PI-2 Renderer Dependency Boundary Scan frozen
+
+PI-2 has completed discovery before implementation.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-2_Renderer_Dependency_Isolation_Boundary_Scan.md`
+
+Scan conclusion:
+
+- The approved PI-2 seam is the renderer text-block lookup path:
+  `CardTextBlockEngine -> TemplateVariableEngine.render(...) ->
+  MetadataContext lookup`.
+- PI-2 should replace only this text lookup dependency with
+  `ExpressionLookup` capability.
+- `RecordCardRenderer(image:card:)`, `RecordCard`, Export, Share Extension,
+  batch processing, preview call sites, provider integration, layout,
+  typography, drawing, color, and module behavior remain out of scope.
+
+Freeze rule:
+
+- Only one renderer integration seam is approved for PI-2.
+- PI-2 must choose the seam with the smallest architectural surface, not the
+  smallest line count.
+- Renderer output change is not allowed.
+
+## 2026-07-06 PI-2 Renderer Dependency Isolation frozen
+
+PI-2 has completed the approved implementation seam.
+
+Implementation checkpoint:
+
+- `0fec6bb` replaces the `CardTextBlockEngine` text dependency from
+  `MetadataContext` lookup to `ExpressionLookup` capability.
+
+Architectural delta:
+
+```text
+Renderer text dependency: MetadataContext -> ExpressionLookup
+```
+
+Scope review:
+
+- The approved seam was the only architectural surface modified:
+  `CardTextBlockEngine -> TemplateVariableEngine.render(...)`.
+- `MetadataContextExpressionLookup` is a local engine-side compatibility
+  adapter for the approved seam; it is not a platform contract.
+- `RecordCardRenderer`, `RecordCard`, Export, Share Extension, batch
+  processing, preview call sites, provider integration, layout, typography,
+  drawing, color, and module behavior were not changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+
+Verification:
+
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+- PI-2 focused tests passed:
+  - `RendererDependencyIsolationTests`
+  - `TemplateVariableEngineTests`
+  - `ExpressionLookupContractTests`
+- Renderer regression tests passed:
+  - `ClassicWhiteCardRendererLayoutTests`
+  - `ClassicWhiteRendererThemeTests`
+  - `ImmersWhiteRendererLayoutTests`
+  - `RecordCardRendererRoutingTests`
+  - `TemplatePresetRenderLayoutTests`
+
+Known verification note:
+
+- `ClassicWhiteSnapshotTests.landscapeStandardSnapshotStaysStable()` passes
+  when run alone, but the full `ClassicWhiteSnapshotTests` suite still shows
+  an order-sensitive text antialiasing/truncation mismatch in that case. This
+  was not fixed in PI-2 because snapshot stability work is outside the
+  approved seam and no renderer behavior change is allowed.
+
+## 2026-07-06 PI-3 Memory Provider Compilation frozen
+
+PI-3 has completed the second canonical provider validation without changing
+platform contracts.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-3_Memory_Provider_Boundary_Scan.md`
+
+Checkpoints:
+
+- `aeacae1` freezes the approved PI-3 seam:
+  `MemoryExpressionContext -> MemoryExpressionEngine ->
+  MemoryResultPresentationAdapter -> MemoryModule.renderedText`.
+- `da775c7` adds `MemoryProvider`, which compiles the completed Memory
+  presentation output into a provider-neutral `ExpressionValue`.
+
+Architectural delta:
+
+```text
+Memory expression compilation: MemoryModule.renderedText -> ExpressionValue
+```
+
+Scope review:
+
+- PI-3 supports only the canonical `memory` token.
+- The provider consumes existing Memory pipeline output and does not implement
+  Memory calculation or formatting rules itself.
+- `MemoryResult`, `MemoryExpressionEngine`, `MemoryResultPresentationAdapter`,
+  Renderer, Export, Share Extension, batch processing, `RecordCard`,
+  `RecordCardBuildService`, `CardVariableProvider`, and production output were
+  not changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+
+Verification:
+
+- `MemoryProviderTests` passed.
+- Memory / Expression contract tests passed:
+  - `MemoryExpressionEngineTests`
+  - `MemoryResultContractTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
+  - `ExpressionSystemSmokeTests`
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-4 Metadata Provider Compilation frozen
+
+PI-4 has completed legacy metadata fact compiler validation without changing
+platform contracts or production metadata acquisition.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-4_Metadata_Provider_Boundary_Scan.md`
+
+Checkpoints:
+
+- `942811d` freezes the approved PI-4 seam:
+  `PhotoMetadata -> MetadataContext.build(from:) -> MetadataContext[model]`.
+- `dcdc257` adds `MetadataProvider`, which compiles the existing normalized
+  metadata model fact into a provider-neutral `ExpressionValue`.
+
+Architectural delta:
+
+```text
+Metadata fact compilation: MetadataContext[model] -> ExpressionValue
+```
+
+Scope review:
+
+- PI-4 supports only the canonical `model` token.
+- The provider consumes the existing `MetadataContext.build(from:)` projection
+  and does not implement EXIF acquisition, production template lookup, or
+  renderer behavior.
+- `PhotoMetadataReader`, `MetadataContext.build(from:)`,
+  `CardVariableProvider`, `TemplateVariableLibrary`, Renderer, Export, Share
+  Extension, batch processing, preview, and Photo Library behavior were not
+  changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+
+Verification:
+
+- `MetadataProviderTests` passed.
+- Metadata / Expression contract tests passed:
+  - `MetadataContextTests`
+  - `PhotoMetadataNormalizationTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
+  - `ExpressionSystemSmokeTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 Stage 2 Platform Integration frozen
+
+Stage 2 is complete as an Architecture-Governed Refactoring stage.
+
+Completed checkpoints:
+
+- PI-1 established `ExpressionLookup` as the renderer dependency capability.
+- PI-2 isolated renderer text lookup at the approved
+  `CardTextBlockEngine -> ExpressionLookup` seam without changing renderer
+  output.
+- PI-3 validated the second canonical provider through Memory provider
+  compilation.
+- PI-4 validated legacy metadata facts entering Expression Language through
+  Metadata provider compilation.
+
+Stage 2 completion criteria:
+
+- Renderer text resolution depends on `ExpressionLookup` capability rather
+  than concrete `ExpressionContext` storage.
+- At least two canonical providers are validated without platform contract
+  changes. Stage 2 now has Location, Memory, and Metadata provider compiler
+  validation.
+- No Stage 2 implementation changed `ExpressionLookup`, `ExpressionValue`,
+  `ExpressionContext`, `Expression_System_Contract.md`, or ADR-007.
+- No Stage 2 implementation changed Renderer layout, typography, drawing,
+  Export, Share Extension, Photo Library behavior, or metadata acquisition.
+
+Guardrail:
+
+- At the time of Stage 2 freeze, no PI-5 seam was approved.
+- PI-5 was later opened through its own frozen Boundary Scan before
+  implementation.
+- Any further Platform Adoption work after PI-5 must begin with a new Boundary
+  Scan before implementation.
+
+## 2026-07-06 PI-5 Legacy Metadata Adapter frozen
+
+PI-5 has completed the first legacy compatibility adapter without changing
+platform contracts or production rendering.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-5_Legacy_Metadata_Adapter_Boundary_Scan.md`
+
+Checkpoints:
+
+- `fd51a03` freezes the approved PI-5 seam:
+  `ExpressionContext -> ExpressionContextMetadataAdapter ->
+  MetadataContext[location_display]`.
+- `1b20bdb` adds `ExpressionContextMetadataAdapter`, which projects the
+  completed Expression Language `location` value into a legacy
+  `MetadataContext` copy for existing template consumers.
+
+Architectural delta:
+
+```text
+Legacy metadata compatibility projection: ExpressionContext[location] -> MetadataContext[location_display]
+```
+
+Scope review:
+
+- PI-5 supports only the approved `location -> location_display` projection.
+- The adapter consumes `ExpressionContext` and produces a `MetadataContext`
+  projection or copy.
+- The adapter does not mutate `ExpressionContext`, does not make
+  `MetadataContext` own Expression semantics, and does not connect production
+  rendering.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider`, `PhotoMetadataReader`,
+  `MetadataContext.build(from:)`, `CardVariableProvider`,
+  `TemplateVariableEngine`, `RecordCard`, `RecordCardBuildService`, Renderer,
+  Export, Share Extension, batch processing, preview, and Photo Library
+  behavior were not changed.
+
+Verification:
+
+- `ExpressionContextMetadataAdapterTests` passed.
+- Expression / legacy template regression tests passed:
+  - `ExpressionContextContractTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionLookupContractTests`
+  - `TemplateVariableEngineTests`
+  - `MetadataContextTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-6 V1 Preview Expression Source frozen
+
+PI-6 has completed the first preview Expression Language adoption seam without
+changing platform contracts, production rendering, or Configuration Center
+module insertion behavior.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-6_V1_Preview_Expression_Source_Boundary_Scan.md`
+
+Checkpoints:
+
+- `5398c89` freezes the approved PI-6 seam:
+  `V1PreviewCompositionEngine.moduleDisplayText(.location) -> preview sample
+  facts -> LocationExpressionProvider -> ExpressionContext[location]`.
+- `06dd0a2` changes the V1 preview location module source from a
+  preview-local rendered string to a provider-produced `ExpressionValue`
+  stored in `ExpressionContext`.
+
+Architectural delta:
+
+```text
+V1 preview location source: preview-local string -> ExpressionContext[location]
+```
+
+Scope review:
+
+- PI-6 supports only the approved `location` preview token.
+- V1 preview output text remains `河南 · 商丘`.
+- V1 preview template token remains `{{location_display}}`.
+- No `PreviewExpressionContext` model was introduced.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider`, `ExpressionContextMetadataAdapter`,
+  `ConfigurationCenterPreviewCompositionHelper`, `PhotoMemoiOSModuleCatalog`,
+  `CardVariableProvider`, `TemplateVariableEngine`, `RecordCard`,
+  `RecordCardBuildService`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and production preview behavior were not
+  changed.
+
+Verification:
+
+- `PreviewCompositionMigrationTests` passed.
+- Expression / Location / legacy adapter regression tests passed:
+  - `LocationExpressionPhase4DTests`
+  - `ExpressionContextMetadataAdapterTests`
+  - `ExpressionContextContractTests`
+  - `ExpressionValueContractTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-7 Location Module Configuration Boundary Scan frozen
+
+PI-7 completed a stopping Boundary Scan and did not approve implementation.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-7_Location_Module_Configuration_Boundary_Scan.md`
+
+Checkpoint:
+
+- `44c4883` freezes the PI-7 scan conclusion:
+  no existing approved seam can persist Location module presentation
+  configuration without introducing a configuration carrier or crossing
+  Configuration Center, Inspector, snapshot, preview, production, or renderer
+  boundaries.
+
+Architectural delta:
+
+```text
+No implementation seam approved: Expression module configuration requires a separate contract review
+```
+
+Scope review:
+
+- No implementation was performed for PI-7.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider`, `LocationResolver`, `LocationFormatter`,
+  `ConfigurationSnapshot`, `ConfigurationSession`,
+  `MemoryBlockInspectorView`, `V1PreviewCompositionEngine`,
+  `ConfigurationCenterPreviewCompositionHelper`, `CardVariableProvider`,
+  `RecordCardBuildService`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and production behavior were not changed.
+
+Required next architecture question:
+
+```text
+Where does provider-neutral Expression Module Configuration live?
+```
+
+Until that question is answered through a focused scan or ADR, Stage 3 should
+not continue with Location module configuration implementation.
+
+## 2026-07-06 PI-8 Expression Module Configuration Boundary Scan frozen
+
+PI-8 answered the follow-up ownership question without implementation.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-8_Expression_Module_Configuration_Boundary_Scan.md`
+
+Checkpoint:
+
+- `72cfff6` freezes the PI-8 scan conclusion:
+  provider-neutral Expression Module Configuration should live on the inserted
+  module instance.
+
+Architectural delta:
+
+```text
+Expression module configuration ownership: unowned -> inserted module instance
+```
+
+Scope review:
+
+- No implementation was performed for PI-8.
+- The recommended owner is the inserted module instance because presentation
+  configuration belongs to one concrete module insertion.
+- The carrier must be provider-neutral, token-addressed, `Codable`, and
+  `Hashable`.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider` token support remains unchanged; Location still
+  supports only the canonical `location` token.
+- Renderer, Template, `MetadataContext`, `ExpressionContext`, and
+  `ExpressionLookup` must not read or infer presentation strategy.
+
+Next implementation boundary:
+
+```text
+Inserted module instance -> provider-neutral expression module configuration carrier
+```
+
+Any implementation must remain scoped to the inserted-module ownership
+boundary and must not jump directly into Renderer, Template, Provider,
+ExpressionContext, live session, snapshot, export, share, photo-library, or
+production behavior.
+
+## 2026-07-06 PI-9 Expression Module Configuration Carrier frozen
+
+PI-9 completed the approved carrier implementation seam without wiring behavior.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-9_Expression_Module_Configuration_Carrier_Boundary_Scan.md`
+
+Checkpoints:
+
+- `8a9ef96` freezes the approved PI-9 seam:
+  `ExpressionModuleConfiguration` plus
+  `IOSInsertedModule.expressionConfiguration`.
+- `c866fdc` adds the provider-neutral `ExpressionModuleConfiguration` carrier
+  and attaches it as optional inserted-module data.
+
+Architectural delta:
+
+```text
+Expression module configuration carrier: absent -> optional inserted-module data
+```
+
+Scope review:
+
+- The approved carrier seam was the only implementation surface modified.
+- `ExpressionModuleConfiguration` is `Codable`, `Hashable`, keyed by
+  `ExpressionToken`, and provider-neutral.
+- `IOSInsertedModule` keeps legacy construction working through a nil default.
+- No Location-specific fields were added to the generic carrier.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `Expression_System_Contract.md`, and ADR-007 were not modified.
+- `LocationExpressionProvider`, `LocationResolver`, `LocationFormatter`,
+  `ConfigurationSession`, `ConfigurationSnapshot`, `MemoryBlock`,
+  `MemoryTokenBlock`, `MemoryExpression`, `MemoryBlockInspectorView`,
+  `V1PreviewCompositionEngine`, `ConfigurationCenterPreviewCompositionHelper`,
+  `CardVariableProvider`, `RecordCardBuildService`, Renderer, Export, Share
+  Extension, batch processing, Photo Library behavior, and production behavior
+  were not changed.
+
+Verification:
+
+- `ExpressionModuleConfigurationContractTests` passed.
+- Expression / inserted-module regression tests passed:
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `ConfigurationCenterRegionEditCoordinatorTests`
+  - `ConfigurationCenterRegionDraftStoreTests`
+  - `ConfigurationCenterRegionBindingAdapterTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-10 Location Configuration Adapter frozen
+
+PI-10 completed the approved Location adapter seam without wiring UI, preview,
+production, or renderer behavior.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-10_Location_Configuration_Adapter_Boundary_Scan.md`
+
+Checkpoints:
+
+- `e0bad54` freezes the approved PI-10 seam:
+  `ExpressionModuleConfiguration -> LocationConfigurationAdapter ->
+  LocationPresentationMode -> LocationResolutionConfiguration`.
+- `e6455c5` adds `LocationConfigurationAdapter`, which translates the
+  provider-neutral carrier into typed Location provider input.
+
+Architectural delta:
+
+```text
+Location configuration adapter: ExpressionModuleConfiguration -> typed Location provider input
+```
+
+Scope review:
+
+- The approved adapter seam was the only implementation surface modified.
+- Unknown or invalid options are deterministic and use typed defaults:
+  `provinceCity` and `allowsCoordinateFallback = false`.
+- The adapter consumes `ExpressionModuleConfiguration` but does not mutate or
+  store configuration.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- `LocationExpressionProvider`, `LocationResolver`, `LocationFormatter`,
+  `IOSInsertedModule`, `ConfigurationSession`, `ConfigurationSnapshot`,
+  `MemoryBlockInspectorView`, `V1PreviewCompositionEngine`,
+  `ConfigurationCenterPreviewCompositionHelper`, `CardVariableProvider`,
+  `RecordCardBuildService`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and production behavior were not changed.
+
+Verification:
+
+- RED confirmed `LocationConfigurationAdapterTests` failed before the adapter
+  existed.
+- `LocationConfigurationAdapterTests` passed.
+- Location / Expression regression tests passed:
+  - `LocationExpressionPhase4DTests`
+  - `LocationExpressionPhase3Tests`
+  - `ExpressionModuleConfigurationContractTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-11 Configuration Persistence frozen
+
+PI-11 completed the approved insertion-chain persistence seam without disk,
+snapshot, preview-provider, production, or renderer adoption.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-11_Configuration_Persistence_Boundary_Scan.md`
+
+Checkpoints:
+
+- `e22e7e7` freezes the approved PI-11 seam:
+  `ConfigurationCenterRegionBindingAdapter.insertModule(...) ->
+  ConfigurationCenterRegionEditCoordinator.insertModule(...) ->
+  ConfigurationCenterPreviewCompositionHelper.insertModule(...) ->
+  IOSInsertedModule.expressionConfiguration`.
+- `5d122f2` forwards optional `ExpressionModuleConfiguration` through the
+  insertion chain and stores it on the resulting `IOSInsertedModule`.
+
+Architectural delta:
+
+```text
+Expression module configuration persistence: insertion input -> stored inserted module instance
+```
+
+Scope review:
+
+- The approved insertion chain was the only implementation surface modified.
+- Existing module insertion still works with no configuration.
+- Configured insertion stores the configuration on the inserted module instance
+  under the active region configuration ID.
+- Preview text remains derived from the same inserted-module rendered value.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- `LocationExpressionProvider`, `LocationConfigurationAdapter`,
+  `LocationResolver`, `LocationFormatter`, `ConfigurationSnapshot`,
+  `ConfigurationSession`, `MemoryBlock`, `MemoryExpression`,
+  `MemoryBlockInspectorView`, `V1PreviewCompositionEngine`,
+  `CardVariableProvider`, `RecordCardBuildService`, Renderer, Export, Share
+  Extension, batch processing, Photo Library behavior, and production behavior
+  were not changed.
+
+Verification:
+
+- RED confirmed configured insertion failed before the insertion chain accepted
+  `expressionConfiguration`.
+- Configuration insertion regression tests passed:
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `ConfigurationCenterRegionBindingAdapterTests`
+  - `ConfigurationCenterRegionEditCoordinatorTests`
+  - `ConfigurationCenterRegionDraftStoreTests`
+- Expression / Location configuration tests passed:
+  - `ExpressionModuleConfigurationContractTests`
+  - `LocationConfigurationAdapterTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
 The RAW / high-resolution media work has started as a bounded intake

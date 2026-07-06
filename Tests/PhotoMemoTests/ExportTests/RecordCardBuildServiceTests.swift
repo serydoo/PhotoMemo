@@ -6,8 +6,8 @@ import Testing
 @Suite("RecordCardBuildService", .serialized)
 struct RecordCardBuildServiceTests {
 
-    @Test("Builds template1 with profile relationship and baby-age phrasing")
-    func buildsTemplate1WithProfileRelationshipAndBabyAgePhrasing() throws {
+    @Test("Builds template1 with profile relationship and Memory Summary phrasing")
+    func buildsTemplate1WithProfileRelationshipAndMemorySummaryPhrasing() throws {
         let profile = PersonalProfile(
             relationshipRole: .custom,
             customRelationshipLabel: "他爹",
@@ -113,7 +113,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "途途今天9个月14天啦"
+            == "途途今天9个月14天啦！"
         )
     }
 

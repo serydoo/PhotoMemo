@@ -100,7 +100,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "途途今天18天啦！")
+        #expect(module.renderedText == "这一天，途途18天")
         #expect(module.sourceAnchor?.anchorType == .birthday)
         #expect(
             module.sourceAnchor?.expressionStyle
@@ -171,7 +171,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "安安今天1年2个月8天啦！")
+        #expect(module.renderedText == "这一天，安安1岁2个月8天")
     }
 
     @Test("uses countdown branch when birthday capture time is before the anchor date")
@@ -240,7 +240,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "距离途途出生还有18天")
+        #expect(module.renderedText == "还有18天，途途就要出生了")
         #expect(module.sourceAnchor?.anchorType == .birthday)
         #expect(
             module.sourceAnchor?.expressionStyle
@@ -308,7 +308,7 @@ struct MemoryExpressionEngineTests {
             )
 
         #expect(
-            previewText == "妈妈眼里的宝宝今天18天啦！"
+            previewText == "这一天，妈妈眼里的宝宝18天"
         )
     }
 
@@ -400,7 +400,7 @@ struct MemoryExpressionEngineTests {
                     expressionStyle: .birthdayNatural,
                     relativeSnapshot: beforeBirthday
                 )
-            == "距离途途出生还有18天"
+            == "还有18天，途途就要出生了"
         )
         #expect(
             MemoryAnchorExpressionResolver
@@ -411,7 +411,7 @@ struct MemoryExpressionEngineTests {
                     expressionStyle: .marriageNatural,
                     relativeSnapshot: afterMarriage
                 )
-            == "我们婚后1年2个月3天"
+            == "结婚已经1年2个月3天"
         )
         #expect(
             MemoryAnchorExpressionResolver
@@ -433,7 +433,7 @@ struct MemoryExpressionEngineTests {
                     expressionStyle: .examRecord,
                     relativeSnapshot: afterExam
                 )
-            == "自高考以来已有3个月12天"
+            == "自高考以来，已有3个月12天"
         )
         #expect(
             MemoryAnchorExpressionResolver
@@ -444,7 +444,178 @@ struct MemoryExpressionEngineTests {
                     expressionStyle: .customNatural,
                     relativeSnapshot: afterCustom
                 )
-            == "自毕业旅行起已有2年1个月6天"
+            == "自毕业旅行起，已有2年1个月6天"
+        )
+    }
+
+    @Test("birthday age wording uses 岁 after full years")
+    func birthdayAgeWordingUsesSuiAfterFullYears() {
+        let afterBirthday =
+            MemoryAnchorRelativeSnapshot(
+                years: 3,
+                months: 2,
+                days: 1,
+                totalDays: 1157,
+                isFutureRelative: false
+            )
+
+        #expect(afterBirthday.ageText == "3岁2个月1天")
+        #expect(
+            MemoryAnchorExpressionResolver
+                .renderedText(
+                    subjectText: "途途",
+                    anchorTitle: "生日",
+                    anchorType: .birthday,
+                    expressionStyle: .birthdayWarm,
+                    relativeSnapshot: afterBirthday
+                )
+            == "陪途途走到3岁2个月1天"
+        )
+    }
+
+    @Test("marriage countdown wording says 结婚 instead of 婚礼")
+    func marriageCountdownWordingSaysMarriageInsteadOfWedding() {
+        let beforeMarriage =
+            MemoryAnchorRelativeSnapshot(
+                years: 0,
+                months: 0,
+                days: 0,
+                totalDays: 18,
+                isFutureRelative: true
+            )
+
+        #expect(
+            MemoryAnchorExpressionResolver
+                .renderedText(
+                    subjectText: "我们",
+                    anchorTitle: "结婚",
+                    anchorType: .marriage,
+                    expressionStyle: .marriageMinimal,
+                    relativeSnapshot: beforeMarriage
+                )
+            == "结婚倒计时：18天"
+        )
+    }
+
+    @Test("annual birthday countdown names the next birthday age")
+    func annualBirthdayCountdownNamesTheNextBirthdayAge() throws {
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2022,
+                        month: 8,
+                        day: 10
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 6
+                    )
+                )
+            )
+        let relativeSnapshot =
+            MemoryAnchorRelativeSnapshot
+            .resolve(
+                anchorDate: birthday,
+                captureDate: captureDate,
+                calendar: calendar
+            )
+        let occurrence =
+            try #require(
+                MemoryAnchorAnnualOccurrence
+                    .resolve(
+                        anchorDate: birthday,
+                        captureDate: captureDate,
+                        calendar: calendar
+                    )
+            )
+
+        #expect(occurrence.daysUntilOccurrence == 35)
+        #expect(occurrence.yearsAtOccurrence == 4)
+        #expect(
+            MemoryAnchorExpressionResolver
+                .renderedText(
+                    subjectText: "途途",
+                    anchorTitle: "生日",
+                    anchorType: .birthday,
+                    expressionStyle: .birthdayNatural,
+                    relativeSnapshot:
+                        relativeSnapshot,
+                    annualOccurrence:
+                        occurrence,
+                    prefersAnnualOccurrence:
+                        true
+                )
+            == "还有35天，就是途途4岁生日"
+        )
+    }
+
+    @Test("annual marriage countdown names the next anniversary")
+    func annualMarriageCountdownNamesTheNextAnniversary() throws {
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let marriageDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2020,
+                        month: 10,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 6
+                    )
+                )
+            )
+        let relativeSnapshot =
+            MemoryAnchorRelativeSnapshot
+            .resolve(
+                anchorDate: marriageDate,
+                captureDate: captureDate,
+                calendar: calendar
+            )
+        let occurrence =
+            try #require(
+                MemoryAnchorAnnualOccurrence
+                    .resolve(
+                        anchorDate: marriageDate,
+                        captureDate: captureDate,
+                        calendar: calendar
+                    )
+            )
+
+        #expect(occurrence.daysUntilOccurrence == 87)
+        #expect(occurrence.yearsAtOccurrence == 6)
+        #expect(
+            MemoryAnchorExpressionResolver
+                .renderedText(
+                    subjectText: "我们",
+                    anchorTitle: "结婚",
+                    anchorType: .marriage,
+                    expressionStyle: .marriageMinimal,
+                    relativeSnapshot:
+                        relativeSnapshot,
+                    annualOccurrence:
+                        occurrence,
+                    prefersAnnualOccurrence:
+                        true
+                )
+            == "结婚6周年倒计时：87天"
         )
     }
 }
