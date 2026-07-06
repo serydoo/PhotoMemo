@@ -83,7 +83,7 @@ struct V1ResolvedMemoryWriteTextPresenterTests {
             )
 
         #expect(
-            resolvedText == "途途今天18天啦！"
+            resolvedText == "这一天，途途18天"
         )
     }
 

@@ -104,7 +104,7 @@ struct PreviewCompositionMigrationTests {
             )
             #expect(
                 slotDModel.displayText
-                == "途途今天11个月28天啦！"
+                == "这一天，途途11个月28天"
             )
         case .failure(let error):
             Issue.record(
@@ -299,7 +299,7 @@ struct PreviewCompositionMigrationTests {
                 context: context,
                 engine: engine
             )
-            .displayText == "途途今天11个月28天啦！"
+            .displayText == "这一天，途途11个月28天"
         )
     }
 
@@ -372,7 +372,7 @@ struct PreviewCompositionMigrationTests {
                 context: context,
                 engine: engine
             )
-            .displayText == "记录途途11个月28天"
+            .displayText == "记录途途｜11个月28天"
         )
     }
 }
