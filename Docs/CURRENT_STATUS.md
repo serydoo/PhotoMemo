@@ -114,7 +114,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-9 Carrier Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-10 Adapter Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`. |
 
 PI-1 completed checkpoints:
 
@@ -585,6 +585,60 @@ Verification:
   - `ConfigurationCenterRegionEditCoordinatorTests`
   - `ConfigurationCenterRegionDraftStoreTests`
   - `ConfigurationCenterRegionBindingAdapterTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-10 Location Configuration Adapter frozen
+
+PI-10 completed the approved Location adapter seam without wiring UI, preview,
+production, or renderer behavior.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-10_Location_Configuration_Adapter_Boundary_Scan.md`
+
+Checkpoints:
+
+- `e0bad54` freezes the approved PI-10 seam:
+  `ExpressionModuleConfiguration -> LocationConfigurationAdapter ->
+  LocationPresentationMode -> LocationResolutionConfiguration`.
+- `e6455c5` adds `LocationConfigurationAdapter`, which translates the
+  provider-neutral carrier into typed Location provider input.
+
+Architectural delta:
+
+```text
+Location configuration adapter: ExpressionModuleConfiguration -> typed Location provider input
+```
+
+Scope review:
+
+- The approved adapter seam was the only implementation surface modified.
+- Unknown or invalid options are deterministic and use typed defaults:
+  `provinceCity` and `allowsCoordinateFallback = false`.
+- The adapter consumes `ExpressionModuleConfiguration` but does not mutate or
+  store configuration.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- `LocationExpressionProvider`, `LocationResolver`, `LocationFormatter`,
+  `IOSInsertedModule`, `ConfigurationSession`, `ConfigurationSnapshot`,
+  `MemoryBlockInspectorView`, `V1PreviewCompositionEngine`,
+  `ConfigurationCenterPreviewCompositionHelper`, `CardVariableProvider`,
+  `RecordCardBuildService`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and production behavior were not changed.
+
+Verification:
+
+- RED confirmed `LocationConfigurationAdapterTests` failed before the adapter
+  existed.
+- `LocationConfigurationAdapterTests` passed.
+- Location / Expression regression tests passed:
+  - `LocationExpressionPhase4DTests`
+  - `LocationExpressionPhase3Tests`
+  - `ExpressionModuleConfigurationContractTests`
+  - `ExpressionValueContractTests`
+  - `ExpressionContextContractTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
 
