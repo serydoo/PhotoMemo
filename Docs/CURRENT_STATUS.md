@@ -45,6 +45,85 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-06 Location Module Feature save and production consumption implemented
+
+Location Module Adoption now has the user-visible configuration loop connected
+to the app production render/export path:
+
+```text
+Location Module
+-> Object Inspector 位置显示
+-> ExpressionModuleConfiguration
+-> BatchConfigurationSnapshot
+-> RecordCardBuildService
+-> CardTextBlockEngine
+```
+
+Completed checkpoints:
+
+- V1 configuration save/apply requests now carry the selected Location display
+  configuration.
+- `SettingsService`, `SettingsRepository`, and
+  `BatchConfigurationSnapshotProvider` persist and reload the selected
+  Location display configuration through the existing shared defaults seam.
+- V1 bootstrap restore now reloads the saved Location display configuration
+  into Object Inspector and preview composition state instead of falling back
+  to the local default after restart.
+- `BatchConfigurationSnapshot` now carries the saved
+  `ExpressionModuleConfiguration` as production transport data.
+- `RecordCardBuildService` compiles the saved Location display configuration
+  into a production `ExpressionContext` value before card text rendering.
+- `CardTextBlockEngine` preserves the production Location expression value and
+  does not overwrite it with the legacy-compatible fallback provider.
+- `SharedBatchConfigurationSnapshotService` now proves the shared snapshot
+  carrier can read the saved Location display configuration used by Share
+  intake.
+- `PhotoMemoShareExtension` compiles with the shared Expression carrier files
+  needed to decode that snapshot field.
+
+Scope review:
+
+- No new Location provider capability was introduced.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- Renderer drawing, layout, typography, export implementation, metadata
+  mutation, photo-library save behavior, and Layout Engine behavior were not
+  changed.
+
+Feature Completion Gate status:
+
+- Preview: ✅ focused tests pass.
+- Production render/export path: ✅ focused tests pass through
+  `RecordCardBuildService` and `CardTextBlockEngine`.
+- Share intake carrier: ✅ shared snapshot test and Share Extension build pass.
+- Manual Product Acceptance: ⬜ pending.
+- Merge to `main`: ⬜ pending Feature Completion Gate.
+
+Verification:
+
+- `git diff --check` passed.
+- Focused Location display / preview tests passed:
+  - `LocationDisplayInspectorPresenterTests`
+  - `ConfigurationCenterRegionBindingAdapterTests`
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `LocationConfigurationAdapterTests`
+- Focused save / production / boundary tests passed:
+  - `V1ConfigurationApplyRequestBuilderTests`
+  - `ConfigurationMigrationTests`
+  - `V1ConfigurationBootstrapPresenterTests`
+  - `V1BootstrapFlowCoordinatorTests`
+  - `V1BootstrapRuntimeCoordinatorTests`
+  - `RendererDependencyIsolationTests`
+  - `RecordCardBuildServiceTests`
+- Focused shared snapshot tests passed:
+  - `SharedBatchConfigurationSnapshotServiceTests`
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+- Builds passed:
+  - `PhotoMemo` Debug
+  - `PhotoMemoiOSV1` generic iOS Simulator
+  - `PhotoMemoShareExtension` generic iOS Simulator
+
 ## 2026-07-06 Location Module Feature Slice A frozen
 
 Location Module Adoption has moved from platform completion into feature

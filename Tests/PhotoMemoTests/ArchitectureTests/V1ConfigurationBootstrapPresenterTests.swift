@@ -22,7 +22,12 @@ struct V1ConfigurationBootstrapPresenterTests {
                 selectedExistingAlbumIdentifier:
                     "album-existing",
                 suggestedNewAlbumName:
-                    "成长记录"
+                    "成长记录",
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "cityDistrict"
+                    )
             )
 
         let projection =
@@ -47,6 +52,13 @@ struct V1ConfigurationBootstrapPresenterTests {
         #expect(
             projection.suggestedNewAlbumName
             == "成长记录"
+        )
+        #expect(
+            projection.locationDisplayConfiguration
+            == LocationDisplayInspectorPresenter
+                .configuration(
+                    for: "cityDistrict"
+                )
         )
     }
 

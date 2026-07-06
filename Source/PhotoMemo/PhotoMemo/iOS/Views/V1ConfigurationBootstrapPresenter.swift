@@ -18,6 +18,9 @@ struct V1ConfigurationBootstrapProjection:
 
     let suggestedNewAlbumName:
         String?
+
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
 }
 
 enum V1ConfigurationBootstrapPresenter {
@@ -41,7 +44,10 @@ enum V1ConfigurationBootstrapPresenter {
                 .selectedExistingAlbumIdentifier,
             suggestedNewAlbumName:
                 state
-                .suggestedNewAlbumName
+                .suggestedNewAlbumName,
+            locationDisplayConfiguration:
+                state
+                .locationDisplayConfiguration
         )
     }
 }

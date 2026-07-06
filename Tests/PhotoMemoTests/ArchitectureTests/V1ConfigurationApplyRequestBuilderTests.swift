@@ -31,6 +31,11 @@ struct V1ConfigurationApplyRequestBuilderTests {
                     .slotC: "拍摄参数内容",
                     .slotD: "智能模块内容"
                 ],
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "cityDistrict"
+                    ),
                 badge: .family,
                 usesCustomMemoryWriteText: true,
                 customMemoryWriteText: "第一次一起看海",
@@ -63,6 +68,13 @@ struct V1ConfigurationApplyRequestBuilderTests {
         #expect(request.template.leftBottomArea.items.first?.value == "时间线内容")
         #expect(request.template.rightTopArea.items.first?.value == "拍摄参数内容")
         #expect(request.template.rightBottomArea.items.first?.value == "智能模块内容")
+        #expect(
+            request.locationDisplayConfiguration
+            == LocationDisplayInspectorPresenter
+                .configuration(
+                    for: "cityDistrict"
+                )
+        )
         #expect(request.badge == .family)
         #expect(request.outputTarget == .existingAlbum)
         #expect(request.availableAlbums == albums)
@@ -92,6 +104,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 templateTextsByRegion: [
                     .slotA: "A"
                 ],
+                locationDisplayConfiguration: nil,
                 badge: nil,
                 usesCustomMemoryWriteText: false,
                 customMemoryWriteText: "不会被保存",

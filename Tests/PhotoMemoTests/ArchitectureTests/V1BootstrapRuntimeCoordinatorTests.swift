@@ -33,6 +33,11 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 outputTarget: .existingAlbum,
                 selectedExistingAlbumIdentifier: "album-1",
                 suggestedNewAlbumName: "成长记录",
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "coordinate"
+                    ),
                 sessionRestorePlan: .restoreLibrary(
                     subjects: [earlierSubject, selectedSubject],
                     selectedSubjectID: selectedSubject.id
@@ -91,6 +96,11 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 outputTarget: .existingAlbum,
                 selectedExistingAlbumIdentifier: "album-1",
                 suggestedNewAlbumName: "成长记录",
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "coordinate"
+                    ),
                 birthdayDate:
                     selectedSubject.primaryTimeAnchor?.date,
                 regionDrafts: expectedDrafts
@@ -134,6 +144,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 outputTarget: .automatic,
                 selectedExistingAlbumIdentifier: "",
                 suggestedNewAlbumName: nil,
+                locationDisplayConfiguration: nil,
                 sessionRestorePlan: .restoreSelectedSubject(
                     subject
                 ),

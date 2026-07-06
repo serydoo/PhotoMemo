@@ -85,7 +85,7 @@ struct RendererDependencyIsolationTests {
         #expect(cardTextBlockEngineSource.contains("LocationExpressionProvider"))
         #expect(cardTextBlockEngineSource.contains(".legacyDisplay"))
         #expect(!cardVariableProviderSource.contains("LocationExpressionProvider"))
-        #expect(!recordCardBuildServiceSource.contains("LocationExpressionProvider"))
+        #expect(recordCardBuildServiceSource.contains("LocationExpressionProvider"))
         #expect(!rendererSource.contains("LocationExpressionProvider"))
     }
 
@@ -327,6 +327,73 @@ struct RendererDependencyIsolationTests {
                 longitude: 114.0578652
             )
         )
+    }
+
+    @Test("Location feature production expression context overrides legacy location display")
+    func locationFeatureProductionExpressionContextOverridesLegacyLocationDisplay() throws {
+        let template =
+            Template(
+                preset: .template2,
+                name: "Location Feature",
+                leftTopArea: TemplateArea(
+                    name: "Left Top",
+                    items: [
+                        TemplateItem(
+                            type: .variable,
+                            name: "Location",
+                            value: "{{location_display}}"
+                        )
+                    ]
+                ),
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea: .empty,
+                badgeArea: .empty
+            )
+        var card =
+            RecordCard(
+                template: template,
+                metadata:
+                    PhotoMetadata(
+                        city: "Shenzhen",
+                        district: "Nanshan",
+                        province: "Guangdong",
+                        country: "China"
+                    ),
+                context:
+                    MetadataContext.build(
+                        from:
+                            PhotoMetadata(
+                                city: "Shenzhen",
+                                district: "Nanshan",
+                                province: "Guangdong",
+                                country: "China"
+                            )
+                    )
+            )
+        card.productionExpressionContext =
+            try ExpressionContext(
+                values: [
+                    ExpressionValue(
+                        token:
+                            LocationExpressionProvider
+                            .locationToken,
+                        resolvedText:
+                            "Shenzhen · Nanshan"
+                    )
+                ]
+            )
+
+        let block =
+            try #require(
+                CardTextBlockEngine()
+                    .build(
+                        from: card
+                    )
+                    .first
+            )
+
+        #expect(block.value == "Shenzhen · Nanshan")
     }
 }
 

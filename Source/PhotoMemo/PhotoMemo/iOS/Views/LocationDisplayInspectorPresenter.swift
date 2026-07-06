@@ -59,9 +59,19 @@ enum LocationDisplayInspectorPresenter {
     static func selectedOptionID(
         from module: IOSInsertedModule?
     ) -> String {
+        selectedOptionID(
+            fromConfiguration:
+                module?
+                .expressionConfiguration
+        )
+    }
+
+    static func selectedOptionID(
+        fromConfiguration configuration:
+            ExpressionModuleConfiguration?
+    ) -> String {
         let mode =
-            module?
-            .expressionConfiguration?
+            configuration?
             .options["presentationMode"]
 
         guard
@@ -79,8 +89,22 @@ enum LocationDisplayInspectorPresenter {
     static func selectedValue(
         from module: IOSInsertedModule?
     ) -> String {
+        selectedValue(
+            fromConfiguration:
+                module?
+                .expressionConfiguration
+        )
+    }
+
+    static func selectedValue(
+        fromConfiguration configuration:
+            ExpressionModuleConfiguration?
+    ) -> String {
         let selectedID =
-            selectedOptionID(from: module)
+            selectedOptionID(
+                fromConfiguration:
+                    configuration
+            )
 
         return presentation
             .options

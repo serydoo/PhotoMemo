@@ -95,6 +95,15 @@ final class SettingsRepository {
             .savePhotoDescriptionSettings()
     }
 
+    func saveLocationDisplayConfiguration(
+        _ configuration: ExpressionModuleConfiguration?
+    ) {
+        settingsService
+            .saveLocationDisplayConfiguration(
+                configuration
+            )
+    }
+
     func saveEditorState(
         selectedAnchorID: UUID?,
         selectedAlbumIdentifier: String,
@@ -224,7 +233,10 @@ final class SettingsRepository {
             selectedExistingAlbumIdentifier:
                 selectedExistingAlbumIdentifier,
             suggestedNewAlbumName:
-                suggestedNewAlbumName
+                suggestedNewAlbumName,
+            locationDisplayConfiguration:
+                settingsService
+                .loadLocationDisplayConfiguration()
         )
     }
 }

@@ -229,6 +229,9 @@ final class SettingsService: ObservableObject {
         static let selectedMemorySubjectText =
             "photomemo.selectedMemorySubjectText"
 
+        static let locationDisplayConfiguration =
+            "photomemo.locationDisplayConfiguration"
+
         static let subjectLibrary =
             "photomemo.v1.subjectLibrary"
 
@@ -466,6 +469,33 @@ final class SettingsService: ObservableObject {
         defaults.set(
             photoDescriptionOverride,
             forKey: Keys.photoDescriptionOverride
+        )
+    }
+
+    func saveLocationDisplayConfiguration(
+        _ configuration: ExpressionModuleConfiguration?
+    ) {
+        guard let configuration else {
+            defaults.removeObject(
+                forKey:
+                    Keys.locationDisplayConfiguration
+            )
+            return
+        }
+
+        guard
+            let data =
+                try? JSONEncoder().encode(
+                    configuration
+                )
+        else {
+            return
+        }
+
+        defaults.set(
+            data,
+            forKey:
+                Keys.locationDisplayConfiguration
         )
     }
 
@@ -915,7 +945,27 @@ extension SettingsService {
                 photoDescriptionOverride,
             selectedAlbumIdentifier:
                 selectedAlbumIdentifier
-                ?? self.selectedAlbumIdentifier
+                ?? self.selectedAlbumIdentifier,
+            locationDisplayConfiguration:
+                loadLocationDisplayConfiguration()
+        )
+    }
+
+    func loadLocationDisplayConfiguration()
+    -> ExpressionModuleConfiguration? {
+        guard
+            let data =
+                defaults.data(
+                    forKey:
+                        Keys.locationDisplayConfiguration
+                )
+        else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(
+            ExpressionModuleConfiguration.self,
+            from: data
         )
     }
 

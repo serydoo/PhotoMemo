@@ -58,4 +58,51 @@ struct SharedBatchConfigurationSnapshotServiceTests {
             .normalizedForEditing
         )
     }
+
+    @Test("shared snapshot carries the saved location display configuration")
+    func sharedSnapshotCarriesLocationDisplayConfiguration() throws {
+
+        let suiteName =
+            "PhotoMemo.SharedBatchConfigurationSnapshotServiceTests.locationDisplay.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let configuration =
+            LocationDisplayInspectorPresenter
+            .configuration(
+                for: "cityDistrict"
+            )
+        let data =
+            try JSONEncoder()
+            .encode(configuration)
+        defaults.set(
+            data,
+            forKey:
+                "photomemo.locationDisplayConfiguration"
+        )
+
+        let service =
+            SharedBatchConfigurationSnapshotService(
+                defaults: defaults
+            )
+
+        #expect(
+            service
+                .loadSnapshot()
+                .locationDisplayConfiguration
+            == configuration
+        )
+    }
 }

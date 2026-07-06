@@ -35,6 +35,9 @@ struct BatchConfigurationSnapshotProvider {
         static let selectedMemorySubject =
             "photomemo.selectedMemorySubject"
 
+        static let locationDisplayConfiguration =
+            "photomemo.locationDisplayConfiguration"
+
         static let personalProfile =
             "photomemo.personalProfile"
     }
@@ -80,7 +83,9 @@ struct BatchConfigurationSnapshotProvider {
                 defaults.string(
                     forKey:
                         Keys.selectedAlbumIdentifier
-                ) ?? ""
+                ) ?? "",
+            locationDisplayConfiguration:
+                loadLocationDisplayConfiguration()
         )
     }
 
@@ -138,7 +143,9 @@ struct BatchConfigurationSnapshotProvider {
         memorySubjectText: String?,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
-        selectedAlbumIdentifier: String
+        selectedAlbumIdentifier: String,
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) -> BatchConfigurationSnapshot {
         let resolvedAnchor =
             resolvedAnchor(
@@ -178,6 +185,8 @@ struct BatchConfigurationSnapshotProvider {
             anchor: resolvedAnchor,
             memorySubjectText:
                 resolvedMemorySubjectText,
+            locationDisplayConfiguration:
+                locationDisplayConfiguration,
             shouldWritePhotoDescription:
                 shouldWritePhotoDescription,
             photoDescriptionOverride:
@@ -281,6 +290,24 @@ private extension BatchConfigurationSnapshotProvider {
              .decodingFailed:
             return nil
         }
+    }
+
+    func loadLocationDisplayConfiguration()
+    -> ExpressionModuleConfiguration? {
+        guard
+            let data =
+                defaults.data(
+                    forKey:
+                        Keys.locationDisplayConfiguration
+                )
+        else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(
+            ExpressionModuleConfiguration.self,
+            from: data
+        )
     }
 
 #if !PHOTOMEMO_SHARE_EXTENSION

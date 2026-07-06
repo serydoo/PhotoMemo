@@ -42,7 +42,12 @@ struct V1BootstrapFlowCoordinatorTests {
                 logoMode: .customUpload,
                 outputTarget: .existingAlbum,
                 selectedExistingAlbumIdentifier: "album-existing",
-                suggestedNewAlbumName: "成长记录"
+                suggestedNewAlbumName: "成长记录",
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "provinceCityDistrict"
+                    )
             )
         let expectedDrafts: [CardRegion: V1EditorDraft] = [
             .slotA: V1EditorDraft(items: [.text("A 区")]),
@@ -91,6 +96,13 @@ struct V1BootstrapFlowCoordinatorTests {
             patch.suggestedNewAlbumName
             == "成长记录"
         )
+        #expect(
+            patch.locationDisplayConfiguration
+            == LocationDisplayInspectorPresenter
+                .configuration(
+                    for: "provinceCityDistrict"
+                )
+        )
         #expect(patch.birthdayDate == selectedAnchorDate)
         #expect(
             patch.welcomeState
@@ -105,6 +117,13 @@ struct V1BootstrapFlowCoordinatorTests {
         #expect(
             capturedContext?.birthdayDate
             == selectedAnchorDate
+        )
+        #expect(
+            capturedContext?.locationDisplayConfiguration
+            == LocationDisplayInspectorPresenter
+                .configuration(
+                    for: "provinceCityDistrict"
+                )
         )
 
         switch patch.sessionRestorePlan {

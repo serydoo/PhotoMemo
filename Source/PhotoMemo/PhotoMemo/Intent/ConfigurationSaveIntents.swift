@@ -28,6 +28,9 @@ struct V1ConfigurationSaveRequest:
 
     let badge: Badge?
 
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
+
     let shouldWritePhotoDescription: Bool
 
     let photoDescriptionOverride: String
@@ -43,6 +46,8 @@ struct V1ConfigurationSaveRequest:
         shouldSaveSubjectLibrary: Bool = true,
         template: Template,
         badge: Badge?,
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
         timeAnchor: TimeAnchor,
@@ -56,6 +61,8 @@ struct V1ConfigurationSaveRequest:
             shouldSaveSubjectLibrary
         self.template = template
         self.badge = badge
+        self.locationDisplayConfiguration =
+            locationDisplayConfiguration
         self.shouldWritePhotoDescription =
             shouldWritePhotoDescription
         self.photoDescriptionOverride =
@@ -94,6 +101,9 @@ struct V1ConfigurationBootstrapState:
     let suggestedNewAlbumName:
         String?
 
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
+
     init(
         subjects: [MemorySubject]? = nil,
         selectedSubjectID: MemorySubject.ID? = nil,
@@ -104,7 +114,9 @@ struct V1ConfigurationBootstrapState:
         logoMode: V1LogoMode,
         outputTarget: V1IOSOutputTarget,
         selectedExistingAlbumIdentifier: String,
-        suggestedNewAlbumName: String?
+        suggestedNewAlbumName: String?,
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) {
         self.subjects = subjects
         self.selectedSubjectID =
@@ -119,6 +131,8 @@ struct V1ConfigurationBootstrapState:
             selectedExistingAlbumIdentifier
         self.suggestedNewAlbumName =
             suggestedNewAlbumName
+        self.locationDisplayConfiguration =
+            locationDisplayConfiguration
     }
 }
 

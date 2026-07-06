@@ -22,6 +22,8 @@ struct V1BootstrapFlowPatch {
     let outputTarget: V1IOSOutputTarget
     let selectedExistingAlbumIdentifier: String
     let suggestedNewAlbumName: String?
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
     let sessionRestorePlan:
         V1BootstrapSessionRestorePlan
     let birthdayDate: Date?
@@ -124,7 +126,10 @@ struct V1BootstrapFlowCoordinator {
                 subject: resolvedSubject,
                 birthdayDate:
                     resolvedBirthdayDate
-                    ?? fallbackBirthdayDate
+                    ?? fallbackBirthdayDate,
+                locationDisplayConfiguration:
+                    state
+                    .locationDisplayConfiguration
             )
 
         return V1BootstrapFlowPatch(
@@ -147,6 +152,9 @@ struct V1BootstrapFlowCoordinator {
             suggestedNewAlbumName:
                 projection
                 .suggestedNewAlbumName,
+            locationDisplayConfiguration:
+                projection
+                .locationDisplayConfiguration,
             sessionRestorePlan:
                 sessionRestorePlan(
                     state: state,

@@ -6,6 +6,81 @@ import Testing
 @Suite("RecordCardBuildService", .serialized)
 struct RecordCardBuildServiceTests {
 
+    @Test("Location display configuration feeds production render text")
+    func locationDisplayConfigurationFeedsProductionRenderText() throws {
+        let template =
+            Template(
+                preset: .template2,
+                name: "Location Display",
+                leftTopArea:
+                    TemplateArea(
+                        name: "Location",
+                        items: [
+                            TemplateItem(
+                                type: .variable,
+                                name: "Location",
+                                value: "{{location_display}}"
+                            )
+                        ]
+                    ),
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea: .empty,
+                badgeArea: .empty
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/location.jpeg"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1200,
+                                height: 900
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        city: "商丘",
+                        district: "永城",
+                        province: "河南",
+                        country: "中国"
+                    )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: nil,
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "cityDistrict"
+                    ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let block =
+            try #require(
+                CardTextBlockEngine()
+                    .build(
+                        from: card
+                    )
+                    .first
+            )
+
+        #expect(block.value == "商丘 · 永城")
+    }
+
     @Test("Builds template1 with profile relationship and Memory Summary phrasing")
     func buildsTemplate1WithProfileRelationshipAndMemorySummaryPhrasing() throws {
         let profile = PersonalProfile(

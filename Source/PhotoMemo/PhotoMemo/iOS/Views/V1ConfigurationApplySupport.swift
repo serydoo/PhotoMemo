@@ -9,6 +9,8 @@ struct V1ConfigurationApplyBuildInput: Hashable {
     let shouldSaveSubjectLibrary: Bool
     let presetTitle: String
     let templateTextsByRegion: [CardRegion: String]
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
     let badge: Badge?
     let usesCustomMemoryWriteText: Bool
     let customMemoryWriteText: String
@@ -95,6 +97,8 @@ enum V1ConfigurationApplyRequestBuilder {
                     badgeArea: .badge
                 ),
             badge: input.badge,
+            locationDisplayConfiguration:
+                input.locationDisplayConfiguration,
             shouldWritePhotoDescription:
                 input.usesCustomMemoryWriteText,
             photoDescriptionOverride:

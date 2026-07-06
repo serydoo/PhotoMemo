@@ -185,6 +185,11 @@
 			path = PhotoMemo/iOS/ShareExtension;
 			sourceTree = "<group>";
 		};
+		A1B2C3143A9C410100A10001 /* PhotoMemo/Expression */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PhotoMemo/Expression;
+			sourceTree = "<group>";
+		};
 		F4A1B2373A9C410100A10001 /* PhotoMemoWidgetExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PhotoMemoWidgetExtension;
@@ -245,6 +250,7 @@
 			children = (
 				B3DBA4F62FE1581100945016 /* PhotoMemo */,
 				F5B100033A9D000000A10001 /* ../../Tests/PhotoMemoTests */,
+				A1B2C3143A9C410100A10001 /* PhotoMemo/Expression */,
 				F4A1B2373A9C410100A10001 /* PhotoMemoWidgetExtension */,
 				B3DBA4F52FE1581100945016 /* Products */,
 				B39FE7622FECAF5200C88A23 /* Recovered References */,
@@ -343,6 +349,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A1B2C3113A9C410100A10001 /* PhotoMemo/App */,
+				A1B2C3143A9C410100A10001 /* PhotoMemo/Expression */,
 				A1B2C3123A9C410100A10001 /* PhotoMemo/Models */,
 				A1B2C3133A9C410100A10001 /* PhotoMemo/iOS/ShareExtension */,
 			);

@@ -23,6 +23,20 @@ final class CardTextBlockEngine {
         var metadataContext =
             baseContext
 
+#if !PHOTOMEMO_SHARE_EXTENSION
+        let hasProductionLocationExpression =
+            card
+            .productionExpressionContext?
+            .value(
+                for:
+                    LocationExpressionProvider
+                    .locationToken
+            ) != nil
+#else
+        let hasProductionLocationExpression =
+            false
+#endif
+
         if let modelExpressionValue =
             MetadataProvider()
             .expressionValue(
@@ -57,7 +71,8 @@ final class CardTextBlockEngine {
         }
 #endif
 
-        if let locationExpressionValue =
+        if !hasProductionLocationExpression,
+           let locationExpressionValue =
             LocationExpressionProvider()
             .expressionValue(
                 for: LocationExpressionProvider.locationToken,

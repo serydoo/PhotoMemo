@@ -9,14 +9,21 @@ struct V1PreviewCompositionContext: Hashable {
 
     let captureDate: Date
 
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
+
     init(
         subject: MemorySubject?,
         birthdayDate: Date,
-        captureDate: Date = V1PreviewCompositionEngine.defaultCaptureDate
+        captureDate: Date = V1PreviewCompositionEngine.defaultCaptureDate,
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) {
         self.subject = subject
         self.birthdayDate = birthdayDate
         self.captureDate = captureDate
+        self.locationDisplayConfiguration =
+            locationDisplayConfiguration
     }
 
     var subjectNameFallback: String {
@@ -684,7 +691,11 @@ struct V1PreviewCompositionEngine {
         case .captureSummary:
             return "20mm f/1.9 1/117s ISO80"
         case .location:
-            return previewExpressionContext()?
+            return previewExpressionContext(
+                expressionConfiguration:
+                    context
+                    .locationDisplayConfiguration
+            )?
                 .value(
                     for: LocationExpressionProvider.locationToken
                 )?
@@ -718,10 +729,14 @@ struct V1PreviewCompositionEngine {
             : token
     }
 
-    private func previewExpressionContext() -> ExpressionContext? {
+    private func previewExpressionContext(
+        expressionConfiguration:
+            ExpressionModuleConfiguration?
+    ) -> ExpressionContext? {
         let metadata =
             PhotoMetadata(
                 city: " 商丘 ",
+                district: " 永城 ",
                 province: " 河南 "
             )
 
@@ -731,13 +746,36 @@ struct V1PreviewCompositionEngine {
                 from: metadata
             )
 
+        let providerInput =
+            LocationConfigurationAdapter()
+            .providerInput(
+                from:
+                    expressionConfiguration
+                    ?? ExpressionModuleConfiguration(
+                        token:
+                            LocationExpressionProvider
+                            .locationToken
+                    )
+            )
+            ?? LocationProviderInput(
+                requestedPresentation:
+                    .provinceCity,
+                resolutionConfiguration:
+                    LocationResolutionConfiguration()
+            )
+
         guard
             let locationValue =
                 LocationExpressionProvider()
                 .expressionValue(
                     for: LocationExpressionProvider.locationToken,
                     context: locationContext,
-                    requestedPresentation: .provinceCity
+                    requestedPresentation:
+                        providerInput
+                        .requestedPresentation,
+                    configuration:
+                        providerInput
+                        .resolutionConfiguration
                 )
         else {
             return nil

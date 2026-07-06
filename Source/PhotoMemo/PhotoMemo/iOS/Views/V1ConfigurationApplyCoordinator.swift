@@ -10,6 +10,8 @@ struct V1ConfigurationApplyRequest:
     let shouldSaveSubjectLibrary: Bool
     let template: Template
     let badge: Badge?
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
     let shouldWritePhotoDescription: Bool
     let photoDescriptionOverride: String
     let timeAnchorTitle: String
@@ -26,6 +28,8 @@ struct V1ConfigurationApplyRequest:
         shouldSaveSubjectLibrary: Bool = true,
         template: Template,
         badge: Badge?,
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
         timeAnchorTitle: String,
@@ -42,6 +46,8 @@ struct V1ConfigurationApplyRequest:
             shouldSaveSubjectLibrary
         self.template = template
         self.badge = badge
+        self.locationDisplayConfiguration =
+            locationDisplayConfiguration
         self.shouldWritePhotoDescription =
             shouldWritePhotoDescription
         self.photoDescriptionOverride =
@@ -166,6 +172,8 @@ struct V1ConfigurationApplyCoordinator {
                         request.shouldSaveSubjectLibrary,
                     template: request.template,
                     badge: request.badge,
+                    locationDisplayConfiguration:
+                        request.locationDisplayConfiguration,
                     shouldWritePhotoDescription:
                         request
                         .shouldWritePhotoDescription,

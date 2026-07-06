@@ -148,8 +148,16 @@ private extension RecordCardBuildService {
         card.memoryModule =
             memoryPayload.module
         card.productionExpressionContext =
-            memoryPayload
-            .productionExpressionContext
+            productionExpressionContext(
+                memoryContext:
+                    memoryPayload
+                    .productionExpressionContext,
+                metadata:
+                    selectedPhoto.metadata,
+                locationDisplayConfiguration:
+                    configuration
+                    .locationDisplayConfiguration
+            )
 #endif
 
         return card
@@ -274,6 +282,76 @@ private extension RecordCardBuildService {
         payload
             .subject
             .resolvedExpressionSubjectText
+    }
+
+    func productionExpressionContext(
+        memoryContext: ExpressionContext?,
+        metadata: PhotoMetadata,
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration?
+    ) -> ExpressionContext? {
+        var values =
+            memoryContext
+            .map {
+                Array(
+                    $0
+                    .valuesByToken
+                    .values
+                )
+            }
+            ?? []
+
+        if let locationValue =
+            productionLocationValue(
+                metadata: metadata,
+                configuration:
+                    locationDisplayConfiguration
+            ) {
+            values.append(locationValue)
+        }
+
+        guard !values.isEmpty else {
+            return nil
+        }
+
+        return try? ExpressionContext(
+            values: values
+        )
+    }
+
+    func productionLocationValue(
+        metadata: PhotoMetadata,
+        configuration:
+            ExpressionModuleConfiguration?
+    ) -> ExpressionValue? {
+        guard
+            let configuration,
+            let providerInput =
+                LocationConfigurationAdapter()
+                .providerInput(
+                    from: configuration
+                )
+        else {
+            return nil
+        }
+
+        return LocationExpressionProvider()
+            .expressionValue(
+                for:
+                    LocationExpressionProvider
+                    .locationToken,
+                context:
+                    LocationContextBuilder()
+                    .build(
+                        from: metadata
+                    ),
+                requestedPresentation:
+                    providerInput
+                    .requestedPresentation,
+                configuration:
+                    providerInput
+                    .resolutionConfiguration
+            )
     }
 #endif
 

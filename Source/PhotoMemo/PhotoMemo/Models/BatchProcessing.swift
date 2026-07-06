@@ -217,6 +217,9 @@ struct BatchConfigurationSnapshot:
 
     var memorySubjectText: String?
 
+    var locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
+
 #if !PHOTOMEMO_SHARE_EXTENSION
     private(set) var frozenMemorySubject:
         MemorySubject?
@@ -238,6 +241,8 @@ struct BatchConfigurationSnapshot:
         badge: Badge?,
         anchor: Anchor?,
         memorySubjectText: String? = nil,
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
         selectedAlbumIdentifier: String
@@ -249,6 +254,8 @@ struct BatchConfigurationSnapshot:
         self.anchor = anchor
         self.memorySubjectText =
             memorySubjectText
+        self.locationDisplayConfiguration =
+            locationDisplayConfiguration
         self.shouldWritePhotoDescription =
             shouldWritePhotoDescription
         self.photoDescriptionOverride =

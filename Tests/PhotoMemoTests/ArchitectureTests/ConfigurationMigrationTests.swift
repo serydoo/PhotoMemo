@@ -56,6 +56,11 @@ struct ConfigurationMigrationTests {
                 subject: subject,
                 template: template,
                 badge: .family,
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "provinceCityDistrict"
+                    ),
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride: "第一次一起看海",
                 timeAnchor:
@@ -109,6 +114,13 @@ struct ConfigurationMigrationTests {
             snapshot.template
             == template.normalizedForEditing
         )
+        #expect(
+            snapshot.locationDisplayConfiguration
+            == LocationDisplayInspectorPresenter
+                .configuration(
+                    for: "provinceCityDistrict"
+                )
+        )
         #expect(snapshot.badge == .family)
         #expect(
             snapshot.anchor
@@ -142,6 +154,13 @@ struct ConfigurationMigrationTests {
         #expect(
             bootstrap.selectedSubject
             == request.subject
+        )
+        #expect(
+            bootstrap.locationDisplayConfiguration
+            == LocationDisplayInspectorPresenter
+                .configuration(
+                    for: "provinceCityDistrict"
+                )
         )
         #expect(
             bootstrap.selectedSubject?

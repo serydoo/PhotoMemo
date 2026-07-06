@@ -17,6 +17,8 @@ struct V1AccessoryEntrySection: View {
     let isOptimizingLogo: Bool
     let timeAnchorPresentation: V1TimeAnchorEntryPresentation
     let birthdaySummaryText: String
+    let locationDisplayModule: IOSInsertedModule?
+    let locationDisplayOptionID: Binding<String>
     let logoExpanded: Binding<Bool>
     let anchorExpanded: Binding<Bool>
 
@@ -44,6 +46,16 @@ struct V1AccessoryEntrySection: View {
             ) {
                 anchorEditorContent
             }
+
+            ConfigurationCenterLocationDisplayPanel(
+                presentation:
+                    LocationDisplayInspectorPresenter
+                    .presentation,
+                locationModule:
+                    locationDisplayModule,
+                selectedOptionID:
+                    locationDisplayOptionID
+            )
         }
     }
 

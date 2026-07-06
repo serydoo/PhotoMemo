@@ -126,6 +126,10 @@ final class ConfigurationCoordinator {
                 request.badge
             )
         settingsRepository
+            .saveLocationDisplayConfiguration(
+                request.locationDisplayConfiguration
+            )
+        settingsRepository
             .saveSelectedMemorySubject(
                 request.subject
             )

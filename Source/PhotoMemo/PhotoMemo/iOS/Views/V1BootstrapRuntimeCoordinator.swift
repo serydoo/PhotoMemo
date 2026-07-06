@@ -11,6 +11,8 @@ struct V1BootstrapViewProjection:
     let outputTarget: V1IOSOutputTarget
     let selectedExistingAlbumIdentifier: String
     let suggestedNewAlbumName: String?
+    let locationDisplayConfiguration:
+        ExpressionModuleConfiguration?
     let birthdayDate: Date?
     let regionDrafts: [CardRegion: V1EditorDraft]
 }
@@ -87,6 +89,8 @@ struct V1BootstrapRuntimeCoordinator {
                     .selectedExistingAlbumIdentifier,
                 suggestedNewAlbumName:
                     patch.suggestedNewAlbumName,
+                locationDisplayConfiguration:
+                    patch.locationDisplayConfiguration,
                 birthdayDate:
                     patch.birthdayDate,
                 regionDrafts:

@@ -82,6 +82,14 @@ struct PhotoMemoiOSV1View: View {
         ) ?? Date()
 
     @State
+    private var locationDisplayConfiguration:
+        ExpressionModuleConfiguration? =
+        LocationDisplayInspectorPresenter
+        .configuration(
+            for: "legacyDisplay"
+        )
+
+    @State
     private var outputTarget: V1IOSOutputTarget = .automatic
 
     @State
@@ -294,6 +302,13 @@ struct PhotoMemoiOSV1View: View {
                     .suggestedNewAlbumName {
                     newAlbumName =
                         suggestedNewAlbumName
+                }
+
+                if let locationDisplayConfiguration =
+                    projection
+                    .locationDisplayConfiguration {
+                    self.locationDisplayConfiguration =
+                        locationDisplayConfiguration
                 }
 
                 if let birthdayDate =
@@ -1060,6 +1075,10 @@ struct PhotoMemoiOSV1View: View {
             timeAnchorPresentation:
                 timeAnchorEntryPresentation,
             birthdaySummaryText: birthdaySummaryText,
+            locationDisplayModule:
+                locationDisplayModule,
+            locationDisplayOptionID:
+                locationDisplayOptionBinding,
             logoExpanded:
                 expansionBinding(
                     for: .logo
@@ -1474,6 +1493,8 @@ struct PhotoMemoiOSV1View: View {
                                         )
                                     }
                             ),
+                        locationDisplayConfiguration:
+                            locationDisplayConfiguration,
                         badge:
                             selectedBadgeForSaving,
                         usesCustomMemoryWriteText:
@@ -1654,7 +1675,61 @@ struct PhotoMemoiOSV1View: View {
             subject:
                 alignedSelectedSubject()
                 ?? session.state.selectedSubject,
-            birthdayDate: birthdayDate
+            birthdayDate: birthdayDate,
+            locationDisplayConfiguration:
+                locationDisplayConfiguration
+        )
+    }
+
+    private var locationDisplayModule:
+        IOSInsertedModule? {
+        guard
+            regionDrafts
+            .values
+            .flatMap(\.items)
+            .contains(where: {
+                $0.title == IOSInsertableModule.location.title
+                && $0.systemImage
+                == IOSInsertableModule.location.systemImage
+            })
+        else {
+            return nil
+        }
+
+        return IOSInsertedModule(
+            title:
+                IOSInsertableModule.location.title,
+            value:
+                LocationDisplayInspectorPresenter
+                .selectedValue(
+                    fromConfiguration:
+                        locationDisplayConfiguration
+                ),
+            systemImage:
+                IOSInsertableModule.location.systemImage,
+            expressionConfiguration:
+                locationDisplayConfiguration
+        )
+    }
+
+    private var locationDisplayOptionBinding:
+        Binding<String> {
+        Binding(
+            get: {
+                LocationDisplayInspectorPresenter
+                    .selectedOptionID(
+                        fromConfiguration:
+                            locationDisplayConfiguration
+                    )
+            },
+            set: { optionID in
+                locationDisplayConfiguration =
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: optionID
+                    )
+                refreshDynamicPreview()
+            }
         )
     }
 
