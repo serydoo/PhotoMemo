@@ -150,7 +150,18 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | ✅ PI-20 Location Provider Production Adoption Frozen | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`; PI-17 implementation is frozen at commit `2686649`; PI-18 mismatch proof is frozen at commit `6dd9da4`; PI-19 scan is frozen at commit `848fe96`; PI-19 implementation is frozen at commit `18e2b6e`; PI-20 scan is frozen at commit `d3acf93`; PI-20 implementation is frozen at commit `dd5d156`. |
+| Stage 3: Legacy Compatibility Adoption | ✅ PI-20 Location Provider Production Adoption Frozen | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-12 scan is frozen at commit `c572230a`; PI-12 implementation is frozen at commit `1ffc3efb`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`; PI-17 implementation is frozen at commit `2686649`; PI-18 mismatch proof is frozen at commit `6dd9da4`; PI-19 scan is frozen at commit `848fe96`; PI-19 implementation is frozen at commit `18e2b6e`; PI-20 scan is frozen at commit `d3acf93`; PI-20 implementation is frozen at commit `dd5d156`. |
+
+Release status:
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Expression Platform Architecture | ✅ Completed | ADR-007 and the Semantic Baseline remain governing decisions. |
+| Expression Platform Implementation | ✅ Completed | Core language, lookup capability, providers, configuration carrier, preview adoption, and production text lookup adoption are implemented. |
+| Platform Integration | ✅ Completed | Renderer text resolution, preview source, and production lookup seams are integrated without platform contract changes. |
+| Platform Governance | ✅ Established | Work proceeded through boundary scans, approved seams, regression tests, freeze records, and architectural deltas. |
+| Merge Readiness | 🟡 Pending Review | Requires Scope Review, Contract Review, Regression Review, Governance Review, and Acceptance Review before merging. |
+| Production Acceptance | 🟡 Pending Acceptance Validation | Requires product-level end-to-end validation across Preview, Production render/export, Share Extension impact, and Photo Library/save-back impact. |
 
 PI-1 completed checkpoints:
 
@@ -733,6 +744,57 @@ Verification:
 - Expression / Location configuration tests passed:
   - `ExpressionModuleConfigurationContractTests`
   - `LocationConfigurationAdapterTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
+
+## 2026-07-06 PI-12 Preview Expression Platform Adoption frozen
+
+PI-12 completed the Configuration Center preview Expression Platform adoption
+seam without changing production, renderer, export, share extension, photo
+library, or platform contract behavior.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-12_Preview_Expression_Platform_Boundary_Scan.md`
+
+Checkpoints:
+
+- `c572230a` freezes the approved PI-12 preview seam:
+  `ConfigurationCenterPreviewCompositionHelper.insertModule(...) ->
+  moduleDisplayText(.location, expressionConfiguration) -> preview sample
+  facts -> LocationConfigurationAdapter -> LocationExpressionProvider ->
+  ExpressionContext[location]`.
+- `1ffc3efb` changes the Configuration Center preview location source from a
+  hardcoded preview string to Expression Platform output through the Location
+  adapter and provider pipeline.
+
+Architectural delta:
+
+```text
+Configuration Center preview location source: hardcoded string -> ExpressionContext[location]
+```
+
+Scope review:
+
+- The approved Configuration Center preview location source was the only
+  implementation surface modified.
+- Default preview output remains `河南 · 商丘`.
+- Configured preview output is produced through `LocationConfigurationAdapter`
+  and `LocationExpressionProvider`.
+- `V1PreviewCompositionEngine`, `CardVariableProvider`, `RecordCard`,
+  `RecordCardBuildService`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and production behavior were not changed.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+
+Verification:
+
+- Configuration Center preview regression tests passed:
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+- Location / Expression configuration tests passed:
+  - `LocationConfigurationAdapterTests`
+  - `LocationExpressionPhase4DTests`
 - `git diff --check` passed.
 - `PhotoMemo` Debug build passed.
 
