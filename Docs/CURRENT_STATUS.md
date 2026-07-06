@@ -160,7 +160,7 @@ Release status:
 | Expression Platform Implementation | ✅ Completed | Core language, lookup capability, providers, configuration carrier, preview adoption, and production text lookup adoption are implemented. |
 | Platform Integration | ✅ Completed | Renderer text resolution, preview source, and production lookup seams are integrated without platform contract changes. |
 | Platform Governance | ✅ Established | Work proceeded through boundary scans, approved seams, regression tests, freeze records, and architectural deltas. |
-| Merge Readiness | 🟡 Pending Review | Requires Scope Review, Contract Review, Regression Review, Governance Review, and Acceptance Review before merging. |
+| Merge Readiness | 🟡 Conditional Pass | `Expression_Platform_RC_Merge_Readiness_Review.md` approves the RC to proceed to Product Acceptance Validation. |
 | Production Acceptance | 🟡 Pending Acceptance Validation | Requires product-level end-to-end validation across Preview, Production render/export, Share Extension impact, and Photo Library/save-back impact. |
 
 PI-1 completed checkpoints:
