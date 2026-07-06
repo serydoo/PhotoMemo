@@ -57,6 +57,32 @@ final class CardTextBlockEngine {
         }
 #endif
 
+        if let locationExpressionValue =
+            LocationExpressionProvider()
+            .expressionValue(
+                for: LocationExpressionProvider.locationToken,
+                context:
+                    LocationContextBuilder()
+                    .build(
+                        from: card.metadata
+                    ),
+                requestedPresentation: .legacyDisplay
+            ),
+           let expressionContext =
+            try? ExpressionContext(
+                values: [
+                    locationExpressionValue
+                ]
+            ) {
+
+            metadataContext =
+                ExpressionContextMetadataAdapter()
+                .metadataContext(
+                    from: expressionContext,
+                    base: metadataContext
+                )
+        }
+
         let lookup =
             MetadataContextExpressionLookup(
                 metadataContext: metadataContext

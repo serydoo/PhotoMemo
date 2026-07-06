@@ -62,6 +62,33 @@ struct RendererDependencyIsolationTests {
         #expect(!rendererSource.contains("productionExpressionContext"))
     }
 
+    @Test("PI-20 Boundary location provider adoption stays inside approved text seam")
+    func pi20BoundaryLocationProviderAdoptionStaysInsideApprovedTextSeam() throws {
+        let cardTextBlockEngineSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Engines/CardTextBlockEngine.swift"
+            )
+        let cardVariableProviderSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Models/CardVariableProvider.swift"
+            )
+        let recordCardBuildServiceSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Services/RecordCardBuildService.swift"
+            )
+        let rendererSource =
+            try sourceFile(
+                "Source/PhotoMemo/PhotoMemo/Renderers/RecordCardRenderer.swift"
+            )
+
+        #expect(cardTextBlockEngineSource.contains("LocationContextBuilder"))
+        #expect(cardTextBlockEngineSource.contains("LocationExpressionProvider"))
+        #expect(cardTextBlockEngineSource.contains(".legacyDisplay"))
+        #expect(!cardVariableProviderSource.contains("LocationExpressionProvider"))
+        #expect(!recordCardBuildServiceSource.contains("LocationExpressionProvider"))
+        #expect(!rendererSource.contains("LocationExpressionProvider"))
+    }
+
     @Test("Boundary concrete renderers do not learn expression storage")
     func boundaryConcreteRenderersDoNotLearnExpressionStorage() throws {
         let rendererFiles = [
@@ -272,6 +299,88 @@ struct RendererDependencyIsolationTests {
         #expect(blocks.first?.area == .leftTop)
         #expect(blocks.first?.value == memoryValue.resolvedText)
     }
+
+    @Test("PI-20 Regression CardTextBlockEngine location output comes from legacy-compatible provider value")
+    func pi20RegressionCardTextBlockEngineLocationOutputComesFromLegacyCompatibleProviderValue() throws {
+        try expectCardTextLocationDisplayResolvesThroughProvider(
+            metadata: PhotoMetadata(
+                city: "Shenzhen",
+                district: "Nanshan",
+                province: "Guangdong",
+                country: "China"
+            )
+        )
+
+        try expectCardTextLocationDisplayResolvesThroughProvider(
+            metadata: PhotoMetadata(
+                city: "Shenzhen",
+                district: "Nanshan",
+                province: "Guangdong",
+                country: "China",
+                locationName: "Lujiazui"
+            )
+        )
+
+        try expectCardTextLocationDisplayResolvesThroughProvider(
+            metadata: PhotoMetadata(
+                latitude: 22.5430964,
+                longitude: 114.0578652
+            )
+        )
+    }
+}
+
+private func expectCardTextLocationDisplayResolvesThroughProvider(
+    metadata: PhotoMetadata
+) throws {
+    let template =
+        Template(
+            preset: .template2,
+            name: "PI-20 Regression",
+            leftTopArea: TemplateArea(
+                name: "Left Top",
+                items: [
+                    TemplateItem(
+                        type: .variable,
+                        name: "Location",
+                        value: "{{location_display}}"
+                    )
+                ]
+            ),
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: .empty,
+            badgeArea: .empty
+        )
+    let legacyText =
+        MetadataContext
+        .build(
+            from: metadata
+        )[MetadataContext.Key.locationDisplay]
+    let card =
+        RecordCard(
+            template: template,
+            metadata: metadata,
+            context: MetadataContext(
+                values: [
+                    MetadataContext.Key.locationDisplay:
+                        "stale legacy location"
+                ]
+            )
+        )
+
+    let block =
+        try #require(
+            CardTextBlockEngine()
+                .build(
+                    from: card
+                )
+                .first
+        )
+
+    #expect(block.area == .leftTop)
+    #expect(block.value == legacyText)
+    #expect(block.value != "stale legacy location")
 }
 
 private struct MockExpressionLookup:
