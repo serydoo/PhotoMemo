@@ -150,7 +150,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-19 Legacy-Compatible Location Mode Frozen | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`; PI-17 implementation is frozen at commit `2686649`; PI-18 mismatch proof is frozen at commit `6dd9da4`; PI-19 scan is frozen at commit `848fe96`; PI-19 implementation is frozen at commit `18e2b6e`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-20 Location Adoption Scan Frozen | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`; PI-17 implementation is frozen at commit `2686649`; PI-18 mismatch proof is frozen at commit `6dd9da4`; PI-19 scan is frozen at commit `848fe96`; PI-19 implementation is frozen at commit `18e2b6e`; PI-20 scan is frozen at commit `d3acf93`. |
 
 PI-1 completed checkpoints:
 
@@ -1115,6 +1115,49 @@ Next approved work:
 - PI-20 should begin with a Location Provider Production Adoption boundary
   scan. It must not connect production adoption directly without first
   freezing the approved seam.
+
+## 2026-07-06 PI-20 Location Provider Production Adoption Scan frozen
+
+PI-20 completed discovery for Location provider production adoption after
+PI-19 proved the legacy-compatible provider mode.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-20_Location_Provider_Production_Adoption_Boundary_Scan.md`
+
+Checkpoint:
+
+- `d3acf93` freezes the approved production adoption seam:
+  use `LocationContextBuilder` and
+  `LocationExpressionProvider[location, legacyDisplay]` at the existing
+  `CardTextBlockEngine` text lookup overlay, then project through the existing
+  `ExpressionContextMetadataAdapter` into `MetadataContext[location_display]`.
+
+Architectural delta:
+
+```text
+Production location authority: legacy MetadataContext[location_display] -> parity-proven LocationProvider[legacyDisplay] projected into legacy lookup
+```
+
+Scope review:
+
+- PI-20 is a scan-only freeze; no production adoption code has been added yet.
+- The only approved future implementation surface is the existing text
+  resolution overlay in `CardTextBlockEngine`.
+- `PhotoMetadata.locationDisplay`, `MetadataContext.build(from:)`,
+  `CardVariableProvider`, `RecordCard`, `RecordCardBuildService`, Renderer,
+  Export, Share Extension, batch processing, Photo Library behavior, and
+  Layout Engine behavior remain out of scope.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 must remain unchanged.
+
+Implementation readiness:
+
+- PI-20 implementation may proceed only inside the approved seam.
+- Required tests must prove `{{location_display}}` resolves through the
+  provider-backed legacy-compatible value without visible output change for
+  POI / location name, full hierarchy with country, and coordinate fallback.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
