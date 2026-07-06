@@ -9,3 +9,4 @@ Canonical repository-line guidance for current release history:
 Release events:
 
 - `Expression_Platform_Main_Merge_2026-07-06.md`
+- `Location_Module_Product_Acceptance_Gate_2026-07-06.md`

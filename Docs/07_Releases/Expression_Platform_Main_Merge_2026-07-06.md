@@ -68,6 +68,9 @@ Post-merge simulator smoke:
 - Launched bundle `com.serydoo.PhotoMemo.iOS` successfully.
 - Launch logs show the app in `running-active-Visible` state.
 - First-run flow reached the system Photos permission dialog.
+- Local sample inspection found that `/Users/rui/Downloads/IMG_0537.jpeg`
+  has no GPS latitude / longitude, so it cannot serve as the Location Module
+  acceptance fixture.
 
 ## Known Issues
 
@@ -76,5 +79,7 @@ Post-merge simulator smoke:
   environment exposes the simulator through `simctl` screenshots/logs but not a
   foreground `Simulator.app` window for tapping the system Photos permission
   dialog.
+- Location Module Product Acceptance is blocked until a GPS-bearing local photo
+  or real-device interaction path is available.
 - Historical snapshot flakiness remains tracked separately and was not treated
   as caused by this merge.
