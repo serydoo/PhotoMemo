@@ -23,6 +23,35 @@ References:
 - [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
 - [Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md)
 
+## 2026-07-06 iPhone7 Location and MemorySubject production fixes installed
+
+- User device testing confirmed Location display configuration worked in
+  preview but production output initially fell back to raw GPS coordinates for
+  GPS-only photos.
+- The production import path now enriches GPS metadata through the local Apple
+  reverse-geocoding flow before Location provider resolution.
+- Explicit Location display configuration no longer falls back to legacy raw
+  coordinates when the configured semantic display cannot resolve text.
+- A second device issue showed Time Anchor preview using the selected subject
+  `途途` while production output showed the default subject text `家人`.
+- Root cause: production snapshot loading only consulted the standalone
+  selected subject payload before falling back to legacy profile defaults, while
+  preview restored the selected subject from the V1 subject library record.
+- `BatchConfigurationSnapshotProvider` now resolves the frozen production
+  `MemorySubject` from the selected V1 subject-library record before using the
+  standalone selected subject or legacy profile fallback.
+- Verified focused tests:
+  - `BatchConfigurationSnapshotProviderDiagnosticsTests`
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `PhotoImportServiceTests`
+- Verified `git diff --check`.
+- Built `PhotoMemoiOSV1` for connected `iPhone7` using:
+  `/tmp/PhotoMemoV1DeviceBuild_20260706_SubjectFix`.
+- The previous app was uninstalled and the new build installed successfully on
+  device. Automatic launch was blocked until the development profile is trusted
+  on-device.
+
 ## 2026-07-03 iPhone7 usable V1 checkpoint
 
 - The current `/Users/rui/Desktop/PhotoMemo` working tree is the accepted latest V1 functional baseline.

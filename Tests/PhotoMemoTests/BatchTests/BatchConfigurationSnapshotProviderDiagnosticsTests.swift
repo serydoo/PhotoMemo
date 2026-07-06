@@ -404,6 +404,167 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
             == .birthdayAgeToday
         )
     }
+
+    @Test("Loaded batch snapshot prefers selected subject library record over stale standalone subject and default profile")
+    func loadedBatchSnapshotPrefersSelectedSubjectLibraryRecordOverStaleStandaloneSubjectAndDefaultProfile() throws {
+        let suiteName =
+            "PhotoMemo.BatchConfigurationSnapshotProviderDiagnosticsTests.subjectLibraryFallback.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let fallbackProfile =
+            PersonalProfile(
+                relationshipRole: .familyMember,
+                customRelationshipLabel: "",
+                babyNickname: ""
+            )
+        defaults.set(
+            try JSONEncoder().encode(fallbackProfile),
+            forKey: "photomemo.personalProfile"
+        )
+
+        let anchorDate =
+            Date(
+                timeIntervalSince1970:
+                    1_748_217_600
+            )
+        let selectedSubject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "途途",
+                        shortName: "途途"
+                    ),
+                relationship:
+                    .init(
+                        role: "家庭",
+                        label: "儿子"
+                    ),
+                referenceDate: anchorDate,
+                timeAnchors: [
+                    .init(
+                        title: "途途生日",
+                        date: anchorDate,
+                        note: "生日",
+                        anchorType: .birthday,
+                        expressionStyle:
+                            .birthdayAgeToday
+                    )
+                ],
+                expressionSubjectSource:
+                    .displayName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor:
+                            "途途生日",
+                        iconStrategy:
+                            .autoMatch,
+                        badgeStrategy:
+                            .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "途途表达",
+                                blocks: [
+                                    .text("途途")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let otherSubject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "备用对象",
+                        shortName: "备用"
+                    ),
+                relationship:
+                    .init(
+                        role: "家庭",
+                        label: "家人"
+                    ),
+                referenceDate: anchorDate,
+                timeAnchors: [],
+                expressionSubjectSource:
+                    .displayName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "备用表达",
+                                blocks: []
+                            )
+                    ),
+                decorations: []
+            )
+        let record =
+            V1SubjectLibraryRecord(
+                subjects: [
+                    otherSubject,
+                    selectedSubject
+                ],
+                selectedSubjectID:
+                    selectedSubject.id
+            )
+        defaults.set(
+            try JSONEncoder().encode(record),
+            forKey: "photomemo.v1.subjectLibrary"
+        )
+        defaults.set(
+            try JSONEncoder().encode(otherSubject),
+            forKey: "photomemo.selectedMemorySubject"
+        )
+        defaults.set(
+            "家人",
+            forKey: "photomemo.selectedMemorySubjectText"
+        )
+
+        let snapshot =
+            BatchConfigurationSnapshotProvider(
+                defaults: defaults
+            )
+            .loadSnapshot()
+        let configurationSnapshot =
+            try #require(
+                snapshot.frozenConfigurationSnapshot
+            )
+        let subject =
+            try #require(
+                configurationSnapshot.memorySubject
+            )
+
+        #expect(
+            subject.identity.displayName
+            == "途途"
+        )
+        #expect(
+            snapshot.memorySubjectText
+            == "途途"
+        )
+        #expect(
+            subject.primaryTimeAnchor?.title
+            == "途途生日"
+        )
+        #expect(
+            configurationSnapshot.expression.title
+            == "途途表达"
+        )
+    }
 #endif
 }
 

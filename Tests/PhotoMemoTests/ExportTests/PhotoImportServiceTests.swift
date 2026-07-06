@@ -177,6 +177,36 @@ struct PhotoImportServiceTests {
         )
     }
 
+    @Test("Applies location metadata enrichment during import")
+    func appliesLocationMetadataEnrichmentDuringImport() async throws {
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let service =
+            PhotoImportService(
+                locationMetadataEnricher:
+                    StubLocationMetadataEnricher { metadata in
+                        var enrichedMetadata = metadata
+                        enrichedMetadata.city = "商丘"
+                        enrichedMetadata.district = "永城"
+                        enrichedMetadata.province = "河南"
+                        enrichedMetadata.country = "中国"
+                        return enrichedMetadata
+                    }
+            )
+
+        let importedPhoto =
+            try await service.importPhoto(
+                from: sourceURL
+            )
+
+        #expect(importedPhoto.metadata.city == "商丘")
+        #expect(importedPhoto.metadata.district == "永城")
+        #expect(importedPhoto.metadata.province == "河南")
+        #expect(importedPhoto.metadata.country == "中国")
+    }
+
     @Test("Falls back away from the Photo Library placeholder for data imports")
     func fallsBackAwayFromPhotoLibraryPlaceholder() async throws {
 
@@ -1255,5 +1285,19 @@ struct PhotoImportServiceTests {
             pixels[offset + 1],
             pixels[offset + 2]
         )
+    }
+}
+
+private struct StubLocationMetadataEnricher:
+    PhotoLocationMetadataEnriching {
+
+    let transform:
+        (PhotoMetadata) -> PhotoMetadata
+
+    func enrichedMetadata(
+        _ metadata: PhotoMetadata
+    ) async -> PhotoMetadata {
+
+        transform(metadata)
     }
 }

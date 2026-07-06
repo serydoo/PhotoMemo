@@ -35,6 +35,9 @@ struct BatchConfigurationSnapshotProvider {
         static let selectedMemorySubject =
             "photomemo.selectedMemorySubject"
 
+        static let subjectLibrary =
+            "photomemo.v1.subjectLibrary"
+
         static let locationDisplayConfiguration =
             "photomemo.locationDisplayConfiguration"
 
@@ -316,6 +319,11 @@ private extension BatchConfigurationSnapshotProvider {
         selectedAnchorID: UUID?
     ) -> MemorySubject {
         if let selectedSubject =
+            loadSelectedSubjectLibrarySubject() {
+            return selectedSubject
+        }
+
+        if let selectedSubject =
             loadSelectedMemorySubject() {
             return selectedSubject
         }
@@ -342,6 +350,35 @@ private extension BatchConfigurationSnapshotProvider {
             MemorySubject.self,
             from: data
         )
+    }
+
+    func loadSelectedSubjectLibrarySubject() -> MemorySubject? {
+        guard
+            let data = defaults.data(
+                forKey: Keys.subjectLibrary
+            ),
+            let record =
+                try? JSONDecoder().decode(
+                    V1SubjectLibraryRecord.self,
+                    from: data
+                ),
+            !record.subjects.isEmpty
+        else {
+            return nil
+        }
+
+        if let selectedSubjectID =
+            record.selectedSubjectID,
+           let selectedSubject =
+            record.subjects.first(
+                where: {
+                    $0.id == selectedSubjectID
+                }
+            ) {
+            return selectedSubject
+        }
+
+        return record.subjects.first
     }
 
     func loadPersonalProfile() -> PersonalProfile? {

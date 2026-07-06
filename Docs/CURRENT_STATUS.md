@@ -45,6 +45,48 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-06 Device acceptance fixes for Location output and MemorySubject production snapshot
+
+Follow-up device testing on `iPhone7` found two preview-to-output mismatches in
+the user-visible Location Module / Time Anchor flow:
+
+- Location display preview correctly showed the selected presentation mode, but
+  production output fell back to raw coordinates when the imported photo only
+  carried GPS facts.
+- Time Anchor preview correctly used the selected memory subject `途途`, but
+  production output could fall back to the legacy default subject text `家人`
+  when the standalone selected subject payload was stale or missing.
+
+Fixes:
+
+- `PhotoImportService` now supports location metadata enrichment after EXIF/GPS
+  import through `PhotoLocationMetadataEnricher`, using the platform reverse
+  geocoder to populate address hierarchy fields consumed by the existing
+  Location provider.
+- Explicit Location display configuration now suppresses legacy coordinate
+  fallback when the requested presentation cannot be resolved, so production
+  does not silently replace a configured semantic display with raw GPS text.
+- `BatchConfigurationSnapshotProvider` now resolves the frozen production
+  `MemorySubject` from the V1 subject library selected record before falling
+  back to the older standalone selected subject and legacy profile path. This
+  keeps Configuration Center preview and production export aligned around the
+  same selected object.
+
+Verification:
+
+- `BatchConfigurationSnapshotProviderDiagnosticsTests` passed, including the
+  regression where the subject library selects `途途` while the standalone
+  selected subject is stale.
+- `ProductionMemoryResolverTests` passed.
+- `RecordCardBuildServiceTests` passed, including Location production output
+  and explicit Location display fallback coverage.
+- `PhotoImportServiceTests` passed for location metadata enrichment.
+- `git diff --check` passed.
+- `PhotoMemoiOSV1` signed device build passed for connected `iPhone7`.
+- Device install succeeded after uninstalling the previous app. Automatic launch
+  was blocked by iOS developer-profile trust and requires the user to trust the
+  development profile on-device before opening.
+
 ## 2026-07-06 Location Module Feature save and production consumption implemented
 
 Location Module Adoption now has the user-visible configuration loop connected

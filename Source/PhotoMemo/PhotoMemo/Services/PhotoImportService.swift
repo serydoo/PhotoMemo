@@ -5,11 +5,39 @@ final class PhotoImportService {
 
     private let metadataReader = PhotoMetadataReader()
     private let mediaDecodeService = MediaDecodeService()
+    private let locationMetadataEnricher:
+        any PhotoLocationMetadataEnriching
+
+    init(
+        locationMetadataEnricher:
+            any PhotoLocationMetadataEnriching =
+                PhotoLocationMetadataEnricher()
+    ) {
+
+        self.locationMetadataEnricher =
+            locationMetadataEnricher
+    }
 
     func importPhoto(
         from url: URL,
         sourceInfo: PhotoSourceInfo? = nil
     ) async throws -> SelectedPhoto {
+
+        let photo =
+            try importPhotoSync(
+                from: url,
+                sourceInfo: sourceInfo
+            )
+
+        return await enrichedPhoto(
+            photo
+        )
+    }
+
+    func importPhotoWithoutLocationEnrichment(
+        from url: URL,
+        sourceInfo: PhotoSourceInfo? = nil
+    ) throws -> SelectedPhoto {
 
         try importPhotoSync(
             from: url,
@@ -49,10 +77,15 @@ final class PhotoImportService {
                     from: data
                 )
 
-            return try importPhotoSync(
-                from: temporaryURL,
-                sourceProperties: sourceProperties,
-                sourceInfo: sourceInfo
+            let photo =
+                try importPhotoSync(
+                    from: temporaryURL,
+                    sourceProperties: sourceProperties,
+                    sourceInfo: sourceInfo
+                )
+
+            return await enrichedPhoto(
+                photo
             )
 
         } catch {
@@ -70,7 +103,8 @@ final class PhotoImportService {
         sourceInfo: PhotoSourceInfo? = nil
     ) async throws -> SelectedPhoto {
 
-        try await withCheckedThrowingContinuation {
+        let photo: SelectedPhoto =
+            try await withCheckedThrowingContinuation {
             continuation in
 
             DispatchQueue.global(
@@ -97,6 +131,10 @@ final class PhotoImportService {
                 }
             }
         }
+
+        return await enrichedPhoto(
+            photo
+        )
     }
 
     private func importPhotoSync(
@@ -187,6 +225,19 @@ final class PhotoImportService {
             previewRepresentation:
                 previewRepresentation
         )
+    }
+
+    private func enrichedPhoto(
+        _ photo: SelectedPhoto
+    ) async -> SelectedPhoto {
+
+        var enrichedPhoto = photo
+        enrichedPhoto.metadata =
+            await locationMetadataEnricher
+            .enrichedMetadata(
+                photo.metadata
+            )
+        return enrichedPhoto
     }
 
     func supportedTypes() -> [UTType] {

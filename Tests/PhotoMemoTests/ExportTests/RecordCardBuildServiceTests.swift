@@ -81,6 +81,76 @@ struct RecordCardBuildServiceTests {
         #expect(block.value == "商丘 · 永城")
     }
 
+    @Test("Explicit location display configuration does not fall back to legacy coordinates")
+    func explicitLocationDisplayConfigurationDoesNotFallBackToLegacyCoordinates() throws {
+        let template =
+            Template(
+                preset: .template2,
+                name: "Location Display",
+                leftTopArea:
+                    TemplateArea(
+                        name: "Location",
+                        items: [
+                            TemplateItem(
+                                type: .variable,
+                                name: "Location",
+                                value: "{{location_display}}"
+                            )
+                        ]
+                    ),
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea: .empty,
+                badgeArea: .empty
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/location.jpeg"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1200,
+                                height: 900
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        latitude: 33.932230,
+                        longitude: 116.459672
+                    )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: nil,
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "cityDistrict"
+                    ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let blocks =
+            CardTextBlockEngine()
+            .build(
+                from: card
+            )
+
+        #expect(blocks.isEmpty)
+    }
+
     @Test("Builds template1 with profile relationship and Memory Summary phrasing")
     func buildsTemplate1WithProfileRelationshipAndMemorySummaryPhrasing() throws {
         let profile = PersonalProfile(

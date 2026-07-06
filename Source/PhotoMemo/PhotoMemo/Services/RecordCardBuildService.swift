@@ -352,6 +352,12 @@ private extension RecordCardBuildService {
                     providerInput
                     .resolutionConfiguration
             )
+            ?? ExpressionValue(
+                token:
+                    LocationExpressionProvider
+                    .locationToken,
+                resolvedText: ""
+            )
     }
 #endif
 

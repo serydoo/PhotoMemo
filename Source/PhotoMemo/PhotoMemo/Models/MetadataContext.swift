@@ -204,6 +204,14 @@ struct MetadataContext: Hashable, Codable {
         values[key] = value
     }
 
+    mutating func replace(
+        _ value: String,
+        for key: String
+    ) {
+
+        values[key] = value
+    }
+
     mutating func set(
         _ value: Int?,
         for key: String

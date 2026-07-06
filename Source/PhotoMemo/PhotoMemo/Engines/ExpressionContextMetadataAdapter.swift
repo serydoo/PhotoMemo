@@ -19,14 +19,16 @@ struct ExpressionContextMetadataAdapter {
         var metadataContext =
             base
 
-        metadataContext.set(
+        if let locationValue =
             expressionContext
-                .value(
-                    for: locationToken
-                )?
-                .resolvedText,
-            for: MetadataContext.Key.locationDisplay
-        )
+            .value(
+                for: locationToken
+            ) {
+            metadataContext.replace(
+                locationValue.resolvedText,
+                for: MetadataContext.Key.locationDisplay
+            )
+        }
 
         metadataContext.set(
             expressionContext
