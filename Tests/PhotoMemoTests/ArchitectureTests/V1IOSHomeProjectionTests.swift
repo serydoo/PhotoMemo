@@ -71,7 +71,7 @@ struct V1IOSHomeProjectionTests {
                 selectedAnchorTitle: nil
             )
 
-        #expect(projection.title == "当前记忆对象")
+        #expect(projection.title == "记忆对象")
         #expect(projection.subtitle == "补充主角信息")
         #expect(projection.anchorTitle == "未设置")
     }
@@ -156,10 +156,55 @@ struct V1IOSHomeProjectionTests {
             )
 
         #expect(projection.title == "记忆预设")
-        #expect(projection.subtitle == "当前配置")
-        #expect(projection.detail == "当前区域组合")
+        #expect(projection.subtitle == "当前生效配置")
+        #expect(projection.detail == "当前生效配置摘要")
         #expect(projection.statusLabel == "有未保存修改")
         #expect(!projection.emphasizesAppliedState)
+    }
+
+    @Test("empty preset summary explains that creation stays in the configuration center")
+    func emptyPresetSummaryExplainsCreationBoundary() {
+        let projection =
+            V1IOSHomeProjection
+            .emptyPresetSummary(
+                configurationLabel: "旅行对象 · 出发前"
+            )
+
+        #expect(projection.title == "当前对象还没有配置")
+        #expect(projection.subtitle == "旅行对象 · 出发前")
+        #expect(
+            projection.detail
+            == "请先到配置中心底部新建配置，之后这里就能直接下拉切换。"
+        )
+        #expect(projection.statusLabel == "等待配置")
+        #expect(!projection.emphasizesAppliedState)
+    }
+
+    @Test("saved status value falls back cleanly and respects the provided time zone")
+    func savedStatusValueSupportsUnsavedAndSavedStates() {
+        #expect(
+            V1IOSHomeProjection
+                .savedStatusValue(savedAt: nil)
+            == "尚未保存"
+        )
+
+        #expect(
+            V1IOSHomeProjection
+                .savedStatusValue(
+                    savedAt: Date(timeIntervalSince1970: 0),
+                    timeZone: TimeZone(secondsFromGMT: 0)!
+                )
+            == "1月1日 00:00"
+        )
+
+        #expect(
+            V1IOSHomeProjection
+                .savedStatusValue(
+                    savedAt: Date(timeIntervalSince1970: 0),
+                    timeZone: TimeZone(identifier: "Asia/Shanghai")!
+                )
+            == "1月1日 08:00"
+        )
     }
 }
 #endif

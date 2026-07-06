@@ -29,7 +29,7 @@ struct ConfigurationCenterPresetMenu: View {
             }
         } label: {
             VStack(alignment: .leading, spacing: 3) {
-                Text("配置组合")
+                Text("当前生效配置")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)

@@ -118,11 +118,11 @@ struct V1SubjectHomeSummaryPresenterTests {
 
         #expect(
             presentation.configurationTitle
-            == "当前记忆对象"
+            == "记忆对象"
         )
         #expect(
             presentation.subjectTitle
-            == "当前记忆对象"
+            == "记忆对象"
         )
         #expect(
             presentation.relationshipSummary

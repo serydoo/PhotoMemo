@@ -62,7 +62,25 @@ struct PhotoMemoRootSceneView: View {
     @ViewBuilder
     private var rootConfigurationCenter: some View {
         #if os(iOS)
-        ConfigurationCenteriOSView()
+        PhotoMemoiOSV1View(
+            backgroundStatusService:
+                runtime.backgroundStatusService,
+            refreshExternalIntake: {
+                runtime.refreshExternalIntakeState()
+            },
+            previewCoordinator:
+                runtime.environment.coordinators.preview,
+            exportCoordinator:
+                runtime.environment.coordinators.export,
+            queueCoordinator:
+                runtime.environment.coordinators.queue,
+            configurationCoordinator:
+                runtime.environment.coordinators.configuration,
+            externalIntakeCenter:
+                runtime.environment.externalIntakeCenter,
+            diagnosticsRepository:
+                runtime.environment.repositories.diagnostics
+        )
         #else
         ConfigurationCenterView()
         #endif

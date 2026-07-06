@@ -18,6 +18,36 @@ struct V1IOSHomeQuickActionsTests {
                 "使用说明"
             ]
         )
+
+        #expect(
+            actions.map(\.subtitle)
+            == [
+                "直接从系统图库选择照片并开始处理",
+                "继续查看当前生效配置",
+                "查看记忆对象与生效锚点",
+                "查看 Apple Photos 使用流程与说明"
+            ]
+        )
+
+        #expect(
+            actions.map(\.compactDetail)
+            == [
+                "从图库开始",
+                "查看当前配置",
+                "切换生效锚点",
+                "查看使用流程"
+            ]
+        )
+
+        #expect(
+            actions.map(\.systemImage)
+            == [
+                "photo.on.rectangle.angled",
+                "slider.horizontal.3",
+                "calendar.badge.clock",
+                "book.pages"
+            ]
+        )
     }
 }
 #endif

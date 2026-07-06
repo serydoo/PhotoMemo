@@ -1,6 +1,6 @@
 # PhotoMemo Current Status
 
-Last updated: 2026-07-06
+Last updated: 2026-07-07
 
 ## Architecture Progress
 
@@ -44,6 +44,63 @@ or IA-003 Completion Criteria change.
 | Production Pipeline no longer depends on runtime configuration | ✅ Complete |
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
+
+## 2026-07-07 V1 iOS UI optimization checkpoint completed
+
+This checkpoint consolidates the visible V1 iOS four-tab surface after the
+latest physical-device feedback round.
+
+What changed:
+
+- the active iOS root surface is the V1 four-tab shell:
+  - `首页`
+  - `配置中心`
+  - `输出`
+  - `任务`
+- homepage now focuses on:
+  - product identity
+  - selected Memory Subject
+  - compact current configuration
+  - four quick actions
+- settings/help moved out of the bottom tab and into the homepage top-right
+  settings entry
+- rightmost bottom tab is now `任务`, showing current processing and recent
+  records
+- Configuration Center now uses a sticky preview plus compact one-row option
+  controls for:
+  - avatar / Logo identity
+  - time anchor
+  - location display
+  - memory display
+  - border style
+- Configuration Center save/create actions remain bottom-only
+- saving the current configuration now writes the active `MemoryPreset` back to
+  the selected subject so the homepage current-configuration card refreshes
+- production save request building now preserves the selected subject's active
+  time-anchor date, preventing output from falling back to stale memory copy
+  such as legacy `家人`
+- task thumbnails were simplified to avoid overlapping icon/card layers on
+  smaller physical-device screens
+- final review cleanup fixed a state-regression risk where restoring a saved
+  configuration could be marked pending again by normal dirtying setters
+- homepage cleanup removed dead recent-record/task callback plumbing after
+  recent records moved to the `任务` tab
+
+Verification:
+
+- focused V1 UI/configuration tests passed
+- `RecordCardBuildServiceTests` passed, including preview/export memory
+  expression regression coverage
+- iOS Simulator build passed
+- iPhone7 real-device build and install passed
+- automatic real-device launch was attempted after install but blocked because
+  the device was locked
+
+Scope boundary:
+
+- this checkpoint stayed in V1 iOS UI/state wiring
+- renderer drawing, export implementation, metadata extraction,
+  share-extension behavior, and photo-library behavior were not changed
 
 ## 2026-07-06 P0 runtime-surface and dirty-path convergence completed
 

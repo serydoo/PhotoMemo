@@ -23,6 +23,1125 @@ References:
 - [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
 - [Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md)
 
+## 2026-07-07 V1 UI optimization final review closeout
+
+- Final review fixed a configuration lifecycle issue where restoring a saved
+  preset could be marked pending again by normal dirtying setters.
+- Homepage dead UI plumbing was removed after recent records moved to the
+  `任务` tab, and compact Configuration Center rows now use a flexible trailing
+  width instead of a fixed 124-point column.
+- Verification passed:
+  - focused V1 UI/configuration tests
+  - `RecordCardBuildServiceTests`
+  - required `PhotoMemo` build
+  - `PhotoMemoiOS` iOS Simulator build
+  - iPhone7 real-device build and install
+- Automatic launch on iPhone7 was attempted but blocked because the device was
+  locked. Manual visual confirmation should still be done by opening the
+  installed app on device.
+
+## 2026-07-07 V1 current-configuration save reconciliation fixed
+
+- This slice fixed the V1 iOS gap where Configuration Center preview could
+  look correct, but saving did not make the current preset appear on the
+  homepage and subsequent processing could still use stale/default memory
+  configuration.
+- Scope stayed in V1 iOS configuration-state wiring and tests.
+- No renderer drawing, export implementation, metadata extraction,
+  share-extension behavior, or photo-library behavior changed.
+
+- What changed:
+  - successful V1 configuration apply now snapshots the current
+    `MemoryPreset` back into the active `ConfigurationSession`
+  - homepage current-configuration filtering can now see a previously unbound
+    preset after `保存为当前配置`
+  - failed configuration saves do not snapshot or mark the preset applied
+  - V1 save-request building now prefers the selected subject's active
+    time-anchor date over stale transient birthday state
+  - this protects production memory output from receiving stale anchor context
+    when the preview is already showing the selected object's current anchor
+
+- Verification:
+  - hygiene check passed:
+    - `git diff --check`
+  - focused tests passed:
+    - `V1ConfigurationApplyRequestBuilderTests`
+    - `V1ConfigurationApplyRuntimeCoordinatorTests`
+    - `ConfigurationSessionConfigurationLifecycleTests`
+  - production-output regression suite passed:
+    - `RecordCardBuildServiceTests`
+    - includes `previewAndExportShareTheSameFrozenMemoryExpression`, which
+      protects against fallback output such as legacy `家人`
+  - iOS Simulator build passed:
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - iPhone7 real-device build and install passed:
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=00008150-000A043136A1401C' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
+    - `xcrun devicectl device install app --device 863C2747-6742-5E93-B715-6F89DBF90B31 /tmp/PhotoMemoIOSDeviceDerivedData/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
+
+- Not yet manually verified:
+  - physical-device relaunch was blocked because the device was locked
+  - user should unlock and manually open the installed app to confirm:
+    - homepage current configuration refreshes after save
+    - reprocessing the reported photo no longer outputs the legacy `家人`
+      memory subject text
+
+## 2026-07-07 V1 unified UI cleanup started
+
+- This slice moved from feedback capture into implementation for the visible
+  four-tab `PhotoMemoiOSV1View` path.
+- Scope stayed in iOS SwiftUI presentation/layout only.
+- No renderer drawing, export, metadata, share-extension, or photo-library
+  behavior changed.
+
+- What changed:
+  - homepage `当前生效配置` was compressed into a compact `当前配置` row-card:
+    - mini preview thumbnail
+    - preset title/style
+    - last modified time
+    - existing preset picker/management affordance
+  - homepage `主入口` title is now `快捷操作`
+  - quick-action functions remain unchanged, but icon treatment is larger and
+    more visually prominent
+  - quick-action symbols were updated to:
+    - `photo.on.rectangle.angled`
+    - `slider.horizontal.3`
+    - `calendar.badge.clock`
+    - `book.pages`
+  - homepage no longer renders the `最近记录` block; recent/current task state
+    is now left to the rightmost `任务` tab
+  - visible Configuration Center no longer renders:
+    - the explanatory intro card
+    - the `头像与标识` wrapper section
+    - the separate `当前生效配置` summary card
+    - the `区域内容` wrapper title
+  - Configuration Center now renders a compact single-list control group:
+    - `头像与标识`
+    - `时间锚点`
+    - `位置显示`
+    - `记忆显示`
+    - `边框样式`
+  - the `时间锚点` row reads the currently selected homepage Memory Subject's
+    anchors and uses a menu picker for immediate selection
+  - the original A/B/C/D editor rows now sit directly below `边框样式`, without
+    the extra ABCD chip/navigation wrapper
+  - `V1EditorPageSurface` now keeps the preview outside the scroll view so the
+    renderer preview remains visible while lower configuration content scrolls
+  - the preview container uses slightly tighter horizontal padding to make the
+    visible card larger while preserving the renderer/card internal ratio
+
+- Verification:
+  - hygiene check passed:
+    - `git diff --check`
+  - focused quick-action test passed:
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSHomeQuickActionsTests CODE_SIGNING_ALLOWED=NO test`
+  - iOS Simulator build passed:
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - iOS device-architecture build passed:
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Not yet manually verified:
+  - physical-device install/launch after this slice
+  - current connected device `IPhone5` is visible to Xcode, but Developer Mode
+    is disabled, so direct device build/install timed out waiting for the
+    destination to become available
+  - visual density on the actual small iPhone screen after removing homepage
+    recent records and simplifying Configuration Center rows
+
+## 2026-07-07 V1 visible Configuration Center migration continued
+
+- The visible iOS runtime surface remains the four-tab `PhotoMemoiOSV1View`
+  shell, not the standalone `ConfigurationCenteriOSView`.
+- This slice continues correcting the earlier drift where polish landed in an
+  off-path configuration surface.
+- No renderer, export, metadata, share-extension, or photo-library behavior
+  changed in this pass.
+
+- What changed:
+  - `PhotoMemoiOSV1View.editorPage` now renders the Configuration Center as:
+    - explanation card
+    - `头像与标识`
+    - current effective configuration summary
+    - folded region-content editor
+    - bottom-only preset action panel
+  - `V1AccessoryEntrySection` is now scoped to Logo 标识 only
+  - time-anchor switching, location display, and memory display now stay in the
+    visible summary panel instead of being duplicated in the old accessory area
+  - `保存为当前配置` and `新建配置` remain bottom-only in the visible
+    Configuration Center; the homepage still has no create/save entry
+  - the old four-region editing capability is preserved, but now sits behind a
+    clearer `区域内容` section instead of dominating the first visible page
+
+- Verification:
+  - hygiene check passed:
+    - `git diff --check`
+  - real-device build passed:
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=00008150-000A043136A1401C' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
+  - installed and launched on connected iPhone7:
+    - `xcrun devicectl device install app --device 863C2747-6742-5E93-B715-6F89DBF90B31 /tmp/PhotoMemoIOSDeviceDerivedData/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
+    - `xcrun devicectl device process launch --device 863C2747-6742-5E93-B715-6F89DBF90B31 --terminate-existing --activate com.serydoo.PhotoMemo.iOS`
+
+- Not yet manually verified:
+  - the exact visual rhythm on the physical iPhone after tapping into the
+    second `配置中心` tab
+  - whether the summary panel still feels too text-heavy on smaller widths
+  - whether the `区域内容` section should default-collapse all four regions even
+    after users jump from the summary chips
+
+- New user feedback to preserve before the next unified UI revision:
+  - during upward scrolling on the lower Configuration Center page, the
+    renderer/preview surface must not scroll offscreen
+  - the intended behavior is a sticky/pinned preview container that remains
+    visible while lower configuration content moves underneath or below it
+  - treat this as a V1 configuration-page layout rule, not a renderer drawing
+    change
+  - preserve the renderer/card internal ratio while making the visible preview
+    slightly larger for readability and stronger visual presence
+  - this ratio-preserving enlargement existed in earlier
+    `ConfigurationCenterTopPreviewSection` polish, but still needs to be
+    applied to the currently visible V1 `PhotoMemoiOSV1View` /
+    `V1EditorPageSurface` path
+  - remove the separate summary module below the Configuration Center preview;
+    the current `当前生效配置` card feels too complex and should not remain as
+    an additional block
+  - rework the Configuration Center controls toward the reference-image style:
+    one compact list container with one row per configuration item
+  - avoid first-level/second-level title stacking inside the configuration
+    list; each row should be direct, simple, and scannable
+  - proposed row model:
+    - `头像与标识` combines avatar, Logo, and identity marker into one row
+    - `时间锚点` is one row with current anchor and anchor count
+    - `位置显示` is one row with current display mode/value
+    - `记忆显示` is one row with current expression mode/result
+    - `边框样式` is one row with the current locked style
+  - tapping a row should reveal the relevant choices, such as the Logo
+    three-option selector, allow selection, then collapse back to the clean
+    one-line row
+  - preserve function, but reduce visible structure: no extra summary card,
+    no large explanatory sections, no nested visible editor hierarchy unless a
+    row is actively opened
+  - remove the lower summary panel as well; after the homepage selects the
+    Memory Subject, the Configuration Center should not repeat the subject
+    identity/object summary
+  - Configuration Center rows should be driven by the currently selected
+    homepage Memory Subject:
+    - switching the Memory Subject on the homepage refreshes the Configuration
+      Center's row values
+    - `时间锚点` row reads the selected subject's available anchors
+    - the right side of `时间锚点` shows the current anchor plus the subject's
+      anchor count/status
+    - tapping `时间锚点` opens the anchor choices, selecting one immediately
+      applies it, and the row collapses back to the single-line state
+  - subject editing and object identity remain in the homepage/object flow, not
+    repeated inside the Configuration Center list
+  - remove the ABCD icon/chip navigation area under `边框样式`; it does not add
+    useful meaning once the rows are already simple and direct
+  - remove the large section headers below the list, including the current
+    `区域内容` style wrapper/title
+  - after `边框样式`, place the original pre-optimization A/B/C/D configuration
+    editing content directly underneath, preserving the actual editing
+    behavior and row-style content from the earlier UI
+  - keep the bottom save/create action area; the current save button treatment
+    is acceptable
+
+- Additional homepage feedback to preserve for the same unified revision:
+  - compress the homepage `当前生效配置` area into the reference image's
+    compact `当前配置` row-card style
+  - homepage current-config row should be visually dense and direct:
+    thumbnail/mini preview on the left, preset title + style in the middle,
+    last modified time beneath, chevron / picker affordance on the right
+  - keep homepage behavior: it switches among configurations owned by the
+    currently selected Memory Subject; no homepage create/save entry
+  - rename the lower main-entry section title from `主入口` to `快捷操作`
+  - keep the four quick-action functions unchanged, but use larger, more
+    expressive icon treatment
+  - candidate large SF Symbols for the four existing quick actions:
+    - `处理照片`: `photo.on.rectangle.angled`
+    - `配置中心`: `slider.horizontal.3`
+    - `时间锚点`: `calendar.badge.clock`
+    - `使用说明`: `book.pages`
+  - render quick-action icons as large visual anchors, not small inline glyphs:
+    larger symbol font, soft rounded icon tile, clearer color per action
+  - move the homepage `最近记录` section fully into the rightmost `任务` tab
+  - if recent records remain visible during transition, keep them at the lower
+    part of the Task page, not on the homepage
+  - homepage goal after this revision: fit as a complete one-page overview with
+    product header, current object, compact current config, and quick actions
+
+## 2026-07-06 Phase 3 memory-display summary now owns anchor expression style
+
+- The next Configuration Center polish slice is now in place and aligns more
+  closely with the confirmed product boundary for time-anchor expression style.
+- No renderer, export, metadata, or share-processing behavior changed in this
+  pass.
+
+- What changed:
+  - `ConfigurationCenterSummarySection` now uses a dedicated:
+    - `记忆显示`
+    summary row
+    for the current active time anchor
+  - the new summary row shows:
+    - current expression style title
+    - formula-preview detail text
+    - a direct style picker tied to the current active anchor
+  - added `ConfigurationCenterMemoryDisplaySupport` as the summary/support
+    helper for:
+    - selected style
+    - available styles
+    - formula-preview detail
+  - `ConfigurationSession` now exposes a focused mutation:
+    - `selectCurrentTimeAnchorExpressionStyle(_:)`
+    so the summary picker can update only the current active anchor
+  - `MemorySubjectEditorView` no longer renders the old
+    `表达样式` section under time-anchor maintenance
+  - object-editor helper copy now explicitly says:
+    - active-anchor switching
+    - memory display
+    both live in the Configuration Center summary area now
+
+- Why this matters:
+  - the “expression formula / display style” capability is no longer split
+    awkwardly between:
+    - object maintenance
+    - top-level configuration summary
+  - this better matches the intended rhythm:
+    - object page maintains anchor data
+    - configuration summary decides how the current anchor is displayed
+  - it reduces one of the biggest remaining mismatches between the current UI
+    and the user-confirmed Configuration Center structure
+
+- Verification:
+  - focused tests passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationCenterMemoryDisplaySupportTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests CODE_SIGNING_ALLOWED=NO test`
+  - required builds passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - the new `记忆显示` row wrapping behavior on smaller iPhone widths
+  - whether the formula-preview detail feels too long beside the summary card
+  - whether removing the old object-page `表达样式` block makes the overall
+    anchor-maintenance page feel visually lighter in device use
+
+## 2026-07-06 Phase 3 config-center preset actions reduced to bottom-only
+
+- The next Configuration Center polish slice now matches the latest confirmed
+  preset-action boundary more closely.
+- No save/create behavior changed; only duplicate top-level entry points were
+  removed from the iOS Configuration Center preview surface.
+
+- What changed:
+  - `ConfigurationCenterTopPreviewSection` no longer renders the duplicated:
+    - `新建`
+    - `保存当前`
+    buttons inside the top preview profile card
+  - the top preview now keeps:
+    - current preset name
+    - rename
+    - reset
+    - summary detail
+    - an explicit reminder that save/create belong to the bottom action area
+  - the actual functional save/create actions remain in the bottom
+    Configuration Center context action group:
+    - `新建配置`
+    - `保存为当前配置`
+
+- Why this matters:
+  - it restores the user-confirmed rule that configuration creation and saving
+    should happen in one consistent bottom location
+  - the top preview becomes more of a summary/identity surface and less of a
+    duplicated control center
+  - this makes the boundary between:
+    - homepage switch existing configs
+    - Configuration Center bottom save/create
+    clearer across both main surfaces
+
+- Verification:
+  - required builds passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - top preview spacing after removing the two action chips
+  - whether the new `底部操作区` reminder is visually clear enough on smaller
+    iPhones
+
+## 2026-07-06 Phase 3 homepage current-config readability stabilized
+
+- The latest homepage configuration-summary slice is now fully closed with
+  clearer switching language and deterministic save-time formatting.
+- No renderer, export, metadata, or processing behavior changed in this pass.
+
+- What changed:
+  - homepage current-configuration fact strip now reads:
+    - `切换`
+    - `下拉即生效`
+    instead of the more internal-feeling:
+    - `入口`
+    - `首页切换`
+  - `V1IOSHomeProjection.savedStatusValue` now formats save timestamps through
+    an explicit Gregorian calendar + injectable time-zone path
+  - homepage still defaults to the device's current time zone, so the visible
+    `最近保存` line remains local to the user
+  - focused test coverage now locks both:
+    - unsaved fallback
+    - saved timestamp rendering under explicit time zones
+
+- Why this matters:
+  - homepage current-configuration card now reads more like a product summary
+    and less like an internal entry-point description
+  - save-time formatting tests no longer depend on whichever locale/time zone
+    happens to run the suite
+  - this closes the remaining rough edge in the homepage “switch existing
+    subject-owned configs only” boundary before moving deeper into
+    Configuration Center polish
+
+- Verification:
+  - focused test passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSHomeProjectionTests CODE_SIGNING_ALLOWED=NO test`
+  - required V1 iOS build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - homepage `最近保存` line on real iPhone widths with longer month/day values
+  - whether `切换 / 下拉即生效` feels visually balanced beside the `管理` menu
+    on smaller screens
+
+## 2026-07-06 Phase 3 task-vs-settings navigation split landed
+
+- The next thin V1 navigation slice is now in place and stays in the iOS
+  presentation/navigation layer only.
+- No renderer, export, metadata, or task-processing semantics changed in this
+  pass.
+- This slice follows the newly confirmed boundary:
+  - bottom fourth main tab = `任务`
+  - homepage top-right button = `设置`
+  - usage/welcome content moves out of the old combined task/settings surface
+
+- What changed:
+  - `PhotoMemoiOSV1View` bottom fourth tab now reads:
+    - `任务`
+    instead of:
+    - `设置`
+  - the bottom task tab now renders `V1TaskPageSurface`, which keeps only:
+    - `当前处理`
+    - `最近记录`
+  - homepage `最近记录` section now routes its `查看全部` action to the
+    bottom `任务` tab instead of the top-right settings entry
+  - homepage top-right settings button now opens a separate sheet-level
+    `V1SettingsPageSurface`
+  - homepage `使用说明` quick entry also routes into the new settings sheet for
+    now, so guide content converges in one place
+  - the new `V1SettingsPageSurface` is now a lighter explanation/help surface
+    that holds:
+    - `重新查看欢迎说明`
+    - `查看使用流程`
+    - current product-principle reminders
+  - `ConfigurationCenteriOSView` settings sheet was updated to use the same new
+    explanation-style settings page, so the shared settings surface stays
+    consistent
+  - `V1EntryFlowCoordinator` now distinguishes:
+    - opening the bottom `任务` tab
+    - opening/closing the separate homepage settings sheet
+
+- Verification:
+  - focused tests passed via the testable scheme:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1EntryFlowCoordinatorTests -only-testing:PhotoMemoTests/V1SettingsPagePresenterTests -only-testing:PhotoMemoTests/V1IOSHomeQuickActionsTests test`
+  - required builds passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - bottom tab label/icon rhythm after `设置 -> 任务`
+  - homepage top-right settings icon visual balance on device
+  - settings sheet open/close rhythm from homepage and from Configuration Center
+  - whether routing `使用说明` into settings feels better than a direct guide
+    jump on smaller iPhone widths
+
+## 2026-07-06 Phase 3 home preset ownership alignment landed
+
+- The next thin homepage configuration slice is now in place and stays focused
+  on preset-selection behavior and V1 view wiring.
+- No renderer, export, metadata, or share-processing behavior changed in this
+  pass.
+- This slice implements the newly confirmed rule that homepage configuration
+  switching follows the currently selected memory subject.
+
+- What changed:
+  - `ConfigurationSession` now exposes:
+    - `availableMemoryPresetsForSelectedSubject`
+  - subject changes now actively realign the selected preset to the current
+    memory subject when subject-owned presets exist
+  - preset realignment also restores the saved anchor/output/write-text context
+    from the matched subject preset
+  - homepage preset picker now uses only the current subject's available preset
+    list instead of the whole repository-wide preset array
+  - homepage preset title falls back to a clearer empty-state line when the
+    current subject has no available preset yet
+  - mock seed presets now carry concrete subject ownership so the compact V1
+    flow has realistic per-subject behavior during preview/testing
+
+- Behavioral result:
+  - switching `记忆对象` on homepage now refreshes the current configuration
+    card toward that object's own preset context
+  - homepage preset dropdown is no longer a global mixed-subject list
+
+- Verification:
+  - focused tests passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -only-testing:PhotoMemoTests/V1EntryFlowCoordinatorTests -only-testing:PhotoMemoTests/V1IOSHomeQuickActionsTests test`
+  - required builds passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - homepage preset-card copy when the selected subject has zero owned presets
+  - real user data upgraded from older subject-unowned presets
+  - switching back and forth between multiple real saved subject presets on
+    device
+
+## 2026-07-06 Phase 3 config-center-create to home-picker continuity locked
+
+- The interaction boundary was clarified again and is now explicitly preserved:
+  - `新建配置` remains in the Configuration Center bottom action area
+  - homepage `当前生效配置` remains a subject-scoped picker/switcher only
+- No homepage create entry was kept.
+
+- What changed:
+  - added a focused lifecycle test that locks the intended continuity:
+    - when the user creates a new configuration from the Configuration Center,
+      the same subject immediately sees that new configuration in the homepage
+      picker list
+  - this confirms the shared-session wiring remains intact between:
+    - Configuration Center bottom actions
+    - homepage current-configuration picker
+
+- Verification:
+  - focused test passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests CODE_SIGNING_ALLOWED=NO test`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - live device flow for:
+    - create one preset in Configuration Center
+    - return to homepage
+    - switch presets under the same memory subject
+
+## 2026-07-06 Phase 3 homepage preset card returned to switch-only mode
+
+- The homepage current-configuration card was tightened again to match the
+  latest product boundary more closely.
+- Homepage no longer offers configuration-saving actions.
+- The card is now focused on:
+  - showing the current subject-scoped configuration state
+  - switching among that subject's existing configurations
+  - pointing users back to Configuration Center when none exist yet
+
+- What changed:
+  - removed the homepage `保存为当前配置 / 重新保存当前配置` action
+  - homepage current-configuration card now treats the Configuration Center as
+    the only place to:
+    - `保存为当前配置`
+    - `新建配置`
+  - when the selected memory subject has no owned configurations:
+    - the homepage card no longer renders an effectively empty picker menu
+    - the preset summary no longer reuses another subject's stale summary copy
+    - the card now shows an explicit empty-state explanation that tells the
+      user to create the configuration in the Configuration Center bottom area
+  - existing subject-owned configurations remain switchable from the homepage
+    picker when available
+
+- Verification:
+  - focused tests passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSHomeProjectionTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests CODE_SIGNING_ALLOWED=NO test`
+  - required V1 iOS build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - homepage current-configuration card spacing after removing the bottom save
+    button
+  - empty-state readability on smaller iPhones when a subject has zero
+    configurations
+  - whether homepage rename affordance still feels discoverable enough once the
+    card becomes switch-only
+
+## 2026-07-06 Phase 3 homepage primary cards moved closer to summary-card rhythm
+
+- The next thin homepage polish slice stayed inside the V1 iOS presentation
+  layer and did not change configuration ownership or save/create boundaries.
+- This slice focused on making the two top homepage cards feel less like
+  stacked control panels and more like compact mobile summary surfaces.
+
+- What changed:
+  - `记忆对象` card now reads more like:
+    - avatar
+    - display name
+    - relationship tag
+    - configured anchor count
+    - current active anchor
+  - the subject card avatar was slightly reduced so the text summary gets more
+    room without making the card feel heavier
+  - `当前生效配置` card now foregrounds:
+    - current configuration title
+    - current object/anchor line
+    - compact fact chips
+    - switch area
+  - removed more of the repeated explanatory copy from the middle of the card
+    and replaced it with a denser summary rhythm
+  - the preset operations affordance now reads `管理` instead of showing only an
+    ellipsis icon, so `重命名配置` is easier to discover from the homepage
+  - homepage reminder copy now reinforces the final boundary:
+    - homepage only switches existing subject-owned configurations
+    - create/save still belong to the Configuration Center bottom area
+
+- Verification:
+  - focused tests passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSHomeProjectionTests -only-testing:PhotoMemoTests/V1SubjectHomeSummaryPresenterTests -only-testing:PhotoMemoTests/V1IOSHomeQuickActionsTests CODE_SIGNING_ALLOWED=NO test`
+  - required V1 iOS build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - whether the new `管理` label feels balanced beside the picker on smaller
+    iPhones
+  - whether `锚点数量` should later be changed from total anchor count to a more
+    explicit “已自定义” count if product semantics tighten further
+  - final spacing balance between:
+    - subject card
+    - current configuration card
+    - quick-entry tile row
+
+## 2026-07-06 Phase 3 homepage top-cluster spacing tightened
+
+- This follow-up homepage slice stayed purely visual and only tightened the
+  rhythm between the first three homepage sections.
+
+- What changed:
+  - grouped:
+    - `记忆对象`
+    - `当前生效配置`
+    - `主入口`
+    into a slightly tighter top summary cluster
+  - reduced the quick-entry tile grid gaps so the four primary actions read
+    more like one compact strip instead of a heavier secondary panel
+  - compressed the quick-entry tiles themselves:
+    - slightly smaller icon block
+    - slightly shorter copy
+    - reduced minimum height
+    - slightly smaller corner radius
+  - pushed `最近记录` a touch lower so the homepage hierarchy is clearer:
+    - top = summary and switching
+    - lower = processing history
+
+- Verification:
+  - focused tests passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSHomeQuickActionsTests -only-testing:PhotoMemoTests/V1IOSHomeProjectionTests CODE_SIGNING_ALLOWED=NO test`
+  - required V1 iOS build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - whether the four primary tiles still feel easy enough to tap on smaller
+    iPhones after the compression pass
+  - whether `主入口` is a better title than `快捷入口` in live use
+
+## 2026-07-06 Phase 3 homepage quick-entry tile polish landed
+
+- The next thin homepage visual slice is now in place and stays inside the V1
+  iOS presentation layer only.
+- No renderer, export, metadata, or configuration-state semantics changed in
+  this pass.
+- This slice also preserves the clarified boundary that:
+  - homepage does not carry renderer preview
+  - Configuration Center keeps the preview surface
+
+- What changed:
+  - `V1HomePageSurface` top header is now lighter and reads more like a product
+    definition block instead of another framed control card
+  - the homepage header copy now reflects the README direction around
+    local-first memory presentation
+  - the top pills now emphasize:
+    - `本地优先`
+    - `Apple Photos`
+    instead of repeating homepage object summary content
+  - `V1IOSHomeQuickActionsContent` no longer renders a vertical settings-list
+    row group
+  - homepage quick entry is now rendered as four compact tiles in one row for:
+    - `处理照片`
+    - `配置中心`
+    - `时间锚点`
+    - `使用说明`
+  - quick-action tiles use shorter helper copy so the one-row mobile layout
+    stays compact without reintroducing a dashboard-style list
+
+- Verification:
+  - focused test passed:
+    - `V1IOSHomeQuickActionsTests`
+  - required builds passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1IOSHomeQuickActionsTests test`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - hygiene check passed:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - one-row four-tile readability on smaller iPhone widths
+  - top header spacing after removing the outer framed card
+  - live tap comfort for the four compact tiles on device
+
+## 2026-07-06 Phase 3 homepage current-configuration language convergence landed
+
+- The next thin V1 homepage language slice is now in place without expanding
+  into configuration logic or structural rewrites.
+- Homepage summary language now aligns more closely with the active
+  Configuration Center terminology around:
+  - `记忆对象`
+  - `当前生效配置`
+  - `当前生效锚点`
+  - `最近记录`
+
+- What changed:
+  - `V1HomePageSurface` now uses:
+    - a product-definition subtitle closer to the current README positioning
+    - `记忆对象` instead of `当前记忆对象`
+    - `当前生效配置` instead of `当前配置`
+    - `快捷入口` instead of `快捷操作`
+    - `最近记录` instead of `最近处理`
+    - `保存为当前配置` wording on the homepage action button
+  - homepage helper copy now describes the active configuration as the current
+    generation/display bundle rather than the old default-configuration wording
+  - `V1IOSHomeProjection` fallback strings now prefer:
+    - `当前生效配置`
+    - `当前生效配置摘要`
+  - `V1IOSHomeQuickAction.defaultActions` subtitles now align with the newer
+    product language for Configuration Center, active anchor context, and Apple
+    Photos usage guidance
+
+- Verification:
+  - focused tests passed:
+    - `V1IOSHomeProjectionTests`
+    - `V1IOSHomeQuickActionsTests`
+  - required build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Not yet manually verified:
+  - V1 homepage card titles and helper copy rhythm on device
+  - homepage save-current-configuration button wording in the live V1 flow
+  - quick-entry subtitle wrapping on smaller iPhone widths
+
+## 2026-07-06 Phase 3 save-current-configuration language convergence landed
+
+- The follow-up wording slice is now in place behind the homepage so the save
+  flow no longer mixes `当前配置` in the entry UI with `默认配置` in the
+  confirmation and status language.
+
+- What changed:
+  - `V1ConfigurationStatus` default-configuration messages now use:
+    - `尚未保存为当前配置`
+    - `已保存为当前配置`
+  - `PhotoMemoiOSV1View` preset-activation confirmation now uses:
+    - `将当前生效配置保存下来？`
+    - `保存为当前配置`
+  - the activation helper message now describes future processing in terms of
+    the current configuration, active time anchor, and output settings rather
+    than the old default-configuration phrasing
+  - the logo persistence hint now also points to `保存为当前配置`
+
+- Verification:
+  - focused tests passed:
+    - `V1ConfigurationStatusTests`
+    - `V1IOSHomeProjectionTests`
+    - `V1IOSHomeQuickActionsTests`
+  - required build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Not yet manually verified:
+  - V1 save-current-configuration confirmation dialog wording on device
+  - dirty logo / 标识 persistence hint wording in the live editor flow
+  - whether the new confirmation message wraps cleanly on narrower iPhone widths
+
+## 2026-07-06 Phase 3 memory-subject title convergence landed
+
+- The next thin wording slice is now in place across the V1 homepage/object
+  summary path so the visible object language no longer mixes
+  `当前记忆对象` and `记忆对象` for the same concept.
+
+- What changed:
+  - `V1IOSHomeProjection` subject fallback title now uses:
+    - `记忆对象`
+  - homepage/object-entry labels now converge to:
+    - `记忆对象`
+  - the homepage quick entry subtitle now uses:
+    - `查看记忆对象与生效锚点`
+  - the iOS subject overview sheet now uses:
+    - `记忆对象`
+    - `删除这个记忆对象？`
+  - subject-home summary fallback tests and copy were updated to match the new
+    wording
+
+- Verification:
+  - focused tests passed:
+    - `V1IOSHomeProjectionTests`
+    - `V1IOSHomeQuickActionsTests`
+    - `V1SubjectHomeSummaryPresenterTests`
+  - required build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Not yet manually verified:
+  - V1 object overview navigation title and delete-confirmation wording on device
+  - homepage object card visual rhythm after the shorter `记忆对象` label
+  - smaller iPhone widths for the updated quick-entry subtitle
+
+## 2026-07-06 Phase 3 preset-entry language convergence landed
+
+- The next thin wording slice is now in place around the V1 preset entry path.
+- This slice stays intentionally narrow:
+  - homepage/current-summary preset language only
+  - no preset data-model changes
+  - no Configuration Center preset-menu rewrite yet
+
+- What changed:
+  - `V1PresetPicker` now labels the picker as:
+    - `当前生效配置`
+    instead of:
+    - `当前配置组合`
+  - `V1PresetOperationsMenu` now uses:
+    - `重命名配置`
+    instead of:
+    - `重命名配置组合`
+  - the V1 subject-home summary helper line now says future processing will
+    continue using:
+    - `当前生效配置与时间锚点`
+    instead of the older `配置组合` wording
+
+- Verification:
+  - focused tests passed:
+    - `V1IOSHomeProjectionTests`
+    - `V1IOSHomeQuickActionsTests`
+    - `V1SubjectHomeSummaryPresenterTests`
+  - required build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Not yet manually verified:
+  - V1 preset picker title and rename action wording on device
+  - subject-home helper copy wrapping after the shorter preset language
+  - any remaining `配置组合` wording inside Configuration Center preset menus,
+    which is intentionally left for a later slice
+
+## 2026-07-06 Phase 3 configuration-center preset title convergence landed
+
+- The follow-up Configuration Center slice is now in place so the top preset
+  control no longer uses a different label from the surrounding page chrome.
+
+- What changed:
+  - `ConfigurationCenterPresetMenu` now labels the control as:
+    - `当前生效配置`
+    instead of:
+    - `配置组合`
+  - this brings the preset menu into line with:
+    - `ConfigurationCenterTopPreviewSection`
+    - the homepage current-configuration wording
+
+- Verification:
+  - required build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - searched remaining iOS view/test surfaces for:
+    - `配置组合`
+    and found no remaining matches in the active iOS view layer
+
+- Not yet manually verified:
+  - Configuration Center top preset control wording on device
+  - visual balance of the longer `当前生效配置` label inside the compact menu
+
+## 2026-07-06 Phase 3 configuration-center current-configuration language convergence landed
+
+- The next thin Configuration Center wording slice is now in place.
+- This pass focuses on the remaining `当前配置` copy inside the active
+  Configuration Center flow and converges it toward the newer
+  `当前生效配置` language where appropriate.
+- For status-pill language, this slice also avoids the awkward literal
+  phrasing `当前生效配置尚未生效` and replaces it with more natural copy.
+
+- What changed:
+  - `ConfigurationCenterTopPreviewSection` now uses:
+    - `当前生效配置预览`
+  - `ConfigurationCenterSessionBindingPresenter` now reports:
+    - `当前生效配置尚未保存`
+  - `ConfigurationCenterLocationDisplaySupport` now says:
+    - `当前生效配置里还没有插入位置模块...`
+  - `ConfigurationCenterSummarySection` now points region jumps to:
+    - `当前生效配置的编辑位置`
+  - `ConfigurationCenterPageChromePresenter` status copy now uses:
+    - `当前配置改动尚未生效`
+    - `当前生效配置已同步`
+
+- Verification:
+  - focused tests passed:
+    - `ConfigurationCenterPageChromePresenterTests`
+    - `ConfigurationCenterSessionBindingPresenterTests`
+    - `ConfigurationCenterLocationDisplaySupportTests`
+  - required build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Not yet manually verified:
+  - Configuration Center preview title and top status pill wording on device
+  - summary/detail helper wrapping after the longer `当前生效配置` wording
+
+## 2026-07-06 Phase 3 configuration-center top rhythm polish landed
+
+- The next thin UI-polish slice is now in place and stays strictly in the
+  visual layer.
+- No state flow, renderer flow, export flow, or configuration semantics were
+  changed in this pass.
+
+- What changed:
+  - `ConfigurationCenterTopPreviewSection` product statement is now rendered as
+    a distinct rounded card instead of bare text, which gives the page header a
+    clearer visual starting point
+  - the top status pill now uses:
+    - icon + tinted background
+    - applied vs pending visual distinction
+  - `ConfigurationCenterSummarySection` introductory sentence is now rendered
+    as a lightweight hint block instead of a loose top paragraph
+  - `ConfigurationCenteriOSView` now passes the active preset state through so
+    the top status pill can reflect it visually
+
+- Verification:
+  - required build passed:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+- Not yet manually verified:
+  - top header card spacing on iPhone widths
+  - pending/applied top status pill contrast and readability on device
+  - summary intro hint block rhythm relative to the first summary row
+
+## 2026-07-06 Phase 3 configuration-center responsive compile closure landed
+
+- The follow-up responsive slice is now verified against the actual iOS build
+  targets instead of only the repository-standard macOS scheme.
+- This pass stayed narrow:
+  - no state-flow expansion
+  - no renderer/layout ownership change
+  - no export or metadata behavior change
+
+- What changed:
+  - `ConfigurationCenterTopPreviewSection` now restores the intended
+    `workflowChips` surface so the product-statement card keeps its compact
+    object / anchor / output guidance row
+  - `ConfigurationCenteriOSView` now uses explicit `return` statements in the
+    new iOS-only computed properties that build the summary section and output
+    panel model
+  - this closes the gap where the earlier macOS-only build passed while the
+    actual iOS schemes still failed to compile the newly added summary/polish
+    surfaces
+
+- Why this matters:
+  - the latest Configuration Center top-area polish is now backed by the real
+    `PhotoMemoiOS` and `PhotoMemoiOSV1` compile paths
+  - future UI polishing can continue from a verified iPhone build baseline
+    instead of relying on a macOS-only signal
+
+- Verification:
+  - passed iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed V1 iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed required repository build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed whitespace check:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - top product-statement chip row wrapping on narrower iPhone widths
+  - summary/header spacing after the restored workflow-chip row
+  - the latest compact top rhythm on physical device scroll behavior
+
+## 2026-07-06 Phase 3 configuration-center mobile-summary visual convergence landed
+
+- This follow-up stays in the same top-summary polish lane and only adjusts the
+  visual hierarchy of the iOS Configuration Center.
+- No configuration logic, renderer ownership, export behavior, or navigation
+  flow changed in this pass.
+
+- What changed:
+  - `ConfigurationCenterTopPreviewSection` now pulls the product definition
+    back out of the heavy rounded container and renders it closer to the
+    reference direction:
+    - stronger `PhotoMemo` title
+    - lighter `配置中心` label
+    - borderless explanatory copy area
+    - compact object / anchor / output chip row
+  - the preview block now reads more like a mobile preview stage:
+    - clearer `记忆卡片预览` heading
+    - softer gray stage background
+    - slightly larger visible preview area while preserving renderer ratio
+  - compact preset facts now stack more cleanly on narrow widths instead of
+    trying to keep two facts on one compressed row
+  - `ConfigurationCenterSummarySection` now reads more like a mobile settings
+    list:
+    - large rounded icon tiles on the left
+    - stronger row titles
+    - simpler top explanation line
+    - whiter card surfaces with softer elevation
+
+- Why this matters:
+  - the Configuration Center top area is now closer to the visual rhythm shown
+    in the product references: title first, preview second, concise summary rows
+    below
+  - the summary section feels less like a dense editor block and more like a
+    scannable configuration digest
+
+- Verification:
+  - passed iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed V1 iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed required repository build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed whitespace check:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - actual live Configuration Center surface on simulator after clearing the
+    current photo-permission onboarding interruption
+  - title/subtitle balance on smaller iPhone widths
+  - preview-stage spacing and summary-card elevation on physical device
+
+## 2026-07-06 Phase 3 configuration-center summary trailing cleanup landed
+
+- This follow-up remains a thin visual-only slice inside the same summary card.
+- No selection logic, anchor switching, location switching, or navigation
+  destination changed in this pass.
+
+- What changed:
+  - `ConfigurationCenterSummarySection` object row no longer uses the more
+    engineering-flavored `进入对象配置` button label on the right
+  - the object row now exposes a lighter mobile-list style affordance:
+    - anchor count as the primary right-side value
+    - `对象详情` as the small helper line
+    - trailing chevron
+  - the memory-write row now uses the same lighter disclosure rhythm:
+    - `调整`
+    - `表达方式`
+    - trailing chevron
+  - the border-style row now shows a quiet `当前锁定` status badge instead of
+    leaving the right side visually empty
+
+- Why this matters:
+  - the summary list now reads closer to the product references:
+    - left side = current effective state
+    - right side = lightweight value / navigation hint
+  - this reduces the “editor button” feeling and makes the page feel more like
+    a compact configuration digest
+
+- Verification:
+  - passed iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed V1 iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed required repository build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed whitespace check:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - right-side disclosure rhythm beside long subject names
+  - anchor-count/value balance on narrower iPhone widths
+  - whether the new quiet badge/disclosure tone still feels obvious enough on
+    device
+
+## 2026-07-06 Phase 3 configuration-center preset-card action softening landed
+
+- This follow-up remains inside the same top-summary lane and only adjusts the
+  visual tone of the active-preset card.
+- No preset lifecycle behavior, save semantics, or region-selection behavior
+  changed in this pass.
+
+- What changed:
+  - `ConfigurationCenterTopPreviewSection` no longer uses the more toolbar-like
+    helper line above the preset actions
+  - the top preset card now surfaces:
+    - `currentMemoryPresetSummary` as the short descriptive summary
+    - softer capsule actions for `新建` and `保存当前`
+    - lighter visual separation between summary text and actions
+
+- Why this matters:
+  - the active-preset block now reads more like a compact configuration card
+    and less like a row of editor controls
+  - this moves the top area closer to the reference direction of:
+    - current config first
+    - actions second
+
+- Verification:
+  - passed iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed V1 iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed required repository build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed whitespace check:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - summary text wrapping in the preset card on narrow widths
+  - action-pill weight relative to the surrounding fact rows
+  - whether the top card now feels sufficiently lighter than the preview stage
+
+## 2026-07-06 Phase 3 configuration-center preset-status hierarchy cleanup landed
+
+- This follow-up remains a thin visual cleanup inside the active-preset block.
+- No save logic, preset identity, or status source changed in this pass.
+
+- What changed:
+  - `ConfigurationCenterTopPreviewSection` now uses the top-right pill only for
+    a short state label:
+    - `已同步`
+    - `待保存`
+  - the longer preset save-time/status text now lives under the preset title
+    instead of competing inside both the pill and the fact row
+  - the compact fact row was reduced to the 2 remaining stable summary facts:
+    - `边框`
+    - `输出`
+
+- Why this matters:
+  - the active-preset card now has clearer hierarchy:
+    - title
+    - save-time/status context
+    - stable summary facts
+  - this reduces duplicate status language and makes the top summary feel less
+    crowded
+
+- Verification:
+  - passed iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed V1 iOS simulator build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSV1DerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed required repository build:
+    - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+  - passed whitespace check:
+    - `git diff --check`
+
+- Not yet manually verified:
+  - save-time line truncation on smaller widths
+  - the balance between the short top-right state pill and the longer subtitle
+  - whether the reduced fact row now reads cleaner on device
+
 ## 2026-07-06 P0 surface convergence landed
 
 - The main iOS runtime no longer exposes the old dual-surface product switch
@@ -9347,3 +10466,943 @@ The macOS test/build blockage is not pointing at this slice's new coordinator lo
 - device check: smart-module insertion while keyboard/caret is active
 - device check: subject switch -> birthday sync -> preview sync
 - device check: preset switch while draft is dirty
+
+## 2026-07-06 Configuration preset lifecycle closure
+
+This slice stayed inside the existing Configuration Center architecture and only closed the missing preset lifecycle capability needed before broader V1 UI convergence.
+
+What landed:
+
+- extended `MemoryPreset` so a preset can now carry configuration-session context:
+  - `savedAt`
+  - `selectedSubjectID`
+  - `selectedTimeAnchorID`
+  - `outputOption`
+  - `storageOption`
+  - `usesCustomMemoryWriteText`
+  - `customMemoryWriteText`
+- added `ConfigurationSession.saveCurrentMemoryPreset()`
+- added `ConfigurationSession.createMemoryPresetFromCurrent()`
+- updated `ConfigurationSession.selectMemoryPreset(_:)` so preset switching restores:
+  - selected subject
+  - active time anchor
+  - output/storage selection
+  - custom memory-write state
+
+Behavioral intent of this slice:
+
+- “保存为当前配置” now has a real snapshot target instead of only renaming/updating the visual preset shell
+- “新建配置” can duplicate the current working context into an unsaved preset copy
+- switching presets now restores the saved context needed by the future homepage/configuration-summary UI
+
+Verification:
+
+- passed targeted lifecycle tests:
+  - `xcodebuild test -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO`
+- passed required repository build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Not yet done in this slice:
+
+- no homepage UI convergence yet
+- no configuration-center mobile summary rearrangement yet
+- no output/tasks/settings surface redesign yet
+- no advanced avatar crop interaction yet
+
+## 2026-07-06 Configuration preset actions wired into the UI
+
+This follow-up stayed within the same preset-lifecycle slice and connected the newly-added preset persistence behavior to the visible Configuration Center controls.
+
+What changed:
+
+- `ConfigurationCenterTopPreviewSection` now exposes:
+  - `保存为当前配置`
+  - `新建配置`
+  - current preset save-status text
+- `ConfigurationCenteriOSView` now wires those actions to:
+  - `session.saveCurrentMemoryPreset()`
+  - `session.createMemoryPresetFromCurrent()`
+- macOS `InteractiveMemoryCardConfigurationContext` was aligned with the same actions and status copy
+- `ConfigurationCenterSessionBindingPresenter` now provides preset save-status copy
+- `ConfigurationSession` now marks the selected preset pending again when snapshot-backed fields change, including:
+  - selected subject
+  - selected output/storage option
+  - custom memory-write toggle/text
+
+Why this matters:
+
+- the Configuration Center buttons now perform real preset persistence instead of only showing apply-style copy
+- a saved preset now correctly falls back to pending state after further edits, so the UI can honestly show whether the current configuration still needs saving
+- later homepage/config-summary work can reuse the same `savedAt` + status copy path
+
+Verification:
+
+- passed targeted tests:
+  - `xcodebuild test -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationCenterSessionBindingPresenterTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Still not done in this follow-up:
+
+- preset dropdown does not yet expose a richer “saved time / active configuration” summary row
+- homepage has not yet been reworked into the new compact four-block structure
+- output/tasks/settings surfaces still need the larger visual convergence pass
+
+## 2026-07-06 Configuration center summary row refinement
+
+This increment continued the configuration-center main-page summary slice without changing the frozen IA-002 architecture.
+
+What changed:
+
+- added `ConfigurationCenterSummarySection` as the compact mobile-style summary surface at the top of the iOS Configuration Center detail area
+- summary row order now reflects the agreed structure:
+  - 头像与标识
+  - 时间锚点
+  - 位置显示
+  - 记忆显示
+  - 边框样式
+  - 四个区域快捷跳转
+- `ConfigurationSession` time-anchor switching is now surfaced through the summary dropdown via:
+  - `availableTimeAnchors`
+  - `selectedTimeAnchorID`
+  - `selectTimeAnchor(id:)`
+- added `ConfigurationCenterLocationDisplaySupport` so the summary row:
+  - shows `位置模块未插入` when slot C has no location module
+  - disables the location-display dropdown until a location module exists
+  - applies location-display changes back to the requested region instead of accidentally following the currently selected region
+- added regression coverage for the location-display summary behavior
+
+Why this matters:
+
+- the configuration center now has a compact “current effective configuration” surface that matches the product direction you described, while still routing deeper edits into existing object/card/module panels
+- the time-anchor row now acts as a lightweight switcher instead of forcing users back into full object editing
+- the location-display dropdown no longer gives a false “already configured” impression when the location module is absent
+- slot C display-mode changes are now safe even if the user is currently editing a different region
+
+Verification:
+
+- passed targeted tests:
+  - `xcodebuild test -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationCenterLocationDisplaySupportTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -only-testing:PhotoMemoTests/ConfigurationCenterSessionBindingPresenterTests -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- continue the same staged convergence by thinning the subject editor surface:
+  - remove/soften old overview emphasis
+  - keep detailed anchor editing inside the object editor
+  - move more “current effective configuration” responsibility into the summary surface
+
+## 2026-07-06 Subject editor thinning and legacy overview cleanup
+
+This increment continued the agreed V1 convergence order by thinning the subject-configuration flow and reducing duplicated “current active anchor” surfaces outside the Configuration Center summary.
+
+What changed:
+
+- `MemorySubjectEditorView` now reads more clearly as:
+  - 基本资料
+  - 时间锚点详细编辑
+- the subject editor now:
+  - promotes identity guidance to the top of the page
+  - adds an explicit `关系` field back into the editable basic profile
+  - rewrites the anchor picker copy from “当前生效时间锚点” to “选择要编辑的时间锚点”
+  - explains that current effective-anchor switching has been moved into the Configuration Center summary surface
+- the subject editor still keeps detailed anchor editing in place:
+  - anchor dropdown
+  - custom anchor title
+  - date picker
+  - anchor type
+  - expression-style picker
+- the heavy formula-preview block was removed from the object editor to reduce visual weight before later expression controls are fully re-homed
+- the legacy V1 subject overview sheet was simplified:
+  - removed the standalone `概览` card
+  - removed the redundant “当前生效时间锚点” quick-switch card
+  - footer now only routes into detailed object configuration, with copy that points active-anchor switching back to the Configuration Center
+
+Why this matters:
+
+- the object editor is now more aligned with the intended split:
+  - Configuration Center summary owns “current effective state”
+  - object editor owns detailed identity and anchor maintenance
+- users no longer see the same active-anchor concept emphasized in multiple places with slightly different responsibilities
+- the subject flow is lighter without deleting the detailed anchor-editing capability we still need during this stage
+
+Verification:
+
+- passed targeted tests:
+  - `xcodebuild test -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationCenterLocationDisplaySupportTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -only-testing:PhotoMemoTests/ConfigurationCenterSessionBindingPresenterTests -only-testing:PhotoMemoTests/V1IOSSubjectOverviewPresenterTests -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- continue the staged UI convergence on the output/settings side:
+  - output surface restructuring
+  - settings entry consolidation
+  - task/history surface refinement
+
+## 2026-07-06 Output panel convergence
+
+This increment continued the agreed V1 convergence order by tightening the Configuration Center output surface without changing export, metadata, or photo-library behavior.
+
+What changed:
+
+- added `ConfigurationCenterOutputPanelPresenter` so the output surface can be driven by explicit presentation copy instead of ad-hoc view strings
+- the iOS Configuration Center output panel now groups output information into 4 clearer blocks:
+  - 输出结果
+  - 元数据保留
+  - 图片存放地点
+  - 相册说明写入
+- the output panel now explicitly states:
+  - default output remains `处理过的图片`
+  - default behavior is to retain as much original metadata as possible
+  - storage location still follows the existing local storage/album options
+- the output panel now also shows the current smart-module write summary and provides a direct button back into the `智能模块` panel for deeper adjustment
+- the detail-panel subtitle for `输出` was updated to better reflect the new scope:
+  - new image result
+  - metadata retention
+  - album-description writing
+
+Why this matters:
+
+- the right-side output surface is now much closer to the desired “final output checklist” feeling, instead of reading like a low-level settings form
+- users can understand output consequences in one place without needing to mentally stitch together output and smart-module write behavior
+- this keeps the architecture frozen while still moving the UI toward the more compact V1 experience you described
+
+Verification:
+
+- passed targeted tests:
+  - `xcodebuild test -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/ConfigurationCenterOutputPanelPresenterTests -only-testing:PhotoMemoTests/ConfigurationCenterSessionBindingPresenterTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- continue with settings-entry consolidation:
+  - move settings access fully behind the top-right entry
+  - rebuild the settings/task-history surface into the more visual current-task vs history layout
+
+## 2026-07-06 Settings entry consolidation
+
+This increment completed the next agreed UI slice by moving the active settings/task-history surface behind the Configuration Center top-right entry and reshaping the page into a clearer current-task vs history presentation.
+
+What changed:
+
+- added `V1SettingsPagePresenter` plus focused tests so the settings page is now driven by an explicit presentation model instead of directly rendering queue diagnostics primitives
+- the settings page surface was rebuilt into 3 compact blocks:
+  - `当前任务`
+  - `历史任务`
+  - `辅助设置`
+- the new `当前任务` card now summarizes:
+  - current status
+  - current task headline/subtitle
+  - photo count when available
+  - completed progress summary
+  - latest update time
+  - refresh / clear-history actions
+- the new `历史任务` list now renders as row summaries with:
+  - thumbnail-like icon tiles
+  - time
+  - compact status pill
+  - available photo-count extraction when diagnostics contain `tasks=` or `unique=`
+- `ConfigurationCenterTopPreviewSection` now exposes a top-right settings entry button
+- `ConfigurationCenteriOSView` now owns the settings sheet presentation and refresh flow:
+  - it reuses the existing diagnostics repository + queue status services
+  - it keeps processing logic unchanged
+  - it can still reopen the welcome surface from inside settings
+- `PhotoMemoRootSceneView` now passes the real runtime into `ConfigurationCenteriOSView`, and the temporary entry path was updated to do the same
+
+Why this matters:
+
+- the active iOS entry path now matches the intended flow better:
+  - Configuration Center stays focused on configuration
+  - settings/task status moves behind a dedicated top-right utility entry
+- users get a much more legible split between “what is happening right now” and “what happened recently” without expanding the underlying feature surface
+- this stays within the IA-002 frozen architecture while making the settings surface feel closer to the visual direction you requested
+
+Verification:
+
+- passed targeted tests:
+  - `xcodebuild test -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/V1SettingsPagePresenterTests -only-testing:PhotoMemoTests/ConfigurationCenterOutputPanelPresenterTests -only-testing:PhotoMemoTests/ConfigurationCenterSessionBindingPresenterTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -only-testing:PhotoMemoTests/PhotoMemoiOSTemporaryEntryTests -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- continue the staged V1 convergence on the remaining visual polish:
+  - tighten the configuration-center top summary copy and proportions if needed
+  - revisit the task/history surface with real thumbnail assets later if the product layer adds durable snapshot references
+  - evaluate the later avatar crop/zoom interaction as a separate isolated slice
+
+## 2026-07-06 Configuration Center top-header polish
+
+This increment stayed inside the frozen Configuration Center architecture and only tightened the visual hierarchy of the top preview surface.
+
+What changed:
+
+- rebuilt the topmost area of `ConfigurationCenterTopPreviewSection` into a lighter product-definition header instead of starting immediately with a bordered control block
+- the new header now carries product-facing copy aligned with the repository README:
+  - local-first Memory Presentation Engine
+  - Apple Photos workflow alignment
+  - no original-photo mutation
+- moved the settings entry into the actual top-right position of the header so it reads more like a utility entry instead of part of the preset form
+- compressed the preset controls into a softer “当前生效配置” block with lighter quick-fact chips for:
+  - 边框
+  - 输出
+  - 状态
+- tightened surrounding paddings and slightly widened the preview presentation so the ratio-locked renderer preview reads a little larger without changing the renderer’s internal proportion rules
+- updated the preview caption to explicitly explain that only the viewing scale is enlarged while the renderer ratio stays locked
+
+Why this matters:
+
+- the top of the Configuration Center now reads more like product context first and controls second, which is closer to the visual direction requested for the V1 main surface
+- the settings entry is easier to discover and more clearly separated from configuration-save actions
+- the preview is marginally easier to inspect while still respecting the “preview is a calibration surface, not a layout redesign” rule
+
+Verification:
+
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- if we continue polishing this surface, the next thin slice should be one of:
+  - adjust the top header copy density and line lengths after device inspection
+  - further rebalance preview height vs control density without changing renderer ownership
+  - continue converging the home-level summary language around “当前生效配置” and “记忆对象”
+
+## 2026-07-06 Top preview density reduction
+
+This follow-up increment kept working on the same fixed top-preview surface, but only targeted density reduction so the ratio-locked renderer preview can read slightly larger.
+
+What changed:
+
+- reduced the outer horizontal padding of the top preview section again
+- compressed the “当前生效配置” block:
+  - tightened internal paddings
+  - reduced rename/reset button footprint
+  - kept the save/new actions intact
+- replaced the previous 3 separate fact chips with one lighter inline summary row:
+  - 边框
+  - 输出
+  - 状态
+- widened the preview presentation a little more by increasing the preview’s horizontal bleed inside the calibration card
+- slightly tightened preview-card spacing so more vertical attention stays on the renderer itself
+
+Why this matters:
+
+- the top area now spends less vertical weight on repeated status chrome
+- the preview gets a bit more space without touching renderer internals or changing the locked ratio behavior
+- this keeps the UI moving toward the “summary first, controls second” direction while staying within the frozen Configuration Center architecture
+
+Verification:
+
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- after visual inspection, choose only one next polish slice:
+  - further enlarge preview framing if the header still feels heavy
+  - soften or shorten the top product copy if it wraps too aggressively on smaller devices
+  - continue converging homepage summary language with the same compact pattern
+
+## 2026-07-06 Summary language convergence
+
+This increment stayed purely on user-facing language so the Configuration Center reads more like one product surface instead of several adjacent technical panels.
+
+What changed:
+
+- tightened the top product copy in `ConfigurationCenterTopPreviewSection`:
+  - less repository-definition tone
+  - more direct “这里负责长期配置……” wording
+- replaced the small preset-summary helper copy in the top block with a clearer user-facing description:
+  - `当前用于生成与展示的配置摘要`
+- updated `ConfigurationCenterSummarySection` copy to align with the same naming pattern:
+  - `头像与标识` -> `记忆对象`
+  - `时间锚点` -> `当前生效锚点`
+  - `记忆显示` -> `智能写入`
+- adjusted summary helper descriptions so they consistently refer to:
+  - `记忆对象`
+  - `当前生效锚点`
+  - current generated smart-module writing behavior
+
+Why this matters:
+
+- the top block and summary block now use closer language for the same concepts
+- the surface reads less like internal configuration terminology and more like an end-user product summary
+- this should make later homepage convergence easier because the naming can now be reused instead of translated again
+
+Verification:
+
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- continue the same language pass into one remaining surface:
+  - homepage current-configuration summary
+  - memory-subject entry wording
+  - settings-page section labels if they still feel slightly off-tone after device inspection
+
+## 2026-07-06 Memory-subject wording alignment
+
+This increment continued the same terminology pass, but only around the memory-subject side of the Configuration Center.
+
+What changed:
+
+- updated `MemorySubjectEditorView` section titles and helper copy so the object editor now reads more consistently with the summary surface:
+  - `基本资料` -> `记忆对象资料`
+  - `时间锚点` -> `锚点维护`
+  - related helper copy now explicitly says `记忆对象`
+  - anchor-maintenance picker wording now uses `要维护的时间锚点`
+- updated `ConfigurationCenterDetailPresenter` labels:
+  - subject detail subtitle now reads `对象资料与锚点维护`
+  - subject region title now reads `记忆对象资料`
+  - smart-module subtitle now uses `智能结果` wording for consistency
+- updated `ConfigurationCenterSidebarView` and `ConfigurationCenteriOSView` labels:
+  - sidebar header now reads `配置资料`
+  - sidebar subtitle now references `记忆对象、卡片区域与智能写入`
+  - subject groups now read `人物对象` / `事件对象`
+  - smart-module and guide subtitles now align with `智能写入` and `对象、锚点与输出原则`
+  - guide-card wording now says `当前生效锚点与智能结果`
+
+Why this matters:
+
+- the object editor, sidebar, and summary area now describe the same concepts with closer product language
+- users should need less mental translation between “current effective state” and “where to maintain that state”
+- this reduces terminology drift before we continue homepage and detail-surface polish
+
+Verification:
+
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- continue the same convergence in one adjacent surface only:
+  - homepage current-configuration summary
+  - settings-page section labels
+  - object-editor visual density after device inspection
+
+## 2026-07-06 Settings-page language convergence
+
+This increment kept the settings/task-history surface functionally unchanged and only aligned its section naming with the current Configuration Center language.
+
+What changed:
+
+- updated `V1SettingsPageSurface` section titles:
+  - `当前任务` -> `当前处理`
+  - `历史任务` -> `最近记录`
+  - `辅助设置` -> `使用与说明`
+- adjusted helper copy so the settings page now reads less like a task center and more like a product-facing summary surface
+- updated the empty-state wording to match the new `最近记录` label
+
+Why this matters:
+
+- the settings sheet now fits more naturally beside the Configuration Center instead of sounding like a separate diagnostics product
+- language is now more consistent across:
+  - top preview summary
+  - memory-subject summary
+  - settings/task-history sheet
+
+Verification:
+
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Likely next step:
+
+- continue the same wording pass into the homepage/current-configuration summary surface, or switch from wording to density polish after device inspection
+
+## 2026-07-06 Subject avatar crop flow
+
+This increment completed the iPhone-contacts-style avatar adjustment slice for the memory-subject editor without changing renderer, export, metadata, or share behavior.
+
+What changed:
+
+- added a dedicated crop math helper:
+  - `SubjectAvatarCropSupport`
+  - `SubjectAvatarCropConfiguration`
+- added a new iOS crop sheet:
+  - `SubjectAvatarCropSheet`
+  - supports drag, zoom, and position adjustment before applying
+- updated `MemorySubjectEditorView` avatar upload flow:
+  - selected image now opens the crop sheet first on UIKit-capable paths
+  - confirm then generates synchronized avatar / badge / preview resources
+  - non-UIKit fallback still applies the default centered crop path directly
+- extended `SubjectAvatarAssetOptimizationService` so optimized avatar derivatives now honor the selected crop configuration
+- added focused crop tests in `SubjectAvatarCropSupportTests`
+- explicitly marked the crop support helpers as nonisolated pure computation so the new flow compiles cleanly under the repository's default main-actor isolation mode
+
+Why this matters:
+
+- the memory-subject editor now matches the requested “像 iPhone 联系人头像一样” interaction more closely
+- avatar resources used by object summary, logo/mark areas, and preview thumbnails now come from one deliberate crop decision instead of a fixed centered fill
+- this keeps the work scoped to V1 iOS configuration polish while avoiding the earlier actor-isolation warning regression
+
+Verification:
+
+- passed targeted tests:
+  - `xcodebuild test -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS' -only-testing:PhotoMemoTests/SubjectAvatarCropSupportTests -only-testing:PhotoMemoTests/ConfigurationCenterMemoryDisplaySupportTests -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests -derivedDataPath /tmp/PhotoMemoAvatarCropTests2 CODE_SIGNING_ALLOWED=NO`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData2 CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData2 CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed:
+  - `git diff --check`
+
+Known remaining verification gap:
+
+- the crop gesture itself was not manually exercised on a real iPhone simulator/device in this session
+
+## 2026-07-06 Task page visual density follow-up
+
+This increment stayed inside the existing `任务` entry and only tightened the display density of the current-task and recent-history cards.
+
+What changed:
+
+- updated `V1TaskPageSurface` so the current-task card now reads more like a compact thumbnail summary:
+  - the left tile now uses a stacked photo-card treatment instead of one flat block
+  - the metadata chips now adapt between horizontal and vertical flow
+  - progress now shows both a linear bar and a compact percentage
+  - detail text now sits inside a lighter inset panel
+- rebuilt each recent-history row into a more visual row summary:
+  - added a stacked thumbnail-style leading tile
+  - preserved row title, detail, time, item count, and status
+  - added a compact status chip to the metadata row so time / count / state can be scanned together
+- kept all queue, diagnostics, and history behavior unchanged:
+  - this is presentation-only polish on top of the existing `V1SettingsPagePresenter` data
+
+Why this matters:
+
+- the `任务` entry is now closer to the desired “缩略图 + 行摘要” direction without moving any settings or workflow boundaries again
+- current task and recent history are easier to distinguish at a glance on mobile-width layouts
+- the page stays aligned with the already confirmed structure:
+  - `首页`
+  - `配置中心`
+  - `输出`
+  - `任务`
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoTaskUIMac CODE_SIGNING_ALLOWED=NO -quiet build`
+- additional verification in progress during this handoff:
+  - a full `PhotoMemoiOS` build was rerun with `/tmp/PhotoMemoTaskUIIOS2`
+  - the build reached `PhotoMemoiOS` compilation and compiled `V1TaskPageSurface.swift` without surfacing task-page-specific compile errors before this handoff note was written
+
+Known remaining verification gap:
+
+- this task-page polish was not manually inspected on a real simulator/device in this session
+
+## 2026-07-06 Home preset activation follow-up
+
+This increment tightened the homepage configuration-switch behavior so it matches the confirmed V1 interaction more closely.
+
+What changed:
+
+- updated the homepage preset-switch path in `PhotoMemoiOSV1View`:
+  - selecting a preset from the homepage dropdown now immediately restores that preset context
+  - the selection then directly applies the current configuration instead of showing the previous confirmation dialog
+- simplified `V1PresetSelectionCoordinator`:
+  - preset switching now reports an immediate activation state
+  - removed the old pending-confirmation payload from the coordinator contract
+- updated `V1PresetSelectionCoordinatorTests` to match the new instant-activation behavior
+
+Why this matters:
+
+- this aligns the homepage with the confirmed rule that configuration switching belongs on the main screen under the current memory subject
+- the homepage now behaves closer to “点选即生效” instead of “点选后再决定是否保存”
+- the save/create entry points remain scoped to the configuration center bottom area, as requested
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- `xcodebuild test` could not be used for this slice through the `PhotoMemo` scheme because that scheme is not configured for the test action in the current project setup
+- the homepage preset switch was not manually tapped through on a simulator/device in this session
+
+## 2026-07-06 Configuration center pinned-preview follow-up
+
+This increment refined the real iOS configuration-center entry so the top preview reads more like a locked renderer surface while the detail area scrolls underneath it.
+
+What changed:
+
+- updated `ConfigurationCenteriOSView`:
+  - added a small detail-scroll offset reader
+  - derived a `detailPreviewPinProgress` value from the detail panel scroll position
+  - passed that progress into the top preview section instead of treating the top area as a completely static slab
+- updated `ConfigurationCenterTopPreviewSection`:
+  - tightened the surrounding padding as the detail area scrolls so the renderer preview gains a bit more visible size without changing its internal aspect ratio
+  - strengthened the bottom divider and added a subtle pinned shadow when the detail area is actively scrolled
+  - refreshed the top descriptive copy so it explicitly tells the user the preview remains locked while configuring objects, anchors, and output behavior
+- important architecture note:
+  - the active iOS root scene currently enters `ConfigurationCenteriOSView`, so this slice was applied to the real configuration-center path rather than only the older V1 surface experiments
+
+Why this matters:
+
+- the top renderer area now feels more intentionally “locked” during long inspector scrolling
+- the preview is slightly easier to read on mobile-width layouts because more horizontal space is given back to the card itself
+- the renderer preview still preserves its original ratio and composition rules; this is display-surface polish only
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- this pinned-preview refinement was not manually inspected on a simulator/device in this session, so the exact “lock感” still deserves a real touch-scroll pass
+
+## 2026-07-06 Settings entry visual refresh
+
+This increment stayed within the lightweight settings entry and only improved how the docs/welcome area is presented visually.
+
+What changed:
+
+- refreshed `V1SettingsPageSurface` into a more thumbnail-led entry page:
+  - the overview card now uses a small stacked artwork block instead of one plain icon tile
+  - added a compact three-item summary strip for welcome / workflow / principles
+  - kept the existing copy that tasks and recent records now live in the bottom `任务` entry
+- rebuilt the two action rows:
+  - `重新查看欢迎说明`
+  - `查看使用流程`
+  - both now use small stacked thumbnail-like previews and accent-colored outlines instead of generic single-icon rows
+- refined the principle area:
+  - each principle now has its own compact tinted marker tile for a denser, more deliberate read
+
+Why this matters:
+
+- the settings page now feels more like a curated entry surface instead of a leftover plain list
+- it stays aligned with the confirmed structure:
+  - settings holds docs / welcome / usage
+  - task processing and recent records remain in `任务`
+- this keeps the work scoped to presentation only without reopening workflow or queue boundaries
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- this settings-page polish was not manually inspected on a simulator/device in this session
+
+## 2026-07-06 Configuration summary list-density refresh
+
+This increment stayed inside the configuration-center summary area and only tightened the presentation into a more mobile-style grouped summary list.
+
+What changed:
+
+- rebuilt `ConfigurationCenterSummarySection` from a stack of separate mini-cards into:
+  - one outer summary panel
+  - one grouped inner list
+  - lightweight row dividers
+- added a small top label pill:
+  - `当前生效配置`
+- rewrote the intro area into a compact summary header:
+  - keeps the same guidance but reads more like a focused mobile summary surface
+- tightened each row:
+  - slightly smaller icon tiles
+  - smaller titles
+  - denser spacing
+  - kept all existing controls and behavior for:
+    - memory subject
+    - active time anchor
+    - location display
+    - memory display
+    - border
+    - A/B/C/D region jump
+
+Why this matters:
+
+- the summary area is now closer to the requested “移动端列表摘要面” direction instead of reading like several unrelated floating cards
+- information order and functions are preserved while the page gains more visual structure and less fragmentation
+- this remains presentation-only polish on top of the existing IA-002 configuration-center architecture
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- this grouped summary refresh was not manually inspected on a simulator/device in this session, so the final row density and touch rhythm still deserve a real pass
+
+## 2026-07-06 Memory-subject editor structure cleanup
+
+This increment stayed within the memory-subject configuration flow and cleaned up a few remaining presentation redundancies.
+
+What changed:
+
+- updated `V1IOSSubjectConfigurationFlow`:
+  - removed the extra outer `基本资料` wrapping card
+  - replaced it with a lighter intro card so the real editor content starts earlier on screen
+- updated `MemorySubjectEditorView`:
+  - added a compact identity snapshot card near the top of the identity section
+  - this gives the current object a clearer “who am I editing” summary before the field list
+  - removed the old always-on time-anchor edit gating logic:
+    - date
+    - custom anchor title
+    - anchor type
+    no longer pretend to have a disabled/edit mode split when the page always opens in editable state
+
+Why this matters:
+
+- this is closer to the requested direction of pushing basic profile information upward and avoiding redundant overview-like wrappers
+- the object editor now reads more directly as:
+  - intro
+  - identity / avatar / relationship
+  - anchor maintenance
+- simplifying the always-editable anchor controls reduces unnecessary UI state and makes the editor easier to reason about
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- this memory-subject editor cleanup was not manually inspected on a simulator/device in this session
+
+## 2026-07-06 Memory-subject editor visual follow-up
+
+This increment stayed inside the same memory-subject editor and only improved readability around the avatar and active-anchor editing surfaces.
+
+What changed:
+
+- updated the avatar area in `MemorySubjectEditorView`:
+  - added compact resource chips for:
+    - 头像
+    - 标识
+    - 预览
+  - these now reflect whether derived avatar assets are already available
+  - added a small in-progress capsule so avatar optimization state is easier to scan
+- updated the time-anchor maintenance area:
+  - added a compact “current anchor snapshot” card above the maintenance controls
+  - the snapshot now surfaces:
+    - current anchor title
+    - date
+    - anchor type
+    - total anchor count
+
+Why this matters:
+
+- the avatar editor now communicates more clearly that one upload/crop action feeds multiple downstream resources
+- the anchor editor now makes it easier to see which anchor is currently being maintained before editing the picker/date/type controls
+- this remains a presentation-only refinement on top of the already cleaned-up object-editor structure
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- this avatar/anchor readability follow-up was not manually inspected on a simulator/device in this session
+
+## 2026-07-06 Memory-subject identity-field grouping follow-up
+
+This increment stayed in the same memory-subject editor and only tightened how the identity text fields are grouped visually.
+
+What changed:
+
+- grouped the identity text fields into one inner panel:
+  - 显示名称
+  - 昵称
+  - 关系
+  - 关系备注
+- added lightweight dividers between rows so the object editor now reads closer to the grouped-summary rhythm already used elsewhere in the configuration center
+- kept all existing field behavior, focus handling, and expression-subject ownership logic unchanged
+
+Why this matters:
+
+- the object editor now feels more unified with the configuration-center summary/list styling instead of reading like unrelated standalone controls
+- the visual scan path is clearer:
+  - object snapshot
+  - avatar resources
+  - grouped identity fields
+  - anchor maintenance
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- this identity-field grouping follow-up was not manually inspected on a simulator/device in this session
+
+## 2026-07-07 Configuration-top current-preset semantics cleanup
+
+This increment stayed in the real iOS configuration-center top area and only tightened the meaning and presentation of the current-preset panel.
+
+What changed:
+
+- updated `ConfigurationCenterTopPreviewSection`:
+  - corrected the compact fact strip so it now reflects:
+    - 对象
+    - 锚点
+    - 边框
+  - removed the misleading use of `session.currentConfigurationLabel` as if it were an output value
+  - changed the action chip wording from a generic bottom-area pointer to a clearer `切换即生效`
+  - added a footer hint explaining that:
+    - save current configuration
+    - create configuration
+    remain in the lower action area, while the top area only handles view / switch / rename
+  - added a faint outline to the profile panel so it sits more cleanly beside the already-refined summary/list surfaces
+
+Why this matters:
+
+- the top preset panel now matches the actual product model more honestly
+- users can scan the active object, active anchor, and border directly without reading a mislabeled “输出” row
+- the division of responsibility between the top preset area and bottom save/create actions is now more explicit
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoiOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+
+Known remaining verification gap:
+
+- this semantics/visual cleanup was not manually inspected on a simulator/device in this session
+
+## 2026-07-07 Real iPhone config-center compact-width cleanup
+
+This increment stayed on the real iOS runtime entry and focused only on
+compact-width Configuration Center presentation behavior.
+
+What changed:
+
+- updated `ConfigurationCenteriOSView` so iPhone-width layouts no longer force
+  the persistent left sidebar beside the detail panel
+- compact widths now render:
+  - top summary / preview area
+  - full-width detail content
+  - a separate sheet-based `配置导航` entry for subject / region / output jumps
+- hid the extra system navigation bar on the real iOS Configuration Center so
+  the product statement area becomes the visual top surface again
+- updated `ConfigurationCenterTopPreviewSection`:
+  - added a compact-width navigation button beside the top-right settings button
+  - kept settings as the dedicated top-right action
+  - preserved the current status pill in the same area
+- selection changes made from the compact navigator now dismiss the navigator
+  sheet immediately so the flow returns to the detail page without an extra tap
+
+Why this matters:
+
+- the real app entry now matches the intended mobile rhythm much more closely:
+  - summary first
+  - detail second
+  - navigation on demand
+- the earlier “sidebar squeezed into phone width” problem is removed from the
+  primary iPhone path
+- the top area no longer competes with a duplicated system title/toolbar stack,
+  so the product-definition copy and current-configuration surface read more
+  cleanly
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed required build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- passed iOS build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
+- manually spot-checked by simulator screenshot:
+  - real runtime now shows the compact-width top area without the duplicated
+    navigation title and without the persistent split sidebar
+
+Known remaining verification gap:
+
+- the new compact `配置导航` sheet was not manually tapped through end-to-end in
+  this session
+- lower sections of the summary/detail page were not fully scrolled through on
+  device after this compact-width layout change
+
+## 2026-07-07 iOS runtime entry restored to V1 four-tab shell
+
+This correction responds to real-device feedback that the main UI had collapsed
+into the Configuration Center instead of preserving the intended four-entry V1
+main surface.
+
+Root cause:
+
+- commit `ff30f25a Converge V1 iOS runtime and status surfaces` changed the
+  real iOS root scene from the temporary/V1 shell path into
+  `ConfigurationCenteriOSView`
+- the four bottom entries still existed inside `PhotoMemoiOSV1View`, but the
+  app no longer launched into that view
+- later Configuration Center polish made the single-page behavior more obvious
+  on device, because homepage / configuration / output / task surfaces were no
+  longer separated by the bottom TabView
+
+What changed:
+
+- `PhotoMemoRootSceneView` now launches `PhotoMemoiOSV1View` on iOS again
+- the root view passes through the live runtime dependencies:
+  - background status service
+  - external intake refresh
+  - preview/export/queue/configuration coordinators
+  - external intake center
+  - diagnostics repository
+- the Configuration Center remains available inside the second bottom tab, so
+  the recent Configuration Center UI work is preserved without owning the app
+  root
+
+Verification:
+
+- passed:
+  - `git diff --check`
+- passed real-device build:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=00008150-000A043136A1401C' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
+- installed and launched on physical device:
+  - device: `iPhone7`
+  - bundle id: `com.serydoo.PhotoMemo.iOS`
+
+Known remaining verification gap:
+
+- final visual confirmation is pending the user's real-device check that the
+  bottom entries show as:
+  - 首页
+  - 配置中心
+  - 输出
+  - 任务

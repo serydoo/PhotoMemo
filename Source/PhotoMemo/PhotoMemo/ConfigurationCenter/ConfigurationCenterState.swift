@@ -61,17 +61,38 @@ struct MemoryPreset:
     var title: String
     var summary: String
     var regionTemplateIDs: [CardRegion: String]
+    var savedAt: Date?
+    var selectedSubjectID: MemorySubject.ID?
+    var selectedTimeAnchorID: UUID?
+    var outputOption: ConfigurationOutputOption
+    var storageOption: ConfigurationStorageOption
+    var usesCustomMemoryWriteText: Bool
+    var customMemoryWriteText: String
 
     init(
         id: UUID = UUID(),
         title: String,
         summary: String,
-        regionTemplateIDs: [CardRegion: String]
+        regionTemplateIDs: [CardRegion: String],
+        savedAt: Date? = nil,
+        selectedSubjectID: MemorySubject.ID? = nil,
+        selectedTimeAnchorID: UUID? = nil,
+        outputOption: ConfigurationOutputOption = .processedImage,
+        storageOption: ConfigurationStorageOption = .appFolder,
+        usesCustomMemoryWriteText: Bool = false,
+        customMemoryWriteText: String = ""
     ) {
         self.id = id
         self.title = title
         self.summary = summary
         self.regionTemplateIDs = regionTemplateIDs
+        self.savedAt = savedAt
+        self.selectedSubjectID = selectedSubjectID
+        self.selectedTimeAnchorID = selectedTimeAnchorID
+        self.outputOption = outputOption
+        self.storageOption = storageOption
+        self.usesCustomMemoryWriteText = usesCustomMemoryWriteText
+        self.customMemoryWriteText = customMemoryWriteText
     }
 
     func templateID(

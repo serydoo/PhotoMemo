@@ -19,6 +19,9 @@ struct PhotoMemoiOSTemporaryEntryView: View {
     private let configuration:
         PhotoMemoiOSTemporaryEntryConfiguration
 
+    private let configurationCenterRuntime:
+        PhotoMemoAppRuntime
+
     init(
         backgroundStatusService:
             PhotoMemoBackgroundStatusService,
@@ -36,6 +39,13 @@ struct PhotoMemoiOSTemporaryEntryView: View {
             environment
         self.configuration =
             configuration
+        self.configurationCenterRuntime =
+            PhotoMemoAppRuntime(
+                environment:
+                    environment
+                    ?? AppEnvironment
+                    .live()
+            )
         _selectedEntryRawValue =
             AppStorage(
                 wrappedValue:
@@ -104,7 +114,10 @@ struct PhotoMemoiOSTemporaryEntryView: View {
                     .diagnostics
             )
         case .configurationCenter:
-            ConfigurationCenteriOSView()
+            ConfigurationCenteriOSView(
+                runtime:
+                    configurationCenterRuntime
+            )
         }
     }
 

@@ -44,7 +44,7 @@ struct ConfigurationCenterDetailPresenter {
                 content: .subject,
                 title: "记忆对象",
                 systemImage: "person.fill",
-                subtitle: "身份与时间锚点"
+                subtitle: "对象资料与锚点维护"
             )
 
         case .card:
@@ -60,7 +60,7 @@ struct ConfigurationCenterDetailPresenter {
                 content: .memoryModule,
                 title: "智能模块",
                 systemImage: "text.badge.checkmark",
-                subtitle: "先生成 1 个智能模块，再决定承载与写入方式"
+                subtitle: "先生成 1 个智能结果，再决定承载与写入方式"
             )
 
         case .output:
@@ -68,7 +68,7 @@ struct ConfigurationCenterDetailPresenter {
                 content: .output,
                 title: "输出",
                 systemImage: "square.and.arrow.down",
-                subtitle: nil
+                subtitle: "新图结果、元数据保留与相册说明写入"
             )
 
         case .configurationGuide:
@@ -88,7 +88,7 @@ struct ConfigurationCenterDetailPresenter {
         case .subject:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .subject,
-                title: "记忆对象配置",
+                title: "记忆对象资料",
                 systemImage: "person.fill"
             )
 

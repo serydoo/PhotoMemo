@@ -11,7 +11,8 @@ struct ConfigurationCenterDetailPanelSection: View {
         )
         case output(
             model: ConfigurationCenterOutputSelectionPanelModel,
-            storageOption: Binding<ConfigurationStorageOption>
+            storageOption: Binding<ConfigurationStorageOption>,
+            onOpenMemoryModule: () -> Void
         )
         case configurationGuide(
             items: [ConfigurationCenterGuideCardModel]
@@ -41,11 +42,14 @@ struct ConfigurationCenterDetailPanelSection: View {
 
             case let .output(
                 model,
-                storageOption
+                storageOption,
+                onOpenMemoryModule
             ):
                 ConfigurationCenterOutputSelectionPanel(
                     model: model,
-                    storageOption: storageOption
+                    storageOption: storageOption,
+                    onOpenMemoryModule:
+                        onOpenMemoryModule
                 )
 
             case let .configurationGuide(items):

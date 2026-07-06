@@ -7,7 +7,6 @@ struct V1AccessoryEntrySection: View {
 
     @Binding var logoMode: V1LogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
-    @Binding var birthdayDate: Date
     let logoStatusMessage: String
     let logoRowDetail: String
     let logoPersistenceHint: String?
@@ -15,12 +14,7 @@ struct V1AccessoryEntrySection: View {
     let subjectAvatarPreviewImagePath: String?
     let customLogoImagePath: String?
     let isOptimizingLogo: Bool
-    let timeAnchorPresentation: V1TimeAnchorEntryPresentation
-    let birthdaySummaryText: String
-    let locationDisplayModule: IOSInsertedModule?
-    let locationDisplayOptionID: Binding<String>
     let logoExpanded: Binding<Bool>
-    let anchorExpanded: Binding<Bool>
 
     var body: some View {
         IOSCompactEntryListGroup {
@@ -34,28 +28,6 @@ struct V1AccessoryEntrySection: View {
             ) {
                 logoEditorContent
             }
-
-            IOSCompactEntryDisclosureRow(
-                title: "时间锚点",
-                subtitle: timeAnchorPresentation.rowSubtitle,
-                value: timeAnchorPresentation.rowValue,
-                detail: birthdaySummaryText,
-                systemImage: "calendar.badge.clock",
-                showsDivider: false,
-                isExpanded: anchorExpanded
-            ) {
-                anchorEditorContent
-            }
-
-            ConfigurationCenterLocationDisplayPanel(
-                presentation:
-                    LocationDisplayInspectorPresenter
-                    .presentation,
-                locationModule:
-                    locationDisplayModule,
-                selectedOptionID:
-                    locationDisplayOptionID
-            )
         }
     }
 
@@ -130,52 +102,6 @@ struct V1AccessoryEntrySection: View {
                         horizontal: false,
                         vertical: true
                     )
-            }
-        }
-    }
-
-    private var anchorEditorContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            DatePicker(
-                timeAnchorPresentation.anchorPickerTitle,
-                selection: $birthdayDate,
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.compact)
-
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 16)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(
-                        timeAnchorPresentation
-                            .formulaTitle
-                    )
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Text(
-                        timeAnchorPresentation
-                            .formulaPreviewText
-                    )
-                        .font(.subheadline.weight(.semibold))
-                        .fixedSize(
-                            horizontal: false,
-                            vertical: true
-                        )
-
-                    Text("当前表达结果由记忆对象里的时间锚点设置决定，保存后会同步影响智能模块预览。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(
-                            horizontal: false,
-                            vertical: true
-                        )
-                }
             }
         }
     }

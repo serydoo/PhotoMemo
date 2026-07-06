@@ -32,6 +32,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
 
         var didReloadAlbums = false
         var restoredSubject: MemorySubject?
+        var didSaveCurrentPreset = false
         var didApplySelectedPreset = false
         var selectedExistingAlbumIdentifier = ""
         var statuses: [V1ConfigurationApplyViewStatus] = []
@@ -50,6 +51,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
                 },
                 restoreSubject: {
                     restoredSubject = $0
+                },
+                saveCurrentMemoryPreset: {
+                    didSaveCurrentPreset = true
                 },
                 applySelectedMemoryPreset: {
                     didApplySelectedPreset = true
@@ -72,6 +76,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             == "picker-album-1"
         )
         #expect(restoredSubject == subject)
+        #expect(didSaveCurrentPreset == true)
         #expect(didApplySelectedPreset == true)
         #expect(
             statuses == [
@@ -98,6 +103,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
 
         var didReloadAlbums = false
         var didRestoreSubject = false
+        var didSaveCurrentPreset = false
         var didApplySelectedPreset = false
         var statuses: [V1ConfigurationApplyViewStatus] = []
 
@@ -117,6 +123,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
                 restoreSubject: { _ in
                     didRestoreSubject = true
                 },
+                saveCurrentMemoryPreset: {
+                    didSaveCurrentPreset = true
+                },
                 applySelectedMemoryPreset: {
                     didApplySelectedPreset = true
                 },
@@ -134,6 +143,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         #expect(wasSuccessful == false)
         #expect(didReloadAlbums == false)
         #expect(didRestoreSubject == false)
+        #expect(didSaveCurrentPreset == false)
         #expect(didApplySelectedPreset == false)
         #expect(
             statuses == [

@@ -27,8 +27,8 @@ enum ConfigurationCenterPageChromePresenter {
                 sectionTitle(for: selectedPanel),
             statusText:
                 canApplyChanges
-                ? "当前配置尚未生效"
-                : "当前配置已生效",
+                ? "当前配置改动尚未生效"
+                : "当前生效配置已同步",
             primaryActionTitle:
                 canApplyChanges
                 ? "保存并生效"

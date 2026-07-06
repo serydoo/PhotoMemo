@@ -10,6 +10,16 @@ enum ConfigurationCenterSessionBindingPresenter {
     static let customMemoryWritePlaceholder =
         "输入要单独写入图库说明的文字"
 
+    private static let presetStatusFormatter:
+        DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.locale =
+                Locale(identifier: "zh_CN")
+            formatter.dateFormat =
+                "yyyy.MM.dd HH:mm"
+            return formatter
+        }()
+
     static func profileTitle(
         session: ConfigurationSession
     ) -> String {
@@ -78,6 +88,26 @@ enum ConfigurationCenterSessionBindingPresenter {
         session.usesCustomMemoryWriteText
         ? "实际写入"
         : "默认写入（当前智能模块）"
+    }
+
+    static func presetStatusText(
+        session: ConfigurationSession,
+        savedAtFormatter: ((Date) -> String)? = nil
+    ) -> String {
+        guard let savedAt =
+            session.state
+            .selectedMemoryPreset?
+            .savedAt else {
+            return "当前生效配置尚未保存"
+        }
+
+        let formattedSavedAt =
+            savedAtFormatter?(savedAt)
+            ?? presetStatusFormatter.string(
+                from: savedAt
+            )
+
+        return "最近保存于 \(formattedSavedAt)"
     }
 }
 #endif

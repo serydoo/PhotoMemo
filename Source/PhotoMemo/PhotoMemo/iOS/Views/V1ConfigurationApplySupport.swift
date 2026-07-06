@@ -37,10 +37,16 @@ enum V1ConfigurationApplyRequestBuilder {
     static func buildRequest(
         from input: V1ConfigurationApplyBuildInput
     ) -> V1ConfigurationApplyRequest {
+        let resolvedAnchorDate =
+            input
+            .selectedSubject?
+            .primaryTimeAnchor?
+            .date
+            ?? input.birthdayDate
         let subjectForSaving =
             alignedSelectedSubject(
                 from: input.selectedSubject,
-                birthdayDate: input.birthdayDate
+                birthdayDate: resolvedAnchorDate
             )
 
         return V1ConfigurationApplyRequest(
@@ -113,7 +119,7 @@ enum V1ConfigurationApplyRequestBuilder {
                         ?? input.selectedSubject
                 ),
             timeAnchorDate:
-                input.birthdayDate,
+                resolvedAnchorDate,
             outputTarget:
                 input.outputTarget,
             availableAlbums:

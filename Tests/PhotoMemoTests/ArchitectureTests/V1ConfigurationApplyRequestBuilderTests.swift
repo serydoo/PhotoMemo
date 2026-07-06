@@ -17,6 +17,12 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 localIdentifier: "album-1"
             )
         ]
+        let resolvedAnchorDate =
+            baseState
+            .selectedSubject?
+            .primaryTimeAnchor?
+            .date
+            ?? birthdayDate
 
         let request = V1ConfigurationApplyRequestBuilder.buildRequest(
             from: V1ConfigurationApplyBuildInput(
@@ -51,7 +57,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             V1ConfigurationApplyRequestBuilder
             .alignedSelectedSubject(
                 from: baseState.selectedSubject,
-                birthdayDate: birthdayDate
+                birthdayDate: resolvedAnchorDate
             )
 
         #expect(request.subject == expectedSubject)
@@ -87,7 +93,78 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 subject: expectedSubject
             )
         )
-        #expect(request.timeAnchorDate == birthdayDate)
+        #expect(request.timeAnchorDate == resolvedAnchorDate)
+    }
+
+    @Test("build request preserves the selected subject anchor date over stale transient birthday state")
+    func buildRequestPreservesSelectedSubjectAnchorDateOverStaleTransientBirthdayState() throws {
+        var subject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        let anchorDate =
+            try #require(
+                Calendar.current.date(
+                    from:
+                        DateComponents(
+                            year: 2025,
+                            month: 5,
+                            day: 26
+                        )
+                )
+            )
+        let staleBirthdayDate =
+            try #require(
+                Calendar.current.date(
+                    from:
+                        DateComponents(
+                            year: 2024,
+                            month: 1,
+                            day: 1
+                        )
+                )
+            )
+        let anchor = MemorySubject.TimeAnchor(
+            title: "途途生日",
+            date: anchorDate,
+            note: "对象页锚点",
+            anchorType: .birthday,
+            expressionStyle: .birthdayNatural
+        )
+
+        subject.timeAnchors = [anchor]
+        subject.activeTimeAnchorID = anchor.id
+        subject.referenceDate = anchorDate
+        subject.behavior.primaryAnchor = anchor.title
+
+        let request =
+            V1ConfigurationApplyRequestBuilder
+            .buildRequest(
+                from: V1ConfigurationApplyBuildInput(
+                    selectedSubject: subject,
+                    subjects: [subject],
+                    selectedSubjectID: subject.id,
+                    shouldSaveSubjectLibrary: true,
+                    presetTitle: "当前配置",
+                    templateTextsByRegion: [
+                        .slotD: "{{memory_summary}}啦！"
+                    ],
+                    locationDisplayConfiguration: nil,
+                    badge: nil,
+                    usesCustomMemoryWriteText: false,
+                    customMemoryWriteText: "",
+                    birthdayDate: staleBirthdayDate,
+                    outputTarget: .automatic,
+                    availableAlbums: [],
+                    selectedExistingAlbumIdentifier: "",
+                    newAlbumName:
+                        PhotoMemoAlbumSelection
+                        .defaultAlbumTitle
+                )
+            )
+
+        #expect(request.timeAnchorDate == anchorDate)
+        #expect(request.subject?.primaryTimeAnchor?.date == anchorDate)
+        #expect(request.subject?.referenceDate == anchorDate)
     }
 
     @Test("build request clears photo description override when custom write text is off and falls back to stored selection when subject is nil")

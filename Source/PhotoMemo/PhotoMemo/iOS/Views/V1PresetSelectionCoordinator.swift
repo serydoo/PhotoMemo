@@ -5,12 +5,8 @@ struct V1PresetSelectionUpdate {
 
     let preset: MemoryPreset
 
-    let pendingActivationPresetTitle: String
-
     let activeConfigurationStatus:
         V1ConfigurationStatus
-
-    let showsPresetActivationConfirmation: Bool
 }
 
 enum V1PresetSelectionCoordinator {
@@ -46,12 +42,8 @@ enum V1PresetSelectionCoordinator {
 
         return V1PresetSelectionUpdate(
             preset: preset,
-            pendingActivationPresetTitle:
-                preset.title,
             activeConfigurationStatus:
-                .dirty,
-            showsPresetActivationConfirmation:
-                true
+                .saving
         )
     }
 }

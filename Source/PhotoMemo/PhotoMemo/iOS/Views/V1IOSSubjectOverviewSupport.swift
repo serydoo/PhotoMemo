@@ -47,34 +47,40 @@ private struct V1IOSSubjectPrimaryCard: View {
                         .identity.avatarImagePath
                         ?? subject?
                         .identity.avatarPreviewImagePath,
-                    size: 68
+                    size: 60
                 )
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("当前记忆对象")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
+                VStack(alignment: .leading, spacing: 8) {
                     Text(summary.title)
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Text(summary.subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-
-                    HStack(spacing: 8) {
-                        V1IOSHomeStatusBadge(
-                            text: "当前生效时间锚点",
-                            tone: .accent
+                    HStack(spacing: 6) {
+                        V1IOSSubjectMetaPill(
+                            text: summary.subtitle,
+                            tone: .neutral
                         )
 
-                        Text(summary.anchorTitle)
+                        V1IOSSubjectMetaPill(
+                            text: anchorCountText,
+                            tone: .accent
+                        )
+                    }
+
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.badge.checkmark")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+
+                        Text("当前生效锚点")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+
+                        Text(summary.anchorTitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
                     }
                 }
 
@@ -101,6 +107,11 @@ private struct V1IOSSubjectPrimaryCard: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var anchorCountText: String {
+        let count = max(subject?.timeAnchors.count ?? 0, 0)
+        return "\(count) 个锚点"
     }
 }
 
@@ -251,6 +262,25 @@ private struct V1IOSHomeLinkRow: View {
                     .padding(.leading, 50)
             }
         }
+    }
+}
+
+private struct V1IOSSubjectMetaPill: View {
+
+    let text: String
+    let tone: V1IOSHomeStatusBadge.Tone
+
+    var body: some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(tone.tint)
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(tone.background)
+            )
     }
 }
 

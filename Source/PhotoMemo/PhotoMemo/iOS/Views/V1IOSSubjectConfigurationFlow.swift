@@ -20,20 +20,11 @@ struct V1IOSSubjectConfigurationFlow: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    V1CardSurface(title: "基本资料") {
-                        Text("以下信息会作为当前记忆对象的长期身份资料，并同步影响时间锚点与记忆卡预览。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(
-                                horizontal: false,
-                                vertical: true
-                            )
-                            .padding(.bottom, 8)
+                    subjectConfigurationIntro
 
-                        MemorySubjectEditorView(
-                            session: flowState.draftSession
-                        )
-                    }
+                    MemorySubjectEditorView(
+                        session: flowState.draftSession
+                    )
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 16)
@@ -67,6 +58,18 @@ struct V1IOSSubjectConfigurationFlow: View {
                     .fontWeight(.semibold)
                 }
             }
+        }
+    }
+
+    private var subjectConfigurationIntro: some View {
+        V1CardSurface(title: "记忆对象配置") {
+            Text("这里专门维护对象头像、名称、关系与时间锚点。当前生效锚点切换已经收拢到配置中心摘要区，这里只负责对象本身的长期资料与锚点内容。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
         }
     }
 

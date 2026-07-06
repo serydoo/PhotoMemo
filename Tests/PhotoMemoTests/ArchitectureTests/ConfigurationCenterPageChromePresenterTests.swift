@@ -22,7 +22,7 @@ struct ConfigurationCenterPageChromePresenterTests {
         #expect(presentation.sectionTitle == "区域 D 配置")
         #expect(
             presentation.statusText
-            == "当前配置尚未生效"
+            == "当前配置改动尚未生效"
         )
         #expect(
             presentation.primaryActionTitle
@@ -50,7 +50,7 @@ struct ConfigurationCenterPageChromePresenterTests {
         #expect(presentation.sectionTitle == "智能模块")
         #expect(
             presentation.statusText
-            == "当前配置已生效"
+            == "当前生效配置已同步"
         )
         #expect(
             presentation.primaryActionTitle

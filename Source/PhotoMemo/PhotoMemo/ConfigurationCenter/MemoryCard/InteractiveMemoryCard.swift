@@ -32,7 +32,9 @@ struct InteractiveMemoryCard: View {
             memoryPresets: session.state.memoryPresets,
             selectedMemoryPresetID: selectedMemoryPresetBinding,
             currentTimeAnchorDescription: session.currentTimeAnchorDescription,
-            selectedMemoryPresetIsApplied: session.selectedMemoryPresetIsApplied,
+            presetStatusText:
+                ConfigurationCenterSessionBindingPresenter
+                .presetStatusText(session: session),
             memoryPresetTitle: memoryPresetTitleBinding,
             isRenamingMemoryPreset: $isRenamingMemoryPreset,
             onReset: {
@@ -40,9 +42,14 @@ struct InteractiveMemoryCard: View {
                     session.resetSelectedMemoryPreset()
                 }
             },
-            onApply: {
+            onSave: {
                 withAnimation(.easeInOut(duration: 0.16)) {
-                    session.applySelectedMemoryPreset()
+                    session.saveCurrentMemoryPreset()
+                }
+            },
+            onCreate: {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    session.createMemoryPresetFromCurrent()
                 }
             }
         )

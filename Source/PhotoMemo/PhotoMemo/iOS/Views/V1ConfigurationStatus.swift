@@ -36,7 +36,7 @@ extension V1ConfigurationStatus {
         case .idle:
             switch context {
             case .defaultConfiguration:
-                return "尚未保存为默认配置"
+                return "尚未保存为当前配置"
             case .shareConfiguration:
                 return "尚未保存为分享配置"
             case .preset:
@@ -49,7 +49,7 @@ extension V1ConfigurationStatus {
         case .saved:
             switch context {
             case .defaultConfiguration:
-                return "已保存为默认配置"
+                return "已保存为当前配置"
             case .shareConfiguration:
                 return "已保存为分享配置"
             case .preset:

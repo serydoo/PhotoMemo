@@ -10,7 +10,7 @@ struct V1ConfigurationStatusTests {
     func contextSpecificMessagesComeFromStatusInsteadOfDrivingIt() {
         #expect(
             V1ConfigurationStatus.idle.message(for: .defaultConfiguration)
-            == "尚未保存为默认配置"
+            == "尚未保存为当前配置"
         )
         #expect(
             V1ConfigurationStatus.idle.message(for: .shareConfiguration)
@@ -19,6 +19,10 @@ struct V1ConfigurationStatusTests {
         #expect(
             V1ConfigurationStatus.saved.message(for: .preset)
             == "当前生效"
+        )
+        #expect(
+            V1ConfigurationStatus.saved.message(for: .defaultConfiguration)
+            == "已保存为当前配置"
         )
         #expect(
             V1ConfigurationStatus.subjectSynced.message(for: .shareConfiguration)

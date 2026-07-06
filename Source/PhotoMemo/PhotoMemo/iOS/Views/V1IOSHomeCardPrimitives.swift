@@ -43,7 +43,7 @@ struct V1IOSHomeStatusBadge: View {
         case warning
         case neutral
 
-        fileprivate var tint: Color {
+        var tint: Color {
             switch self {
             case .accent:
                 return .accentColor
@@ -54,7 +54,7 @@ struct V1IOSHomeStatusBadge: View {
             }
         }
 
-        fileprivate var background: Color {
+        var background: Color {
             switch self {
             case .neutral:
                 return ConfigurationUI.controlBackground
@@ -210,6 +210,102 @@ struct V1IOSHomeNavigationRowButton: View {
                     .padding(.leading, 60)
             }
         }
+    }
+}
+
+struct V1IOSHomeActionTileButton: View {
+
+    let title: String
+    let detail: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .center, spacing: 9) {
+                ZStack {
+                    RoundedRectangle(
+                        cornerRadius: 16,
+                        style: .continuous
+                    )
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.16),
+                                Color.accentColor.opacity(0.06)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                    Image(systemName: systemImage)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .frame(width: 48, height: 48)
+
+                VStack(alignment: .center, spacing: 3) {
+                    Text(title)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 104, alignment: .center)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white,
+                            ConfigurationUI
+                                .controlBackground
+                                .opacity(0.92)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .stroke(ConfigurationUI.faintHairline)
+            )
+            .shadow(
+                color: Color.black.opacity(0.04),
+                radius: 10,
+                y: 5
+            )
+            .contentShape(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

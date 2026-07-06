@@ -52,14 +52,16 @@ struct MemorySubjectEditorView: View {
     private var selectedTimeAnchorID: UUID?
 
     @State
-    private var isEditingTimeAnchor = false
-
-    @State
     private var isOptimizingAvatar = false
 
 #if canImport(PhotosUI)
     @State
     private var selectedAvatarItem: PhotosPickerItem?
+#endif
+
+#if canImport(UIKit)
+    @State
+    private var pendingAvatarCropDraft: SubjectAvatarCropDraft?
 #endif
 
     @FocusState
@@ -72,14 +74,14 @@ struct MemorySubjectEditorView: View {
         VStack(alignment: .leading, spacing: 26) {
             if session.state.selectedSubject != nil {
                 InspectorSectionView(
-                    "身份",
+                    "记忆对象资料",
                     systemImage: "person.fill"
                 ) {
                     identityEditor
                 }
 
                 InspectorSectionView(
-                    "时间锚点",
+                    "锚点维护",
                     systemImage: "calendar.badge.clock"
                 ) {
                     timeWindowEditor
@@ -128,40 +130,88 @@ struct MemorySubjectEditorView: View {
             }
 
             Task {
-                await optimizeSelectedAvatar(item)
+                await prepareSelectedAvatar(item)
             }
+        }
+#endif
+#if canImport(UIKit)
+        .sheet(item: $pendingAvatarCropDraft) { draft in
+            SubjectAvatarCropSheet(
+                image: draft.image,
+                onCancel: {
+                    pendingAvatarCropDraft = nil
+                    avatarStatusMessage = normalizedAvatarStatusMessage(
+                        from: avatarImagePath
+                    )
+                },
+                onConfirm: { configuration in
+                    pendingAvatarCropDraft = nil
+
+                    Task {
+                        await applyAvatarCrop(
+                            data: draft.data,
+                            configuration: configuration
+                        )
+                    }
+                }
+            )
         }
 #endif
     }
 
     private var identityEditor: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Text("在这里维护记忆对象的头像、名称和关系资料。这些内容会同步影响配置中心摘要、对象入口和锚点表达主体。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            identitySnapshotCard
             avatarEditor
-
-            labeledTextField(
-                "显示名称",
-                text: $displayName,
-                systemImage: "person.text.rectangle",
-                focus: .displayName,
-                subjectSource: .displayName
-            )
-
-            labeledTextField(
-                "昵称",
-                text: $shortName,
-                systemImage: "person.crop.circle",
-                focus: .shortName,
-                subjectSource: .shortName
-            )
-
-            labeledTextField(
-                "关系备注",
-                text: $relationshipLabel,
-                systemImage: "heart.text.square",
-                focus: .relationshipLabel,
-                subjectSource: .relationshipLabel
-            )
+            identityFieldsPanel
         }
+    }
+
+    private var identitySnapshotCard: some View {
+        HStack(alignment: .center, spacing: 14) {
+            subjectAvatarPreview
+                .frame(width: 72, height: 72)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "记忆对象" : displayName)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                HStack(spacing: 8) {
+                    identitySummaryChip(
+                        title: shortName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "未设昵称" : shortName,
+                        systemImage: "person.text.rectangle"
+                    )
+
+                    identitySummaryChip(
+                        title: relationshipLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "未设关系" : relationshipLabel,
+                        systemImage: "person.2.fill"
+                    )
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.controlBackground.opacity(0.72))
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
     }
 
     private var avatarEditor: some View {
@@ -170,8 +220,17 @@ struct MemorySubjectEditorView: View {
                 subjectAvatarPreview
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("对象头像")
-                        .font(.subheadline.weight(.semibold))
+                    HStack(spacing: 6) {
+                        Text("对象头像")
+                            .font(.subheadline.weight(.semibold))
+
+                        if isOptimizingAvatar {
+                            statusCapsule(
+                                title: "处理中",
+                                tint: .orange
+                            )
+                        }
+                    }
 
                     Text(avatarStatusMessage)
                         .font(.caption)
@@ -185,38 +244,131 @@ struct MemorySubjectEditorView: View {
                 Spacer(minLength: 0)
             }
 
+            HStack(spacing: 8) {
+                avatarResourceChip(
+                    title: "头像",
+                    isReady: avatarImagePath?.isEmpty == false
+                )
+
+                avatarResourceChip(
+                    title: "标识",
+                    isReady: avatarBadgeImagePath?.isEmpty == false
+                )
+
+                avatarResourceChip(
+                    title: "预览",
+                    isReady: avatarPreviewImagePath?.isEmpty == false
+                )
+            }
+
 #if canImport(PhotosUI)
             PhotosPicker(
                 selection: $selectedAvatarItem,
                 matching: .images
             ) {
-                Label(
-                    isOptimizingAvatar
-                    ? "正在优化头像"
-                    : "上传对象头像",
-                    systemImage:
+                HStack(spacing: 8) {
+                    Image(
+                        systemName:
+                            isOptimizingAvatar
+                            ? "hourglass"
+                            : "person.crop.circle.badge.plus"
+                    )
+                    .font(.subheadline.weight(.semibold))
+
+                    Text(
                         isOptimizingAvatar
-                        ? "hourglass"
-                        : "person.crop.circle.badge.plus"
-                )
+                        ? "正在处理头像"
+                        : "上传对象头像"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                }
                 .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
             }
             .buttonStyle(.bordered)
             .controlSize(.regular)
             .disabled(isOptimizingAvatar)
+
+            Text("上传后可像联系人头像一样拖动、放大和调整位置，再生成对象头像资源。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 #endif
         }
         .padding(12)
         .configurationPanelChrome(isSelected: true)
     }
 
+    private var identityFieldsPanel: some View {
+        VStack(spacing: 0) {
+            labeledTextField(
+                "显示名称",
+                text: $displayName,
+                systemImage: "person.text.rectangle",
+                focus: .displayName,
+                subjectSource: .displayName
+            )
+
+            fieldDivider
+
+            labeledTextField(
+                "昵称",
+                text: $shortName,
+                systemImage: "person.crop.circle",
+                focus: .shortName,
+                subjectSource: .shortName
+            )
+
+            fieldDivider
+
+            labeledTextField(
+                "关系",
+                text: $relationshipRole,
+                systemImage: "person.2.fill",
+                focus: .relationshipRole,
+                subjectSource: .relationshipRole
+            )
+
+            fieldDivider
+
+            labeledTextField(
+                "关系备注",
+                text: $relationshipLabel,
+                systemImage: "heart.text.square",
+                focus: .relationshipLabel,
+                subjectSource: .relationshipLabel
+            )
+        }
+        .padding(.vertical, 4)
+        .background(Color.white.opacity(0.94))
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
     private var timeWindowEditor: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Text("这里专门维护当前记忆对象下每个时间锚点的详细参数。当前生效锚点的切换和记忆显示已经收拢到配置中心摘要区，这里只负责选择要编辑的锚点，并维护日期、名称与锚点类型。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
             if timeAnchors.isEmpty {
                 Text("暂无时间锚点。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
+                currentAnchorSnapshotCard
                 timeAnchorSelectionCard
 
                 if let anchorBinding {
@@ -233,15 +385,10 @@ struct MemorySubjectEditorView: View {
                         selection: anchorBinding.date,
                         displayedComponents: .date
                     )
-                    .disabled(!isEditingTimeAnchor)
                     .padding(10)
                     .configurationPanelChrome()
 
                     anchorTypeEditor(
-                        anchorBinding
-                    )
-
-                    expressionStyleEditor(
                         anchorBinding
                     )
                 }
@@ -249,14 +396,84 @@ struct MemorySubjectEditorView: View {
         }
     }
 
+    private var currentAnchorSnapshotCard: some View {
+        let anchor = timeAnchors.first {
+            $0.id == selectedTimeAnchorID
+        } ?? timeAnchors.first
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                RoundedRectangle(
+                    cornerRadius: 14,
+                    style: .continuous
+                )
+                .fill(Color.accentColor.opacity(0.10))
+                .frame(width: 40, height: 40)
+                .overlay {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(anchor?.title ?? "时间锚点")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text("当前维护中的锚点会同步影响对象时间线与摘要区切换结果。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            HStack(spacing: 8) {
+                anchorMetaChip(
+                    title: anchor?.date.formatted(
+                        date: .abbreviated,
+                        time: .omitted
+                    ) ?? "未设日期",
+                    systemImage: "calendar"
+                )
+
+                anchorMetaChip(
+                    title: anchor?.resolvedAnchorType.displayName ?? "锚点类型",
+                    systemImage: "tag"
+                )
+
+                anchorMetaChip(
+                    title: "\(timeAnchors.count) 个锚点",
+                    systemImage: "square.stack.3d.up"
+                )
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.controlBackground.opacity(0.72))
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
     private var timeAnchorSelectionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("当前生效时间锚点")
+                Text("选择要维护的时间锚点")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text("选择当前真正参与记忆表达和后台计算的时间锚点。")
+                Text("在这里切换当前要维护的锚点，继续调整日期、名称和锚点类型。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -264,7 +481,7 @@ struct MemorySubjectEditorView: View {
 
             HStack(spacing: 8) {
                 Picker(
-                    "当前生效时间锚点",
+                    "要维护的时间锚点",
                     selection: Binding(
                         get: {
                             selectedTimeAnchorID
@@ -283,13 +500,6 @@ struct MemorySubjectEditorView: View {
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
-
-                Label(
-                    "可直接编辑",
-                    systemImage: "slider.horizontal.3"
-                )
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
             }
 
             if let anchorBinding {
@@ -299,7 +509,6 @@ struct MemorySubjectEditorView: View {
                     systemImage: "tag",
                     focus: .timeTitle
                 )
-                .disabled(!isEditingTimeAnchor)
             }
         }
         .padding(12)
@@ -354,147 +563,9 @@ struct MemorySubjectEditorView: View {
                 }
             }
             .pickerStyle(.menu)
-            .disabled(!isEditingTimeAnchor)
             .padding(10)
-            .configurationPanelChrome(
-                isSelected: isEditingTimeAnchor
-            )
+            .configurationPanelChrome(isSelected: true)
         }
-    }
-
-    private func expressionStyleEditor(
-        _ anchorBinding: Binding<MemorySubject.TimeAnchor>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center, spacing: 12) {
-                Text("请选择表达公式")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.primary)
-
-                Spacer(minLength: 0)
-
-                Picker(
-                    "请选择表达公式",
-                    selection: anchorBinding.expressionStyle
-                ) {
-                    ForEach(
-                        MemoryAnchorExpressionStyle
-                            .availableStyles(
-                                for: anchorBinding
-                                    .wrappedValue
-                                    .resolvedAnchorType
-                            ),
-                        id: \.self
-                    ) { style in
-                        Text(style.displayTitle)
-                            .tag(style)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .disabled(!isEditingTimeAnchor)
-            }
-            .padding(12)
-            .configurationPanelChrome(isSelected: isEditingTimeAnchor)
-
-            timeAnchorFormulaPreview(
-                anchorBinding
-                    .wrappedValue
-            )
-        }
-    }
-
-    private func timeAnchorFormulaPreview(
-        _ anchor: MemorySubject.TimeAnchor
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("当前公式预览")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text(
-                anchor
-                    .resolvedExpressionStyle
-                    .formulaPreview(
-                        subjectText:
-                            resolvedExpressionSubjectPreview,
-                        anchorTitle:
-                            resolvedAnchorTitlePreview(
-                                for: anchor
-                            )
-                    )
-            )
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Color.primary)
-            .fixedSize(
-                horizontal: false,
-                vertical: true
-            )
-        }
-        .padding(12)
-        .configurationPanelChrome()
-    }
-
-    private var resolvedExpressionSubjectPreview:
-        String {
-        let draftSubject = MemorySubject(
-            identity: .init(
-                displayName: displayName,
-                shortName: shortName,
-                avatarImagePath: avatarImagePath,
-                avatarBadgeImagePath:
-                    avatarBadgeImagePath,
-                avatarPreviewImagePath:
-                    avatarPreviewImagePath
-            ),
-            relationship: .init(
-                role: relationshipRole,
-                label: relationshipLabel
-            ),
-            definition: definition,
-            referenceDate:
-                timeAnchors.first?.date
-                ?? Date(),
-            timeAnchors: timeAnchors,
-            activeTimeAnchorID:
-                selectedTimeAnchorID,
-            expressionSubjectSource:
-                expressionSubjectSource,
-            behavior: MemoryBehavior(
-                primaryAnchor:
-                    timeAnchors.first(
-                        where: {
-                            $0.id
-                            == selectedTimeAnchorID
-                        }
-                    )?.title ?? "",
-                iconStrategy: .autoMatch,
-                badgeStrategy: .autoMatch,
-                memoryExpression:
-                    MemoryExpression(
-                        title: "",
-                        blocks: []
-                    )
-            ),
-            decorations: []
-        )
-
-        return draftSubject
-            .resolvedExpressionSubjectText
-    }
-
-    private func resolvedAnchorTitlePreview(
-        for anchor: MemorySubject.TimeAnchor
-    ) -> String {
-        let trimmedTitle =
-            anchor.title
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        return trimmedTitle.isEmpty
-            ? "时间锚点"
-            : trimmedTitle
     }
 
     private func labeledTextField(
@@ -553,6 +624,8 @@ struct MemorySubjectEditorView: View {
                     isActive: focusedField == focus
                 )
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
 
     private func loadDrafts() {
@@ -582,7 +655,6 @@ struct MemorySubjectEditorView: View {
         selectedTimeAnchorID =
             subject.primaryTimeAnchor?.id
             ?? subject.timeAnchors.first?.id
-        isEditingTimeAnchor = true
     }
 
     private func syncDraftToSession(
@@ -644,6 +716,104 @@ struct MemorySubjectEditorView: View {
         )
     }
 
+    private func identitySummaryChip(
+        title: String,
+        systemImage: String
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color.primary.opacity(0.82))
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.88))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(ConfigurationUI.faintHairline)
+            )
+    }
+
+    private func avatarResourceChip(
+        title: String,
+        isReady: Bool
+    ) -> some View {
+        Label(
+            title,
+            systemImage: isReady
+            ? "checkmark.circle.fill"
+            : "circle.dashed"
+        )
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(
+            isReady
+            ? Color.accentColor
+            : Color.secondary
+        )
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            Capsule(style: .continuous)
+                .fill(
+                    isReady
+                    ? Color.accentColor.opacity(0.10)
+                    : Color.white.opacity(0.88)
+                )
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .stroke(
+                    isReady
+                    ? Color.accentColor.opacity(0.18)
+                    : ConfigurationUI.faintHairline
+                )
+        )
+    }
+
+    private func anchorMetaChip(
+        title: String,
+        systemImage: String
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color.primary.opacity(0.82))
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.88))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(ConfigurationUI.faintHairline)
+            )
+    }
+
+    private func statusCapsule(
+        title: String,
+        tint: Color
+    ) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(tint.opacity(0.10))
+            )
+    }
+
+    private var fieldDivider: some View {
+        Rectangle()
+            .fill(ConfigurationUI.faintHairline)
+            .frame(height: 0.5)
+            .padding(.leading, 54)
+    }
+
     private func normalizedAvatarStatusMessage(
         from avatarPath: String?
     ) -> String {
@@ -657,11 +827,11 @@ struct MemorySubjectEditorView: View {
 
 #if canImport(PhotosUI)
     @MainActor
-    private func optimizeSelectedAvatar(
+    private func prepareSelectedAvatar(
         _ item: PhotosPickerItem
     ) async {
         isOptimizingAvatar = true
-        avatarStatusMessage = "正在优化对象头像"
+        avatarStatusMessage = "正在载入对象头像"
 
         do {
             guard
@@ -673,9 +843,45 @@ struct MemorySubjectEditorView: View {
                 throw SubjectAvatarAssetOptimizationError.invalidImage
             }
 
+#if canImport(UIKit)
+            guard let image = UIImage(data: data) else {
+                throw SubjectAvatarAssetOptimizationError.invalidImage
+            }
+
+            pendingAvatarCropDraft =
+                SubjectAvatarCropDraft(
+                    data: data,
+                    image: image
+                )
+            avatarStatusMessage = "调整头像位置后再应用。"
+#else
+            await applyAvatarCrop(
+                data: data,
+                configuration: .init()
+            )
+#endif
+        } catch {
+            avatarStatusMessage =
+                error.localizedDescription
+        }
+
+        isOptimizingAvatar = false
+    }
+#endif
+
+    @MainActor
+    private func applyAvatarCrop(
+        data: Data,
+        configuration: SubjectAvatarCropConfiguration
+    ) async {
+        isOptimizingAvatar = true
+        avatarStatusMessage = "正在优化对象头像"
+
+        do {
             let optimizedAsset =
                 try await avatarOptimizer.optimize(
-                    data: data
+                    data: data,
+                    cropConfiguration: configuration
                 )
 
             avatarImagePath =
@@ -693,7 +899,6 @@ struct MemorySubjectEditorView: View {
 
         isOptimizingAvatar = false
     }
-#endif
 }
 
 private enum SubjectFocusedField: Hashable {
@@ -776,19 +981,6 @@ private extension Binding where Value == MemorySubject.TimeAnchor {
                     .defaultStyle(
                         for: $0
                     )
-            }
-        )
-    }
-
-    var expressionStyle:
-        Binding<MemoryAnchorExpressionStyle> {
-        Binding<MemoryAnchorExpressionStyle>(
-            get: {
-                wrappedValue
-                    .resolvedExpressionStyle
-            },
-            set: {
-                wrappedValue.expressionStyle = $0
             }
         )
     }

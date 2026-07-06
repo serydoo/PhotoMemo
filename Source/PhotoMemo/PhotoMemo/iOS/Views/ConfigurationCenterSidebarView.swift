@@ -112,11 +112,11 @@ struct ConfigurationCenterSidebarView: View {
 
     private var sidebarHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("资料库")
+            Text("配置资料")
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Color.primary)
 
-            Text("记忆对象与卡片配置")
+            Text("记忆对象、卡片区域与智能写入")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -268,7 +268,7 @@ struct ConfigurationCenterSidebarView: View {
                 .opacity(0.28)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("时间锚点")
+                Text("当前生效锚点")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
@@ -279,11 +279,11 @@ struct ConfigurationCenterSidebarView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("记忆对象资料库")
+                Text("记忆对象")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text("PhotoMemo 用锚点帮助你阅读回忆。")
+                Text("PhotoMemo 用锚点帮助你阅读回忆，而不只是保存照片。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

@@ -15,7 +15,8 @@ struct V1EntryFlowCoordinatorTests {
                 showsWorkflowGuide: false,
                 showsProcessingPhotoPicker: false,
                 showsSubjectOverview: false,
-                subjectConfigurationFlowState: nil
+                subjectConfigurationFlowState: nil,
+                showsSettingsPage: false
             )
 
         let update =
@@ -64,7 +65,8 @@ struct V1EntryFlowCoordinatorTests {
                 showsWorkflowGuide: false,
                 showsProcessingPhotoPicker: false,
                 showsSubjectOverview: true,
-                subjectConfigurationFlowState: nil
+                subjectConfigurationFlowState: nil,
+                showsSettingsPage: false
             )
 
         let nextState =
@@ -82,8 +84,8 @@ struct V1EntryFlowCoordinatorTests {
         )
     }
 
-    @Test("successful quick action routes to settings only after submission")
-    func successfulQuickActionRoutesToSettingsOnlyAfterSubmission() {
+    @Test("successful quick action routes to tasks only after submission")
+    func successfulQuickActionRoutesToTasksOnlyAfterSubmission() {
         let state = V1EntryFlowState()
         let result =
             V1PhotoProcessingQuickActionCoordinator
@@ -99,7 +101,21 @@ struct V1EntryFlowCoordinatorTests {
                 to: state
             )
 
-        #expect(nextState.selectedTab == .settings)
+        #expect(nextState.selectedTab == .tasks)
+    }
+
+    @Test("settings page opens as a separate surface without changing the active tab")
+    func settingsPageOpensSeparately() {
+        let state = V1EntryFlowState(selectedTab: .home)
+
+        let nextState =
+            V1EntryFlowCoordinator
+            .openSettingsPage(
+                from: state
+            )
+
+        #expect(nextState.selectedTab == .home)
+        #expect(nextState.showsSettingsPage == true)
     }
 }
 #endif

@@ -241,7 +241,9 @@ enum ConfigurationCenterMockSeed {
                     .slotB: "timeline.configuration1",
                     .slotC: "context.configuration1",
                     .slotD: "memory.configuration1"
-                ]
+                ],
+                selectedSubjectID: subject.id,
+                selectedTimeAnchorID: subject.timeAnchors[0].id
             )
 
         let preset2 =
@@ -253,7 +255,9 @@ enum ConfigurationCenterMockSeed {
                     .slotB: "timeline.configuration2",
                     .slotC: "context.configuration2",
                     .slotD: "memory.configuration2"
-                ]
+                ],
+                selectedSubjectID: travelSubject.id,
+                selectedTimeAnchorID: travelSubject.timeAnchors[1].id
             )
 
         let preset3 =
@@ -265,7 +269,9 @@ enum ConfigurationCenterMockSeed {
                     .slotB: "timeline.configuration3",
                     .slotC: "context.configuration3",
                     .slotD: "memory.configuration3"
-                ]
+                ],
+                selectedSubjectID: subject.id,
+                selectedTimeAnchorID: subject.timeAnchors[1].id
             )
 
         return ConfigurationCenterState(

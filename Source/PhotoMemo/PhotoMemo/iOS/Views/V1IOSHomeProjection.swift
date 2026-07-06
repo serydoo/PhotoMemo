@@ -103,12 +103,12 @@ enum V1IOSHomeProjection {
                 normalizedOptionalText(
                     configurationLabel
                 )
-                ?? "当前配置",
+                ?? "当前生效配置",
             detail:
                 normalizedOptionalText(
                     presetSummary
                 )
-                ?? "当前区域组合",
+                ?? "当前生效配置摘要",
             statusLabel:
                 isApplied
                 ? V1ConfigurationStatus
@@ -118,6 +118,59 @@ enum V1IOSHomeProjection {
                     .message(for: .preset),
             emphasizesAppliedState:
                 isApplied
+        )
+    }
+
+    static func emptyPresetSummary(
+        configurationLabel: String
+    ) -> V1IOSHomePresetSummaryProjection {
+
+        V1IOSHomePresetSummaryProjection(
+            title: "当前对象还没有配置",
+            subtitle:
+                normalizedOptionalText(
+                    configurationLabel
+                )
+                ?? "当前生效配置",
+            detail: "请先到配置中心底部新建配置，之后这里就能直接下拉切换。",
+            statusLabel: "等待配置",
+            emphasizesAppliedState: false
+        )
+    }
+
+    static func savedStatusValue(
+        savedAt: Date?,
+        timeZone: TimeZone = .autoupdatingCurrent
+    ) -> String {
+
+        guard let savedAt else {
+            return "尚未保存"
+        }
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+
+        let components =
+            calendar.dateComponents(
+                [.month, .day, .hour, .minute],
+                from: savedAt
+            )
+
+        guard
+            let month = components.month,
+            let day = components.day,
+            let hour = components.hour,
+            let minute = components.minute
+        else {
+            return "尚未保存"
+        }
+
+        return String(
+            format: "%d月%d日 %02d:%02d",
+            month,
+            day,
+            hour,
+            minute
         )
     }
 
@@ -149,7 +202,7 @@ enum V1IOSHomeProjection {
             return displayName
         }
 
-        return "当前记忆对象"
+        return "记忆对象"
     }
 
     private static func normalizedSubjectSubtitle(

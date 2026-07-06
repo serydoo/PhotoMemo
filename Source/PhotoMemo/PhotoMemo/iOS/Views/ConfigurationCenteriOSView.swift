@@ -4,9 +4,14 @@ import UIKit
 
 struct ConfigurationCenteriOSView: View {
 
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+
+    @ObservedObject
+    var runtime: PhotoMemoAppRuntime
+
     @StateObject
-    private var session =
-        ConfigurationSession()
+    private var session: ConfigurationSession
 
     @State
     private var selectedPanel:
@@ -19,12 +24,99 @@ struct ConfigurationCenteriOSView: View {
     private var regionDraftStore =
         ConfigurationCenterRegionDraftStore()
 
+    @State
+    private var showsSettingsSheet = false
+
+    @State
+    private var showsWelcomePage = false
+
+    @State
+    private var showsWorkflowGuide = false
+
+    @State
+    private var showsCompactNavigator = false
+
+    @State
+    private var detailScrollOffsetY: CGFloat = 0
+
+    @State
+    private var processingDiagnosticsSnapshot:
+        PhotoMemoiOSProcessingDiagnosticsSnapshot
+
+    @State
+    private var shareDiagnosticEvents:
+        [PhotoMemoShareDiagnosticEvent]
+
+    @ObservedObject
+    private var backgroundStatusService:
+        PhotoMemoBackgroundStatusService
+
+    private let diagnosticsRefreshCoordinator:
+        V1DiagnosticsRefreshCoordinator
+
     private let currentBorderStyleName =
         "Classic White"
+
+    init(
+        runtime: PhotoMemoAppRuntime
+    ) {
+        self.runtime = runtime
+        _session = StateObject(
+            wrappedValue:
+                ConfigurationSession()
+        )
+        _backgroundStatusService =
+            ObservedObject(
+                wrappedValue:
+                    runtime
+                    .backgroundStatusService
+            )
+
+        let refreshCoordinator =
+            V1DiagnosticsRefreshCoordinator(
+                refreshExternalIntake:
+                    runtime.refreshExternalIntakeState,
+                diagnosticsRepository:
+                    runtime
+                    .environment
+                    .repositories
+                    .diagnostics,
+                backgroundStatusService:
+                    runtime
+                    .backgroundStatusService,
+                queueCoordinator:
+                    runtime
+                    .environment
+                    .coordinators
+                    .queue
+            )
+        self.diagnosticsRefreshCoordinator =
+            refreshCoordinator
+
+        let initialDiagnosticsState =
+            refreshCoordinator
+            .shareDiagnosticsState()
+        _processingDiagnosticsSnapshot =
+            State(
+                initialValue:
+                    initialDiagnosticsState
+                    .snapshot
+            )
+        _shareDiagnosticEvents =
+            State(
+                initialValue:
+                    initialDiagnosticsState
+                    .events
+            )
+    }
 
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
+                let usesCompactLayout =
+                    usesCompactLayout(
+                        for: proxy.size.width
+                    )
                 let sidebarWidth =
                     min(
                         max(proxy.size.width * 0.28, 148),
@@ -32,19 +124,26 @@ struct ConfigurationCenteriOSView: View {
                     )
 
                 VStack(spacing: 0) {
-                    topConfigurationPreview
+                    topConfigurationPreview(
+                        usesCompactLayout:
+                            usesCompactLayout
+                    )
 
-                    HStack(spacing: 0) {
-                        sidebar
-                            .frame(width: sidebarWidth)
-
-                        Rectangle()
-                            .fill(ConfigurationUI.faintHairline)
-                            .frame(width: 0.5)
-
+                    if usesCompactLayout {
                         detailSurface
+                    } else {
+                        HStack(spacing: 0) {
+                            sidebar
+                                .frame(width: sidebarWidth)
+
+                            Rectangle()
+                                .fill(ConfigurationUI.faintHairline)
+                                .frame(width: 0.5)
+
+                            detailSurface
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(
                     maxWidth: .infinity,
@@ -55,11 +154,47 @@ struct ConfigurationCenteriOSView: View {
                         .ignoresSafeArea()
                 )
             }
-            .navigationTitle("PhotoMemo 配置中心")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                configurationToolbar
-            }
+            .toolbar(.hidden, for: .navigationBar)
+        }
+        .sheet(
+            isPresented:
+                $showsSettingsSheet
+        ) {
+            settingsSheet
+        }
+        .sheet(
+            isPresented:
+                $showsWelcomePage
+        ) {
+            V1WelcomePageSurface(
+                presentation:
+                    V1WelcomePresentation
+                    .default,
+                onStart: {
+                    showsWelcomePage = false
+                },
+                onShowWorkflow: {
+                    showsWelcomePage = false
+                    showsWorkflowGuide = true
+                }
+            )
+        }
+        .sheet(
+            isPresented:
+                $showsWorkflowGuide
+        ) {
+            V1WorkflowGuideSurface(
+                steps:
+                    V1WelcomePresentation
+                    .default
+                    .workflowSteps
+            )
+        }
+        .sheet(
+            isPresented:
+                $showsCompactNavigator
+        ) {
+            compactNavigatorSheet
         }
         .preferredColorScheme(.light)
     }
@@ -78,6 +213,8 @@ struct ConfigurationCenteriOSView: View {
     private var detailSurface: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                detailScrollOffsetReader
+                configurationSummarySection
                 detailContent
             }
             .padding(16)
@@ -85,6 +222,7 @@ struct ConfigurationCenteriOSView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(ConfigurationUI.panelBackground)
+        .coordinateSpace(name: "configuration-center-detail-scroll")
         .simultaneousGesture(
             TapGesture()
                 .onEnded {
@@ -93,10 +231,78 @@ struct ConfigurationCenteriOSView: View {
         )
     }
 
-    private var topConfigurationPreview: some View {
+    private var configurationSummarySection: some View {
+        let slotCLocationModule =
+            currentLocationModule(for: .slotC)
+        let locationPresentation =
+            LocationDisplayInspectorPresenter
+            .presentation
+        let selectedLocationValue =
+            ConfigurationCenterLocationDisplaySupport
+            .summaryValue(
+                module: slotCLocationModule,
+                presentation: locationPresentation
+            )
+
+        return ConfigurationCenterSummarySection(
+            subject: session.state.selectedSubject,
+            selectedRegion: session.state.selectedRegion,
+            currentBorderStyleName: currentBorderStyleName,
+            locationPresentation: locationPresentation,
+            selectedLocationValue: selectedLocationValue,
+            locationDetail:
+                ConfigurationCenterLocationDisplaySupport
+                .summaryDetail(
+                    module: slotCLocationModule,
+                    selectedValue: selectedLocationValue
+                ),
+            isLocationSelectable:
+                slotCLocationModule != nil,
+            selectedLocationOptionID:
+                locationDisplayOptionBinding(
+                    for: .slotC
+                ),
+            selectedMemoryDisplayStyle:
+                selectedMemoryDisplayStyleBinding,
+            availableMemoryDisplayStyles:
+                ConfigurationCenterMemoryDisplaySupport
+                .availableStyles(
+                    subject: session.state.selectedSubject
+                ),
+            availableTimeAnchors:
+                session.availableTimeAnchors,
+            selectedTimeAnchorID:
+                selectedTimeAnchorBinding,
+            onOpenSubject: {
+                applySelectionUpdate(
+                    ConfigurationCenterSelectionCoordinator
+                        .showSubjectPanel()
+                )
+            },
+            onSelectRegion: { region in
+                applySelectionUpdate(
+                    ConfigurationCenterSelectionCoordinator
+                        .showCard(region: region)
+                )
+            }
+        )
+    }
+
+    private func topConfigurationPreview(
+        usesCompactLayout: Bool
+    ) -> some View {
         ConfigurationCenterTopPreviewSection(
             session: session,
+            isCurrentPresetApplied:
+                session.selectedMemoryPresetIsApplied,
             currentBorderStyleName: currentBorderStyleName,
+            currentPresetStatusText:
+                ConfigurationCenterSessionBindingPresenter
+                .presetStatusText(session: session),
+            previewPinProgress:
+                detailPreviewPinProgress,
+            showsNavigatorButton:
+                usesCompactLayout,
             isRenamingProfile: $isRenamingProfile,
             profileTitle: profileTitleBinding,
             onDismissKeyboard: dismissKeyboard,
@@ -107,8 +313,14 @@ struct ConfigurationCenteriOSView: View {
             onResetPreset: {
                 session.resetSelectedMemoryPreset()
             },
-            onApplyPreset: {
-                session.applySelectedMemoryPreset()
+            onOpenSettings: {
+                dismissKeyboard()
+                refreshProcessingState()
+                showsSettingsSheet = true
+            },
+            onOpenNavigator: {
+                dismissKeyboard()
+                showsCompactNavigator = true
             },
             onRegionSelection: { region in
                 applySelectionUpdate(
@@ -118,6 +330,84 @@ struct ConfigurationCenteriOSView: View {
             }
         ) {
             profilePresetMenu
+        }
+    }
+
+    private var compactNavigatorSheet: some View {
+        NavigationStack {
+            sidebar
+                .navigationTitle("配置导航")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(
+                        placement: .topBarTrailing
+                    ) {
+                        Button("完成") {
+                            showsCompactNavigator = false
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+                }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var detailScrollOffsetReader: some View {
+        GeometryReader { proxy in
+            Color.clear
+                .preference(
+                    key:
+                        ConfigurationCenterDetailScrollOffsetPreferenceKey.self,
+                    value:
+                        proxy.frame(
+                            in: .named(
+                                "configuration-center-detail-scroll"
+                            )
+                        ).minY
+                )
+        }
+        .frame(height: 0)
+        .onPreferenceChange(
+            ConfigurationCenterDetailScrollOffsetPreferenceKey.self
+        ) { value in
+            detailScrollOffsetY = value
+        }
+    }
+
+    private var detailPreviewPinProgress: CGFloat {
+        let threshold: CGFloat = 10
+        let distance: CGFloat = 72
+        let traveled =
+            max(
+                -(detailScrollOffsetY) - threshold,
+                0
+            )
+        return min(traveled / distance, 1)
+    }
+
+    private var settingsSheet: some View {
+        NavigationStack {
+            V1SettingsPageSurface(
+                onShowWelcome: {
+                    showsSettingsSheet = false
+                    showsWelcomePage = true
+                },
+                onShowWorkflow: {
+                    showsSettingsSheet = false
+                    showsWorkflowGuide = true
+                },
+                onDismissKeyboard: dismissKeyboard
+            )
+            .toolbar {
+                ToolbarItem(
+                    placement: .topBarTrailing
+                ) {
+                    Button("完成") {
+                        showsSettingsSheet = false
+                    }
+                    .font(.caption.weight(.semibold))
+                }
+            }
         }
     }
 
@@ -172,7 +462,13 @@ struct ConfigurationCenteriOSView: View {
                     model:
                         outputSelectionPanelModel,
                     storageOption:
-                        storageOptionBinding
+                        storageOptionBinding,
+                    onOpenMemoryModule: {
+                        applySelectionUpdate(
+                            ConfigurationCenterSelectionCoordinator
+                                .showPanel(.memoryModule)
+                        )
+                    }
                 )
             )
 
@@ -347,13 +643,26 @@ struct ConfigurationCenteriOSView: View {
 
     private var outputSelectionPanelModel:
         ConfigurationCenterOutputSelectionPanelModel {
-        ConfigurationCenterOutputSelectionPanelModel(
-            outputTitle:
-                session.selectedOutputOption.title,
-            storageTitle:
-                session.selectedStorageOption.title,
-            storageNote:
-                session.selectedStorageOption.note
+        let memoryWritePresentation =
+            MemoryWriteOptionPresenter
+            .presentation(
+                usesCustomText:
+                    session.usesCustomMemoryWriteText,
+                resolvedText:
+                    session.resolvedMemoryWriteText
+            )
+
+        return ConfigurationCenterOutputSelectionPanelModel(
+            presentation:
+                ConfigurationCenterOutputPanelPresenter
+                .presentation(
+                    outputOption:
+                        session.selectedOutputOption,
+                    storageOption:
+                        session.selectedStorageOption,
+                    memoryWritePresentation:
+                        memoryWritePresentation
+                )
         )
     }
 
@@ -368,9 +677,9 @@ struct ConfigurationCenteriOSView: View {
                     "rectangle.and.pencil.and.ellipsis"
             ),
             ConfigurationCenterGuideCardModel(
-                title: "记忆日期与智能结果",
+                title: "当前生效锚点与智能结果",
                 note:
-                    "时间锚点和照片时间会组合成 1 个智能结果，并可插入任意区域。",
+                    "当前生效锚点和照片时间会组合成 1 个智能结果，并可插入任意区域。",
                 systemImage:
                     "calendar.badge.clock"
             ),
@@ -423,8 +732,8 @@ struct ConfigurationCenteriOSView: View {
         [ConfigurationCenterSidebarSubjectGroup] {
         [
             ConfigurationCenterSidebarSubjectGroup(
-                title: "人物",
-                addTitle: "新增人物",
+                title: "人物对象",
+                addTitle: "新增人物对象",
                 items:
                     session.state.subjects
                     .filter {
@@ -439,8 +748,8 @@ struct ConfigurationCenteriOSView: View {
                 }
             ),
             ConfigurationCenterSidebarSubjectGroup(
-                title: "事件",
-                addTitle: "新增事件",
+                title: "事件对象",
+                addTitle: "新增事件对象",
                 items:
                     session.state.subjects
                     .filter {
@@ -498,7 +807,7 @@ struct ConfigurationCenteriOSView: View {
         [
             ConfigurationCenterSidebarItem(
                 title: "智能模块",
-                subtitle: "生成、承载与写入",
+                subtitle: "生成、承载与智能写入",
                 systemImage: "text.badge.checkmark",
                 isSelected:
                     selectedPanel == .memoryModule,
@@ -536,7 +845,7 @@ struct ConfigurationCenteriOSView: View {
         [
             ConfigurationCenterSidebarItem(
                 title: "配置说明",
-                subtitle: "保存位置与原则",
+                subtitle: "对象、锚点与输出原则",
                 systemImage: "questionmark.circle",
                 isSelected:
                     selectedPanel == .configurationGuide,
@@ -735,10 +1044,11 @@ struct ConfigurationCenteriOSView: View {
         )
     }
 
-    private var currentLocationModule:
-        IOSInsertedModule? {
+    private func currentLocationModule(
+        for region: CardRegion
+    ) -> IOSInsertedModule? {
         regionBindingAdapter(
-            for: session.state.selectedRegion
+            for: region
         )
         .modules()
         .first {
@@ -747,36 +1057,83 @@ struct ConfigurationCenteriOSView: View {
         }
     }
 
-    private var locationDisplayOptionBinding:
-        Binding<String> {
+    private var currentLocationModule:
+        IOSInsertedModule? {
+        currentLocationModule(
+            for: session.state.selectedRegion
+        )
+    }
+
+    private func locationDisplayOptionBinding(
+        for region: CardRegion
+    ) -> Binding<String> {
         Binding(
             get: {
                 LocationDisplayInspectorPresenter
                     .selectedOptionID(
-                        from: currentLocationModule
+                        from: currentLocationModule(
+                            for: region
+                        )
                     )
             },
             set: { optionID in
-                guard let module =
-                    currentLocationModule
+                guard let change =
+                    ConfigurationCenterLocationDisplaySupport
+                    .selectionChange(
+                        optionID: optionID,
+                        region: region,
+                        module:
+                            currentLocationModule(
+                                for: region
+                            ),
+                        adapter:
+                            regionBindingAdapter(
+                                for: region
+                            )
+                    )
                 else {
                     return
                 }
 
                 applyRegionBindingMutation(
-                    regionBindingAdapter(
-                        for: session.state.selectedRegion
-                    )
-                    .updateInsertedModule(
-                        module,
-                        expressionConfiguration:
-                            LocationDisplayInspectorPresenter
-                            .configuration(
-                                for: optionID
-                            )
-                    ),
-                    for: session.state.selectedRegion
+                    change.mutation,
+                    for: change.region
                 )
+            }
+        )
+    }
+
+    private var locationDisplayOptionBinding:
+        Binding<String> {
+        locationDisplayOptionBinding(
+            for: session.state.selectedRegion
+        )
+    }
+
+    private var selectedTimeAnchorBinding:
+        Binding<UUID> {
+        Binding(
+            get: {
+                session.selectedTimeAnchorID
+                ?? session.availableTimeAnchors.first?.id
+                ?? UUID()
+            },
+            set: { session.selectTimeAnchor(id: $0) }
+        )
+    }
+
+    private var selectedMemoryDisplayStyleBinding:
+        Binding<MemoryAnchorExpressionStyle> {
+        Binding(
+            get: {
+                ConfigurationCenterMemoryDisplaySupport
+                    .selectedStyle(
+                        subject: session.state.selectedSubject
+                    )
+                ?? .birthdayNatural
+            },
+            set: {
+                session.selectCurrentTimeAnchorExpressionStyle($0)
             }
         )
     }
@@ -839,6 +1196,17 @@ struct ConfigurationCenteriOSView: View {
                 session: session,
                 selectedPanel: &selectedPanel
             )
+
+        if showsCompactNavigator {
+            showsCompactNavigator = false
+        }
+    }
+
+    private func usesCompactLayout(
+        for width: CGFloat
+    ) -> Bool {
+        horizontalSizeClass == .compact
+        || width < 860
     }
 
     private var storageOptionBinding:
@@ -965,6 +1333,49 @@ struct ConfigurationCenteriOSView: View {
         )
     }
 
+    private var shareDiagnosticsHeaderProjection:
+        PhotoMemoiOSQueueDiagnosticsHeaderProjection {
+
+        PhotoMemoiOSQueueDiagnosticsProjectionEngine
+            .headerProjection(
+                backgroundSnapshot:
+                    backgroundStatusService
+                    .currentSnapshot,
+                processingDiagnosticsSnapshot:
+                    processingDiagnosticsSnapshot,
+                events:
+                    shareDiagnosticEvents
+            )
+    }
+
+    private func refreshProcessingState() {
+        applyDiagnosticsRefreshState(
+            diagnosticsRefreshCoordinator
+                .refreshedState()
+        )
+    }
+
+    private func applyDiagnosticsRefreshState(
+        _ state:
+            V1DiagnosticsRefreshState
+    ) {
+        processingDiagnosticsSnapshot =
+            state.snapshot
+        shareDiagnosticEvents =
+            state.events
+    }
+
+    private func clearCompletedQueueHistory() {
+        diagnosticsRefreshCoordinator
+            .clearCompletedQueueHistory(
+                preservingJobID:
+                    backgroundStatusService
+                    .currentSnapshot?
+                    .jobID
+            )
+        refreshProcessingState()
+    }
+
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(
             #selector(UIResponder.resignFirstResponder),
@@ -976,6 +1387,21 @@ struct ConfigurationCenteriOSView: View {
 }
 
 #Preview("iOS 配置中心") {
-    ConfigurationCenteriOSView()
+    ConfigurationCenteriOSView(
+        runtime: PhotoMemoAppRuntime()
+    )
+}
+
+private struct ConfigurationCenterDetailScrollOffsetPreferenceKey:
+    PreferenceKey {
+
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(
+        value: inout CGFloat,
+        nextValue: () -> CGFloat
+    ) {
+        value = nextValue()
+    }
 }
 #endif

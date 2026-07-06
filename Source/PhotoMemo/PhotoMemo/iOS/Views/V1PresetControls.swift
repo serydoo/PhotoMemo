@@ -11,7 +11,7 @@ struct V1PresetPicker: View {
     var body: some View {
         Menu {
             Picker(
-                "当前配置组合",
+                "当前生效配置",
                 selection: $selectedPresetID
             ) {
                 ForEach(presets) { preset in
@@ -48,7 +48,7 @@ struct V1PresetOperationsMenu: View {
 
     var body: some View {
         Menu {
-            Button("重命名配置组合") {
+            Button("重命名配置") {
                 onRename()
             }
 
@@ -56,9 +56,23 @@ struct V1PresetOperationsMenu: View {
                 onRestoreDefaults()
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
-                .font(.body.weight(.semibold))
-                .frame(width: 28, height: 28)
+            HStack(spacing: 5) {
+                Image(systemName: "ellipsis.circle")
+                    .font(.caption.weight(.semibold))
+
+                Text("管理")
+                    .font(.caption.weight(.semibold))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(ConfigurationUI.controlBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(ConfigurationUI.faintHairline)
+            )
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)

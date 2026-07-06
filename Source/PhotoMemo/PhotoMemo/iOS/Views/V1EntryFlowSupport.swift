@@ -5,7 +5,7 @@ enum V1EntryTab: Hashable {
     case home
     case editor
     case output
-    case settings
+    case tasks
 }
 
 struct V1EntryFlowState {
@@ -16,6 +16,7 @@ struct V1EntryFlowState {
     var showsSubjectOverview = false
     var subjectConfigurationFlowState:
         V1IOSSubjectConfigurationFlowState?
+    var showsSettingsPage = false
 }
 
 struct V1EntryWelcomeFlowUpdate {
@@ -135,11 +136,27 @@ enum V1EntryFlowCoordinator {
         return nextState
     }
 
-    static func openSettingsTab(
+    static func openTasksTab(
         from state: V1EntryFlowState
     ) -> V1EntryFlowState {
         var nextState = state
-        nextState.selectedTab = .settings
+        nextState.selectedTab = .tasks
+        return nextState
+    }
+
+    static func openSettingsPage(
+        from state: V1EntryFlowState
+    ) -> V1EntryFlowState {
+        var nextState = state
+        nextState.showsSettingsPage = true
+        return nextState
+    }
+
+    static func closeSettingsPage(
+        from state: V1EntryFlowState
+    ) -> V1EntryFlowState {
+        var nextState = state
+        nextState.showsSettingsPage = false
         return nextState
     }
 
@@ -156,7 +173,7 @@ enum V1EntryFlowCoordinator {
                 .noSupportedPhotos:
             break
         case .submitted:
-            nextState.selectedTab = .settings
+            nextState.selectedTab = .tasks
         }
 
         return nextState

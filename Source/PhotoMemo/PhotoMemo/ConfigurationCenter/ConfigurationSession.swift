@@ -28,6 +28,9 @@ final class ConfigurationSession:
                     .selectedMemoryPreset?
                     .id
             )
+        alignSelectedMemoryPresetToSelectedSubject(
+            restoreContext: true
+        )
     }
 
     var selectedOutputOption:
@@ -39,6 +42,7 @@ final class ConfigurationSession:
         set {
             presentationState
                 .selectedOutputOption = newValue
+            markSelectedMemoryPresetNeedsApply()
         }
     }
 
@@ -51,6 +55,7 @@ final class ConfigurationSession:
         set {
             presentationState
                 .selectedStorageOption = newValue
+            markSelectedMemoryPresetNeedsApply()
         }
     }
 
@@ -62,6 +67,7 @@ final class ConfigurationSession:
         set {
             presentationState
                 .usesCustomMemoryWriteText = newValue
+            markSelectedMemoryPresetNeedsApply()
         }
     }
 
@@ -73,6 +79,7 @@ final class ConfigurationSession:
         set {
             presentationState
                 .customMemoryWriteText = newValue
+            markSelectedMemoryPresetNeedsApply()
         }
     }
 
@@ -126,6 +133,10 @@ final class ConfigurationSession:
                 )
         }
         selectRegion(.subject)
+        markSelectedMemoryPresetNeedsApply()
+        alignSelectedMemoryPresetToSelectedSubject(
+            restoreContext: true
+        )
     }
 
     func selectRegion(
@@ -189,6 +200,7 @@ final class ConfigurationSession:
                     subject: subject
                 )
         }
+        markSelectedMemoryPresetNeedsApply()
     }
 
     func restoreSelectedSubject(
@@ -278,6 +290,10 @@ final class ConfigurationSession:
                     subject: selectedSubject
                 )
         }
+
+        alignSelectedMemoryPresetToSelectedSubject(
+            restoreContext: true
+        )
     }
 
     func appendSubject(
@@ -352,6 +368,10 @@ final class ConfigurationSession:
                     subject: selectedSubject
                 )
         }
+
+        alignSelectedMemoryPresetToSelectedSubject(
+            restoreContext: true
+        )
     }
 
     func updateRegionPreview(
@@ -500,6 +520,58 @@ final class ConfigurationSession:
         _ preset: MemoryPreset
     ) {
         state.selectedMemoryPresetID = preset.id
+        restoreConfigurationContext(
+            from: state.selectedMemoryPreset ?? preset
+        )
+        appliedMemoryPresetID =
+            state.selectedMemoryPreset?.id
+            ?? preset.id
+        refreshPresetDrivenPreview()
+    }
+
+    func saveCurrentMemoryPreset() {
+        guard let presetIndex = selectedMemoryPresetIndex else {
+            return
+        }
+
+        state.memoryPresets[presetIndex] =
+            snapshotCurrentConfiguration(
+                in: state.memoryPresets[presetIndex],
+                savedAt: Date()
+            )
+        state.selectedMemoryPresetID =
+            state.memoryPresets[presetIndex].id
+        appliedMemoryPresetID =
+            state.memoryPresets[presetIndex].id
+    }
+
+    func createMemoryPresetFromCurrent() {
+        guard let currentPreset = state.selectedMemoryPreset else {
+            return
+        }
+
+        let duplicatedTitle =
+            duplicatedMemoryPresetTitle(
+                from: currentPreset.title
+            )
+
+        let duplicatedPreset =
+            snapshotCurrentConfiguration(
+                in: MemoryPreset(
+                    title: duplicatedTitle,
+                    summary: currentPreset.summary,
+                    regionTemplateIDs:
+                        currentPreset.regionTemplateIDs
+                ),
+                savedAt: nil
+            )
+
+        state.memoryPresets.append(
+            duplicatedPreset
+        )
+        state.selectedMemoryPresetID =
+            duplicatedPreset.id
+        appliedMemoryPresetID = nil
         refreshPresetDrivenPreview()
     }
 
@@ -560,6 +632,19 @@ final class ConfigurationSession:
         return appliedMemoryPresetID == selectedPresetID
     }
 
+    var availableMemoryPresetsForSelectedSubject:
+        [MemoryPreset] {
+        guard let selectedSubjectID =
+            state.selectedSubject?.id
+        else {
+            return state.memoryPresets
+        }
+
+        return state.memoryPresets.filter {
+            $0.selectedSubjectID == selectedSubjectID
+        }
+    }
+
     func applySelectedMemoryPreset() {
         appliedMemoryPresetID = state.selectedMemoryPreset?.id
     }
@@ -593,6 +678,55 @@ final class ConfigurationSession:
         ?? state.selectedSubject?
         .behavior.primaryAnchor
         ?? "时间锚点"
+    }
+
+    var availableTimeAnchors:
+        [MemorySubject.TimeAnchor] {
+        state.selectedSubject?.timeAnchors ?? []
+    }
+
+    var selectedTimeAnchorID: UUID? {
+        state.selectedSubject?.primaryTimeAnchor?.id
+    }
+
+    func selectTimeAnchor(
+        id: UUID
+    ) {
+        guard
+            var subject = state.selectedSubject,
+            let selectedAnchor =
+                subject.timeAnchor(id: id)
+        else {
+            return
+        }
+
+        subject.activeTimeAnchorID =
+            selectedAnchor.id
+        subject.behavior.primaryAnchor =
+            selectedAnchor.title
+        subject.referenceDate =
+            selectedAnchor.date
+        updateSelectedSubject(subject)
+    }
+
+    func selectCurrentTimeAnchorExpressionStyle(
+        _ style: MemoryAnchorExpressionStyle
+    ) {
+        guard
+            var subject = state.selectedSubject,
+            let selectedAnchorID =
+                subject.primaryTimeAnchor?.id,
+            let anchorIndex =
+                subject.timeAnchors.firstIndex(
+                    where: { $0.id == selectedAnchorID }
+                )
+        else {
+            return
+        }
+
+        subject.timeAnchors[anchorIndex]
+            .expressionStyle = style
+        updateSelectedSubject(subject)
     }
 
     var currentTimeAnchorDescription: String {
@@ -743,6 +877,123 @@ final class ConfigurationSession:
         appliedMemoryPresetID = nil
     }
 
+    private func snapshotCurrentConfiguration(
+        in preset: MemoryPreset,
+        savedAt: Date?
+    ) -> MemoryPreset {
+        var updatedPreset = preset
+        updatedPreset.savedAt = savedAt
+        updatedPreset.selectedSubjectID =
+            state.selectedSubject?.id
+        updatedPreset.selectedTimeAnchorID =
+            state.selectedSubject?
+            .primaryTimeAnchor?
+            .id
+        updatedPreset.outputOption =
+            selectedOutputOption
+        updatedPreset.storageOption =
+            selectedStorageOption
+        updatedPreset.usesCustomMemoryWriteText =
+            usesCustomMemoryWriteText
+        updatedPreset.customMemoryWriteText =
+            customMemoryWriteText
+        return updatedPreset
+    }
+
+    private func restoreConfigurationContext(
+        from preset: MemoryPreset
+    ) {
+        if let subjectID = preset.selectedSubjectID,
+           let subjectIndex =
+            state.subjects.firstIndex(where: {
+                $0.id == subjectID
+            }) {
+            var restoredSubject =
+                state.subjects[subjectIndex]
+
+            if let anchorID =
+                preset.selectedTimeAnchorID,
+               let anchor =
+                restoredSubject.timeAnchor(id: anchorID) {
+                restoredSubject.activeTimeAnchorID =
+                    anchor.id
+                restoredSubject.behavior.primaryAnchor =
+                    anchor.title
+                restoredSubject.referenceDate =
+                    anchor.date
+            }
+
+            restoreSelectedSubject(
+                restoredSubject
+            )
+        }
+
+        restorePresentationContext(
+            from: preset
+        )
+    }
+
+    private func restorePresentationContext(
+        from preset: MemoryPreset
+    ) {
+        presentationState.selectedOutputOption =
+            preset.outputOption
+        presentationState.selectedStorageOption =
+            preset.storageOption
+        presentationState.usesCustomMemoryWriteText =
+            preset.usesCustomMemoryWriteText
+        presentationState.customMemoryWriteText =
+            preset.customMemoryWriteText
+    }
+
+    private func alignSelectedMemoryPresetToSelectedSubject(
+        restoreContext: Bool
+    ) {
+        guard let preset =
+            preferredMemoryPresetForSelectedSubject
+        else {
+            return
+        }
+
+        state.selectedMemoryPresetID = preset.id
+
+        guard restoreContext else {
+            return
+        }
+
+        restoreConfigurationContext(
+            from: preset
+        )
+    }
+
+    private func duplicatedMemoryPresetTitle(
+        from title: String
+    ) -> String {
+        let suffix = " 副本"
+        let trimmedTitle =
+            title.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        let baseTitle =
+            trimmedTitle.isEmpty
+            ? "记忆预设"
+            : trimmedTitle
+        let availableTitleLength =
+            max(
+                Self.maximumMemoryPresetTitleLength
+                - suffix.count,
+                1
+            )
+        let normalizedBaseTitle =
+            String(
+                baseTitle.prefix(
+                    availableTitleLength
+                )
+            )
+
+        return normalizedBaseTitle + suffix
+    }
+
     static func defaultPreviewText(
         for region: CardRegion,
         subject: MemorySubject?
@@ -797,6 +1048,45 @@ final class ConfigurationSession:
         return state.memoryPresets.firstIndex {
             $0.id == preset.id
         }
+    }
+
+    private var preferredMemoryPresetForSelectedSubject:
+        MemoryPreset? {
+        let presets =
+            availableMemoryPresetsForSelectedSubject
+
+        guard !presets.isEmpty else {
+            return nil
+        }
+
+        if let selectedMemoryPresetID =
+            state.selectedMemoryPresetID,
+           let selectedPreset =
+            presets.first(where: {
+                $0.id == selectedMemoryPresetID
+            }) {
+            return selectedPreset
+        }
+
+        if let appliedMemoryPresetID,
+           let appliedPreset =
+            presets.first(where: {
+                $0.id == appliedMemoryPresetID
+            }) {
+            return appliedPreset
+        }
+
+        if let latestSavedPreset =
+            presets
+            .filter({ $0.savedAt != nil })
+            .max(by: { lhs, rhs in
+                (lhs.savedAt ?? .distantPast)
+                < (rhs.savedAt ?? .distantPast)
+            }) {
+            return latestSavedPreset
+        }
+
+        return presets.first
     }
 }
 

@@ -115,7 +115,7 @@ struct V1SubjectHomeSummaryView: View {
                 )
             }
 
-            Text("下一次从 Apple Photos 分享进入 PhotoMemo 时，会默认使用当前这套配置组合与时间锚点。")
+            Text("下一次从 Apple Photos 分享进入 PhotoMemo 时，会继续使用当前生效配置与时间锚点。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(
@@ -125,7 +125,7 @@ struct V1SubjectHomeSummaryView: View {
 
             V1IOSHomeInsetGroup {
                 V1IOSHomeSemanticRow(
-                    title: "当前记忆对象",
+                    title: "记忆对象",
                     value:
                         presentation
                         .subjectTitle,

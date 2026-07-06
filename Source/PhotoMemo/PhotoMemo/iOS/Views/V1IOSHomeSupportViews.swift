@@ -31,6 +31,7 @@ struct V1IOSHomeQuickAction:
     let id: Destination
     let title: String
     let subtitle: String
+    let compactDetail: String
     let systemImage: String
 
     static let defaultActions: [Self] = [
@@ -38,25 +39,29 @@ struct V1IOSHomeQuickAction:
             id: .processPhotos,
             title: "处理照片",
             subtitle: "直接从系统图库选择照片并开始处理",
-            systemImage: "photo.badge.plus"
+            compactDetail: "从图库开始",
+            systemImage: "photo.on.rectangle.angled"
         ),
         .init(
             id: .configurationCenter,
             title: "配置中心",
-            subtitle: "继续校准当前配置",
+            subtitle: "继续查看当前生效配置",
+            compactDetail: "查看当前配置",
             systemImage: "slider.horizontal.3"
         ),
         .init(
             id: .timeAnchor,
             title: "时间锚点",
-            subtitle: "查看当前对象与生效锚点",
+            subtitle: "查看记忆对象与生效锚点",
+            compactDetail: "切换生效锚点",
             systemImage: "calendar.badge.clock"
         ),
         .init(
             id: .usageGuide,
             title: "使用说明",
-            subtitle: "重新查看欢迎说明与使用流程",
-            systemImage: "questionmark.circle"
+            subtitle: "查看 Apple Photos 使用流程与说明",
+            compactDetail: "查看使用流程",
+            systemImage: "book.pages"
         )
     ]
 }
@@ -155,26 +160,33 @@ struct V1IOSHomeQuickActionsContent: View {
     let openUsageGuide: () -> Void
 
     var body: some View {
-        V1IOSHomeInsetGroup {
-            actionButtons
-        }
+        actionButtons
     }
 
     @ViewBuilder
     private var actionButtons: some View {
-        ForEach(
-            Array(V1IOSHomeQuickAction.defaultActions.enumerated()),
-            id: \.offset
-        ) { index, action in
-            V1IOSHomeNavigationRowButton(
-                title: action.title,
-                subtitle: action.subtitle,
-                systemImage: action.systemImage,
-                showsDivider: index != V1IOSHomeQuickAction.defaultActions.count - 1,
-                action: {
-                    perform(action.id)
-                }
-            )
+        LazyVGrid(
+            columns: Array(
+                repeating: GridItem(
+                    .flexible(),
+                    spacing: 8
+                ),
+                count: 4
+            ),
+            spacing: 8
+        ) {
+            ForEach(
+                V1IOSHomeQuickAction.defaultActions
+            ) { action in
+                V1IOSHomeActionTileButton(
+                    title: action.title,
+                    detail: action.compactDetail,
+                    systemImage: action.systemImage,
+                    action: {
+                        perform(action.id)
+                    }
+                )
+            }
         }
     }
 

@@ -152,5 +152,29 @@ struct ConfigurationCenterSessionBindingPresenterTests {
                 .contains("单独录入的文字")
         )
     }
+
+    @Test("preset status copy reports unsaved and saved states")
+    func presetStatusCopyReflectsSavedState() {
+        let session = ConfigurationSession()
+
+        #expect(
+            ConfigurationCenterSessionBindingPresenter
+                .presetStatusText(session: session)
+            == "当前生效配置尚未保存"
+        )
+
+        session.saveCurrentMemoryPreset()
+
+        #expect(
+            ConfigurationCenterSessionBindingPresenter
+                .presetStatusText(
+                    session: session,
+                    savedAtFormatter: { _ in
+                        "2026.07.06 19:30"
+                    }
+                )
+            == "最近保存于 2026.07.06 19:30"
+        )
+    }
 }
 #endif

@@ -14,16 +14,11 @@ struct V1IOSSubjectOverviewSheet: View {
 
     let onSelectSubject: (MemorySubject.ID) -> Void
 
-    let onConfirmActiveAnchor: (UUID) -> Void
-
     let onAddSubject: () -> Void
 
     let onDeleteCurrentSubject: () -> Void
 
     let onOpenEditor: () -> Void
-
-    @State
-    private var pendingActiveAnchorID: UUID?
 
     @State
     private var showsDeleteConfirmation = false
@@ -39,14 +34,8 @@ struct V1IOSSubjectOverviewSheet: View {
                         onSelectSubject: {
                             subjectID in
                             onSelectSubject(subjectID)
-                            pendingActiveAnchorID = nil
                         },
                         onAddSubject: onAddSubject
-                    )
-
-                    V1IOSSubjectOverviewCard(
-                        presentation:
-                            presentation
                     )
 
                     V1IOSSubjectIdentitySection(
@@ -55,33 +44,7 @@ struct V1IOSSubjectOverviewSheet: View {
                         subject: subject
                     )
 
-                    V1IOSSubjectAnchorSection(
-                        presentation:
-                            presentation,
-                        subject: subject,
-                        selectedAnchorID:
-                            Binding(
-                                get: {
-                                    pendingActiveAnchorID
-                                    ?? subject?
-                                    .primaryTimeAnchor?
-                                    .id
-                                },
-                                set: {
-                                    pendingActiveAnchorID = $0
-                                }
-                            )
-                    )
-
                     V1IOSSubjectOverviewFooter(
-                        hasAnchors:
-                            subject?.timeAnchors.isEmpty == false,
-                        resolvedPendingAnchorID:
-                            resolvedPendingAnchorID,
-                        hasAnchorSelectionChange:
-                            hasAnchorSelectionChange,
-                        onConfirmActiveAnchor:
-                            onConfirmActiveAnchor,
                         onOpenEditor: onOpenEditor
                     )
                 }
@@ -93,7 +56,7 @@ struct V1IOSSubjectOverviewSheet: View {
                 ConfigurationUI.appBackground
                     .ignoresSafeArea()
             )
-            .navigationTitle("当前记忆对象")
+            .navigationTitle("记忆对象")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -115,7 +78,7 @@ struct V1IOSSubjectOverviewSheet: View {
                 }
             }
             .confirmationDialog(
-                "删除当前记忆对象？",
+                "删除这个记忆对象？",
                 isPresented:
                     $showsDeleteConfirmation,
                 titleVisibility: .visible
@@ -129,23 +92,9 @@ struct V1IOSSubjectOverviewSheet: View {
 
                 Button("取消", role: .cancel) {}
             } message: {
-                Text("删除后会立即切换到仍然保留的记忆对象，并同步首页当前对象。")
-            }
-            .onAppear {
-                pendingActiveAnchorID =
-                    subject?.primaryTimeAnchor?.id
+                Text("删除后会立即切换到仍然保留的记忆对象，并同步首页记忆对象。")
             }
         }
-    }
-
-    private var resolvedPendingAnchorID: UUID? {
-        pendingActiveAnchorID
-        ?? subject?.primaryTimeAnchor?.id
-    }
-
-    private var hasAnchorSelectionChange: Bool {
-        resolvedPendingAnchorID
-        != subject?.primaryTimeAnchor?.id
     }
 }
 #endif

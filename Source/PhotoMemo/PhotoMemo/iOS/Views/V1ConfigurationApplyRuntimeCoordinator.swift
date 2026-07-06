@@ -20,6 +20,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         (String) -> Void
     private let restoreSubject:
         (MemorySubject) -> Void
+    private let saveCurrentMemoryPreset:
+        () -> Void
     private let applySelectedMemoryPreset:
         () -> Void
     private let updateStatus:
@@ -38,6 +40,7 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         restoreSubject: @escaping (
             MemorySubject
         ) -> Void,
+        saveCurrentMemoryPreset: @escaping () -> Void = {},
         applySelectedMemoryPreset: @escaping () -> Void,
         updateStatus: @escaping (
             V1ConfigurationApplyViewStatus
@@ -48,6 +51,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         self.setSelectedExistingAlbumIdentifier =
             setSelectedExistingAlbumIdentifier
         self.restoreSubject = restoreSubject
+        self.saveCurrentMemoryPreset =
+            saveCurrentMemoryPreset
         self.applySelectedMemoryPreset =
             applySelectedMemoryPreset
         self.updateStatus = updateStatus
@@ -62,6 +67,7 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         restoreSubject: @escaping (
             MemorySubject
         ) -> Void,
+        saveCurrentMemoryPreset: @escaping () -> Void = {},
         applySelectedMemoryPreset: @escaping () -> Void,
         updateStatus: @escaping (
             V1ConfigurationApplyViewStatus
@@ -75,6 +81,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
             setSelectedExistingAlbumIdentifier:
                 setSelectedExistingAlbumIdentifier,
             restoreSubject: restoreSubject,
+            saveCurrentMemoryPreset:
+                saveCurrentMemoryPreset,
             applySelectedMemoryPreset:
                 applySelectedMemoryPreset,
             updateStatus: updateStatus
@@ -138,6 +146,7 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         }
 
         if patch.shouldApplySelectedMemoryPreset {
+            saveCurrentMemoryPreset()
             applySelectedMemoryPreset()
         }
 

@@ -13,14 +13,13 @@ struct V1HomePageSurface<
     let borderStyleDescription: String
     let presetSummary: V1IOSHomePresetSummaryProjection
     let presetStatusTone: V1IOSHomeStatusBadge.Tone
+    let presetSavedStatusText: String
+    let hasHomePresetSelection: Bool
     let isEditingMemoryPresetTitle: Bool
     let memoryPresetTitleDraft: Binding<String>
     let memoryPresetTitleFieldFocused: FocusState<Bool>.Binding
-    let isSavingConfiguration: Bool
-    let recentProcessingPresentation: V1IOSHomeRecentProcessingPresentation
     let onOpenSubject: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
-    let onApplyCurrentConfiguration: () -> Void
     let onOpenPhotoPicker: () -> Void
     let onOpenEditor: () -> Void
     let onOpenTimeAnchor: () -> Void
@@ -33,15 +32,10 @@ struct V1HomePageSurface<
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: 16) {
                 topHeaderSection
 
-                profileSection
-                    .background(profileTrackingBackground)
-
-                currentPresetSection
-                quickActionsSection
-                recentProcessingSection
+                topSummaryCluster
             }
             .padding(.horizontal, 18)
             .padding(.top, 16)
@@ -62,6 +56,16 @@ struct V1HomePageSurface<
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var topSummaryCluster: some View {
+        VStack(spacing: 14) {
+            profileSection
+                .background(profileTrackingBackground)
+
+            currentPresetSection
+            quickActionsSection
+        }
+    }
+
     private var topHeaderSection: some View {
         HStack(alignment: .top, spacing: 14) {
             V1HomeAppMark()
@@ -70,19 +74,20 @@ struct V1HomePageSurface<
                 Text("PhotoMemo")
                     .font(.title2.weight(.semibold))
 
-                Text("记录人生，珍藏记忆")
+                Text("本地优先的记忆呈现引擎，让照片不止记录画面，也保留它在人生时间线里的位置。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 8) {
                     V1HomeHeaderPill(
-                        systemImage: "person.crop.circle",
-                        title: subjectSummary.title
+                        systemImage: "lock.shield",
+                        title: "本地优先"
                     )
 
                     V1HomeHeaderPill(
-                        systemImage: "sparkles",
-                        title: "V1.0"
+                        systemImage: "photo.on.rectangle",
+                        title: "Apple Photos"
                     )
                 }
             }
@@ -91,53 +96,42 @@ struct V1HomePageSurface<
 
             Button(action: onOpenSettings) {
                 Image(systemName: "gearshape")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(width: 38, height: 38)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.blue)
+                    .frame(width: 42, height: 42)
                     .background(
-                        Circle()
-                            .fill(Color.white.opacity(0.94))
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white,
+                                            Color.blue.opacity(0.10)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+
+                            Circle()
+                                .stroke(Color.blue.opacity(0.16), lineWidth: 1)
+                        }
                     )
-                    .overlay(
-                        Circle()
-                            .stroke(ConfigurationUI.faintHairline)
+                    .shadow(
+                        color: Color.blue.opacity(0.10),
+                        radius: 10,
+                        y: 4
                     )
             }
             .buttonStyle(.plain)
             .accessibilityLabel("打开设置")
         }
-        .padding(18)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 26,
-                style: .continuous
-            )
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color.white,
-                        Color.white.opacity(0.92)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 26,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
-        .shadow(
-            color: Color.black.opacity(0.04),
-            radius: 14,
-            y: 6
-        )
+        .padding(.horizontal, 2)
+        .padding(.vertical, 4)
     }
 
     private var profileSection: some View {
-        V1CardSurface(title: "当前记忆对象") {
+        V1CardSurface(title: "记忆对象") {
             V1IOSSubjectHomeEntryContent(
                 subjectSummary: subjectSummary,
                 subject: subject,
@@ -148,120 +142,42 @@ struct V1HomePageSurface<
 
     private var currentPresetSection: some View {
         V1CardSurface(title: "当前配置") {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(borderStyleName)
-                            .font(.headline.weight(.semibold))
+            VStack(alignment: .leading, spacing: 10) {
+                V1HomeCurrentPresetRow(
+                    title: presetSummary.title,
+                    subtitle: borderStyleName,
+                    detail: "上次修改：\(presetSavedStatusText)",
+                    statusLabel: presetSummary.statusLabel,
+                    statusTone: presetStatusTone,
+                    hasSelection: hasHomePresetSelection,
+                    presetPicker: presetPicker,
+                    presetOperationsMenu: presetOperationsMenu
+                )
 
-                        Text("边框样式")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    V1IOSHomeStatusBadge(
-                        text: presetSummary.statusLabel,
-                        tone: presetStatusTone
-                    )
-                }
-
-                Text(borderStyleDescription)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text("这一组决定下一次默认使用的边框样式、配置组合、时间锚点与输出组合。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                V1IOSHomeInsetGroup {
-                    HStack(alignment: .center, spacing: 12) {
-                        Image(systemName: "slider.horizontal.below.rectangle")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 18)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("配置组合")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .textCase(.uppercase)
-
-                            presetPicker
-                        }
-
-                        Spacer(minLength: 0)
-
-                        presetOperationsMenu
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 13)
-
-                    if !presetSummary.detail.isEmpty {
-                        Rectangle()
-                            .fill(ConfigurationUI.faintHairline)
-                            .frame(height: 0.5)
-                            .padding(.leading, 14)
-
-                        Text(presetSummary.detail)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 14)
-                    }
-
-                    if isEditingMemoryPresetTitle {
-                        Rectangle()
-                            .fill(ConfigurationUI.faintHairline)
-                            .frame(height: 0.5)
-                            .padding(.leading, 14)
-
-                        HStack(spacing: 8) {
-                            TextField(
-                                "配置组合名称",
-                                text: memoryPresetTitleDraft
-                            )
-                            .textFieldStyle(.roundedBorder)
-                            .font(.subheadline)
-                            .submitLabel(.done)
-                            .focused(memoryPresetTitleFieldFocused)
-                            .onSubmit {
-                                onCommitMemoryPresetTitle()
-                            }
-
-                            Button("完成") {
-                                onCommitMemoryPresetTitle()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
-                            .accessibilityLabel("完成名称编辑")
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 14)
-                    }
-                }
-
-                Button(action: onApplyCurrentConfiguration) {
+                if isEditingMemoryPresetTitle {
                     HStack(spacing: 8) {
-                        if isSavingConfiguration {
-                            ProgressView()
-                                .controlSize(.small)
+                        TextField(
+                            "配置名称",
+                            text: memoryPresetTitleDraft
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        .font(.subheadline)
+                        .submitLabel(.done)
+                        .focused(memoryPresetTitleFieldFocused)
+                        .onSubmit {
+                            onCommitMemoryPresetTitle()
                         }
 
-                        Text(
-                            presetSummary.emphasizesAppliedState
-                            ? "重新保存默认配置"
-                            : "保存为默认配置"
-                        )
+                        Button("完成") {
+                            onCommitMemoryPresetTitle()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .accessibilityLabel("完成名称编辑")
                     }
-                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 2)
                 }
-                .buttonStyle(.bordered)
-                .disabled(isSavingConfiguration)
             }
         }
     }
@@ -276,14 +192,119 @@ struct V1HomePageSurface<
             )
         }
     }
+}
 
-    private var recentProcessingSection: some View {
-        V1CardSurface(title: "最近处理") {
-            V1IOSHomeRecentProcessingContent(
-                presentation: recentProcessingPresentation,
-                openStatus: onOpenSettings
-            )
+private struct V1HomeCurrentPresetRow<
+    PresetPicker: View,
+    PresetOperationsMenu: View
+>: View {
+
+    let title: String
+    let subtitle: String
+    let detail: String
+    let statusLabel: String
+    let statusTone: V1IOSHomeStatusBadge.Tone
+    let hasSelection: Bool
+    let presetPicker: PresetPicker
+    let presetOperationsMenu: PresetOperationsMenu
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            presetThumbnail
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    V1IOSHomeStatusBadge(
+                        text: statusLabel,
+                        tone: statusTone
+                    )
+                }
+
+                Text(subtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 6) {
+                if hasSelection {
+                    presetPicker
+                    presetOperationsMenu
+                } else {
+                    Text("等待配置")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 20,
+                style: .continuous
+            )
+            .fill(Color.white.opacity(0.94))
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 20,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+        .shadow(
+            color: Color.black.opacity(0.045),
+            radius: 12,
+            y: 5
+        )
+    }
+
+    private var presetThumbnail: some View {
+        ZStack {
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.white,
+                        Color.blue.opacity(0.08)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+
+            VStack(spacing: 3) {
+                RoundedRectangle(
+                    cornerRadius: 3,
+                    style: .continuous
+                )
+                .fill(Color.black.opacity(0.16))
+                .frame(width: 24, height: 5)
+
+                RoundedRectangle(
+                    cornerRadius: 4,
+                    style: .continuous
+                )
+                .stroke(Color.black.opacity(0.22), lineWidth: 1.2)
+                .frame(width: 34, height: 20)
+            }
+        }
+        .frame(width: 52, height: 52)
     }
 }
 

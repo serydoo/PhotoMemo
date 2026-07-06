@@ -6,11 +6,12 @@ struct InteractiveMemoryCardConfigurationContext: View {
     let memoryPresets: [MemoryPreset]
     let selectedMemoryPresetID: Binding<MemoryPreset.ID>
     let currentTimeAnchorDescription: String
-    let selectedMemoryPresetIsApplied: Bool
+    let presetStatusText: String
     let memoryPresetTitle: Binding<String>
     let isRenamingMemoryPreset: Binding<Bool>
     let onReset: () -> Void
-    let onApply: () -> Void
+    let onSave: () -> Void
+    let onCreate: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -93,29 +94,34 @@ struct InteractiveMemoryCardConfigurationContext: View {
     }
 
     private var contextPresetActions: some View {
-        HStack(spacing: 8) {
-            Button(action: onReset) {
-                Label("重置", systemImage: "arrow.counterclockwise")
-                    .labelStyle(.iconOnly)
-            }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-            .help("重置当前总体配置")
+        VStack(alignment: .trailing, spacing: 6) {
+            Text(presetStatusText)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
 
-            Button(action: onApply) {
-                Label(
-                    selectedMemoryPresetIsApplied
-                    ? "已生效"
-                    : "保存并生效",
-                    systemImage:
-                        selectedMemoryPresetIsApplied
-                        ? "checkmark.circle.fill"
-                        : "checkmark.circle"
-                )
+            HStack(spacing: 8) {
+                Button(action: onReset) {
+                    Label("重置", systemImage: "arrow.counterclockwise")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .help("重置当前总体配置")
+
+                Button(action: onCreate) {
+                    Label("新建配置", systemImage: "plus")
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .help("从当前状态创建新的配置")
+
+                Button(action: onSave) {
+                    Label("保存为当前配置", systemImage: "checkmark.circle")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("将当前总体配置保存到当前配置")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help("将当前总体配置设为生效配置")
         }
         .font(.caption.weight(.semibold))
     }

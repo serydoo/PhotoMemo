@@ -15,9 +15,8 @@ struct ConfigurationCenterMemoryWritePanelModel:
 struct ConfigurationCenterOutputSelectionPanelModel:
     Equatable {
 
-    let outputTitle: String
-    let storageTitle: String
-    let storageNote: String
+    let presentation:
+        ConfigurationCenterOutputPanelPresentation
 }
 
 struct ConfigurationCenterGuideCardModel:
@@ -187,62 +186,133 @@ struct ConfigurationCenterOutputSelectionPanel:
     @Binding
     var storageOption: ConfigurationStorageOption
 
+    let onOpenMemoryModule: () -> Void
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "photo")
-                    .font(.caption.weight(.semibold))
+        VStack(alignment: .leading, spacing: 12) {
+            Text("输出区现在只保留最终结果、保存去向、元数据保留和相册说明写入这 4 件事。中间格式细项先不展开，默认沿用当前本地安全链路。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            outputInfoCard(
+                title: "输出结果",
+                value: model.presentation.outputTitle,
+                note: model.presentation.outputNote,
+                systemImage: "photo"
+            )
+
+            outputInfoCard(
+                title: "元数据保留",
+                value: model.presentation.metadataTitle,
+                note: model.presentation.metadataNote,
+                systemImage: "info.circle"
+            )
+
+            VStack(alignment: .leading, spacing: 10) {
+                outputInfoHeader(
+                    title: "图片存放地点",
+                    value:
+                        storageOption.title,
+                    systemImage: "folder"
+                )
+
+                Picker(
+                    "存放地点",
+                    selection: $storageOption
+                ) {
+                    ForEach(ConfigurationStorageOption.allCases) { option in
+                        Text(option.title)
+                            .tag(option)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Text(storageOption.note)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .frame(width: 16)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("输出结果")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Text(model.outputTitle)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.primary.opacity(0.86))
-                }
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(12)
+            .configurationPanelChrome()
 
-            Picker(
-                "存放地点",
-                selection: $storageOption
-            ) {
-                ForEach(ConfigurationStorageOption.allCases) { option in
-                    Text(option.title)
-                        .tag(option)
-                }
-            }
-            .pickerStyle(.menu)
+            VStack(alignment: .leading, spacing: 10) {
+                outputInfoHeader(
+                    title: "相册说明写入",
+                    value:
+                        model.presentation.memoryWriteTitle,
+                    systemImage: "text.badge.checkmark"
+                )
 
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "folder")
-                    .font(.caption.weight(.semibold))
+                Text(model.presentation.memoryWriteDescription)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.primary.opacity(0.86))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(model.presentation.memoryWriteNote)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .frame(width: 16)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("图片存放地点")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Text(model.storageTitle)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.primary.opacity(0.86))
+                Button(
+                    model.presentation.memoryWriteActionTitle
+                ) {
+                    onOpenMemoryModule()
                 }
+                .buttonStyle(.borderless)
+                .font(.caption.weight(.semibold))
             }
+            .padding(12)
+            .configurationPanelChrome()
+        }
+        .padding(12)
+        .configurationPanelChrome()
+    }
 
-            Text(model.storageNote)
+    private func outputInfoCard(
+        title: String,
+        value: String,
+        note: String,
+        systemImage: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            outputInfoHeader(
+                title: title,
+                value: value,
+                systemImage: systemImage
+            )
+
+            Text(note)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
         .configurationPanelChrome()
+    }
+
+    private func outputInfoHeader(
+        title: String,
+        value: String,
+        systemImage: String
+    ) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 16)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                Text(value)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.primary.opacity(0.86))
+            }
+        }
     }
 }
 

@@ -78,7 +78,7 @@ struct V1PresetSelectionCoordinatorTests {
         )
     }
 
-    @Test("selectionUpdate returns the pending activation payload for a valid preset switch")
+    @Test("selectionUpdate returns the immediate activation payload for a valid preset switch")
     func selectionUpdateBuildsActivationPayload() throws {
         let first =
             MemoryPreset(
@@ -105,15 +105,8 @@ struct V1PresetSelectionCoordinatorTests {
 
         #expect(update.preset.id == second.id)
         #expect(
-            update.pendingActivationPresetTitle
-            == "旅行配置"
-        )
-        #expect(
             update.activeConfigurationStatus
-            == .dirty
-        )
-        #expect(
-            update.showsPresetActivationConfirmation
+            == .saving
         )
     }
 }

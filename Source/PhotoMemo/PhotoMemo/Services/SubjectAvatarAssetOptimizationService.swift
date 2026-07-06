@@ -63,7 +63,9 @@ final class SubjectAvatarAssetOptimizationService {
     nonisolated static let safeInsetRatio: CGFloat = 0.04
 
     func optimize(
-        data: Data
+        data: Data,
+        cropConfiguration:
+            SubjectAvatarCropConfiguration = .init()
     ) async throws -> OptimizedSubjectAvatarAsset {
 
         let displayPixelSize = Self.displayPixelSize
@@ -86,19 +88,22 @@ final class SubjectAvatarAssetOptimizationService {
                 try Self.normalizedPNGData(
                     from: data,
                     canvasPixelSize: displayPixelSize,
-                    safeInsetRatio: safeInsetRatio
+                    safeInsetRatio: safeInsetRatio,
+                    cropConfiguration: cropConfiguration
                 )
             let badgeData =
                 try Self.normalizedPNGData(
                     from: data,
                     canvasPixelSize: badgePixelSize,
-                    safeInsetRatio: safeInsetRatio
+                    safeInsetRatio: safeInsetRatio,
+                    cropConfiguration: cropConfiguration
                 )
             let previewData =
                 try Self.normalizedPNGData(
                     from: data,
                     canvasPixelSize: previewPixelSize,
-                    safeInsetRatio: safeInsetRatio
+                    safeInsetRatio: safeInsetRatio,
+                    cropConfiguration: cropConfiguration
                 )
 
             let displayURL =
@@ -142,7 +147,9 @@ private extension SubjectAvatarAssetOptimizationService {
     nonisolated static func normalizedPNGData(
         from data: Data,
         canvasPixelSize: Int,
-        safeInsetRatio: CGFloat
+        safeInsetRatio: CGFloat,
+        cropConfiguration:
+            SubjectAvatarCropConfiguration
     ) throws -> Data {
 
         guard let sourceImage = UIImage(data: data) else {
@@ -173,10 +180,13 @@ private extension SubjectAvatarAssetOptimizationService {
                 )
 
                 let drawingRect =
-                    aspectFillRect(
+                    SubjectAvatarCropSupport
+                    .resolvedDrawRect(
                         sourceSize: sourceImage.size,
                         canvasSize: canvasSize,
-                        safeInsetRatio: safeInsetRatio
+                        safeInsetRatio: safeInsetRatio,
+                        configuration:
+                            cropConfiguration
                     )
 
                 let clipPath =
@@ -200,7 +210,9 @@ private extension SubjectAvatarAssetOptimizationService {
     nonisolated static func normalizedPNGData(
         from data: Data,
         canvasPixelSize: Int,
-        safeInsetRatio: CGFloat
+        safeInsetRatio: CGFloat,
+        cropConfiguration:
+            SubjectAvatarCropConfiguration
     ) throws -> Data {
 
         guard let sourceImage = NSImage(data: data) else {
@@ -247,10 +259,13 @@ private extension SubjectAvatarAssetOptimizationService {
         clipPath.addClip()
 
         sourceImage.draw(
-            in: aspectFillRect(
+            in: SubjectAvatarCropSupport
+                .resolvedDrawRect(
                 sourceSize: sourceImage.size,
                 canvasSize: canvasSize,
-                safeInsetRatio: safeInsetRatio
+                safeInsetRatio: safeInsetRatio,
+                configuration:
+                    cropConfiguration
             ),
             from: .zero,
             operation: .sourceOver,
@@ -271,44 +286,4 @@ private extension SubjectAvatarAssetOptimizationService {
     }
 #endif
 
-    nonisolated static func aspectFillRect(
-        sourceSize: CGSize,
-        canvasSize: CGSize,
-        safeInsetRatio: CGFloat
-    ) -> CGRect {
-
-        let sourceWidth =
-            max(sourceSize.width, 1)
-        let sourceHeight =
-            max(sourceSize.height, 1)
-        let safeInset =
-            canvasSize.width
-            * safeInsetRatio
-        let availableSize =
-            CGSize(
-                width:
-                    max(canvasSize.width - safeInset * 2, 1),
-                height:
-                    max(canvasSize.height - safeInset * 2, 1)
-            )
-        let scale =
-            max(
-                availableSize.width / sourceWidth,
-                availableSize.height / sourceHeight
-            )
-        let fittedSize =
-            CGSize(
-                width: sourceWidth * scale,
-                height: sourceHeight * scale
-            )
-
-        return CGRect(
-            x:
-                (canvasSize.width - fittedSize.width) / 2,
-            y:
-                (canvasSize.height - fittedSize.height) / 2,
-            width: fittedSize.width,
-            height: fittedSize.height
-        )
-    }
 }
