@@ -45,6 +45,60 @@ or IA-003 Completion Criteria change.
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
 
+## 2026-07-06 Location Module Feature Slice A frozen
+
+Location Module Adoption has moved from platform completion into feature
+experience completion. This slice exposes the existing Location display
+capability through Object Inspector without adding new platform capability.
+
+Checkpoints:
+
+- `c96403a` freezes the Slice A product boundary and Object Inspector boundary
+  scan.
+- `25936da` adds the Object Inspector `位置显示` panel.
+- User-facing language is product language only:
+  - `位置显示`
+  - `自动兼容`
+  - `省份 · 城市`
+  - `城市 · 区县`
+  - `省份 · 城市 · 区县`
+  - `经纬度`
+  - `位置模块未插入`
+- `LocationDisplayInspectorPresenter` maps those labels to existing
+  `ExpressionModuleConfiguration` values.
+- Selecting a Location display option writes configuration to the inserted
+  module and recomputes Configuration Center preview through the existing
+  Location adapter/provider path.
+- Non-location modules are ignored by the location-display update path.
+
+Scope review:
+
+- No new Location provider capability was introduced.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+- Renderer, Export, Share Extension, Metadata mutation, Photo Library
+  behavior, and Layout Engine behavior were not changed.
+
+Remaining feature completion work:
+
+- Persist Location display choices through the production configuration path.
+- Make production render/export consume the persisted Location display
+  configuration.
+- Run the Location Module Feature Completion Gate before merging this feature
+  into `main`.
+
+Verification:
+
+- `git diff --check` passed.
+- Focused Location display / preview tests passed:
+  - `LocationDisplayInspectorPresenterTests`
+  - `ConfigurationCenterRegionBindingAdapterTests`
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `LocationConfigurationAdapterTests`
+- `PhotoMemo` Debug build passed.
+- `PhotoMemoiOSV1` generic iOS Simulator build passed.
+
 ## 2026-07-06 V1 Memory Summary entry cleanup
 
 V1 time-anchor expression entry points now prefer the new Memory layer.
