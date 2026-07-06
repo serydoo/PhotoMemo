@@ -41,8 +41,21 @@ final class CardTextBlockEngine {
                 .metadataContext(
                     from: expressionContext,
                     base: baseContext
+            )
+        }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+        if let productionExpressionContext =
+            card.productionExpressionContext {
+
+            metadataContext =
+                ExpressionContextMetadataAdapter()
+                .metadataContext(
+                    from: productionExpressionContext,
+                    base: metadataContext
                 )
         }
+#endif
 
         let lookup =
             MetadataContextExpressionLookup(

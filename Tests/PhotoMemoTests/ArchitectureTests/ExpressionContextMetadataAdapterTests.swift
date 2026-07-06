@@ -77,7 +77,31 @@ struct ExpressionContextMetadataAdapterTests {
 
         #expect(
             metadataContext[MetadataContext.Key.model]
-                == "iPhone 17 Pro"
+            == "iPhone 17 Pro"
+        )
+    }
+
+    @Test("PI-17 Given memory expression value When projected Then legacy memory summary is set")
+    func pi17GivenMemoryExpressionValueWhenProjectedThenLegacyMemorySummaryIsSet() throws {
+        let expressionContext =
+            try ExpressionContext(
+                values: [
+                    ExpressionValue(
+                        token: MemoryProvider.memoryToken,
+                        resolvedText: "这一天，途途18天"
+                    )
+                ]
+            )
+
+        let metadataContext =
+            ExpressionContextMetadataAdapter()
+            .metadataContext(
+                from: expressionContext
+            )
+
+        #expect(
+            metadataContext[MetadataContext.Key.memorySummary]
+                == "这一天，途途18天"
         )
     }
 
@@ -87,7 +111,7 @@ struct ExpressionContextMetadataAdapterTests {
             try ExpressionContext(
                 values: [
                     ExpressionValue(
-                        token: ExpressionToken(rawValue: "memory"),
+                        token: ExpressionToken(rawValue: "people"),
                         resolvedText: "第31天"
                     ),
                     ExpressionValue(
@@ -166,6 +190,7 @@ struct ExpressionContextMetadataAdapterTests {
         #expect(source.contains("MetadataContext"))
         #expect(source.contains("MetadataContext.Key.locationDisplay"))
         #expect(source.contains("MetadataContext.Key.model"))
+        #expect(source.contains("MetadataContext.Key.memorySummary"))
         #expect(!source.contains("PhotoMetadata"))
         #expect(!source.contains("PhotoMetadataReader"))
         #expect(!source.contains("LocationExpressionProvider"))

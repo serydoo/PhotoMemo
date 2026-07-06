@@ -41,8 +41,8 @@ struct RendererDependencyIsolationTests {
         #expect(!recordCardBuildServiceSource.contains("MetadataProvider"))
     }
 
-    @Test("PI-16 Boundary production expression carrier is not consumed by text lookup or legacy projection")
-    func pi16BoundaryProductionExpressionCarrierIsNotConsumedByTextLookupOrLegacyProjection() throws {
+    @Test("PI-17 Boundary memory provider adoption consumes carried values without provider policy")
+    func pi17BoundaryMemoryProviderAdoptionConsumesCarriedValuesWithoutProviderPolicy() throws {
         let cardTextBlockEngineSource =
             try sourceFile(
                 "Source/PhotoMemo/PhotoMemo/Engines/CardTextBlockEngine.swift"
@@ -57,7 +57,7 @@ struct RendererDependencyIsolationTests {
             )
 
         #expect(!cardTextBlockEngineSource.contains("MemoryProvider"))
-        #expect(!cardTextBlockEngineSource.contains("productionExpressionContext"))
+        #expect(cardTextBlockEngineSource.contains("productionExpressionContext"))
         #expect(!cardVariableProviderSource.contains("productionExpressionContext"))
         #expect(!rendererSource.contains("productionExpressionContext"))
     }
@@ -216,6 +216,61 @@ struct RendererDependencyIsolationTests {
         #expect(blocks.count == 1)
         #expect(blocks.first?.area == .leftTop)
         #expect(blocks.first?.value == providerValue.resolvedText)
+    }
+
+    @Test("PI-17 Regression CardTextBlockEngine memory output comes from carried provider value")
+    func pi17RegressionCardTextBlockEngineMemoryOutputComesFromCarriedProviderValue() throws {
+        let template =
+            Template(
+                preset: .template2,
+                name: "PI-17 Regression",
+                leftTopArea: TemplateArea(
+                    name: "Left Top",
+                    items: [
+                        TemplateItem(
+                            type: .variable,
+                            name: "Memory",
+                            value: "{{memory_summary}}"
+                        )
+                    ]
+                ),
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea: .empty,
+                badgeArea: .empty
+            )
+        let memoryValue =
+            ExpressionValue(
+                token: MemoryProvider.memoryToken,
+                resolvedText: "这一天，途途18天"
+            )
+        var card =
+            RecordCard(
+                template: template,
+                metadata: PhotoMetadata(),
+                context: MetadataContext(
+                    values: [
+                        MetadataContext.Key.memorySummary:
+                            "legacy memory text"
+                    ]
+                )
+            )
+        card.productionExpressionContext =
+            try ExpressionContext(
+                values: [
+                    memoryValue
+                ]
+            )
+
+        let blocks =
+            CardTextBlockEngine()
+            .build(
+                from: card
+            )
+
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.area == .leftTop)
+        #expect(blocks.first?.value == memoryValue.resolvedText)
     }
 }
 

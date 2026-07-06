@@ -8,6 +8,9 @@ struct ExpressionContextMetadataAdapter {
     private let modelToken =
         ExpressionToken(rawValue: "model")
 
+    private let memoryToken =
+        ExpressionToken(rawValue: "memory")
+
     func metadataContext(
         from expressionContext: ExpressionContext,
         base: MetadataContext = MetadataContext()
@@ -32,6 +35,15 @@ struct ExpressionContextMetadataAdapter {
                 )?
                 .resolvedText,
             for: MetadataContext.Key.model
+        )
+
+        metadataContext.set(
+            expressionContext
+                .value(
+                    for: memoryToken
+                )?
+                .resolvedText,
+            for: MetadataContext.Key.memorySummary
         )
 
         return metadataContext
