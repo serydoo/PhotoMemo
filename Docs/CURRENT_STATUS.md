@@ -150,7 +150,7 @@ Stage status:
 | --- | --- | --- |
 | Stage 1: Expression Platform Baseline | ✅ Complete | Baseline commit `d2daedf9` establishes `ExpressionToken`, `ExpressionValue`, `ExpressionContext`, Canonical Provider Pipeline, platform contract, ADR-007, and Location as the first validation Provider. |
 | Stage 2: Platform Integration | ✅ Complete | PI-1 is frozen at commit `739b76fd`; PI-2 implementation is frozen at commit `0fec6bb`; PI-3 implementation is frozen at commit `da775c7`; PI-4 implementation is frozen at commit `dcdc257`. |
-| Stage 3: Legacy Compatibility Adoption | 🟡 PI-15 Memory Adoption Blocked Pending Carrier | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`. |
+| Stage 3: Legacy Compatibility Adoption | 🟡 PI-16 Production Expression Carrier Implemented | PI-5 boundary scan is frozen at commit `fd51a03`; PI-5 implementation is frozen at commit `1b20bdb`; PI-6 implementation is frozen at commit `06dd0a2`; PI-7 scan is frozen at commit `44c4883` with no implementation seam approved; PI-8 scan is frozen at commit `72cfff6`; PI-9 implementation is frozen at commit `c866fdc`; PI-10 implementation is frozen at commit `e6455c5`; PI-11 implementation is frozen at commit `5d122f2`; PI-13D implementation is frozen at commit `0aca215`; PI-14 parity proof is frozen at commit `750d74d`; PI-15 scan is frozen at commit `3467eaa`; PI-16 implementation is frozen at commit `6ab34aa`. |
 
 PI-1 completed checkpoints:
 
@@ -890,6 +890,61 @@ Required follow-up:
 ```text
 Production Expression Value Carrier
 ```
+
+## 2026-07-06 PI-16 Production Expression Value Carrier frozen
+
+PI-16 completed the approved carrier-only implementation. Provider-produced
+Memory expression values are now carried through the production Memory payload
+and `RecordCard`, but they are not consumed by text lookup.
+
+Boundary scan artifact:
+
+- `Docs/02_Architecture/PI-16_Production_Expression_Value_Carrier_Boundary_Scan.md`
+
+Checkpoints:
+
+- `d340345` freezes the approved carrier-only seam:
+  `ProductionMemoryResolver -> ExpressionContext[memory] ->
+  ProductionMemoryPayload.productionExpressionContext ->
+  RecordCard.productionExpressionContext`.
+- `6ab34aa` implements the inert production expression carrier.
+
+Architectural delta:
+
+```text
+Production expression value carrier: absent -> inert ExpressionContext on production payload/card
+```
+
+Scope review:
+
+- `ProductionMemoryResolver` produces `ExpressionContext[memory]` from the
+  existing canonical Memory input through `MemoryProvider`.
+- `ProductionMemoryPayload` carries the optional expression context.
+- `RecordCardBuildService` forwards the expression context only; it does not
+  construct provider values or change template lookup.
+- `RecordCard` carries the optional production expression context for future
+  approved adoption seams.
+- `CardTextBlockEngine`, `ExpressionContextMetadataAdapter`,
+  `CardVariableProvider`, Renderer, Export, Share Extension, batch
+  processing, Photo Library behavior, and Layout Engine behavior were not
+  changed.
+- Memory provider output is still not production text authority.
+- `ExpressionLookup`, `ExpressionValue`, `ExpressionContext`,
+  `ExpressionModuleConfiguration`, `Expression_System_Contract.md`, and
+  ADR-007 were not modified.
+
+Verification:
+
+- RED confirmed the carrier tests failed before implementation.
+- PI-16 focused tests passed:
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+  - `RendererDependencyIsolationTests`
+- Memory / provider regression tests passed:
+  - `MemoryProviderTests`
+  - `MemoryResultContractTests`
+- `git diff --check` passed.
+- `PhotoMemo` Debug build passed.
 
 ## 2026-07-05 High-Resolution Media Intake Foundation started
 
