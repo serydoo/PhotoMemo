@@ -49,11 +49,47 @@ struct LocationFormatter {
             return formatCoordinate(
                 context.coordinate
             )
+
+        case .legacyDisplay:
+            return formatLegacyDisplay(
+                context: context
+            )
         }
     }
 }
 
 private extension LocationFormatter {
+
+    func formatLegacyDisplay(
+        context: LocationContext
+    ) -> String {
+
+        if let name =
+            nonEmpty(
+                context.address?.name
+            ) {
+            return name
+        }
+
+        let hierarchy =
+            uniqueNonEmptyParts([
+                context.address?.country,
+                context.address?.province,
+                context.address?.city,
+                context.address?.district
+            ])
+
+        if !hierarchy.isEmpty {
+            return hierarchy
+                .joined(
+                    separator: " · "
+                )
+        }
+
+        return formatCoordinate(
+            context.coordinate
+        )
+    }
 
     func formatAddressParts(
         _ parts: [String?]
@@ -80,6 +116,23 @@ private extension LocationFormatter {
             coordinate.latitude,
             coordinate.longitude
         )
+    }
+
+    func nonEmpty(
+        _ value: String?
+    ) -> String? {
+
+        guard
+            let value =
+                value?.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ),
+            !value.isEmpty
+        else {
+            return nil
+        }
+
+        return value
     }
 
     func uniqueNonEmptyParts(

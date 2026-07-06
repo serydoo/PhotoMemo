@@ -13,4 +13,6 @@ enum LocationPresentationMode:
     case provinceCityDistrict
 
     case coordinate
+
+    case legacyDisplay
 }

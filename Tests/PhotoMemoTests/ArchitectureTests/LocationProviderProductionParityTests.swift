@@ -30,6 +30,21 @@ struct LocationProviderProductionParityTests {
         #expect(providerText != legacyText)
     }
 
+    @Test("PI-19 legacy-compatible mode matches full hierarchy legacy location display")
+    func pi19LegacyCompatibleModeMatchesFullHierarchyLegacyLocationDisplay() throws {
+        let metadata =
+            PhotoMetadata(
+                city: "Shenzhen",
+                district: "Nanshan",
+                province: "Guangdong",
+                country: "China"
+            )
+
+        try expectLegacyCompatibleLocationProviderMatchesLegacyDisplay(
+            metadata
+        )
+    }
+
     @Test("PI-18 location name legacy display is not provider parity")
     func pi18LocationNameLegacyDisplayIsNotProviderParity() throws {
         let metadata =
@@ -56,6 +71,22 @@ struct LocationProviderProductionParityTests {
         #expect(providerText != legacyText)
     }
 
+    @Test("PI-19 legacy-compatible mode matches location name legacy display")
+    func pi19LegacyCompatibleModeMatchesLocationNameLegacyDisplay() throws {
+        let metadata =
+            PhotoMetadata(
+                city: "Shenzhen",
+                district: "Nanshan",
+                province: "Guangdong",
+                country: "China",
+                locationName: "Lujiazui"
+            )
+
+        try expectLegacyCompatibleLocationProviderMatchesLegacyDisplay(
+            metadata
+        )
+    }
+
     @Test("PI-18 coordinate fallback legacy display is not default provider parity")
     func pi18CoordinateFallbackLegacyDisplayIsNotDefaultProviderParity() throws {
         let metadata =
@@ -78,6 +109,36 @@ struct LocationProviderProductionParityTests {
         #expect(providerText.isEmpty)
         #expect(providerText != legacyText)
     }
+
+    @Test("PI-19 legacy-compatible mode matches coordinate fallback legacy display")
+    func pi19LegacyCompatibleModeMatchesCoordinateFallbackLegacyDisplay() throws {
+        let metadata =
+            PhotoMetadata(
+                latitude: 22.5430964,
+                longitude: 114.0578652
+            )
+
+        try expectLegacyCompatibleLocationProviderMatchesLegacyDisplay(
+            metadata
+        )
+    }
+}
+
+private func expectLegacyCompatibleLocationProviderMatchesLegacyDisplay(
+    _ metadata: PhotoMetadata
+) throws {
+    let legacyText =
+        MetadataContext
+        .build(
+            from: metadata
+        )[MetadataContext.Key.locationDisplay]
+    let providerText =
+        try providerText(
+            from: metadata,
+            requestedPresentation: .legacyDisplay
+        )
+
+    #expect(providerText == legacyText)
 }
 
 private func providerText(

@@ -86,6 +86,7 @@ private extension LocationResolver {
             : nil
 
         case .cityDistrict,
+             .legacyDisplay,
              .coordinate:
             return nil
         }
@@ -127,6 +128,24 @@ private extension LocationResolver {
 
         case .coordinate:
             return context.coordinate != nil
+
+        case .legacyDisplay:
+            return hasValue(
+                context.address?.name
+            )
+            || hasValue(
+                context.address?.country
+            )
+            || hasValue(
+                context.address?.province
+            )
+            || hasValue(
+                context.address?.city
+            )
+            || hasValue(
+                context.address?.district
+            )
+            || context.coordinate != nil
         }
     }
 
