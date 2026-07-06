@@ -56,6 +56,47 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
     }
 
     @MainActor
+    @Test("insertModule stores expression configuration on the inserted module without changing preview text")
+    func insertModuleStoresExpressionConfigurationWithoutChangingPreviewText() {
+        let subject =
+            previewSubject()
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(
+                    subject: subject
+                )
+            )
+        let configuration =
+            ExpressionModuleConfiguration(
+                token: LocationExpressionProvider.locationToken,
+                options: [
+                    "presentationMode": "provinceCityDistrict"
+                ]
+            )
+
+        let update =
+            helper.insertModule(
+                .location,
+                into: .slotC,
+                store: ConfigurationCenterRegionDraftStore(),
+                expressionConfiguration: configuration
+            )
+
+        #expect(
+            update.store.modules(for: .slotC).first?
+                .expressionConfiguration == configuration
+        )
+        #expect(
+            update.previewText
+            == helper.composedPreviewText(
+                for: .slotC,
+                store: update.store
+            )
+        )
+        #expect(update.previewText.contains("河南 · 商丘"))
+    }
+
+    @MainActor
     @Test("removeInsertedModule recomposes the preview without the removed module")
     func removeInsertedModuleRecomposesThePreviewWithoutTheRemovedModule() {
         let helper =

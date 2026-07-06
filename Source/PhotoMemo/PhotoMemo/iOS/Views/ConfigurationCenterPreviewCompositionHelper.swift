@@ -53,7 +53,9 @@ struct ConfigurationCenterPreviewCompositionHelper {
     func insertModule(
         _ module: IOSInsertableModule,
         into region: CardRegion,
-        store: ConfigurationCenterRegionDraftStore
+        store: ConfigurationCenterRegionDraftStore,
+        expressionConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) -> ConfigurationCenterPreviewCompositionUpdate {
         guard CardRegion.memoryCardRegions.contains(region) else {
             return .init(
@@ -86,7 +88,9 @@ struct ConfigurationCenterPreviewCompositionHelper {
             IOSInsertedModule(
                 title: module.title,
                 value: moduleDisplayText(module),
-                systemImage: module.systemImage
+                systemImage: module.systemImage,
+                expressionConfiguration:
+                    expressionConfiguration
             )
         )
         updatedStore.setModules(

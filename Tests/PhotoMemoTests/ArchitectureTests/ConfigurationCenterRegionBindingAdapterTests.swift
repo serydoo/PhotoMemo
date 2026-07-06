@@ -110,6 +110,50 @@ struct ConfigurationCenterRegionBindingAdapterTests {
         #expect(mutation == nil)
     }
 
+    @Test("insertModule forwards expression configuration into the stored inserted module")
+    func insertModuleForwardsExpressionConfigurationIntoStoredInsertedModule() throws {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(subject: subject)
+            )
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotC,
+                subject: subject,
+                store: .init(),
+                coordinator:
+                    .init(previewHelper: helper)
+            )
+        let configuration =
+            ExpressionModuleConfiguration(
+                token: LocationExpressionProvider.locationToken,
+                options: [
+                    "allowsCoordinateFallback": "true"
+                ]
+            )
+
+        let mutation =
+            try #require(
+                adapter.insertModule(
+                    .location,
+                    expressionConfiguration: configuration
+                )
+            )
+
+        #expect(
+            mutation.store.modules(for: .slotC).first?
+                .expressionConfiguration == configuration
+        )
+        #expect(
+            mutation.previewText
+            == helper.composedPreviewText(
+                for: .slotC,
+                store: mutation.store
+            )
+        )
+    }
+
     @Test("removeInsertedModule recomputes preview text from the updated store")
     func removeInsertedModuleRecomputesPreviewText() {
         let subject = ConfigurationCenterState.mock.selectedSubject

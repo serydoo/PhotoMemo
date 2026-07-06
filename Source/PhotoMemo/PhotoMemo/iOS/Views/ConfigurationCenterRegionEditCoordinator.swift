@@ -73,12 +73,16 @@ struct ConfigurationCenterRegionEditCoordinator {
     func insertModule(
         _ module: IOSInsertableModule,
         into region: CardRegion,
-        store: ConfigurationCenterRegionDraftStore
+        store: ConfigurationCenterRegionDraftStore,
+        expressionConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) -> ConfigurationCenterPreviewCompositionUpdate {
         previewHelper.insertModule(
             module,
             into: region,
-            store: store
+            store: store,
+            expressionConfiguration:
+                expressionConfiguration
         )
     }
 

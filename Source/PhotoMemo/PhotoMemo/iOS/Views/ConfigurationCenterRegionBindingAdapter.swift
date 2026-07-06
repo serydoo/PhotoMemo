@@ -122,7 +122,9 @@ struct ConfigurationCenterRegionBindingAdapter {
     }
 
     func insertModule(
-        _ module: IOSInsertableModule
+        _ module: IOSInsertableModule,
+        expressionConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) -> ConfigurationCenterRegionBindingMutation? {
         guard CardRegion.memoryCardRegions.contains(region) else {
             return nil
@@ -132,7 +134,9 @@ struct ConfigurationCenterRegionBindingAdapter {
             coordinator.insertModule(
                 module,
                 into: region,
-                store: store
+                store: store,
+                expressionConfiguration:
+                    expressionConfiguration
             )
         )
     }
