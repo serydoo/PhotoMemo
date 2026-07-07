@@ -2,6 +2,49 @@
 
 Last updated: 2026-07-07
 
+## 2026-07-07 V1 memory-subject switch confirmation fixed
+
+This slice fixed the confusing V1 iOS subject-switch behavior where the
+Memory Subject sheet implied horizontal browsing could switch the active
+subject, while the app only changed the active subject after an explicit card
+tap. It also closed the state gap where switching to a subject without any
+bound configuration could leave the previous subject's current configuration
+temporarily visible.
+
+What changed:
+
+- the Memory Subject sheet now separates browsing from activation:
+  - default state is object browsing only
+  - `切换` enters explicit switch mode
+  - card taps select a candidate only while switch mode is active
+  - `保存切换` commits the selected subject through the existing subject
+    selection path
+- current-configuration state now clears stale selected preset IDs when the
+  newly selected subject has no available configurations
+- the homepage/current configuration title now shows a clear empty state for
+  subjects without configurations instead of falling back to another subject's
+  preset
+- regression coverage was added for switching to a subject without
+  configurations
+
+Verification:
+
+- `git diff --check` passed
+- focused tests passed:
+  - `ConfigurationSessionConfigurationLifecycleTests`
+  - `V1SubjectLibrarySupportTests`
+- `PhotoMemoiOS` iOS Simulator build passed
+
+Not yet manually verified:
+
+- physical-device interaction pass for:
+  - browse objects by horizontal scrolling
+  - tap `切换`
+  - choose another object
+  - tap `保存切换`
+  - return to homepage and confirm the current configuration belongs to that
+    object or shows the no-configuration empty state
+
 ## 2026-07-07 V1 smart-module selected-subject projection fixed
 
 This slice fixed the remaining real-device issue where Configuration Center

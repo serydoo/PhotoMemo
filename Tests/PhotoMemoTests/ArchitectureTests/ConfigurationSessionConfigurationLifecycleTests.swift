@@ -387,5 +387,36 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.customMemoryWriteText == "旅行说明")
         #expect(session.currentTimeAnchorTitle == secondSubject.timeAnchors[1].title)
     }
+
+    @Test("switching to a memory subject without configurations clears the stale current configuration")
+    func switchingToSubjectWithoutConfigurationsClearsStaleCurrentConfiguration() {
+        var state = ConfigurationCenterState.mock
+        let firstSubject = state.subjects[0]
+        let secondSubject = state.subjects[1]
+
+        let firstPreset = MemoryPreset(
+            title: "宝宝配置",
+            summary: "对象一配置",
+            regionTemplateIDs: state.memoryPresets[0].regionTemplateIDs,
+            savedAt: Date(timeIntervalSince1970: 10),
+            selectedSubjectID: firstSubject.id,
+            selectedTimeAnchorID: firstSubject.timeAnchors[0].id
+        )
+
+        state.memoryPresets = [firstPreset]
+        state.selectedSubjectID = firstSubject.id
+        state.selectedMemoryPresetID = firstPreset.id
+
+        let session = ConfigurationSession(state: state)
+
+        session.selectSubject(secondSubject)
+
+        #expect(session.state.selectedSubjectID == secondSubject.id)
+        #expect(session.availableMemoryPresetsForSelectedSubject.isEmpty)
+        #expect(session.state.selectedMemoryPresetID == nil)
+        #expect(session.currentMemoryPresetTitle == "当前对象还没有配置")
+        #expect(session.currentMemoryPresetSummary == "为当前记忆对象新建配置后即可使用。")
+        #expect(session.selectedMemoryPresetIsApplied == false)
+    }
 }
 #endif

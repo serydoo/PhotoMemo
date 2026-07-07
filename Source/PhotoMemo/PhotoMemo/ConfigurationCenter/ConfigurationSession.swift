@@ -617,11 +617,23 @@ final class ConfigurationSession:
     }
 
     var currentMemoryPresetTitle: String {
-        state.selectedMemoryPreset?.title ?? "记忆预设"
+        guard
+            !availableMemoryPresetsForSelectedSubject.isEmpty
+        else {
+            return "当前对象还没有配置"
+        }
+
+        return state.selectedMemoryPreset?.title ?? "记忆预设"
     }
 
     var currentMemoryPresetSummary: String {
-        state.selectedMemoryPreset?.summary ?? "当前区域组合"
+        guard
+            !availableMemoryPresetsForSelectedSubject.isEmpty
+        else {
+            return "为当前记忆对象新建配置后即可使用。"
+        }
+
+        return state.selectedMemoryPreset?.summary ?? "当前区域组合"
     }
 
     var selectedMemoryPresetIsApplied: Bool {
@@ -952,6 +964,8 @@ final class ConfigurationSession:
         guard let preset =
             preferredMemoryPresetForSelectedSubject
         else {
+            state.selectedMemoryPresetID = nil
+            appliedMemoryPresetID = nil
             return
         }
 

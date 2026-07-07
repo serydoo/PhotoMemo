@@ -23,6 +23,12 @@ struct V1IOSSubjectOverviewSheet: View {
     @State
     private var showsDeleteConfirmation = false
 
+    @State
+    private var isSwitchingSubject = false
+
+    @State
+    private var switchCandidateSubjectID: MemorySubject.ID?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -31,11 +37,39 @@ struct V1IOSSubjectOverviewSheet: View {
                         subjects: subjects,
                         selectedSubjectID:
                             selectedSubjectID,
+                        switchCandidateSubjectID:
+                            switchCandidateSubjectID,
+                        isSwitchingSubject:
+                            isSwitchingSubject,
                         onSelectSubject: {
                             subjectID in
-                            onSelectSubject(subjectID)
+                            switchCandidateSubjectID =
+                                subjectID
                         },
-                        onAddSubject: onAddSubject
+                        onAddSubject: onAddSubject,
+                        onBeginSwitch: {
+                            switchCandidateSubjectID =
+                                selectedSubjectID
+                                ?? subject?.id
+                                ?? subjects.first?.id
+                            isSwitchingSubject = true
+                        },
+                        onCancelSwitch: {
+                            switchCandidateSubjectID = nil
+                            isSwitchingSubject = false
+                        },
+                        onCommitSwitch: {
+                            guard
+                                let subjectID =
+                                    switchCandidateSubjectID
+                            else {
+                                return
+                            }
+
+                            onSelectSubject(subjectID)
+                            switchCandidateSubjectID = nil
+                            isSwitchingSubject = false
+                        }
                     )
 
                     V1IOSSubjectIdentitySection(
@@ -94,6 +128,13 @@ struct V1IOSSubjectOverviewSheet: View {
             } message: {
                 Text("删除后会立即切换到仍然保留的记忆对象，并同步首页记忆对象。")
             }
+        }
+        .onChange(of: selectedSubjectID) { _, newValue in
+            guard !isSwitchingSubject else {
+                return
+            }
+
+            switchCandidateSubjectID = newValue
         }
     }
 }

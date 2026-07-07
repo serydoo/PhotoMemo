@@ -5,28 +5,30 @@ struct V1IOSSubjectOverviewSubjectRail: View {
 
     let subjects: [MemorySubject]
     let selectedSubjectID: MemorySubject.ID?
+    let switchCandidateSubjectID: MemorySubject.ID?
+    let isSwitchingSubject: Bool
     let onSelectSubject: (MemorySubject.ID) -> Void
     let onAddSubject: () -> Void
+    let onBeginSwitch: () -> Void
+    let onCancelSwitch: () -> Void
+    let onCommitSwitch: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("对象切换")
+                    Text("对象浏览")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    Text("左右滑动查看不同记忆对象，保持当前卡片作为生效对象。")
+                    Text(helperText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer(minLength: 0)
 
-                V1IOSSubjectRailAddButton(
-                    compact: subjects.count > 1,
-                    action: onAddSubject
-                )
+                headerActions
             }
 
             if subjects.count <= 1 {
@@ -37,12 +39,65 @@ struct V1IOSSubjectOverviewSubjectRail: View {
         }
     }
 
+    @ViewBuilder
+    private var headerActions: some View {
+        if isSwitchingSubject {
+            HStack(spacing: 8) {
+                Button("取消") {
+                    onCancelSwitch()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    onCommitSwitch()
+                } label: {
+                    Label("保存切换", systemImage: "checkmark")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(
+                    switchCandidateSubjectID == nil
+                    || switchCandidateSubjectID
+                    == resolvedSelectedSubjectID
+                )
+            }
+        } else {
+            HStack(spacing: 8) {
+                Button {
+                    onBeginSwitch()
+                } label: {
+                    Label(
+                        "切换",
+                        systemImage:
+                            "arrow.left.arrow.right"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .accessibilityLabel("切换当前对象")
+
+                V1IOSSubjectRailAddButton(
+                    compact: true,
+                    action: onAddSubject
+                )
+            }
+        }
+    }
+
     private var singleCardLayout: some View {
         HStack(spacing: 12) {
             if let subject = subjects.first {
                 V1IOSSubjectRailCard(
                     subject: subject,
-                    isSelected: true,
+                    isCurrent:
+                        subject.id
+                        == resolvedSelectedSubjectID,
+                    isCandidate:
+                        subject.id
+                        == resolvedSwitchCandidateSubjectID,
+                    isSwitchingSubject:
+                        isSwitchingSubject,
                     action: {
                         onSelectSubject(subject.id)
                     }
@@ -64,9 +119,14 @@ struct V1IOSSubjectOverviewSubjectRail: View {
                 ForEach(subjects) { subject in
                     V1IOSSubjectRailCard(
                         subject: subject,
-                        isSelected:
+                        isCurrent:
                             subject.id
                             == resolvedSelectedSubjectID,
+                        isCandidate:
+                            subject.id
+                            == resolvedSwitchCandidateSubjectID,
+                        isSwitchingSubject:
+                            isSwitchingSubject,
                         action: {
                             onSelectSubject(subject.id)
                         }
@@ -83,98 +143,129 @@ struct V1IOSSubjectOverviewSubjectRail: View {
         selectedSubjectID
         ?? subjects.first?.id
     }
+
+    private var resolvedSwitchCandidateSubjectID:
+        MemorySubject.ID? {
+        guard isSwitchingSubject else {
+            return nil
+        }
+
+        return switchCandidateSubjectID
+        ?? resolvedSelectedSubjectID
+    }
+
+    private var helperText: String {
+        if isSwitchingSubject {
+            return "选择一个对象后保存，首页当前配置会切到这个对象名下。"
+        }
+
+        return "左右滑动查看不同记忆对象；需要生效时点击切换当前对象。"
+    }
 }
 
 private struct V1IOSSubjectRailCard: View {
 
     let subject: MemorySubject
-    let isSelected: Bool
+    let isCurrent: Bool
+    let isCandidate: Bool
+    let isSwitchingSubject: Bool
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
-                            V1IOSHomeStatusBadge(
-                                text: isSelected ? "当前对象" : "可切换",
-                                tone: isSelected ? .accent : .neutral
-                            )
+        if isSwitchingSubject {
+            Button(action: action) {
+                cardContent
+            }
+            .buttonStyle(.plain)
+        } else {
+            cardContent
+        }
+    }
 
-                            Text(subjectAnchorTitle)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-
-                        Text(subjectDisplayName)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-
-                        Text(subjectRelationship)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    V1SubjectAvatarView(
-                        imagePath:
-                            subject.identity.avatarImagePath
-                            ?? subject.identity.avatarPreviewImagePath,
-                        size: 56
-                    )
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    V1IOSSubjectRailMetaRow(
-                        title: "显示名称",
-                        value: subject.identity.displayName
-                    )
-
-                    V1IOSSubjectRailMetaRow(
-                        title: "时间锚点",
-                        value: "\(subject.timeAnchors.count) 个"
-                    )
-                }
-
-                HStack(spacing: 8) {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "arrow.left.arrow.right.circle")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(
-                            isSelected
-                            ? Color.accentColor
-                            : .secondary
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        V1IOSHomeStatusBadge(
+                            text: statusLabel,
+                            tone:
+                                isHighlighted
+                                ? .accent
+                                : .neutral
                         )
 
-                    Text(
-                        isSelected
-                        ? "当前用于生成与预览"
-                        : "点按切换到这个对象"
+                        Text(subjectAnchorTitle)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Text(subjectDisplayName)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Text(subjectRelationship)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                V1SubjectAvatarView(
+                    imagePath:
+                        subject.identity.avatarImagePath
+                        ?? subject.identity.avatarPreviewImagePath,
+                    size: 56
+                )
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                V1IOSSubjectRailMetaRow(
+                    title: "显示名称",
+                    value: subject.identity.displayName
+                )
+
+                V1IOSSubjectRailMetaRow(
+                    title: "时间锚点",
+                    value: "\(subject.timeAnchors.count) 个"
+                )
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: footerSymbolName)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(
+                        isHighlighted
+                        ? Color.accentColor
+                        : .secondary
                     )
+
+                Text(footerText)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                    Spacer(minLength: 0)
-                }
+                Spacer(minLength: 0)
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, minHeight: 188, alignment: .topLeading)
-            .background(cardBackground)
-            .overlay(cardBorder)
-            .shadow(
-                color:
-                    isSelected
-                    ? ConfigurationUI.cardShadow.opacity(1.15)
-                    : ConfigurationUI.cardShadow.opacity(0.5),
-                radius: isSelected ? 12 : 7,
-                y: isSelected ? 5 : 3
-            )
         }
-        .buttonStyle(.plain)
+        .padding(18)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: 188,
+            alignment: .topLeading
+        )
+        .background(cardBackground)
+        .overlay(cardBorder)
+        .shadow(
+            color:
+                isHighlighted
+                ? ConfigurationUI.cardShadow.opacity(1.15)
+                : ConfigurationUI.cardShadow.opacity(0.5),
+            radius: isHighlighted ? 12 : 7,
+            y: isHighlighted ? 5 : 3
+        )
     }
 
     private var cardBackground: some View {
@@ -184,7 +275,7 @@ private struct V1IOSSubjectRailCard: View {
         )
         .fill(
             LinearGradient(
-                colors: isSelected
+                colors: isHighlighted
                     ? [
                         Color.white,
                         Color.white.opacity(0.96)
@@ -205,11 +296,47 @@ private struct V1IOSSubjectRailCard: View {
             style: .continuous
         )
         .stroke(
-            isSelected
+            isHighlighted
             ? Color.accentColor.opacity(0.34)
             : ConfigurationUI.faintHairline,
-            lineWidth: isSelected ? 1.1 : 0.8
+            lineWidth: isHighlighted ? 1.1 : 0.8
         )
+    }
+
+    private var isHighlighted: Bool {
+        isSwitchingSubject ? isCandidate : isCurrent
+    }
+
+    private var statusLabel: String {
+        if isSwitchingSubject {
+            return isCandidate ? "待切换" : "可选择"
+        }
+
+        return isCurrent ? "当前对象" : "可浏览"
+    }
+
+    private var footerSymbolName: String {
+        if isSwitchingSubject {
+            return isCandidate
+                ? "checkmark.circle.fill"
+                : "circle"
+        }
+
+        return isCurrent
+            ? "checkmark.circle.fill"
+            : "eye"
+    }
+
+    private var footerText: String {
+        if isSwitchingSubject {
+            return isCandidate
+                ? "将保存为当前对象"
+                : "点按选择这个对象"
+        }
+
+        return isCurrent
+            ? "当前用于生成与预览"
+            : "滑动查看对象信息"
     }
 
     private var subjectDisplayName: String {
