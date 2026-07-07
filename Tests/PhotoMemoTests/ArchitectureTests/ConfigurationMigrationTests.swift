@@ -442,7 +442,7 @@ struct ConfigurationMigrationTests {
                 badge: .family,
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride:
-                    "这一天，途途18天",
+                    "今天途途18天",
                 timeAnchor:
                     .init(
                         title: "生日",
@@ -480,7 +480,7 @@ struct ConfigurationMigrationTests {
         #expect(snapshot.badge == .family)
         #expect(
             snapshot.photoDescriptionOverride
-            == "这一天，途途18天"
+            == "今天途途18天"
         )
         #expect(
             snapshot.selectedAlbumIdentifier
@@ -1037,6 +1037,146 @@ struct ConfigurationMigrationTests {
             )
 
         #expect(reloadedRecord == originalRecord)
+    }
+
+    @MainActor
+    @Test("SaveV1ConfigurationIntent keeps selected subject in stale subject library saves")
+    func saveV1ConfigurationIntentKeepsSelectedSubjectInStaleSubjectLibrarySaves() async throws {
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.staleSubjectLibrarySave.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let staleSubject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "旧对象",
+                        shortName: "家人"
+                    ),
+                relationship:
+                    .init(
+                        role: "家庭",
+                        label: "家人"
+                    ),
+                referenceDate:
+                    Date(timeIntervalSince1970: 1_704_067_200),
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .fixed,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "旧表达",
+                                blocks: []
+                            )
+                    ),
+                decorations: []
+            )
+
+        var selectedSubject =
+            try #require(
+                ConfigurationCenterState
+                    .mock
+                    .selectedSubject
+            )
+        selectedSubject.identity.displayName = "途途"
+        selectedSubject.identity.shortName = "途途"
+
+        let coordinator =
+            Self.makeConfigurationCoordinator(
+                defaults: defaults
+            )
+        let request =
+            V1ConfigurationSaveRequest(
+                subject: selectedSubject,
+                subjects: [staleSubject],
+                selectedSubjectID:
+                    selectedSubject.id,
+                shouldSaveSubjectLibrary: true,
+                template: .template1,
+                badge: nil,
+                shouldWritePhotoDescription: true,
+                photoDescriptionOverride: "",
+                timeAnchor:
+                    .init(
+                        title: "生日",
+                        date:
+                            selectedSubject
+                            .primaryTimeAnchor?
+                            .date
+                            ?? Date(
+                                timeIntervalSince1970:
+                                    1_704_067_200
+                            )
+                    ),
+                albumSelection:
+                    .init(
+                        identifier: "",
+                        title: ""
+                    )
+            )
+
+        _ =
+            try Self.requireSuccess(
+                await SaveV1ConfigurationIntent(
+                    request: request,
+                    coordinator: coordinator
+                )
+                .execute(),
+                failurePrefix:
+                    "Expected stale subject-library save to keep the selected subject"
+            )
+
+        let reloadedRecord =
+            try JSONDecoder().decode(
+                V1SubjectLibraryRecord.self,
+                from:
+                    try #require(
+                        defaults.data(
+                            forKey:
+                                "photomemo.v1.subjectLibrary"
+                        )
+                    )
+            )
+        let reloadedSubject =
+            try #require(
+                reloadedRecord
+                    .subjects
+                    .first {
+                        $0.id == selectedSubject.id
+                    }
+            )
+
+        #expect(
+            reloadedRecord.selectedSubjectID
+            == selectedSubject.id
+        )
+        #expect(
+            reloadedSubject
+                .resolvedExpressionSubjectText
+            == "途途"
+        )
+        #expect(
+            defaults.string(
+                forKey:
+                    "photomemo.selectedMemorySubjectText"
+            )
+            == "途途"
+        )
     }
 }
 

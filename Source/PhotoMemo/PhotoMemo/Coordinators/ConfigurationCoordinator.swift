@@ -134,12 +134,19 @@ final class ConfigurationCoordinator {
                 request.subject
             )
         if request.shouldSaveSubjectLibrary,
-           !request.subjects.isEmpty {
+           !request.subjects.isEmpty || request.subject != nil {
             settingsRepository
                 .saveV1SubjectLibrary(
-                    subjects: request.subjects,
+                    subjects:
+                        subjectsForSaving(
+                            selectedSubject:
+                                request.subject,
+                            subjects:
+                                request.subjects
+                        ),
                     selectedSubjectID:
                         request.selectedSubjectID
+                        ?? request.subject?.id
                 )
         }
         settingsRepository
@@ -185,6 +192,32 @@ final class ConfigurationCoordinator {
             settingsRepository
             .loadV1ConfigurationBootstrapState()
         )
+    }
+}
+
+private extension ConfigurationCoordinator {
+
+    func subjectsForSaving(
+        selectedSubject: MemorySubject?,
+        subjects: [MemorySubject]
+    ) -> [MemorySubject] {
+        guard let selectedSubject else {
+            return subjects
+        }
+
+        var resolvedSubjects = subjects
+        if let index =
+            resolvedSubjects.firstIndex(
+                where: {
+                    $0.id == selectedSubject.id
+                }
+            ) {
+            resolvedSubjects[index] = selectedSubject
+        } else {
+            resolvedSubjects.append(selectedSubject)
+        }
+
+        return resolvedSubjects
     }
 }
 #endif

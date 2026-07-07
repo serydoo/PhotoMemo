@@ -42,7 +42,7 @@ enum MainFieldSlot: String, CaseIterable, Hashable {
             return "例如：记录于完整时间"
 
         case .rightBottom:
-            return "例如：这一天，途途1岁2个月"
+            return "例如：今天途途1岁2个月"
         }
     }
 }

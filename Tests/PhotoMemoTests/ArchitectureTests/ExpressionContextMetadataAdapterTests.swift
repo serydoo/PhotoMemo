@@ -88,7 +88,7 @@ struct ExpressionContextMetadataAdapterTests {
                 values: [
                     ExpressionValue(
                         token: MemoryProvider.memoryToken,
-                        resolvedText: "这一天，途途18天"
+                        resolvedText: "今天途途18天"
                     )
                 ]
             )
@@ -101,7 +101,7 @@ struct ExpressionContextMetadataAdapterTests {
 
         #expect(
             metadataContext[MetadataContext.Key.memorySummary]
-                == "这一天，途途18天"
+                == "今天途途18天"
         )
     }
 

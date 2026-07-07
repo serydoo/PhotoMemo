@@ -77,11 +77,19 @@ enum V1SubjectLibraryResolver {
             return subjects
         }
 
-        return subjects.map {
-            $0.id == selectedSubject.id
-            ? selectedSubject
-            : $0
+        var resolvedSubjects = subjects
+        if let index =
+            resolvedSubjects.firstIndex(
+                where: {
+                    $0.id == selectedSubject.id
+                }
+            ) {
+            resolvedSubjects[index] = selectedSubject
+        } else {
+            resolvedSubjects.append(selectedSubject)
         }
+
+        return resolvedSubjects
     }
 
     static func persist(

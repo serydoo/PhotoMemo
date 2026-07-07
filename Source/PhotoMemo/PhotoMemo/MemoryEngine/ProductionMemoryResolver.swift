@@ -74,7 +74,9 @@ private extension ProductionMemoryResolver {
         configuration: BatchConfigurationSnapshot
     ) -> ProductionMemoryPayload {
         let profile =
-            PersonalProfile()
+            transportSubjectProjectionFallbackProfile(
+                from: configuration
+            )
         let legacyAnchor =
             configuration.legacyAnchor
         let anchors =
@@ -129,9 +131,29 @@ private extension ProductionMemoryResolver {
             result: resolved.result,
             module: resolved.module,
             productionExpressionContext:
-                productionExpressionContext(
-                    from: context
-                )
+            productionExpressionContext(
+                from: context
+            )
+        )
+    }
+
+    func transportSubjectProjectionFallbackProfile(
+        from configuration: BatchConfigurationSnapshot
+    ) -> PersonalProfile {
+        let subjectText =
+            configuration
+            .legacyMemorySubjectText?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        guard !subjectText.isEmpty else {
+            return PersonalProfile()
+        }
+
+        return PersonalProfile(
+            relationshipRole: .familyMember,
+            babyNickname: subjectText
         )
     }
 

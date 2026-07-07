@@ -238,7 +238,7 @@ enum MemoryAnchorExpressionStyle:
     ) -> String {
         switch self {
         case .birthdayNatural:
-            return "锚点前：还有倒计时天数，\(subjectText)就要出生了｜锚点后：这一天，\(subjectText)年龄结果"
+            return "锚点前：还有倒计时天数，\(subjectText)就要出生了｜锚点后：今天\(subjectText)年龄结果"
         case .birthdayCeremonial:
             return "锚点前：再过倒计时天数，就是\(subjectText)来到世界的日子｜锚点后：今天是\(subjectText)年龄结果"
         case .birthdayGrowth:

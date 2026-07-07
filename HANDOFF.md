@@ -23,6 +23,39 @@ References:
 - [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
 - [Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md)
 
+## 2026-07-07 V1 smart-module selected-subject projection fixed
+
+- The remaining `家人` output issue was traced to the production smart-module
+  fallback, not to renderer drawing or preview token insertion.
+- Important source rule:
+  - the selected subject identity comes from
+    `MemorySubject.resolvedExpressionSubjectText`
+  - `SettingsService.saveSelectedMemorySubject` writes that projection into
+    shared defaults as `photomemo.selectedMemorySubjectText`
+  - full app snapshots still prefer the embedded `MemorySubject`
+  - Share Extension transport may only carry the projection as
+    `BatchConfigurationSnapshot.memorySubjectText`
+- `ProductionMemoryResolver` now falls back to that selected-subject identity
+  projection before creating the final default `PersonalProfile()`.
+- This preserves the priority order:
+  - canonical frozen `ConfigurationSnapshot`
+  - legacy frozen `MemorySubject`
+  - selected subject identity projection from transport
+  - safe default profile
+- Regression coverage added:
+  - `ProductionMemoryResolverTests.usesSelectedSubjectIdentityProjectionWhenFrozenMemoryConfigurationIsMissing`
+  - `RecordCardBuildServiceTests.selectedSubjectIdentityProjectionFeedsSmartModuleOutput`
+- Verification passed:
+  - `git diff --check`
+  - focused `ProductionMemoryResolverTests`
+  - focused `RecordCardBuildServiceTests`
+  - generic `PhotoMemoiOS` iOS build
+  - iPhone7 signed real-device build
+  - iPhone7 install
+- Automatic launch on iPhone7 failed only because iOS rejected the untrusted
+  developer profile/signature. The app is installed; trust the developer
+  profile on device before launching manually.
+
 ## 2026-07-07 V1 UI optimization final review closeout
 
 - Final review fixed a configuration lifecycle issue where restoring a saved

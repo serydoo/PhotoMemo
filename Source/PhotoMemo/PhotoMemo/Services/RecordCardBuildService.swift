@@ -419,6 +419,15 @@ private extension RecordCardBuildService {
                 from: metadata
             )
 
+        context.set(
+            memorySubject
+                .resolvedShortName,
+            for:
+                MetadataContext
+                .Key
+                .subjectNickname
+        )
+
         if let relationshipLabel =
             normalizedRelationshipLabel(
                 memorySubject

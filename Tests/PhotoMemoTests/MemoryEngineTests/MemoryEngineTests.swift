@@ -45,7 +45,7 @@ struct MemoryEngineTests {
         #expect(result.monthsSince == "8")
         #expect(result.weeksSince == "34")
         #expect(result.babyAge == "8个月")
-        #expect(result.memorySummary == "这一天，宝宝8个月")
+        #expect(result.memorySummary == "今天宝宝8个月")
     }
 
     @Test("Handles leap-year birthdays deterministically")
@@ -181,7 +181,7 @@ struct MemoryEngineTests {
         #expect(context[MetadataContext.Key.daysSince] == "0")
         #expect(context[MetadataContext.Key.weeksSince] == "0")
         #expect(context[MetadataContext.Key.babyAge] == "0天")
-        #expect(context[MetadataContext.Key.memorySummary] == "这一天，宝宝0天")
+        #expect(context[MetadataContext.Key.memorySummary] == "今天宝宝0天")
     }
 
     @Test("Projects explicit memory module into variable and template flow when legacy memory inputs are absent")

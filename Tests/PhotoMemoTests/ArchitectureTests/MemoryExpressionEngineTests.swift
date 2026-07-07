@@ -100,7 +100,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "这一天，途途18天")
+        #expect(module.renderedText == "今天途途18天")
         #expect(module.sourceAnchor?.anchorType == .birthday)
         #expect(
             module.sourceAnchor?.expressionStyle
@@ -171,7 +171,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "这一天，安安1岁2个月8天")
+        #expect(module.renderedText == "今天安安1岁2个月8天")
     }
 
     @Test("uses countdown branch when birthday capture time is before the anchor date")
@@ -308,7 +308,7 @@ struct MemoryExpressionEngineTests {
             )
 
         #expect(
-            previewText == "这一天，妈妈眼里的宝宝18天"
+            previewText == "今天妈妈眼里的宝宝18天"
         )
     }
 

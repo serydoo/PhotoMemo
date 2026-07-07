@@ -10,7 +10,7 @@ struct BirthdayAgeExpressionProvider:
         anchor: MemoryAnchor,
         context: MemoryExpressionContext
     ) -> String {
-        "这一天，\(subjectText)\(semanticResult.displayText)"
+        "今天\(subjectText)\(semanticResult.displayText)"
     }
 }
 #endif

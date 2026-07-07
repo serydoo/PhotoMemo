@@ -333,7 +333,7 @@ enum MemoryAnchorExpressionResolver {
                 return "还有\(relativeSnapshot.countdownValueText)，\(resolvedSubject)就要出生了"
             }
 
-            return "这一天，\(resolvedSubject)\(relativeSnapshot.ageText)"
+            return "今天\(resolvedSubject)\(relativeSnapshot.ageText)"
 
         case .birthdayCeremonial:
             if relativeSnapshot.isFutureRelative {

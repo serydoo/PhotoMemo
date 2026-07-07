@@ -92,7 +92,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "这一天，直接Snapshot对象18天"
+            == "今天直接Snapshot对象18天"
         )
         #expect(
             payload
@@ -101,7 +101,7 @@ struct ProductionMemoryResolverTests {
                     for: MemoryProvider.memoryToken
                 )?
                 .resolvedText
-            == "这一天，直接Snapshot对象18天"
+            == "今天直接Snapshot对象18天"
         )
         #expect(
             payload.result.primaryAnchorResult?
@@ -239,7 +239,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "这一天，家人18天"
+            == "今天家人18天"
         )
         #expect(
             payload.result.subjectID
@@ -368,7 +368,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "这一天，冻结对象18天"
+            == "今天冻结对象18天"
         )
         #expect(
             payload.result.subjectID
@@ -497,7 +497,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "这一天，Snapshot对象18天"
+            == "今天Snapshot对象18天"
         )
         #expect(
             payload.result.subjectID
@@ -618,7 +618,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "这一天，配对冻结对象18天"
+            == "今天配对冻结对象18天"
         )
     }
 
@@ -729,11 +729,71 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "这一天，旧冻结对象18天"
+            == "今天旧冻结对象18天"
         )
         #expect(
             payload.result.subjectID
             == subject.id
+        )
+    }
+
+    @Test("uses selected subject identity projection when frozen memory configuration is missing")
+    func usesSelectedSubjectIdentityProjectionWhenFrozenMemoryConfigurationIsMissing() throws {
+        let anchorDate =
+            Calendar.current.date(
+                from: DateComponents(
+                    year: 2025,
+                    month: 5,
+                    day: 26
+                )
+            ) ?? Date()
+        let captureDate =
+            Calendar.current.date(
+                from: DateComponents(
+                    year: 2025,
+                    month: 6,
+                    day: 13
+                )
+            ) ?? Date()
+
+        let payload =
+            ProductionMemoryResolver()
+            .resolveLegacyBatchConfiguration(
+                photo:
+                    selectedPhoto(
+                        captureDate: captureDate
+                    ),
+                configuration:
+                    BatchConfigurationSnapshot(
+                        template:
+                            .template1
+                            .normalizedForEditing,
+                        badge: nil,
+                        anchor:
+                            Anchor(
+                                type: .birthday,
+                                title: "生日",
+                                date: anchorDate
+                            ),
+                        memorySubjectText: "途途",
+                        shouldWritePhotoDescription:
+                            false,
+                        photoDescriptionOverride: "",
+                        selectedAlbumIdentifier: ""
+                    )
+            )
+
+        #expect(
+            payload.subject.identity.displayName
+            == "途途"
+        )
+        #expect(
+            payload.module.sourceAnchor?.title
+            == "生日"
+        )
+        #expect(
+            payload.module.renderedText
+            == "今天途途18天"
         )
     }
 

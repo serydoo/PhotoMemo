@@ -83,6 +83,9 @@ struct MetadataContext: Hashable, Codable {
         static let relationshipLabel =
             "relationship_label"
 
+        static let subjectNickname =
+            "subject_nickname"
+
         static let story = "story"
 
         static let tags = "tags"

@@ -167,6 +167,86 @@ struct V1ConfigurationApplyRequestBuilderTests {
         #expect(request.subject?.referenceDate == anchorDate)
     }
 
+    @Test("build request appends the selected subject when the library is stale")
+    func buildRequestAppendsSelectedSubjectWhenLibraryIsStale() throws {
+        var selectedSubject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        selectedSubject.identity.displayName = "途途"
+        selectedSubject.identity.shortName = "途途"
+
+        let staleSubject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "旧对象",
+                        shortName: "家人"
+                    ),
+                relationship:
+                    .init(
+                        role: "家庭",
+                        label: "家人"
+                    ),
+                referenceDate:
+                    Date(timeIntervalSince1970: 1_704_067_200),
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .fixed,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "旧表达",
+                                blocks: []
+                            )
+                    ),
+                decorations: []
+            )
+
+        let request =
+            V1ConfigurationApplyRequestBuilder
+            .buildRequest(
+                from: V1ConfigurationApplyBuildInput(
+                    selectedSubject: selectedSubject,
+                    subjects: [staleSubject],
+                    selectedSubjectID: selectedSubject.id,
+                    shouldSaveSubjectLibrary: true,
+                    presetTitle: "当前配置",
+                    templateTextsByRegion: [
+                        .slotD: "{{memory_summary}}啦！"
+                    ],
+                    locationDisplayConfiguration: nil,
+                    badge: nil,
+                    usesCustomMemoryWriteText: false,
+                    customMemoryWriteText: "",
+                    birthdayDate:
+                        selectedSubject
+                        .primaryTimeAnchor?
+                        .date
+                        ?? Date(timeIntervalSince1970: 1_704_067_200),
+                    outputTarget: .automatic,
+                    availableAlbums: [],
+                    selectedExistingAlbumIdentifier: "",
+                    newAlbumName:
+                        PhotoMemoAlbumSelection
+                        .defaultAlbumTitle
+                )
+            )
+
+        #expect(
+            request.subjects.contains {
+                $0.id == selectedSubject.id
+            }
+        )
+        #expect(
+            request.subjects.first {
+                $0.id == selectedSubject.id
+            }?
+            .resolvedExpressionSubjectText
+            == "途途"
+        )
+    }
+
     @Test("build request clears photo description override when custom write text is off and falls back to stored selection when subject is nil")
     func buildRequestClearsPhotoDescriptionOverrideWhenCustomWriteTextIsOffAndFallsBackToStoredSelectionWhenSubjectIsNil() {
         let baseState = ConfigurationCenterState.mock

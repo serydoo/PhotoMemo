@@ -2,6 +2,51 @@
 
 Last updated: 2026-07-07
 
+## 2026-07-07 V1 smart-module selected-subject projection fixed
+
+This slice fixed the remaining real-device issue where Configuration Center
+preview could show the selected Memory Subject correctly, but actual output
+from the Share/queue path could still render the default `家人` subject inside
+the smart module.
+
+Root cause:
+
+- smart modules such as `{{memory_summary}}` are recomputed in production by
+  `ProductionMemoryResolver`, not directly copied from preview text
+- the full app snapshot carries the selected `MemorySubject`, but Share
+  Extension transport can only carry a degraded `BatchConfigurationSnapshot`
+- that degraded snapshot still contains `memorySubjectText`, which is the
+  selected subject identity projection written from
+  `MemorySubject.resolvedExpressionSubjectText`
+- the production fallback ignored that projection and rebuilt a default
+  `PersonalProfile()`, whose default relationship label is `家人`
+
+What changed:
+
+- production fallback now resolves in this order:
+  - canonical frozen `ConfigurationSnapshot`
+  - legacy frozen `MemorySubject`
+  - selected subject identity projection from transport `memorySubjectText`
+  - final safe default profile
+- the fallback helper was named around the transport subject projection so the
+  source is explicit and does not look like arbitrary free text
+- regression tests now cover both:
+  - `ProductionMemoryResolver` recovering the selected subject projection
+  - `RecordCardBuildService` producing final `{{memory_summary}}` output
+    without `家人`
+
+Verification:
+
+- `git diff --check` passed
+- focused tests passed:
+  - `ProductionMemoryResolverTests`
+  - `RecordCardBuildServiceTests`
+- `PhotoMemoiOS` generic iOS build passed
+- iPhone7 real-device signed build passed
+- install to iPhone7 succeeded
+- automatic launch was blocked by iOS trust/signature policy; the app is
+  installed, but the device must trust the developer profile before launch
+
 ## Architecture Progress
 
 IA-003 is treated as Production Pipeline Convergence. Its goal is not to create
@@ -44,6 +89,50 @@ or IA-003 Completion Criteria change.
 | Production Pipeline no longer depends on runtime configuration | ✅ Complete |
 | Naming Freeze is complete | ⬜ Post IA-003 |
 | Renderer Contract remains stable with no new runtime-state dependency | ✅ Maintained |
+
+## 2026-07-07 V1 subject nickname output parity fixed
+
+This slice fixed the remaining V1 issue where Configuration Center preview
+could show the selected subject nickname correctly, but actual production
+output still rendered legacy relationship copy such as `家人`.
+
+Root cause:
+
+- the V1 `对象昵称` insertable module displayed `subject_nickname` in the UI,
+  but saved `{{relationship_label}}` as the renderer token
+- production `MetadataContext` did not expose a separate
+  `subject_nickname` value, so nickname and relationship-label semantics were
+  conflated
+- after changing the module token, the preview draft needed one additional
+  guard so `{{subject_nickname}}` remains a dynamic production token instead
+  of being folded into the current literal preview text
+
+What changed:
+
+- added `MetadataContext.Key.subjectNickname`
+- `RecordCardBuildService` now projects the frozen `MemorySubject` short
+  name/display name into `subject_nickname`
+- V1/iOS subject nickname module tokens now save `{{subject_nickname}}`
+  instead of `{{relationship_label}}`
+- added regression coverage for:
+  - V1 subject nickname module saved token
+  - production output resolving `{{subject_nickname}}` as `途途` while keeping
+    `{{relationship_label}}` as `家人`
+
+Verification:
+
+- `git diff --check` passed
+- focused regression tests passed:
+  - `PreviewCompositionMigrationTests.subjectNicknameModuleSavesProductionNicknameToken`
+  - `RecordCardBuildServiceTests.productionOutputResolvesSubjectNicknameSeparatelyFromRelationshipLabel`
+- related regression suites passed:
+  - `PreviewCompositionMigrationTests`
+  - `ConfigurationCenterPreviewCompositionHelperTests`
+  - `RecordCardBuildServiceTests`
+  - `ProductionMemoryResolverTests`
+- iPhone7 real-device `PhotoMemoiOS` build succeeded
+- install to iPhone7 succeeded
+- automatic launch was blocked only because the device was locked
 
 ## 2026-07-07 V1 iOS UI optimization checkpoint completed
 

@@ -208,7 +208,7 @@ enum IOSInsertableModule:
     var rendererToken: String {
         switch self {
         case .subjectNickname:
-            return "{{relationship_label}}"
+            return "{{subject_nickname}}"
         case .smartTime:
             return "{{memory_summary}}"
         case .captureDate:

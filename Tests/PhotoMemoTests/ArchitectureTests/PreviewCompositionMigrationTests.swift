@@ -104,7 +104,7 @@ struct PreviewCompositionMigrationTests {
             )
             #expect(
                 slotDModel.displayText
-                == "这一天，途途11个月28天"
+                == "今天途途11个月28天"
             )
         case .failure(let error):
             Issue.record(
@@ -186,6 +186,57 @@ struct PreviewCompositionMigrationTests {
         #expect(
             unknownItemModel.displayText
             == "保持原样"
+        )
+    }
+
+    @MainActor
+    @Test("Subject nickname module saves the production nickname token")
+    func subjectNicknameModuleSavesProductionNicknameToken() {
+
+        let engine =
+            V1PreviewCompositionEngine()
+        let context =
+            V1PreviewCompositionContext(
+                subject: previewSubject(),
+                birthdayDate:
+                    Calendar.current.date(
+                        from: DateComponents(
+                            year: 2025,
+                            month: 5,
+                            day: 26
+                        )
+                    ) ?? Date()
+            )
+        let item =
+            engine.makeModuleItem(
+                .subjectNickname,
+                context: context
+            )
+        let model =
+            renderModel(
+                for:
+                    V1PreviewDraft(
+                        items: [item]
+                    ),
+                context: context,
+                engine: engine
+            )
+
+        #expect(
+            V1PreviewCompositionModule
+                .subjectNickname
+                .rendererToken == "{{subject_nickname}}"
+        )
+        #expect(
+            IOSInsertableModule
+                .subjectNickname
+                .rendererToken == "{{subject_nickname}}"
+        )
+        #expect(
+            model.templateSourceText == "{{subject_nickname}}"
+        )
+        #expect(
+            model.displayText == "途途"
         )
     }
 
@@ -299,7 +350,7 @@ struct PreviewCompositionMigrationTests {
                 context: context,
                 engine: engine
             )
-            .displayText == "这一天，途途11个月28天"
+            .displayText == "今天途途11个月28天"
         )
     }
 

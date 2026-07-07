@@ -370,7 +370,7 @@ enum V1PreviewCompositionModule:
     var rendererToken: String {
         switch self {
         case .subjectNickname:
-            return "{{relationship_label}}"
+            return "{{subject_nickname}}"
         case .smartTime:
             return "{{memory_summary}}"
         case .captureDate:
@@ -720,6 +720,10 @@ struct V1PreviewCompositionEngine {
     ) -> String {
 
         let token = module.rendererToken
+
+        if module == .subjectNickname {
+            return token
+        }
 
         return token == module.token
             ? moduleDisplayText(

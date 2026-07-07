@@ -258,7 +258,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "这一天，途途9个月14天"
+            == "今天途途9个月14天"
         )
         #expect(
             card
@@ -267,7 +267,7 @@ struct RecordCardBuildServiceTests {
                     for: MemoryProvider.memoryToken
                 )?
                 .resolvedText
-            == "这一天，途途9个月14天"
+            == "今天途途9个月14天"
         )
     }
 
@@ -883,7 +883,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             context[MetadataContext.Key.memorySummary]
-            == "这一天，途途18天"
+            == "今天途途18天"
         )
         #expect(
             card.memoryResult?.subjectID
@@ -1093,6 +1093,282 @@ struct RecordCardBuildServiceTests {
         #expect(
             card.exportDescriptionOverride
             == previewText
+        )
+    }
+
+    @Test("Selected subject identity projection feeds smart module output")
+    func selectedSubjectIdentityProjectionFeedsSmartModuleOutput() throws {
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 5,
+                        day: 26
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 6,
+                        day: 13,
+                        hour: 10,
+                        minute: 13
+                    )
+                )
+            )
+        let template =
+            Template(
+                preset: .template1,
+                name: "Legacy Transport Smart Module",
+                leftTopArea: .empty,
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea:
+                    TemplateArea(
+                        name: "Right Bottom",
+                        items: [
+                            TemplateItem(
+                                type: .text,
+                                name: "Memory",
+                                value: "{{memory_summary}}"
+                            )
+                        ]
+                    ),
+                badgeArea: .empty
+            )
+            .normalizedForEditing
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor:
+                    Anchor(
+                        type: .birthday,
+                        title: "生日",
+                        date: birthday,
+                        isCountdown: false
+                    ),
+                memorySubjectText: "途途",
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(
+                        fileURLWithPath:
+                            "/tmp/legacy_transport_subject.jpeg"
+                    ),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memorySubjectText == "途途"
+        )
+        #expect(
+            context[MetadataContext.Key.memorySummary]
+            == "今天途途18天"
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "今天途途18天"
+        )
+        #expect(
+            card.exportDescriptionOverride?
+                .contains("家人") == false
+        )
+    }
+
+    @Test("Production output resolves subject nickname separately from relationship label")
+    func productionOutputResolvesSubjectNicknameSeparatelyFromRelationshipLabel() throws {
+
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 5,
+                        day: 26
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 5,
+                        day: 24,
+                        hour: 14,
+                        minute: 33
+                    )
+                )
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "王途途",
+                        shortName: "途途"
+                    ),
+                relationship:
+                    .init(
+                        role: "亲人",
+                        label: "家人"
+                    ),
+                definition: "测试对象",
+                referenceDate: birthday,
+                timeAnchors: [
+                    .init(
+                        title: "生日",
+                        date: birthday,
+                        note: "出生日期",
+                        anchorType: .birthday,
+                        expressionStyle:
+                            .birthdayNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "生日记忆",
+                                blocks: [
+                                    .text("生日智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let template =
+            Template(
+                preset: .template1,
+                name: "Subject Nickname Token",
+                leftTopArea: .empty,
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea:
+                    TemplateArea(
+                        name: "Right Bottom",
+                        items: [
+                            TemplateItem(
+                                type: .variable,
+                                name: "Subject Nickname",
+                                value: "{{subject_nickname}}|{{relationship_label}}"
+                            )
+                        ]
+                    ),
+                badgeArea: .empty
+            )
+            .normalizedForEditing
+        let legacyConfiguration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor:
+                    Anchor(
+                        type: .birthday,
+                        title: "旧生日",
+                        date: birthday,
+                        isCountdown: false
+                    ),
+                memorySubjectText: "家人",
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let configuration =
+            legacyConfiguration
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    ConfigurationSnapshotBuilder
+                    .build(from: subject)
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/IMG_subject_nickname.JPEG"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            context[MetadataContext.Key.subjectNickname]
+            == "途途"
+        )
+        #expect(
+            context[MetadataContext.Key.relationshipLabel]
+            == "家人"
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "途途|家人"
         )
     }
 
