@@ -2,6 +2,78 @@
 
 Last updated: 2026-07-07
 
+## 2026-07-07 TestFlight upload reached App Store Connect
+
+The App Store Connect app record now exists for the iOS app bundle ID:
+
+- `com.serydoo.PhotoMemo.iOS`
+
+This cleared the previous local upload blocker:
+
+- `IDEDistribution.DistributionAppRecordProviderError.missingApp`
+
+The first upload attempt for local build `1.5` / `5` reached App Store
+Connect, but Apple rejected the upload during server-side processing because
+the archive was built with an unsupported SDK or Xcode version.
+
+Current TestFlight blocker:
+
+- rebuild/archive/upload with a currently supported Xcode and SDK version
+
+Release materials prepared in this slice include:
+
+- public privacy policy at `PRIVACY.md`
+- TestFlight/App Store Connect materials under
+  `Docs/07_Releases/V1.5-TestFlight/`
+- TestFlight upload export options at `scripts/export_options_testflight.plist`
+
+## 2026-07-07 TestFlight privacy-manifest readiness check
+
+This release-readiness slice closed the most file-like TestFlight blocker found
+in the local project: missing privacy manifests for the app and Share
+Extension.
+
+What changed:
+
+- added an app privacy manifest at `Source/PhotoMemo/PhotoMemo/PrivacyInfo.xcprivacy`
+- added a Share Extension privacy manifest at
+  `Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PrivacyInfo.xcprivacy`
+- declared required-reason API usage for:
+  - UserDefaults in the app and Share Extension
+  - file timestamp access in the main app
+- declared no tracking and no collected data types in both manifests
+- excluded the Share Extension manifest from main-app synchronized target
+  membership so it is copied only into the extension bundle and not duplicated
+  by app targets
+
+Verification:
+
+- `plutil -lint` passed for the project file and both privacy manifests
+- `git diff --check` passed
+- `PhotoMemoShareExtension` iOS Simulator target build passed with signing
+  disabled
+- `PhotoMemoiOS` iOS Simulator target build passed with signing disabled
+- built products contain:
+  - `PhotoMemoiOS.app/PrivacyInfo.xcprivacy`
+  - `PhotoMemoiOS.app/PlugIns/PhotoMemoShareExtension.appex/PrivacyInfo.xcprivacy`
+- Release archive passed with `-allowProvisioningUpdates`
+- local App Store Connect export passed without uploading
+- exported IPA is signed with `Cloud Managed Apple Distribution`
+- Store provisioning profiles were generated for:
+  - `com.serydoo.PhotoMemo.iOS`
+  - `com.serydoo.PhotoMemo.iOS.ShareExtension`
+  - `com.serydoo.PhotoMemo.iOS.WidgetExtension`
+- exported app and embedded extensions have `get-task-allow = false`
+
+Remaining TestFlight blockers:
+
+- local keychain still shows only an Apple Development identity, but Xcode
+  successfully used Cloud Managed Apple Distribution during export
+- direct App Store Connect upload has not yet been executed
+- version/build numbers are now set to `1.5` / `5`
+- App Store Connect listing/test information and tester-facing instructions
+  are prepared under `Docs/07_Releases/V1.5-TestFlight/`
+
 ## 2026-07-07 V1 subject-switch preview draft synchronization fixed
 
 This slice fixed the remaining V1 iOS risk where switching Memory Subjects
