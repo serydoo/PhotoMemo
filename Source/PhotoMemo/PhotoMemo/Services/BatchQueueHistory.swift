@@ -138,7 +138,7 @@ struct BatchQueueHistory {
             .sorted {
                 $0.updatedAt > $1.updatedAt
             }
-            .compactMap { job in
+            .compactMap { job -> BatchFailureSummary? in
 
                 guard let latestFailure =
                     job.latestFailure else {

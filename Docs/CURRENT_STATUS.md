@@ -1,6 +1,90 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
+
+## 2026-07-08 TestFlight build 6 invalid; Xcode Cloud build 7 planned
+
+Apple rejected the uploaded `1.5` / `6` binary during automated processing,
+before human App Review, with:
+
+- `ITMS-90111: Unsupported SDK or Xcode version`
+
+Local inspection showed the IPA was built with:
+
+- `DTXcodeBuild = 17F113`
+- `DTSDKName = iphoneos26.5`
+- `BuildMachineOSBuild = 26A5378j`
+
+The likely blocker is that the local archive was produced on `macOS 27.0`
+beta, which writes the beta OS build into the binary metadata. The next
+release attempt should not be archived locally from this beta macOS machine.
+
+Current release direction:
+
+- use Xcode Cloud to build from GitHub in Apple's supported cloud environment
+- raise `CURRENT_PROJECT_VERSION` from `6` to `7`
+- keep marketing version at `1.5`
+- select build `7` in App Store Connect and resubmit after Xcode Cloud uploads
+  the processed build
+
+## 2026-07-07 TestFlight 1.5 build 6 ready IPA prepared with Xcode 26.6
+
+The first TestFlight-ready local package accepted for manual upload preparation
+after reinstalling the App Store Xcode line has been prepared as build
+`1.5` / `6`.
+
+Packaging output:
+
+- archive:
+  `/Users/rui/Desktop/时光记_1.5_build6_xcode26_upload/TimeMemo-1.5-6.xcarchive`
+- exported IPA:
+  `/Users/rui/Desktop/时光记_1.5_build6_xcode26_upload/export/PhotoMemoiOS.ipa`
+- manual-upload export options:
+  `/Users/rui/Desktop/时光记_1.5_build6_xcode26_upload/export_options_manual_upload.plist`
+
+What changed in the repository:
+
+- added `INFOPLIST_KEY_CFBundleDisplayName = "时光记"` to the active
+  `PhotoMemoiOS` target Debug and Release build settings
+- this fixes the previously exported package where the main app Info.plist
+  still exposed `CFBundleName = PhotoMemoiOS` and no display-name override
+- adjusted the Xcode project compatibility metadata back to the App Store
+  Xcode line after the project had been opened by the beta Xcode
+- raised `CURRENT_PROJECT_VERSION` to build `6`
+- fixed two Xcode 26.6 Swift compile issues in the current UI/history code
+
+App icon status:
+
+- prepared desktop icon:
+  `/Users/rui/Desktop/PhotoMemo_Release_AppIcon/PhotoMemo-AppStoreIcon-1024.png`
+- project App Store icon:
+  `Source/PhotoMemo/PhotoMemo/Assets.xcassets/AppIcon.appiconset/appicon-ios-marketing.png`
+- both files are `1024x1024`, have no alpha channel, and share the same
+  SHA-256:
+  `af9374a11d4ea7dc015ee0c8dd78668da1a30f78a2a2a1050b63a329238ed1b5`
+
+Verification:
+
+- project file lint passed
+- Xcode 26.6 Debug simulator build passed
+- Xcode 26.6 Release archive passed with `-allowProvisioningUpdates`
+- App Store Connect local export passed without direct upload
+- final IPA package checks passed:
+  - `CFBundleDisplayName = 时光记`
+  - `CFBundleIdentifier = com.serydoo.PhotoMemo.iOS`
+  - version/build = `1.5` / `6`
+  - `DTXcodeBuild = 17F113`
+  - `DTSDKName = iphoneos26.5`
+  - app and Share Extension privacy manifests are embedded
+  - exported signing certificate is `Cloud Managed Apple Distribution`
+  - app and embedded extensions use Store provisioning profiles
+  - exported entitlements have `get-task-allow = false`
+
+Recommended next action:
+
+- upload
+  `/Users/rui/Desktop/时光记_1.5_build6_xcode26_upload/export/PhotoMemoiOS.ipa`
+  through Transporter or Xcode Organizer for the next TestFlight attempt
 
 ## 2026-07-07 Product brand renamed to MemoMark / 时光记
 

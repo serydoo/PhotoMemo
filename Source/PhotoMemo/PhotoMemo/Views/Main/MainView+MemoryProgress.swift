@@ -322,7 +322,7 @@ struct MainMemoryProgressPanel: View {
             summary.anchorTitle
             ?? "未设置时间点"
 
-        let intakeCountText =
+        let intakeCountSummaryText =
             summary.importSummary
             .map {
                 intakeCountText($0)
@@ -335,7 +335,7 @@ struct MainMemoryProgressPanel: View {
                 importSummaryWarningText($0)
             } ?? ""
 
-        return "最近一次外部导入来自\(sourceTitle)：\(intakeCountText)，当前\(stateTitle)。使用模板“\(summary.templateName)”，时间点“\(anchorTitle)”。\(importSummaryText)"
+        return "最近一次外部导入来自\(sourceTitle)：\(intakeCountSummaryText)，当前\(stateTitle)。使用模板“\(summary.templateName)”，时间点“\(anchorTitle)”。\(importSummaryText)"
     }
 
     private func intakeCountText(
