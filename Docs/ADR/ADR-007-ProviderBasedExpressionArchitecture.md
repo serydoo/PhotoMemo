@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-PhotoMemo's legacy expression path mainly uses `MetadataContext` to carry
+MemoMark's legacy expression path mainly uses `MetadataContext` to carry
 template variables. As Location, Memory, Weather, People, AI, and future
 capabilities enter the system, continuing to expand `MetadataContext` would mix
 semantic ownership, presentation policy, preview data, and renderer
@@ -23,7 +23,7 @@ stored in `ExpressionContext`.
 
 ## Decision
 
-PhotoMemo adopts Provider-Based Expression Architecture.
+MemoMark adopts Provider-Based Expression Architecture.
 
 Every Canonical Provider compiles domain facts into provider-neutral expression
 values through this pipeline:
@@ -111,7 +111,7 @@ must not own separate expression models or rendering logic.
 
 ### Trade-offs
 
-- PhotoMemo accepts an explicit expression language layer in exchange for
+- MemoMark accepts an explicit expression language layer in exchange for
   stable provider ownership and renderer independence.
 - Location is the first validation case, but future Location enhancements such
   as reverse geocoding, POI, landmark, and raw coordinate token output remain

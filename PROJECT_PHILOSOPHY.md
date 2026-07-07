@@ -1,26 +1,26 @@
-# PhotoMemo Project Philosophy
+# MemoMark Project Philosophy
 
 Last updated: 2026-06-23
 
 ## Core Definition
 
-PhotoMemo is an open-source, local-first, privacy-first Memory Presentation Engine.
+MemoMark is an open-source, local-first, privacy-first Memory Presentation Engine.
 
 It is not simply a photo annotation application, a watermark tool, or a renderer experiment.
 
-PhotoMemo does not only present photographs. It presents memories.
+MemoMark does not only present photographs. It presents memories.
 
-PhotoMemo is not an EXIF display surface.
+MemoMark is not an EXIF display surface.
 
-PhotoMemo is a memory storytelling system built from objective facts and life relationships.
+MemoMark is a memory storytelling system built from objective facts and life relationships.
 
-PhotoMemo is not a photo manager.
+MemoMark is not a photo manager.
 
-PhotoMemo is a local-first Memory Capability inside the Apple ecosystem.
+MemoMark is a local-first Memory Capability inside the Apple ecosystem.
 
-PhotoMemo does not manage photos.
+MemoMark does not manage photos.
 
-PhotoMemo only owns Memory Workflow.
+MemoMark only owns Memory Workflow.
 
 It should not change how users manage photos.
 
@@ -59,21 +59,19 @@ These answer:
 
 - What does this moment mean?
 
-PhotoMemo preserves both.
+MemoMark preserves both.
 
-PhotoMemo is not showing EXIF for its own sake.
+MemoMark is not showing EXIF for its own sake.
 
-PhotoMemo uses objective facts to support memory expression.
+MemoMark uses objective facts to support memory expression.
 
-PhotoMemo respects every act of remembering.
+MemoMark respects every act of remembering.
 
-PhotoMemo 尊重每一次回忆。
+时光记尊重每一次回忆。
 
-PhotoMemo is better suited to a meaningful set of memories than to mass-producing memory output.
+MemoMark is better suited to a meaningful set of memories than to mass-producing memory output.
 
-PhotoMemo 更适合处理一段值得回味的记录。
-
-PhotoMemo 不追求批量生产记忆。
+时光记更适合处理一段值得回味的记录。时光记不追求批量生产记忆。
 
 而追求认真对待每一次回忆。
 
@@ -81,7 +79,7 @@ PhotoMemo 不追求批量生产记忆。
 
 Every photo already has a timestamp.
 
-PhotoMemo gives every photo another property:
+MemoMark gives every photo another property:
 
 ```text
 Life Position
@@ -100,7 +98,7 @@ Examples:
 
 A photograph becomes more meaningful when it gains a position inside life's timeline.
 
-PhotoMemo does not merely help users remember the past.
+MemoMark does not merely help users remember the past.
 
 It helps users connect:
 
@@ -115,7 +113,7 @@ Important life events can become:
 
 ## Memory Timeline
 
-PhotoMemo should not only display photos.
+MemoMark should not only display photos.
 
 It should build Life Timeline.
 
@@ -147,7 +145,7 @@ Engine is responsible for calculation.
 
 They must remain decoupled.
 
-PhotoMemo must not hard-code full sentence assembly inside the calculation layer.
+MemoMark must not hard-code full sentence assembly inside the calculation layer.
 
 Responsibilities remain separated.
 
@@ -160,7 +158,7 @@ Apple Photos remains the trusted system for:
 - search
 - sync
 
-PhotoMemo extends that system instead of rebuilding it.
+MemoMark extends that system instead of rebuilding it.
 
 ## Product Principle
 
@@ -178,9 +176,9 @@ Layout Engine decides how that meaning is presented.
 
 Renderer simply draws.
 
-PhotoMemo does not directly display time.
+MemoMark does not directly display time.
 
-PhotoMemo displays the distance between a person and an important life event.
+MemoMark displays the distance between a person and an important life event.
 
 Time Anchor supports both:
 
@@ -196,7 +194,7 @@ This relationship must be unified by a Time Anchor Engine.
 
 ## Interaction Philosophy
 
-PhotoMemo should prefer expanding Apple-native capabilities over inventing a separate interaction universe.
+MemoMark should prefer expanding Apple-native capabilities over inventing a separate interaction universe.
 
 The product should be:
 
@@ -215,7 +213,7 @@ The primary path is:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Memory Workflow
 -> Done
 ```
@@ -227,7 +225,7 @@ The best default experience is Zero Interaction:
 - the user waits
 - completion returns naturally to Photos
 
-PhotoMemo should finish in the background and communicate with gentle, human language instead of technical vocabulary.
+MemoMark should finish in the background and communicate with gentle, human language instead of technical vocabulary.
 
 ## Product Boundary
 
@@ -241,23 +239,23 @@ PhotoMemo should finish in the background and communicate with gentle, human lan
 | Apple Photos | Search |
 | Apple Photos | Reading |
 | Apple Photos | iCloud |
-| PhotoMemo | Metadata |
-| PhotoMemo | Memory Workflow |
-| PhotoMemo | Memory Expression |
-| PhotoMemo | Memory Reading |
-| PhotoMemo | Time Anchor |
-| PhotoMemo | Life Anchor |
-| PhotoMemo | Memory Generation |
+| MemoMark | Metadata |
+| MemoMark | Memory Workflow |
+| MemoMark | Memory Expression |
+| MemoMark | Memory Reading |
+| MemoMark | Time Anchor |
+| MemoMark | Life Anchor |
+| MemoMark | Memory Generation |
 
-PhotoMemo never rebuilds capabilities that Apple Photos already owns.
+MemoMark never rebuilds capabilities that Apple Photos already owns.
 
-PhotoMemo stays focused on Memory Capability.
+MemoMark stays focused on Memory Capability.
 
 ## Long-Term Vision
 
-PhotoMemo is not building a better watermark tool.
+MemoMark is not building a better watermark tool.
 
-PhotoMemo is building a lifelong memory system.
+MemoMark is building a lifelong memory system.
 
 The project should be able to accompany users through every stage of life:
 
@@ -285,7 +283,7 @@ Pictures record moments.
 
 Time Anchor gives those moments meaning.
 
-PhotoMemo exists to preserve the meaning of time.
+MemoMark exists to preserve the meaning of time.
 
 When years later the same photo is processed again, the photo may stay the same while its meaning grows because the person's position in life has changed.
 
@@ -295,13 +293,13 @@ Every photo has a timestamp.
 
 Every memory has a place inside life's timeline.
 
-PhotoMemo preserves both.
+MemoMark preserves both.
 
 Pictures record moments.
 
 Time Anchor gives moments meaning.
 
-PhotoMemo records relationships.
+MemoMark records relationships.
 
 Research is temporary.
 
@@ -317,6 +315,6 @@ But meaningful memories stay with them forever.
 
 ## Final Goal
 
-The purpose of PhotoMemo is not merely to make photos beautiful.
+The purpose of MemoMark is not merely to make photos beautiful.
 
 The purpose is to help families remember their lives, their relationships, their loved ones, and the position every photograph occupies within their own story.

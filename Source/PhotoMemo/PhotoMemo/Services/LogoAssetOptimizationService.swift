@@ -79,7 +79,7 @@ final class LogoAssetOptimizationService {
 
             let fileURL =
                 folderURL.appendingPathComponent(
-                    "photomemo-logo-\(UUID().uuidString).png"
+                    "memomark-logo-\(UUID().uuidString).png"
                 )
 
             try pngData.write(

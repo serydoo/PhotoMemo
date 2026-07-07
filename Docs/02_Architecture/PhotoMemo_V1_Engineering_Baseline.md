@@ -1,4 +1,4 @@
-# PhotoMemo V1 Engineering Baseline
+# MemoMark V1 Engineering Baseline
 
 Version: `V1.0 Baseline`
 
@@ -40,7 +40,7 @@ Open Question Count: `4`
 
 ## Executive Summary
 
-PhotoMemo V1 is a real local-first production pipeline, but its live runtime still depends on the legacy `BatchConfigurationSnapshot -> RecordCard -> TemplateVariableEngine -> Renderer -> Export` stack, while the newer `MemorySubject -> ConfigurationSnapshot -> MemoryExpressionEngine` architecture is present mainly as a parallel preview and configuration path rather than the owning runtime path.
+MemoMark V1 is a real local-first production pipeline, but its live runtime still depends on the legacy `BatchConfigurationSnapshot -> RecordCard -> TemplateVariableEngine -> Renderer -> Export` stack, while the newer `MemorySubject -> ConfigurationSnapshot -> MemoryExpressionEngine` architecture is present mainly as a parallel preview and configuration path rather than the owning runtime path.
 
 ## Assumptions
 
@@ -415,7 +415,7 @@ Evidence:
 - E-012
 
 Decision:
-The core Apple Photos pipeline is not orphaned. PhotoMemo still has a real, explainable product spine.
+The core Apple Photos pipeline is not orphaned. MemoMark still has a real, explainable product spine.
 
 Confidence:
 High
@@ -653,4 +653,4 @@ References:
 
 ## Baseline Statement
 
-This document represents the factual engineering baseline of PhotoMemo V1. It records the current system as observed, without prescribing redesign or migration.
+This document represents the factual engineering baseline of MemoMark V1. It records the current system as observed, without prescribing redesign or migration.

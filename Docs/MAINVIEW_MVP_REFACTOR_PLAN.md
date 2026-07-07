@@ -1,7 +1,7 @@
 # Implementation Plan: MainView MVP Refactor Round 2
 
 ## Overview
-Continue reducing `MainView.swift` by extracting the remaining high-density template calibration panels into focused SwiftUI views, while preserving MainView as the state and action coordinator for PhotoMemo's current MVP.
+Continue reducing `MainView.swift` by extracting the remaining high-density template calibration panels into focused SwiftUI views, while preserving MainView as the state and action coordinator for MemoMark's current MVP.
 
 ## Architecture Decisions
 - Keep bindings, persistence, and mutation logic in `MainView`

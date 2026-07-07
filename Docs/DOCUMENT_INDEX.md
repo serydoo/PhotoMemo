@@ -1,4 +1,4 @@
-# PhotoMemo Document Index
+# MemoMark Document Index
 
 Last updated: 2026-07-04
 
@@ -73,7 +73,7 @@ Use these when deciding what to build next:
 Use these when changing boundaries, ownership, or shared flows:
 
 - `Docs/ARCHITECTURE.md` - architecture overview
-- `Docs/02_Architecture/PhotoMemo_V1_Engineering_Baseline.md` - factual V1 engineering baseline
+- `Docs/02_Architecture/MemoMark_V1_Engineering_Baseline.md` - factual V1 engineering baseline
 - `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md` - closed RFC for Memory entering the production path
 - `Docs/02_Architecture/V1_Preview_Renderer_Export_Contract_Review_2026-07-03.md` - V1 preview, renderer, and export contract drift review
 - `Docs/02_Architecture/V1_Render_Contract_Freeze_2026-07-03.md` - accepted V1 contract freeze for template text, display text, renderer input, and export input semantics

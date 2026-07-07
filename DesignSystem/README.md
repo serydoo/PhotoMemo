@@ -1,6 +1,6 @@
 # DesignSystem
 
-This folder is reserved for durable PhotoMemo V2 design-system assets.
+This folder is reserved for durable MemoMark V2 design-system assets.
 
 It should eventually contain:
 

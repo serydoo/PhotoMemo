@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Purpose
 
-PhotoMemo needs a repeatable fixture library for long-term regression verification.
+MemoMark needs a repeatable fixture library for long-term regression verification.
 
 This fixture set is intended to support:
 
@@ -17,7 +17,7 @@ This fixture set is intended to support:
 
 ## Repository Policy
 
-PhotoMemo does **not** commit copyrighted personal photos.
+MemoMark does **not** commit copyrighted personal photos.
 
 Current repository policy:
 

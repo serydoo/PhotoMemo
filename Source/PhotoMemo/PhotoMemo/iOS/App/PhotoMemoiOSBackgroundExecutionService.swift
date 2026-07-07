@@ -71,7 +71,7 @@ private extension PhotoMemoiOSBackgroundExecutionService {
             UIApplication.shared
             .beginBackgroundTask(
                 withName:
-                    "PhotoMemoBatchProcessing"
+                    "MemoMarkBatchProcessing"
             ) { [weak self] in
                 Task { @MainActor in
                     self?

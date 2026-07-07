@@ -691,7 +691,7 @@ struct ConfigurationCenteriOSView: View {
                     "square.and.arrow.down"
             ),
             ConfigurationCenterGuideCardModel(
-                title: "关于 PhotoMemo",
+                title: "关于时光记",
                 note:
                     "帮助用户阅读回忆，而不只是保存照片。",
                 systemImage: "info.circle"

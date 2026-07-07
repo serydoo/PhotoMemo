@@ -37,7 +37,7 @@ Status: Closed.
 Closure:
 
 - Decode failures now retain the raw corrupt payload in
-  `PhotoMemoSharedDefaultsReadFailure`.
+  `MemoMarkSharedDefaultsReadFailure`.
 - Add Subject now respects the bootstrap write gate instead of forcing
   Subject Library persistence back on.
 - Explicit corrupt-library recovery is represented by a named recovery

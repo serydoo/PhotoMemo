@@ -27,7 +27,7 @@ This implementation plan was restored into `~/Desktop/PhotoMemo` on `2026-07-03`
 ## References
 
 - `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md`
-- `Docs/02_Architecture/PhotoMemo_V1_Engineering_Baseline.md`
+- `Docs/02_Architecture/MemoMark_V1_Engineering_Baseline.md`
   - `D-002`
   - `D-004`
   - `I-003`

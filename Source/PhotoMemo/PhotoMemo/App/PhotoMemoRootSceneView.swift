@@ -21,7 +21,7 @@ struct PhotoMemoRootSceneView: View {
                     case .share:
                         PhotoMemoShareDiagnostics.record(
                             stage: .appOpenURLShare,
-                            message: "Received photomemo://share."
+                            message: "Received memomark://share."
                         )
                         runtime
                             .refreshExternalIntakeState()

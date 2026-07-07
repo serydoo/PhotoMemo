@@ -1,10 +1,10 @@
-# PhotoMemo Architecture Freeze V1
+# MemoMark Architecture Freeze V1
 
 Last updated: 2026-07-01
 
 ## Purpose
 
-This document freezes the near-term architecture rules for the current PhotoMemo V1 / IA-003 integration work.
+This document freezes the near-term architecture rules for the current MemoMark V1 / IA-003 integration work.
 
 The immediate goal is not “split large files for appearance.”
 
@@ -17,7 +17,7 @@ can happen without View, Session, and MME drift.
 
 ## Current Diagnosis
 
-PhotoMemo has already completed the first stage of refactor in several areas:
+MemoMark has already completed the first stage of refactor in several areas:
 
 - large views were partially decomposed
 - coordinators / repositories / intents exist
@@ -40,7 +40,7 @@ The four active risks are:
 
 ## Layer Model
 
-PhotoMemo should now be understood through four layers:
+MemoMark should now be understood through four layers:
 
 ```text
 Presentation

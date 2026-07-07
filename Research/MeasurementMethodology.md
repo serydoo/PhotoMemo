@@ -4,7 +4,7 @@ Last updated: 2026-06-22
 
 ## Purpose
 
-Define how PhotoMemo research turns visual references into measurable layout knowledge.
+Define how MemoMark research turns visual references into measurable layout knowledge.
 
 ## Forbidden Language
 

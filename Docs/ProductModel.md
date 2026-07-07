@@ -1,4 +1,4 @@
-# PhotoMemo Product Model
+# MemoMark Product Model
 
 Last updated: 2026-06-20
 
@@ -8,17 +8,17 @@ Configure once. Remember forever.
 
 一次设定，永久记录。
 
-This is now the clearest long-term definition of PhotoMemo:
+This is now the clearest long-term definition of MemoMark:
 
 - the Main App prepares the workflow
 - the Share Extension executes the workflow
-- the user should not need to reconfigure PhotoMemo during normal sharing
+- the user should not need to reconfigure MemoMark during normal sharing
 
 ## Core Definition
 
-PhotoMemo is not a photo editor.
+MemoMark is not a photo editor.
 
-PhotoMemo is a memory generation workflow built around Apple Photos.
+MemoMark is a memory generation workflow built around Apple Photos.
 
 Its long-term product shape is:
 
@@ -41,7 +41,7 @@ Execution comes last.
 | Layer | Purpose | Owns | Must Not Own |
 | --- | --- | --- | --- |
 | Personal Profile | Represents the person, baby, and long-term family defaults | relationship, baby nickname, birthday, default album policy, default style, future family memory dates | renderer layout, template arrangement, share execution state |
-| Style | Represents how a PhotoMemo card is generated | template structure, variable placement, layout, badge/logo choice, supplemental-description behavior, renderer-facing options | baby nickname, relationship, birthday, album destination |
+| Style | Represents how a MemoMark card is generated | template structure, variable placement, layout, badge/logo choice, supplemental-description behavior, renderer-facing options | baby nickname, relationship, birthday, album destination |
 | Workflow | Represents execution from Apple Photos to saved result | selected photos, share source context, generate/save progress, result status, temporary execution choices | identity setup, style authoring |
 
 ## Layer 1: Personal Profile
@@ -50,7 +50,7 @@ Personal Profile is the new long-term home for information that rarely changes.
 
 Its job is to answer:
 
-- Who is using PhotoMemo?
+- Who is using MemoMark?
 - Who is this family record about?
 - Which album should results usually go to?
 - Which style should be used by default?
@@ -121,7 +121,7 @@ Apple Photos
 
 -> Share
 
--> PhotoMemo
+-> MemoMark
 
 -> Generate
 
@@ -149,12 +149,12 @@ Those belong to setup, not execution.
 
 The first run should establish the workflow once and then disappear.
 
-It should be shown only when PhotoMemo has no completed Personal Profile baseline.
+It should be shown only when MemoMark has no completed Personal Profile baseline.
 
 Recommended one-time steps:
 
 1. Welcome
-   - Welcome to PhotoMemo
+   - Welcome to MemoMark
    - Let's spend one minute preparing your memory workflow.
 
 2. Who are you?
@@ -173,7 +173,7 @@ Recommended one-time steps:
 
 5. Output Album
    - Current Album
-   - Create `PhotoMemo`
+   - Create `MemoMark`
    - User Selected Album
 
 First Run should not expose:

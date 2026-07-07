@@ -64,7 +64,7 @@ struct MemorySubjectListView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.primary)
 
-                    Text("PhotoMemo 用锚点帮助你阅读回忆。")
+                    Text("时光记用锚点帮助你阅读回忆。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

@@ -4,11 +4,11 @@ Last updated: 2026-06-20
 
 ## Scope
 
-This document compares PhotoMemo output behavior for JPEG and HEIC based on the current export implementation.
+This document compares MemoMark output behavior for JPEG and HEIC based on the current export implementation.
 
 ## Current Output Modes
 
-PhotoMemo currently has two practical output paths:
+MemoMark currently has two practical output paths:
 
 1. batch / iOS / photo-library pipeline
 2. manual macOS export
@@ -34,7 +34,7 @@ Important current fact:
 
 ## What Is Consistent
 
-PhotoMemo already keeps these parts format-neutral:
+MemoMark already keeps these parts format-neutral:
 
 - same rendering layout
 - same final pixel geometry rules
@@ -43,7 +43,7 @@ PhotoMemo already keeps these parts format-neutral:
 
 ## What Is Not Yet Explicitly Controlled
 
-PhotoMemo does not currently set:
+MemoMark does not currently set:
 
 - JPEG compression quality
 - HEIC compression quality
@@ -67,7 +67,7 @@ The project should currently be described this way:
 
 ## Compatibility Conclusion
 
-For Sprint-008, PhotoMemo is in a good position for:
+For Sprint-008, MemoMark is in a good position for:
 
 - JPEG-first output reliability
 - format-neutral render correctness

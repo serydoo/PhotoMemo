@@ -1,14 +1,14 @@
-# PhotoMemo Project Direction
+# MemoMark Project Direction
 
 Last updated: 2026-06-22
 
 ## Direction
 
-PhotoMemo is evolving from a Photo Presentation Engine into a Memory Presentation Engine.
+MemoMark is evolving from a Photo Presentation Engine into a Memory Presentation Engine.
 
 This does not reject the V2 repository reset. It sharpens it.
 
-PhotoMemo still needs:
+MemoMark still needs:
 
 - research
 - specification
@@ -35,7 +35,7 @@ But the project center is now memory meaning, not photo decoration.
 
 Current work is V2.1 Memory Engine.
 
-The goal is to define how PhotoMemo calculates Life Position from objective photo facts and emotional Life Anchors.
+The goal is to define how MemoMark calculates Life Position from objective photo facts and emotional Life Anchors.
 
 No renderer work should happen in this phase.
 
@@ -45,14 +45,14 @@ No runtime implementation should happen until the architecture is documented.
 
 ## Product Boundary
 
-PhotoMemo preserves both:
+MemoMark preserves both:
 
 - objective metadata: when, where, and how a photo was captured
 - emotional context: what that moment means in a life timeline
 
 ## Future Product Shape
 
-Long term, PhotoMemo should become a lifelong memory system.
+Long term, MemoMark should become a lifelong memory system.
 
 It should support many life timelines:
 

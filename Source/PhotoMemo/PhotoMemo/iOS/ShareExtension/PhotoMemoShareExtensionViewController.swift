@@ -351,7 +351,7 @@ private extension PhotoMemoShareExtensionViewController {
         brandLabel.textColor =
             .secondaryLabel
         brandLabel.text =
-            "PhotoMemo"
+            "时光记"
 
         titleLabel.font =
             .preferredFont(
@@ -764,19 +764,19 @@ private extension PhotoMemoShareExtensionViewController {
 
         subtitleLabel.text =
             sharedPhotoCount > 0
-            ? "PhotoMemo 会按当前配置继续处理，并把结果写回系统相册。"
+            ? "时光记会按当前配置继续处理，并把结果写回系统相册。"
             : "当前内容看起来不像可直接处理的静态照片。"
 
         if sharedPhotoCount > 0 {
             statusTitleLabel.text =
-                "准备交给 PhotoMemo"
+                "准备交给时光记"
             statusMessageLabel.text =
-                "点击后会继续交给主程序，进度可在 PhotoMemo 或锁屏中查看。"
+                "点击后会继续交给主程序，进度可在时光记或锁屏中查看。"
             footerLabel.text =
                 "处理完成后会发送系统通知。你不需要停留在这里。"
             applyPrimaryButton(
                 title:
-                    "交给 PhotoMemo 处理 \(sharedPhotoCount) 张"
+                    "交给时光记处理 \(sharedPhotoCount) 张"
             )
         } else {
             statusTitleLabel.text =
@@ -805,7 +805,7 @@ private extension PhotoMemoShareExtensionViewController {
             sharedPhotoCount == 0
         previewSectionView?.isHidden = true
         titleLabel.text =
-            "正在交给 PhotoMemo"
+            "正在交给时光记"
         subtitleLabel.text =
             "正在安全接收这次分享。"
         statusTitleLabel.text =
@@ -813,7 +813,7 @@ private extension PhotoMemoShareExtensionViewController {
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "会先接收原图，再交给 PhotoMemo 主程序继续处理。"
+            "会先接收原图，再交给时光记主程序继续处理。"
         footerLabel.text =
             "原始照片不会被修改。"
 
@@ -875,7 +875,7 @@ private extension PhotoMemoShareExtensionViewController {
             statusTitleLabel.text =
                 "正在读取 iCloud 原图"
             statusMessageLabel.text =
-                "原图可读取后会继续交给 PhotoMemo 处理。"
+                "原图可读取后会继续交给时光记处理。"
             primaryButton.configuration?.title =
                 "正在准备"
             return
@@ -887,13 +887,13 @@ private extension PhotoMemoShareExtensionViewController {
             titleLabel.text =
             "原图已可读取"
             subtitleLabel.text =
-            "正在安全交给 PhotoMemo。"
+            "正在安全交给时光记。"
             statusTitleLabel.text =
-            "正在继续交给 PhotoMemo"
+            "正在继续交给时光记"
             statusMessageLabel.text =
             "照片已经可处理，正在继续交给主程序。"
             primaryButton.configuration?.title =
-            "正在交给 PhotoMemo"
+            "正在交给时光记"
         }
     }
 
@@ -915,7 +915,7 @@ private extension PhotoMemoShareExtensionViewController {
         titleLabel.text =
             "这次交接没有完成"
         subtitleLabel.text =
-            "可以直接重试；如果仍失败，再回到 PhotoMemo 查看。"
+            "可以直接重试；如果仍失败，再回到时光记查看。"
         statusTitleLabel.text =
             title
         statusMessageLabel.textColor =
@@ -1019,9 +1019,9 @@ private extension PhotoMemoShareExtensionViewController {
                 title:
                     "无法读取这次分享",
                 message:
-                    "PhotoMemo 没有收到这次分享的原始内容。",
+                    "时光记没有收到这次分享的原始内容。",
                 suggestion:
-                    "请返回系统相册重新分享；如果重复出现，请打开 PhotoMemo 检查默认风格后再试。"
+                    "请返回系统相册重新分享；如果重复出现，请打开时光记检查默认风格后再试。"
             )
             return
         }
@@ -1050,7 +1050,7 @@ private extension PhotoMemoShareExtensionViewController {
             )
 
             statusTitleLabel.text =
-                "正在打开 PhotoMemo"
+                "正在打开时光记"
             statusMessageLabel.textColor =
                 .secondaryLabel
             statusMessageLabel.text =
@@ -1058,7 +1058,7 @@ private extension PhotoMemoShareExtensionViewController {
                     for: result
                 )
             footerLabel.text =
-                "处理进度会在 PhotoMemo 主程序中显示。"
+                "处理进度会在时光记主程序中显示。"
 
             PhotoMemoShareDiagnostics.record(
                 stage: .extensionHandoffRequested,
@@ -1076,13 +1076,13 @@ private extension PhotoMemoShareExtensionViewController {
 
             if opened {
                 titleLabel.text =
-                    "已交给 PhotoMemo"
+                    "已交给时光记"
                 subtitleLabel.text =
-                    "PhotoMemo 会继续处理，并把结果写回系统相册。"
+                    "时光记会继续处理，并把结果写回系统相册。"
                 statusTitleLabel.text =
-                    "后续进度会在 PhotoMemo 中显示"
+                    "后续进度会在时光记中显示"
                 statusMessageLabel.text =
-                    "如果系统没有自动切换，可手动打开 PhotoMemo 查看处理状态。"
+                    "如果系统没有自动切换，可手动打开时光记查看处理状态。"
                 footerLabel.text =
                     "处理完成后会发送系统通知。现在可以关闭这个窗口。"
                 viewState = .received
@@ -1143,9 +1143,9 @@ private extension PhotoMemoShareExtensionViewController {
                     message:
                         (error as? LocalizedError)?
                         .errorDescription
-                        ?? "无法把内容交给 PhotoMemo。",
+                        ?? "无法把内容交给时光记。",
                     suggestion:
-                        "请先返回系统相册重新分享；如果仍失败，请打开 PhotoMemo 检查默认风格和系统相册权限。"
+                        "请先返回系统相册重新分享；如果仍失败，请打开时光记检查默认风格和系统相册权限。"
                 )
             }
         }
@@ -1193,10 +1193,10 @@ private extension PhotoMemoShareExtensionViewController {
                 )
             }
 
-            return "\(summaryParts.joined(separator: "，"))，其余情况会在 PhotoMemo 中继续说明。"
+            return "\(summaryParts.joined(separator: "，"))，其余情况会在时光记中继续说明。"
         }
 
-        return "已接收 \(result.requestedCount) 张，正在交给 PhotoMemo 继续处理。"
+        return "已接收 \(result.requestedCount) 张，正在交给时光记继续处理。"
     }
 
     @MainActor
@@ -1212,19 +1212,19 @@ private extension PhotoMemoShareExtensionViewController {
         titleLabel.text =
             "照片已经接收"
         subtitleLabel.text =
-            "但这次没有顺利继续交给 PhotoMemo。"
+            "但这次没有顺利继续交给时光记。"
         statusTitleLabel.text =
-            "重新交给 PhotoMemo"
+            "重新交给时光记"
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "请点下面按钮再试一次；如果仍失败，请直接打开 PhotoMemo，它会继续检查待处理照片。"
+            "请点下面按钮再试一次；如果仍失败，请直接打开时光记，它会继续检查待处理照片。"
         footerLabel.text =
             "原图已经接收，原始照片不会被修改。"
 
         applyPrimaryButton(
             title:
-                "重新交给 PhotoMemo"
+                "重新交给时光记"
         )
     }
 
@@ -1512,7 +1512,7 @@ private extension PhotoMemoShareExtensionViewController {
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "已接收 \(fallbackPhotoCount) 张照片，正在等待 PhotoMemo 开始逐张处理。"
+            "已接收 \(fallbackPhotoCount) 张照片，正在等待时光记开始逐张处理。"
         previewCaptionLabel.text =
             processingLegendText()
         updatePreviewRows(
@@ -1536,17 +1536,17 @@ private extension PhotoMemoShareExtensionViewController {
         titleLabel.text =
             "照片已经接收"
         subtitleLabel.text =
-            "需要 PhotoMemo 主程序接手后才会开始处理。"
+            "需要时光记主程序接手后才会开始处理。"
         statusTitleLabel.text =
-            "等待 PhotoMemo 开始处理"
+            "等待时光记开始处理"
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "iOS 不会因为 Share Extension 写入待处理请求就自动运行主程序。打开 PhotoMemo 后，队列会立即继续。"
+            "iOS 不会因为 Share Extension 写入待处理请求就自动运行主程序。打开时光记后，队列会立即继续。"
         footerLabel.text =
-            "原始照片已经安全暂存；点下面按钮打开 PhotoMemo 继续。"
+            "原始照片已经安全暂存；点下面按钮打开时光记继续。"
         previewCaptionLabel.text =
-            "队列已建立，等待 PhotoMemo 主程序接手。"
+            "队列已建立，等待时光记主程序接手。"
         updatePreviewRows(
             phases:
                 Array(
@@ -1560,7 +1560,7 @@ private extension PhotoMemoShareExtensionViewController {
         )
         applyPrimaryButton(
             title:
-                "打开 PhotoMemo 继续处理"
+                "打开时光记继续处理"
         )
     }
 
@@ -1585,7 +1585,7 @@ private extension PhotoMemoShareExtensionViewController {
                 statusTitleLabel.text =
                     "已完成 \(snapshot.completedCount) 张，\(snapshot.failedCount) 张需要处理"
                 statusMessageLabel.text =
-                    "失败项会保留记录，可回到 PhotoMemo 查看原因并重试。"
+                    "失败项会保留记录，可回到时光记查看原因并重试。"
             } else {
                 statusTitleLabel.text =
                     "已完成 \(snapshot.completedCount) 张照片"
@@ -1624,7 +1624,7 @@ private extension PhotoMemoShareExtensionViewController {
             snapshot.firstActiveTaskIndex,
               snapshot.tasks.indices
             .contains(index) else {
-            return "PhotoMemo 会继续处理，完成后发送系统通知。"
+            return "时光记会继续处理，完成后发送系统通知。"
         }
 
         let task =
@@ -1849,7 +1849,7 @@ private extension PhotoMemoShareExtensionViewController {
             .secondaryLabel
         detailLabel.numberOfLines = 1
         detailLabel.text =
-            "等待 PhotoMemo 接手"
+            "等待时光记接手"
 
         let textStack =
             UIStackView(
@@ -2081,13 +2081,13 @@ private extension PhotoMemoShareExtensionViewController {
         switch phase {
 
         case .queued:
-            return "等待 PhotoMemo 接手"
+            return "等待时光记接手"
 
         case .completed:
             return "已保存到系统图库"
 
         case .failed:
-            return "需要回到 PhotoMemo 查看"
+            return "需要回到时光记查看"
 
         case .cancelled:
             return "已取消"

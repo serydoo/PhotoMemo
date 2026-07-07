@@ -137,7 +137,7 @@ Frozen areas:
 - DecorationAsset
 - lightweight ConfigurationSession
 - Capture-Time Principle
-- PhotoMemo Design System
+- MemoMark Design System
 - IA-002 Configuration Center Architecture
 
 ## IA-003

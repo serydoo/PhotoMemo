@@ -1,4 +1,4 @@
-# PhotoMemo Manual Regression Checklist
+# MemoMark Manual Regression Checklist
 
 Date: 2026-06-19
 
@@ -205,7 +205,7 @@ Expected:
 
 Expected:
 
-- PhotoMemo does not pretend the system will re-show the native prompt automatically
+- MemoMark does not pretend the system will re-show the native prompt automatically
 - the UI clearly routes the user to system settings instead
 
 ### 4.3 Album list refresh
@@ -216,7 +216,7 @@ Expected:
 Expected:
 
 - the album list loads successfully after authorization
-- a no-longer-existing album selection falls back safely to `自动存入 PhotoMemo`
+- a no-longer-existing album selection falls back safely to `自动存入时光记`
 
 ### 4.4 Save to library success
 

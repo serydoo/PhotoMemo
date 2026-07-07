@@ -1,4 +1,4 @@
-# PhotoMemo Product Score
+# MemoMark Product Score
 
 Last updated: 2026-06-20
 

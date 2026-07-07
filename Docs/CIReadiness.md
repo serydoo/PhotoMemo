@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Goal
 
-Evaluate PhotoMemo's readiness for future CI without creating GitHub Actions yet.
+Evaluate MemoMark's readiness for future CI without creating GitHub Actions yet.
 
 ## Current Build Commands
 
@@ -24,7 +24,7 @@ Sprint-009 adds the expectation that `PhotoMemoTests` should also be runnable fr
 
 Future CI should minimally cover:
 
-- `PhotoMemo`
+- `MemoMark`
 - `PhotoMemoiOS`
 - `PhotoMemoShareExtension`
 - `PhotoMemoTests`
@@ -87,7 +87,7 @@ Recommended CI rule:
 
 ## CI Decision
 
-PhotoMemo is not ready for deep end-to-end CI yet, but it is ready for the first CI layer:
+MemoMark is not ready for deep end-to-end CI yet, but it is ready for the first CI layer:
 
 - compile verification
 - deterministic logic regression tests

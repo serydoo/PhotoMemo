@@ -1,12 +1,12 @@
-# PhotoMemo V2 Project Reset
+# MemoMark V2 Project Reset
 
 Last updated: 2026-06-22
 
 ## Status
 
-PhotoMemo feature development is paused.
+MemoMark feature development is paused.
 
-The project has entered the PhotoMemo Research Phase.
+The project has entered the MemoMark Research Phase.
 
 `PROJECT_CONSTITUTION.md` is now the highest-level repository instruction. Read it before this file.
 
@@ -14,11 +14,11 @@ The project has entered the PhotoMemo Research Phase.
 
 The previous implementation path was converging on renderer and UI refinement. That work improved output quality, but it also exposed a deeper architectural problem: layout decisions were still distributed across renderer code, UI assumptions, and manually tuned constants.
 
-Continuing to polish renderer details would make PhotoMemo better as a photo watermark or card generator, but it would not make it a reusable Memory Presentation Engine.
+Continuing to polish renderer details would make MemoMark better as a photo watermark or card generator, but it would not make it a reusable Memory Presentation Engine.
 
 ## Why Reverse Engineering Begins
 
-PhotoMemo now treats great photo presentation examples as research material, not as designs to copy.
+MemoMark now treats great photo presentation examples as research material, not as designs to copy.
 
 The goal is to extract reusable, measurable principles:
 
@@ -38,7 +38,7 @@ Private research photos are temporary inputs. Specifications are the lasting pro
 
 Renderer code should draw resolved presentation instructions. It should not invent layout.
 
-PhotoMemo V2 introduces a Layout Engine as the only source of layout truth. The future chain is:
+MemoMark V2 introduces a Layout Engine as the only source of layout truth. The future chain is:
 
 ```text
 Photo
@@ -53,7 +53,7 @@ The renderer must become stateless from a layout perspective.
 
 ## Why Memory Presentation Engine Became The Better Definition
 
-PhotoMemo does not only present photographs. It presents memories.
+MemoMark does not only present photographs. It presents memories.
 
 Objective photo metadata answers:
 

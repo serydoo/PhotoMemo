@@ -1,4 +1,4 @@
-# PhotoMemo Alpha 0.7
+# MemoMark Alpha 0.7
 
 Last updated: 2026-06-20
 
@@ -8,7 +8,7 @@ Last updated: 2026-06-20
 
 This phase is not about shipping more features.
 
-It is about proving that PhotoMemo can survive real use inside Apple Photos.
+It is about proving that MemoMark can survive real use inside Apple Photos.
 
 ## Validation Mode
 
@@ -35,7 +35,7 @@ Photos
 
 -> Share
 
--> PhotoMemo
+-> MemoMark
 
 -> Generate
 
@@ -85,4 +85,4 @@ These should not be active priorities during Alpha 0.7 unless a bug forces them:
 
 ## Success Signal
 
-If, after a week of normal use, PhotoMemo starts feeling habitual inside the Photos flow, the product has crossed an important line.
+If, after a week of normal use, MemoMark starts feeling habitual inside the Photos flow, the product has crossed an important line.

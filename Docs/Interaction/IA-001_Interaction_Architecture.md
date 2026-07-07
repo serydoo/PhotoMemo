@@ -10,7 +10,7 @@ Frozen
 
 ## Definition
 
-IA-001 defines how PhotoMemo should enter, execute, and finish its default memory workflow.
+IA-001 defines how MemoMark should enter, execute, and finish its default memory workflow.
 
 IA-001 does not define runtime implementation details.
 
@@ -18,22 +18,22 @@ IA-001 defines frozen interaction architecture.
 
 ## Product Position
 
-PhotoMemo is not:
+MemoMark is not:
 
 - a photo editor
 - an EXIF tool
 - a renderer
 - an image border tool
 
-PhotoMemo is:
+MemoMark is:
 
 ```text
 a Local First Memory Capability inside the Apple ecosystem
 ```
 
-PhotoMemo does not manage photos.
+MemoMark does not manage photos.
 
-PhotoMemo only owns:
+MemoMark only owns:
 
 ```text
 Memory Workflow
@@ -41,13 +41,13 @@ Memory Workflow
 
 ## North Star
 
-PhotoMemo should not change how users manage photos.
+MemoMark should not change how users manage photos.
 
-PhotoMemo should change how users understand photos.
+MemoMark should change how users understand photos.
 
 ## Configuration Center Role
 
-PhotoMemo's foreground product surface is permanently:
+MemoMark's foreground product surface is permanently:
 
 ```text
 Configuration Center
@@ -64,7 +64,7 @@ The frozen primary path is:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
@@ -87,9 +87,9 @@ Reading
 The default happy path is:
 
 - user shares
-- PhotoMemo processes
+- MemoMark processes
 - user waits
-- PhotoMemo finishes
+- MemoMark finishes
 
 The default happy path should not require additional user operation.
 
@@ -101,25 +101,25 @@ The default posture is:
 - notify at the end
 - avoid interrupting the user
 
-PhotoMemo should be present only when needed.
+MemoMark should be present only when needed.
 
 ## Back To Photos Principle
 
 After completion, the user should return to Apple Photos by default.
 
-PhotoMemo should not try to capture attention after work is complete.
+MemoMark should not try to capture attention after work is complete.
 
 ## Apple Native Principle
 
-PhotoMemo should extend Apple-native capabilities before inventing its own interaction system.
+MemoMark should extend Apple-native capabilities before inventing its own interaction system.
 
 It should integrate into Apple Photos behavior instead of replacing it.
 
 ## Invisible Product Principle
 
-PhotoMemo should reduce its visible presence whenever possible.
+MemoMark should reduce its visible presence whenever possible.
 
-The best PhotoMemo experience should feel naturally embedded in Apple Photos workflows.
+The best MemoMark experience should feel naturally embedded in Apple Photos workflows.
 
 ## Configuration Center Principle
 
@@ -136,7 +136,7 @@ That means:
 The frozen progress language is:
 
 ```text
-PhotoMemo
+MemoMark
 正在创建记忆...
 
 23 / 128
@@ -155,13 +155,13 @@ Prohibited in user-facing progress:
 
 ## Smart Batch Recommendation
 
-PhotoMemo should not frame batching through fixed words such as:
+MemoMark should not frame batching through fixed words such as:
 
 - Maximum
 - Limit
 - Threshold
 
-PhotoMemo should instead use:
+MemoMark should instead use:
 
 ```text
 Smart Batch Recommendation
@@ -175,7 +175,7 @@ Secondary: 20-50
 Advanced: 50+
 ```
 
-PhotoMemo is better suited to processing a passage of memory worth returning to than to defining itself around large anonymous runs.
+MemoMark is better suited to processing a passage of memory worth returning to than to defining itself around large anonymous runs.
 
 The system should recommend the best experience based on:
 
@@ -183,9 +183,9 @@ The system should recommend the best experience based on:
 - photo count
 - runtime conditions
 
-PhotoMemo does not forbid the user.
+MemoMark does not forbid the user.
 
-PhotoMemo recommends the best experience.
+MemoMark recommends the best experience.
 
 ## Product Boundary
 
@@ -199,7 +199,7 @@ Apple Photos owns:
 - albums
 - reading
 
-PhotoMemo owns:
+MemoMark owns:
 
 - metadata usage
 - Memory Workflow
@@ -210,4 +210,4 @@ PhotoMemo owns:
 
 ## Result
 
-IA-001 freezes PhotoMemo as a calm, background-first, Apple-native Memory Workflow surface rather than a foreground photo-management product.
+IA-001 freezes MemoMark as a calm, background-first, Apple-native Memory Workflow surface rather than a foreground photo-management product.

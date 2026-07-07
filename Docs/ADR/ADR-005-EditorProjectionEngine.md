@@ -27,7 +27,7 @@ The project needed a cleaner editor-specific architecture without changing the c
 
 ## Decision
 
-PhotoMemo extracts an `EditorProjectionEngine` for editor-only projection behavior.
+MemoMark extracts an `EditorProjectionEngine` for editor-only projection behavior.
 
 This engine is responsible for:
 
@@ -69,7 +69,7 @@ The architecture decision for canonical content remains string-based, and a rich
 
 ### Trade-offs
 
-- PhotoMemo accepts a dedicated editor projection layer in exchange for preserving clean downstream boundaries
+- MemoMark accepts a dedicated editor projection layer in exchange for preserving clean downstream boundaries
 
 ## Follow-up Work
 

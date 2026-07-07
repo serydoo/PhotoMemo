@@ -1,4 +1,4 @@
-# PhotoMemo Alpha UX Notes
+# MemoMark Alpha UX Notes
 
 Last updated: 2026-06-20
 

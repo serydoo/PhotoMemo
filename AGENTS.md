@@ -1,8 +1,8 @@
 # AGENTS.md
 
-This file defines the long-term working rules for AI agents and future coding sessions in the PhotoMemo repository.
+This file defines the long-term working rules for AI agents and future coding sessions in the MemoMark repository.
 
-## Highest Priority: PhotoMemo V2 Reset
+## Highest Priority: MemoMark V2 Reset
 
 Before any modification, read:
 
@@ -12,7 +12,7 @@ Before any modification, read:
 4. `RepositoryAudit.md`
 5. `Research/README.md`
 
-PhotoMemo has completed IA-002 Configuration Center Architecture and is entering controlled Product Realization.
+MemoMark has completed IA-002 Configuration Center Architecture and is entering controlled Product Realization.
 
 Unscoped feature development, renderer polishing, and UI architecture redesign remain paused.
 
@@ -36,7 +36,7 @@ Renderer must not own layout decisions. New layout work must follow:
 
 ## Project Identity
 
-PhotoMemo is a **local-first Memory Presentation Engine**.
+MemoMark is a **local-first Memory Presentation Engine**.
 
 It is not:
 
@@ -130,7 +130,7 @@ Forbidden user-facing repository terms:
 
 Daily workflow must be described as:
 
-`Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos`
+`Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos`
 
 Do not describe daily use as:
 
@@ -154,7 +154,7 @@ Final wording should remain user-controlled.
 When working on the Immers-inspired preset:
 
 - only borrow the bottom white-bar design language
-- keep content centered on PhotoMemo memory/smart-module semantics
+- keep content centered on MemoMark memory/smart-module semantics
 - use `Logo 标识` terminology consistently
 - if no custom logo is selected for `immersWhite`, keep the classic Apple mini-logo fallback
 - preserve the horizontal layout refinement already made for tighter title width and denser right-side parameters
@@ -199,7 +199,7 @@ Installed skills available for this workflow:
 RFC guidance:
 
 - `Docs/02_Architecture/RFC-001-Memory-Enters-the-Production-Pipeline.md`
-  is the canonical PhotoMemo RFC reference
+  is the canonical MemoMark RFC reference
 - new RFCs should default to its structure and closure discipline unless there
   is an explicit reason to diverge
 - RFC follow-up work should be driven by real architectural need, not by the
@@ -207,7 +207,7 @@ RFC guidance:
 
 Dual-loop guidance:
 
-- PhotoMemo now operates with two distinct development loops:
+- MemoMark now operates with two distinct development loops:
   - `Product Loop`
   - `Engineering Loop`
 - issue intake should classify one primary source before implementation begins

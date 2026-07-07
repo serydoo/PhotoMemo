@@ -12,7 +12,7 @@ For full history, also read:
 
 ## Product Direction Snapshot
 
-PhotoMemo is now being refined as:
+MemoMark is now being refined as:
 
 - a local-first memory card generator
 - a share-first product built around Apple Photos
@@ -21,7 +21,7 @@ PhotoMemo is now being refined as:
 
 Current product language to preserve:
 
-- PhotoMemo is not a photo editor
+- MemoMark is not a photo editor
 - configure once, share naturally, remember forever
 - users should spend most of their time in Apple Photos, not in the main app
 
@@ -38,7 +38,7 @@ The current worktree includes several connected slices that are intentionally sm
 2. Export naming hardening
 
 - output file naming now prefers real original file names
-- placeholder names such as `Photo Library` and `PhotoMemo Import` are filtered out
+- placeholder names such as `Photo Library` and `MemoMark Import` are filtered out
 - deterministic fallback naming now uses `IMG_yyyyMMdd_HHmmss`
 - copy suffix behavior follows:
   - `name.jpg`
@@ -106,7 +106,7 @@ Related tests:
 The following verification has already been completed in this session:
 
 - `PhotoMemoTests` full suite: passed
-- `PhotoMemo` build: passed
+- `MemoMark` build: passed
 - `PhotoMemoiOS` build: passed
 - `PhotoMemoShareExtension` build: passed
 - device install: passed
@@ -159,4 +159,4 @@ These are the most natural next slices, without expanding product surface too ea
 
 If another AI needs to continue safely, a good starting prompt is:
 
-`Read README.md, AI_CONTEXT.md, HANDOFF.md, AGENTS.md, Docs/CURRENT_STATUS.md, and Docs/AI_HANDOFF_2026-06-21.md. Then inspect git status. Continue from the current share-first PhotoMemo state without refactoring architecture.`
+`Read README.md, AI_CONTEXT.md, HANDOFF.md, AGENTS.md, Docs/CURRENT_STATUS.md, and Docs/AI_HANDOFF_2026-06-21.md. Then inspect git status. Continue from the current share-first MemoMark state without refactoring architecture.`

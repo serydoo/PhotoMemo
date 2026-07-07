@@ -33,9 +33,9 @@ struct V1WelcomePresentation: Equatable {
 
     static let `default` =
         V1WelcomePresentation(
-            title: "PhotoMemo",
+            title: "时光记",
             subtitle: "记录人生，珍藏记忆",
-            message: "PhotoMemo 会结合照片信息、时间锚点与记忆对象，生成更有意义的记忆表达，同时保留原图。",
+            message: "时光记会结合照片信息、时间锚点与记忆对象，生成更有意义的记忆表达，同时保留原图。",
             features: [
                 .init(
                     id: "local-first",
@@ -71,14 +71,14 @@ struct V1WelcomePresentation: Equatable {
                 ),
                 .init(
                     id: "share",
-                    title: "分享给 PhotoMemo",
+                    title: "分享给时光记",
                     detail: "也可以直接在首页点“处理照片”进入相同流程。",
                     systemImage: "square.and.arrow.up"
                 ),
                 .init(
                     id: "processing",
                     title: "后台生成记忆表达",
-                    detail: "PhotoMemo 会按当前配置、时间锚点和输出规则自动处理。",
+                    detail: "时光记会按当前配置、时间锚点和输出规则自动处理。",
                     systemImage: "arrow.trianglehead.2.clockwise.circle"
                 ),
                 .init(
@@ -123,7 +123,7 @@ struct V1WelcomePageSurface: View {
 
                     V1CardSurface(title: "推荐流程") {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Apple Photos -> 分享 -> PhotoMemo -> 处理 -> Apple Photos")
+                            Text("Apple Photos -> 分享 -> 时光记 -> 处理 -> Apple Photos")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
 
@@ -184,7 +184,7 @@ struct V1WorkflowGuideSurface: View {
                 VStack(spacing: 18) {
                     V1CardSurface(title: "使用流程") {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("推荐日常路径保持在 Apple Photos 内：选择照片，分享给 PhotoMemo，后台处理完成后再回到系统相册继续阅读。")
+                            Text("推荐日常路径保持在 Apple Photos 内：选择照片，分享给时光记，后台处理完成后再回到系统相册继续阅读。")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)

@@ -87,7 +87,7 @@ Not manually verified in this freeze:
 
 ## Accepted By
 
-PhotoMemo maintainer and Codex collaboration session.
+MemoMark maintainer and Codex collaboration session.
 
 ## Supersedes
 

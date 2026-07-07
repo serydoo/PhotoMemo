@@ -322,7 +322,7 @@ private extension PhotoImporterView {
             return nil
         }
 
-        return "PhotoMemo Import.\(fileExtension)"
+        return "MemoMark Import.\(fileExtension)"
     }
 
     func unsupportedInputMessage(
@@ -523,7 +523,7 @@ enum PhotoImporterFileRepresentationResolver {
         let baseDirectory =
             fileManager.temporaryDirectory
             .appendingPathComponent(
-                "PhotoMemoPickerFileRepresentations",
+                "MemoMarkPickerFileRepresentations",
                 isDirectory: true
             )
 
@@ -551,7 +551,7 @@ enum PhotoImporterFileRepresentationResolver {
                     )
                 return trimmed.isEmpty ? nil : trimmed
             }
-            ?? "PhotoMemo Picked Photo"
+            ?? "MemoMark Picked Photo"
         let fileExtension =
             sanitizedFileName
             .map {

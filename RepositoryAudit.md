@@ -1,4 +1,4 @@
-# PhotoMemo Repository Audit
+# MemoMark Repository Audit
 
 Last updated: 2026-06-22
 
@@ -31,7 +31,7 @@ Key inputs included:
 
 ### Current State
 
-PhotoMemo V1 has a real local-first application architecture:
+MemoMark V1 has a real local-first application architecture:
 
 - app/runtime layer for startup, intake, deep links, and shared containers
 - metadata layer with `PhotoMetadataReader` and typed `PhotoMetadata`
@@ -116,7 +116,7 @@ Documents that overlap and should eventually be consolidated after research spec
 
 Known cross-document conflicts:
 
-- Older docs describe PhotoMemo mainly as a memory card generator or template calibration center; V2 philosophy now defines it as a Memory Presentation Engine.
+- Older docs describe MemoMark mainly as a memory card generator or template calibration center; V2 philosophy now defines it as a Memory Presentation Engine.
 - Older renderer docs discuss fixed renderer-side values; V2 constitution requires Layout Engine ownership for layout decisions.
 - Older docs recommend documentation migration as a next step; the constitution now says migration waits until research specification stabilizes.
 
@@ -174,7 +174,7 @@ Reading -> Share -> Processing -> Notification -> Reading
 The daily workflow is:
 
 ```text
-Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos
+Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos
 ```
 
 V2 target architecture is:
@@ -245,6 +245,6 @@ Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engin
 
 ## Audit Conclusion
 
-PhotoMemo has a strong V1 application foundation, but V2 requires a deliberate architecture reset.
+MemoMark has a strong V1 application foundation, but V2 requires a deliberate architecture reset.
 
 The most important correction is not another renderer tweak. It is establishing memory philosophy, research, and specification as first-class project assets, then making Memory Engine and Layout Engine explicit architecture boundaries.

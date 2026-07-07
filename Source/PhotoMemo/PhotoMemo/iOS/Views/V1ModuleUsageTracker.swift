@@ -68,7 +68,7 @@ enum V1ModuleUsageTracker {
         case .subjectNickname,
              .smartTime,
              .captureSummary:
-            return "PhotoMemo"
+            return "时光记"
         default:
             return "EXIF"
         }

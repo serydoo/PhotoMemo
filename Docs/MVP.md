@@ -1,8 +1,8 @@
-# PhotoMemo MVP
+# MemoMark MVP
 
 ## Goal
 
-Ship a reliable local-first pipeline that turns a photo into a finished PhotoMemo image with real EXIF-driven context.
+Ship a reliable local-first pipeline that turns a photo into a finished MemoMark image with real EXIF-driven context.
 
 ## MVP Workflow
 
@@ -42,7 +42,7 @@ Ship a reliable local-first pipeline that turns a photo into a finished PhotoMem
 
 - generate a new image
 - write to system photo library
-- support default PhotoMemo album or chosen existing album
+- support default MemoMark album or chosen existing album
 - preserve metadata usefulness as much as platform APIs allow
 
 ### Background Entry

@@ -341,14 +341,14 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             .extensionSourceReady,
             in: events
         ) {
-            return "原图可用，正在交给 PhotoMemo"
+            return "原图可用，正在交给时光记"
         }
 
         if containsStage(
             .appOpenURLShare,
             in: events
         ) {
-            return "PhotoMemo 已被唤起"
+            return "时光记已被唤起"
         }
 
         if isFailureStage(
@@ -357,7 +357,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             return "这次分享需要查看"
         }
 
-        return "正在交给 PhotoMemo"
+        return "正在交给时光记"
     }
 
     static func diagnosticsSubheadline(
@@ -406,7 +406,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 .appEnqueueCreated,
                 in: events
            ) {
-            return "原图已经可读取，正在交给 PhotoMemo 主程序。"
+            return "原图已经可读取，正在交给时光记主程序。"
         }
 
         if containsAnyStage(
@@ -420,7 +420,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 .appEnqueueCreated,
                 in: events
            ) {
-            return "原图已经接收，等待 PhotoMemo 接力处理。"
+            return "原图已经接收，等待时光记接力处理。"
         }
 
         if containsStage(
@@ -430,7 +430,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             return "照片已经进入后台队列，完成后会写回系统相册。"
         }
 
-        return "PhotoMemo 正在接收这次分享。"
+        return "时光记正在接收这次分享。"
     }
 
     static func diagnosticsSymbolName(
@@ -653,7 +653,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             return "原图暂时不可读取"
         case .extensionHandoffUnconfirmed,
              .extensionHandoffFailed:
-            return "等待 PhotoMemo 接手"
+            return "等待时光记接手"
         case .appDrain:
             return "检查待处理照片"
         case .appRequestValidated:
@@ -679,16 +679,16 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
         switch event.stage {
         case .extensionRequestPersisted,
              .extensionPersisted:
-            return "原图已暂存，PhotoMemo 会按当前配置继续处理。"
+            return "原图已暂存，时光记会按当前配置继续处理。"
         case .extensionSourcePrepare:
             return "正在向系统请求原图数据，等待 iCloud 缓存到本地。"
         case .extensionSourceReady:
-            return "原图已经可读取，正在继续交给 PhotoMemo。"
+            return "原图已经可读取，正在继续交给时光记。"
         case .extensionSourceUnavailable:
             return "系统暂时没有提供完整原图，请稍后重试或先在相册打开原图。"
         case .extensionHandoffUnconfirmed,
              .extensionHandoffFailed:
-            return "照片已接收，如未自动切换，可手动打开 PhotoMemo 继续。"
+            return "照片已接收，如未自动切换，可手动打开时光记继续。"
         case .appDrain:
             return "正在读取刚接收的照片。"
         case .appRequestValidated:

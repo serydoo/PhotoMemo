@@ -6,7 +6,7 @@
 
 **Architecture:** Keep renderer locked. Move subject-selection, active-anchor selection, subject-expression selection, and avatar/logo asset preparation into configuration and MEE layers. Deliver one thin vertical slice for the first birthday age module driven by capture time, then reconnect the V1 UI to that slice.
 
-**Tech Stack:** Swift, SwiftUI, Swift Testing, existing PhotoMemo configuration/session models.
+**Tech Stack:** Swift, SwiftUI, Swift Testing, existing MemoMark configuration/session models.
 
 ## Global Constraints
 

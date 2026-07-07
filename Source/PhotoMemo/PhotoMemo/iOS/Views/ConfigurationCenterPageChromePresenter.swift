@@ -60,7 +60,7 @@ enum ConfigurationCenterPageChromePresenter {
             return ConfigurationCenterDetailPresenter
                 .panelPresentation(for: panel)
                 .title
-            ?? "PhotoMemo 配置中心"
+            ?? "时光记配置中心"
         }
     }
 }

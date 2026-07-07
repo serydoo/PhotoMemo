@@ -33,7 +33,7 @@ Per task, the execution path is:
 | Notification stages | queued, imported, rendering, saving, final | background status remains visible without main-UI coupling |
 | Cancellation checks | checked after import, after export, and again before save | reduces risk of saving cancelled work into Photos |
 | Temporary export cleanup | temp file removed on success, cancel-abort paths, and failures | strong local temp-file hygiene |
-| Managed intake cleanup | only PhotoMemo-managed `ExternalIntake` files are cleaned | protects user originals |
+| Managed intake cleanup | only MemoMark-managed `ExternalIntake` files are cleaned | protects user originals |
 | Retry semantics | retry allowed only when source still exists | avoids false retry promises |
 | Per-job configuration | each job uses one captured `BatchConfigurationSnapshot` | stable output policy within a batch |
 
@@ -72,7 +72,7 @@ Two cleanup layers are present:
 
 Important safety rule already preserved:
 
-- PhotoMemo only cleans source files that it copied into its own `ExternalIntake` area
+- MemoMark only cleans source files that it copied into its own `ExternalIntake` area
 - it does not delete user original file paths
 
 ## Reliability Strengths
@@ -94,7 +94,7 @@ Important safety rule already preserved:
 
 The current batch system is conservative and reliability-oriented.
 
-That is a reasonable tradeoff for PhotoMemo's present stage:
+That is a reasonable tradeoff for MemoMark's present stage:
 
 - correctness first
 - deterministic behavior first

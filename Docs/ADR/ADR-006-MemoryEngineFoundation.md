@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-PhotoMemo has already stabilized its metadata pipeline, variable catalog, editor projection, and export reliability layers.
+MemoMark has already stabilized its metadata pipeline, variable catalog, editor projection, and export reliability layers.
 
 However, memory-oriented values are still spread across existing components:
 
@@ -20,7 +20,7 @@ However, memory-oriented values are still spread across existing components:
 
 The product is no longer only a metadata overlay tool.
 
-PhotoMemo now needs a dedicated domain boundary for memory semantics so future memory-facing variables can evolve without pushing business meaning into renderer, export, or UI layers.
+MemoMark now needs a dedicated domain boundary for memory semantics so future memory-facing variables can evolve without pushing business meaning into renderer, export, or UI layers.
 
 The project also needs this boundary to remain:
 
@@ -31,7 +31,7 @@ The project also needs this boundary to remain:
 
 ## Decision
 
-PhotoMemo introduces a dedicated `MemoryEngine` domain layer.
+MemoMark introduces a dedicated `MemoryEngine` domain layer.
 
 Its initial boundary is intentionally narrow and foundation-only.
 
@@ -89,7 +89,7 @@ That would exceed the scope of the current foundation and create unnecessary abs
 
 - memory semantics gain a dedicated, testable domain boundary
 - `memory_summary` and future memory variables can evolve without leaking logic into renderer or export
-- PhotoMemo's product philosophy now has a concrete implementation boundary
+- MemoMark's product philosophy now has a concrete implementation boundary
 
 ### Negative
 
@@ -98,7 +98,7 @@ That would exceed the scope of the current foundation and create unnecessary abs
 
 ### Trade-offs
 
-- PhotoMemo accepts one focused domain layer in exchange for cleaner long-term ownership of memory logic
+- MemoMark accepts one focused domain layer in exchange for cleaner long-term ownership of memory logic
 - some short-term duplication with existing anchor terminology remains until future memory work decides what should stay anchor-specific
 
 ## Follow-up Work

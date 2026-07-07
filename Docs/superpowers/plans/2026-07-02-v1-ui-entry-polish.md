@@ -6,7 +6,7 @@
 
 **Architecture:** Keep `PhotoMemoiOSV1View` as the state owner and add lightweight view-only helpers around it. Reuse existing runtime/coordinator/intake paths for photo processing, add only minimal persisted UI state for welcome-page visibility, and keep subject-management changes inside the existing overview/configuration flow.
 
-**Tech Stack:** SwiftUI, PhotosUI, AppStorage, existing PhotoMemo coordinators/runtime services, Swift Testing, Xcode asset catalogs.
+**Tech Stack:** SwiftUI, PhotosUI, AppStorage, existing MemoMark coordinators/runtime services, Swift Testing, Xcode asset catalogs.
 
 ---
 
@@ -31,7 +31,7 @@ struct V1WelcomePresentationTests {
     func usesApprovedCopy() {
         let presentation = V1WelcomePresentation.default
 
-        #expect(presentation.title == "PhotoMemo")
+        #expect(presentation.title == "MemoMark")
         #expect(presentation.subtitle == "记录人生，珍藏记忆")
         #expect(presentation.features.count == 4)
         #expect(presentation.primaryActionTitle == "开始使用")
@@ -66,9 +66,9 @@ struct V1WelcomePresentation: Equatable {
     let secondaryActionTitle: String
 
     static let `default` = V1WelcomePresentation(
-        title: "PhotoMemo",
+        title: "MemoMark",
         subtitle: "记录人生，珍藏记忆",
-        message: "PhotoMemo 会结合照片信息、时间锚点与记忆对象，生成更有意义的记忆表达，同时保留原图。",
+        message: "时光记会结合照片信息、时间锚点与记忆对象，生成更有意义的记忆表达，同时保留原图。",
         features: [
             .init(id: "local", title: "本地优先", detail: "不上传照片，处理留在设备内。", systemImage: "internaldrive"),
             .init(id: "original", title: "保留原图", detail: "生成新图，不改动原始照片。", systemImage: "photo"),

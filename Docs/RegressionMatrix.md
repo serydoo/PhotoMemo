@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Purpose
 
-This matrix defines the repeatable regression coverage PhotoMemo should maintain.
+This matrix defines the repeatable regression coverage MemoMark should maintain.
 
 ## Matrix
 

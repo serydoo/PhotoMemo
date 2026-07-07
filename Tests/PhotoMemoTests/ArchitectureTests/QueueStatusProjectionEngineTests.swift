@@ -226,7 +226,7 @@ struct QueueStatusProjectionEngineTests {
             projections.map(\.title)
             == [
                 "处理完成",
-                "等待 PhotoMemo 接手",
+                "等待时光记接手",
                 "进入处理队列"
             ]
         )
@@ -234,7 +234,7 @@ struct QueueStatusProjectionEngineTests {
             projections.map(\.message)
             == [
                 "已完成处理，结果会出现在目标相册。",
-                "照片已接收，如未自动切换，可手动打开 PhotoMemo 继续。",
+                "照片已接收，如未自动切换，可手动打开时光记继续。",
                 "照片会按当前默认风格生成并保存。"
             ]
         )

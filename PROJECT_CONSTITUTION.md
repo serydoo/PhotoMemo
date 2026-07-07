@@ -1,14 +1,14 @@
-# PhotoMemo V2 Project Constitution
+# MemoMark V2 Project Constitution
 
 Last updated: 2026-06-24
 
-This is the highest-level repository instruction for PhotoMemo V2.
+This is the highest-level repository instruction for MemoMark V2.
 
 Every AI agent and future coding session must read this before making any modification.
 
 ## Current Status
 
-PhotoMemo Repository V2 Reset has already been completed.
+MemoMark Repository V2 Reset has already been completed.
 
 The repository already contains:
 
@@ -53,9 +53,9 @@ The next implementation work must connect real data through the approved IA-003 
 
 ## Mission
 
-PhotoMemo is not a photo watermark application.
+MemoMark is not a photo watermark application.
 
-PhotoMemo is a:
+MemoMark is a:
 
 - local-first
 - privacy-first
@@ -64,7 +64,7 @@ PhotoMemo is a:
 
 Memory Presentation Engine.
 
-PhotoMemo is also a:
+MemoMark is also a:
 
 ```text
 Local First Memory Capability
@@ -72,11 +72,11 @@ Local First Memory Capability
 
 inside Apple Photos workflows.
 
-PhotoMemo does not only present photographs. It presents memories.
+MemoMark does not only present photographs. It presents memories.
 
-PhotoMemo does not manage photos.
+MemoMark does not manage photos.
 
-PhotoMemo only owns:
+MemoMark only owns:
 
 ```text
 Memory Workflow
@@ -105,13 +105,13 @@ Layout Engine becomes the center.
 - Immers is only a research reference.
 - The purpose is to study excellent design languages.
 - The goal is to extract reusable layout rules.
-- PhotoMemo must build its own Design System.
+- MemoMark must build its own Design System.
 - Photos have timestamps.
 - Memories have positions.
 - EXIF records when a photo was taken.
 - Memory Engine calculates where that photo belongs inside a person's life.
-- PhotoMemo should not change how users manage photos.
-- PhotoMemo should change how users understand photos.
+- MemoMark should not change how users manage photos.
+- MemoMark should change how users understand photos.
 - Configuration Center edits Objects, not Data.
 - Everything starts from the Memory Card.
 - Configuration Center previews the real Memory Card, not an abstract layout.
@@ -143,15 +143,15 @@ Layout Engine becomes the center.
 
 ## Apple Trust Principle
 
-PhotoMemo trusts Apple.
+MemoMark trusts Apple.
 
 Not because it is Apple as a brand.
 
 But because Apple Photos has already proven its maturity and reliability in real large-scale photo management.
 
-PhotoMemo does not rebuild those systems.
+MemoMark does not rebuild those systems.
 
-PhotoMemo focuses on:
+MemoMark focuses on:
 
 ```text
 Memory Capability
@@ -164,7 +164,7 @@ The developer has used Apple Photos to manage more than 110,000 life photos over
 Therefore:
 
 ```text
-PhotoMemo fully trusts Apple Photos.
+MemoMark fully trusts Apple Photos.
 ```
 
 ## Immediate Task
@@ -195,15 +195,15 @@ Do not:
 - modify Renderer, Metadata, Export, Share Extension, or Photo Library behavior before the approved IA-003 slice reaches that boundary
 - migrate old documents before research specifications stabilize
 
-Focus on turning frozen repository concepts into one real PhotoMemo pipeline while preserving local-first and Apple Photos lifecycle boundaries.
+Focus on turning frozen repository concepts into one real MemoMark pipeline while preserving local-first and Apple Photos lifecycle boundaries.
 
 ## Repository Simplification Principle
 
-PhotoMemo is now moving from Repository Refactor to Repository Simplification.
+MemoMark is now moving from Repository Refactor to Repository Simplification.
 
 Every review should leave the repository simpler than before.
 
-每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+每一次设计评审，都应该让时光记比昨天更简单一点。
 
 Current repository-facing vocabulary must preserve:
 
@@ -230,7 +230,7 @@ Daily workflow is:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos

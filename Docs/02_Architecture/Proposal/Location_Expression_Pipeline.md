@@ -19,7 +19,7 @@ Expression tokens.
 
 ## Context
 
-PhotoMemo currently has real production token rendering through
+MemoMark currently has real production token rendering through
 `MetadataContext` and `TemplateVariableEngine`, while newer Memory work has
 moved toward structured engine output. Location facts already exist in
 `PhotoMetadata` and location tokens already exist in the variable catalog, but

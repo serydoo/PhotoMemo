@@ -8,7 +8,7 @@ Last updated: 2026-06-23
 Frozen
 ```
 
-PhotoMemo should never become:
+MemoMark should never become:
 
 - its own gallery
 - its own timeline
@@ -23,4 +23,4 @@ PhotoMemo should never become:
 
 These systems belong to Apple Photos.
 
-PhotoMemo only extends memory understanding and memory workflow.
+MemoMark only extends memory understanding and memory workflow.

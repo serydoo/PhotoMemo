@@ -1,10 +1,10 @@
-# PhotoMemo iOS Readiness Audit
+# MemoMark iOS Readiness Audit
 
 Date: 2026-06-19
 
 ## Verdict
 
-PhotoMemo is **not yet at "add an iOS target and immediately ship a working build" readiness**, but it **is already at a practical "start iOS development now with a focused adaptation sprint" stage**.
+MemoMark is **not yet at "add an iOS target and immediately ship a working build" readiness**, but it **is already at a practical "start iOS development now with a focused adaptation sprint" stage**.
 
 Short version:
 
@@ -118,7 +118,7 @@ Impact:
 The main app entry still depends on macOS-only pieces for desktop-style file opening:
 
 - `@NSApplicationDelegateAdaptor`
-- `PhotoMemoAppDelegate`
+- `MemoMarkAppDelegate`
 - `application(_:open:)`
 - `openFile` / `openFiles`
 - direct `NSAppearance` setup
@@ -202,7 +202,7 @@ Key files:
 
 ### 3. Background / external intake product shape
 
-PhotoMemo's long-term direction includes external intake and background processing.
+MemoMark's long-term direction includes external intake and background processing.
 
 That direction still makes sense on iOS, but the actual implementation shape will differ:
 
@@ -245,7 +245,7 @@ Key files:
 
 ## Practical Conclusion
 
-PhotoMemo already has enough shared architecture to **start iOS work now without rewriting the app**.
+MemoMark already has enough shared architecture to **start iOS work now without rewriting the app**.
 
 The repository is **not blocked by fundamental architectural mistakes**.
 
@@ -296,7 +296,7 @@ Recommended order:
 
 ## Bottom-Line Recommendation
 
-PhotoMemo is **iOS-preparable now**, but **not iOS-ready today**.
+MemoMark is **iOS-preparable now**, but **not iOS-ready today**.
 
 The repository has enough shared foundation that starting an iOS branch would be reasonable right now.
 
@@ -322,7 +322,7 @@ Current practical meaning:
 - it already contains:
   - a buildable iOS app target
   - a buildable share extension
-  - a shared intake/storage/config foundation for “从系统分享进入 PhotoMemo”
+  - a shared intake/storage/config foundation for “从系统分享进入时光记”
 
 What is still not done:
 
@@ -333,5 +333,5 @@ What is still not done:
 
 So the newest honest conclusion is:
 
-- **PhotoMemo is now iOS-enabled at the target/foundation level**
-- **PhotoMemo is not yet iPhone-finished at the workflow/polish level**
+- **MemoMark is now iOS-enabled at the target/foundation level**
+- **MemoMark is not yet iPhone-finished at the workflow/polish level**

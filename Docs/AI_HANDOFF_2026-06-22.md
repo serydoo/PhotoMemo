@@ -137,7 +137,7 @@ Verified in this round:
 
 ### 1. macOS build path is not clean under the current Xcode beta
 
-A standalone `PhotoMemo` macOS build exposed existing issues in the main-app UI layer, especially around:
+A standalone `MemoMark` macOS build exposed existing issues in the main-app UI layer, especially around:
 
 - `MainView.swift`
 - `MainView+WorkspaceControls.swift`

@@ -27,9 +27,9 @@ This slice does not:
 
 PM-003 defines the content semantics that the future content and layout system must preserve.
 
-PhotoMemo no longer treats the bottom information area as an EXIF border or metadata dump.
+MemoMark no longer treats the bottom information area as an EXIF border or metadata dump.
 
-PhotoMemo treats it as a memory expression system.
+MemoMark treats it as a memory expression system.
 
 The system must answer four different questions:
 
@@ -200,9 +200,9 @@ This preserves future architecture without expanding current runtime scope.
 
 ## Frozen Decision: Time Anchor Principle
 
-PhotoMemo does not directly display time.
+MemoMark does not directly display time.
 
-PhotoMemo displays:
+MemoMark displays:
 
 ```text
 the distance between a person and an important life event
@@ -313,9 +313,9 @@ Engine is responsible for:
 
 Expression and Engine must remain fully decoupled.
 
-PhotoMemo must not directly concatenate a full sentence inside the calculation layer.
+MemoMark must not directly concatenate a full sentence inside the calculation layer.
 
-PhotoMemo must use Grammar as the contract between expression and calculation.
+MemoMark must use Grammar as the contract between expression and calculation.
 
 ## Frozen Decision: Variable Classification
 

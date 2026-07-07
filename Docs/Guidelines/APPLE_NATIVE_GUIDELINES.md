@@ -10,15 +10,15 @@ Frozen
 
 ## Apple Native Principle
 
-PhotoMemo should extend Apple-native capabilities before inventing new interaction systems.
+MemoMark should extend Apple-native capabilities before inventing new interaction systems.
 
 ## Invisible Product Principle
 
-PhotoMemo should reduce its visible presence and merge into Apple Photos workflows.
+MemoMark should reduce its visible presence and merge into Apple Photos workflows.
 
 ## Apple Trust Principle
 
-PhotoMemo should always trust Apple.
+MemoMark should always trust Apple.
 
 Apple Photos already owns:
 
@@ -30,15 +30,15 @@ Apple Photos already owns:
 - sync
 - memories
 
-PhotoMemo does not rebuild those systems.
+MemoMark does not rebuild those systems.
 
-PhotoMemo only provides Memory Capability.
+MemoMark only provides Memory Capability.
 
 This principle comes from long-term real use of Apple Photos as the primary life archive.
 
 ## Back To Photos Principle
 
-After finishing work, PhotoMemo should return users to Apple Photos by default.
+After finishing work, MemoMark should return users to Apple Photos by default.
 
 ## Review Checklist
 

@@ -3,7 +3,7 @@
 Classic White now has a small fixed reference set for manual visual review.
 
 The goal is not to compare against another product.
-The goal is to keep PhotoMemo's own render language stable:
+The goal is to keep MemoMark's own render language stable:
 
 - fixed `260pt` bottom bar
 - stable `40 / 20 / 40` grid

@@ -1,8 +1,6 @@
 # 状态流（State Flow）
 
-## 总判断
-
-PhotoMemo 当前的状态流不是单一 store 架构。
+## 总判断时光记当前的状态流不是单一 store 架构。
 
 从 V1 和 Configuration Center 的实际实现看，更像是三种状态系统并存：
 
@@ -179,7 +177,7 @@ ConfigurationCenterRegionDraftStore
 
 ### 为什么它重要
 
-它说明 PhotoMemo 已经不只是“点一下预览”的 app。
+它说明时光记已经不只是“点一下预览”的 app。
 
 它已经有：
 

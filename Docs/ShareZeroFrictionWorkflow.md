@@ -1,4 +1,4 @@
-# PhotoMemo Share Zero-Friction Workflow
+# MemoMark Share Zero-Friction Workflow
 
 Last updated: 2026-06-20
 
@@ -6,7 +6,7 @@ Last updated: 2026-06-20
 
 The default share workflow must require as few decisions as possible.
 
-Users should not re-configure PhotoMemo during normal sharing.
+Users should not re-configure MemoMark during normal sharing.
 
 Configuration belongs to the Main App.
 
@@ -20,7 +20,7 @@ Apple Photos
 
 -> Share
 
--> PhotoMemo
+-> MemoMark
 
 -> Automatically use the current configuration
 
@@ -79,13 +79,13 @@ It should:
 
 When the extension opens, the user should immediately understand three things:
 
-1. PhotoMemo will use the current configuration automatically.
+1. MemoMark will use the current configuration automatically.
 2. The result will continue toward save-back without more setup.
 3. If they want to change settings, that belongs in the Main App, not in this moment.
 
 That means the default share page should show:
 
-- what PhotoMemo is about to use
+- what MemoMark is about to use
 - what kind of output path will happen
 - one calm automatic-processing message
 
@@ -123,7 +123,7 @@ This creates a better product surface now, without pretending that the extension
 
 ## Later Evolution
 
-Only after the automatic share path feels stable should PhotoMemo consider:
+Only after the automatic share path feels stable should MemoMark consider:
 
 1. lightweight preview inside the Share Extension
 2. optional configuration switching

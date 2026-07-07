@@ -83,4 +83,4 @@ Reason:
 - `iso`
 - `location`
 
-This keeps the picker aligned with real PhotoMemo usage instead of raw key order.
+This keeps the picker aligned with real MemoMark usage instead of raw key order.

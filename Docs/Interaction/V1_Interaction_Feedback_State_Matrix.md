@@ -28,12 +28,12 @@ Every user-facing feedback surface should derive from this matrix:
 
 | State | Meaning | User Needs Action |
 | --- | --- | --- |
-| `已接收` | PhotoMemo has accepted the incoming share request. | No |
-| `准备中` | PhotoMemo is verifying files or preparing media prerequisites. | No |
-| `处理中` | PhotoMemo is actively generating or saving results. | No |
+| `已接收` | 时光记 has accepted the incoming share request. | No |
+| `准备中` | 时光记 is verifying files or preparing media prerequisites. | No |
+| `处理中` | 时光记 is actively generating or saving results. | No |
 | `已完成` | All intended supported photos finished successfully. | No |
 | `部分完成` | Some photos finished; some still need attention. | Maybe |
-| `需处理` | The batch requires a return to PhotoMemo for details or retry. | Yes |
+| `需处理` | The batch requires a return to 时光记 for details or retry. | Yes |
 | `暂不支持` | The input is outside the current supported capability envelope. | Maybe |
 
 ## Cross-Surface Mapping
@@ -43,7 +43,7 @@ Every user-facing feedback surface should derive from this matrix:
 - Share title:
   - `已接收 3 张照片`
 - Share detail:
-  - `PhotoMemo 会按当前配置继续处理。`
+  - `时光记会按当前配置继续处理。`
 - Live Activity:
   - not usually shown for long; transitions quickly to `准备中`
 - Notification:
@@ -69,7 +69,7 @@ Every user-facing feedback surface should derive from this matrix:
 ### `处理中`
 
 - Share title:
-  - `正在交给 PhotoMemo`
+  - `正在交给时光记`
 - Share detail:
   - `主程序会继续处理并写回系统相册。`
 - Live Activity primary line:
@@ -84,7 +84,7 @@ Every user-facing feedback surface should derive from this matrix:
 ### `已完成`
 
 - Share title:
-  - `已交给 PhotoMemo`
+  - `已交给时光记`
 - Share detail:
   - `完成后结果会回到系统相册。`
 - Live Activity primary line:
@@ -94,7 +94,7 @@ Every user-facing feedback surface should derive from this matrix:
 - Notification title:
   - `09:12 处理 3 张照片已完成`
 - Notification body:
-  - `已保存到「PhotoMemo」。`
+  - `已保存到「时光记」。`
 - In-app:
   - latest batch completed, no attention needed
 
@@ -105,11 +105,11 @@ Every user-facing feedback surface should derive from this matrix:
 - Live Activity primary line:
   - `部分照片已完成`
 - Live Activity detail:
-  - `仍有 1 张需要回到 PhotoMemo 查看`
+  - `仍有 1 张需要回到时光记查看`
 - Notification title:
   - `09:12 已完成 8 张，1 张需处理`
 - Notification body:
-  - `大部分结果已保存，剩余项目可回到 PhotoMemo 查看。`
+  - `大部分结果已保存，剩余项目可回到时光记查看。`
 - In-app:
   - completed items stay saved; attention items remain visible
 
@@ -118,15 +118,15 @@ Every user-facing feedback surface should derive from this matrix:
 - Share title:
   - `这次分享需要查看`
 - Share detail:
-  - `可以重新交给 PhotoMemo，或直接打开主程序继续。`
+  - `可以重新交给时光记，或直接打开主程序继续。`
 - Live Activity primary line:
   - `有照片需要处理`
 - Live Activity detail:
-  - `请回到 PhotoMemo 查看原因`
+  - `请回到时光记查看原因`
 - Notification title:
   - `09:12 2 张照片需要处理`
 - Notification body:
-  - `请回到 PhotoMemo 查看原因并重试。`
+  - `请回到时光记查看原因并重试。`
 - In-app:
   - detailed reason, phase, retry availability
 

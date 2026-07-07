@@ -1,4 +1,4 @@
-# PhotoMemo Alpha Known Issues
+# MemoMark Alpha Known Issues
 
 Last updated: 2026-06-20
 
@@ -10,7 +10,7 @@ This file tracks issues already understood by the project, even if they are not 
 
 - Area: Share-first workflow
 - Summary: The Share Extension is still more of an intake bridge than a complete primary product experience.
-- Impact: Users may still feel that share-to-PhotoMemo is a handoff instead of an immediate generate-and-save flow.
+- Impact: Users may still feel that share-to-MemoMark is a handoff instead of an immediate generate-and-save flow.
 - Status: Known
 
 ### KI-002

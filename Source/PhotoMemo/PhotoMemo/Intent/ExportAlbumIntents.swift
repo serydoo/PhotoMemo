@@ -31,9 +31,9 @@ enum V1IOSOutputTarget:
     var note: String {
         switch self {
         case .automatic:
-            return "不选择时，生成照片会进入系统图库，并自动归入 photomemo 相册。"
+            return "不选择时，生成照片会进入系统图库，并自动归入时光记相册。"
         case .applePhotos:
-            return "生成照片只写入系统图库，不额外加入 PhotoMemo 指定相册。"
+            return "生成照片只写入系统图库，不额外加入时光记指定相册。"
         case .existingAlbum:
             return "生成照片会写入系统图库，并加入选中的相册。"
         case .newAlbum:

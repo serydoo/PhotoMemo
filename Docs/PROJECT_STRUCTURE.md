@@ -1,4 +1,4 @@
-# PhotoMemo Project Structure
+# MemoMark Project Structure
 
 Last updated: 2026-07-01
 

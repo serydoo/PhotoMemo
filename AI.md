@@ -1,10 +1,10 @@
-# PhotoMemo AI Guide
+# MemoMark AI Guide
 
-这份文档用于帮助后续任何 AI 工具快速接手 PhotoMemo 项目，不依赖历史聊天记录，也不需要先靠猜来理解项目方向。
+这份文档用于帮助后续任何 AI 工具快速接手时光记项目，不依赖历史聊天记录，也不需要先靠猜来理解项目方向。
 
 ## 0. V2 Reset Notice
 
-PhotoMemo 已进入 V2 Research Phase。
+时光记已进入 V2 Research Phase。
 
 功能开发暂停，Renderer 打磨暂停，UI 扩展暂停。
 
@@ -44,11 +44,9 @@ Research -> Specification -> Layout Engine -> Renderer -> Validation -> Release
   - iOS 基础：`PhotoMemoiOS` target 已可编译
   - 分享扩展：`PhotoMemoShareExtension` target 已可编译
 
-一句话：
+一句话：时光记 V2 是一个 **local-first、基于 metadata、memory engine、presentation specification 和 layout engine 的 Memory Presentation Engine**。
 
-PhotoMemo V2 是一个 **local-first、基于 metadata、memory engine、presentation specification 和 layout engine 的 Memory Presentation Engine**。
-
-照片有时间戳，记忆有位置。PhotoMemo 要保存的不只是照片怎么显示，而是这张照片在用户人生时间线里的位置。
+照片有时间戳，记忆有位置。时光记要保存的不只是照片怎么显示，而是这张照片在用户人生时间线里的位置。
 
 它不是：
 
@@ -138,7 +136,7 @@ PhotoMemo V2 是一个 **local-first、基于 metadata、memory engine、present
 关键边界：
 
 - `ExternalIntake` 是纯临时存储，不是长期缓存
-- 只能清 PhotoMemo 自己复制进去的托管文件
+- 只能清时光记自己复制进去的托管文件
 - 绝不能碰用户原始照片路径
 - 写回系统相册的成品图不能当缓存处理
 
@@ -254,7 +252,7 @@ Git 同步信息：
 - `swift-testing`
 - `swiftui-patterns`
 
-这批新增的项目本地 skills，主要用于补强 PhotoMemo 的 iPhone 方向开发：
+这批新增的项目本地 skills，主要用于补强时光记的 iPhone 方向开发：
 
 - `photokit`：相册读取、权限、选择器、保存链路
 - `background-processing`：分享入口后的后台任务、继续处理、取消与恢复
@@ -302,7 +300,7 @@ Git 同步信息：
 4. 继续保证预览、渲染、导出、元数据保留的一致性
 5. 在不破坏现有主链的前提下推进 iPhone 工作流
 6. 保证 share-extension / ExternalIntake 来源的失败项可以保留源文件并重试，而不是失败后直接丢失重试机会
-7. 继续沿着 `PhotoMemoBackgroundStatusService` 这类中间层推进 iPhone 进度能力，而不是让 ActivityKit 或 iPhone UI 直接耦合 `BatchQueueStore`
+7. 继续沿着 `时光记BackgroundStatusService` 这类中间层推进 iPhone 进度能力，而不是让 ActivityKit 或 iPhone UI 直接耦合 `BatchQueueStore`
 8. iPhone 端的后台状态优先通过独立入口或 sheet 呈现，不把进度内容重新塞回主编辑内容区
 9. iPhone 主 app 在队列处理中进入后台时，优先保持系统标准 background-task 托底，而不是先把复杂 BGTaskScheduler / Live Activity 强塞进主链
 10. 如果继续做灵动岛/锁屏进度，优先接 `PhotoMemoiOSLiveActivityBridgeService`，不要让 ActivityKit 直接读取 `BatchQueueStore`
@@ -326,7 +324,7 @@ Git 同步信息：
 ```text
 项目路径是 /Users/rui/Desktop/PhotoMemo。
 先按 AGENTS.md 的 startup routine 读取 README.md、AI.md、AI_CONTEXT.md、HANDOFF.md、AGENTS.md、Docs/CURRENT_STATUS.md，并检查 git status。
-保持 PhotoMemo 作为 local-first 的模板校准中心，不修改原图。
+保持时光记作为 local-first 的模板校准中心，不修改原图。
 继续沿着当前产品方向开发，优先遵循 /spec -> /plan -> /build -> /test -> /review。
 如果涉及主编辑流，检查 MainView.swift 和最新 MainView+*.swift；
 如果涉及分享入口或 iOS，优先检查 ExternalIntake、PhotoMemoAppRuntime、SharedBatchConfigurationSnapshotService、PhotoMemoShareExtensionIntakeService。

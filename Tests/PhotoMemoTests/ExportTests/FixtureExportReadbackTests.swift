@@ -150,7 +150,7 @@ struct FixtureExportReadbackTests {
                 tiff[
                     kCGImagePropertyTIFFSoftware
                 ]
-            ) == "PhotoMemo"
+            ) == "MemoMark"
         )
         #expect(
             stringValue(

@@ -4,7 +4,7 @@ Architecture overview, RFCs, ADRs, workflow boundaries, and engine ownership doc
 
 Canonical architecture artifacts in the current repository line:
 
-- `PhotoMemo_V1_Engineering_Baseline.md`
+- `MemoMark_V1_Engineering_Baseline.md`
 - `RFC-001-Memory-Enters-the-Production-Pipeline.md`
 - `RFC-001-Implementation-Plan.md`
 - `V1_Render_Contract_Freeze_2026-07-03.md`
@@ -43,7 +43,7 @@ ADRs or Freeze documents.
 Architecture Freeze documents define decisions that should not be reopened
 without an explicit review.
 
-- `PhotoMemo_V1_Engineering_Baseline.md`
+- `MemoMark_V1_Engineering_Baseline.md`
 - `RFC-001-Memory-Enters-the-Production-Pipeline.md`
 - `RFC-001-Implementation-Plan.md`
 - `V1_Render_Contract_Freeze_2026-07-03.md`

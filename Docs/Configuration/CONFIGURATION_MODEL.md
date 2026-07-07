@@ -10,7 +10,7 @@ Frozen
 
 ## Configuration Center Principle
 
-PhotoMemo's foreground product surface is permanently the Configuration Center.
+MemoMark's foreground product surface is permanently the Configuration Center.
 
 It owns long-term setup.
 
@@ -95,7 +95,7 @@ System Defaults
 
 ### System Defaults
 
-The baseline defaults PhotoMemo can use automatically.
+The baseline defaults MemoMark can use automatically.
 
 ### User Preferences
 

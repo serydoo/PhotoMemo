@@ -1,10 +1,10 @@
-# PhotoMemo Main Workflow Consolidation
+# MemoMark Main Workflow Consolidation
 
 Last updated: 2026-06-21
 
 ## Purpose
 
-This document captures the parts of `PhotoMemo v0.4 Main Workflow Consolidation` that are worth adopting now without forcing a new architecture rewrite.
+This document captures the parts of `MemoMark v0.4 Main Workflow Consolidation` that are worth adopting now without forcing a new architecture rewrite.
 
 It does not introduce a new ADR.
 
@@ -18,7 +18,7 @@ Instead, it defines the current internal workflow standard that future work shou
 
 ## Canonical Internal Workflow
 
-PhotoMemo should be reasoned about through one internal execution path:
+MemoMark should be reasoned about through one internal execution path:
 
 Import
 
@@ -85,7 +85,7 @@ These still need tighter lifecycle alignment.
 
 ### 5. Share stays product-primary, but not through a risky rewrite
 
-PhotoMemo should keep moving toward a share-first experience, but this round does not force a full rewrite where generation must immediately move entirely into the Share Extension.
+MemoMark should keep moving toward a share-first experience, but this round does not force a full rewrite where generation must immediately move entirely into the Share Extension.
 
 Stability remains more important than purity.
 
@@ -105,7 +105,7 @@ The next worthwhile consolidation work should focus on:
 2. keeping renderer free of business logic drift
 3. making share failures stage-visible and user-readable
 4. verifying the happy path:
-   Photos -> Share -> PhotoMemo -> Generate -> Save
+   Photos -> Share -> MemoMark -> Generate -> Save
 
 ## Acceptance Standard
 

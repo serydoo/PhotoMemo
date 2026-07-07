@@ -1,6 +1,34 @@
-# PhotoMemo Current Status
+# MemoMark Current Status
 
 Last updated: 2026-07-07
+
+## 2026-07-07 Product brand renamed to MemoMark / 时光记
+
+This branding slice updates the external product identity from PhotoMemo to:
+
+- English: `MemoMark`
+- Chinese: `时光记`
+
+What changed:
+
+- app-facing display names now use `时光记`
+- Share Extension display name now uses `时光记分享`
+- Widget/Live Activity display name now uses `时光记 Live`
+- user-facing Chinese app copy now uses `时光记`
+- English docs, privacy policy, and TestFlight/App Review materials now use
+  `MemoMark`
+- generated output file fallbacks and export metadata software now use
+  `MemoMark`
+- `memomark://share` is now the generated deep link
+- `photomemo://share` remains accepted as a compatibility alias
+
+Intentionally preserved for project stability:
+
+- Bundle IDs under `com.serydoo.PhotoMemo...`
+- App Group identifier `group.com.serydoo.PhotoMemo`
+- Xcode target, scheme, module, source folder, and Swift type names
+- existing `photomemo.*` UserDefaults keys and internal compatibility markers
+- GitHub repository URL and local path names
 
 ## 2026-07-07 TestFlight upload reached App Store Connect
 

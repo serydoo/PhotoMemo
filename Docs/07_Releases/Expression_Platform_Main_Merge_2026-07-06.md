@@ -57,7 +57,7 @@ Passed before merge to `main`:
 - Focused Location display / preview tests.
 - Focused save / production / boundary tests.
 - Focused shared snapshot tests.
-- `PhotoMemo` Debug build.
+- `MemoMark` Debug build.
 - `PhotoMemoiOSV1` generic iOS Simulator build.
 - `PhotoMemoShareExtension` generic iOS Simulator build.
 
@@ -72,7 +72,7 @@ Post-merge simulator smoke:
   has no GPS latitude / longitude, so it cannot serve as the Location Module
   acceptance fixture.
 - Follow-up local acceptance used the Photos render
-  `0194231B-1F96-4A84-A5D7-B32200353811_1_201_a.jpeg`; the real PhotoMemo
+  `0194231B-1F96-4A84-A5D7-B32200353811_1_201_a.jpeg`; the real MemoMark
   metadata, Location provider, configuration adapter, and `ExpressionContext`
   lookup sources resolved `33.930355, 116.444153`.
 

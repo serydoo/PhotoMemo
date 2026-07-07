@@ -1,4 +1,4 @@
-# PhotoMemo V1.0 Testing Release
+# MemoMark V1.0 Testing Release
 
 Release label: `v1.0.0-test1`
 
@@ -10,7 +10,7 @@ App version:
 
 Artifacts:
 
-- `PhotoMemo-V1.0.0-test1.ipa`
+- `MemoMark-V1.0.0-test1.ipa`
 
 Packaging notes:
 
@@ -29,11 +29,11 @@ Build/export commands:
 xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
   -scheme PhotoMemoiOSV1 \
   -destination "generic/platform=iOS" \
-  -archivePath /tmp/PhotoMemo-V1.0.0-test1.xcarchive \
+  -archivePath /tmp/MemoMark-V1.0.0-test1.xcarchive \
   archive
 
 xcodebuild -exportArchive \
-  -archivePath /tmp/PhotoMemo-V1.0.0-test1.xcarchive \
-  -exportPath /tmp/PhotoMemo-V1.0.0-test1-export \
+  -archivePath /tmp/MemoMark-V1.0.0-test1.xcarchive \
+  -exportPath /tmp/MemoMark-V1.0.0-test1-export \
   -exportOptionsPlist scripts/export_options_v1_testing.plist
 ```

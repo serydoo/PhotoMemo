@@ -4,7 +4,7 @@ Last updated: 2026-06-22
 
 ## Purpose
 
-Define how PhotoMemo measures the final presentation canvas before any renderer draws it.
+Define how MemoMark measures the final presentation canvas before any renderer draws it.
 
 ## Definitions
 

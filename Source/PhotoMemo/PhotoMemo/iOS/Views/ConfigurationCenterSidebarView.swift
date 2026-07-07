@@ -283,7 +283,7 @@ struct ConfigurationCenterSidebarView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text("PhotoMemo 用锚点帮助你阅读回忆，而不只是保存照片。")
+                Text("时光记用锚点帮助你阅读回忆，而不只是保存照片。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

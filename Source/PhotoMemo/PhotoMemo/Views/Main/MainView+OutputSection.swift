@@ -48,7 +48,7 @@ struct MainOutputSection: View {
                                 .systemLibraryIdentifier
                         )
 
-                    Text("PhotoMemo")
+                    Text("时光记")
                         .tag(
                             PhotoAlbumOption
                                 .automaticIdentifier
@@ -64,7 +64,7 @@ struct MainOutputSection: View {
                 .controlSize(.small)
             }
 
-            Text("如果不指定相册，会默认保存到 photomemo 相册。")
+            Text("如果不指定相册，会默认保存到时光记相册。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(
@@ -138,7 +138,7 @@ struct MainOutputSection: View {
 
         if selectedAlbumIdentifier
             == PhotoAlbumOption.automaticIdentifier {
-            return "保存到 photomemo 相册"
+            return "保存到时光记相册"
         }
 
         return "保存到“\(selectedAlbumSummary)”"

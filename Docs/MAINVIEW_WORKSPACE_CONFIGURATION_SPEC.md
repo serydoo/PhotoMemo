@@ -1,7 +1,7 @@
 # Spec: MainView Workspace Configurations And Operation Guide
 
 ## Objective
-Add a real multi-configuration workflow to PhotoMemo's calibration UI and reduce left-panel clutter with dismissible guidance and a right-side operation guide.
+Add a real multi-configuration workflow to MemoMark's calibration UI and reduce left-panel clutter with dismissible guidance and a right-side operation guide.
 
 This slice turns the user's requested "3 个按钮" into three real local configuration slots. Each slot can persist the full calibration state, including:
 
@@ -79,7 +79,7 @@ applyWorkspaceConfigurationSnapshot(snapshot)
   - split configuration state away from the actual batch/export defaults
 
 ## Success Criteria
-- PhotoMemo has three real local configuration slots with one active slot at a time
+- MemoMark has three real local configuration slots with one active slot at a time
 - Each configuration slot can be given a custom user-facing name without changing template names
 - The right side contains the configuration switcher and save actions instead of the old toolbar-only save button
 - Switching slots refreshes the active calibration state and preview coherently

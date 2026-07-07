@@ -6,7 +6,7 @@ Last updated: 2026-06-24
 
 Decision:
 
-PhotoMemo is a Local First Memory Capability inside the Apple ecosystem.
+MemoMark is a Local First Memory Capability inside the Apple ecosystem.
 
 Reason:
 
@@ -14,7 +14,7 @@ The product should extend Apple Photos workflows rather than compete with them.
 
 Impact:
 
-PhotoMemo cannot grow into a standalone gallery, editor, or photo-management system.
+MemoMark cannot grow into a standalone gallery, editor, or photo-management system.
 
 Status:
 
@@ -24,7 +24,7 @@ Frozen
 
 Decision:
 
-PhotoMemo does not manage photos. It only owns Memory Workflow.
+MemoMark does not manage photos. It only owns Memory Workflow.
 
 Reason:
 
@@ -42,7 +42,7 @@ Frozen
 
 Decision:
 
-PhotoMemo's foreground product surface is a permanent Configuration Center.
+MemoMark's foreground product surface is a permanent Configuration Center.
 
 Reason:
 
@@ -60,11 +60,11 @@ Frozen
 
 Decision:
 
-The primary entry path is `Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos`.
+The primary entry path is `Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos`.
 
 Reason:
 
-The best PhotoMemo experience should begin where users already manage photos.
+The best MemoMark experience should begin where users already manage photos.
 
 Impact:
 
@@ -82,7 +82,7 @@ The default happy path follows Zero Interaction.
 
 Reason:
 
-PhotoMemo should reduce decisions during the moment of remembering.
+MemoMark should reduce decisions during the moment of remembering.
 
 Impact:
 
@@ -96,7 +96,7 @@ Frozen
 
 Decision:
 
-PhotoMemo follows Quiet Computing by default.
+MemoMark follows Quiet Computing by default.
 
 Reason:
 
@@ -114,11 +114,11 @@ Frozen
 
 Decision:
 
-After completion, PhotoMemo returns users to Apple Photos by default.
+After completion, MemoMark returns users to Apple Photos by default.
 
 Reason:
 
-PhotoMemo should support the photo flow rather than hijack it.
+MemoMark should support the photo flow rather than hijack it.
 
 Impact:
 
@@ -150,7 +150,7 @@ Frozen
 
 Decision:
 
-PhotoMemo should automatically recover tasks whenever possible.
+MemoMark should automatically recover tasks whenever possible.
 
 Reason:
 
@@ -168,7 +168,7 @@ Frozen
 
 Decision:
 
-PhotoMemo should automatically follow Apple device constraints.
+MemoMark should automatically follow Apple device constraints.
 
 Reason:
 
@@ -204,7 +204,7 @@ Frozen
 
 Decision:
 
-Generated photos should remain near their originals and also join the PhotoMemo output album.
+Generated photos should remain near their originals and also join the MemoMark output album.
 
 Reason:
 
@@ -226,7 +226,7 @@ The original photo never changes.
 
 Reason:
 
-PhotoMemo is a non-destructive memory workflow.
+MemoMark is a non-destructive memory workflow.
 
 Impact:
 
@@ -244,7 +244,7 @@ Metadata remains preserved, with canvas size as the only allowed output-level ch
 
 Reason:
 
-PhotoMemo should preserve the photo's objective usefulness while generating a new memory result.
+MemoMark should preserve the photo's objective usefulness while generating a new memory result.
 
 Impact:
 
@@ -276,7 +276,7 @@ Frozen
 
 Decision:
 
-PhotoMemo always trusts Apple Photos.
+MemoMark always trusts Apple Photos.
 
 Reason:
 
@@ -284,7 +284,7 @@ Apple Photos already owns the higher-order systems users depend on every day.
 
 Impact:
 
-PhotoMemo will not rebuild gallery, timeline, map, people, search, or sync systems.
+MemoMark will not rebuild gallery, timeline, map, people, search, or sync systems.
 
 Status:
 
@@ -330,7 +330,7 @@ Frozen
 
 Decision:
 
-PhotoMemo has explicit anti-goals against becoming its own gallery, timeline, map, people manager, search system, browser, editor, dashboard, workspace, or task center.
+MemoMark has explicit anti-goals against becoming its own gallery, timeline, map, people manager, search system, browser, editor, dashboard, workspace, or task center.
 
 Reason:
 
@@ -348,15 +348,15 @@ Frozen
 
 Decision:
 
-Apple Photos and PhotoMemo have an explicit product-boundary split.
+Apple Photos and MemoMark have an explicit product-boundary split.
 
 Reason:
 
-The repository needs one stable statement of ownership for Apple Photos versus PhotoMemo.
+The repository needs one stable statement of ownership for Apple Photos versus MemoMark.
 
 Impact:
 
-Future product work must check whether a capability belongs to Apple Photos or to PhotoMemo before entering implementation.
+Future product work must check whether a capability belongs to Apple Photos or to MemoMark before entering implementation.
 
 Status:
 
@@ -406,7 +406,7 @@ Smart Batch Recommendation replaces fixed maximum, limit, or threshold language.
 
 Reason:
 
-PhotoMemo should recommend the best experience without turning guidance into a rigid product restriction.
+MemoMark should recommend the best experience without turning guidance into a rigid product restriction.
 
 Impact:
 
@@ -456,7 +456,7 @@ Frozen
 
 Decision:
 
-PhotoMemo exists to help people read their memories, not just store their photos.
+MemoMark exists to help people read their memories, not just store their photos.
 
 Reason:
 
@@ -478,7 +478,7 @@ The Configuration Center edits Objects, not Data.
 
 Reason:
 
-PhotoMemo users should understand the foreground app as a place for shaping durable memory objects, not as a form for changing isolated strings, dates, or configuration fields.
+MemoMark users should understand the foreground app as a place for shaping durable memory objects, not as a form for changing isolated strings, dates, or configuration fields.
 
 Impact:
 
@@ -532,7 +532,7 @@ Object Inspector replaces generic editor language for Configuration Center objec
 
 Reason:
 
-PhotoMemo needs one consistent object-inspection model for Memory Subject, Memory Card, Decoration, Preset, and future objects.
+MemoMark needs one consistent object-inspection model for Memory Subject, Memory Card, Decoration, Preset, and future objects.
 
 Impact:
 
@@ -568,7 +568,7 @@ Memory Tokens use capture time, not export time.
 
 Reason:
 
-PhotoMemo records the moment when a photo was captured, not when a generated output was exported.
+MemoMark records the moment when a photo was captured, not when a generated output was exported.
 
 Impact:
 
@@ -582,7 +582,7 @@ Frozen
 
 Decision:
 
-PhotoMemo must establish and reuse a Configuration UI Design System.
+MemoMark must establish and reuse a Configuration UI Design System.
 
 Reason:
 
@@ -618,7 +618,7 @@ Frozen
 
 Decision:
 
-IA-002 Configuration Center Architecture is complete and frozen. PhotoMemo now enters Product Realization through IA-003 Memory Engine Integration.
+IA-002 Configuration Center Architecture is complete and frozen. MemoMark now enters Product Realization through IA-003 Memory Engine Integration.
 
 Reason:
 
@@ -640,7 +640,7 @@ Preview is the Renderer before Rendering.
 
 Reason:
 
-Configuration Center should preview the real Memory Card that PhotoMemo will generate, not a photo placeholder, an abstract editor layout, or a separate configuration-only composition. Photos belong to Apple Photos; PhotoMemo owns the Memory Card.
+Configuration Center should preview the real Memory Card that MemoMark will generate, not a photo placeholder, an abstract editor layout, or a separate configuration-only composition. Photos belong to Apple Photos; MemoMark owns the Memory Card.
 
 Impact:
 
@@ -658,7 +658,7 @@ MemoryBlock is a field-based content asset, not a layout slot.
 
 Reason:
 
-PhotoMemo needs a Memory Language Layer that can express growth records, anniversaries, travel records, device records, family memories, and future dynamic memory types without forcing every block into the current four-slot layout or into a fixed Subject + Action + Result structure.
+MemoMark needs a Memory Language Layer that can express growth records, anniversaries, travel records, device records, family memories, and future dynamic memory types without forcing every block into the current four-slot layout or into a fixed Subject + Action + Result structure.
 
 Impact:
 

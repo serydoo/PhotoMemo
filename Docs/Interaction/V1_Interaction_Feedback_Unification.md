@@ -12,13 +12,13 @@ Implemented in the 2026-07-07 V1 interaction feedback unification slice.
 
 ## Objective
 
-This document defines a unified V1 interaction-feedback upgrade for PhotoMemo's
+This document defines a unified V1 interaction-feedback upgrade for MemoMark's
 real daily workflow:
 
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
@@ -65,7 +65,7 @@ This document closes that gap.
 
 ## Product Position
 
-PhotoMemo remains:
+MemoMark remains:
 
 - local-first
 - privacy-first
@@ -76,14 +76,14 @@ PhotoMemo remains:
 This unification work must strengthen the existing product shape:
 
 ```text
-Configuration in PhotoMemo
+Configuration in MemoMark
 Execution from Apple Photos
 Quiet processing in background
 Clear result feedback
 Return to Apple Photos
 ```
 
-This work must not turn PhotoMemo into:
+This work must not turn MemoMark into:
 
 - a queue dashboard product
 - a batch-console product
@@ -296,8 +296,8 @@ states:
 
 Meaning:
 
-- PhotoMemo has accepted the incoming share/open request.
-- The batch is now inside the PhotoMemo workflow.
+- MemoMark has accepted the incoming share/open request.
+- The batch is now inside the MemoMark workflow.
 
 Used in:
 
@@ -308,7 +308,7 @@ Used in:
 
 Meaning:
 
-- PhotoMemo is verifying files, reading source availability, or preparing
+- MemoMark is verifying files, reading source availability, or preparing
   heavy media conditions such as RAW.
 
 Used in:
@@ -355,7 +355,7 @@ Used in:
 
 Meaning:
 
-- the user should return to PhotoMemo to understand or resolve something
+- the user should return to MemoMark to understand or resolve something
 - retry may or may not be available
 
 Used in:
@@ -405,14 +405,14 @@ with accurate internal reason
 
 Primary role:
 
-- confirm what PhotoMemo detected
+- confirm what MemoMark detected
 - explain what will happen next
 - reassure the user that they do not need to stay here
 
 Must answer:
 
 1. what was detected
-2. what PhotoMemo will do
+2. what MemoMark will do
 3. where the user can check progress if needed
 
 Must not default to:
@@ -474,7 +474,7 @@ Must answer:
 
 1. what finished
 2. what result category it belongs to
-3. whether the user needs to return to PhotoMemo
+3. whether the user needs to return to MemoMark
 
 Notifications must remain short enough to scan in a list.
 
@@ -517,20 +517,20 @@ The primary state should be recognizable within one second.
 
 Examples:
 
-- `准备交给 PhotoMemo`
+- `准备交给时光记`
 - `正在生成记忆卡片`
 - `已完成`
 - `有 1 张照片需处理`
 
 ### Level 2: Outcome Or Current Step
 
-The secondary line explains what PhotoMemo is doing or what result happened.
+The secondary line explains what MemoMark is doing or what result happened.
 
 Examples:
 
 - `将按当前配置继续处理`
 - `已保存到系统相册`
-- `大部分结果已完成，剩余项目可回到 PhotoMemo 查看`
+- `大部分结果已完成，剩余项目可回到时光记查看`
 
 ### Level 3: Detail
 
@@ -603,7 +603,7 @@ Use action-oriented language without panic.
 Preferred pattern:
 
 - say how many photos need attention
-- say that PhotoMemo can explain more
+- say that MemoMark can explain more
 - only promise retry when retry is truly possible
 
 ### Unsupported
@@ -628,7 +628,7 @@ Preferred pattern:
 
 - explain that the process did not finish within the allowed handoff or
   background condition
-- direct the user back to PhotoMemo when needed
+- direct the user back to MemoMark when needed
 
 Avoid:
 
@@ -741,7 +741,7 @@ Example:
 
 ```text
 Share:
-已交给 PhotoMemo
+已交给时光记
 
 Live Activity:
 处理中
@@ -911,9 +911,9 @@ These questions should be resolved before implementation planning:
 
 ## Success Criteria
 
-The project succeeds when PhotoMemo's feedback surfaces feel like one product
+The project succeeds when MemoMark's feedback surfaces feel like one product
 system rather than five adjacent implementations.
 
 The user should be able to share photos, leave calmly, understand progress at a
-glance, receive a clear outcome, and know exactly when returning to PhotoMemo is
+glance, receive a clear outcome, and know exactly when returning to MemoMark is
 necessary.

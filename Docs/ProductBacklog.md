@@ -1,4 +1,4 @@
-# PhotoMemo Product Backlog
+# MemoMark Product Backlog
 
 Last updated: 2026-06-20
 
@@ -68,4 +68,4 @@ These are valid ideas, but not planned for active development now.
 
 5. The most important question remains:
 
-How do we let users configure PhotoMemo once, stay inside Apple Photos, and receive a result worth keeping with as little friction as possible?
+How do we let users configure MemoMark once, stay inside Apple Photos, and receive a result worth keeping with as little friction as possible?

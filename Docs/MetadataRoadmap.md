@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Goal
 
-Strengthen PhotoMemo's metadata system without changing the core product shape:
+Strengthen MemoMark's metadata system without changing the core product shape:
 
 - local-first
 - template string remains the source of truth
@@ -128,7 +128,7 @@ Why sixth:
 
 Goal:
 
-- verify that exported and photo-library-saved outputs still carry the metadata PhotoMemo cares about
+- verify that exported and photo-library-saved outputs still carry the metadata MemoMark cares about
 
 Work:
 
@@ -138,7 +138,7 @@ Work:
 
 Why seventh:
 
-- PhotoMemo's promise is not just pretty rendering; it is metadata-friendly output
+- MemoMark's promise is not just pretty rendering; it is metadata-friendly output
 - export verification closes the loop on the whole pipeline
 
 ## What Should Not Happen Yet
@@ -190,4 +190,4 @@ The right roadmap is:
 5. expand variables
 6. verify save-back
 
-That order keeps PhotoMemo disciplined and preserves the architecture that is already working.
+That order keeps MemoMark disciplined and preserves the architecture that is already working.

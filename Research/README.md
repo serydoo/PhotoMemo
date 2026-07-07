@@ -1,8 +1,8 @@
-# PhotoMemo Research
+# MemoMark Research
 
 Last updated: 2026-06-22
 
-Research is the highest-priority activity in PhotoMemo V2.
+Research is the highest-priority activity in MemoMark V2.
 
 This folder stores extracted knowledge, not private datasets.
 

@@ -1,14 +1,14 @@
-# PhotoMemo Design System
+# MemoMark Design System
 
 Last updated: 2026-06-20
 
 ## Purpose
 
-This document defines the baseline UI system for PhotoMemo.
+This document defines the baseline UI system for MemoMark.
 
 The goal is consistency, not decoration.
 
-PhotoMemo should feel:
+MemoMark should feel:
 
 - Apple-native
 - calm
@@ -85,7 +85,7 @@ Default rule:
 
 ## Typography
 
-PhotoMemo should use Apple system typography and clear hierarchy.
+MemoMark should use Apple system typography and clear hierarchy.
 
 ### Recommended Type Scale
 
@@ -144,7 +144,7 @@ Use SF Symbols as the default icon system.
 
 ## Cards and Containers
 
-PhotoMemo currently relies heavily on cards.
+MemoMark currently relies heavily on cards.
 
 That is acceptable, but cards must be disciplined.
 
@@ -192,7 +192,7 @@ Visual traits:
 
 ## Buttons
 
-PhotoMemo should use only a small button vocabulary.
+MemoMark should use only a small button vocabulary.
 
 ### Primary Button
 
@@ -233,7 +233,7 @@ Rule:
 
 ## Motion and Feedback
 
-PhotoMemo should feel responsive, not animated for its own sake.
+MemoMark should feel responsive, not animated for its own sake.
 
 Use motion for:
 

@@ -1,4 +1,4 @@
-# PhotoMemo UX Principles
+# MemoMark UX Principles
 
 1. Photo first. Configuration second.
 

@@ -11,7 +11,11 @@ enum PhotoMemoDeepLink: Equatable {
         guard
             let scheme = url.scheme?
                 .lowercased(),
-            scheme == "photomemo"
+            [
+                "memomark",
+                "photomemo",
+            ]
+            .contains(scheme)
         else {
             return nil
         }
@@ -47,7 +51,7 @@ enum PhotoMemoDeepLink: Equatable {
 
         case .share:
             return URL(
-                string: "photomemo://share"
+                string: "memomark://share"
             )!
         }
     }

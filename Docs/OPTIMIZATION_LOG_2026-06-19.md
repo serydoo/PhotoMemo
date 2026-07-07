@@ -1,4 +1,4 @@
-# PhotoMemo Optimization Log
+# MemoMark Optimization Log
 
 Date: 2026-06-19
 
@@ -398,7 +398,7 @@ What changed:
   - duplicate URL deduplication
   - missing-file filtering before queue handoff
   - managed temporary-file cleanup on persistence failure
-- refused the tempting `UIImage -> JPEG` fallback to avoid silent EXIF loss or binary mutation before PhotoMemo starts real processing
+- refused the tempting `UIImage -> JPEG` fallback to avoid silent EXIF loss or binary mutation before MemoMark starts real processing
 - extracted `ExternalPhotoIntakeRequest` into its own shared file so the request model no longer lives inside the main-app intake center
 - introduced a synchronized-group exception set for `PhotoMemoShareExtension` and removed a large amount of app-only UI/service surface from that target
 

@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Scope
 
-This review audits PhotoMemo's current metadata pipeline without changing behavior, architecture boundaries, rendering, export, or template persistence.
+This review audits MemoMark's current metadata pipeline without changing behavior, architecture boundaries, rendering, export, or template persistence.
 
 Core files reviewed:
 
@@ -298,7 +298,7 @@ This is the canonical metadata entry point. There is no second EXIF reader in th
 
 ## 6. Bottom Line
 
-PhotoMemo already has a recognizable canonical metadata pipeline:
+MemoMark already has a recognizable canonical metadata pipeline:
 
 `PhotoMetadataReader -> PhotoMetadata -> MetadataContext / CardVariableProvider -> TemplateVariableEngine -> Renderer / Export`
 

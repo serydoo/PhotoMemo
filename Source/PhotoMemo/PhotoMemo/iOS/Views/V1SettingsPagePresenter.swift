@@ -441,7 +441,7 @@ private extension V1SettingsPagePresenter {
             return "原图暂时不可读取"
         case .extensionHandoffUnconfirmed,
              .extensionHandoffFailed:
-            return "等待 PhotoMemo 接力"
+            return "等待时光记接力"
         case .appDrain:
             return "检查待处理照片"
         case .appRequestValidated:
@@ -466,11 +466,11 @@ private extension V1SettingsPagePresenter {
         switch event.stage {
         case .extensionRequestPersisted,
              .extensionPersisted:
-            return "原图已暂存，等待 PhotoMemo 处理。"
+            return "原图已暂存，等待时光记处理。"
         case .extensionSourcePrepare:
             return "正在向系统请求原图数据，等待 iCloud 缓存到本地。"
         case .extensionSourceReady:
-            return "原图已经可读取，正在继续交给 PhotoMemo。"
+            return "原图已经可读取，正在继续交给时光记。"
         case .extensionSourceUnavailable:
             return "系统暂时没有提供完整原图，请稍后重试或先在相册打开原图。"
         case .extensionHandoffUnconfirmed,

@@ -42,11 +42,11 @@ enum BatchNotificationMessageFormatter {
                 .map {
                     "已保存到「\($0)」。"
                 }
-                ?? "PhotoMemo 已生成新的照片。"
+                ?? "时光记已生成新的照片。"
         }
 
         if completedCount == 0 {
-            return "请回到 PhotoMemo 查看原因，并按提示继续处理。"
+            return "请回到时光记查看原因，并按提示继续处理。"
         }
 
         if Double(completedCount)
@@ -55,10 +55,10 @@ enum BatchNotificationMessageFormatter {
             if let albumName =
                 savedAlbumName
                 .flatMap(normalizedAlbumName) {
-                return "大部分结果已保存到「\(albumName)」，剩余 \(failedCount) 张可回到 PhotoMemo 查看。"
+                return "大部分结果已保存到「\(albumName)」，剩余 \(failedCount) 张可回到时光记查看。"
             }
 
-            return "大部分结果已经完成，剩余 \(failedCount) 张可回到 PhotoMemo 查看。"
+            return "大部分结果已经完成，剩余 \(failedCount) 张可回到时光记查看。"
         }
 
         if let albumName =
@@ -141,7 +141,7 @@ final class BatchNotificationService:
             UNMutableNotificationContent()
 
         content.title =
-            "PhotoMemo 已接收任务"
+            "时光记已接收任务"
         content.body =
             queuedMessage(
                 for: job
@@ -258,7 +258,7 @@ final class BatchNotificationService:
             UNMutableNotificationContent()
 
         content.title =
-            "PhotoMemo 正在后台处理"
+            "时光记正在后台处理"
         content.body =
             progressMessage(
                 for: job,
@@ -523,7 +523,7 @@ private extension BatchNotificationService {
             ?? ""
 
         let summary =
-            "已接收 \(job.totalTaskCount) 张照片，PhotoMemo 会按当前配置继续处理。"
+            "已接收 \(job.totalTaskCount) 张照片，时光记会按当前配置继续处理。"
 
         let intakeWarningSummary =
             intakeWarningSummary(

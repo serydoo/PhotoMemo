@@ -1,8 +1,12 @@
-# PhotoMemo Handoff
+# MemoMark Handoff
 
 ## Current Truth
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
+- External product branding is now `MemoMark` / `时光记`; internal engineering
+  names such as `PhotoMemo` targets, bundle IDs, App Group, UserDefaults keys,
+  source paths, and GitHub repository URL remain intentionally preserved until
+  a dedicated engineering rename slice is approved.
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
 - `main` is now the active V1 source line after merging the former latest
   `v1-checkpoint-20260702` checkpoint into it.

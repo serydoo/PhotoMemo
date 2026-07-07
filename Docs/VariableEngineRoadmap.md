@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Current Position
 
-PhotoMemo should keep its current rule:
+MemoMark should keep its current rule:
 
 - template source of truth remains `String`
 - editor remains independent
@@ -320,7 +320,7 @@ But they should complement, not replace:
 - raw date fields
 - raw location fields
 
-This keeps PhotoMemo flexible for users who want custom phrasing.
+This keeps MemoMark flexible for users who want custom phrasing.
 
 ## 7. Recommended Variable Backlog
 
@@ -346,7 +346,7 @@ This keeps PhotoMemo flexible for users who want custom phrasing.
 
 ## 8. Recommendation
 
-PhotoMemo should not introduce a new Variable Engine architecture right now.
+MemoMark should not introduce a new Variable Engine architecture right now.
 
 It should keep the current string-based engine and invest in:
 

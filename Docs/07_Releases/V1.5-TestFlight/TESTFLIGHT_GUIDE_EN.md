@@ -1,12 +1,12 @@
-# PhotoMemo TestFlight Guide
+# MemoMark TestFlight Guide
 
-Thank you for helping test PhotoMemo.
+Thank you for helping test MemoMark.
 
-PhotoMemo is a local-first memory presentation app for Apple Photos. It helps
+MemoMark is a local-first memory presentation app for Apple Photos. It helps
 people turn meaningful photos into clean memory-card images while preserving
 the original photo.
 
-This TestFlight build is PhotoMemo `1.5 (5)`, the first broad MVP test focused
+This TestFlight build is MemoMark `1.5 (5)`, the first broad MVP test focused
 on the Apple Photos share workflow.
 
 ## Before You Start
@@ -14,17 +14,17 @@ on the Apple Photos share workflow.
 - No account is required.
 - Normal operation does not require a server.
 - Photo processing is performed locally on your device.
-- Your photos are not uploaded by PhotoMemo.
+- Your photos are not uploaded by MemoMark.
 - Original photos are not modified.
-- PhotoMemo creates a new generated image as output.
+- MemoMark creates a new generated image as output.
 
 ## Recommended Test Flow
 
 1. Open Apple Photos.
 2. Select one or more static photos.
-3. Share the selected photos to PhotoMemo.
-4. Confirm that PhotoMemo receives the photos and starts processing.
-5. Open PhotoMemo if needed to review the processing state and configuration.
+3. Share the selected photos to MemoMark.
+4. Confirm that MemoMark receives the photos and starts processing.
+5. Open MemoMark if needed to review the processing state and configuration.
 6. Confirm that the generated image is saved back to Apple Photos.
 7. Compare the generated image with the original photo.
 
@@ -43,7 +43,7 @@ Please try sharing:
 - A single photo
 - Multiple photos
 
-Confirm whether PhotoMemo receives the photos and creates processing status
+Confirm whether MemoMark receives the photos and creates processing status
 clearly.
 
 ### Configuration Center
@@ -103,6 +103,6 @@ When reporting an issue, please include:
 - Actual behavior
 - iPhone model
 - iOS version
-- Whether the issue happened in Apple Photos Share or inside PhotoMemo
+- Whether the issue happened in Apple Photos Share or inside MemoMark
 
 Thank you for being part of the first TestFlight phase.

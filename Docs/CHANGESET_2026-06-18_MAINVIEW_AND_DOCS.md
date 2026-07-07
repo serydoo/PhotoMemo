@@ -18,12 +18,12 @@ Refactor MainView panel structure and formalize project handoff rules
 
 This changeset does two things:
 
-1. Continues the structural decomposition of `MainView.swift` into focused SwiftUI panel files without changing the current PhotoMemo MVP direction.
-2. Formalizes long-term repository guidance and current project state in project-internal docs so future PhotoMemo sessions can restart with less context loss.
+1. Continues the structural decomposition of `MainView.swift` into focused SwiftUI panel files without changing the current MemoMark MVP direction.
+2. Formalizes long-term repository guidance and current project state in project-internal docs so future MemoMark sessions can restart with less context loss.
 
 ## Why This Change Exists
 
-PhotoMemo is no longer at the “just make it work” stage.
+MemoMark is no longer at the “just make it work” stage.
 
 The project now has:
 

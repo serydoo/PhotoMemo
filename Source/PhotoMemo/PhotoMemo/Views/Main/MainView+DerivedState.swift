@@ -89,7 +89,7 @@ extension MainView {
 
         if selectedAlbumIdentifier
             == PhotoAlbumOption.automaticIdentifier {
-            return "自动存入 photomemo"
+            return "自动存入时光记"
         }
 
         if selectedAlbumIdentifier
@@ -114,7 +114,7 @@ extension MainView {
             return "系统相册"
 
         case .photoMemoAlbum:
-            return "photomemo 相册"
+            return "时光记相册"
 
         case .selectedAlbum:
             let title =

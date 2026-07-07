@@ -5,6 +5,7 @@ enum PhotoFileNameResolver {
     private nonisolated static let
         placeholderPrefixes = [
             "photo library",
+            "memomark import",
             "photomemo import"
         ]
 
@@ -59,7 +60,7 @@ enum PhotoFileNameResolver {
         assetOriginalFileName: String? = nil,
         captureDate: Date? = nil,
         timeZone: TimeZone? = nil,
-        fallbackBaseName: String = "PhotoMemo"
+        fallbackBaseName: String = "MemoMark"
     ) -> String {
 
         if let resolvedFileName =
@@ -98,7 +99,7 @@ enum PhotoFileNameResolver {
 
         return trimmedFallbackBaseName
             .isEmpty
-            ? "PhotoMemo"
+            ? "MemoMark"
             : trimmedFallbackBaseName
     }
 
@@ -133,7 +134,7 @@ enum PhotoFileNameResolver {
 
         let safeBaseName =
             trimmedBaseName.isEmpty
-            ? "PhotoMemo"
+            ? "MemoMark"
             : trimmedBaseName
 
         return "\(safeBaseName)(\(max(index, 1)))"
@@ -253,7 +254,7 @@ enum PhotoFileNameResolver {
             trimmedBaseName.last == ")"
         else {
             return (
-                trimmedBaseName.isEmpty ? "PhotoMemo" : trimmedBaseName,
+                trimmedBaseName.isEmpty ? "MemoMark" : trimmedBaseName,
                 nil
             )
         }
@@ -271,7 +272,7 @@ enum PhotoFileNameResolver {
             let index = Int(numberText)
         else {
             return (
-                trimmedBaseName.isEmpty ? "PhotoMemo" : trimmedBaseName,
+                trimmedBaseName.isEmpty ? "MemoMark" : trimmedBaseName,
                 nil
             )
         }
@@ -283,7 +284,7 @@ enum PhotoFileNameResolver {
             )
 
         return (
-            root.isEmpty ? "PhotoMemo" : root,
+            root.isEmpty ? "MemoMark" : root,
             max(index, 1)
         )
     }

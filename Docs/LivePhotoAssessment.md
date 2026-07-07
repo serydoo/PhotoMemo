@@ -10,7 +10,7 @@ No Live Photo support was implemented in Sprint-008.
 
 ## Current Behavior
 
-PhotoMemo currently operates as a **derived still-image generator**.
+MemoMark currently operates as a **derived still-image generator**.
 
 Current pipeline assumptions:
 
@@ -49,7 +49,7 @@ No paired-video path is present.
 
 ## Product Reality Today
 
-If a Live Photo enters the system today, PhotoMemo should be understood as handling only the still-image side when a usable image resource is available.
+If a Live Photo enters the system today, MemoMark should be understood as handling only the still-image side when a usable image resource is available.
 
 What does not survive:
 
@@ -95,14 +95,14 @@ Would require at least:
 
 ## Recommended Product Decision
 
-For the current PhotoMemo phase, the best decision is:
+For the current MemoMark phase, the best decision is:
 
 - do not claim Live Photo support
-- describe PhotoMemo as a still-image derivative workflow
+- describe MemoMark as a still-image derivative workflow
 - if Live Photo assets are encountered, treat support as “still-image only” unless and until a dedicated Live Photo project slice is built
 
 ## Conclusion
 
-Live Photo support is currently outside PhotoMemo's verified product boundary.
+Live Photo support is currently outside MemoMark's verified product boundary.
 
 That is acceptable for now, because the core product promise is still-photo memory-card generation with metadata preservation, not full motion-asset reconstruction.

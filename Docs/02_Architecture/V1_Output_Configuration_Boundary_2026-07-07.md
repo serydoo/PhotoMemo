@@ -2,7 +2,7 @@
 
 Date: 2026-07-07
 Status: accepted
-Scope: PhotoMemo V1 iOS output configuration, current configuration, and Memory Subject switching
+Scope: MemoMark V1 iOS output configuration, current configuration, and Memory Subject switching
 
 ## 1. Purpose
 
@@ -250,5 +250,5 @@ For V1, the user-facing rule is:
 ```
 
 This keeps the Configuration Center as an object-centered setup surface while
-protecting the Apple Photos -> Share -> PhotoMemo -> Processing ->
+protecting the Apple Photos -> Share -> MemoMark -> Processing ->
 Notification -> Apple Photos lifecycle from transient UI state.

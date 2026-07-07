@@ -37,7 +37,7 @@ struct PhotoAlbumOption: Identifiable, Hashable {
 
     static let automatic = PhotoAlbumOption(
         id: automaticIdentifier,
-        title: "自动存入 photomemo",
+        title: "自动存入时光记",
         localIdentifier: nil
     )
 }
@@ -57,13 +57,13 @@ enum PhotoLibraryExportError: LocalizedError {
         switch self {
 
         case .unauthorized:
-            return "请先允许 PhotoMemo 访问你的系统相册。"
+            return "请先允许时光记访问你的系统相册。"
 
         case .albumNotFound:
             return "未找到你选择的相册，请刷新后重试。"
 
         case .albumCreateFailed:
-            return "无法创建 photomemo 相册。"
+            return "无法创建时光记相册。"
 
         case .assetSaveFailed:
             return "图片已生成，但写入系统相册失败。"
@@ -276,7 +276,7 @@ final class PhotoLibraryExportService:
             )
 
         guard !fileName.isEmpty else {
-            return "PhotoMemo.jpg"
+            return "MemoMark.jpg"
         }
 
         return fileName
@@ -540,7 +540,7 @@ private extension PhotoLibraryExportService {
         let temporaryFolder =
             FileManager.default.temporaryDirectory
             .appendingPathComponent(
-                "PhotoMemoPhotoLibraryValidation",
+                "MemoMarkPhotoLibraryValidation",
                 isDirectory: true
             )
 

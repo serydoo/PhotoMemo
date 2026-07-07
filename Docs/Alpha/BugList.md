@@ -1,4 +1,4 @@
-# PhotoMemo Alpha Bug List
+# MemoMark Alpha Bug List
 
 Last updated: 2026-06-20
 

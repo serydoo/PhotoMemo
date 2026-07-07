@@ -306,7 +306,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
         case .partialSuccess:
             return "已完成 \(snapshot.completedCount) 张，仍有 \(snapshot.failedCount) 张需处理"
         case .needsAttention:
-            return "\(snapshot.failedCount) 张需要回到 PhotoMemo 查看"
+            return "\(snapshot.failedCount) 张需要回到时光记查看"
         case .unsupported:
             return "这批照片当前不在支持范围内"
         }

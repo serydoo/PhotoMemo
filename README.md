@@ -1,10 +1,10 @@
-# PhotoMemo
+# MemoMark
 
 > 让照片，不止记录画面，更记录人生。
 
-PhotoMemo is a local-first Memory Presentation Engine for Apple Photos.
+MemoMark is a local-first Memory Presentation Engine for Apple Photos.
 
-PhotoMemo 是一款围绕 Apple Photos 打造的本地化照片记忆增强应用。它不会修改原始照片，也不是传统意义上的水印工具。它读取照片的拍摄事实，结合用户设定的 Memory Subject、Life Anchor、Time Anchor 和表达内容，为照片生成一张新的记忆版本。
+时光记是一款围绕 Apple Photos 打造的本地化照片记忆增强应用。它不会修改原始照片，也不是传统意义上的水印工具。它读取照片的拍摄事实，结合用户设定的 Memory Subject、Life Anchor、Time Anchor 和表达内容，为照片生成一张新的记忆版本。
 
 多年以后，当再次翻开照片时，看到的不只是画面，更是那一天在生命时间线里的位置。
 
@@ -12,12 +12,12 @@ PhotoMemo 是一款围绕 Apple Photos 打造的本地化照片记忆增强应�
 Hero image slot:
 
 Add a public, non-private product image here when available.
-Recommended path: Screenshots/photomemo-hero.png
+Recommended path: Screenshots/memomark-hero.png
 
-![PhotoMemo memory card example](Screenshots/photomemo-hero.png)
+![MemoMark memory card example](Screenshots/memomark-hero.png)
 -->
 
-## Why PhotoMemo Exists
+## Why MemoMark Exists
 
 Today, we take more photos than we can meaningfully reread.
 
@@ -29,21 +29,19 @@ The details people care about years later are rarely only camera settings. More 
 - Why was this photo taken?
 - Where does this photo belong in a person's life?
 
-PhotoMemo exists to help people read their memories, not just store their photos.
+MemoMark exists to help people read their memories, not just store their photos.
 
-PhotoMemo 存在的意义，不是帮助人们保存照片，而是帮助人们阅读回忆。
+时光记存在的意义，不是帮助人们保存照片，而是帮助人们阅读回忆。
 
 Photos preserve moments.
 
-PhotoMemo reveals their meaning.
+MemoMark reveals their meaning.
 
-照片记录瞬间。
+照片记录瞬间。时光记赋予意义。
 
-PhotoMemo 赋予意义。
+## What MemoMark Is
 
-## What PhotoMemo Is
-
-PhotoMemo is:
+MemoMark is:
 
 - a local-first Memory Presentation Engine
 - a memory timeline system
@@ -52,7 +50,7 @@ PhotoMemo is:
 - a system that generates a new image while preserving the original photo
 - a Memory Capability inside Apple Photos workflows
 
-PhotoMemo is not:
+MemoMark is not:
 
 - a cloud photo product
 - a general image editor
@@ -62,7 +60,7 @@ PhotoMemo is not:
 - a batch-first dashboard
 - a watermark clone app
 
-Apple Photos remains the trusted library, timeline, map, people system, search system, sync system, and reading space. PhotoMemo only owns the Memory Workflow that helps a meaningful photo reveal its Life Position.
+Apple Photos remains the trusted library, timeline, map, people system, search system, sync system, and reading space. MemoMark only owns the Memory Workflow that helps a meaningful photo reveal its Life Position.
 
 ## Core Principles
 
@@ -70,7 +68,7 @@ Apple Photos remains the trusted library, timeline, map, people system, search s
 
 EXIF is data. Memory is relationship.
 
-PhotoMemo does not display photo facts for their own sake. It uses capture time, location, camera information, Life Anchors, and user expression to make a photo easier to understand later.
+MemoMark does not display photo facts for their own sake. It uses capture time, location, camera information, Life Anchors, and user expression to make a photo easier to understand later.
 
 Photos have timestamps.
 
@@ -80,24 +78,24 @@ Memories have positions.
 
 All core processing is local.
 
-PhotoMemo does not upload photos, does not depend on cloud processing, and does not mutate the original image. The output is a newly generated image.
+MemoMark does not upload photos, does not depend on cloud processing, and does not mutate the original image. The output is a newly generated image.
 
 ### Apple Native
 
-PhotoMemo extends Apple Photos instead of replacing it.
+MemoMark extends Apple Photos instead of replacing it.
 
 The intended daily lifecycle is:
 
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
 ```
 
-PhotoMemo should return users to Apple Photos instead of pulling them into a separate app-owned workflow.
+MemoMark should return users to Apple Photos instead of pulling them into a separate app-owned workflow.
 
 ### Configuration Once, Benefit Forever
 
@@ -119,7 +117,7 @@ Everything starts from the Memory Card.
 
 ## Memory Card Workflow
 
-PhotoMemo's long-term workflow is:
+MemoMark's long-term workflow is:
 
 ```text
 Photo
@@ -144,9 +142,9 @@ Renderer must not own layout decisions.
 
 ## Time Anchor
 
-Time Anchor is one of PhotoMemo's core capabilities.
+Time Anchor is one of MemoMark's core capabilities.
 
-A photo already has a capture time. PhotoMemo adds relationships between that capture time and important life events.
+A photo already has a capture time. MemoMark adds relationships between that capture time and important life events.
 
 Examples of anchors:
 
@@ -172,7 +170,7 @@ Smart anchor variables output time results, not complete prose. Users remain in 
 
 ## Memory Subject
 
-PhotoMemo is not centered on generic contacts.
+MemoMark is not centered on generic contacts.
 
 It is centered on Memory Subjects: the people, relationships, events, and life contexts that make a photo meaningful.
 
@@ -192,7 +190,7 @@ One photo may belong to multiple life timelines. The long-term goal is to let ev
 
 ## Current Status
 
-PhotoMemo is in V2.1 Memory Engine Product Realization.
+MemoMark is in V2.1 Memory Engine Product Realization.
 
 The approved implementation track is:
 
@@ -233,7 +231,7 @@ Existing source files remain under `Source/PhotoMemo/` until a reviewed migratio
 
 ## Repository Lines
 
-PhotoMemo should preserve historical product phases through branches, tags, and releases rather than duplicated version folders.
+MemoMark should preserve historical product phases through branches, tags, and releases rather than duplicated version folders.
 
 Current intended line split:
 
@@ -264,10 +262,8 @@ Old documents remain reference material for now. Do not migrate them until the r
 
 Every review should leave the repository simpler than before.
 
-每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+每一次设计评审，都应该让时光记比昨天更简单一点。
 
 ## Closing
 
-照片记录的是那一刻。
-
-PhotoMemo 希望记录的是，那一刻背后的故事。
+照片记录的是那一刻。时光记希望记录的是，那一刻背后的故事。

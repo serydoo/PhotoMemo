@@ -34,4 +34,4 @@ xcodebuild \
 
 If a snapshot fails, diff artifacts are written to:
 
-- `/tmp/PhotoMemoSnapshotDiffs/ClassicWhite/`
+- `/tmp/MemoMarkSnapshotDiffs/ClassicWhite/`

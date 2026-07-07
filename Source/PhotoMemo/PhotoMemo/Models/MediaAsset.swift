@@ -108,7 +108,7 @@ struct PhotoSourceInfo:
             .sanitizedOriginalFileName(
                 originalFileName
             )
-            ?? "PhotoMemo Import.jpg"
+            ?? "MemoMark Import.jpg"
         self.assetLocalIdentifier =
             assetLocalIdentifier?
             .trimmingCharacters(
@@ -135,7 +135,7 @@ struct PhotoSourceInfo:
             )
 
         return baseName.isEmpty
-            ? "PhotoMemo Import"
+            ? "MemoMark Import"
             : baseName
     }
 }

@@ -1,10 +1,10 @@
-# PhotoMemo Competitor Notes
+# MemoMark Competitor Notes
 
 Research date: 2026-06-19
 
 ## Positioning Reality
 
-PhotoMemo does not have one perfect one-to-one competitor.
+MemoMark does not have one perfect one-to-one competitor.
 
 It sits at the intersection of four product shapes:
 
@@ -27,7 +27,7 @@ What it does well:
 - treats privacy and personal history as product identity, not a footnote
 - makes revisiting old content feel emotionally intentional
 
-What PhotoMemo can borrow:
+What MemoMark can borrow:
 
 - stronger "why this memory matters" framing in empty states and first-run copy
 - a cleaner revisit surface for past outputs, not just processing stats
@@ -35,8 +35,8 @@ What PhotoMemo can borrow:
 
 What not to copy blindly:
 
-- long-form journaling depth is not PhotoMemo's main job
-- PhotoMemo should stay focused on calibration + rendering + save-back, not become a full diary
+- long-form journaling depth is not MemoMark's main job
+- MemoMark should stay focused on calibration + rendering + save-back, not become a full diary
 
 ### 2. 1 Second Everyday
 
@@ -48,7 +48,7 @@ What it does well:
 - makes timeline review and long-term accumulation feel rewarding
 - gives users a clear sense that small moments build into a larger personal artifact
 
-What PhotoMemo can borrow:
+What MemoMark can borrow:
 
 - more obvious milestone framing around "already generated how many memory cards"
 - future "On This Day" / "same date in past years" surfaces tied to anchors and outputs
@@ -56,7 +56,7 @@ What PhotoMemo can borrow:
 
 What not to copy blindly:
 
-- PhotoMemo should not shift toward video-first daily capture
+- MemoMark should not shift toward video-first daily capture
 - the core remains metadata-aware photo finishing, not timeline editing
 
 ### 3. Metapho
@@ -69,15 +69,15 @@ What it does well:
 - gives confidence that people can inspect, understand, and manage what stays with a photo
 - stays close to the system photo workflow instead of forcing a separate library worldview
 
-What PhotoMemo can borrow:
+What MemoMark can borrow:
 
 - an optional advanced metadata check surface for power users
 - clearer post-save verification of capture date, location, device fields, and album result
-- more explicit wording around what PhotoMemo preserves, what the platform preserves, and what cannot be guaranteed
+- more explicit wording around what MemoMark preserves, what the platform preserves, and what cannot be guaranteed
 
 What not to copy blindly:
 
-- PhotoMemo should not turn into a general EXIF editor
+- MemoMark should not turn into a general EXIF editor
 - metadata should support memory rendering, not replace the memory-card workflow
 
 ### 4. Mylio Photos
@@ -90,15 +90,15 @@ What it does well:
 - treats the photo library as a long-lived family asset
 - communicates organization, retrieval, and control with confidence
 
-What PhotoMemo can borrow:
+What MemoMark can borrow:
 
 - a stronger public/product-facing articulation of "your originals stay yours"
-- clearer messaging that PhotoMemo creates new outputs without damaging the original
+- clearer messaging that MemoMark creates new outputs without damaging the original
 - future family-oriented configuration presets, such as growth, travel, anniversaries, exam countdowns
 
 What not to copy blindly:
 
-- PhotoMemo should not expand into a full photo-library replacement
+- MemoMark should not expand into a full photo-library replacement
 - large-scale asset management would pull focus away from render/export excellence
 
 ## Ecosystem Baseline
@@ -109,11 +109,11 @@ Reference link: [apple.com/macos/photos](https://www.apple.com/macos/photos/)
 
 Why it still matters:
 
-- users will judge PhotoMemo against the native Photos experience even if PhotoMemo is not a library app
+- users will judge MemoMark against the native Photos experience even if MemoMark is not a library app
 - save-back, album placement, extension entry points, and overall system feel need to feel native
-- the closer PhotoMemo gets to "works with my existing library" instead of "imports me into another universe", the better
+- the closer MemoMark gets to "works with my existing library" instead of "imports me into another universe", the better
 
-## What PhotoMemo Is Already Uniquely Good At
+## What MemoMark Is Already Uniquely Good At
 
 - combines EXIF, anchor semantics, and template rendering in one real chain
 - stays local-first instead of making memory generation cloud-dependent
@@ -124,7 +124,7 @@ This combination is still relatively distinctive.
 
 The opportunity is not to copy a direct rival.
 
-The opportunity is to assemble the strongest parts of adjacent categories while keeping PhotoMemo's product shape disciplined.
+The opportunity is to assemble the strongest parts of adjacent categories while keeping MemoMark's product shape disciplined.
 
 ## Recommended Product Directions
 

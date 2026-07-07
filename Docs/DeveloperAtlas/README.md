@@ -1,8 +1,8 @@
-# PhotoMemo Developer Atlas
+# MemoMark Developer Atlas
 
 ## 这是什么
 
-Developer Atlas 是 PhotoMemo 的开发导航资料库。
+Developer Atlas 是时光记的开发导航资料库。
 
 它不是一次性代码分析报告，而是后续新增功能、理解 V1、确认 V1 / Configuration Center / Memory Engine 边界时的入口。
 

@@ -1,4 +1,4 @@
-# PhotoMemo Fixtures
+# MemoMark Fixtures
 
 This directory stores long-term regression fixtures.
 

@@ -1,4 +1,4 @@
-# PhotoMemo Share Extension Review
+# MemoMark Share Extension Review
 
 Last updated: 2026-06-20
 
@@ -23,7 +23,7 @@ The current extension is functional as an intake bridge, but it still behaves mo
 Today the Share Extension does this:
 
 - accepts shared photos
-- persists them into PhotoMemo intake
+- persists them into MemoMark intake
 - shows a loading indicator
 - returns a simple success or failure sentence
 
@@ -43,11 +43,11 @@ Yes, mildly.
 
 The current extension does not explain what will happen next in user terms.
 
-The message "正在交给 PhotoMemo 处理..." is technically true, but it does not answer the user questions that matter:
+The message "正在交给时光记处理..." is technically true, but it does not answer the user questions that matter:
 
 - Which result will I get?
 - Where is it being saved?
-- Do I need to open PhotoMemo afterward?
+- Do I need to open MemoMark afterward?
 - Is this already finished or only queued?
 
 For experienced users this may be acceptable.
@@ -72,7 +72,7 @@ Share
 
 -> Save
 
-That means the "queued into PhotoMemo inbox" state should become a fallback path, not the default primary path.
+That means the "queued into MemoMark inbox" state should become a fallback path, not the default primary path.
 
 ### Can one click be removed?
 
@@ -125,7 +125,7 @@ This is appropriate for a queue system, but it does not yet satisfy the share-fi
 
 There is not enough visible defaulting.
 
-If PhotoMemo wants to feel light, the extension should make more decisions on behalf of the user:
+If MemoMark wants to feel light, the extension should make more decisions on behalf of the user:
 
 - active configuration
 - output destination
@@ -186,7 +186,7 @@ This should stay an assessment topic until configuration reliability and preview
 
 ## Smart Mode Assessment
 
-Can PhotoMemo eventually choose a configuration automatically?
+Can MemoMark eventually choose a configuration automatically?
 
 Probably yes, but not yet as a product default.
 
@@ -233,4 +233,4 @@ It is not yet a complete primary product experience.
 
 The next UX goal is clear:
 
-Move from "handoff to PhotoMemo" toward "complete the memory result inside the share flow."
+Move from "handoff to MemoMark" toward "complete the memory result inside the share flow."

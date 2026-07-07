@@ -18,7 +18,7 @@ extension MainView {
         NavigationStack {
 
             compactContent
-            .navigationTitle("PhotoMemo")
+            .navigationTitle("时光记")
             .navigationBarTitleDisplayMode(.inline)
         }
 #endif
@@ -53,7 +53,7 @@ extension MainView {
             spacing: 10
         ) {
 
-            Text("PhotoMemo")
+            Text("时光记")
                 .font(.system(
                     size: 28,
                     weight: .semibold
@@ -119,7 +119,7 @@ extension MainView {
                 spacing: 20
             ) {
 
-                Text("PhotoMemo")
+                Text("时光记")
                     .font(.system(
                         size: 32,
                         weight: .semibold
@@ -444,7 +444,7 @@ extension MainView {
 
                     Divider()
 
-                    Text("PhotoMemo 已具备读取照片、保存结果和发送本地提醒所需的权限。")
+                    Text("时光记已具备读取照片、保存结果和发送本地提醒所需的权限。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(
@@ -471,14 +471,14 @@ extension MainView {
                     alignment: .leading,
                     spacing: 10
                 ) {
-                    Text("PhotoMemo 不是修图工具，而是围绕系统相册构建的记忆生成器。")
+                    Text("时光记不是修图工具，而是围绕系统相册构建的记忆生成器。")
                         .font(.body)
                         .fixedSize(
                             horizontal: false,
                             vertical: true
                         )
 
-                    Text("日常使用里，大多数时候你只需要在系统相册中分享照片给 PhotoMemo。")
+                    Text("日常使用里，大多数时候你只需要在系统相册中分享照片给时光记。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(

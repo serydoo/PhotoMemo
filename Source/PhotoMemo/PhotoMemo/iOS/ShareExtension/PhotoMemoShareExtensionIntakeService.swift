@@ -87,10 +87,10 @@ struct PhotoMemoShareExtensionError:
             return "这次分享里没有找到可直接处理的照片。"
 
         case .allImportsFailed:
-            return "这次分享里的照片暂时没有成功交给 PhotoMemo。"
+            return "这次分享里的照片暂时没有成功交给时光记。"
 
         case .persistFailed:
-            return "PhotoMemo 暂时无法记录这次分享。"
+            return "时光记暂时无法记录这次分享。"
         }
     }
 
@@ -102,7 +102,7 @@ struct PhotoMemoShareExtensionError:
             return "没有识别到可处理照片"
 
         case .allImportsFailed:
-            return "照片没有成功交给 PhotoMemo"
+            return "照片没有成功交给时光记"
 
         case .persistFailed:
             return "这次分享没有保存下来"
@@ -117,10 +117,10 @@ struct PhotoMemoShareExtensionError:
             return "请尽量从系统相册直接分享原始照片；如果来自其他 App，请确认分享的是原图而不是预览图。"
 
         case .allImportsFailed:
-            return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开 PhotoMemo 检查默认风格。"
+            return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开时光记检查默认风格。"
 
         case .persistFailed:
-            return "请先重试一次；如果重复出现，请打开 PhotoMemo 检查共享容器、默认风格和系统相册权限。"
+            return "请先重试一次；如果重复出现，请打开时光记检查共享容器、默认风格和系统相册权限。"
         }
     }
 

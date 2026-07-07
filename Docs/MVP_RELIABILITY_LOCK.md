@@ -1,4 +1,4 @@
-# PhotoMemo MVP Reliability Lock
+# MemoMark MVP Reliability Lock
 
 Last updated: 2026-06-29
 
@@ -21,7 +21,7 @@ daily Apple Photos lifecycle reliable enough to feel like a system capability.
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
@@ -29,9 +29,9 @@ Apple Photos
 
 ## MVP Reliability Principle
 
-PhotoMemo must generate a new image without modifying the original photo.
+MemoMark must generate a new image without modifying the original photo.
 
-The user should be able to share photos, leave PhotoMemo, and trust that the
+The user should be able to share photos, leave MemoMark, and trust that the
 system will either finish quietly or explain exactly what needs attention.
 
 ## Locked User-Facing Queue Semantics
@@ -125,7 +125,7 @@ Completed:
 Needs attention:
 
 - say how many photos need attention
-- link back into PhotoMemo status
+- link back into MemoMark status
 - avoid generic failure language
 
 ## Manual Regression Matrix
@@ -174,6 +174,6 @@ A build is not considered MVP-reliability ready unless:
 - focused tests pass
 - `PhotoMemoiOSMVP` builds for the connected device
 - the app installs to the test phone
-- macOS `PhotoMemo` still builds
+- macOS `MemoMark` still builds
 - manual Share regression notes are updated in `HANDOFF.md` or
   `Docs/CURRENT_STATUS.md`

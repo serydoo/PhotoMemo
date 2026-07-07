@@ -2881,7 +2881,7 @@ struct RecordCardBuildServiceTests {
             )
 
         let photo = SelectedPhoto(
-            sourceURL: URL(fileURLWithPath: "/tmp/PhotoMemo Import.JPG"),
+            sourceURL: URL(fileURLWithPath: "/tmp/MemoMark Import.JPG"),
             image: NSImage(size: NSSize(width: 32, height: 32)),
             metadata: PhotoMetadata(
                 captureDate: captureDate,
@@ -2894,7 +2894,7 @@ struct RecordCardBuildServiceTests {
             ),
             sourceInfo: PhotoSourceInfo(
                 originalFileName:
-                    "PhotoMemo Import.JPG"
+                    "MemoMark Import.JPG"
             )
         )
 
@@ -2961,7 +2961,7 @@ struct RecordCardBuildServiceTests {
         #expect(
             service.assetOriginalFilename(
                 for: URL(fileURLWithPath: "/tmp/ ")
-            ) == "PhotoMemo.jpg"
+            ) == "MemoMark.jpg"
         )
     }
 }
@@ -2972,7 +2972,7 @@ private extension RecordCardBuildServiceTests {
 
         FileManager.default.temporaryDirectory
             .appendingPathComponent(
-                "PhotoMemoExports",
+                "MemoMarkExports",
                 isDirectory: true
             )
     }

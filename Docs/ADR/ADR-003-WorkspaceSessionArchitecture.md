@@ -18,7 +18,7 @@ However, a full rewrite of the editor flow would have carried high regression ri
 
 ## Decision
 
-PhotoMemo introduces a workspace session architecture through:
+MemoMark introduces a workspace session architecture through:
 
 - `WorkspaceSessionController`
 - `WorkspaceState`
@@ -58,7 +58,7 @@ That would preserve a brittle long-term architecture and make future state owner
 
 ### Trade-offs
 
-- PhotoMemo accepts a longer migration timeline in exchange for safer behavioral preservation
+- MemoMark accepts a longer migration timeline in exchange for safer behavioral preservation
 
 ## Follow-up Work
 

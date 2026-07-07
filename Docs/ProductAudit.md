@@ -1,10 +1,10 @@
-# PhotoMemo Product Audit
+# MemoMark Product Audit
 
 Last updated: 2026-06-20
 
 ## Audit Scope
 
-This audit reviews every currently visible product-facing page in PhotoMemo.
+This audit reviews every currently visible product-facing page in MemoMark.
 
 To keep the audit useful, UI elements are grouped by meaningful user-facing control clusters instead of listing every decorative text label separately.
 
@@ -17,7 +17,7 @@ For each element, four questions are answered:
 
 ## Core Judgment
 
-PhotoMemo's biggest product opportunity is not more capability.
+MemoMark's biggest product opportunity is not more capability.
 
 It is less surface.
 
@@ -47,7 +47,7 @@ The Share Extension should continue evolving toward an almost invisible workflow
 |---|---|---:|---:|---:|---|
 | `从照片中选择` | Yes | No | No | No | Keep. This is the best calibration entry when users intentionally open the app. |
 | `从文件导入` | Partial | Partial | No | No | Keep, but demote further. It should feel like a fallback, not a peer to Photos. |
-| Photo metadata summary under importer | Yes | No | Already automatic | No | Keep. It builds trust that PhotoMemo is reading the real photo correctly. |
+| Photo metadata summary under importer | Yes | No | Already automatic | No | Keep. It builds trust that MemoMark is reading the real photo correctly. |
 | Hero pills (`模板 / 时间点 / 图库`) | Partial | Yes | Yes | No | Compress or remove. These repeat state already visible elsewhere and add scanning cost. |
 | iPhone `预览 / 编辑` segmented switch | Yes | Not yet | Remember last tab | No | Keep for now, but long-term one screen should solve one problem with less mode switching. |
 | `配置工作区` panel header | Partial | Partial | No | Yes | Keep the concept, but rename toward `Default Style` and move most management actions out of the main workspace. |
@@ -114,7 +114,7 @@ But its surrounding chrome should keep shrinking.
 
 | UI element | Need? | Remove? | Automatic? | Move into Settings? | Audit decision |
 |---|---|---:|---:|---:|---|
-| Brand label `PhotoMemo` | Partial | Partial | N/A | No | Keep lightly branded, but this can become quieter over time. |
+| Brand label `MemoMark` | Partial | Partial | N/A | No | Keep lightly branded, but this can become quieter over time. |
 | Confirmation title and subtitle | Yes | No | Partial | No | Keep for Alpha. Later, when trust is established, most of this should disappear. |
 | Shared photo count | Yes | No | Automatic data | No | Keep. Users need to know what this share action is about to process. |
 | Current configuration name | Yes | No | Automatic data | Yes | Keep, but rename toward `Default Style`. Selection belongs in the main app. |
@@ -240,7 +240,7 @@ if users need this page often, the main UI is not simple enough yet.
 
 This entire page should continue losing prominence.
 
-PhotoMemo's ideal state is:
+MemoMark's ideal state is:
 
 - notifications for passive awareness
 - optional live status when needed
@@ -300,7 +300,7 @@ These are the clearest candidates to move away from the daily surface:
 
 ## Product Conclusion
 
-PhotoMemo is at its best when it stops asking users to think like operators.
+MemoMark is at its best when it stops asking users to think like operators.
 
 The Main App should increasingly feel like:
 
@@ -314,4 +314,4 @@ The Share Extension should increasingly feel like:
 
 The product should keep moving toward one standard:
 
-The best PhotoMemo experience is the one users barely notice.
+The best MemoMark experience is the one users barely notice.

@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>PhotoMemo</string>
+	<string>时光记</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,6 +27,7 @@
 			<string>com.serydoo.PhotoMemo.iOS</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>memomark</string>
 				<string>photomemo</string>
 			</array>
 		</dict>
@@ -36,9 +37,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>PhotoMemo 需要把处理后的照片存回你的系统相册。</string>
+	<string>时光记需要把处理后的照片存回你的系统相册。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>PhotoMemo 需要读取你选择的照片与相册，并把处理后的照片保存进去。</string>
+	<string>时光记需要读取你选择的照片与相册，并把处理后的照片保存进去。</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

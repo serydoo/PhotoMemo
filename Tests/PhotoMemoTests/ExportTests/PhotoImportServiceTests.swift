@@ -241,7 +241,7 @@ struct PhotoImportServiceTests {
             importedPhoto.sourceURL
             .lastPathComponent
             .hasPrefix(
-                "PhotoMemo Import"
+                "MemoMark Import"
             )
         )
         #expect(

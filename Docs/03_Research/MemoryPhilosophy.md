@@ -8,7 +8,7 @@ EXIF records when a photo was taken.
 
 Memory Engine records where that photo belongs inside a person's life.
 
-PhotoMemo does not simply display photos. PhotoMemo presents memories.
+MemoMark does not simply display photos. MemoMark presents memories.
 
 ## Objective And Emotional Information
 
@@ -41,7 +41,7 @@ These answer:
 
 - What does this moment mean?
 
-PhotoMemo preserves both.
+MemoMark preserves both.
 
 ## Life Position
 
@@ -90,4 +90,4 @@ Photos have timestamps.
 
 Memories have positions.
 
-PhotoMemo exists to preserve the meaning of time.
+MemoMark exists to preserve the meaning of time.

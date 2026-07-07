@@ -42,7 +42,7 @@ It does not describe UI.
 
 ## Configuration Snapshot Principle
 
-Every time a Memory Workflow starts, PhotoMemo freezes a:
+Every time a Memory Workflow starts, MemoMark freezes a:
 
 ```text
 Configuration Snapshot
@@ -66,20 +66,20 @@ Users should only be interrupted when recovery is truly not possible.
 
 ## Device Adaptive Principle
 
-PhotoMemo automatically follows:
+MemoMark automatically follows:
 
 - Low Power Mode
 - Thermal State
 - Memory Pressure
 - Background Policy
 
-PhotoMemo should fully follow Apple device constraints.
+MemoMark should fully follow Apple device constraints.
 
-PhotoMemo should not offer a separate performance mode.
+MemoMark should not offer a separate performance mode.
 
 ## Storage Verification Principle
 
-Before processing starts, PhotoMemo should estimate output storage requirements.
+Before processing starts, MemoMark should estimate output storage requirements.
 
 If storage is insufficient, the user should be informed before processing fails.
 
@@ -88,7 +88,7 @@ If storage is insufficient, the user should be informed before processing fails.
 After metadata is preserved and output is generated:
 
 - the new photo should naturally appear near the original photo
-- the new photo should also join the `PhotoMemo` output album
+- the new photo should also join the `MemoMark` output album
 
 ## Data Constitution
 

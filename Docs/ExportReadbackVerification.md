@@ -67,7 +67,7 @@ This helps the saved asset sort correctly in Photos, but it is not the same as p
 
 ## Verification Conclusion
 
-PhotoMemo currently has a useful read-back loop, but it is a **normalized metadata read-back**, not a complete embedded metadata diff tool.
+MemoMark currently has a useful read-back loop, but it is a **normalized metadata read-back**, not a complete embedded metadata diff tool.
 
 For Sprint-008 this means:
 

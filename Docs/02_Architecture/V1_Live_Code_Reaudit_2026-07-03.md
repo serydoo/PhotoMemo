@@ -1,4 +1,4 @@
-PhotoMemo V1 Live Code Re-Audit
+MemoMark V1 Live Code Re-Audit
 
 Date:
 2026-07-03
@@ -109,7 +109,7 @@ Risk:
 
 Optimization direction:
 - either skip the extra V1 picker staging layer when the shared intake can safely manage the provider URL directly
-- or add explicit cleanup for `PhotoMemoV1Picker` after submission / failure
+- or add explicit cleanup for `MemoMarkV1Picker` after submission / failure
 - add a regression test for temporary-file cleanup
 
 6. Medium
@@ -141,7 +141,7 @@ Phase 2: Product cleanup consistency
 - Convert string-based status branching into a typed status model
 
 Phase 3: Preview and intake hardening
-- Add cleanup for `PhotoMemoV1Picker` temporary files
+- Add cleanup for `MemoMarkV1Picker` temporary files
 - Collapse duplicate preview semantics toward one renderer-backed contract
 - Re-audit remaining large V1 files after the state-flow fixes land
 

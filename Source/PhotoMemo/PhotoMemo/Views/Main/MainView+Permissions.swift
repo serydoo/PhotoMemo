@@ -49,7 +49,7 @@ struct MainPermissionSection: View {
                 )
             }
 
-            Text("PhotoMemo 只会请求完成这条流程所需的本地权限。")
+            Text("时光记只会请求完成这条流程所需的本地权限。")
             .font(.caption)
             .foregroundStyle(.secondary)
         }
@@ -143,7 +143,7 @@ struct MainPermissionSection: View {
             }
 
             if state == .denied {
-                Text("如果已拒绝，请到系统设置里重新开启 PhotoMemo 的权限。")
+                Text("如果已拒绝，请到系统设置里重新开启时光记的权限。")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -176,7 +176,7 @@ struct MainPermissionSetupSheet: View {
                             weight: .semibold
                         ))
 
-                    Text("为了读取照片、保存结果和在处理完成时提醒你，PhotoMemo 需要相册与通知权限。")
+                    Text("为了读取照片、保存结果和在处理完成时提醒你，时光记需要相册与通知权限。")
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

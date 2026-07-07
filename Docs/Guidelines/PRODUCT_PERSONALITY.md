@@ -8,7 +8,7 @@ Last updated: 2026-06-23
 Frozen
 ```
 
-PhotoMemo should feel:
+MemoMark should feel:
 
 - Calm
 - Quiet

@@ -249,7 +249,7 @@ enum V1IOSHomeProjection {
 
         switch outputTarget {
         case .automatic:
-            return "系统图库 + photomemo 相册"
+            return "系统图库 + 时光记相册"
         case .applePhotos:
             return "仅写入系统图库"
         case .existingAlbum:

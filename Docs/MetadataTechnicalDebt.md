@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Summary
 
-PhotoMemo already has a good canonical pipeline shape, but the metadata layer now has several quality and maintenance gaps:
+MemoMark already has a good canonical pipeline shape, but the metadata layer now has several quality and maintenance gaps:
 
 - model coverage is ahead of actual population for location fields
 - runtime context coverage is ahead of public variable exposure

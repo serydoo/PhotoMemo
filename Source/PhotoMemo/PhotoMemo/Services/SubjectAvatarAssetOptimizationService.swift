@@ -108,15 +108,15 @@ final class SubjectAvatarAssetOptimizationService {
 
             let displayURL =
                 folderURL.appendingPathComponent(
-                    "photomemo-subject-avatar-display-\(UUID().uuidString)-\(displayPixelSize).png"
+                    "memomark-subject-avatar-display-\(UUID().uuidString)-\(displayPixelSize).png"
                 )
             let badgeURL =
                 folderURL.appendingPathComponent(
-                    "photomemo-subject-avatar-badge-\(UUID().uuidString)-\(badgePixelSize).png"
+                    "memomark-subject-avatar-badge-\(UUID().uuidString)-\(badgePixelSize).png"
                 )
             let previewURL =
                 folderURL.appendingPathComponent(
-                    "photomemo-subject-avatar-preview-\(UUID().uuidString)-\(previewPixelSize).png"
+                    "memomark-subject-avatar-preview-\(UUID().uuidString)-\(previewPixelSize).png"
                 )
 
             try displayData.write(

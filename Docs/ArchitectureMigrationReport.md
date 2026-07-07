@@ -1,11 +1,11 @@
-# PhotoMemo V1 Architecture Migration Report
+# MemoMark V1 Architecture Migration Report
 
 Last updated: 2026-06-30
 
 ## Scope
 
 This report documents the Phase 1 foundation migration and the Phase 2 share
-workflow migration requested for PhotoMemo V1 / MVP under the following
+workflow migration requested for MemoMark V1 / MVP under the following
 constraints:
 
 - no UI behavior change
@@ -45,7 +45,7 @@ Verification added in this slice:
 
 - `ConfigurationMigrationTests`
 - `ExportMigrationTests`
-- `PhotoMemo` macOS Debug build
+- `MemoMark` macOS Debug build
 - `PhotoMemoiOSMVP` generic iOS Debug build
 
 ## Phase 2D Update
@@ -185,7 +185,7 @@ Confirmed in this Phase 2 slice:
 - passed `PhotoMemoTests/ShareDrainMigrationRegressionTests`
 - passed `PhotoMemoTests/ArchitectureMigrationFoundationTests`
 - passed `PhotoMemoTests/BatchFixtureCoverageTests`
-- passed `PhotoMemo` macOS Debug build
+- passed `MemoMark` macOS Debug build
 - passed `PhotoMemoiOSMVP` generic iOS Debug build
 
 Not fully reconfirmed in this session:
@@ -210,8 +210,8 @@ Added:
 
 New types:
 
-- `PhotoMemoErrorCode`
-- `PhotoMemoError`
+- `MemoMarkErrorCode`
+- `MemoMarkError`
 - `PhotoMemoResult<Value>`
 
 Current role:
@@ -230,7 +230,7 @@ Added:
 
 New types:
 
-- `PhotoMemoIntent`
+- `MemoMarkIntent`
 - `BuildPreviewIntent`
 - `ExportRecordCardIntent`
 - `SaveRenderedPhotoIntent`
@@ -302,9 +302,9 @@ Added:
 
 New types:
 
-- `PhotoMemoServiceContainer`
-- `PhotoMemoRepositoryContainer`
-- `PhotoMemoCoordinatorContainer`
+- `MemoMarkServiceContainer`
+- `MemoMarkRepositoryContainer`
+- `MemoMarkCoordinatorContainer`
 - `AppEnvironment`
 
 Current role:
@@ -345,7 +345,7 @@ Why this matters:
 
 Confirmed after the latest compile-boundary fix:
 
-- passed `PhotoMemo` macOS Debug build
+- passed `MemoMark` macOS Debug build
 - passed `PhotoMemoiOSMVP` generic iOS Debug build
 - passed `PhotoMemoTests/ArchitectureMigrationFoundationTests`
 

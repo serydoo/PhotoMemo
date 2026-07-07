@@ -112,7 +112,7 @@ struct V1IOSHomeProjectionTests {
             )
 
         #expect(projection.title == "自动")
-        #expect(projection.detail == "系统图库 + photomemo 相册")
+        #expect(projection.detail == "系统图库 + 时光记相册")
         #expect(projection.memoryWriteLabel == "写入说明已关闭")
         #expect(
             projection.targetNote

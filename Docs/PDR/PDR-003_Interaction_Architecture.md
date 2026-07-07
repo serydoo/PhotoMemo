@@ -10,7 +10,7 @@ Frozen
 
 ## Purpose
 
-PDR-003 records the frozen interaction architecture for PhotoMemo after PM-003 Content Layout System Phase 1.
+PDR-003 records the frozen interaction architecture for MemoMark after PM-003 Content Layout System Phase 1.
 
 This is not a runtime implementation task.
 
@@ -18,9 +18,9 @@ This is a repository documentation synchronization task.
 
 ## Core Decision
 
-PhotoMemo is not a foreground photo-management app.
+MemoMark is not a foreground photo-management app.
 
-PhotoMemo is a Local First Memory Capability inside Apple Photos workflows.
+MemoMark is a Local First Memory Capability inside Apple Photos workflows.
 
 The Main App is the Configuration Center.
 
@@ -29,7 +29,7 @@ The product-primary path is:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Memory Workflow
 -> Done
 ```

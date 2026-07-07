@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-PhotoMemo evaluated whether the composer should adopt a richer editor document model.
+MemoMark evaluated whether the composer should adopt a richer editor document model.
 
 Possible alternatives included custom document types, node trees, or richer editor-specific content structures.
 
@@ -27,7 +27,7 @@ The project needed a clear decision on the canonical model before editor archite
 
 ## Decision
 
-Template strings remain the canonical model for PhotoMemo content composition.
+Template strings remain the canonical model for MemoMark content composition.
 
 The editor may use projection logic for editing behavior, but:
 
@@ -69,7 +69,7 @@ That would create synchronization risk and long-term ambiguity about canonical o
 
 ### Trade-offs
 
-- PhotoMemo accepts editor-local projection complexity in exchange for keeping the rest of the system simpler
+- MemoMark accepts editor-local projection complexity in exchange for keeping the rest of the system simpler
 
 ## Follow-up Work
 

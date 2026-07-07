@@ -4,11 +4,11 @@ Last updated: 2026-06-20
 
 ## Purpose
 
-This document defines the minimum product acceptance criteria for PhotoMemo's verification stage.
+This document defines the minimum product acceptance criteria for MemoMark's verification stage.
 
 ## Metadata Correctness
 
-PhotoMemo is acceptable only if:
+MemoMark is acceptable only if:
 
 - capture date is read when valid EXIF/TIFF date metadata exists
 - timezone suffixes are normalized when present
@@ -18,7 +18,7 @@ PhotoMemo is acceptable only if:
 
 ## Render Correctness
 
-PhotoMemo is acceptable only if:
+MemoMark is acceptable only if:
 
 - portrait and landscape orientation inference remain correct
 - preview/build logic continues to consume normalized metadata
@@ -26,7 +26,7 @@ PhotoMemo is acceptable only if:
 
 ## Export Correctness
 
-PhotoMemo is acceptable only if:
+MemoMark is acceptable only if:
 
 - export produces a new rendered image
 - output dimensions reflect the final rendered card
@@ -81,7 +81,7 @@ Sprint-010 is considered successful if:
 - minimal batch fixture coverage exists for enqueue / cancel / retry semantics
 - the `PhotoMemoTests` suite passes
 - the project still builds for:
-  - `PhotoMemo`
+  - `MemoMark`
   - `PhotoMemoiOS`
   - `PhotoMemoShareExtension`
   - `PhotoMemoTests`

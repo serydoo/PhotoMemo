@@ -85,7 +85,7 @@ extension MainView {
 
         presentAlert(
             title: "通知尚未开启",
-            message: "你仍然可以继续使用 PhotoMemo，只是后台处理完成时不会自动弹出系统通知。"
+            message: "你仍然可以继续使用时光记，只是后台处理完成时不会自动弹出系统通知。"
         )
     }
 }

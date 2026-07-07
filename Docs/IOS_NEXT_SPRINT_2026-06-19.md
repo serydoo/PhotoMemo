@@ -1,8 +1,8 @@
-# PhotoMemo iOS Next Sprint
+# MemoMark iOS Next Sprint
 
 Date: 2026-06-19
 
-这份文档用于把 PhotoMemo 当前 iOS / 分享扩展方向，整理成后续 AI 或人工都能直接接着做的执行清单。
+这份文档用于把时光记当前 iOS / 分享扩展方向，整理成后续 AI 或人工都能直接接着做的执行清单。
 
 ## Current Reality
 
@@ -34,7 +34,7 @@ Date: 2026-06-19
 
 目标：
 
-- 验证“从系统分享进入 PhotoMemo”在真实场景下能稳定写入共享收件箱
+- 验证“从系统分享进入时光记”在真实场景下能稳定写入共享收件箱
 
 重点场景：
 
@@ -142,7 +142,7 @@ xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcod
 如果下一个 AI 会话要直接继续做，建议提示它：
 
 ```text
-继续 PhotoMemo 的 iOS / share extension 方向开发。
+继续时光记的 iOS / share extension 方向开发。
 先读 AI.md、Docs/IOS_NEXT_SPRINT_2026-06-19.md、Docs/MANUAL_REGRESSION_CHECKLIST_2026-06-19.md、HANDOFF.md、Docs/CURRENT_STATUS.md。
 优先做真实系统分享回归与失败语义补强，不要扩张功能面。
 保持 local-first，不修改原图，不牺牲 EXIF，不把主界面变成进度面板。

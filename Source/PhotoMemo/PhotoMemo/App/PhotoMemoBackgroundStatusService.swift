@@ -538,16 +538,16 @@ private extension PhotoMemoBackgroundStatusService {
             return "本批照片已完成并写回系统相册"
         case .partialSuccess:
             if job.hasRetryableFailures {
-                return "大部分照片已完成，剩余项目可回到 PhotoMemo 继续处理"
+                return "大部分照片已完成，剩余项目可回到时光记继续处理"
             }
 
-            return "部分照片已完成，剩余项目需要回到 PhotoMemo 查看"
+            return "部分照片已完成，剩余项目需要回到时光记查看"
         case .needsAttention:
             if job.hasRetryableFailures {
-                return "这批照片需要回到 PhotoMemo 处理"
+                return "这批照片需要回到时光记处理"
             }
 
-            return "这批照片需要回到 PhotoMemo 查看原因"
+            return "这批照片需要回到时光记查看原因"
         case .unsupported:
             return "这批照片当前暂不支持处理"
         }

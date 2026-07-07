@@ -1,8 +1,8 @@
-# PhotoMemo AI Context
+# MemoMark AI Context
 
 ## V2 Reset
 
-PhotoMemo has completed the IA-002 Configuration Center architecture phase and is entering controlled Product Realization.
+MemoMark has completed the IA-002 Configuration Center architecture phase and is entering controlled Product Realization.
 
 Unscoped feature development, renderer polishing, and UI architecture expansion remain paused.
 
@@ -170,8 +170,8 @@ Life Anchor rules:
 
 Time Anchor rules:
 
-- PhotoMemo does not directly display time
-- PhotoMemo displays the distance between a person and an important life event
+- MemoMark does not directly display time
+- MemoMark displays the distance between a person and an important life event
 - past and future are unified by Time Anchor Engine
 
 Expression rules:
@@ -183,7 +183,7 @@ Expression rules:
 
 ## Product Position
 
-PhotoMemo V1 is a local-first memory card generator. PhotoMemo V2 repositions the project as a local-first Memory Presentation Engine.
+MemoMark V1 is a local-first memory card generator. MemoMark V2 repositions the project as a local-first Memory Presentation Engine.
 
 Photos have timestamps. Memories have positions.
 
@@ -199,13 +199,13 @@ It is:
 - a metadata and memory presentation system
 - a background photo-processing capability that writes finished images back to the system photo library
 
-PhotoMemo is not an EXIF viewer.
+MemoMark is not an EXIF viewer.
 
-PhotoMemo is a memory expression system.
+MemoMark is a memory expression system.
 
-PhotoMemo is not a standalone photo product.
+MemoMark is not a standalone photo product.
 
-PhotoMemo is a Memory Capability inside Apple Photos workflows.
+MemoMark is a Memory Capability inside Apple Photos workflows.
 
 ## Current Product Shape
 
@@ -215,12 +215,12 @@ PhotoMemo is a Memory Capability inside Apple Photos workflows.
 - The Configuration Center architecture is `Library -> Interactive Memory Card -> Object Inspector`
 - The Configuration Center is not the daily workflow surface
 - The main UI should keep one Configuration Preview image as the calibration surface
-- The primary entry path is Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos
+- The primary entry path is Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos
 - Real day-to-day usage should move toward external intake such as open-with, share, or similar background entry points
 - The app should generate a new image and preserve original photo usability in the library as much as the platform allows
 - PM-003 freezes semantic content ownership before any future UI or layout implementation
-- PhotoMemo should return users back to Photos instead of pulling them into the Configuration Center
-- Apple Photos and PhotoMemo now have an explicit product-boundary split
+- MemoMark should return users back to Photos instead of pulling them into the Configuration Center
+- Apple Photos and MemoMark now have an explicit product-boundary split
 
 ## Core Lifecycle
 
@@ -239,7 +239,7 @@ Daily workflow:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
@@ -297,5 +297,5 @@ Current implementation priority inside V2.1:
 - no sentence assembly inside calculation engines
 - no semantic slots defined as raw layout coordinates
 - no user-facing developer terms such as renderer or metadata pipeline
-- no separate PhotoMemo-owned gallery, map, people, search, dashboard, workspace, or task center
+- no separate MemoMark-owned gallery, map, people, search, dashboard, workspace, or task center
 - never break the permanent rules recorded in `Docs/NEVER_BREAK.md`

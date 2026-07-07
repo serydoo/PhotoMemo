@@ -1,4 +1,4 @@
-# PhotoMemo UI Specification
+# MemoMark UI Specification
 
 ## Design Language
 

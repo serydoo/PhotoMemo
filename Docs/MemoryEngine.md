@@ -4,7 +4,7 @@ Last updated: 2026-06-20
 
 ## Purpose
 
-PhotoMemo is no longer only a metadata overlay tool.
+MemoMark is no longer only a metadata overlay tool.
 
 Its memory layer now has a dedicated domain foundation:
 

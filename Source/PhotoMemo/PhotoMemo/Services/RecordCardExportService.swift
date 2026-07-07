@@ -76,7 +76,7 @@ final class RecordCardExportService {
         let folderURL =
             FileManager.default.temporaryDirectory
             .appendingPathComponent(
-                "PhotoMemoExports",
+                "MemoMarkExports",
                 isDirectory: true
             )
 
@@ -413,8 +413,8 @@ private extension RecordCardExportService {
             )
 
         return baseName?.isEmpty == false
-            ? baseName ?? "PhotoMemo"
-            : "PhotoMemo"
+            ? baseName ?? "MemoMark"
+            : "MemoMark"
     }
 
     func originalPhotoLibraryFileName(
@@ -596,7 +596,7 @@ private extension RecordCardExportService {
 
         tiff[
             kCGImagePropertyTIFFSoftware
-        ] = "PhotoMemo"
+        ] = "MemoMark"
 
         if !exportDescription.isEmpty {
             tiff[

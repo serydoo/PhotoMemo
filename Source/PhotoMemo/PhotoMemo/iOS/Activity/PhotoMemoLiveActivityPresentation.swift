@@ -119,7 +119,7 @@ private struct PhotoMemoLiveActivityLockScreenView:
                 spacing: 8
             ) {
                 Label(
-                    "PhotoMemo",
+                    "时光记",
                     systemImage:
                         compactSymbolName(
                             for: context

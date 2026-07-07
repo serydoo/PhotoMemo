@@ -4,7 +4,7 @@ Configuration State Contract
 
 Date: 2026-07-04
 Status: accepted
-Scope: PhotoMemo V1 Configuration Center / iOS V1 surface
+Scope: MemoMark V1 Configuration Center / iOS V1 surface
 
 ## 1. Purpose
 

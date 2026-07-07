@@ -1,7 +1,7 @@
 # Spec: MainView Permission And Content Refinement
 
 ## Objective
-Refine several high-friction parts of PhotoMemo's current template-calibration UI without breaking the real preview/render/export pipeline.
+Refine several high-friction parts of MemoMark's current template-calibration UI without breaking the real preview/render/export pipeline.
 
 This slice focuses on three issues raised from current usage:
 
@@ -14,7 +14,7 @@ This slice does **not** fully implement the larger three-config switching system
 ## Assumptions
 1. On macOS, Photo Library permission will only show the system prompt once; after denial, the right fix is to lead the user to System Settings rather than pretending the prompt can reappear.
 2. For birthday/age wording, under-one-year output should suppress the `0岁` prefix but keep month/day precision when available.
-3. The user's requested custom-description checkbox should control whether a separate batch description is entered; when unchecked, PhotoMemo should still write the full rendered right-bottom content instead of writing nothing.
+3. The user's requested custom-description checkbox should control whether a separate batch description is entered; when unchecked, MemoMark should still write the full rendered right-bottom content instead of writing nothing.
 4. The three-config button system and operation-guide redesign should be planned now but deferred from this implementation slice.
 
 ## Tech Stack
@@ -79,7 +79,7 @@ if state == .denied {
 - Photo Library permission UI clearly distinguishes between first-time request and post-denial recovery
 - Birthday smart text suppresses `0岁` for under-one-year output
 - `补充信息` becomes a single-card section with one clear custom-description checkbox
-- When custom-description input is disabled, PhotoMemo falls back to the full rendered right-bottom content instead of writing nothing
+- When custom-description input is disabled, MemoMark falls back to the full rendered right-bottom content instead of writing nothing
 - Build succeeds after the change
 
 ## Open Questions

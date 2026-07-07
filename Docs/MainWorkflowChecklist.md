@@ -1,4 +1,4 @@
-# PhotoMemo Main Workflow Checklist
+# MemoMark Main Workflow Checklist
 
 Last updated: 2026-06-21
 
@@ -15,7 +15,7 @@ It is intentionally biased toward correctness and simplification, not feature ex
 - [ ] Finish consolidating import-origin facts across intake, metadata, export, and save-back
 - [ ] Verify original filename preservation end to end on real device flows
 - [ ] Make share failures clearly attributable to a concrete stage during diagnostics and QA
-- [ ] Verify the shortest user path on device: `Photos -> Share -> PhotoMemo -> Generate -> Save`
+- [ ] Verify the shortest user path on device: `Photos -> Share -> MemoMark -> Generate -> Save`
 
 ## Next
 
@@ -39,7 +39,7 @@ It is intentionally biased toward correctness and simplification, not feature ex
 
 ## Verification Checklist
 
-- [x] `PhotoMemo` builds
+- [x] `MemoMark` builds
 - [x] `PhotoMemoiOS` builds
 - [x] `PhotoMemoShareExtension` builds
 - [x] if code changed, `PhotoMemoTests` remains green

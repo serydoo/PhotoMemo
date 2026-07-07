@@ -63,7 +63,7 @@ struct FirstRunWizardView: View {
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("PhotoMemo")
+            .navigationTitle("时光记")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
@@ -77,7 +77,7 @@ private extension FirstRunWizardView {
     var heroHeader: some View {
 
         VStack(alignment: .leading) {
-            Text("欢迎使用 PhotoMemo")
+            Text("欢迎使用时光记")
                 .font(.title)
                 .fontWeight(.semibold)
 
@@ -131,7 +131,7 @@ private extension FirstRunWizardView {
     var welcomeStep: some View {
 
         VStack(alignment: .leading) {
-            Text("欢迎来到 PhotoMemo")
+            Text("欢迎来到时光记")
                 .font(.headline)
 
             Text("把宝宝照片变成值得长期保存的成长记录。")
@@ -158,7 +158,7 @@ private extension FirstRunWizardView {
             Text("这是为谁记录？")
                 .font(.headline)
 
-            Text("以后 PhotoMemo 会用这个称呼来生成记忆内容。")
+            Text("以后时光记会用这个称呼来生成记忆内容。")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(
@@ -224,7 +224,7 @@ private extension FirstRunWizardView {
             Text("出生日期")
                 .font(.headline)
 
-            Text("PhotoMemo 将自动计算每张照片拍摄时的年龄。")
+            Text("时光记将自动计算每张照片拍摄时的年龄。")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(
@@ -262,7 +262,7 @@ private extension FirstRunWizardView {
             ) {
                 Text("系统相册")
                     .tag(PersonalProfileSaveDestination.systemLibrary)
-                Text("photomemo 相册（推荐）")
+                Text("时光记相册（推荐）")
                     .tag(PersonalProfileSaveDestination.photoMemoAlbum)
             }
             .pickerStyle(.inline)
@@ -287,7 +287,7 @@ private extension FirstRunWizardView {
                 value: PersonalProfile.recommendedStyleTitle
             )
 
-            Text("设置完成后，日常只需要在系统相册里分享照片到 PhotoMemo。")
+            Text("设置完成后，日常只需要在系统相册里分享照片到时光记。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(

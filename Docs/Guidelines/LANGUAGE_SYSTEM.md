@@ -42,7 +42,7 @@ Preferred example:
 
 已保存到：
 
-PhotoMemo。
+MemoMark。
 ```
 
 ## Soft Limit Language
@@ -50,7 +50,7 @@ PhotoMemo。
 Preferred example:
 
 ```text
-PhotoMemo 更适合处理一段值得回味的记录。
+时光记更适合处理一段值得回味的记录。
 
 建议一次处理 30 张以内，
 
@@ -63,9 +63,9 @@ It is not a hard limit.
 
 ## Smart Batch Recommendation
 
-PhotoMemo does not limit the user by a fixed maximum, limit, or threshold.
+MemoMark does not limit the user by a fixed maximum, limit, or threshold.
 
-Instead, PhotoMemo should recommend the best experience according to:
+Instead, MemoMark should recommend the best experience according to:
 
 - device performance
 - photo count

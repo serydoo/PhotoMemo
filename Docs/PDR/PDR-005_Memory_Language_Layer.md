@@ -18,7 +18,7 @@ Revision A
 
 ## Purpose
 
-PDR-005 defines PhotoMemo's Memory Language Layer.
+PDR-005 defines MemoMark's Memory Language Layer.
 
 This is a repository amendment.
 
@@ -38,7 +38,7 @@ The Configuration Center may display Memory Blocks through slots, cards, strips,
 
 ## Memory Language Layer
 
-PhotoMemo now separates:
+MemoMark now separates:
 
 ```text
 Layout Layer
@@ -181,7 +181,7 @@ Do not force all Memory Blocks into `Subject + Action + Result`.
 
 ## Other Block Schemas
 
-PhotoMemo must support future schemas such as:
+MemoMark must support future schemas such as:
 
 ```text
 Device Record

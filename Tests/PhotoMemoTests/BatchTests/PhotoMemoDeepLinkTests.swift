@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import PhotoMemo
 
-@Suite("PhotoMemo deep links")
+@Suite("MemoMark deep links")
 struct PhotoMemoDeepLinkTests {
 
     @Test("Parses the share deep link host")
@@ -12,7 +12,7 @@ struct PhotoMemoDeepLinkTests {
             try #require(
                 PhotoMemoDeepLink(
                     url: URL(
-                        string: "photomemo://share"
+                        string: "memomark://share"
                     )!
                 )
             )
@@ -22,7 +22,7 @@ struct PhotoMemoDeepLinkTests {
         )
     }
 
-    @Test("Parses the share deep link path")
+    @Test("Parses the legacy share deep link path")
     func parsesShareDeepLinkPath() throws {
 
         let deepLink =
@@ -39,8 +39,8 @@ struct PhotoMemoDeepLinkTests {
         )
     }
 
-    @Test("Ignores non-PhotoMemo URLs")
-    func ignoresNonPhotoMemoURLs() {
+    @Test("Ignores non-MemoMark URLs")
+    func ignoresNonMemoMarkURLs() {
 
         #expect(
             PhotoMemoDeepLink(
@@ -55,6 +55,18 @@ struct PhotoMemoDeepLinkTests {
                     string: "https://example.com/share"
                 )!
             ) == nil
+        )
+    }
+
+    @Test("Emits the MemoMark share URL")
+    func emitsMemoMarkShareURL() {
+
+        #expect(
+            PhotoMemoDeepLink
+                .share
+                .url
+                .absoluteString
+            == "memomark://share"
         )
     }
 }

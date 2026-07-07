@@ -18,7 +18,7 @@ A full rewrite would have increased migration risk across UI, runtime, and backg
 
 ## Decision
 
-PhotoMemo keeps `BatchQueueStore` as the stable public facade for the batch subsystem.
+MemoMark keeps `BatchQueueStore` as the stable public facade for the batch subsystem.
 
 Internal responsibilities may be moved into focused supporting components, but the external queue boundary remains centered on `BatchQueueStore`.
 
@@ -53,7 +53,7 @@ That would spread queue coordination responsibilities and increase migration cos
 
 ### Trade-offs
 
-- PhotoMemo accepts a stable facade with internal decomposition instead of replacing the public subsystem shape all at once
+- MemoMark accepts a stable facade with internal decomposition instead of replacing the public subsystem shape all at once
 
 ## Follow-up Work
 

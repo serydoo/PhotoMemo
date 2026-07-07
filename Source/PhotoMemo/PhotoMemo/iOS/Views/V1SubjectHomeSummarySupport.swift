@@ -115,7 +115,7 @@ struct V1SubjectHomeSummaryView: View {
                 )
             }
 
-            Text("下一次从 Apple Photos 分享进入 PhotoMemo 时，会继续使用当前生效配置与时间锚点。")
+            Text("下一次从 Apple Photos 分享进入时光记时，会继续使用当前生效配置与时间锚点。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(

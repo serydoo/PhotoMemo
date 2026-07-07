@@ -90,7 +90,7 @@ All Configuration Center interaction should revolve around the Memory Card.
 
 The center preview should show the same Bottom Card structure the future Renderer will produce, not a schematic grid of editable modules.
 
-The Configuration Center must not preview a photo area plus a bottom card. Photos belong to Apple Photos. PhotoMemo owns the Memory Card.
+The Configuration Center must not preview a photo area plus a bottom card. Photos belong to Apple Photos. MemoMark owns the Memory Card.
 
 Preview should not feel like an editor by default. It should look like an already-generated Memory Card; hover, selection, and Region Strip reveal editability only when needed.
 
@@ -138,7 +138,7 @@ The Memory Card is not:
 - a background image surface
 - a Renderer debugging surface
 
-The Memory Card only displays content created by PhotoMemo.
+The Memory Card only displays content created by MemoMark.
 
 The default card model is Bottom Card.
 
@@ -325,13 +325,13 @@ Photo Capture Date
 
 Re-exporting a photo must not change the Memory Expression.
 
-PhotoMemo records the time of capture.
+MemoMark records the time of capture.
 
-PhotoMemo does not record the time of export as memory truth.
+MemoMark does not record the time of export as memory truth.
 
 ## Design System
 
-PhotoMemo must establish a first-class PhotoMemo Design System.
+MemoMark must establish a first-class MemoMark Design System.
 
 All Configuration UI should reuse shared components for:
 

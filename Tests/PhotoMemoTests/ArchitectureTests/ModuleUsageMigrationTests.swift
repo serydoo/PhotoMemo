@@ -87,14 +87,14 @@ struct ModuleUsageMigrationTests {
         )
     }
 
-    @Test("categoryTitle preserves current PhotoMemo versus EXIF labeling")
+    @Test("categoryTitle preserves current brand versus EXIF labeling")
     func categoryTitlePreservesCurrentLabeling() {
 
         #expect(
             V1ModuleUsageTracker
             .categoryTitle(
                 for: .captureSummary
-            ) == "PhotoMemo"
+            ) == "时光记"
         )
         #expect(
             V1ModuleUsageTracker

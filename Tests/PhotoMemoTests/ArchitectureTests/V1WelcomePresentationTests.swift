@@ -9,7 +9,7 @@ struct V1WelcomePresentationTests {
     func usesApprovedCopy() {
         let presentation = V1WelcomePresentation.default
 
-        #expect(presentation.title == "PhotoMemo")
+        #expect(presentation.title == "时光记")
         #expect(presentation.subtitle == "记录人生，珍藏记忆")
         #expect(presentation.features.count == 4)
         #expect(

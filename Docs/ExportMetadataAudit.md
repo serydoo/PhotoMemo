@@ -18,7 +18,7 @@ Method used in this sprint:
 
 ## Current Export Strategy
 
-PhotoMemo does not rebuild output metadata from a new canonical writer model.
+MemoMark does not rebuild output metadata from a new canonical writer model.
 
 Current behavior is:
 
@@ -29,7 +29,7 @@ Current behavior is:
 5. overwrite only a small set of fields in `sanitizedMetadata(...)`
 6. save the exported file into Photos when needed
 
-This means PhotoMemo currently uses a **pass-through plus patching** strategy.
+This means MemoMark currently uses a **pass-through plus patching** strategy.
 
 ## Metadata Category Audit
 
@@ -40,7 +40,7 @@ This means PhotoMemo currently uses a **pass-through plus patching** strategy.
 | EXIF `DateTimeOriginal` | not explicitly rewritten | passive preserve | survives only if ImageIO keeps the original EXIF dictionary for the chosen output type |
 | EXIF `UserComment` | written when export description is non-empty | explicit write | now also correctly disabled when `shouldWritePhotoDescription == false` |
 | TIFF make/model | preserved by pass-through | passive preserve | useful for read-back camera model if destination keeps TIFF dictionary |
-| TIFF `Software` | overwritten to `PhotoMemo` | explicit modify | intended provenance marker |
+| TIFF `Software` | overwritten to `MemoMark` | explicit modify | intended provenance marker |
 | TIFF `ImageDescription` | written when export description is non-empty | explicit write | disabled when description writing is off |
 | GPS dictionary | not rewritten, carried forward | passive preserve | latitude/longitude/altitude rely on original dictionary surviving export |
 | Top-level orientation | forced to `1` | explicit modify | correct for a newly rendered upright bitmap |
@@ -53,7 +53,7 @@ This means PhotoMemo currently uses a **pass-through plus patching** strategy.
 
 ## Preserved Fields
 
-Fields PhotoMemo tries to preserve today by carrying forward original metadata:
+Fields MemoMark tries to preserve today by carrying forward original metadata:
 
 - EXIF camera/lens/exposure values
 - TIFF make/model
@@ -75,10 +75,10 @@ Fields intentionally changed during export:
 - pixel height
 - EXIF pixel dimensions
 - top-level orientation -> `1`
-- TIFF `Software` -> `PhotoMemo`
+- TIFF `Software` -> `MemoMark`
 - description/comment fields when enabled
 
-These changes are expected because PhotoMemo exports a newly rendered derived image, not the original pixel buffer.
+These changes are expected because MemoMark exports a newly rendered derived image, not the original pixel buffer.
 
 ## Removed Or Not Explicitly Covered
 
@@ -99,11 +99,11 @@ One real export correctness issue was confirmed and fixed:
 
 Result:
 
-- disabling photo-description writing now prevents `UserComment`, `TIFF ImageDescription`, `IPTC CaptionAbstract`, and PNG description from being written by PhotoMemo
+- disabling photo-description writing now prevents `UserComment`, `TIFF ImageDescription`, `IPTC CaptionAbstract`, and PNG description from being written by MemoMark
 
 ## Audit Conclusion
 
-PhotoMemo's current export metadata path is strongest for:
+MemoMark's current export metadata path is strongest for:
 
 - still-photo export
 - retaining original EXIF/TIFF/GPS opportunistically

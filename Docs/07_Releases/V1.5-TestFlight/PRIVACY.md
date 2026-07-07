@@ -1,34 +1,34 @@
-# PhotoMemo Privacy Statement
+# MemoMark Privacy Statement
 
 Last updated: 2026-07-07
 
-PhotoMemo is designed as a local-first memory presentation app for Apple
+MemoMark is designed as a local-first memory presentation app for Apple
 Photos.
 
 ## Summary
 
-- PhotoMemo does not require an account.
-- PhotoMemo does not upload photos to a server.
-- PhotoMemo does not modify original photos.
-- PhotoMemo generates a new image as output.
-- PhotoMemo does not track users.
-- PhotoMemo does not use third-party advertising SDKs.
-- PhotoMemo does not declare collected data types in its privacy manifests.
+- MemoMark does not require an account.
+- MemoMark does not upload photos to a server.
+- MemoMark does not modify original photos.
+- MemoMark generates a new image as output.
+- MemoMark does not track users.
+- MemoMark does not use third-party advertising SDKs.
+- MemoMark does not declare collected data types in its privacy manifests.
 
 ## Photo Access
 
-PhotoMemo requests Photo Library access so users can:
+MemoMark requests Photo Library access so users can:
 
-- share selected photos from Apple Photos to PhotoMemo
+- share selected photos from Apple Photos to MemoMark
 - process those selected photos locally
 - save generated memory-card images back to Apple Photos
 
-PhotoMemo should be used with photos the tester is comfortable using in a beta
+MemoMark should be used with photos the tester is comfortable using in a beta
 build.
 
 ## Local Storage
 
-PhotoMemo stores configuration, processing state, and shared workflow data
+MemoMark stores configuration, processing state, and shared workflow data
 locally on the device using the app container and App Group container.
 
 Examples include:
@@ -40,12 +40,12 @@ Examples include:
 
 ## Networking
 
-Normal PhotoMemo operation does not require server communication. The current
+Normal MemoMark operation does not require server communication. The current
 MVP is built around local processing and the Apple Photos share workflow.
 
 ## Original Photo Safety
 
-PhotoMemo does not destructively edit the original photo. The intended output
+MemoMark does not destructively edit the original photo. The intended output
 is a newly generated image saved back to Apple Photos.
 
 ## App Privacy Labels

@@ -37,7 +37,7 @@ enum V1PhotoIntakeURLResolver {
         let baseDirectory =
             fileManager.temporaryDirectory
             .appendingPathComponent(
-                "PhotoMemoV1Picker",
+                "MemoMarkV1Picker",
                 isDirectory: true
             )
 
@@ -66,7 +66,7 @@ enum V1PhotoIntakeURLResolver {
                     )
                 return trimmed.isEmpty ? nil : trimmed
             }
-            ?? "PhotoMemo Picked Photo"
+            ?? "MemoMark Picked Photo"
 
         let fileExtension =
             sanitizedFileName
@@ -380,7 +380,7 @@ enum V1PhotoIntakeImporter {
             return nil
         }
 
-        return "PhotoMemo Picked Photo.\(fileExtension)"
+        return "MemoMark Picked Photo.\(fileExtension)"
     }
 
     private static func originalPhotoLibraryFileName(

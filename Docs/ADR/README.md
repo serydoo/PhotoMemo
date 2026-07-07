@@ -1,4 +1,4 @@
-# PhotoMemo ADR System
+# MemoMark ADR System
 
 ## What ADR Means
 
@@ -8,13 +8,13 @@ An ADR captures a durable architecture decision, the context that led to it, the
 
 An ADR is not a task log and not an implementation guide.
 
-## Why PhotoMemo Uses ADR
+## Why MemoMark Uses ADR
 
-PhotoMemo is intended to be maintained for many years.
+MemoMark is intended to be maintained for many years.
 
 The project already has strong implementation and handoff notes, but long-term maintenance also requires a stable record of architectural intent.
 
-PhotoMemo uses ADR so future contributors can understand:
+MemoMark uses ADR so future contributors can understand:
 
 - why a boundary exists
 - why one model was kept and another was rejected
@@ -115,6 +115,6 @@ Practical distinction:
 
 ## Working Rule
 
-For PhotoMemo, any change that affects architecture boundaries should update the relevant ADR before the code change is implemented.
+For MemoMark, any change that affects architecture boundaries should update the relevant ADR before the code change is implemented.
 
 Feature work does not need a new ADR unless it changes an architectural decision.

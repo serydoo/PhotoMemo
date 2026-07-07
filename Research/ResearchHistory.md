@@ -2,7 +2,7 @@
 
 ## 2026-06-22
 
-PhotoMemo entered V2 Research Phase.
+MemoMark entered V2 Research Phase.
 
 Development, UI polishing, and renderer polishing were paused so the project can become a local-first Photo Presentation Engine with research, specification, and Layout Engine as first-class assets.
 

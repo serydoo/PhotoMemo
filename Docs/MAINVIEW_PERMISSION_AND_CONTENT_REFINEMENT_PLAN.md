@@ -1,7 +1,7 @@
 # Implementation Plan: MainView Permission And Content Refinement
 
 ## Overview
-Land the highest-confidence usability fixes from the latest PhotoMemo feedback while keeping the larger multi-config redesign out of this slice.
+Land the highest-confidence usability fixes from the latest MemoMark feedback while keeping the larger multi-config redesign out of this slice.
 
 ## Architecture Decisions
 - Keep permission-status resolution in `PermissionCenter`, but make the UI and alert flow honest about denied-state recovery

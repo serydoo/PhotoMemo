@@ -314,7 +314,7 @@ final class PhotoImportService {
         let rootFolderURL =
             FileManager.default.temporaryDirectory
             .appendingPathComponent(
-                "PhotoMemoPickerImports",
+                "MemoMarkPickerImports",
                 isDirectory: true
             )
 
@@ -372,7 +372,7 @@ final class PhotoImportService {
         _ suggestedFileName: String?
     ) -> String {
 
-        let fallback = "PhotoMemo Import"
+        let fallback = "MemoMark Import"
 
         guard let sanitizedFileName =
             sanitizedSuggestedFileName(

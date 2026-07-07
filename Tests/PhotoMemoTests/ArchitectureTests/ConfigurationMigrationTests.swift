@@ -807,7 +807,7 @@ struct ConfigurationMigrationTests {
         )
         #expect(
             automaticBootstrap.suggestedNewAlbumName
-            == "photomemo"
+            == "时光记"
         )
     }
 

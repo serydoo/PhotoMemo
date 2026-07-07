@@ -72,7 +72,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
                     memoryWritePresentation
             )
 
-        #expect(presentation.storageTitle == "PhotoMemo 文件夹")
+        #expect(presentation.storageTitle == "时光记文件夹")
         #expect(presentation.memoryWriteTitle == "实际写入")
         #expect(
             presentation.memoryWriteDescription

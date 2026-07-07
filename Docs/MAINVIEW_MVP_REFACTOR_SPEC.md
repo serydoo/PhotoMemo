@@ -1,9 +1,9 @@
 # Spec: MainView MVP Refactor Round 2
 
 ## Objective
-Reduce `MainView.swift` complexity without changing PhotoMemo's current MVP behavior. This round focuses on the template calibration center surfaces that still live directly inside `MainView`: template selection, template rename, supplemental content, and logo configuration.
+Reduce `MainView.swift` complexity without changing MemoMark's current MVP behavior. This round focuses on the template calibration center surfaces that still live directly inside `MainView`: template selection, template rename, supplemental content, and logo configuration.
 
-Success means `MainView` becomes more of a state coordinator, while these editor panels move into dedicated view types that are easier to iterate on during PhotoMemo's template-calibration MVP phase.
+Success means `MainView` becomes more of a state coordinator, while these editor panels move into dedicated view types that are easier to iterate on during MemoMark's template-calibration MVP phase.
 
 ## Tech Stack
 - Swift 5

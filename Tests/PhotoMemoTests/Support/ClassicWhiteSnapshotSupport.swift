@@ -950,7 +950,7 @@ enum ClassicWhiteSnapshotSupport {
 
         hostWritableTemporaryDirectory()
             .appendingPathComponent(
-                "PhotoMemoSnapshotDiffs",
+                "MemoMarkSnapshotDiffs",
                 isDirectory: true
             )
             .appendingPathComponent(
@@ -974,7 +974,7 @@ enum ClassicWhiteSnapshotSupport {
 
         hostWritableTemporaryDirectory()
             .appendingPathComponent(
-                "PhotoMemoSnapshotRecordings",
+                "MemoMarkSnapshotRecordings",
                 isDirectory: true
             )
             .appendingPathComponent(

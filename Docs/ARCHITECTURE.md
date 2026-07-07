@@ -1,10 +1,10 @@
-# PhotoMemo V2 Architecture
+# MemoMark V2 Architecture
 
 Last updated: 2026-06-22
 
 ## Definition
 
-PhotoMemo is a local-first, privacy-first Memory Presentation Engine.
+MemoMark is a local-first, privacy-first Memory Presentation Engine.
 
 The architecture exists to preserve both objective photo facts and emotional memory position.
 

@@ -1,8 +1,8 @@
-# PhotoMemo Product Specification
+# MemoMark Product Specification
 
 ## Product Position
 
-PhotoMemo is a local-first memory card generator.
+MemoMark is a local-first memory card generator.
 
 Not:
 
@@ -24,7 +24,7 @@ Is:
 2. Configure anchor
 3. Save local settings
 4. Use one preview photo to calibrate result style
-5. Later send photos into PhotoMemo from external entry points
+5. Later send photos into MemoMark from external entry points
 6. Process in background
 7. Save the finished image into the system library and target album
 
@@ -49,8 +49,8 @@ It should not become a heavy batch dashboard.
 
 The real day-to-day processing path should trend toward:
 
-- open with PhotoMemo
-- share to PhotoMemo
+- open with MemoMark
+- share to MemoMark
 - future iOS-oriented external intake
 
 ---

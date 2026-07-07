@@ -32,14 +32,14 @@ struct PhotoFileNameResolverTests {
         #expect(
             PhotoFileNameResolver
             .sanitizedOriginalFileName(
-                "PhotoMemo Import.JPG"
+                "MemoMark Import.JPG"
             ) == nil
         )
 
         #expect(
             PhotoFileNameResolver
             .sanitizedOriginalFileName(
-                "PhotoMemo Import (1).JPG"
+                "MemoMark Import (1).JPG"
             ) == nil
         )
     }
@@ -93,15 +93,15 @@ struct PhotoFileNameResolverTests {
             PhotoFileNameResolver
             .outputBaseName(
                 preferredOriginalFileName:
-                    "PhotoMemo Import.JPG",
+                    "MemoMark Import.JPG",
                 captureDate: captureDate,
                 timeZone: calendar.timeZone
             ) == "IMG_20260620_090819"
         )
     }
 
-    @Test("Builds PhotoMemo output copy names without spaces")
-    func buildsPhotoMemoOutputCopyNamesWithoutSpaces() {
+    @Test("Builds MemoMark output copy names without spaces")
+    func buildsMemoMarkOutputCopyNamesWithoutSpaces() {
 
         #expect(
             PhotoFileNameResolver
@@ -124,12 +124,12 @@ struct PhotoFileNameResolverTests {
             .outputCopyBaseName(
                 from: "",
                 index: 0
-            ) == "PhotoMemo(1)"
+            ) == "MemoMark(1)"
         )
     }
 
-    @Test("Finds next PhotoMemo output copy name")
-    func findsNextPhotoMemoOutputCopyName() {
+    @Test("Finds next MemoMark output copy name")
+    func findsNextMemoMarkOutputCopyName() {
 
         let existingNames: Set<String> = [
             "IMG_1234(1)",
@@ -145,8 +145,8 @@ struct PhotoFileNameResolverTests {
         )
     }
 
-    @Test("Continues PhotoMemo output copy names without nesting suffixes")
-    func continuesPhotoMemoOutputCopyNamesWithoutNestingSuffixes() {
+    @Test("Continues MemoMark output copy names without nesting suffixes")
+    func continuesMemoMarkOutputCopyNamesWithoutNestingSuffixes() {
 
         let existingNames: Set<String> = [
             "IMG_1234(1)"

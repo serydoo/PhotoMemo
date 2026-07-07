@@ -99,7 +99,7 @@ struct ConfigurationCenterTopPreviewSection<
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("PhotoMemo")
+                    Text("时光记")
                         .font(.largeTitle.weight(.bold))
                         .foregroundStyle(.primary)
 
@@ -138,7 +138,7 @@ struct ConfigurationCenterTopPreviewSection<
 
             workflowChips
 
-            Text("Apple Photos -> Share -> PhotoMemo -> Processing -> Apple Photos")
+            Text("Apple Photos -> Share -> MemoMark -> Processing -> Apple Photos")
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 2)

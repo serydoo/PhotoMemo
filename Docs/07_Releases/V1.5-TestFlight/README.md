@@ -1,8 +1,8 @@
-# PhotoMemo 1.5 TestFlight Release Materials
+# MemoMark 1.5 TestFlight Release Materials
 
 Last updated: 2026-07-07
 
-This folder contains the prepared materials for PhotoMemo 1.5 TestFlight and
+This folder contains the prepared materials for MemoMark 1.5 TestFlight and
 App Store Connect setup.
 
 ## Build Identity
@@ -15,7 +15,7 @@ App Store Connect setup.
 - Primary workflow:
 
 ```text
-Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos
+Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos
 ```
 
 ## Files

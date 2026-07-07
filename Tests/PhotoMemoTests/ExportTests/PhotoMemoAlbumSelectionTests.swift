@@ -5,17 +5,17 @@ import Testing
 @Suite("PhotoMemoAlbumSelection")
 struct PhotoMemoAlbumSelectionTests {
 
-    @Test("Uses lowercase photomemo as the automatic album title")
-    func usesLowercasePhotomemoAsAutomaticAlbumTitle() {
+    @Test("Uses branded album title for automatic output")
+    func usesBrandedAlbumTitleForAutomaticOutput() {
 
         #expect(
             PhotoMemoAlbumSelection.defaultAlbumTitle
-            == "photomemo"
+            == "时光记"
         )
 
         #expect(
             PhotoAlbumOption.automatic.title
-            == "自动存入 photomemo"
+            == "自动存入时光记"
         )
     }
 

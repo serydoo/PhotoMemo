@@ -1,6 +1,6 @@
 # LayoutEngine
 
-This folder is reserved for the future PhotoMemo V2 Layout Engine boundary.
+This folder is reserved for the future MemoMark V2 Layout Engine boundary.
 
 The Layout Engine will own:
 

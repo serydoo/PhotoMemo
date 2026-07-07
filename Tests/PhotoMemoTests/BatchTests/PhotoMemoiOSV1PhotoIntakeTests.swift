@@ -4,7 +4,7 @@ import Testing
 import UniformTypeIdentifiers
 @testable import PhotoMemo
 
-@Suite("PhotoMemo iOS V1 photo intake")
+@Suite("MemoMark iOS V1 photo intake")
 struct PhotoMemoiOSV1PhotoIntakeTests {
 
     @Test("keeps supported image URLs and removes duplicates")
@@ -43,7 +43,7 @@ struct PhotoMemoiOSV1PhotoIntakeTests {
         let sourceDirectory =
             FileManager.default.temporaryDirectory
             .appendingPathComponent(
-                "PhotoMemoV1PhotoIntakeTests-\(UUID().uuidString)",
+                "MemoMarkV1PhotoIntakeTests-\(UUID().uuidString)",
                 isDirectory: true
             )
 

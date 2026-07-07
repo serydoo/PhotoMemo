@@ -10,10 +10,10 @@ RSR-001
 
 ## Goal
 
-Delete or downgrade content that no longer fits the PhotoMemo V3 Product Philosophy:
+Delete or downgrade content that no longer fits the MemoMark V3 Product Philosophy:
 
 ```text
-PhotoMemo exists to help people read their memories,
+MemoMark exists to help people read their memories,
 not just store their photos.
 ```
 
@@ -37,21 +37,21 @@ Question 2:
 If it is deleted, does the mission still hold?
 ```
 
-RSR-001 applies these questions to repository language. Concepts that only make PhotoMemo feel like a workbench, dashboard, import tool, photo manager, or bulk-processing console were removed from active source-of-truth wording or downgraded to historical/internal implementation context.
+RSR-001 applies these questions to repository language. Concepts that only make MemoMark feel like a workbench, dashboard, import tool, photo manager, or bulk-processing console were removed from active source-of-truth wording or downgraded to historical/internal implementation context.
 
 ## Deleted Or Downgraded Concepts
 
 Deleted from active source-of-truth language:
 
-- PhotoMemo as a workbench
-- PhotoMemo as a daily app-open workflow
-- PhotoMemo as an import-first product
-- PhotoMemo as a dashboard
-- PhotoMemo as a task center
-- PhotoMemo as a workspace
-- PhotoMemo as a photo manager
-- PhotoMemo as an EXIF tool
-- PhotoMemo as a large-batch-first system
+- MemoMark as a workbench
+- MemoMark as a daily app-open workflow
+- MemoMark as an import-first product
+- MemoMark as a dashboard
+- MemoMark as a task center
+- MemoMark as a workspace
+- MemoMark as a photo manager
+- MemoMark as an EXIF tool
+- MemoMark as a large-batch-first system
 
 Downgraded to historical or internal implementation context:
 
@@ -116,7 +116,7 @@ Current daily workflow:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
@@ -164,7 +164,7 @@ Advanced: 50+
 
 Avoid making 300, 500, 1000, or similar counts part of the product identity.
 
-PhotoMemo is better suited to processing:
+MemoMark is better suited to processing:
 
 ```text
 a passage of memory worth returning to
@@ -251,4 +251,4 @@ Do later as separate reviewed slices:
 
 Every review should leave the repository simpler than before.
 
-每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+每一次设计评审，都应该让时光记比昨天更简单一点。

@@ -2,7 +2,7 @@
 
 Last updated: 2026-06-24
 
-This document records the current frozen interaction baseline for the PhotoMemo Configuration Center.
+This document records the current frozen interaction baseline for the MemoMark Configuration Center.
 
 It freezes the product-facing structure and interaction behavior that emerged from the latest UI review. It does not freeze visual polish details, mock values, or future runtime integration.
 
@@ -251,7 +251,7 @@ The output must generate a new image and must not modify the original photo.
 
 Storage options currently shown as UI state:
 
-- `PhotoMemo 文件夹`
+- `时光记文件夹`
 - `现有文件夹`
 - `新建文件夹`
 - `目标相册`
@@ -259,7 +259,7 @@ Storage options currently shown as UI state:
 Default rule:
 
 ```text
-If no storage destination is specified, use the PhotoMemo folder.
+If no storage destination is specified, use the MemoMark folder.
 ```
 
 This is currently UI-only and does not call the export pipeline.

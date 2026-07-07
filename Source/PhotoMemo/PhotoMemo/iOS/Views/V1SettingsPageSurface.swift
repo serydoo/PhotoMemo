@@ -90,7 +90,7 @@ struct V1SettingsPageSurface: View {
                 Button(action: onShowWorkflow) {
                     settingsActionRow(
                         title: "查看使用流程",
-                        detail: "按 Apple Photos -> Share -> PhotoMemo 的真实路径回看处理方式。",
+                        detail: "按 Apple Photos -> Share -> 时光记的真实路径回看处理方式。",
                         systemImage: "list.bullet.rectangle.portrait",
                         accent: .teal,
                         thumbnail: {
@@ -114,7 +114,7 @@ struct V1SettingsPageSurface: View {
         V1CardSurface(title: "当前原则") {
             VStack(alignment: .leading, spacing: 10) {
                 settingsPrinciple(
-                    title: "PhotoMemo 会生成新图，不修改系统相册里的原始照片。",
+                    title: "时光记会生成新图，不修改系统相册里的原始照片。",
                     tint: .blue
                 )
 
@@ -124,7 +124,7 @@ struct V1SettingsPageSurface: View {
                 )
 
                 settingsPrinciple(
-                    title: "日常路径仍然保持在 Apple Photos -> Share -> PhotoMemo -> Processing -> Apple Photos。",
+                    title: "日常路径仍然保持在 Apple Photos -> Share -> 时光记 -> Processing -> Apple Photos。",
                     tint: .indigo
                 )
             }

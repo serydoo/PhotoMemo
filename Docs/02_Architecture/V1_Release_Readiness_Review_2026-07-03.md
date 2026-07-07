@@ -138,7 +138,7 @@ Evidence:
 
 Risk:
 
-The current picker path now correctly prefers file representation over loading every image as `Data`, but both file-copy and fallback-data paths stage files under `PhotoMemoV1Picker`. The production path does not show a dedicated cleanup loop for those staged picker files.
+The current picker path now correctly prefers file representation over loading every image as `Data`, but both file-copy and fallback-data paths stage files under `MemoMarkV1Picker`. The production path does not show a dedicated cleanup loop for those staged picker files.
 
 Release meaning:
 
@@ -146,7 +146,7 @@ This is not an immediate correctness blocker, but it will matter for repeated HE
 
 Fix direction:
 
-Track staged picker URLs and clean them after submit/failure, or run an age-based cleanup for `PhotoMemoV1Picker` during startup/intake refresh.
+Track staged picker URLs and clean them after submit/failure, or run an age-based cleanup for `MemoMarkV1Picker` during startup/intake refresh.
 
 ### Medium 3: iOS exposes V1 and Configuration Center as separate root entries with separate sessions
 
@@ -248,7 +248,7 @@ Evidence available at review time:
 
 Additional review support:
 
-- Used code-review and PhotoMemo release/UI/render review skills.
+- Used code-review and MemoMark release/UI/render review skills.
 - Used two completed read-only subagent reviews:
   - Subject / Bootstrap / persistence runtime
   - Docs / Architecture / MemoryEngine consistency

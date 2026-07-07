@@ -685,4 +685,4 @@ The correct next step is to migrate one cohesive responsibility at a time, in th
 7. export/permission coordination
 8. lifecycle routing
 
-This keeps `MainView` as a real view shell while allowing `WorkspaceSessionController` to grow into a workflow coordinator without changing PhotoMemo behavior.
+This keeps `MainView` as a real view shell while allowing `WorkspaceSessionController` to grow into a workflow coordinator without changing MemoMark behavior.

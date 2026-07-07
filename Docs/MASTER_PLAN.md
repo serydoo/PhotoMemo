@@ -1,4 +1,4 @@
-# PhotoMemo V2 Master Plan
+# MemoMark V2 Master Plan
 
 Last updated: 2026-06-24
 
@@ -6,15 +6,15 @@ Read `PROJECT_CONSTITUTION.md` before this file. The constitution is the highest
 
 ## Vision
 
-PhotoMemo is a local-first Memory Presentation Engine.
+MemoMark is a local-first Memory Presentation Engine.
 
-It is not a watermark application and it is not a clone of any existing product. PhotoMemo studies excellent design languages, extracts measurable layout principles, and turns those principles into reusable specifications, design tokens, layout rules, and renderer implementations. More importantly, PhotoMemo preserves the position every photograph occupies inside a person's life.
+It is not a watermark application and it is not a clone of any existing product. MemoMark studies excellent design languages, extracts measurable layout principles, and turns those principles into reusable specifications, design tokens, layout rules, and renderer implementations. More importantly, MemoMark preserves the position every photograph occupies inside a person's life.
 
-PhotoMemo does not only present photographs. It presents memories.
+MemoMark does not only present photographs. It presents memories.
 
 ## Current Phase
 
-PhotoMemo V2.1 Memory Engine.
+MemoMark V2.1 Memory Engine.
 
 Product Definition is complete enough to enter Product Realization.
 
@@ -52,7 +52,7 @@ Build the V2.1 documentation and architecture foundation:
    - Export
 5. Keep Layout Specification waiting for reverse-engineering results.
 6. Synchronize frozen interaction architecture and behavior principles into repository documentation.
-7. Connect the first real PhotoMemo pipeline through the approved IA-003 sequence without reopening IA-002.
+7. Connect the first real MemoMark pipeline through the approved IA-003 sequence without reopening IA-002.
 
 ## Long-Term Development Rule
 
@@ -69,7 +69,7 @@ Any new feature must pass through these five steps:
 5. `Review & Freeze`
    Validate the result, freeze the accepted decisions, and record them in `Docs/FROZEN_REGISTRY.md`.
 
-This is a permanent workflow rule for future PhotoMemo feature development.
+This is a permanent workflow rule for future MemoMark feature development.
 
 ## Product Philosophy
 
@@ -96,13 +96,13 @@ Every memory has emotional information:
 
 These answer what that moment means.
 
-PhotoMemo preserves both.
+MemoMark preserves both.
 
 The key new property is Life Position: where a photo belongs inside a person's life timeline.
 
-PhotoMemo is not a photo manager.
+MemoMark is not a photo manager.
 
-PhotoMemo is a local-first Memory Capability inside Apple workflows.
+MemoMark is a local-first Memory Capability inside Apple workflows.
 
 The product should not change how users manage photos.
 
@@ -144,10 +144,10 @@ Status: frozen.
 Scope:
 
 - define the Configuration Center as the long-term setup surface
-- freeze the Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos lifecycle
+- freeze the Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos lifecycle
 - define Zero Interaction and Quiet Computing behavior
 - define progress language, product personality, and Apple-native interaction principles
-- define the boundary that PhotoMemo extends Apple Photos instead of replacing it
+- define the boundary that MemoMark extends Apple Photos instead of replacing it
 
 ### RSR-001: Repository Simplification Review
 
@@ -163,7 +163,7 @@ Scope:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
@@ -270,7 +270,7 @@ Status: current implementation track.
 
 Goal:
 
-Produce the first real PhotoMemo by connecting real photo facts, Memory Subject, Configuration Snapshot, Memory Engine output, Memory Card, and Renderer in controlled slices.
+Produce the first real MemoMark by connecting real photo facts, Memory Subject, Configuration Snapshot, Memory Engine output, Memory Card, and Renderer in controlled slices.
 
 Approved sequence:
 

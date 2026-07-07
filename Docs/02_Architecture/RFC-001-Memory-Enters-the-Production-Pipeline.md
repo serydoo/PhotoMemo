@@ -26,13 +26,13 @@ This RFC was restored into `~/Desktop/PhotoMemo` on `2026-07-03` after the repos
 
 ## Authors
 
-- PhotoMemo project
+- MemoMark project
 - Codex collaboration session
 
 ## References
 
 Baseline:
-- `Docs/02_Architecture/PhotoMemo_V1_Engineering_Baseline.md`
+- `Docs/02_Architecture/MemoMark_V1_Engineering_Baseline.md`
 - `D-002`
 - `D-004`
 - `I-003`
@@ -48,7 +48,7 @@ None
 
 ## Project Convention
 
-This RFC follows the PhotoMemo V2 convention:
+This RFC follows the MemoMark V2 convention:
 
 - One RFC, One Architectural Fact
 - Never solve two architectural facts in one RFC
@@ -122,7 +122,7 @@ See:
 - Baseline `D-004`
 - Baseline `I-003`
 
-This means PhotoMemo already has a real Memory architecture slice, but production export does not yet depend on it.
+This means MemoMark already has a real Memory architecture slice, but production export does not yet depend on it.
 
 ## Goal
 
@@ -158,7 +158,7 @@ Primary document scope for this RFC:
 ```text
 Docs/02_Architecture/
     RFC-001-Memory-Enters-the-Production-Pipeline.md
-    PhotoMemo_V1_Engineering_Baseline.md
+    MemoMark_V1_Engineering_Baseline.md
 
 Source/PhotoMemo/PhotoMemo/
     MemoryEngine/

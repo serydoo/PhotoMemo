@@ -66,7 +66,7 @@ struct BatchNotificationMessageFormatterTests {
                 failedCount: 2,
                 totalCount: 2
             )
-            == "请回到 PhotoMemo 查看原因，并按提示继续处理。"
+            == "请回到时光记查看原因，并按提示继续处理。"
         )
     }
 
@@ -99,7 +99,7 @@ struct BatchNotificationMessageFormatterTests {
                 totalCount: 5,
                 savedAlbumName: "家庭相册"
             )
-            == "大部分结果已保存到「家庭相册」，剩余 1 张可回到 PhotoMemo 查看。"
+            == "大部分结果已保存到「家庭相册」，剩余 1 张可回到时光记查看。"
         )
     }
 
@@ -112,7 +112,7 @@ struct BatchNotificationMessageFormatterTests {
                 totalCount: 1,
                 savedAlbumName: " "
             )
-            == "PhotoMemo 已生成新的照片。"
+            == "时光记已生成新的照片。"
         )
     }
 

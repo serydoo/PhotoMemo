@@ -1,4 +1,4 @@
-# PhotoMemo Development Plan
+# MemoMark Development Plan
 
 ## Phase 1
 

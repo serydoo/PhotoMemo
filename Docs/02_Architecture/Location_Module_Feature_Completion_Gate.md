@@ -31,7 +31,7 @@ PASS
 - Focused Location display / preview tests passed.
 - Focused save / production / boundary tests passed.
 - Focused shared snapshot tests passed.
-- `PhotoMemo` Debug build passed.
+- `MemoMark` Debug build passed.
 - `PhotoMemoiOSV1` generic iOS Simulator build passed.
 - `PhotoMemoShareExtension` generic iOS Simulator build passed.
 

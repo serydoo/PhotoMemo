@@ -1,14 +1,14 @@
-# PhotoMemo Repository Line Strategy
+# MemoMark Repository Line Strategy
 
 Last updated: 2026-07-02
 
-This document defines how PhotoMemo should preserve older product phases without turning the repository into a stack of duplicated version folders.
+This document defines how MemoMark should preserve older product phases without turning the repository into a stack of duplicated version folders.
 
 Read `PROJECT_CONSTITUTION.md` and `Docs/MASTER_PLAN.md` first. This strategy must not override the V2 reset rules.
 
 ## Purpose
 
-PhotoMemo has already moved through several meaningful phases:
+MemoMark has already moved through several meaningful phases:
 
 - macOS local export foundation
 - iOS foundation

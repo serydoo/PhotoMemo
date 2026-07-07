@@ -71,7 +71,7 @@ struct V1HomePageSurface<
             V1HomeAppMark()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("PhotoMemo")
+                Text("时光记")
                     .font(.title2.weight(.semibold))
 
                 Text("本地优先的记忆呈现引擎，让照片不止记录画面，也保留它在人生时间线里的位置。")

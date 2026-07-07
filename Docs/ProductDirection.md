@@ -1,4 +1,4 @@
-# PhotoMemo Product Direction
+# MemoMark Product Direction
 
 Last updated: 2026-06-20
 
@@ -10,43 +10,43 @@ Configure once. Remember forever.
 
 ## Core Definition
 
-PhotoMemo is a memory generator built around Apple Photos, not a photo editor.
+MemoMark is a memory generator built around Apple Photos, not a photo editor.
 
-PhotoMemo 不是修图工具，而是围绕系统相册构建的记忆生成器。
+时光记不是修图工具，而是围绕系统相册构建的记忆生成器。
 
 ## Product Philosophy
 
-- PhotoMemo is not an EXIF viewer.
-- PhotoMemo is not a photo editor.
-- PhotoMemo is not an app users should need to open first.
-- PhotoMemo is a local-first memory capability invoked from Apple Photos.
+- MemoMark is not an EXIF viewer.
+- MemoMark is not a photo editor.
+- MemoMark is not an app users should need to open first.
+- MemoMark is a local-first memory capability invoked from Apple Photos.
 - The Main App exists to prepare the workflow.
 - The Share Extension exists to execute the workflow.
 
 ## Core Experience Principle
 
-The best PhotoMemo experience is the one users barely notice.
+The best MemoMark experience is the one users barely notice.
 
-PhotoMemo 最好的体验，是用户几乎感觉不到它的存在。
+时光记最好的体验，是用户几乎感觉不到它的存在。
 
 The ideal feeling is:
 
 see a photo -> share -> wait a moment -> find a new photo worth keeping in the library.
 
-The main app exists mainly to configure PhotoMemo.
+The main app exists mainly to configure MemoMark.
 
-The share extension exists mainly to use PhotoMemo.
+The share extension exists mainly to use MemoMark.
 
 The long-term promise is:
 
 - configure once
 - share from Photos
-- let PhotoMemo generate and save quietly
+- let MemoMark generate and save quietly
 - return to life instead of returning to settings
 
 ## Internal Workflow Standard
 
-PhotoMemo is now also defined by one internal product workflow:
+MemoMark is now also defined by one internal product workflow:
 
 Import
 
@@ -77,7 +77,7 @@ Renderer quality matters, but renderer is not the product center.
 
 Old mindset:
 
-Open PhotoMemo
+Open MemoMark
 
 -> Choose Photo
 
@@ -95,7 +95,7 @@ Apple Photos
 
 -> Share
 
--> PhotoMemo
+-> MemoMark
 
 -> Generate
 
@@ -105,7 +105,7 @@ Apple Photos
 
 ## Product Model
 
-PhotoMemo is now defined by three layers:
+MemoMark is now defined by three layers:
 
 1. Personal Profile
 2. Style
@@ -123,7 +123,7 @@ Personal Profile owns information that rarely changes:
 
 ### Style
 
-Style owns how a PhotoMemo result is generated:
+Style owns how a MemoMark result is generated:
 
 - layout
 - variables
@@ -141,7 +141,7 @@ Apple Photos
 
 -> Share
 
--> PhotoMemo
+-> MemoMark
 
 -> Generate
 
@@ -172,7 +172,7 @@ The ideal default interaction is:
 
 Share
 
--> PhotoMemo
+-> MemoMark
 
 -> Automatically use the current configuration
 
@@ -201,13 +201,13 @@ The Share Extension should never ask users to enter personal information.
 
 ## Product Polishing Phase
 
-PhotoMemo has now entered a product-polishing stage.
+MemoMark has now entered a product-polishing stage.
 
 From this point forward, iterative UX improvement should follow one sentence:
 
-Let users stay inside Apple Photos as much as possible, share to PhotoMemo only when needed, and receive a result worth keeping within seconds.
+Let users stay inside Apple Photos as much as possible, share to MemoMark only when needed, and receive a result worth keeping within seconds.
 
-This is the clearest product differentiator PhotoMemo has.
+This is the clearest product differentiator MemoMark has.
 
 ## Supporting Documents
 
@@ -232,4 +232,4 @@ This direction update does not require:
 
 It is a product-model and product-flow alignment document.
 
-The goal is to make PhotoMemo feel share-first, photo-first, decision-light, and increasingly invisible in normal use.
+The goal is to make MemoMark feel share-first, photo-first, decision-light, and increasingly invisible in normal use.

@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-PhotoMemo constructs runtime batch configuration snapshots for preview, export, background intake, and share-extension-driven processing.
+MemoMark constructs runtime batch configuration snapshots for preview, export, background intake, and share-extension-driven processing.
 
 Snapshot construction previously existed in more than one place.
 
@@ -20,7 +20,7 @@ The project needed one authoritative place to build runtime batch configuration 
 
 ## Decision
 
-PhotoMemo uses `BatchConfigurationSnapshotProvider` as the single source of truth for runtime batch configuration snapshot construction.
+MemoMark uses `BatchConfigurationSnapshotProvider` as the single source of truth for runtime batch configuration snapshot construction.
 
 This provider is responsible for:
 
@@ -60,7 +60,7 @@ That would spread default semantics across preview, batch, and extension boundar
 
 ### Trade-offs
 
-- PhotoMemo accepts a more explicit provider boundary in exchange for lower configuration drift risk
+- MemoMark accepts a more explicit provider boundary in exchange for lower configuration drift risk
 
 ## Follow-up Work
 

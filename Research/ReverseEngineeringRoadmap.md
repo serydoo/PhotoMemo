@@ -4,7 +4,7 @@ Last updated: 2026-06-22
 
 ## Purpose
 
-Define the research order for extracting reusable PhotoMemo layout rules.
+Define the research order for extracting reusable MemoMark layout rules.
 
 This roadmap does not aim for screenshot similarity. It aims to produce measurable specifications that can later drive the Layout Engine.
 

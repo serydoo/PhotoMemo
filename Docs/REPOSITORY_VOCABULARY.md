@@ -10,15 +10,15 @@ Frozen by RSR-001
 
 ## Purpose
 
-This document defines the repository language for PhotoMemo after RSR-001.
+This document defines the repository language for MemoMark after RSR-001.
 
-The goal is simplification: future documents should make PhotoMemo easier to understand, not broader, louder, or more app-like.
+The goal is simplification: future documents should make MemoMark easier to understand, not broader, louder, or more app-like.
 
 ## Repository Mission
 
-PhotoMemo exists to help people read their memories, not just store their photos.
+MemoMark exists to help people read their memories, not just store their photos.
 
-PhotoMemo 存在的意义，
+时光记存在的意义，
 
 不是帮助人们保存照片，
 
@@ -26,11 +26,9 @@ PhotoMemo 存在的意义，
 
 Photos preserve moments.
 
-PhotoMemo reveals their meaning.
+MemoMark reveals their meaning.
 
-照片记录瞬间。
-
-PhotoMemo 赋予意义。
+照片记录瞬间。时光记赋予意义。
 
 ## Allowed Terms
 
@@ -63,7 +61,7 @@ Use these terms in current source-of-truth documents:
 - Apple Photos Lifecycle
 - Configuration Preview
 - Configuration Snapshot
-- PhotoMemo Design System
+- MemoMark Design System
 
 ## Forbidden User-Workflow Terms
 
@@ -94,7 +92,7 @@ Use these replacements in active repository language:
 | Template, when describing user configuration | Preset |
 | Preview, when describing the center Memory Card surface | Memory Card Preview |
 | Preview, when describing user calibration broadly | Configuration Preview |
-| Open App -> Import -> Configure -> Export | Apple Photos -> Share -> PhotoMemo -> Processing -> Notification -> Apple Photos |
+| Open App -> Import -> Configure -> Export | Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos |
 | Sidebar, when describing Configuration Center architecture | Library |
 | Inspector, when describing selected configuration objects | Object Inspector |
 | Logo, when describing configurable decoration objects | DecorationAsset |
@@ -145,7 +143,7 @@ The daily workflow is:
 ```text
 Apple Photos
 -> Share
--> PhotoMemo
+-> MemoMark
 -> Processing
 -> Notification
 -> Apple Photos
@@ -180,7 +178,7 @@ Interrupted
 
 ## Configuration Snapshot
 
-When a task starts, PhotoMemo freezes a Configuration Snapshot.
+When a task starts, MemoMark freezes a Configuration Snapshot.
 
 The running task treats that snapshot as read-only.
 
@@ -196,12 +194,12 @@ Secondary: 20-50
 Advanced: 50+
 ```
 
-Avoid defining PhotoMemo around 300, 500, 1000, or other large-run marketing language.
+Avoid defining MemoMark around 300, 500, 1000, or other large-run marketing language.
 
-PhotoMemo is better suited to processing a passage of memory worth returning to.
+MemoMark is better suited to processing a passage of memory worth returning to.
 
 ## Design Review Closing Principle
 
 Every review should leave the repository simpler than before.
 
-每一次设计评审，都应该让 PhotoMemo 比昨天更简单一点。
+每一次设计评审，都应该让时光记比昨天更简单一点。

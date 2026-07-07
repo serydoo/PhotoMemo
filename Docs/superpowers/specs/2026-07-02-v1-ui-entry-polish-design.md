@@ -1,4 +1,4 @@
-# PhotoMemo V1 UI Entry Polish Design
+# MemoMark V1 UI Entry Polish Design
 Date: 2026-07-02
 Status: Proposed and user-approved in conversation
 Scope: V1 iOS UI polish only
@@ -20,7 +20,7 @@ This slice focuses on:
 
 The V1 app should immediately communicate:
 
-- what PhotoMemo is
+- what MemoMark is
 - why it is different from a normal photo editor
 - how users should begin using it
 - which object/configuration is currently active
@@ -67,7 +67,7 @@ Rules:
 
 ### Purpose
 
-Give first-time users a clear explanation of what PhotoMemo is and how it fits into the Apple Photos workflow.
+Give first-time users a clear explanation of what MemoMark is and how it fits into the Apple Photos workflow.
 
 ### Entry Rules
 
@@ -79,7 +79,7 @@ Give first-time users a clear explanation of what PhotoMemo is and how it fits i
 Single-screen layout:
 
 1. app icon
-2. app title: `PhotoMemo`
+2. app title: `MemoMark`
 3. subtitle: `记录人生，珍藏记忆`
 4. one short explanatory paragraph
 5. four feature rows
@@ -90,7 +90,7 @@ Single-screen layout:
 
 The paragraph should compress the README message into user-facing language:
 
-PhotoMemo uses photo metadata, time anchors, and memory objects to generate more meaningful memory presentation while preserving the original photo.
+MemoMark uses photo metadata, time anchors, and memory objects to generate more meaningful memory presentation while preserving the original photo.
 
 Feature rows:
 
@@ -107,7 +107,7 @@ Buttons:
 ### Behavior
 
 - `开始使用` dismisses the page and enters Home
-- `查看使用流程` shows a lightweight explanation of the Apple Photos -> Share -> PhotoMemo lifecycle or a follow-up help surface
+- `查看使用流程` shows a lightweight explanation of the Apple Photos -> Share -> 时光记 lifecycle or a follow-up help surface
 
 ## Screen 2: Home Page Reorder
 
@@ -215,7 +215,7 @@ Tap `处理照片`:
 
 This aligns in-app initiation with the Share flow:
 
-- both paths feed photos into the same PhotoMemo processing pipeline
+- both paths feed photos into the same MemoMark processing pipeline
 - the home screen gains a real action entry
 - output settings stop competing with action semantics
 

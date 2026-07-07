@@ -47,14 +47,14 @@ extension MainView {
             == .denied {
             presentAlert(
                 title: "请到系统设置开启相册权限",
-                message: "macOS 在你拒绝后不会再次自动弹出相册授权框。请点击权限区里的“打开系统设置”，然后为 PhotoMemo 重新开启相册权限。"
+                message: "macOS 在你拒绝后不会再次自动弹出相册授权框。请点击权限区里的“打开系统设置”，然后为时光记重新开启相册权限。"
             )
             return
         }
 
         presentAlert(
             title: "需要相册权限",
-            message: "请允许 PhotoMemo 访问系统相册，这样才能读取照片并把处理后的图片存回图库。"
+            message: "请允许时光记访问系统相册，这样才能读取照片并把处理后的图片存回图库。"
         )
     }
 
@@ -77,7 +77,7 @@ extension MainView {
             } else {
                 presentAlert(
                     title: "需要相册权限",
-                    message: "请先允许 PhotoMemo 访问系统相册，之后才能读取相册列表和保存处理结果。"
+                    message: "请先允许时光记访问系统相册，之后才能读取相册列表和保存处理结果。"
                 )
             }
             return

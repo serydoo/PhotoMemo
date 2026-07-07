@@ -30,7 +30,7 @@ struct MainMemoryProgressPanel: View {
                 storageKey:
                     "photomemo.guide.memoryProgress.dismissed",
                 title: "记忆进度说明",
-                message: "这里会累计 PhotoMemo 的处理进度、默认配置去向和最近的后台结果。如果你已经熟悉这块用途，可以直接关闭，完整说明会继续保留在右侧操作指南里。"
+                message: "这里会累计时光记的处理进度、默认配置去向和最近的后台结果。如果你已经熟悉这块用途，可以直接关闭，完整说明会继续保留在右侧操作指南里。"
             )
 
             MinimalInsetCard {
@@ -239,10 +239,10 @@ struct MainMemoryProgressPanel: View {
     private var memoryProgressHeadline: String {
 
         if snapshot.completedPhotoCount == 0 {
-            return "等你第一次处理完成后，这里会慢慢积累属于 PhotoMemo 的小记录。"
+            return "等你第一次处理完成后，这里会慢慢积累属于时光记的小记录。"
         }
 
-        return "PhotoMemo 已经帮你把 \(snapshot.completedPhotoCount) 张照片整理成带记忆注脚的样子。"
+        return "时光记已经帮你把 \(snapshot.completedPhotoCount) 张照片整理成带记忆注脚的样子。"
     }
 
     private var backgroundStatusTitle: String {
@@ -291,7 +291,7 @@ struct MainMemoryProgressPanel: View {
         } else if defaultConfigurationSnapshot
             .selectedAlbumIdentifier.isEmpty {
 
-            albumTitle = "自动存入 photomemo"
+            albumTitle = "自动存入时光记"
 
         } else {
 

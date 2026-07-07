@@ -1177,7 +1177,7 @@ enum ConfigurationStorageOption:
     var title: String {
         switch self {
         case .appFolder:
-            return "PhotoMemo 文件夹"
+            return "时光记文件夹"
         case .existingFolder:
             return "现有文件夹"
         case .newFolder:
@@ -1190,7 +1190,7 @@ enum ConfigurationStorageOption:
     var note: String {
         switch self {
         case .appFolder:
-            return "未指定保存地点时，默认存入软件对应的 PhotoMemo 文件夹。"
+            return "未指定保存地点时，默认存入软件对应的时光记文件夹。"
         case .existingFolder:
             return "后续从已有文件夹中选择保存位置。"
         case .newFolder:

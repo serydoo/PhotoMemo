@@ -1,7 +1,7 @@
 # Spec: MainView Preview Detail Refactor
 
 ## Objective
-Continue reducing `MainView.swift` without changing PhotoMemo's current MVP behavior. This round focuses on the preview/detail side helpers that still live inline in `MainView`: the live preview layout, preview header, preview canvas shell, live context summary, and small status pills.
+Continue reducing `MainView.swift` without changing MemoMark's current MVP behavior. This round focuses on the preview/detail side helpers that still live inline in `MainView`: the live preview layout, preview header, preview canvas shell, live context summary, and small status pills.
 
 Success means `MainView` keeps acting as the coordinator for state, bindings, and side effects, while preview/detail display composition moves into a dedicated `MainView+*.swift` file that is easier to iterate on and less likely to hide behavior inside layout code.
 
