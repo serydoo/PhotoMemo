@@ -388,6 +388,58 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.currentTimeAnchorTitle == secondSubject.timeAnchors[1].title)
     }
 
+    @Test("switching memory subjects rebuilds region preview text from that subject's configuration")
+    func switchingMemorySubjectsRebuildsRegionPreviewTextFromConfiguration() {
+        var state = ConfigurationCenterState.mock
+        let firstSubject = state.subjects[0]
+        let secondSubject = state.subjects[1]
+
+        let firstPreset = MemoryPreset(
+            title: "宝宝配置",
+            summary: "对象一配置",
+            regionTemplateIDs: [
+                .slotA: "recorder.configuration1",
+                .slotB: "timeline.configuration1",
+                .slotC: "context.configuration1",
+                .slotD: "memory.configuration1"
+            ],
+            savedAt: Date(timeIntervalSince1970: 10),
+            selectedSubjectID: firstSubject.id,
+            selectedTimeAnchorID: firstSubject.timeAnchors[0].id
+        )
+        let secondPreset = MemoryPreset(
+            title: "旅行配置",
+            summary: "对象二配置",
+            regionTemplateIDs: [
+                .slotA: "recorder.configuration2",
+                .slotB: "timeline.configuration2",
+                .slotC: "context.configuration2",
+                .slotD: "memory.configuration2"
+            ],
+            savedAt: Date(timeIntervalSince1970: 20),
+            selectedSubjectID: secondSubject.id,
+            selectedTimeAnchorID: secondSubject.timeAnchors[1].id
+        )
+
+        state.memoryPresets = [firstPreset, secondPreset]
+        state.selectedSubjectID = firstSubject.id
+        state.selectedMemoryPresetID = firstPreset.id
+        state.regionPreviewTexts[.slotA] = "旧对象记录内容"
+        state.regionPreviewTexts[.slotB] = "旧对象时间线"
+        state.regionPreviewTexts[.slotC] = "旧对象拍摄参数"
+        state.regionPreviewTexts[.slotD] = "旧对象记忆表达"
+
+        let session = ConfigurationSession(state: state)
+
+        session.selectSubject(secondSubject)
+
+        #expect(session.state.selectedMemoryPresetID == secondPreset.id)
+        #expect(session.previewText(for: .slotA) == " ")
+        #expect(session.previewText(for: .slotB) == "2026.05.24")
+        #expect(session.previewText(for: .slotC) == "24mm f/1.78 1/100s ISO125")
+        #expect(session.previewText(for: .slotD) == " ")
+    }
+
     @Test("switching to a memory subject without configurations clears the stale current configuration")
     func switchingToSubjectWithoutConfigurationsClearsStaleCurrentConfiguration() {
         var state = ConfigurationCenterState.mock

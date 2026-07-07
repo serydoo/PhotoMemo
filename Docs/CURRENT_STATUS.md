@@ -2,6 +2,49 @@
 
 Last updated: 2026-07-07
 
+## 2026-07-07 V1 subject-switch preview draft synchronization fixed
+
+This slice fixed the remaining V1 iOS risk where switching Memory Subjects
+could align the current Preset but leave renderer preview content partially
+stale, defaulted, or missing.
+
+Root cause:
+
+- `ConfigurationSession.selectSubject` aligned the selected Memory Preset to
+  the new subject, but the subject-switch alignment path did not rebuild the
+  four region preview texts the same way explicit Preset selection did.
+- The V1 subject overview patch refreshed ordinary preview state only in some
+  cases, but it did not tell `PhotoMemoiOSV1View` to rebuild the local
+  `regionDrafts` that feed the visible renderer preview.
+
+What changed:
+
+- subject-to-Preset alignment now rebuilds region preview texts from the
+  selected subject's configuration
+- switching, adding, or deleting a Memory Subject now emits a
+  `rebootstrapPreviewDrafts` one-shot event
+- those subject-switch patches also carry the newly selected subject's active
+  time-anchor date so smart-time preview rebuilding does not reuse the previous
+  object's date context
+- `PhotoMemoiOSV1View` consumes that event by bootstrapping editor drafts from
+  the selected subject/Preset before refreshing the renderer preview
+- ordinary subject editor saves still use refresh-only behavior so they do not
+  wipe the user's current region draft editing state
+
+Verification:
+
+- `git diff --check` passed
+- focused tests passed:
+  - `ConfigurationSessionConfigurationLifecycleTests`
+  - `V1SubjectLibrarySupportTests`
+- `PhotoMemoiOS` iOS Simulator build passed
+- `PhotoMemoiOS` generic iOS build passed
+
+Not yet manually verified:
+
+- iPhone7 install was not attempted in this slice because the connected device
+  list reported `iPhone7` as unavailable
+
 ## 2026-07-07 V1 output configuration boundary documented
 
 This documentation slice formalized the V1 output-configuration boundary after

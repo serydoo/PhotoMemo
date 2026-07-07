@@ -966,6 +966,7 @@ final class ConfigurationSession:
         else {
             state.selectedMemoryPresetID = nil
             appliedMemoryPresetID = nil
+            refreshPresetDrivenPreview()
             return
         }
 
@@ -978,6 +979,7 @@ final class ConfigurationSession:
         restoreConfigurationContext(
             from: preset
         )
+        refreshPresetDrivenPreview()
     }
 
     private func duplicatedMemoryPresetTitle(

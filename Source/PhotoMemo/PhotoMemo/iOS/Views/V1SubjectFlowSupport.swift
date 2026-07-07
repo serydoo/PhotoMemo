@@ -5,6 +5,7 @@ enum V1SubjectFlowEvent:
     Hashable {
 
     case reopenSubjectLibraryPersistence
+    case rebootstrapPreviewDrafts
 }
 
 struct V1SubjectFlowPatch {
@@ -177,11 +178,13 @@ enum V1SubjectOverviewActionCoordinator {
             )
 
         return V1SubjectFlowPatch(
-            birthdayDate: nil,
+            birthdayDate:
+                subject.primaryTimeAnchor?.date
+                ?? subject.referenceDate,
             shouldRefreshPreview: false,
             activeConfigurationStatus:
                 .subjectSynced,
-            events: [],
+            events: [.rebootstrapPreviewDrafts],
             shouldCloseOverview: false,
             flowState: nil
         )
@@ -216,14 +219,19 @@ enum V1SubjectOverviewActionCoordinator {
             )
 
         return V1SubjectFlowPatch(
-            birthdayDate: nil,
+            birthdayDate:
+                subject.primaryTimeAnchor?.date
+                ?? subject.referenceDate,
             shouldRefreshPreview: false,
             activeConfigurationStatus:
                 .subjectSynced,
             events:
                 shouldPersistLibrary
-                ? [.reopenSubjectLibraryPersistence]
-                : [],
+                ? [
+                    .reopenSubjectLibraryPersistence,
+                    .rebootstrapPreviewDrafts
+                ]
+                : [.rebootstrapPreviewDrafts],
             shouldCloseOverview: true,
             flowState:
                 makeConfigurationFlowState(
@@ -268,11 +276,16 @@ enum V1SubjectOverviewActionCoordinator {
             )
 
         return V1SubjectFlowPatch(
-            birthdayDate: nil,
+            birthdayDate:
+                session.state.selectedSubject?
+                .primaryTimeAnchor?
+                .date
+                ?? session.state.selectedSubject?
+                .referenceDate,
             shouldRefreshPreview: true,
             activeConfigurationStatus:
                 .subjectSynced,
-            events: [],
+            events: [.rebootstrapPreviewDrafts],
             shouldCloseOverview: false,
             flowState: nil
         )

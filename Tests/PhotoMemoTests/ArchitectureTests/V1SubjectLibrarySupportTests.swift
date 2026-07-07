@@ -223,6 +223,60 @@ struct V1SubjectLibrarySupportTests {
         )
     }
 
+    @Test("overview subject switch requests preview draft bootstrap")
+    @MainActor
+    func overviewSubjectSwitchRequestsPreviewDraftBootstrap() throws {
+        let firstSubject = makeSubject(
+            displayName: "途途成长记录",
+            shortName: "途途",
+            relationship: "成长记录",
+            anchorTitle: "生日",
+            anchorDate: Date(timeIntervalSince1970: 0)
+        )
+        let secondSubject = makeSubject(
+            displayName: "京都旅行",
+            shortName: "京都",
+            relationship: "旅行",
+            anchorTitle: "出发日",
+            anchorDate: Date(timeIntervalSince1970: 86_400)
+        )
+        let session = ConfigurationSession(
+            state: ConfigurationCenterState(
+                subjects: [firstSubject, secondSubject],
+                selectedSubjectID: firstSubject.id,
+                memoryPresets: [],
+                selectedMemoryPresetID: nil,
+                cardSelection: .init(selectedRegion: .subject),
+                selectedBlockID: nil,
+                tokenLibrary: .init(),
+                availableDecorations: [],
+                regionPreviewTexts: [:]
+            )
+        )
+
+        let patch = try #require(
+            V1SubjectOverviewActionCoordinator
+                .selectSubject(
+                    secondSubject.id,
+                    in: session,
+                    shouldSaveSubjectLibrary: false,
+                    configurationCoordinator: nil
+                )
+        )
+
+        #expect(session.state.selectedSubjectID == secondSubject.id)
+        #expect(
+            patch.birthdayDate
+            == secondSubject.primaryTimeAnchor?.date
+        )
+        #expect(patch.activeConfigurationStatus == .subjectSynced)
+        #expect(
+            patch.events.contains(
+                .rebootstrapPreviewDrafts
+            )
+        )
+    }
+
     @Test("adding default subject keeps editing enabled without reopening corrupt-library persistence")
     @MainActor
     func addingDefaultSubjectDoesNotReopenCorruptLibraryPersistence() throws {

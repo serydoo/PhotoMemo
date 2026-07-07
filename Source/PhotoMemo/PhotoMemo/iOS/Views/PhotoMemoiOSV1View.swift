@@ -1247,7 +1247,9 @@ struct PhotoMemoiOSV1View: View {
             self.birthdayDate = birthdayDate
         }
 
-        if patch.shouldRefreshPreview {
+        if patch.events.contains(.rebootstrapPreviewDrafts) {
+            bootstrapDrafts()
+        } else if patch.shouldRefreshPreview {
             refreshDynamicPreview()
         }
 
