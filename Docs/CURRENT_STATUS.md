@@ -2,6 +2,37 @@
 
 Last updated: 2026-07-07
 
+## 2026-07-07 V1 output configuration boundary documented
+
+This documentation slice formalized the V1 output-configuration boundary after
+the Memory Subject switch confirmation fix.
+
+What changed:
+
+- added `Docs/02_Architecture/V1_Output_Configuration_Boundary_2026-07-07.md`
+- documented the two current output-configuration layers:
+  - Preset-scoped presentation output in `ConfigurationSession` / `MemoryPreset`
+  - production output destination in `V1IOSOutputTarget`, resolved album
+    selection, shared settings, and `BatchConfigurationSnapshot`
+- froze the rule that browsing Memory Subjects only changes display context,
+  while production behavior changes only after `保存为当前配置` succeeds
+- clarified that switching to a subject with no configurations must clear stale
+  current-configuration display state instead of falling back to another
+  subject's Preset
+- recorded the current ambiguity that `MemoryPreset.storageOption` is not the
+  same thing as the actual iOS album destination
+
+Verification:
+
+- documentation/code-path review covered:
+  - `ConfigurationSession`
+  - V1 output page state
+  - V1 configuration apply/save coordinators
+  - bootstrap projection
+  - `BatchConfigurationSnapshotProvider`
+  - related regression tests
+- no production code changed in this slice
+
 ## 2026-07-07 V1 memory-subject switch confirmation fixed
 
 This slice fixed the confusing V1 iOS subject-switch behavior where the
