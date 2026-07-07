@@ -3,6 +3,22 @@ import SwiftUI
 import ActivityKit
 import WidgetKit
 
+private enum PhotoMemoLiveActivityFeedbackState:
+    String {
+
+    case preparing
+
+    case processing
+
+    case completed
+
+    case partialSuccess
+
+    case needsAttention
+
+    case unsupported
+}
+
 struct PhotoMemoLiveActivityWidgetDefinition:
     Widget {
 
@@ -103,15 +119,20 @@ private struct PhotoMemoLiveActivityLockScreenView:
                 spacing: 8
             ) {
                 Label(
-                    "PhotoMemo 后台处理",
+                    "PhotoMemo",
                     systemImage:
                         compactSymbolName(
                             for: context
                         )
                 )
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .lineLimit(1)
                 .labelStyle(.titleAndIcon)
+                .foregroundStyle(
+                    compactTint(
+                        for: context
+                    )
+                )
 
                 Spacer(minLength: 10)
 
@@ -127,6 +148,14 @@ private struct PhotoMemoLiveActivityLockScreenView:
             }
 
             Text(
+                primaryTitle(
+                    for: context
+                )
+            )
+            .font(.headline.weight(.semibold))
+            .lineLimit(2)
+
+            Text(
                 context.attributes.jobTitle
             )
             .font(.caption.weight(.medium))
@@ -137,7 +166,7 @@ private struct PhotoMemoLiveActivityLockScreenView:
                 Text(
                     statusLine(for: context)
                 )
-                .font(.caption2)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
 
@@ -370,20 +399,18 @@ private func compactSymbolName(
         >
 ) -> String {
 
-    switch context.state
-        .presentationStateRawValue {
-
-    case "active":
+    switch feedbackState(
+        for: context
+    ) {
+    case .preparing,
+         .processing:
         return "arrow.trianglehead.2.clockwise.circle.fill"
-
-    case "needsAttention":
+    case .partialSuccess,
+         .needsAttention,
+         .unsupported:
         return "exclamationmark.triangle.fill"
-
-    case "completed":
+    case .completed:
         return "checkmark.circle.fill"
-
-    default:
-        return "square.stack.3d.down.forward"
     }
 }
 
@@ -394,20 +421,84 @@ private func compactTint(
         >
 ) -> Color {
 
+    switch feedbackState(
+        for: context
+    ) {
+    case .preparing,
+         .processing:
+        return .blue
+    case .partialSuccess,
+         .needsAttention,
+         .unsupported:
+        return .orange
+    case .completed:
+        return .green
+    }
+}
+
+private func primaryTitle(
+    for context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >
+) -> String {
+
+    switch feedbackState(
+        for: context
+    ) {
+    case .preparing:
+        return "正在准备照片"
+    case .processing:
+        if isSingleTask(context) {
+            return context.state.phaseTitle
+        }
+
+        return "正在处理 \(context.state.totalCount) 张照片"
+    case .completed:
+        return "处理已完成"
+    case .partialSuccess:
+        return "部分照片已完成"
+    case .needsAttention:
+        return "有照片需要处理"
+    case .unsupported:
+        return "这批照片暂不支持处理"
+    }
+}
+
+private func feedbackState(
+    for context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >
+) -> PhotoMemoLiveActivityFeedbackState {
+
+    PhotoMemoLiveActivityFeedbackState(
+        rawValue:
+            context.state
+            .feedbackStateRawValue
+    )
+    ?? fallbackFeedbackState(
+        for: context
+    )
+}
+
+private func fallbackFeedbackState(
+    for context:
+        ActivityViewContext<
+            PhotoMemoBackgroundActivityAttributes
+        >
+) -> PhotoMemoLiveActivityFeedbackState {
+
     switch context.state
         .presentationStateRawValue {
-
     case "active":
-        return .blue
-
+        return .processing
     case "needsAttention":
-        return .orange
-
+        return .needsAttention
     case "completed":
-        return .green
-
+        return .completed
     default:
-        return .secondary
+        return .processing
     }
 }
 
@@ -520,15 +611,20 @@ private func pipelineStepTint(
         >
 ) -> Color {
 
-    if context.state.presentationStateRawValue
-        == "needsAttention",
+    let currentFeedbackState =
+        feedbackState(
+            for: context
+        )
+
+    if currentFeedbackState == .needsAttention
+        || currentFeedbackState == .partialSuccess
+        || currentFeedbackState == .unsupported,
        index == activeIndex {
         return .orange
     }
 
     if index < activeIndex
-        || context.state.presentationStateRawValue
-        == "completed" {
+        || currentFeedbackState == .completed {
         return .green
     }
 

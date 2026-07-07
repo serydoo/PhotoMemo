@@ -536,6 +536,10 @@ final class BatchQueueExecution {
                         (error as? LocalizedError)?
                         .errorDescription
                         ?? error.localizedDescription,
+                    classification:
+                        failureClassification(
+                            for: error
+                        ),
                     canRetry: canRetry
                 )
                 task.progress = BatchTaskProgress(
@@ -882,6 +886,26 @@ private extension BatchQueueExecution {
         }
 
         return true
+    }
+
+    func failureClassification(
+        for error: Error
+    ) -> BatchTaskFailure.Classification {
+
+        if let importError =
+            error as? PhotoImportError {
+            switch importError {
+            case .unsupportedInput:
+                return .unsupportedInput
+            case .imageLoadFailed,
+                 .temporaryImportPreparationFailed:
+                return .interrupted
+            case .rawDisplayRenderFailed:
+                return .processingFailure
+            }
+        }
+
+        return .processingFailure
     }
 
     func initialPreparationStatusMessage(

@@ -22,10 +22,10 @@ enum BatchNotificationMessageFormatter {
         }
 
         if completedCount == 0 {
-            return "\(timeText) \(failedCount) 张照片需要处理"
+            return "\(timeText) \(failedCount) 张照片需处理"
         }
 
-        return "\(timeText) 已完成 \(completedCount) 张，\(failedCount) 张需要处理"
+        return "\(timeText) 已完成 \(completedCount) 张，\(failedCount) 张需处理"
     }
 
     nonisolated
@@ -46,7 +46,7 @@ enum BatchNotificationMessageFormatter {
         }
 
         if completedCount == 0 {
-            return "请回到 PhotoMemo 查看原因并重试。"
+            return "请回到 PhotoMemo 查看原因，并按提示继续处理。"
         }
 
         if Double(completedCount)
@@ -55,19 +55,19 @@ enum BatchNotificationMessageFormatter {
             if let albumName =
                 savedAlbumName
                 .flatMap(normalizedAlbumName) {
-                return "大部分照片已保存到「\(albumName)」，另有 \(failedCount) 张需要处理。"
+                return "大部分结果已保存到「\(albumName)」，剩余 \(failedCount) 张可回到 PhotoMemo 查看。"
             }
 
-            return "大部分照片已经完成，另有 \(failedCount) 张需要处理。"
+            return "大部分结果已经完成，剩余 \(failedCount) 张可回到 PhotoMemo 查看。"
         }
 
         if let albumName =
             savedAlbumName
             .flatMap(normalizedAlbumName) {
-            return "已保存 \(completedCount) 张到「\(albumName)」，\(failedCount) 张需要处理。"
+            return "已保存 \(completedCount) 张到「\(albumName)」，另有 \(failedCount) 张需处理。"
         }
 
-        return "已完成 \(completedCount) 张，\(failedCount) 张需要处理。"
+        return "已完成 \(completedCount) 张，仍有 \(failedCount) 张需处理。"
     }
 
     nonisolated
@@ -523,7 +523,7 @@ private extension BatchNotificationService {
             ?? ""
 
         let summary =
-            "已接收 \(job.totalTaskCount) 张照片，会按当前风格在后台自动处理。"
+            "已接收 \(job.totalTaskCount) 张照片，PhotoMemo 会按当前配置继续处理。"
 
         let intakeWarningSummary =
             intakeWarningSummary(
@@ -538,11 +538,11 @@ private extension BatchNotificationService {
 
         if !templateName.isEmpty,
            !anchorName.isEmpty {
-            return "\(enrichedSummary) 风格：\(templateName)，时间点：\(anchorName)。"
+            return "\(enrichedSummary) 当前预设：\(templateName)，时间点：\(anchorName)。"
         }
 
         if !templateName.isEmpty {
-            return "\(enrichedSummary) 模板：\(templateName)。"
+            return "\(enrichedSummary) 当前预设：\(templateName)。"
         }
 
         if !anchorName.isEmpty {

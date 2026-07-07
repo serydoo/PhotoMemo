@@ -29,6 +29,7 @@ struct V1IOSHomeRecentProcessingPresenterTests {
                 totalCount: 3,
                 progressFraction: 0.67,
                 canRetryFailures: false,
+                hasOnlyUnsupportedFailures: false,
                 updatedAt: Date(
                     timeIntervalSince1970: 1_720_000_000
                 )

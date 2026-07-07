@@ -50,7 +50,7 @@ struct V1TaskPageSurface: View {
     private var currentTaskSection: some View {
         V1CardSurface(title: "当前处理") {
             VStack(alignment: .leading, spacing: 14) {
-                Text("这里集中查看当前处理状态与最近记录。原图不会被修改，生成结果仍按既有本地流程写回目标位置。")
+                Text("这里集中查看当前批次的处理状态、结果回执和需要你介入的项目。原图不会被修改，生成结果仍按既有本地流程写回目标位置。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -161,7 +161,7 @@ struct V1TaskPageSurface: View {
     private var historySection: some View {
         V1CardSurface(title: "最近记录") {
             VStack(alignment: .leading, spacing: 12) {
-                Text("按行查看最近接收、入队和完成状态。这里保留现有处理逻辑，只把展示压缩成更清晰的摘要列表。")
+                Text("按行查看最近的接收、交接、完成和需处理结果。这里展示结果摘要，详细原因仍以当前批次状态页为准。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

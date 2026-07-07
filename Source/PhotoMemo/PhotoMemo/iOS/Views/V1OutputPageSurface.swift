@@ -16,6 +16,7 @@ struct V1OutputPageSurface: View {
 
     let isLoadingAlbums: Bool
     let albumStatusMessage: String
+    let onReloadAlbums: () -> Void
 
     @Binding
     var usesCustomMemoryWriteText: Bool
@@ -35,7 +36,8 @@ struct V1OutputPageSurface: View {
                     selectedExistingAlbumIdentifier: $selectedExistingAlbumIdentifier,
                     newAlbumName: $newAlbumName,
                     isLoadingAlbums: isLoadingAlbums,
-                    albumStatusMessage: albumStatusMessage
+                    albumStatusMessage: albumStatusMessage,
+                    onReloadAlbums: onReloadAlbums
                 )
 
                 V1MemoryWriteSection(
@@ -79,6 +81,7 @@ private struct V1OutputSection: View {
 
     let isLoadingAlbums: Bool
     let albumStatusMessage: String
+    let onReloadAlbums: () -> Void
 
     var body: some View {
         V1CardSurface(title: "输出") {
@@ -96,6 +99,24 @@ private struct V1OutputSection: View {
                     EmptyView()
 
                 case .existingAlbum:
+                    HStack(spacing: 10) {
+                        Text("目标相册")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Spacer(minLength: 0)
+
+                        Button(
+                            isLoadingAlbums
+                                ? "刷新中"
+                                : "刷新相册"
+                        ) {
+                            onReloadAlbums()
+                        }
+                        .font(.caption.weight(.semibold))
+                        .disabled(isLoadingAlbums)
+                    }
+
                     Picker(
                         "相册",
                         selection: $selectedExistingAlbumIdentifier
@@ -110,6 +131,11 @@ private struct V1OutputSection: View {
                     }
                     .pickerStyle(.menu)
                     .disabled(availableAlbums.isEmpty)
+
+                    Text("这里只显示可直接加入结果图的已有相册；如果你只是想让新图回到系统图库，请使用上面的“系统图库”。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
                 case .newAlbum:
                     TextField("相册名称", text: $newAlbumName)

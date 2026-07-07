@@ -164,6 +164,9 @@ private extension PhotoMemoiOSLiveActivityBridgeService {
                         snapshot
                         .presentationState
                     ),
+                feedbackStateRawValue:
+                    snapshot.feedbackState
+                    .rawValue,
                 updatedAt:
                     snapshot.updatedAt
             )

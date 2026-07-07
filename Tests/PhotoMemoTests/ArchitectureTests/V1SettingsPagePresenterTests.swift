@@ -29,6 +29,7 @@ struct V1SettingsPagePresenterTests {
                 totalCount: 3,
                 progressFraction: 0.67,
                 canRetryFailures: false,
+                hasOnlyUnsupportedFailures: false,
                 updatedAt: Date(
                     timeIntervalSince1970: 1_720_000_000
                 )
@@ -64,7 +65,7 @@ struct V1SettingsPagePresenterTests {
 
         #expect(
             presentation.currentTask.headline
-            == "家庭周末记录 正在处理"
+            == "家庭周末记录 处理中"
         )
         #expect(
             presentation.currentTask.statusText
@@ -156,6 +157,61 @@ struct V1SettingsPagePresenterTests {
         #expect(
             presentation.historyRows[0].statusText
             == "准备中"
+        )
+    }
+
+    @Test("surfaces unsupported batches as calm unsupported status instead of generic failure")
+    func presentationSurfacesUnsupportedBatchState() {
+        let snapshot =
+            PhotoMemoBackgroundJobSnapshot(
+                jobID: UUID(),
+                title: "超长截图",
+                launchSource: .shareExtension,
+                presentationState: .needsAttention,
+                jobState: .failed,
+                currentPhase: .failed,
+                currentPhaseTitle: "处理失败",
+                currentFileName: "panorama.png",
+                statusMessage: "这批照片当前暂不支持处理",
+                displayMode: .singleTask,
+                pipelineSteps: [],
+                activePipelineStepIndex: 2,
+                queueLines: [],
+                overflowQueueCount: 0,
+                completedCount: 0,
+                failedCount: 1,
+                totalCount: 1,
+                progressFraction: 1,
+                canRetryFailures: false,
+                hasOnlyUnsupportedFailures: true,
+                updatedAt: Date(
+                    timeIntervalSince1970: 1_720_000_120
+                )
+            )
+        let header =
+            PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+                headline: "超长截图 暂不支持",
+                subheadline: "当前版本更适合支持的静态照片格式。",
+                symbolName: "exclamationmark.triangle.fill",
+                tint: .orange
+            )
+
+        let presentation =
+            V1SettingsPagePresenter
+            .presentation(
+                header: header,
+                snapshot: snapshot,
+                recoveryMessage: nil,
+                events: []
+            )
+
+        #expect(
+            presentation.currentTask.statusText
+            == "暂不支持"
+        )
+        #expect(
+            presentation.currentTask.progressText
+            == "1 张暂不支持"
         )
     }
 }

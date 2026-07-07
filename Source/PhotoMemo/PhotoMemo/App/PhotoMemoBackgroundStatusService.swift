@@ -78,6 +78,41 @@ enum PhotoMemoBackgroundDisplayMode: String, Hashable {
     case aggregate
 }
 
+enum PhotoMemoBackgroundFeedbackState:
+    String,
+    Hashable {
+
+    case preparing
+
+    case processing
+
+    case completed
+
+    case partialSuccess
+
+    case needsAttention
+
+    case unsupported
+
+    var displayTitle: String {
+
+        switch self {
+        case .preparing:
+            return "准备中"
+        case .processing:
+            return "处理中"
+        case .completed:
+            return "已完成"
+        case .partialSuccess:
+            return "部分完成"
+        case .needsAttention:
+            return "需处理"
+        case .unsupported:
+            return "暂不支持"
+        }
+    }
+}
+
 enum PhotoMemoBackgroundPipelineStepState: Hashable {
 
     case pending
@@ -136,7 +171,43 @@ struct PhotoMemoBackgroundJobSnapshot: Hashable {
 
     let canRetryFailures: Bool
 
+    let hasOnlyUnsupportedFailures: Bool
+
     let updatedAt: Date
+
+    var feedbackState:
+        PhotoMemoBackgroundFeedbackState {
+
+        switch presentationState {
+        case .active:
+            switch jobState {
+            case .draft,
+                 .queued,
+                 .preparing:
+                return .preparing
+            case .ready,
+                 .running,
+                 .completed,
+                 .failed,
+                 .cancelled:
+                return .processing
+            }
+        case .needsAttention:
+            if hasOnlyUnsupportedFailures,
+               completedCount == 0 {
+                return .unsupported
+            }
+
+            if failedCount > 0,
+               completedCount > 0 {
+                return .partialSuccess
+            }
+
+            return .needsAttention
+        case .completed:
+            return .completed
+        }
+    }
 }
 
 @MainActor
@@ -364,6 +435,8 @@ private extension PhotoMemoBackgroundStatusService {
                 ),
             canRetryFailures:
                 job.hasRetryableFailures,
+            hasOnlyUnsupportedFailures:
+                job.hasOnlyUnsupportedFailures,
             updatedAt: job.updatedAt
         )
     }
@@ -439,41 +512,83 @@ private extension PhotoMemoBackgroundStatusService {
             return "\(baseMessage) · \(trimmedFileName)"
         }
 
-        if job.hasRetryableFailures {
-            return "有失败项可在 PhotoMemo 内重试"
+        switch resolvedFeedbackState(
+            for: job
+        ) {
+        case .preparing:
+            switch job.state {
+            case .draft,
+                 .queued:
+                return "已接收，正在准备照片"
+            case .preparing,
+                 .ready,
+                 .running,
+                 .completed,
+                 .failed,
+                 .cancelled:
+                return "正在准备原图与处理信息"
+            }
+        case .processing:
+            if job.totalTaskCount <= 1 {
+                return "正在生成新的结果图并写回系统相册"
+            }
+
+            return "正在继续处理这批照片，结果会写回系统相册"
+        case .completed:
+            return "本批照片已完成并写回系统相册"
+        case .partialSuccess:
+            if job.hasRetryableFailures {
+                return "大部分照片已完成，剩余项目可回到 PhotoMemo 继续处理"
+            }
+
+            return "部分照片已完成，剩余项目需要回到 PhotoMemo 查看"
+        case .needsAttention:
+            if job.hasRetryableFailures {
+                return "这批照片需要回到 PhotoMemo 处理"
+            }
+
+            return "这批照片需要回到 PhotoMemo 查看原因"
+        case .unsupported:
+            return "这批照片当前暂不支持处理"
+        }
+    }
+
+    func resolvedFeedbackState(
+        for job: BatchJob
+    ) -> PhotoMemoBackgroundFeedbackState {
+
+        if !job.tasks.allSatisfy({
+            $0.phase.isTerminal
+        }) {
+            switch job.state {
+            case .draft,
+                 .queued,
+                 .preparing:
+                return .preparing
+            case .ready,
+                 .running,
+                 .completed,
+                 .failed,
+                 .cancelled:
+                return .processing
+            }
+        }
+
+        if job.hasOnlyUnsupportedFailures,
+           job.completedTaskCount == 0 {
+            return .unsupported
+        }
+
+        if job.failedTaskCount > 0,
+           job.completedTaskCount > 0 {
+            return .partialSuccess
         }
 
         if job.failedTaskCount > 0 {
-            return "本批有未成功处理的照片"
+            return .needsAttention
         }
 
-        if job.completedTaskCount == job.totalTaskCount,
-           job.totalTaskCount > 0 {
-            return "本批照片已完成并写回系统相册"
-        }
-
-        switch job.state {
-
-        case .queued:
-            return "等待后台处理"
-
-        case .preparing,
-             .ready,
-             .running:
-            return "正在后台处理"
-
-        case .completed:
-            return "处理完成"
-
-        case .failed:
-            return "处理失败"
-
-        case .cancelled:
-            return "任务已取消"
-
-        case .draft:
-            return "等待开始"
-        }
+        return .completed
     }
 
     func resolvedProgressFraction(

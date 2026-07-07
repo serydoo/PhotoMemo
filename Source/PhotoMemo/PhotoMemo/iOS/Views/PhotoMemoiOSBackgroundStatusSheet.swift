@@ -242,17 +242,19 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
             PhotoMemoBackgroundJobSnapshot
     ) -> String {
 
-        switch snapshot
-            .presentationState {
-
-        case .active:
+        switch snapshot.feedbackState {
+        case .preparing:
+            return "正在准备处理"
+        case .processing:
             return "正在后台处理"
-
-        case .needsAttention:
-            return "有任务需要处理"
-
         case .completed:
             return "最近后台任务已完成"
+        case .partialSuccess:
+            return "部分照片已完成"
+        case .needsAttention:
+            return "有照片需要处理"
+        case .unsupported:
+            return "有照片暂不支持"
         }
     }
 
@@ -261,15 +263,14 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
             PhotoMemoBackgroundJobSnapshot
     ) -> String {
 
-        switch snapshot
-            .presentationState {
-
-        case .active:
+        switch snapshot.feedbackState {
+        case .preparing,
+             .processing:
             return "arrow.trianglehead.2.clockwise.circle.fill"
-
-        case .needsAttention:
+        case .partialSuccess,
+             .needsAttention,
+             .unsupported:
             return "exclamationmark.triangle.fill"
-
         case .completed:
             return "checkmark.circle.fill"
         }
@@ -291,18 +292,34 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
             Int(
                 (
                     snapshot.progressFraction
-                    * 100
+                * 100
                 )
                 .rounded()
             )
 
-        return "整体进度 \(percent)% · 已完成 \(snapshot.completedCount)/\(snapshot.totalCount)"
+        switch snapshot.feedbackState {
+        case .preparing,
+             .processing:
+            return "整体进度 \(percent)% · 已完成 \(snapshot.completedCount)/\(snapshot.totalCount)"
+        case .completed:
+            return "已完成 \(snapshot.completedCount) 张，结果已写回系统相册"
+        case .partialSuccess:
+            return "已完成 \(snapshot.completedCount) 张，仍有 \(snapshot.failedCount) 张需处理"
+        case .needsAttention:
+            return "\(snapshot.failedCount) 张需要回到 PhotoMemo 查看"
+        case .unsupported:
+            return "这批照片当前不在支持范围内"
+        }
     }
 
     func attentionSummary(
         _ snapshot:
             PhotoMemoBackgroundJobSnapshot
     ) -> String {
+
+        if snapshot.feedbackState == .unsupported {
+            return "这批照片当前不在支持范围内，建议改用支持的静态照片格式再试。"
+        }
 
         if snapshot.canRetryFailures {
             return "本批次有 \(snapshot.failedCount) 张未成功，可直接在这里重试失败项。"

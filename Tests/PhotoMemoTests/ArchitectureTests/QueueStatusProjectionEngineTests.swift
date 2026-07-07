@@ -102,6 +102,7 @@ struct QueueStatusProjectionEngineTests {
                 presentationState: .needsAttention,
                 statusMessage: "还有 1 张需要查看",
                 queueLines: ["队列中的照片"],
+                failedCount: 1,
                 progressFraction: 1.2,
                 pipelineSteps: [
                     PhotoMemoBackgroundPipelineStep(
@@ -123,7 +124,7 @@ struct QueueStatusProjectionEngineTests {
 
         #expect(
             projection.title
-            == "家庭相册 需要查看"
+            == "家庭相册 部分完成"
         )
         #expect(
             projection.symbolName
@@ -225,7 +226,7 @@ struct QueueStatusProjectionEngineTests {
             projections.map(\.title)
             == [
                 "处理完成",
-                "等待 PhotoMemo 接力",
+                "等待 PhotoMemo 接手",
                 "进入处理队列"
             ]
         )
@@ -233,7 +234,7 @@ struct QueueStatusProjectionEngineTests {
             projections.map(\.message)
             == [
                 "已完成处理，结果会出现在目标相册。",
-                "原图已接收，主程序会在可用时继续处理。",
+                "照片已接收，如未自动切换，可手动打开 PhotoMemo 继续。",
                 "照片会按当前默认风格生成并保存。"
             ]
         )
@@ -248,6 +249,7 @@ private extension QueueStatusProjectionEngineTests {
         statusMessage: String = "正在处理 1 / 2",
         queueLines: [String] = ["队列中的照片"],
         overflowQueueCount: Int = 0,
+        failedCount: Int = 0,
         progressFraction: Double = 0.45,
         pipelineSteps: [PhotoMemoBackgroundPipelineStep] = [
             PhotoMemoBackgroundPipelineStep(
@@ -276,10 +278,11 @@ private extension QueueStatusProjectionEngineTests {
             queueLines: queueLines,
             overflowQueueCount: overflowQueueCount,
             completedCount: 1,
-            failedCount: 0,
+            failedCount: failedCount,
             totalCount: 2,
             progressFraction: progressFraction,
             canRetryFailures: false,
+            hasOnlyUnsupportedFailures: false,
             updatedAt: updatedAt
         )
     }

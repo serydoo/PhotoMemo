@@ -58,7 +58,7 @@ struct BatchNotificationMessageFormatterTests {
                 finishedAt: finishedAt,
                 calendar: calendar
             )
-            == "15:20 2 张照片需要处理"
+            == "15:20 2 张照片需处理"
         )
         #expect(
             BatchNotificationMessageFormatter.finishedMessage(
@@ -66,7 +66,7 @@ struct BatchNotificationMessageFormatterTests {
                 failedCount: 2,
                 totalCount: 2
             )
-            == "请回到 PhotoMemo 查看原因并重试。"
+            == "请回到 PhotoMemo 查看原因，并按提示继续处理。"
         )
     }
 
@@ -90,7 +90,7 @@ struct BatchNotificationMessageFormatterTests {
                 finishedAt: finishedAt,
                 calendar: calendar
             )
-            == "15:20 已完成 4 张，1 张需要处理"
+            == "15:20 已完成 4 张，1 张需处理"
         )
         #expect(
             BatchNotificationMessageFormatter.finishedMessage(
@@ -99,7 +99,7 @@ struct BatchNotificationMessageFormatterTests {
                 totalCount: 5,
                 savedAlbumName: "家庭相册"
             )
-            == "大部分照片已保存到「家庭相册」，另有 1 张需要处理。"
+            == "大部分结果已保存到「家庭相册」，剩余 1 张可回到 PhotoMemo 查看。"
         )
     }
 

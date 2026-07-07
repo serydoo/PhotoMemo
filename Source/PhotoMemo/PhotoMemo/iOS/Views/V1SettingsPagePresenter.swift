@@ -94,7 +94,7 @@ private extension V1SettingsPagePresenter {
                     header.subheadline,
                 statusText:
                     snapshotStatusText(
-                        snapshot.presentationState
+                        snapshot
                     ),
                 itemCountText:
                     photoCountText(
@@ -167,21 +167,23 @@ private extension V1SettingsPagePresenter {
             return completedText
         }
 
-        return "\(completedText) · 失败 \(snapshot.failedCount)"
+        if snapshot.completedCount > 0 {
+            return "\(completedText) · 仍有 \(snapshot.failedCount) 张需处理"
+        }
+
+        if snapshot.hasOnlyUnsupportedFailures {
+            return "\(snapshot.failedCount) 张暂不支持"
+        }
+
+        return "\(snapshot.failedCount) 张需要处理"
     }
 
     static func snapshotStatusText(
-        _ state:
-            PhotoMemoBackgroundPresentationState
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot
     ) -> String {
-        switch state {
-        case .active:
-            return "处理中"
-        case .needsAttention:
-            return "需查看"
-        case .completed:
-            return "已完成"
-        }
+        snapshot.feedbackState
+            .displayTitle
     }
 
     static func headerStatusText(

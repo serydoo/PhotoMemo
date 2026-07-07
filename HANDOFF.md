@@ -23,6 +23,75 @@ References:
 - [Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/Maintenance_Baseline_Freeze_2026-07-03.md)
 - [Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_Boundary_Inventory_2026-07-04.md)
 
+## 2026-07-07 V1 Share Extension sheet layout adjusted
+
+- User-reported symptom on the Apple Photos share flow:
+  - the PhotoMemo share interface felt too high inside the system container
+  - the primary action was not positioned as conveniently as expected
+  - the full-screen-looking presentation raised the question of whether the
+    Share Extension must occupy the whole screen
+- Scope stayed in Share Extension presentation layout only.
+- No share intake semantics, renderer drawing, export behavior, metadata
+  extraction, or photo-library save behavior changed.
+- What changed:
+  - `PhotoMemoShareExtensionViewController` now suggests a shorter preferred
+    content height for the host sheet
+  - the main content stack sits inside a scroll view with extra top breathing
+    room
+  - the footer copy and primary action moved into a fixed bottom action area
+  - the primary button height was slightly increased for easier tapping
+- Platform note:
+  - for a `com.apple.share-services` Share Extension, iOS controls the outer
+    share-sheet presentation
+  - `preferredContentSize` is only a suggestion and may not be honored exactly
+  - the reliable fix is to improve the internal layout: lower content rhythm,
+    scrollable details, and a stable bottom action
+- Verification passed:
+  - `git diff --check`
+  - `PhotoMemoiOS` iPhone7 signed real-device build
+  - iPhone7 install
+  - iPhone7 launch via `devicectl`
+- Manual device confirmation still wanted:
+  - from Apple Photos, share one photo to PhotoMemo
+  - confirm the top spacing feels calmer
+  - confirm the primary action is easier to tap
+  - confirm whether the host still presents the extension full-screen or
+    honors the shorter preferred height on the current iOS build
+
+## 2026-07-07 V1 output album refresh regression fixed
+
+- User-reported symptom on the installed iPhone7 build:
+  - entering `输出`
+  - checking `已有相册`
+  - album choices could look stale and appear to show only the previously
+    loaded `photomemo` entry
+- Root cause:
+  - this was not a new `PhotoLibraryExportService` regression
+  - the recent V1 UI split that moved output settings into a dedicated page
+    left album loading on the root `.task` path only
+  - returning to foreground or switching into the `输出` tab no longer
+    triggered an album refresh, so the picker could keep stale state
+- What changed:
+  - `PhotoMemoiOSV1View` now reloads album options when:
+    - scene phase returns to `.active`
+    - the selected tab changes to `输出`
+  - `V1OutputPageSurface` now exposes a lightweight `刷新相册` action inside
+    the existing-album branch
+  - output copy now also clarifies that `已有相册` is for directly addable
+    destination albums, while general library return should use `系统图库`
+- Verification passed:
+  - `git diff --check`
+  - focused `ExportAlbumPresenterTests`
+  - `PhotoMemoiOS` iOS Simulator build
+  - iPhone7 signed real-device build
+  - iPhone7 install
+  - iPhone7 launch via `devicectl`
+- Manual device confirmation still wanted:
+  - open `输出 -> 已有相册`
+  - confirm returning from background or re-entering the tab refreshes the
+    album list
+  - confirm `刷新相册` updates the picker immediately on device
+
 ## 2026-07-07 V1 smart-module selected-subject projection fixed
 
 - The remaining `家人` output issue was traced to the production smart-module
@@ -11439,3 +11508,69 @@ Known remaining verification gap:
   - 配置中心
   - 输出
   - 任务
+
+## 2026-07-07 V1 interaction feedback unification landed across share, activity, notification, and in-app status
+
+This slice turns the earlier design/spec work for V1 interaction feedback into
+real code, with one calmer state language flowing through the share handoff,
+Live Activity, notification result wording, and in-app status/task surfaces.
+
+Scope boundary:
+
+- this remained a V1 interaction-polish and wording-unification slice
+- no renderer drawing logic, export format, metadata extraction rules, or
+  photo-library save behavior changed
+- no Configuration Center architecture redesign was introduced
+
+What changed:
+
+- added canonical feedback-state derivation in
+  `PhotoMemoBackgroundStatusService`:
+  - `准备中`
+  - `处理中`
+  - `已完成`
+  - `部分完成`
+  - `需处理`
+  - `暂不支持`
+- batch failures are now classified so unsupported input can be surfaced as a
+  calm product state instead of a generic failure
+- share handoff copy was rewritten around:
+  - accepted / handing off / received reassurance
+  - unsupported-input clarity
+  - softer retry guidance when the handoff itself fails
+- Live Activity payloads now carry unified feedback-state data in addition to
+  the older presentation-state field
+- Live Activity presentation now uses the unified primary titles and matching
+  icon/tint behavior for partial-success / attention / unsupported cases
+- in-app V1 task/status presenters now derive their summary wording from the
+  same feedback state instead of mixing older MVP labels
+- queue diagnostics and notification tests were updated to reflect the new
+  state language and calmer result wording
+- new interaction documents were added:
+  - `Docs/Interaction/V1_Interaction_Feedback_Unification.md`
+  - `Docs/Interaction/V1_Interaction_Feedback_State_Matrix.md`
+
+Verification:
+
+- passed focused tests:
+  - `BatchNotificationMessageFormatterTests`
+  - `QueueStatusProjectionEngineTests`
+  - `V1SettingsPagePresenterTests`
+- passed builds:
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData4 CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData5 CODE_SIGNING_ALLOWED=NO -quiet build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoShareExtensionDerivedData5 CODE_SIGNING_ALLOWED=NO -quiet build`
+- observed existing warning:
+  - `GeocoderService.swift` still emits the known macOS 26 deprecation warning
+    for `CLGeocoder`
+
+Not yet manually verified:
+
+- share extension visual hierarchy on a real device after the copy/layout
+  changes
+- Live Activity / Dynamic Island visual rhythm for:
+  - `部分完成`
+  - `需处理`
+  - `暂不支持`
+- end-to-end notification receipts on real iPhone hardware after a true share
+  batch completes

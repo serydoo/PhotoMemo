@@ -406,9 +406,24 @@ struct BatchTaskFailure:
     Codable,
     Hashable {
 
+    enum Classification:
+        String,
+        Codable,
+        Hashable {
+
+        case unsupportedInput
+
+        case interrupted
+
+        case processingFailure
+    }
+
     var phase: BatchTaskPhase
 
     var message: String
+
+    var classification:
+        Classification?
 
     var canRetry: Bool
 
@@ -417,11 +432,15 @@ struct BatchTaskFailure:
     init(
         phase: BatchTaskPhase,
         message: String,
+        classification:
+            Classification? = nil,
         canRetry: Bool = true,
         timestamp: Date = Date()
     ) {
         self.phase = phase
         self.message = message
+        self.classification =
+            classification
         self.canRetry = canRetry
         self.timestamp = timestamp
     }
@@ -653,6 +672,23 @@ extension BatchJob {
         tasks.contains {
             $0.phase == .failed
             && ($0.failure?.canRetry ?? true)
+        }
+    }
+
+    var hasOnlyUnsupportedFailures: Bool {
+
+        let failedTasks =
+            tasks.filter {
+                $0.phase == .failed
+            }
+
+        guard !failedTasks.isEmpty else {
+            return false
+        }
+
+        return failedTasks.allSatisfy {
+            $0.failure?.classification
+            == .unsupportedInput
         }
     }
 

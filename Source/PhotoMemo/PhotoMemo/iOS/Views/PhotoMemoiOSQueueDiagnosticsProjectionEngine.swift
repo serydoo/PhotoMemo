@@ -528,13 +528,19 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             PhotoMemoBackgroundJobSnapshot
     ) -> String {
 
-        switch snapshot.presentationState {
-        case .active:
-            return "\(snapshot.title) 正在处理"
-        case .needsAttention:
-            return "\(snapshot.title) 需要查看"
+        switch snapshot.feedbackState {
+        case .preparing:
+            return "\(snapshot.title) 准备中"
+        case .processing:
+            return "\(snapshot.title) 处理中"
         case .completed:
             return "\(snapshot.title) 已完成"
+        case .partialSuccess:
+            return "\(snapshot.title) 部分完成"
+        case .needsAttention:
+            return "\(snapshot.title) 需处理"
+        case .unsupported:
+            return "\(snapshot.title) 暂不支持"
         }
     }
 
@@ -543,10 +549,13 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             PhotoMemoBackgroundJobSnapshot
     ) -> String {
 
-        switch snapshot.presentationState {
-        case .active:
+        switch snapshot.feedbackState {
+        case .preparing,
+             .processing:
             return "arrow.trianglehead.2.clockwise.circle.fill"
-        case .needsAttention:
+        case .partialSuccess,
+             .needsAttention,
+             .unsupported:
             return "exclamationmark.triangle.fill"
         case .completed:
             return "checkmark.circle.fill"
@@ -558,10 +567,13 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             PhotoMemoBackgroundJobSnapshot
     ) -> PhotoMemoiOSQueueDiagnosticsTint {
 
-        switch snapshot.presentationState {
-        case .active:
+        switch snapshot.feedbackState {
+        case .preparing,
+             .processing:
             return .blue
-        case .needsAttention:
+        case .partialSuccess,
+             .needsAttention,
+             .unsupported:
             return .orange
         case .completed:
             return .green
@@ -641,7 +653,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             return "原图暂时不可读取"
         case .extensionHandoffUnconfirmed,
              .extensionHandoffFailed:
-            return "等待 PhotoMemo 接力"
+            return "等待 PhotoMemo 接手"
         case .appDrain:
             return "检查待处理照片"
         case .appRequestValidated:
@@ -667,7 +679,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
         switch event.stage {
         case .extensionRequestPersisted,
              .extensionPersisted:
-            return "原图已暂存，等待 PhotoMemo 处理。"
+            return "原图已暂存，PhotoMemo 会按当前配置继续处理。"
         case .extensionSourcePrepare:
             return "正在向系统请求原图数据，等待 iCloud 缓存到本地。"
         case .extensionSourceReady:
@@ -676,7 +688,7 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             return "系统暂时没有提供完整原图，请稍后重试或先在相册打开原图。"
         case .extensionHandoffUnconfirmed,
              .extensionHandoffFailed:
-            return "原图已接收，主程序会在可用时继续处理。"
+            return "照片已接收，如未自动切换，可手动打开 PhotoMemo 继续。"
         case .appDrain:
             return "正在读取刚接收的照片。"
         case .appRequestValidated:

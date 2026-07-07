@@ -41,7 +41,13 @@ final class PhotoMemoShareExtensionViewController:
 
     private var pendingHandoffRequestID: UUID?
 
+    private let scrollView =
+        UIScrollView()
+
     private let contentStack =
+        UIStackView()
+
+    private let bottomActionStack =
         UIStackView()
 
     private let brandLabel =
@@ -135,6 +141,11 @@ final class PhotoMemoShareExtensionViewController:
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        preferredContentSize =
+            CGSize(
+                width: 0,
+                height: 680
+            )
         configureView()
         loadInputItems()
         applyWorkflowSummary()
@@ -150,7 +161,9 @@ private extension PhotoMemoShareExtensionViewController {
         view.backgroundColor =
             .systemBackground
 
+        configureScrollView()
         configureContentStack()
+        configureBottomActionStack()
         configureHeaderLabels()
         configureStatusLabels()
         configureFooterLabel()
@@ -197,57 +210,109 @@ private extension PhotoMemoShareExtensionViewController {
         contentStack.addArrangedSubview(
             statusCard
         )
-        contentStack.addArrangedSubview(
-            footerLabel
-        )
-        contentStack.addArrangedSubview(
-            primaryButton
-        )
 
         view.addSubview(
+            scrollView
+        )
+        scrollView.addSubview(
             contentStack
+        )
+        view.addSubview(
+            bottomActionStack
         )
 
         NSLayoutConstraint.activate([
-            contentStack.topAnchor
+            scrollView.topAnchor
                 .constraint(
-                    greaterThanOrEqualTo:
+                    equalTo:
                         view.safeAreaLayoutGuide
                         .topAnchor,
-                    constant: 16
+                    constant: 52
                 ),
-            contentStack.leadingAnchor
+            scrollView.leadingAnchor
                 .constraint(
                     equalTo:
                         view.safeAreaLayoutGuide
                         .leadingAnchor,
                     constant: 20
                 ),
-            contentStack.trailingAnchor
+            scrollView.trailingAnchor
                 .constraint(
                     equalTo:
                         view.safeAreaLayoutGuide
                         .trailingAnchor,
                     constant: -20
                 ),
-            contentStack.centerYAnchor
+            scrollView.bottomAnchor
+                .constraint(
+                    equalTo:
+                        bottomActionStack
+                        .topAnchor,
+                    constant: -18
+                ),
+            contentStack.topAnchor.constraint(
+                equalTo:
+                    scrollView.contentLayoutGuide
+                    .topAnchor
+            ),
+            contentStack.leadingAnchor.constraint(
+                equalTo:
+                    scrollView.contentLayoutGuide
+                    .leadingAnchor
+            ),
+            contentStack.trailingAnchor.constraint(
+                equalTo:
+                    scrollView.contentLayoutGuide
+                    .trailingAnchor
+            ),
+            contentStack.bottomAnchor.constraint(
+                equalTo:
+                    scrollView.contentLayoutGuide
+                    .bottomAnchor
+            ),
+            contentStack.widthAnchor.constraint(
+                equalTo:
+                    scrollView.frameLayoutGuide
+                    .widthAnchor
+            ),
+            bottomActionStack.leadingAnchor
                 .constraint(
                     equalTo:
                         view.safeAreaLayoutGuide
-                        .centerYAnchor
+                        .leadingAnchor,
+                    constant: 20
                 ),
-            contentStack.bottomAnchor
+            bottomActionStack.trailingAnchor
                 .constraint(
-                    lessThanOrEqualTo:
+                    equalTo:
+                        view.safeAreaLayoutGuide
+                        .trailingAnchor,
+                    constant: -20
+                ),
+            bottomActionStack.bottomAnchor
+                .constraint(
+                    equalTo:
                         view.safeAreaLayoutGuide
                         .bottomAnchor,
-                    constant: -16
+                    constant: -24
                 ),
             primaryButton.heightAnchor
                 .constraint(
-                    equalToConstant: 50
+                    equalToConstant: 52
                 )
         ])
+    }
+
+    func configureScrollView() {
+
+        scrollView.translatesAutoresizingMaskIntoConstraints =
+            false
+        scrollView.alwaysBounceVertical =
+            false
+        scrollView.showsVerticalScrollIndicator =
+            false
+        scrollView.keyboardDismissMode =
+            .interactive
     }
 
     func configureContentStack() {
@@ -257,6 +322,24 @@ private extension PhotoMemoShareExtensionViewController {
         contentStack.axis = .vertical
         contentStack.spacing = 16
         contentStack.alignment = .fill
+    }
+
+    func configureBottomActionStack() {
+
+        bottomActionStack.translatesAutoresizingMaskIntoConstraints =
+            false
+        bottomActionStack.axis =
+            .vertical
+        bottomActionStack.spacing =
+            12
+        bottomActionStack.alignment =
+            .fill
+        bottomActionStack.addArrangedSubview(
+            footerLabel
+        )
+        bottomActionStack.addArrangedSubview(
+            primaryButton
+        )
     }
 
     func configureHeaderLabels() {
@@ -639,7 +722,7 @@ private extension PhotoMemoShareExtensionViewController {
 
         sharedCountValueLabel.text =
             sharedPhotoCount > 0
-            ? "\(sharedPhotoCount) 张"
+            ? "\(sharedPhotoCount) 张可处理照片"
             : "未识别到可处理照片"
 
         previewSectionView?.isHidden = true
@@ -671,32 +754,33 @@ private extension PhotoMemoShareExtensionViewController {
         statusMessageLabel.textColor =
             .secondaryLabel
         previewSectionView?.isHidden = true
-        summarySectionView?.isHidden = true
+        summarySectionView?.isHidden =
+            sharedPhotoCount == 0
 
         titleLabel.text =
             sharedPhotoCount > 0
-            ? "检测到 \(sharedPhotoCount) 张照片"
+            ? "检测到 \(sharedPhotoCount) 张可处理照片"
             : "这次分享里没有可处理照片"
 
         subtitleLabel.text =
             sharedPhotoCount > 0
-            ? "将按当前配置交给 PhotoMemo 主程序处理。"
-            : "当前内容看起来不像可直接处理的原始照片。"
+            ? "PhotoMemo 会按当前配置继续处理，并把结果写回系统相册。"
+            : "当前内容看起来不像可直接处理的静态照片。"
 
         if sharedPhotoCount > 0 {
             statusTitleLabel.text =
                 "准备交给 PhotoMemo"
             statusMessageLabel.text =
-                "点击后会打开 PhotoMemo，处理进度在主程序中查看。"
+                "点击后会继续交给主程序，进度可在 PhotoMemo 或锁屏中查看。"
             footerLabel.text =
-                "完成后结果会写回系统相册，并发送系统通知。"
+                "处理完成后会发送系统通知。你不需要停留在这里。"
             applyPrimaryButton(
                 title:
                     "交给 PhotoMemo 处理 \(sharedPhotoCount) 张"
             )
         } else {
             statusTitleLabel.text =
-                "建议这样重试"
+                "暂不支持这类内容"
             statusMessageLabel.text =
                 PhotoMemoShareExtensionError
                 .noSupportedImages
@@ -717,18 +801,19 @@ private extension PhotoMemoShareExtensionViewController {
 
         viewState = .processing
         activityIndicator.startAnimating()
-        summarySectionView?.isHidden = true
+        summarySectionView?.isHidden =
+            sharedPhotoCount == 0
         previewSectionView?.isHidden = true
         titleLabel.text =
             "正在交给 PhotoMemo"
         subtitleLabel.text =
             "正在安全接收这次分享。"
         statusTitleLabel.text =
-            "正在接收原图"
+            "正在准备继续处理"
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "会把照片暂存后打开 PhotoMemo 继续处理。"
+            "会先接收原图，再交给 PhotoMemo 主程序继续处理。"
         footerLabel.text =
             "原始照片不会被修改。"
 
@@ -790,7 +875,7 @@ private extension PhotoMemoShareExtensionViewController {
             statusTitleLabel.text =
                 "正在读取 iCloud 原图"
             statusMessageLabel.text =
-                "原图可读取后会继续交给 PhotoMemo。"
+                "原图可读取后会继续交给 PhotoMemo 处理。"
             primaryButton.configuration?.title =
                 "正在准备"
             return
@@ -800,15 +885,15 @@ private extension PhotoMemoShareExtensionViewController {
             $0.stage == .extensionSourceReady
         }) {
             titleLabel.text =
-                "原图已可读取"
+            "原图已可读取"
             subtitleLabel.text =
-                "正在安全交给 PhotoMemo 主程序。"
+            "正在安全交给 PhotoMemo。"
             statusTitleLabel.text =
-                "正在交给 PhotoMemo"
+            "正在继续交给 PhotoMemo"
             statusMessageLabel.text =
-                "照片可用，正在继续处理。"
+            "照片已经可处理，正在继续交给主程序。"
             primaryButton.configuration?.title =
-                "正在交给 PhotoMemo"
+            "正在交给 PhotoMemo"
         }
     }
 
@@ -825,14 +910,16 @@ private extension PhotoMemoShareExtensionViewController {
             suggestion: suggestion
         )
         activityIndicator.stopAnimating()
+        summarySectionView?.isHidden =
+            sharedPhotoCount == 0
         titleLabel.text =
-            "这次分享没有完成"
+            "这次交接没有完成"
         subtitleLabel.text =
-            "可以直接重试；如果仍失败，再回到 PhotoMemo 或系统相册检查。"
+            "可以直接重试；如果仍失败，再回到 PhotoMemo 查看。"
         statusTitleLabel.text =
             title
         statusMessageLabel.textColor =
-            .systemRed
+            .systemOrange
         statusMessageLabel.text =
             message
         footerLabel.text =
@@ -991,15 +1078,17 @@ private extension PhotoMemoShareExtensionViewController {
                 titleLabel.text =
                     "已交给 PhotoMemo"
                 subtitleLabel.text =
-                    "主程序会继续处理并写回系统相册。"
+                    "PhotoMemo 会继续处理，并把结果写回系统相册。"
                 statusTitleLabel.text =
-                    "处理进度请在 PhotoMemo 查看"
+                    "后续进度会在 PhotoMemo 中显示"
                 statusMessageLabel.text =
-                    "如果系统没有自动切换，请手动打开 PhotoMemo。"
+                    "如果系统没有自动切换，可手动打开 PhotoMemo 查看处理状态。"
                 footerLabel.text =
-                    "可以关闭这个窗口。"
+                    "处理完成后会发送系统通知。现在可以关闭这个窗口。"
                 viewState = .received
                 activityIndicator.stopAnimating()
+                summarySectionView?.isHidden =
+                    pendingHandoffPhotoCount == 0
                 applyPrimaryButton(
                     title:
                         "关闭"
@@ -1104,10 +1193,10 @@ private extension PhotoMemoShareExtensionViewController {
                 )
             }
 
-            return "\(summaryParts.joined(separator: "，"))，正在交给 PhotoMemo 主程序。"
+            return "\(summaryParts.joined(separator: "，"))，其余情况会在 PhotoMemo 中继续说明。"
         }
 
-        return "已接收 \(result.requestedCount) 张，正在交给 PhotoMemo 主程序。"
+        return "已接收 \(result.requestedCount) 张，正在交给 PhotoMemo 继续处理。"
     }
 
     @MainActor
@@ -1117,19 +1206,21 @@ private extension PhotoMemoShareExtensionViewController {
         contentStack.alpha = 1
         contentStack.transform = .identity
         activityIndicator.stopAnimating()
+        summarySectionView?.isHidden =
+            pendingHandoffPhotoCount == 0
 
         titleLabel.text =
             "照片已经接收"
         subtitleLabel.text =
-            "但系统这次没有把处理交给 PhotoMemo。"
+            "但这次没有顺利继续交给 PhotoMemo。"
         statusTitleLabel.text =
-            "需要重新交给 PhotoMemo"
+            "重新交给 PhotoMemo"
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.text =
-            "请点下面按钮再试一次；如果仍失败，请直接打开 PhotoMemo V1.0，它会继续检查待处理照片。"
+            "请点下面按钮再试一次；如果仍失败，请直接打开 PhotoMemo，它会继续检查待处理照片。"
         footerLabel.text =
-            "这通常和应用唤起或系统分享状态有关，原始照片不会被修改。"
+            "原图已经接收，原始照片不会被修改。"
 
         applyPrimaryButton(
             title:

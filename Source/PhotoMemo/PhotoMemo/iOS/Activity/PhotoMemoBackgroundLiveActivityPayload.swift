@@ -38,6 +38,8 @@ nonisolated struct PhotoMemoBackgroundActivityAttributes:
 
         let presentationStateRawValue: String
 
+        let feedbackStateRawValue: String
+
         let updatedAt: Date
     }
 

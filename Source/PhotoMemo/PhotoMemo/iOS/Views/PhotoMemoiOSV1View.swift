@@ -639,6 +639,19 @@ struct PhotoMemoiOSV1View: View {
             }
 
             refreshProcessingState()
+
+            Task {
+                await loadAlbumOptions()
+            }
+        }
+        .onChange(of: entryFlowState.selectedTab) { _, newTab in
+            guard newTab == .output else {
+                return
+            }
+
+            Task {
+                await loadAlbumOptions()
+            }
         }
         .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
             isEditingMemoryPresetTitle = false
@@ -1085,6 +1098,11 @@ struct PhotoMemoiOSV1View: View {
             newAlbumName: $newAlbumName,
             isLoadingAlbums: isLoadingAlbums,
             albumStatusMessage: albumStatusMessage,
+            onReloadAlbums: {
+                Task {
+                    await loadAlbumOptions()
+                }
+            },
             usesCustomMemoryWriteText: $session.usesCustomMemoryWriteText,
             customMemoryWriteText: $session.customMemoryWriteText,
             resolvedMemoryWriteText: resolvedMemoryWriteText,

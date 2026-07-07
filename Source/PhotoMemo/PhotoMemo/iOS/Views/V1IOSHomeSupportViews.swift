@@ -1,21 +1,6 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
 
-extension PhotoMemoBackgroundPresentationState {
-
-    var displayTitle: String {
-
-        switch self {
-        case .active:
-            return "处理中"
-        case .needsAttention:
-            return "需要处理"
-        case .completed:
-            return "已完成"
-        }
-    }
-}
-
 struct V1IOSHomeQuickAction:
     Equatable,
     Identifiable {
@@ -108,7 +93,7 @@ enum V1IOSHomeRecentProcessingPresenter {
                 header.tint,
             statusValue:
                 snapshot?
-                .presentationState
+                .feedbackState
                 .displayTitle
                 ?? (
                     recoveryMessage == nil

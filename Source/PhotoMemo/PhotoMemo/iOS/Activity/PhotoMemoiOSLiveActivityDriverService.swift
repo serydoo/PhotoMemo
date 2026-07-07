@@ -499,6 +499,8 @@ private extension PhotoMemoiOSLiveActivityDriverService {
                     progressPercent: 100,
                     presentationStateRawValue:
                         "completed",
+                    feedbackStateRawValue:
+                        "completed",
                     updatedAt: Date()
                 ),
             staleDate: nil,
