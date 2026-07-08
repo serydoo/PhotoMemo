@@ -2,6 +2,54 @@
 
 Last updated: 2026-07-08
 
+## 2026-07-08 iOS release entry unified as PhotoMemoiOS
+
+The old parallel iOS app-target setup has been cleaned up after the
+TestFlight/Xcode Cloud packaging path moved past the `PhotoMemoiOSV1` naming
+phase.
+
+Current iOS release/build rule:
+
+- use the single `PhotoMemoiOS` scheme/target for local device builds, Xcode
+  Cloud, TestFlight, and future archive work
+- track product progress through `MARKETING_VERSION` and
+  `CURRENT_PROJECT_VERSION`, not through target names
+- keep the App Store bundle identifier stable:
+  `com.serydoo.PhotoMemo.iOS`
+
+What changed:
+
+- removed the duplicate legacy iOS app target from the Xcode project
+- renamed the active `PhotoMemoiOSV1` release scheme to `PhotoMemoiOS`
+- renamed the active iOS Info.plist to `PhotoMemoiOS-Info.plist`
+- removed the obsolete `PhotoMemoiOSV1App.swift` entry file
+- preserved the existing app display name, bundle identifier, entitlements,
+  Share Extension embedding, Widget Extension embedding, and version/build
+  values
+
+Verification passed:
+
+- project file lint passed
+- `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -list` now shows
+  one iOS app target/scheme: `PhotoMemoiOS`
+- `PhotoMemoiOS` Debug generic iOS Simulator build passed
+- `PhotoMemoiOS` Debug generic iOS build passed
+- `PhotoMemoiOS` signed Debug iPhone7 device build passed
+- iPhone7 install passed through `devicectl`
+- iPhone7 launch passed through `devicectl`
+- built app inspection confirmed:
+  - `CFBundleDisplayName = 时光记`
+  - `CFBundleIdentifier = com.serydoo.PhotoMemo.iOS`
+  - version/build = `1.5` / `7`
+  - `PhotoMemoShareExtension.appex` is embedded
+  - `PhotoMemoWidgetExtension.appex` is embedded
+  - app and Share Extension privacy manifests are present
+
+Not completed:
+
+- a local Release generic iOS build was attempted, but Xcode entered an
+  internal idle operation wait and was interrupted without compile errors
+
 ## 2026-07-08 TestFlight build 6 invalid; Xcode Cloud build 7 planned
 
 Apple rejected the uploaded `1.5` / `6` binary during automated processing,

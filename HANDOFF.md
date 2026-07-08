@@ -21,6 +21,37 @@
 - `e48508e9` remains the first accepted V1 maintenance freeze checkpoint.
 - `2218878d` remains the functional device checkpoint that preceded the maintenance freeze.
 
+## 2026-07-08 iOS release entry cleanup
+
+- The project now has one iOS app release entry:
+  - scheme/target: `PhotoMemoiOS`
+  - product: `PhotoMemoiOS.app`
+  - Info.plist: `PhotoMemoiOS-Info.plist`
+  - bundle identifier: `com.serydoo.PhotoMemo.iOS`
+  - version/build: `1.5` / `7`
+- The former `PhotoMemoiOSV1` scheme/target naming has been retired from the
+  Xcode project. Future local device builds, Xcode Cloud workflows, TestFlight
+  builds, and archive work should select `PhotoMemoiOS`.
+- Version progress should be represented by `MARKETING_VERSION` and
+  `CURRENT_PROJECT_VERSION`, not by target/scheme names.
+- The cleanup intentionally did not rename internal UI types such as
+  `PhotoMemoiOSV1View`; those remain code-level V1 implementation names and
+  can be handled in a separate low-risk refactor if desired.
+- Verification passed:
+  - project file lint
+  - `xcodebuild -list`
+  - `PhotoMemoiOS` Debug generic iOS Simulator build
+  - `PhotoMemoiOS` Debug generic iOS build
+  - `PhotoMemoiOS` signed Debug iPhone7 device build
+  - iPhone7 install through `devicectl`
+  - iPhone7 launch through `devicectl`
+  - built-product inspection confirmed app display name, bundle identifier,
+    version/build, embedded Share Extension, embedded Widget Extension, and
+    privacy manifests
+- Not completed:
+  - local Release generic iOS build entered an Xcode internal idle wait and was
+    interrupted without compile errors
+
 References:
 
 - [Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md](/Users/rui/Desktop/PhotoMemo/Docs/02_Architecture/V1_High_Finding_Closure_Checklist_2026-07-03.md)

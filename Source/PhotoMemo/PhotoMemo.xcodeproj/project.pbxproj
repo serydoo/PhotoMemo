@@ -7,29 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F4A1B2203A9C410100A10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8B0A7C6D4E184A8AA7E10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8B0A7C6D4E184A8AA7E10005 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F4A1B2303A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2383A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift */; };
 		F4A1B2313A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2393A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoLiveActivityPresentation.swift */; };
-		F4A1B2323A9C410100A10001 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		F4A1B2213A9C410100A10001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F4A1B20B3A9C410100A10001;
-			remoteInfo = PhotoMemoShareExtension;
-		};
-		F4A1B2343A9C410100A10001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F4A1B23E3A9C410100A10001;
-			remoteInfo = PhotoMemoWidgetExtension;
-		};
 		8B0A7C6D4E184A8AA7E10002 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
@@ -54,16 +38,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F4A1B2223A9C410100A10001 /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			dstPath = "";
-			dstSubfolder = PlugIns;
-			files = (
-				F4A1B2203A9C410100A10001 /* PhotoMemoShareExtension.appex in Embed App Extensions */,
-				F4A1B2323A9C410100A10001 /* PhotoMemoWidgetExtension.appex in Embed App Extensions */,
-			);
-			name = "Embed App Extensions";
-		};
 		8B0A7C6D4E184A8AA7E10003 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "";
@@ -78,8 +52,7 @@
 
 /* Begin PBXFileReference section */
 		B3DBA4F42FE1581100945016 /* PhotoMemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F4A1B2013A9C410100A10001 /* PhotoMemoiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemoiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1155B1BF5AC74477ACAA1F66 /* PhotoMemoiOSV1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemoiOSV1.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1155B1BF5AC74477ACAA1F66 /* PhotoMemoiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoMemoiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhotoMemoShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhotoMemoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4A1B2383A9C410100A10001 /* PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoMemo/iOS/Activity/PhotoMemoBackgroundLiveActivityPayload.swift; sourceTree = SOURCE_ROOT; };
@@ -127,21 +100,12 @@
 			);
 			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
 		};
-		489996B64AA2479E8C8FBB0E /* Exceptions for "PhotoMemo" folder in "PhotoMemoiOS" target */ = {
+		77CE0C61042F41738A77F85D /* Exceptions for "PhotoMemo" folder in "PhotoMemoiOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				iOS/App/PhotoMemoiOSV1App.swift,
 				iOS/ShareExtension/PrivacyInfo.xcprivacy,
 			);
-			target = F4A1B2033A9C410100A10001 /* PhotoMemoiOS */;
-		};
-		77CE0C61042F41738A77F85D /* Exceptions for "PhotoMemo" folder in "PhotoMemoiOSV1" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				iOS/App/PhotoMemoiOSApp.swift,
-				iOS/ShareExtension/PrivacyInfo.xcprivacy,
-			);
-			target = DF8E1E1435DC445F99C53213 /* PhotoMemoiOSV1 */;
+			target = DF8E1E1435DC445F99C53213 /* PhotoMemoiOS */;
 		};
 		F4A1B2443A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemo" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -158,8 +122,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F4A1B2443A9C410100A10001 /* Exceptions for "PhotoMemo" folder in "PhotoMemo" target */,
-				489996B64AA2479E8C8FBB0E /* Exceptions for "PhotoMemo" folder in "PhotoMemoiOS" target */,
-				77CE0C61042F41738A77F85D /* Exceptions for "PhotoMemo" folder in "PhotoMemoiOSV1" target */,
+				77CE0C61042F41738A77F85D /* Exceptions for "PhotoMemo" folder in "PhotoMemoiOS" target */,
 			);
 			path = PhotoMemo;
 			sourceTree = "<group>";
@@ -207,11 +170,6 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		B3DBA4F12FE1581100945016 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-			);
-		};
-		F4A1B2023A9C410100A10001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -265,8 +223,7 @@
 			children = (
 				B3DBA4F42FE1581100945016 /* PhotoMemo.app */,
 				F5B100023A9D000000A10001 /* PhotoMemoTests.xctest */,
-				F4A1B2013A9C410100A10001 /* PhotoMemoiOS.app */,
-				1155B1BF5AC74477ACAA1F66 /* PhotoMemoiOSV1.app */,
+				1155B1BF5AC74477ACAA1F66 /* PhotoMemoiOS.app */,
 				F4A1B2093A9C410100A10001 /* PhotoMemoShareExtension.appex */,
 				F4A1B2333A9C410100A10001 /* PhotoMemoWidgetExtension.appex */,
 			);
@@ -294,32 +251,9 @@
 			productReference = B3DBA4F42FE1581100945016 /* PhotoMemo.app */;
 			productType = "com.apple.product-type.application";
 		};
-		F4A1B2033A9C410100A10001 /* PhotoMemoiOS */ = {
+		DF8E1E1435DC445F99C53213 /* PhotoMemoiOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F4A1B2083A9C410100A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoiOS" */;
-			buildPhases = (
-				F4A1B2043A9C410100A10001 /* Sources */,
-				F4A1B2023A9C410100A10001 /* Frameworks */,
-				F4A1B2053A9C410100A10001 /* Resources */,
-				F4A1B2223A9C410100A10001 /* Embed App Extensions */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				F4A1B2233A9C410100A10001 /* PBXTargetDependency */,
-				F4A1B2353A9C410100A10001 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				B3DBA4F62FE1581100945016 /* PhotoMemo */,
-			);
-			name = PhotoMemoiOS;
-			productName = PhotoMemoiOS;
-			productReference = F4A1B2013A9C410100A10001 /* PhotoMemoiOS.app */;
-			productType = "com.apple.product-type.application";
-		};
-		DF8E1E1435DC445F99C53213 /* PhotoMemoiOSV1 */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = FD8F6E5CD0234A8BB96291DE /* Build configuration list for PBXNativeTarget "PhotoMemoiOSV1" */;
+			buildConfigurationList = FD8F6E5CD0234A8BB96291DE /* Build configuration list for PBXNativeTarget "PhotoMemoiOS" */;
 			buildPhases = (
 				F89B4A3D3DB343EBAF7D9B7F /* Sources */,
 				630755BBC5174C7A80B839C4 /* Frameworks */,
@@ -335,9 +269,9 @@
 			fileSystemSynchronizedGroups = (
 				B3DBA4F62FE1581100945016 /* PhotoMemo */,
 			);
-			name = PhotoMemoiOSV1;
-			productName = PhotoMemoiOSV1;
-			productReference = 1155B1BF5AC74477ACAA1F66 /* PhotoMemoiOSV1.app */;
+			name = PhotoMemoiOS;
+			productName = PhotoMemoiOS;
+			productReference = 1155B1BF5AC74477ACAA1F66 /* PhotoMemoiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 		F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */ = {
@@ -413,9 +347,6 @@
 					B3DBA4F32FE1581100945016 = {
 						CreatedOnToolsVersion = 27.0;
 					};
-					F4A1B2033A9C410100A10001 = {
-						CreatedOnToolsVersion = 27.0;
-					};
 					DF8E1E1435DC445F99C53213 = {
 						CreatedOnToolsVersion = 27.0;
 					};
@@ -447,8 +378,7 @@
 			targets = (
 				B3DBA4F32FE1581100945016 /* PhotoMemo */,
 				F5B1000A3A9D000000A10001 /* PhotoMemoTests */,
-				F4A1B2033A9C410100A10001 /* PhotoMemoiOS */,
-				DF8E1E1435DC445F99C53213 /* PhotoMemoiOSV1 */,
+				DF8E1E1435DC445F99C53213 /* PhotoMemoiOS */,
 				F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */,
 				F4A1B23E3A9C410100A10001 /* PhotoMemoWidgetExtension */,
 			);
@@ -457,11 +387,6 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		B3DBA4F22FE1581100945016 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
-		F4A1B2053A9C410100A10001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -494,11 +419,6 @@
 			files = (
 			);
 		};
-		F4A1B2043A9C410100A10001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
 		F89B4A3D3DB343EBAF7D9B7F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -524,16 +444,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		F4A1B2233A9C410100A10001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
-			targetProxy = F4A1B2213A9C410100A10001 /* PBXContainerItemProxy */;
-		};
-		F4A1B2353A9C410100A10001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F4A1B23E3A9C410100A10001 /* PhotoMemoWidgetExtension */;
-			targetProxy = F4A1B2343A9C410100A10001 /* PBXContainerItemProxy */;
-		};
 		8B0A7C6D4E184A8AA7E10004 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F4A1B20B3A9C410100A10001 /* PhotoMemoShareExtension */;
@@ -742,7 +652,7 @@
 			};
 			name = Release;
 		};
-		F4A1B2063A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
+		F9F054D5C7B4471E885C1840 /* Debug configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -751,7 +661,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "PhotoMemoiOS-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "时光记";
 				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        memomark,\n        photomemo\n    );\n}";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -782,47 +693,7 @@
 			};
 			name = Debug;
 		};
-		F4A1B2073A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "时光记";
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        memomark,\n        photomemo\n    );\n}";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "时光记需要把处理后的照片存回你的系统相册。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "时光记需要读取你选择的照片与相册，并把处理后的照片保存进去。";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		F9F054D5C7B4471E885C1840 /* Debug configuration for PBXNativeTarget "PhotoMemoiOSV1" */ = {
+		2DB40F57D9AA4FC5AD790FF2 /* Release configuration for PBXNativeTarget "PhotoMemoiOS" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -832,48 +703,7 @@
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "PhotoMemoiOSV1-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "时光记";
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        memomark,\n        photomemo\n    );\n}";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "时光记需要把处理后的照片存回你的系统相册。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "时光记需要读取你选择的照片与相册，并把处理后的照片保存进去。";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		2DB40F57D9AA4FC5AD790FF2 /* Release configuration for PBXNativeTarget "PhotoMemoiOSV1" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_TEAM = UK7ZR8G564;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "PhotoMemoiOSV1-Info.plist";
+				INFOPLIST_FILE = "PhotoMemoiOS-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "时光记";
 				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        memomark,\n        photomemo\n    );\n}";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1097,19 +927,11 @@
 			);
 			defaultConfigurationName = Release;
 		};
-		F4A1B2083A9C410100A10001 /* Build configuration list for PBXNativeTarget "PhotoMemoiOS" */ = {
+		FD8F6E5CD0234A8BB96291DE /* Build configuration list for PBXNativeTarget "PhotoMemoiOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F4A1B2063A9C410100A10001 /* Debug configuration for PBXNativeTarget "PhotoMemoiOS" */,
-				F4A1B2073A9C410100A10001 /* Release configuration for PBXNativeTarget "PhotoMemoiOS" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		FD8F6E5CD0234A8BB96291DE /* Build configuration list for PBXNativeTarget "PhotoMemoiOSV1" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F9F054D5C7B4471E885C1840 /* Debug configuration for PBXNativeTarget "PhotoMemoiOSV1" */,
-				2DB40F57D9AA4FC5AD790FF2 /* Release configuration for PBXNativeTarget "PhotoMemoiOSV1" */,
+				F9F054D5C7B4471E885C1840 /* Debug configuration for PBXNativeTarget "PhotoMemoiOS" */,
+				2DB40F57D9AA4FC5AD790FF2 /* Release configuration for PBXNativeTarget "PhotoMemoiOS" */,
 			);
 			defaultConfigurationName = Release;
 		};
