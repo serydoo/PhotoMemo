@@ -1,6 +1,6 @@
 # App Store Connect Materials - MemoMark 1.5
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
 
 Use this document as the copy source when creating or updating the App Store
 Connect app record and TestFlight information.
@@ -16,7 +16,8 @@ Recommended values:
 - Category: `Photo & Video`
 - Secondary category: `Lifestyle`
 - Version: `1.5`
-- Build: `5`
+- Build: Xcode Cloud generated, currently `13`, next expected `14`
+- Next planned development label: `1.6`
 - Copyright:
   `Copyright (c) 2026 serydoo wang. All rights reserved.`
 
@@ -81,6 +82,8 @@ Chinese:
 
 - Feedback email: `serydoo@gmail.com`
 - Alternate feedback email: `serydoo@163.com`
+- Xiaohongshu contact: `49956456623`
+- Public issue tracker: `https://github.com/serydoo/PhotoMemo/issues`
 - Beta review contact: `serydoo@gmail.com`
 - Sign-in required: `No`
 - Demo account required: `No`
@@ -88,6 +91,51 @@ Chinese:
 
 ```text
 MemoMark 1.5 is the first TestFlight build focused on validating the local-first Apple Photos share workflow. Please test with non-sensitive photos first and include device model, iOS version, screenshots, and reproduction steps when reporting issues.
+```
+
+## Supported Scope And Output Format
+
+Use this when testers or reviewers ask what the current TestFlight build
+supports.
+
+English:
+
+```text
+MemoMark 1.5 currently focuses on user-selected static photos shared from Apple Photos. It supports single-photo and small multi-photo share flows, photos with or without location metadata, and local generation of a memory-card result.
+
+The output is a new still image saved back to Apple Photos. MemoMark does not modify the original photo. Videos, motion playback from Live Photos, advanced batch management, cloud processing, account sync, and full custom layout editing are outside the current TestFlight scope.
+```
+
+Chinese:
+
+```text
+时光记 1.5 当前聚焦从 Apple Photos 主动分享的静态照片。它支持单张照片和少量多张照片分享，支持有位置信息或无位置信息的照片，并在本机生成记忆卡片结果。
+
+输出形式是一张保存回 Apple Photos 的新静态图片。时光记不会修改原始照片。视频、Live Photo 动态播放、高级批量管理、云端处理、账号同步和完整自定义布局编辑不属于当前 TestFlight 范围。
+```
+
+## Feedback Channels
+
+Recommended public tester copy:
+
+```text
+Please send feedback through TestFlight's built-in feedback button when possible, especially for crashes, screenshots, and screen recordings. You can also email serydoo@gmail.com or serydoo@163.com. Chinese testers can contact Xiaohongshu ID 49956456623 for group discussion.
+
+For reproducible issues, please include device model, iOS version, MemoMark build number, whether the issue happened in Apple Photos Share or inside MemoMark, steps to reproduce, expected result, actual result, and screenshots or recordings if available.
+```
+
+Optional public issue tracker:
+
+```text
+GitHub Issues: https://github.com/serydoo/PhotoMemo/issues
+```
+
+## Post-TestFlight Development Plan
+
+Short public-facing version:
+
+```text
+After the 1.5 TestFlight validation, the next development focus is reliability and feedback closure: share intake edge cases, permission clarity, save-back behavior, failed-task retry polish, and clearer Configuration Center guidance. Later builds will continue render fidelity, metadata retention, and Memory Engine integration without changing the local-first and non-destructive workflow.
 ```
 
 ## App Review Notes
@@ -147,4 +195,4 @@ MemoMark needs Photo Library access so users can share selected photos into the 
   workflow.
 - If reviewers open only the app and do not use Apple Photos Share, they should
   still see the Configuration Center and usage guide.
-- TestFlight upload should use version `1.5` and build `5`.
+- TestFlight upload should use version `1.5` and the next Xcode Cloud build.

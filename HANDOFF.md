@@ -3,6 +3,10 @@
 ## Current Truth
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
+- The user-facing TestFlight version remains `1.5`. The App Store Connect /
+  Xcode Cloud build counter has reached build `13`; the next successful cloud
+  attempt is expected to appear as build `14`. Treat the cloud build number as
+  owned by Xcode Cloud / App Store Connect, not as the product version.
 - External product branding is now `MemoMark` / `时光记`; internal engineering
   names such as `PhotoMemo` targets, bundle IDs, App Group, UserDefaults keys,
   source paths, and GitHub repository URL remain intentionally preserved until
