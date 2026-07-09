@@ -3,6 +3,8 @@ import SwiftUI
 
 struct V1SettingsPageSurface: View {
 
+    @Environment(\.openURL) private var openURL
+
     let onShowWelcome: () -> Void
     let onShowWorkflow: () -> Void
     let onDismissKeyboard: () -> Void
@@ -11,6 +13,10 @@ struct V1SettingsPageSurface: View {
         ScrollView {
             VStack(spacing: 18) {
                 overviewSection
+                releaseSection
+                supportSection
+                developmentPlanSection
+                feedbackSection
                 guideSection
                 principleSection
             }
@@ -34,13 +40,13 @@ struct V1SettingsPageSurface: View {
     }
 
     private var overviewSection: some View {
-        V1CardSurface(title: "说明入口") {
+        V1CardSurface(title: "关于时光记") {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top, spacing: 14) {
                     settingsOverviewArtwork
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("这里承接欢迎说明、使用流程与产品原则。任务状态与最近记录已经单独收拢到底部“任务”入口。")
+                        Text("这里汇总当前 TestFlight 版本、支持范围、反馈入口和下一阶段计划。任务状态与最近记录已经单独收拢到底部“任务”入口。")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -65,7 +71,7 @@ struct V1SettingsPageSurface: View {
     }
 
     private var guideSection: some View {
-        V1CardSurface(title: "使用与欢迎") {
+        V1CardSurface(title: "使用说明") {
             VStack(spacing: 12) {
                 Button(action: onShowWelcome) {
                     settingsActionRow(
@@ -110,6 +116,150 @@ struct V1SettingsPageSurface: View {
         }
     }
 
+    private var releaseSection: some View {
+        V1CardSurface(title: "版本与上架") {
+            VStack(spacing: 0) {
+                settingsInfoRow(
+                    title: "当前版本",
+                    headline: "时光记 1.5",
+                    detail:
+                        "用户可见版本保持 1.5；TestFlight 构建号由 Xcode Cloud 与 App Store Connect 生成。",
+                    systemImage: "number.circle.fill",
+                    tint: .blue
+                )
+
+                settingsInfoRow(
+                    title: "云端构建",
+                    headline: "当前 13，下一次预计 14",
+                    detail:
+                        "前面的 Xcode Cloud 申请与取消已经消耗部分构建号，后续以上传成功后的 TestFlight 显示为准。",
+                    systemImage: "icloud.and.arrow.up.fill",
+                    tint: .teal,
+                    showsDivider: false
+                )
+            }
+            .background(settingsInsetBackground)
+        }
+    }
+
+    private var supportSection: some View {
+        V1CardSurface(title: "支持范围") {
+            VStack(spacing: 0) {
+                settingsInfoRow(
+                    title: "输入",
+                    headline: "Apple Photos 分享的静态照片",
+                    detail:
+                        "支持单张和少量多张分享；有无位置信息都可以进入本地处理。",
+                    systemImage: "photo.on.rectangle.angled",
+                    tint: .blue
+                )
+
+                settingsInfoRow(
+                    title: "输出",
+                    headline: "保存回相册的新图片",
+                    detail:
+                        "时光记生成一张新的记忆卡片图片，不修改系统相册里的原始照片。",
+                    systemImage: "square.and.arrow.down.on.square.fill",
+                    tint: .teal
+                )
+
+                settingsInfoRow(
+                    title: "当前边界",
+                    headline: "视频与动态 Live Photo 暂不在 1.5 范围",
+                    detail:
+                        "1.5 先验证分享、处理、保存回相册的主流程；Live Photo 支持进入 1.6 计划。",
+                    systemImage: "livephoto",
+                    tint: .indigo,
+                    showsDivider: false
+                )
+            }
+            .background(settingsInsetBackground)
+        }
+    }
+
+    private var feedbackSection: some View {
+        V1CardSurface(title: "反馈渠道") {
+            VStack(spacing: 0) {
+                settingsLinkRow(
+                    title: "TestFlight 反馈",
+                    headline: "适合闪退、截图和录屏",
+                    detail:
+                        "优先使用系统内置反馈，方便带上设备和崩溃上下文。",
+                    systemImage: "paperplane.fill",
+                    tint: .blue
+                )
+
+                settingsLinkRow(
+                    title: "邮件反馈",
+                    headline: "serydoo@gmail.com",
+                    detail:
+                        "适合描述复现步骤、预期结果、实际结果和 iOS 版本。",
+                    systemImage: "envelope.fill",
+                    tint: .teal
+                ) {
+                    openMailFeedback()
+                }
+
+                settingsLinkRow(
+                    title: "小红书",
+                    headline: "ID 49956456623",
+                    detail:
+                        "可以通过小红书联系，也可以进一步加群沟通测试反馈。",
+                    systemImage: "person.2.fill",
+                    tint: .pink
+                )
+
+                settingsLinkRow(
+                    title: "GitHub Issues",
+                    headline: "公开可复现问题",
+                    detail:
+                        "适合记录稳定复现的缺陷和后续开发讨论。",
+                    systemImage: "curlybraces.square.fill",
+                    tint: .indigo,
+                    showsDivider: false
+                ) {
+                    openGitHubIssues()
+                }
+            }
+            .background(settingsInsetBackground)
+        }
+    }
+
+    private var developmentPlanSection: some View {
+        V1CardSurface(title: "后续计划") {
+            VStack(spacing: 0) {
+                settingsInfoRow(
+                    title: "1.6",
+                    headline: "Live Photo 支持",
+                    detail:
+                        "下一版优先评估 Live Photo 输入、静态封面提取和输出规则，保持本地处理与不改原图。",
+                    systemImage: "play.rectangle.fill",
+                    tint: .blue
+                )
+
+                settingsInfoRow(
+                    title: "可靠性",
+                    headline: "关闭 TestFlight 反馈",
+                    detail:
+                        "优先处理分享入口、权限说明、失败重试、保存回相册和引导文案。",
+                    systemImage: "checkmark.seal.fill",
+                    tint: .teal
+                )
+
+                settingsInfoRow(
+                    title: "呈现质量",
+                    headline: "渲染与元数据继续加固",
+                    detail:
+                        "继续验证预览与导出一致性、位置回退、清晰度和特殊比例照片表现。",
+                    systemImage: "camera.fill",
+                    tint: .indigo,
+                    showsDivider: false
+                )
+            }
+            .background(settingsInsetBackground)
+        }
+    }
+
     private var principleSection: some View {
         V1CardSurface(title: "当前原则") {
             VStack(alignment: .leading, spacing: 10) {
@@ -129,6 +279,21 @@ struct V1SettingsPageSurface: View {
                 )
             }
         }
+    }
+
+    private var settingsInsetBackground: some View {
+        RoundedRectangle(
+            cornerRadius: 14,
+            style: .continuous
+        )
+        .fill(ConfigurationUI.controlBackground.opacity(0.82))
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 14,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
     }
 
     private var settingsOverviewArtwork: some View {
@@ -185,23 +350,23 @@ struct V1SettingsPageSurface: View {
     private var settingsOverviewStrip: some View {
         HStack(spacing: 10) {
             settingsOverviewStat(
-                title: "欢迎说明",
-                detail: "首次引导",
-                systemImage: "sparkles",
+                title: "版本",
+                detail: "1.5",
+                systemImage: "number.circle",
                 tint: .blue
             )
 
             settingsOverviewStat(
-                title: "使用流程",
-                detail: "真实路径",
-                systemImage: "arrow.triangle.branch",
+                title: "输出",
+                detail: "新图片",
+                systemImage: "photo",
                 tint: .teal
             )
 
             settingsOverviewStat(
-                title: "产品原则",
-                detail: "当前共识",
-                systemImage: "checkmark.shield",
+                title: "反馈",
+                detail: "TestFlight",
+                systemImage: "paperplane",
                 tint: .indigo
             )
         }
@@ -299,6 +464,159 @@ struct V1SettingsPageSurface: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 2)
+    }
+
+    private func settingsInfoRow(
+        title: String,
+        headline: String,
+        detail: String,
+        systemImage: String,
+        tint: Color,
+        showsDivider: Bool = true
+    ) -> some View {
+        settingsContentRow(
+            title: title,
+            headline: headline,
+            detail: detail,
+            systemImage: systemImage,
+            tint: tint,
+            showsDivider: showsDivider
+        )
+    }
+
+    @ViewBuilder
+    private func settingsLinkRow(
+        title: String,
+        headline: String,
+        detail: String,
+        systemImage: String,
+        tint: Color,
+        showsDivider: Bool = true,
+        action: (() -> Void)? = nil
+    ) -> some View {
+        if let action {
+            Button(action: action) {
+                settingsContentRow(
+                    title: title,
+                    headline: headline,
+                    detail: detail,
+                    systemImage: systemImage,
+                    tint: tint,
+                    showsDivider: showsDivider,
+                    accessory: "chevron.right"
+                )
+            }
+            .buttonStyle(.plain)
+        } else {
+            settingsContentRow(
+                title: title,
+                headline: headline,
+                detail: detail,
+                systemImage: systemImage,
+                tint: tint,
+                showsDivider: showsDivider
+            )
+        }
+    }
+
+    private func settingsContentRow(
+        title: String,
+        headline: String,
+        detail: String,
+        systemImage: String,
+        tint: Color,
+        showsDivider: Bool,
+        accessory: String? = nil
+    ) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                settingsTonalIcon(
+                    systemImage: systemImage,
+                    tint: tint
+                )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(tint)
+                        .lineLimit(1)
+
+                    Text(headline)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                if let accessory {
+                    Image(systemName: accessory)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 12)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+
+            if showsDivider {
+                Rectangle()
+                    .fill(ConfigurationUI.faintHairline)
+                    .frame(height: 0.5)
+                    .padding(.leading, 60)
+            }
+        }
+    }
+
+    private func settingsTonalIcon(
+        systemImage: String,
+        tint: Color
+    ) -> some View {
+        ZStack {
+            RoundedRectangle(
+                cornerRadius: 10,
+                style: .continuous
+            )
+            .fill(tint.opacity(0.10))
+
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .symbolRenderingMode(.hierarchical)
+        }
+        .frame(width: 36, height: 36)
+    }
+
+    private func openMailFeedback() {
+        guard let url =
+            URL(
+                string:
+                    "mailto:serydoo@gmail.com?subject=MemoMark%201.5%20TestFlight%20Feedback"
+            )
+        else {
+            return
+        }
+
+        openURL(url)
+    }
+
+    private func openGitHubIssues() {
+        guard let url =
+            URL(
+                string:
+                    "https://github.com/serydoo/PhotoMemo/issues"
+            )
+        else {
+            return
+        }
+
+        openURL(url)
     }
 
     private func settingsMiniTile(

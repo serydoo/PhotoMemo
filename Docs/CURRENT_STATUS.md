@@ -735,6 +735,72 @@ MGF-1 does not render anything. It proves that MemoMark can derive one
 immutable Geometry Truth from a still image.
 ```
 
+## 2026-07-08 iOS settings About content expanded for TestFlight
+
+The iOS homepage settings sheet now behaves more like a lightweight About and
+TestFlight information surface.
+
+What changed:
+
+- settings content order now follows a clearer About-page rhythm:
+  - About MemoMark
+  - version and Xcode Cloud build-number note
+  - supported input/output scope
+  - post-1.5 development plan
+  - feedback channels
+  - usage guide
+  - current principles
+- feedback channels now include:
+  - TestFlight built-in feedback
+  - email
+  - Xiaohongshu ID `49956456623` for contact and group discussion
+  - GitHub Issues for public reproducible issues
+- the 1.6 plan explicitly includes Live Photo support as the next-version
+  focus while 1.5 remains scoped to static-photo validation
+
+Verification passed:
+
+- `git diff --check`
+- project file lint
+- `PhotoMemoiOS` Debug generic iOS Simulator build
+
+Not manually verified:
+
+- visual inspection on a physical iPhone after opening the settings sheet
+
+## 2026-07-08 Xcode Cloud build-number ownership clarified
+
+The app's user-facing release version remains:
+
+- `MARKETING_VERSION = 1.5`
+
+The App Store Connect / Xcode Cloud build counter has already reached build
+`13` after repeated workflow/apply/cancel attempts consumed intermediate build
+numbers.
+
+Current release interpretation:
+
+- user-facing version: `1.5`
+- TestFlight build number: owned by Xcode Cloud / App Store Connect
+- current observed cloud build number: `13`
+- next successful cloud attempt is expected to appear as build `14`
+
+What changed:
+
+- V1.5 TestFlight release materials no longer treat the next cloud build number
+  as a manually owned repository value
+- tester-facing material describes the release as MemoMark `1.5`
+- App Store Connect materials record that the cloud build number is currently
+  `13` and the next expected successful build is `14`
+
+Release guidance:
+
+- keep `MARKETING_VERSION = 1.5`
+- let Xcode Cloud / App Store Connect own the visible TestFlight build number
+  for cloud-produced builds
+- if another cloud attempt consumes build `14`, do not change the user-facing
+  version unless the submitted release scope changes
+
 ## 2026-07-08 iOS release entry unified as PhotoMemoiOS
 
 The old parallel iOS app-target setup has been cleaned up after the

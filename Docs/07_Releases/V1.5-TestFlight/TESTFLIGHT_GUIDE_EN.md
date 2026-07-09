@@ -6,7 +6,7 @@ MemoMark is a local-first memory presentation app for Apple Photos. It helps
 people turn meaningful photos into clean memory-card images while preserving
 the original photo.
 
-This TestFlight build is MemoMark `1.5 (5)`, the first broad MVP test focused
+This TestFlight build is MemoMark `1.5`, the first broad MVP test focused
 on the Apple Photos share workflow.
 
 ## Before You Start
@@ -84,15 +84,49 @@ Please report:
 
 This build intentionally focuses on the core local-first memory workflow.
 
+Current supported scope and output format:
+
+- Static photos shared intentionally from Apple Photos.
+- Single-photo and small multi-photo share flows.
+- Photos with or without location metadata.
+- Output is a new still image saved back to Apple Photos.
+- MemoMark does not modify the original photo.
+
 Expected limitations:
 
 - Advanced customization is still limited.
 - Some photo types may be rejected or skipped.
 - Static photos are the preferred input.
 - Very large, panoramic, or unusual-ratio images may not be ideal.
+- Videos, Live Photo motion playback, advanced batch management, cloud processing, account sync, and full custom layout editing are outside the current TestFlight scope.
 - The Share Extension may be constrained by iOS share-sheet behavior.
 
+## Development Plan
+
+After `1.5`, the next development phase will focus on reliability and
+feedback closure:
+
+- Apple Photos share intake edge cases
+- Permission clarity and save-back behavior
+- Failed-task retry polish
+- Clearer Configuration Center guidance
+- Render consistency and metadata-retention validation
+
 ## Feedback
+
+Please use TestFlight's built-in feedback when possible, especially for
+crashes, screenshots, and screen recordings. You can also send feedback by
+email:
+
+- `serydoo@gmail.com`
+- `serydoo@163.com`
+
+Chinese testers can also contact Xiaohongshu ID `49956456623` for group
+discussion.
+
+Public reproducible issues can also be filed on GitHub Issues:
+
+- `https://github.com/serydoo/PhotoMemo/issues`
 
 Screenshots and screen recordings are very helpful.
 
