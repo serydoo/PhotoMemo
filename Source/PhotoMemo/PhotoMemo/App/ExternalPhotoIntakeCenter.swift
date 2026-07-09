@@ -113,6 +113,72 @@ final class ExternalPhotoIntakeCenter:
         revision = UUID()
     }
 
+    func submit(
+        items: [ExternalPhotoIntakeItem],
+        importSummary:
+            ExternalPhotoImportSummary? = nil,
+        source: BatchJobLaunchSource
+    ) {
+
+        let acceptedItems =
+            items
+            .map(normalizedIntakeItem)
+            .filter(isSupportedIntakeItem)
+            .reduce(into: [ExternalPhotoIntakeItem]()) {
+                partialResult,
+                item in
+
+                if !partialResult.contains(
+                    where: {
+                        $0.managedURL
+                            .standardizedFileURL
+                            .path
+                        == item.managedURL
+                            .standardizedFileURL
+                            .path
+                    }
+                ) {
+                    partialResult.append(item)
+                }
+            }
+
+        guard !acceptedItems.isEmpty else {
+            return
+        }
+
+        if let persistedRequest =
+            intakeStore.persistRequest(
+                items: acceptedItems,
+                source: source,
+                importSummary:
+                    importSummary,
+                configurationSnapshot:
+                    defaultConfigurationSnapshot
+            ) {
+            pendingRequests.append(
+                persistedRequest
+            )
+        } else {
+            pendingRequests.append(
+                ExternalPhotoIntakeRequest(
+                    launchSource: source,
+                    urls:
+                        acceptedItems.map(
+                            \.managedURL
+                        ),
+                    items:
+                        acceptedItems,
+                    configurationSnapshot:
+                        defaultConfigurationSnapshot,
+                    importSummary:
+                        importSummary
+                )
+            )
+        }
+
+        revision = UUID()
+    }
+
     func drainPendingRequests() -> [ExternalPhotoIntakeRequest] {
 
         let persistedRequests =
@@ -174,5 +240,52 @@ private extension ExternalPhotoIntakeCenter {
 
         return PhotoProcessingInputPolicy.standard
             .isSupportedContentType(type)
+    }
+
+    func normalizedIntakeItem(
+        _ item: ExternalPhotoIntakeItem
+    ) -> ExternalPhotoIntakeItem {
+
+        ExternalPhotoIntakeItem(
+            managedURL:
+                normalizedFileURL(
+                    for:
+                        item.managedURL
+                ),
+            originalFileName:
+                item.originalFileName,
+            sourceIdentifier:
+                item.sourceIdentifier,
+            contentTypeIdentifier:
+                item.contentTypeIdentifier
+        )
+    }
+
+    func isSupportedIntakeItem(
+        _ item: ExternalPhotoIntakeItem
+    ) -> Bool {
+
+        guard item.managedURL.isFileURL else {
+            return false
+        }
+
+        let declaredType =
+            item.contentTypeIdentifier
+            .flatMap(UTType.init)
+        let extensionType =
+            UTType(
+                filenameExtension:
+                    item.managedURL
+                    .pathExtension
+                    .lowercased()
+            )
+        let contentType =
+            declaredType
+            ?? extensionType
+
+        return PhotoProcessingInputPolicy(
+            allowsLivePhoto: true
+        )
+        .isSupportedContentType(contentType)
     }
 }

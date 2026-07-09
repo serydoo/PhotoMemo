@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 
 struct PhotoMemoShareDiagnosticStage:
     RawRepresentable,
@@ -27,10 +28,16 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "app.openURL.file")
     nonisolated static let appOpenURLShare =
         Self(rawValue: "app.openURL.share")
+    nonisolated static let appPickerItemObserved =
+        Self(rawValue: "app.picker.itemObserved")
     nonisolated static let appRequestDropped =
         Self(rawValue: "app.request.dropped")
     nonisolated static let appRequestValidated =
         Self(rawValue: "app.request.validated")
+    nonisolated static let appEnqueueTaskRoute =
+        Self(rawValue: "app.enqueue.taskRoute")
+    nonisolated static let batchTaskRoute =
+        Self(rawValue: "batch.task.route")
 
     nonisolated static let extensionError =
         Self(rawValue: "extension.error")
@@ -58,8 +65,12 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "extension.item.imported")
     nonisolated static let extensionItemSkipped =
         Self(rawValue: "extension.item.skipped")
+    nonisolated static let extensionLivePhotoRepresentationProbe =
+        Self(rawValue: "extension.livePhotoRepresentation.probe")
     nonisolated static let extensionPersisted =
         Self(rawValue: "extension.persisted")
+    nonisolated static let extensionProviderObserved =
+        Self(rawValue: "extension.provider.observed")
     nonisolated static let extensionRequestCreated =
         Self(rawValue: "extension.request.created")
     nonisolated static let extensionRequestPersisted =
@@ -79,6 +90,12 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "liveActivity.request.created")
     nonisolated static let liveActivityRequestFailed =
         Self(rawValue: "liveActivity.request.failed")
+    nonisolated static let livePhotoVideoCompositionGeometry =
+        Self(rawValue: "livePhoto.videoComposition.geometry")
+    nonisolated static let livePhotoAssetResourcesObserved =
+        Self(rawValue: "livePhoto.assetResources.observed")
+    nonisolated static let livePhotoAssetResourceExportFailed =
+        Self(rawValue: "livePhoto.assetResource.exportFailed")
 }
 
 struct PhotoMemoShareDiagnosticEvent:
@@ -305,6 +322,160 @@ enum PhotoMemoShareDiagnostics {
         )
         defaults.synchronize()
         return .success
+    }
+}
+
+enum PhotoMemoShareProviderTypeSelection {
+
+    nonisolated static let livePhotoTypeIdentifiers: Set<String> = [
+        "com.apple.live-photo",
+        "com.apple.live-photo-bundle"
+    ]
+
+    nonisolated static func preferredImportTypeIdentifier(
+        from registeredTypeIdentifiers: [String]
+    ) -> String? {
+
+        preferredLivePhotoTypeIdentifier(
+            from: registeredTypeIdentifiers
+        )
+        ?? preferredImageTypeIdentifier(
+            from: registeredTypeIdentifiers
+        )
+    }
+
+    nonisolated static func preferredLivePhotoTypeIdentifier(
+        from registeredTypeIdentifiers: [String]
+    ) -> String? {
+
+        registeredTypeIdentifiers.first {
+            livePhotoTypeIdentifiers.contains($0)
+        }
+    }
+
+    nonisolated static func preferredImageTypeIdentifier(
+        from registeredTypeIdentifiers: [String]
+    ) -> String? {
+
+        registeredTypeIdentifiers
+            .compactMap(UTType.init)
+            .first { type in
+                type.conforms(to: .image)
+            }?
+            .identifier
+    }
+
+    nonisolated static func supportsLivePhoto(
+        _ registeredTypeIdentifiers: [String]
+    ) -> Bool {
+
+        registeredTypeIdentifiers.contains {
+            livePhotoTypeIdentifiers.contains($0)
+        }
+    }
+}
+
+enum PhotoMemoShareLivePhotoRepresentationProbe {
+
+    nonisolated static func message(
+        operation: String,
+        providerIndex: Int,
+        typeIdentifier: String,
+        resultDescription: String? = nil,
+        url: URL?,
+        error: Error?
+    ) -> String {
+
+        var parts = [
+            "operation=\(operation)",
+            "providerIndex=\(providerIndex)",
+            "type=\(typeIdentifier)"
+        ]
+
+        if let resultDescription {
+            parts.append(resultDescription)
+        }
+
+        if let error {
+            let nsError = error as NSError
+            parts.append(
+                "error=\(nsError.domain)/\(nsError.code)"
+            )
+            parts.append(
+                "description=\(nsError.localizedDescription)"
+            )
+            return parts.joined(separator: ", ")
+        }
+
+        guard let url else {
+            if resultDescription == nil {
+                parts.append("result=nil")
+            }
+            return parts.joined(separator: ", ")
+        }
+
+        let normalizedURL =
+            url.standardizedFileURL
+        var isDirectory =
+            ObjCBool(false)
+        let exists =
+            FileManager.default.fileExists(
+                atPath: normalizedURL.path,
+                isDirectory:
+                    &isDirectory
+            )
+        let fileSize =
+            (
+                try? normalizedURL
+                    .resourceValues(
+                        forKeys: [
+                            .fileSizeKey
+                        ]
+                    )
+                    .fileSize
+            ) ?? nil
+        let childNames =
+            isDirectory.boolValue
+            ? (
+                (
+                    try? FileManager.default
+                        .contentsOfDirectory(
+                            atPath:
+                                normalizedURL.path
+                        )
+                ) ?? []
+            )
+            : []
+
+        parts.append(
+            "result=url"
+        )
+        parts.append(
+            "lastPathComponent=\(normalizedURL.lastPathComponent)"
+        )
+        parts.append(
+            "pathExtension=\(normalizedURL.pathExtension)"
+        )
+        parts.append(
+            "exists=\(exists)"
+        )
+        parts.append(
+            "isDirectory=\(isDirectory.boolValue)"
+        )
+
+        if let fileSize {
+            parts.append(
+                "bytes=\(fileSize)"
+            )
+        }
+
+        if !childNames.isEmpty {
+            parts.append(
+                "children=\(childNames.prefix(8).joined(separator: "|"))"
+            )
+        }
+
+        return parts.joined(separator: ", ")
     }
 }
 

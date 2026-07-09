@@ -1,6 +1,739 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-08
+Last updated: 2026-07-09
+
+## 2026-07-09 Live Photo Description Metadata Parity Verified
+
+Live Photo runtime output now preserves the MemoMark description metadata path
+used by still-image export.
+
+Runtime / metadata finding:
+
+- Classification: Composition / metadata propagation
+- Symptom: Live Photo visual output was present, but the motion-preserving still
+  HEIC resource did not yet have the same smart-module / right-bottom export
+  description behavior as ordinary still-image export.
+- Root cause: `LivePhotoBatchTaskProcessor` needed to pass
+  `CardVariableProvider.exportDescription(from:)` into the Live Photo still
+  composition path, and HEIC `UserComment` must not receive non-ASCII text that
+  ImageIO reads back as corrupted truncated Unicode.
+- Foundation changed: No.
+
+Implementation result:
+
+- Live Photo motion-preserving output now derives the export description from
+  the built `RecordCard`.
+- `LivePhotoPairCompositionService` passes that description only into the still
+  HEIC composer, not the MOV composer.
+- The composed still HEIC writes stable description metadata through TIFF
+  `ImageDescription` and IPTC `CaptionAbstract`.
+- Non-ASCII HEIC descriptions are no longer written into EXIF `UserComment`
+  when ImageIO would produce corrupted truncated text.
+
+Verification:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS' \
+  -only-testing:PhotoMemoTests/LivePhotoStillImageCompositionServiceTests \
+  -only-testing:PhotoMemoTests/LivePhotoPairCompositionServiceTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/ExternalPhotoIntakeCenterTests \
+  -only-testing:PhotoMemoTests/PhotoImportServiceTests \
+  -only-testing:PhotoMemoTests/MediaOutputPolicyTests \
+  -only-testing:PhotoMemoTests/MediaProcessingRouterTests \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  test
+
+git diff --check
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoLivePhotoReviewIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoLivePhotoReviewShareExtensionBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+- Focused tests passed.
+- `git diff --check` passed.
+- `PhotoMemoiOS` Debug generic iOS build passed.
+- `PhotoMemoShareExtension` Debug generic iOS build passed.
+
+Merge-readiness note:
+
+- The main iOS picker path has the strongest evidence for Live Photo adoption
+  because it preserves the PhotoKit asset identifier needed for still + MOV
+  resource export.
+- Share Extension intake has diagnostics and build coverage, but real-device
+  Live Photo sharing remains a separate production-validation evidence item.
+- UI refinements for failed-item thumbnail/reason presentation remain deferred
+  until after Live Photo support is merged into `main`.
+
+## 2026-07-09 Live Photo Release Readiness Review
+
+Current product status:
+
+- `Media Geometry Foundation`: closed
+- `Live Photo Main App Picker Pipeline`: release candidate / production
+  candidate
+- `Share Extension Live Photo`: known limitation and future production
+  validation item
+- failed-item thumbnail/reason UI: deferred polish, not a merge blocker for the
+  main app picker capability
+
+Release review conclusion:
+
+- Live Photo should no longer be described as active feature R&D for the main
+  app picker path.
+- The correct current label is `Release Readiness Review`.
+- Main app picker evidence now covers automatic media routing, motion-preserving
+  Live Photo output, static-image output, geometry adoption through
+  `CanonicalGeometry`, still/video pairing identity consistency, footer/photo
+  geometry consistency, output-description metadata on the composed still image,
+  and batch queue routing.
+
+Build matrix passed in the integration worktree:
+
+- `PhotoMemoiOS` Debug generic iOS build
+- `PhotoMemoShareExtension` Debug generic iOS build
+- `PhotoMemoWidgetExtension` Debug generic iOS build
+- `PhotoMemo` Debug macOS build
+
+Focused verification passed:
+
+- `MemoryResultContractTests/batchConfigurationSnapshotRemainsTransportDTOForProductionSemantics`
+- `MediaGeometryArchitectureTests`
+- `MediaGeometryFoundationCoreTests`
+- `LivePhotoVideoCompositionServiceTests`
+- `LivePhotoStillImageCompositionServiceTests`
+- `LivePhotoVideoMetadataWriterContractTests/revisesMOVMetadataByReplacingPairingContentIdentifier`
+- `LivePhotoPairCompositionServiceTests`
+- Live Photo asset/identity/readback focused group:
+  - `LivePhotoAssetLoaderContractTests`
+  - `LivePhotoAssetWriterContractTests`
+  - `LivePhotoPairingIdentityVerifierTests`
+  - `LivePhotoAssetReadbackVerificationTests`
+- media routing/policy/planner/router/runtime-gate focused group
+- `PhotoMemoiOSV1PhotoIntakeTests`
+- `LivePhotoBatchQueueExecutionTests`
+- `ExternalPhotoIntakeCenterTests`
+
+Important test-harness caveat:
+
+- broad `PhotoMemoTests` runs can still hang during Xcode result finalization
+- observed Xcode state includes:
+  - `waiting for record to finish saving`
+  - `Finalize test log`
+  - `waiting for workers to materialize`
+- interrupting that state can produce exit code `75` and false-looking
+  `TEST INTERRUPTED` output
+- current focused reruns do not reproduce a stable Live Photo assertion failure
+
+Known non-blocking warnings:
+
+- macOS deployment target is set to `27.0`, while the installed SDK supports up
+  to `26.5.99`
+- `GeocoderService.swift` still uses APIs deprecated in macOS 26
+
+Git/release caveat:
+
+- branch `codex/ios-livephoto-internal-test` is behind `origin/main` by one
+  commit
+- the worktree remains intentionally dirty with the Live Photo integration
+  diff
+- do not merge to `main` until the branch has a clean checkpoint commit and the
+  one-commit divergence from `origin/main` has been resolved safely
+
+Recommended next action:
+
+- treat the main app picker Live Photo path as merge-candidate scope after a
+  safe commit/rebase or merge-from-main pass
+- keep Share Extension Live Photo runtime validation as a separate known
+  limitation, not as a blocker for the main app picker release candidate
+- avoid reopening Media Geometry Foundation unless runtime evidence proves
+  `CanonicalGeometry` itself is wrong
+
+## 2026-07-09 Task Status Terminal History Cleanup Verified
+
+The persistent `需处理 / 待处理` task-page state after successful Live Photo
+runtime output has been classified as a queue-history lifecycle issue, not a
+Media Geometry Foundation, renderer, composer, or export failure.
+
+Runtime finding:
+
+- Classification: Runtime / task-state projection
+- Symptom: the main app task page continued to show `需处理 / 待处理` after the
+  Live Photo runtime path had already produced successful output.
+- Root cause: old terminal external jobs from pre-fix `PHPhotosErrorDomain 3164`
+  runs remained in the persisted App Group queue and were still projected as
+  needs-attention history after restart.
+- Decision: `清理历史` must clear terminal external jobs, including failed
+  retryable histories, while preserving active jobs and in-app preview jobs.
+- Foundation changed: No.
+
+Implementation result:
+
+- `PhotoMemoBackgroundStatusService` no longer lets older retryable failure jobs
+  mask the latest external job.
+- `BatchQueueStore.clearTerminalExternalJobHistory` clears terminal external
+  history instead of only completed external jobs.
+- Task-page presentation now exposes `清理历史` for terminal snapshots, including
+  single failed / unsupported histories.
+
+Verification:
+
+```bash
+git diff --check
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS' \
+  -only-testing:PhotoMemoTests/V1SettingsPagePresenterTests \
+  -only-testing:PhotoMemoTests/QueueStatusMigrationTests \
+  -only-testing:PhotoMemoTests/PhotoMemoBackgroundStatusServiceTests \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  test
+```
+
+- Focused tests passed.
+- `PhotoMemoiOS` Debug iPhone7 device build passed.
+- The build was installed and launched on the connected iPhone7.
+- Before cleanup, device evidence showed only old failed terminal jobs, all from
+  earlier `PHPhotosErrorDomain 3164` runs.
+- After tapping `清理历史`, device evidence showed `batchQueue.jobs` was empty.
+- After a process-level app restart, the old failed jobs did not return.
+- A pending external-intake request was drained after restart and completed as a
+  new `10:57（5张）` job; all five tasks completed successfully and
+  `externalIntake.requests` was empty.
+
+Private evidence paths:
+
+- `/tmp/PhotoMemoRuntimeEvidence/20260709-task-status-still-pending-current`
+- `/tmp/PhotoMemoRuntimeEvidence/20260709-task-status-terminal-clear-postfix`
+- `/tmp/PhotoMemoRuntimeEvidence/20260709-task-status-terminal-clear-relaunch`
+- `/tmp/PhotoMemoRuntimeEvidence/20260709-task-status-terminal-clear-process-restart`
+
+## 2026-07-09 MGF-2B Runtime R005 iCloud Resource Export Fixed
+
+MGF-2B runtime validation found and fixed a Runtime-layer Live Photo export
+failure without reopening Geometry Foundation.
+
+Runtime finding:
+
+- Classification: Runtime / R005 Export / Import
+- Failed phase: `exporting`
+- Symptom: iCloud-backed Live Photo `.HEIC` assets failed before geometry or
+  composition.
+- Error: `PHPhotosErrorDomain 3164`
+- Root cause: `3164` is `PHPhotosErrorNetworkAccessRequired`; PhotoKit resource
+  export was using default `PHAssetResourceRequestOptions`, so iCloud-backed
+  Live Photo MOV resources could not be downloaded before export.
+
+Fix:
+
+- `PhotoKitLivePhotoAssetResourceExporter` now exports resources with
+  `PHAssetResourceRequestOptions.isNetworkAccessAllowed = true`.
+- Existing paired-video fallback remains in place:
+  `fullSizePairedVideo -> pairedVideo`.
+- No `CanonicalGeometry`, Geometry Core, Renderer, Composer, or Foundation
+  document was modified for this runtime-only failure.
+
+Verification:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS' \
+  -only-testing:PhotoMemoTests/LivePhotoAssetLoaderContractTests \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  test
+```
+
+- Focused contract tests passed, including the regression guard that PhotoKit
+  resource exports allow network access.
+- `git diff --check` passed.
+- `PhotoMemoiOS` Debug iPhone7 device build passed.
+- The build was installed and launched on the connected iPhone7.
+
+Runtime evidence:
+
+- Private evidence directory:
+  `/tmp/PhotoMemoRuntimeEvidence/20260709-mgf2b-network-access-progress2`
+- Job `3FF84449-DE92-4A2B-A251-77E6A5BBFF0E` processed 11 Live Photos and
+  completed successfully.
+- All 11 tasks have `phase=completed` and saved asset identifiers.
+- The previous `PHPhotosErrorDomain 3164` events remain only on the old
+  pre-fix job `BD1F5D7E-59A1-463C-B206-3AE0873F7C32`.
+
+Next validation:
+
+- User should confirm Photos runtime behavior for the newly saved outputs:
+  recognition as Live Photo, long-press playback, still-to-video transition,
+  and portrait/landscape geometry.
+
+## 2026-07-09 MGF-2A Geometry Adoption Completed
+
+MGF-2 has been split into two implementation stages:
+
+```text
+MGF-2A: Geometry Adoption Completion
+MGF-2B: Runtime Validation
+```
+
+Closed milestones:
+
+- MGF-0 Foundation Freeze: Closed
+- MGF-1 Geometry Core Implementation: Closed
+- MGF-2A Geometry Adoption Completion: Closed
+
+MGF-2A is complete. The first production consumer has accepted the Geometry
+Foundation boundary: Live Photo composition no longer owns duplicated geometry
+logic and now consumes `CanonicalGeometry` for composition decisions.
+
+What changed:
+
+- `LivePhotoGeometryResolver` now adapts MGF-1 `MediaGeometryResolver` facts
+  into the Live Photo composition path.
+- Live Photo pair composition resolves `CanonicalGeometry` once before still
+  and video composition.
+- The same `CanonicalGeometry` value is passed to still and video pairing
+  composers.
+- Still and video pairing composition use `geometry.canvas` to construct their
+  effective composition overlay.
+- The V1 renderer footer image content remains sourced from the existing
+  rendered overlay, preserving current footer visual rules.
+- Composer architecture guardrails remain active: composers no longer observe
+  `CGImageSource`, `PHAsset`, `AVAssetTrack`, `naturalSize`, or
+  `preferredTransform`.
+
+Important architecture rule frozen during review:
+
+```text
+API shape is not Architecture Adoption.
+```
+
+`CanonicalGeometry` appearing in a function signature is not enough. Adoption
+requires the consumer to remove duplicated domain logic and make composition
+decisions from the Foundation truth.
+
+MGF-2A completion rule:
+
+```text
+A Foundation is not proven by its implementation. It is proven by the first
+consumer that no longer owns the same domain logic.
+```
+
+MGF-2A Adoption Review Checklist:
+
+- [x] Consumer no longer derives Geometry Truth.
+- [x] Consumer receives Geometry Truth.
+- [x] Consumer uses Geometry Truth for canvas/photo/footer composition frames.
+- [x] Consumer does not recreate Geometry Truth between resolver and composer.
+- [x] Legacy composer media-observation logic is protected by architecture
+  tests.
+
+Focused verification passed:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS' \
+  -only-testing:PhotoMemoTests/LivePhotoPairCompositionServiceTests \
+  -only-testing:PhotoMemoTests/LivePhotoVideoCompositionServiceTests \
+  -only-testing:PhotoMemoTests/LivePhotoStillImageCompositionServiceTests \
+  -only-testing:PhotoMemoTests/MediaGeometryArchitectureTests \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  test
+```
+
+Debug build passed:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemo \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoMGF2BRouteBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Known environment warning remains:
+
+- Xcode reports the current macOS deployment target as `27.0`, while the
+  installed SDK supports up to `26.5.99`; tests still pass.
+
+MGF-2 is not complete yet. Remaining work belongs to MGF-2B Runtime Validation.
+
+MGF-2B mission:
+
+```text
+Prove Media Geometry Foundation holds in the iOS Photos Runtime.
+```
+
+Runtime validation principle:
+
+```text
+Runtime Validation validates runtime behavior. It never redesigns Foundation.
+```
+
+MGF-2B is a Runtime Sprint, not a refactor sprint. Do not optimize or reshape
+implementation code unless a runtime failure has first been reproduced and
+classified.
+
+Runtime quality discipline:
+
+```text
+One runtime failure, one root cause.
+```
+
+Investigate one failing runtime scenario at a time. Do not bundle portrait,
+landscape, metadata, footer, animation, and playback changes into one fix.
+
+Required first question for every runtime finding:
+
+```text
+Is Truth wrong, or is the Consumer wrong?
+```
+
+Foundation change burden:
+
+```text
+Do not ask whether Foundation should change. Prove CanonicalGeometry is wrong.
+```
+
+If that proof is missing, the finding must remain Runtime or Composition.
+
+MGF-2B issue triage order:
+
+1. Runtime bug:
+   Photos recognition, pairing identity, MOV pairing, long-press playback,
+   export/import, or runtime metadata behavior.
+2. Composition bug:
+   Footer, overlay, canvas, crop, stretch, or transition geometry after
+   `CanonicalGeometry` has already been consumed.
+3. Foundation bug:
+   Only when evidence proves `CanonicalGeometry`, the resolver, or the linter
+   produced incorrect truth.
+
+Issue classification:
+
+| Area | Code | Meaning |
+|---|---|---|
+| Runtime | R001 | Pairing |
+| Runtime | R002 | Photos Recognition |
+| Runtime | R003 | Playback |
+| Runtime | R004 | Transition |
+| Runtime | R005 | Export / Import |
+| Runtime | R006 | Runtime Metadata |
+| Composition | C001 | Footer |
+| Composition | C002 | Overlay |
+| Composition | C003 | Canvas |
+| Composition | C004 | Crop / Stretch |
+| Foundation | F001 | Canonical Geometry |
+| Foundation | F002 | Resolver |
+| Foundation | F003 | Linter |
+
+RuntimeValidationChecklist:
+
+- [ ] Photos recognizes the output as a Live Photo.
+- [ ] Still image and MOV pairing identity remains intact.
+- [ ] Long-press playback works.
+- [ ] Still-to-motion transition is visually stable.
+- [ ] Portrait Live Photo output remains portrait.
+- [ ] Portrait Live Photo output is not stretched.
+- [ ] Footer remains fixed and visually consistent with V1 renderer output.
+- [ ] Static JPEG/HEIC output behavior remains unchanged.
+- [ ] Simulator smoke is used only for UI/static routing regressions.
+- [ ] Final acceptance is performed on the connected iPhone Photos runtime.
+
+Runtime Regression Matrix:
+
+| Validation | Portrait | Landscape |
+|---|---|---|
+| Recognized by Photos | [ ] | [ ] |
+| Long press playback | [ ] | [ ] |
+| Still-to-motion transition | [ ] | [ ] |
+| Footer fixed and aligned | [ ] | [ ] |
+| No stretch | [ ] | [ ] |
+| Static export unchanged | [ ] | [ ] |
+
+Fixed device validation order:
+
+1. Import Live Photo.
+2. Export Live Photo.
+3. Verify Photos recognition.
+4. Verify long-press playback.
+5. Verify still-to-motion transition.
+6. Verify footer geometry.
+7. Verify portrait output.
+8. Verify landscape output.
+
+Stop on the first failed runtime pipeline step. For example, if Photos does not
+recognize the output as a Live Photo, do not continue to long-press playback,
+transition, footer, portrait, or landscape validation.
+
+Runtime Report format:
+
+```text
+Runtime Validation
+
+[ ] Live Photo Recognized
+[ ] Asset Identifier Match
+[ ] Long Press Playback
+[ ] Still-to-Video Transition
+[ ] Geometry Hash Match
+[ ] Footer Bounds Match
+[ ] Portrait OK
+[ ] Landscape OK
+
+Issue:
+Classification:
+Code:
+Layer:
+Root Cause:
+Decision:
+Foundation Changed: No
+```
+
+MGF-2B Stop Rule:
+
+```text
+MGF-2B ends when all runtime failures can be classified without changing
+Foundation.
+```
+
+MGF-2B Exit Gates:
+
+- Gate 1: Foundation is not modified for runtime-only failures.
+- Gate 2: Every issue is classified as Runtime, Composition, or Foundation.
+- Gate 3: Runtime Regression Matrix passes for the accepted validation scope.
+- Gate 4: Runtime behavior is stable on the connected iPhone Photos runtime.
+
+Runtime Evidence:
+
+- Runtime reports live under
+  `Docs/Foundations/MediaGeometry/RuntimeReports/`.
+- Private `.heic`, `.mov`, screenshots, and screen recordings must not be
+  committed.
+- Store private evidence outside the repository and record only safe paths,
+  hashes, dimensions, and conclusions.
+
+Suggested daily scope:
+
+- Day 1: Portrait Runtime.
+- Day 2: Landscape Runtime.
+- Day 3: Playback Transition.
+- Day 4: Runtime Metadata Validation.
+
+## 2026-07-08 MGF-1 Complete and MGF-2 Boundary Frozen
+
+MGF-1 is complete against the frozen Exit Criteria.
+
+Formal conclusion:
+
+```text
+MGF-1 is complete: Media Geometry Core has established the unique,
+JSON-snapshot-verifiable CanonicalGeometry foundation layer.
+```
+
+Implemented Geometry Core:
+
+- `CanonicalGeometry`
+- `MediaGeometryFacts`
+- `CanvasGeometry`
+- `MediaGeometryOrientation`
+- `MediaGeometryResolver`
+- `GeometryIssue`
+- `GeometryLinter`
+- `GeometrySnapshotSerializer`
+
+Implementation boundary preserved:
+
+- no Live Photo composer changes
+- no renderer changes
+- no exporter changes
+- no Overlay adoption
+- no UIKit or SwiftUI dependency in Geometry Core
+- no AVFoundation dependency in Geometry Core
+
+The first resolver consumer is now JSON Geometry Snapshot.
+
+Focused verification passed:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS' \
+  -only-testing:PhotoMemoTests/MediaGeometryFoundationCoreTests \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  test
+```
+
+Covered cases:
+
+- portrait JPEG stable JSON snapshot
+- landscape JPEG stable JSON snapshot
+- portrait HEIC stable JSON snapshot
+- landscape HEIC stable JSON snapshot
+- HEIC Orientation Right display-space resolution
+- HEIC Orientation Left display-space resolution
+- machine-readable linter issue code
+- source dependency guard for Geometry Core imports
+
+Known environment warning:
+
+- Xcode reports the current macOS deployment target as `27.0`, while the
+  installed SDK supports up to `26.5.99`; tests still pass.
+
+Next MGF-1 work should stay inside Geometry Core unless implementation feedback
+requires a narrow adjustment. Live Photo adoption remains paused until the
+Geometry Core result is reviewed and accepted.
+
+MGF-2 is now the next implementation boundary:
+
+```text
+MGF-2: Live Photo Geometry Adoption
+```
+
+MGF-2 mission:
+
+```text
+Adopt Geometry Truth through the first real production consumer.
+```
+
+MGF-2 architecture guardrails:
+
+```text
+Live Photo Composer consumes CanonicalGeometry. It never derives geometry.
+
+Live Photo Composer never observes media. It only observes composition inputs.
+```
+
+MGF-2 scope:
+
+- resolve still-image geometry before composer entry
+- pass the same `CanonicalGeometry` into still and video composition
+- derive footer/canvas placement from display-space geometry
+- preserve existing V1 static-image routing and output behavior
+- verify the current portrait Live Photo horizontal/stretch regression through
+  tests before changing composer behavior
+
+MGF-2 non-goals:
+
+- output format UI redesign
+- metadata policy redesign
+- RAW/HDR/ProRAW adoption
+- general video export support
+- renderer visual polish unrelated to geometry
+
+MGF-2 acceptance target:
+
+- portrait Live Photo output remains portrait
+- portrait Live Photo output is not stretched
+- landscape Live Photo output remains landscape
+- still and video composition consume the same `CanonicalGeometry`
+- composer code does not parse EXIF orientation, inspect `AVAssetTrack`, infer
+  from `naturalSize` or `preferredTransform`, or swap width/height locally
+- composer code does not inspect `CGImageSource`, raw image properties,
+  `PHAsset`, `AVAsset`, or source media objects
+- dependency acceptance proves composer has no direct `ImageIO`, `PhotoKit`, or
+  media-observation `AVFoundation` dependency
+- geometry consistency acceptance proves Resolver output equals Composer input
+  without reconstructing another `CanonicalGeometry`
+- static JPEG/HEIC output behavior remains unchanged
+- focused tests and Debug build pass
+- final acceptance is real iPhone Photos recognition and long-press playback
+
+## 2026-07-08 MGF-0 Complete: Media Geometry Foundation Freeze
+
+The Live Photo portrait regression has been elevated from a Live Photo-specific
+bug to a media-pipeline foundation issue.
+
+Foundation status:
+
+- `Media Geometry Foundation`
+- MGF-0 Foundation Freeze: `Completed`
+- MGF-1 Geometry Core Implementation: `Completed`
+- MGF-2 Live Photo Geometry Adoption: `Boundary frozen / next`
+
+Architecture status:
+
+| Layer | Item | Status |
+|---|---|---|
+| Production Ready | iOS V1 release line | Active |
+| Foundations | Configuration Foundation | Accepted |
+| Foundations | Memory Expression Foundation | Accepted |
+| Foundations | Production Media Pipeline | In progress |
+| Foundations | Media Geometry Foundation | MGF-0 completed |
+| Implementations | Geometry Core | MGF-1 completed |
+| Implementations | Live Photo Geometry Adoption | MGF-2 boundary frozen / next |
+
+Canonical architecture documents:
+
+- `Docs/Foundations/README.md`
+- `Docs/Foundations/MediaGeometry/Manifest.md`
+- `Docs/02_Architecture/RFC-002-Media-Geometry-Foundation.md`
+- `Docs/ADR/ADR-008-MediaGeometryFoundation.md`
+- `Docs/Foundations/MediaGeometry/README.md`
+- `Docs/Foundations/MediaGeometry/GeometryConstitution.md`
+- `Docs/Foundations/MediaGeometry/FoundationChecklist.md`
+
+Frozen principles:
+
+- Geometry is a property of media, not Renderer, Composer, or Exporter.
+- Geometry is resolved once, consumed everywhere.
+- `CanonicalGeometry` is the only cross-module Geometry Truth and is immutable.
+- Geometry verification uses Geometry Linter and JSON Geometry Snapshot, not
+  downstream runtime correction.
+
+Implementation boundary:
+
+- The first consumer of Geometry Resolver must be Geometry Snapshot, not Live
+  Photo Composer.
+- Ordinary JPEG/HEIC still-image geometry must be stable before Live Photo
+  composer migration resumes.
+- No further Live Photo-specific geometry patch should be applied until
+  Geometry Models, Resolver, Linter, and Snapshot are in place.
+
+MGF-1 acceptance target:
+
+- Produce stable JSON-snapshot-verifiable `CanonicalGeometry` for ordinary
+  JPEG/HEIC still images.
+- Start with portrait HEIC, landscape HEIC, Orientation Right, and Orientation
+  Left.
+- Add portrait JPEG and landscape JPEG snapshot stability before adoption work.
+- Keep `GeometrySnapshotSerializer` pure: input is `CanonicalGeometry`, not
+  image or asset objects.
+- Keep `GeometryLinter` pure: input is `CanonicalGeometry`, output is
+  `[GeometryIssue]`.
+- Do not modify Live Photo composer, renderer, or exporter during the first
+  Geometry Core implementation slice.
+
+MGF-1 mission:
+
+```text
+MGF-1 does not render anything. It proves that MemoMark can derive one
+immutable Geometry Truth from a still image.
+```
 
 ## 2026-07-08 iOS release entry unified as PhotoMemoiOS
 

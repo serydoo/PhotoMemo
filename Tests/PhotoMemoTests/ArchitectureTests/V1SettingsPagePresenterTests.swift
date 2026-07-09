@@ -213,6 +213,9 @@ struct V1SettingsPagePresenterTests {
             presentation.currentTask.progressText
             == "1 张暂不支持"
         )
+        #expect(
+            presentation.canClearCompletedHistory
+        )
     }
 }
 #endif

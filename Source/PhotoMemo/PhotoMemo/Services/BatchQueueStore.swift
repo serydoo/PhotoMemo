@@ -50,7 +50,9 @@ final class BatchQueueStore: ObservableObject {
         previewCoordinator:
             PreviewCoordinator? = nil,
         exportCoordinator:
-            ExportCoordinator? = nil
+            ExportCoordinator? = nil,
+        livePhotoProcessor:
+            (any LivePhotoBatchTaskProcessing)? = nil
     ) {
         let resolvedDefaults =
             defaults
@@ -77,7 +79,9 @@ final class BatchQueueStore: ObservableObject {
                 previewCoordinator:
                     previewCoordinator,
                 exportCoordinator:
-                    exportCoordinator
+                    exportCoordinator,
+                livePhotoProcessor:
+                    livePhotoProcessor
             )
         self.persistence =
             BatchQueuePersistence(
@@ -268,7 +272,7 @@ final class BatchQueueStore: ObservableObject {
         )
     }
 
-    func clearCompletedExternalJobHistory(
+    func clearTerminalExternalJobHistory(
         preserving preservedJobID: UUID?
     ) {
 
@@ -291,8 +295,7 @@ final class BatchQueueStore: ObservableObject {
                     return true
                 }
 
-                return job.hasRetryableFailures
-                    || job.failedTaskCount > 0
+                return false
             }
 
         guard jobs.count != originalCount else {

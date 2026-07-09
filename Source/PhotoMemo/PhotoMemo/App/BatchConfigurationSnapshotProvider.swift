@@ -41,6 +41,9 @@ struct BatchConfigurationSnapshotProvider {
         static let locationDisplayConfiguration =
             "photomemo.locationDisplayConfiguration"
 
+        static let mediaOutputMode =
+            "photomemo.v1.mediaOutputMode"
+
         static let personalProfile =
             "photomemo.personalProfile"
     }
@@ -88,7 +91,12 @@ struct BatchConfigurationSnapshotProvider {
                         Keys.selectedAlbumIdentifier
                 ) ?? "",
             locationDisplayConfiguration:
-                loadLocationDisplayConfiguration()
+                loadLocationDisplayConfiguration(),
+            mediaOutputModeRawValue:
+                defaults.string(
+                    forKey:
+                        Keys.mediaOutputMode
+                )
         )
     }
 
@@ -148,7 +156,8 @@ struct BatchConfigurationSnapshotProvider {
         photoDescriptionOverride: String,
         selectedAlbumIdentifier: String,
         locationDisplayConfiguration:
-            ExpressionModuleConfiguration? = nil
+            ExpressionModuleConfiguration? = nil,
+        mediaOutputModeRawValue: String? = nil
     ) -> BatchConfigurationSnapshot {
         let resolvedAnchor =
             resolvedAnchor(
@@ -197,7 +206,9 @@ struct BatchConfigurationSnapshotProvider {
             selectedAlbumIdentifier:
                 normalizedAlbumIdentifier(
                     selectedAlbumIdentifier
-                )
+                ),
+            mediaOutputModeRawValue:
+                mediaOutputModeRawValue
         )
 
 #if !PHOTOMEMO_SHARE_EXTENSION

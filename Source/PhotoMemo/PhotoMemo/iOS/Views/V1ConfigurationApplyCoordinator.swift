@@ -17,6 +17,8 @@ struct V1ConfigurationApplyRequest:
     let timeAnchorTitle: String
     let timeAnchorDate: Date
     let outputTarget: V1IOSOutputTarget
+    let mediaOutputMode:
+        V1MediaOutputMode
     let availableAlbums: [PhotoAlbumOption]
     let selectedExistingAlbumIdentifier: String
     let newAlbumName: String
@@ -35,6 +37,8 @@ struct V1ConfigurationApplyRequest:
         timeAnchorTitle: String,
         timeAnchorDate: Date,
         outputTarget: V1IOSOutputTarget,
+        mediaOutputMode:
+            V1MediaOutputMode = .originalFormat,
         availableAlbums: [PhotoAlbumOption],
         selectedExistingAlbumIdentifier: String,
         newAlbumName: String
@@ -55,6 +59,8 @@ struct V1ConfigurationApplyRequest:
         self.timeAnchorTitle = timeAnchorTitle
         self.timeAnchorDate = timeAnchorDate
         self.outputTarget = outputTarget
+        self.mediaOutputMode =
+            mediaOutputMode
         self.availableAlbums = availableAlbums
         self.selectedExistingAlbumIdentifier =
             selectedExistingAlbumIdentifier
@@ -197,7 +203,9 @@ struct V1ConfigurationApplyCoordinator {
                             title:
                                 albumSelection
                                 .title
-                        )
+                        ),
+                    mediaOutputMode:
+                        request.mediaOutputMode
                 )
 
             switch await saveConfiguration(

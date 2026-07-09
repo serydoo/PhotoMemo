@@ -16,6 +16,8 @@ struct V1ConfigurationApplyBuildInput: Hashable {
     let customMemoryWriteText: String
     let birthdayDate: Date
     let outputTarget: V1IOSOutputTarget
+    let mediaOutputMode:
+        V1MediaOutputMode
     let availableAlbums: [PhotoAlbumOption]
     let selectedExistingAlbumIdentifier: String
     let newAlbumName: String
@@ -122,6 +124,8 @@ enum V1ConfigurationApplyRequestBuilder {
                 resolvedAnchorDate,
             outputTarget:
                 input.outputTarget,
+            mediaOutputMode:
+                input.mediaOutputMode,
             availableAlbums:
                 input.availableAlbums,
             selectedExistingAlbumIdentifier:

@@ -177,6 +177,9 @@ struct V1ConfigurationBootstrapReadState {
     let selectedAlbumIdentifier: String
 
     let selectedAlbumTitle: String
+
+    let mediaOutputMode:
+        V1MediaOutputMode
 }
 
 @MainActor
@@ -223,6 +226,9 @@ final class SettingsService: ObservableObject {
         static let selectedAlbumTitle =
             "photomemo.selectedAlbumTitle"
 
+        static let mediaOutputMode =
+            "photomemo.v1.mediaOutputMode"
+
         static let selectedMemorySubject =
             "photomemo.selectedMemorySubject"
 
@@ -259,6 +265,10 @@ final class SettingsService: ObservableObject {
     @Published var selectedAlbumTitle = ""
 
     @Published
+    var mediaOutputMode:
+        V1MediaOutputMode = .originalFormat
+
+    @Published
     var activeConfigurationSlotID:
         WorkspaceConfigurationSlotID = .slot1
 
@@ -288,6 +298,8 @@ final class SettingsService: ObservableObject {
         loadPhotoDescriptionSettings()
 
         loadEditorState()
+
+        loadMediaOutputMode()
 
         if selectedTemplate == nil {
             selectedTemplate = .template1
@@ -319,6 +331,8 @@ final class SettingsService: ObservableObject {
         loadPhotoDescriptionSettings()
 
         loadEditorState()
+
+        loadMediaOutputMode()
 
         if selectedTemplate == nil {
             selectedTemplate = .template1
@@ -499,6 +513,16 @@ final class SettingsService: ObservableObject {
         )
     }
 
+    func saveMediaOutputMode(
+        _ mode: V1MediaOutputMode
+    ) {
+        mediaOutputMode = mode
+        defaults.set(
+            mode.rawValue,
+            forKey: Keys.mediaOutputMode
+        )
+    }
+
     func schedulePhotoDescriptionSettingsSave() {
 
         photoDescriptionSaveTask?.cancel()
@@ -523,6 +547,7 @@ final class SettingsService: ObservableObject {
         saveBadge()
         savePhotoDescriptionSettings()
         saveEditorState()
+        saveMediaOutputMode(mediaOutputMode)
         saveConfigurationSlots()
     }
 
@@ -606,7 +631,9 @@ final class SettingsService: ObservableObject {
             selectedAlbumIdentifier:
                 selectedAlbumIdentifier,
             selectedAlbumTitle:
-                selectedAlbumTitle
+                selectedAlbumTitle,
+            mediaOutputMode:
+                mediaOutputMode
         )
     }
 
@@ -819,6 +846,21 @@ final class SettingsService: ObservableObject {
             ) ?? ""
     }
 
+    private func loadMediaOutputMode() {
+        guard let rawValue =
+            defaults.string(
+                forKey: Keys.mediaOutputMode
+            ),
+              let mode =
+            V1MediaOutputMode(rawValue: rawValue)
+        else {
+            mediaOutputMode = .originalFormat
+            return
+        }
+
+        mediaOutputMode = mode
+    }
+
     private func loadConfigurationSlots() {
 
         if let activeSlotRawValue =
@@ -947,7 +989,9 @@ extension SettingsService {
                 selectedAlbumIdentifier
                 ?? self.selectedAlbumIdentifier,
             locationDisplayConfiguration:
-                loadLocationDisplayConfiguration()
+                loadLocationDisplayConfiguration(),
+            mediaOutputModeRawValue:
+                mediaOutputMode.rawValue
         )
     }
 

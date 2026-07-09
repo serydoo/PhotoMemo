@@ -1371,7 +1371,12 @@ struct ConfigurationCenteriOSView: View {
                 preservingJobID:
                     backgroundStatusService
                     .currentSnapshot?
+                    .presentationState == .active
+                    ?
+                    backgroundStatusService
+                    .currentSnapshot?
                     .jobID
+                    : nil
             )
         refreshProcessingState()
     }

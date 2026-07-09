@@ -71,6 +71,41 @@ struct PhotoProcessingInputPolicyTests {
         #expect(verdict.title == "暂不支持 Live Photo")
     }
 
+    @Test("Allows Live Photo packages only through the internal runtime gate")
+    func allowsLivePhotosOnlyThroughInternalRuntimeGate() throws {
+
+        let livePhotoType =
+            try #require(
+                UTType("com.apple.live-photo")
+            )
+        let policy =
+            PhotoProcessingInputPolicy(
+                allowsLivePhoto: true
+            )
+
+        #expect(
+            PhotoProcessingInputPolicy
+                .standard
+                .isSupportedContentType(livePhotoType)
+            == false
+        )
+        #expect(
+            policy.isSupportedContentType(
+                livePhotoType
+            )
+        )
+
+        let verdict =
+            policy.verdict(
+                contentType: livePhotoType,
+                pixelWidth: nil,
+                pixelHeight: nil
+            )
+
+        #expect(verdict.isSupported)
+        #expect(verdict.reason == nil)
+    }
+
     @Test("Accepts current highest standard iPhone still-photo dimensions")
     func acceptsHighestStandardIPhoneStillPhotoDimensions() {
 

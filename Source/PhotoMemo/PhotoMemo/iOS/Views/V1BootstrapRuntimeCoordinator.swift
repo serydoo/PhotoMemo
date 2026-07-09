@@ -9,6 +9,8 @@ struct V1BootstrapViewProjection:
     let logoMode: V1LogoMode
     let logoStatusMessage: String?
     let outputTarget: V1IOSOutputTarget
+    let mediaOutputMode:
+        V1MediaOutputMode
     let selectedExistingAlbumIdentifier: String
     let suggestedNewAlbumName: String?
     let locationDisplayConfiguration:
@@ -84,6 +86,8 @@ struct V1BootstrapRuntimeCoordinator {
                     patch.logoStatusMessage,
                 outputTarget:
                     patch.outputTarget,
+                mediaOutputMode:
+                    patch.mediaOutputMode,
                 selectedExistingAlbumIdentifier:
                     patch
                     .selectedExistingAlbumIdentifier,

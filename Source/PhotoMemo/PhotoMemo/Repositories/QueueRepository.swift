@@ -90,7 +90,7 @@ final class QueueRepository {
     ) {
 
         batchQueueStore
-            .clearCompletedExternalJobHistory(
+            .clearTerminalExternalJobHistory(
                 preserving: jobID
             )
     }

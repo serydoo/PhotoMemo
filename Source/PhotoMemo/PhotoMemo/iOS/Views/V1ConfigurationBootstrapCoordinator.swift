@@ -46,6 +46,8 @@ struct V1ConfigurationBootstrapCoordinator {
                     customLogoBadge: nil,
                     logoMode: .appleMini,
                     outputTarget: .automatic,
+                    mediaOutputMode:
+                        .originalFormat,
                     selectedExistingAlbumIdentifier:
                         "",
                     suggestedNewAlbumName: nil

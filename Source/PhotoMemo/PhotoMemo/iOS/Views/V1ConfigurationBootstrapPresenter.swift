@@ -13,6 +13,9 @@ struct V1ConfigurationBootstrapProjection:
     let outputTarget:
         V1IOSOutputTarget
 
+    let mediaOutputMode:
+        V1MediaOutputMode
+
     let selectedExistingAlbumIdentifier:
         String
 
@@ -39,6 +42,8 @@ enum V1ConfigurationBootstrapPresenter {
                 state.logoMode,
             outputTarget:
                 state.outputTarget,
+            mediaOutputMode:
+                state.mediaOutputMode,
             selectedExistingAlbumIdentifier:
                 state
                 .selectedExistingAlbumIdentifier,

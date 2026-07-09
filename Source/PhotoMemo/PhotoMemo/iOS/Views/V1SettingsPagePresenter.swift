@@ -68,7 +68,7 @@ enum V1SettingsPagePresenter {
                     from: events
                 ),
             canClearCompletedHistory:
-                (snapshot?.overflowQueueCount ?? 0) > 0
+                canClearHistory(snapshot)
         )
     }
 }
@@ -150,6 +150,18 @@ private extension V1SettingsPagePresenter {
             updatedAt: nil,
             progressFraction: nil
         )
+    }
+
+    static func canClearHistory(
+        _ snapshot:
+            PhotoMemoBackgroundJobSnapshot?
+    ) -> Bool {
+        guard let snapshot else {
+            return false
+        }
+
+        return snapshot.overflowQueueCount > 0
+            || snapshot.presentationState != .active
     }
 
     static func progressText(

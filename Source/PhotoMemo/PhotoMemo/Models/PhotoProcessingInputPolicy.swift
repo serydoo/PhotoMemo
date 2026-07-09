@@ -32,11 +32,15 @@ struct PhotoProcessingInputPolicy: Hashable {
     let maximumPixelDimension: Int
     let maximumPixelCount: Int
     let maximumAspectRatio: Double
+    let allowsLivePhoto:
+        Bool
 
     init(
         maximumPixelDimension: Int = 8064,
         maximumPixelCount: Int = 8064 * 6048,
-        maximumAspectRatio: Double = 3
+        maximumAspectRatio: Double = 3,
+        allowsLivePhoto:
+            Bool = false
     ) {
         self.maximumPixelDimension =
             max(maximumPixelDimension, 1)
@@ -44,6 +48,8 @@ struct PhotoProcessingInputPolicy: Hashable {
             max(maximumPixelCount, 1)
         self.maximumAspectRatio =
             max(maximumAspectRatio, 1)
+        self.allowsLivePhoto =
+            allowsLivePhoto
     }
 
     nonisolated func isSupportedContentType(
@@ -54,8 +60,8 @@ struct PhotoProcessingInputPolicy: Hashable {
             return false
         }
 
-        guard !Self.isLivePhotoContentType(contentType) else {
-            return false
+        if Self.isLivePhotoContentType(contentType) {
+            return allowsLivePhoto
         }
 
         return Self.supportedImageTypes.contains {
@@ -74,11 +80,20 @@ struct PhotoProcessingInputPolicy: Hashable {
         }
 
         if Self.isLivePhotoContentType(contentType) {
+            guard allowsLivePhoto else {
+                return Verdict(
+                    isSupported: false,
+                    reason: .livePhoto,
+                    title: "暂不支持 Live Photo",
+                    message: "请先在系统相册中选择静态照片，或将 Live Photo 另存为普通照片后再处理。"
+                )
+            }
+
             return Verdict(
-                isSupported: false,
-                reason: .livePhoto,
-                title: "暂不支持 Live Photo",
-                message: "请先在系统相册中选择静态照片，或将 Live Photo 另存为普通照片后再处理。"
+                isSupported: true,
+                reason: nil,
+                title: "可以处理 Live Photo",
+                message: ""
             )
         }
 

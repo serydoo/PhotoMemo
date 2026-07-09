@@ -47,6 +47,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 customMemoryWriteText: "第一次一起看海",
                 birthdayDate: birthdayDate,
                 outputTarget: .existingAlbum,
+                mediaOutputMode: .originalFormat,
                 availableAlbums: albums,
                 selectedExistingAlbumIdentifier: "album-1",
                 newAlbumName: "成长记录"
@@ -154,6 +155,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                     customMemoryWriteText: "",
                     birthdayDate: staleBirthdayDate,
                     outputTarget: .automatic,
+                    mediaOutputMode: .originalFormat,
                     availableAlbums: [],
                     selectedExistingAlbumIdentifier: "",
                     newAlbumName:
@@ -225,6 +227,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                         .date
                         ?? Date(timeIntervalSince1970: 1_704_067_200),
                     outputTarget: .automatic,
+                    mediaOutputMode: .originalFormat,
                     availableAlbums: [],
                     selectedExistingAlbumIdentifier: "",
                     newAlbumName:
@@ -267,6 +270,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 customMemoryWriteText: "不会被保存",
                 birthdayDate: Date(timeIntervalSince1970: 1_704_067_200),
                 outputTarget: .automatic,
+                mediaOutputMode: .originalFormat,
                 availableAlbums: [],
                 selectedExistingAlbumIdentifier: "",
                 newAlbumName: PhotoMemoAlbumSelection.defaultAlbumTitle

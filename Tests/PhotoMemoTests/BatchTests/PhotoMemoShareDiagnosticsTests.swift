@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UniformTypeIdentifiers
 @testable import PhotoMemo
 
 @Suite("PhotoMemo share diagnostics")
@@ -115,6 +116,31 @@ struct PhotoMemoShareDiagnosticsTests {
         )
         #expect(
             PhotoMemoShareDiagnosticStage(
+                rawValue: "app.enqueue.taskRoute"
+            ) == .appEnqueueTaskRoute
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "app.picker.itemObserved"
+            ) == .appPickerItemObserved
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "batch.task.route"
+            ) == .batchTaskRoute
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "extension.provider.observed"
+            ) == .extensionProviderObserved
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "extension.livePhotoRepresentation.probe"
+            ) == .extensionLivePhotoRepresentationProbe
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
                 rawValue: "extension.source.ready"
             ) == .extensionSourceReady
         )
@@ -122,6 +148,87 @@ struct PhotoMemoShareDiagnosticsTests {
             PhotoMemoShareDiagnosticStage(
                 rawValue: "liveActivity.request.created"
             ) == .liveActivityRequestCreated
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "livePhoto.videoComposition.geometry"
+            ) == .livePhotoVideoCompositionGeometry
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "livePhoto.assetResources.observed"
+            ) == .livePhotoAssetResourcesObserved
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "livePhoto.assetResource.exportFailed"
+            ) == .livePhotoAssetResourceExportFailed
+        )
+    }
+
+    @Test("Live Photo provider type selection prefers Live Photo before image")
+    func livePhotoProviderTypeSelectionPrefersLivePhotoBeforeImage() {
+        let selectedType =
+            PhotoMemoShareProviderTypeSelection
+            .preferredImportTypeIdentifier(
+                from: [
+                    UTType.jpeg.identifier,
+                    "com.apple.live-photo",
+                    UTType.heic.identifier
+                ]
+            )
+
+        #expect(selectedType == "com.apple.live-photo")
+        #expect(
+            PhotoMemoShareProviderTypeSelection
+                .supportsLivePhoto(
+                    [
+                        UTType.jpeg.identifier,
+                        "com.apple.live-photo",
+                        UTType.heic.identifier
+                    ]
+            )
+        )
+    }
+
+    @Test("Live Photo representation probe messages include operation")
+    func livePhotoRepresentationProbeMessagesIncludeOperation() {
+        let message =
+            PhotoMemoShareLivePhotoRepresentationProbe
+            .message(
+                operation: "loadItem",
+                providerIndex: 0,
+                typeIdentifier: "com.apple.live-photo",
+                resultDescription: "itemClass=PHLivePhoto",
+                url: nil,
+                error: nil
+            )
+
+        #expect(message.contains("operation=loadItem"))
+        #expect(message.contains("type=com.apple.live-photo"))
+        #expect(message.contains("itemClass=PHLivePhoto"))
+    }
+
+    @Test("Static image provider type selection falls back to first supported image")
+    func staticImageProviderTypeSelectionFallsBackToFirstSupportedImage() {
+        let selectedType =
+            PhotoMemoShareProviderTypeSelection
+            .preferredImportTypeIdentifier(
+                from: [
+                    UTType.jpeg.identifier,
+                    UTType.heic.identifier
+                ]
+            )
+
+        #expect(selectedType == UTType.jpeg.identifier)
+        #expect(
+            !PhotoMemoShareProviderTypeSelection
+                .supportsLivePhoto(
+                    [
+                        UTType.jpeg.identifier,
+                        UTType.heic.identifier
+                    ]
+                )
         )
     }
 

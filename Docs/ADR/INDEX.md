@@ -9,5 +9,6 @@
 | ADR-005 | Editor Projection Engine | Accepted | 2026-06-20 | Editor-only projection logic is isolated from MainView while remaining outside renderer, export, and batch boundaries. |
 | ADR-006 | Memory Engine Foundation | Accepted | 2026-06-20 | Memory-oriented variables are derived through a dedicated local-first domain layer between metadata inputs and the variable pipeline. |
 | ADR-007 | Provider-Based Expression Architecture | Accepted | 2026-07-06 | Canonical Providers compile domain facts into provider-neutral Expression Values before values enter ExpressionContext and Renderer. |
+| ADR-008 | Media Geometry Foundation | Accepted | 2026-07-08 | Geometry is resolved once into immutable CanonicalGeometry and consumed read-only by Renderer, Composer, and Exporter. |
 
 Future ADRs should be appended to this table.

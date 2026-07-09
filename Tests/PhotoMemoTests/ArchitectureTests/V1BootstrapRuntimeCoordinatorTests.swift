@@ -31,6 +31,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 logoMode: .subjectAvatar,
                 logoStatusMessage: "已使用头像",
                 outputTarget: .existingAlbum,
+                mediaOutputMode: .staticImage,
                 selectedExistingAlbumIdentifier: "album-1",
                 suggestedNewAlbumName: "成长记录",
                 locationDisplayConfiguration:
@@ -94,6 +95,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 logoMode: .subjectAvatar,
                 logoStatusMessage: "已使用头像",
                 outputTarget: .existingAlbum,
+                mediaOutputMode: .staticImage,
                 selectedExistingAlbumIdentifier: "album-1",
                 suggestedNewAlbumName: "成长记录",
                 locationDisplayConfiguration:
@@ -142,6 +144,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 logoMode: .appleMini,
                 logoStatusMessage: nil,
                 outputTarget: .automatic,
+                mediaOutputMode: .originalFormat,
                 selectedExistingAlbumIdentifier: "",
                 suggestedNewAlbumName: nil,
                 locationDisplayConfiguration: nil,

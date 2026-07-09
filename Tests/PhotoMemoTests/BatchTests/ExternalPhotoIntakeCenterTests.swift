@@ -1,6 +1,7 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 import Testing
+import UniformTypeIdentifiers
 @testable import PhotoMemo
 
 @Suite("ExternalPhotoIntakeCenter")
@@ -71,6 +72,110 @@ struct ExternalPhotoIntakeCenterTests {
         #expect(
             request.urls.map(\.lastPathComponent)
             == ["IMG_0001.dng"]
+        )
+    }
+
+    @MainActor
+    @Test("accepts Live Photo intake items with source asset identity")
+    func acceptsLivePhotoIntakeItemsWithSourceAssetIdentity() throws {
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeCenterTests.LivePhoto.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let intakeDirectoryURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        defer {
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let center =
+            ExternalPhotoIntakeCenter(
+                intakeStore:
+                    ExternalPhotoIntakeStore(
+                        defaults: defaults,
+                        intakeDirectoryURL:
+                            intakeDirectoryURL
+                    ),
+                settingsService:
+                    SettingsService(
+                        defaults: defaults
+                    )
+            )
+        let livePhotoType =
+            try #require(
+                UTType(
+                    "com.apple.live-photo"
+                )
+            )
+        let livePhotoItem =
+            ExternalPhotoIntakeItem(
+                managedURL:
+                    URL(
+                        fileURLWithPath:
+                            "/tmp/IMG_6093.HEIC"
+                    ),
+                originalFileName:
+                    "IMG_6093.HEIC",
+                sourceIdentifier:
+                    "live-photo-local-identifier",
+                contentTypeIdentifier:
+                    livePhotoType.identifier
+            )
+        let unsupportedItem =
+            ExternalPhotoIntakeItem(
+                managedURL:
+                    URL(
+                        fileURLWithPath:
+                            "/tmp/notes.txt"
+                    ),
+                contentTypeIdentifier:
+                    UTType.plainText.identifier
+            )
+
+        center.submit(
+            items: [
+                livePhotoItem,
+                livePhotoItem,
+                unsupportedItem
+            ],
+            source: .quickAction
+        )
+
+        let request =
+            try #require(
+                center.drainPendingRequests().first
+            )
+        let payload =
+            try #require(
+                request.intakePayloads.first
+            )
+
+        #expect(request.urls.count == 1)
+        #expect(payload.fileName == "IMG_6093.HEIC")
+        #expect(
+            payload.sourceIdentifier
+            == "live-photo-local-identifier"
+        )
+        #expect(
+            payload.contentTypeIdentifier
+            == livePhotoType.identifier
         )
     }
 }

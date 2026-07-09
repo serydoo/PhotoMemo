@@ -161,6 +161,56 @@ struct PhotoMemoiOSV1PhotoIntakeTests {
         #expect(events == ["save", "import", "submit:1"])
     }
 
+    @Test("saves current configuration before submitting picked photo payloads")
+    func savesCurrentConfigurationBeforeSubmittingPickedPhotoPayloads() async {
+        var events: [String] = []
+        let item =
+            ExternalPhotoIntakeItem(
+                managedURL:
+                    URL(fileURLWithPath: "/tmp/IMG_6093.HEIC"),
+                originalFileName:
+                    "IMG_6093.HEIC",
+                sourceIdentifier:
+                    "live-photo-local-identifier",
+                contentTypeIdentifier:
+                    UTType("com.apple.live-photo")?.identifier
+            )
+
+        let result =
+            await V1PhotoProcessingQuickActionCoordinator
+            .processPickedPhotoItems(
+                saveCurrentConfiguration: {
+                    events.append("save")
+                    return true
+                },
+                importItems: {
+                    events.append("import")
+                    return [
+                        item
+                    ]
+                },
+                submit: { submittedItems in
+                    events.append(
+                        "submit:\(submittedItems.count)"
+                    )
+                }
+            )
+
+        #expect(result.status == .submitted)
+        #expect(
+            result.submittedURLs
+            == [
+                item.managedURL
+            ]
+        )
+        #expect(
+            result.submittedItems == [
+                item
+            ]
+        )
+        #expect(events == ["save", "import", "submit:1"])
+    }
+
     @Test("does not import or submit when configuration save fails")
     func doesNotSubmitWhenConfigurationSaveFails() async {
         var events: [String] = []

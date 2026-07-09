@@ -1,6 +1,7 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 import CryptoKit
+import Photos
 import UniformTypeIdentifiers
 import UIKit
 
@@ -234,6 +235,10 @@ final class PhotoMemoShareExtensionIntakeService {
                 "providers=\(providers.count), itemProviders=\(itemProviders.count)",
             requestID:
                 requestID
+        )
+        recordProviderDiagnostics(
+            itemProviders,
+            requestID: requestID
         )
         var managedItems:
             [ExternalPhotoIntakeItem] = []
@@ -565,6 +570,44 @@ private extension PhotoMemoShareExtensionIntakeService {
         }
     }
 
+    func recordProviderDiagnostics(
+        _ providers: [NSItemProvider],
+        requestID: UUID
+    ) {
+
+        for (index, provider) in providers.enumerated() {
+            let identifiers =
+                provider.registeredTypeIdentifiers
+            let preferredImageType =
+                preferredImageTypeIdentifier(
+                    from: identifiers
+                )
+            let supportsLivePhoto =
+                PhotoMemoShareProviderTypeSelection
+                .supportsLivePhoto(
+                    identifiers
+                )
+            let supportsMovie =
+                identifiers
+                .contains {
+                    UTType($0)?
+                        .conforms(to: .movie)
+                        == true
+                }
+            let joinedIdentifiers =
+                identifiers
+                .prefix(12)
+                .joined(separator: ",")
+
+            PhotoMemoShareDiagnostics.record(
+                stage: .extensionProviderObserved,
+                message:
+                    "index=\(index), suggestedName=\(provider.suggestedName ?? "nil"), preferredImageType=\(preferredImageType ?? "nil"), supportsLivePhoto=\(supportsLivePhoto), supportsMovie=\(supportsMovie), registeredTypes=\(joinedIdentifiers)",
+                requestID: requestID
+            )
+        }
+    }
+
     func loadManagedURL(
         from provider: NSItemProvider,
         requestID: UUID,
@@ -574,11 +617,13 @@ private extension PhotoMemoShareExtensionIntakeService {
         seenSourceKeys: inout Set<String>
     ) async -> ManagedImportOutcome {
 
+        let registeredTypeIdentifiers =
+            provider
+            .registeredTypeIdentifiers
         let preferredTypeIdentifier =
             preferredImageTypeIdentifier(
                 from:
-                    provider
-                    .registeredTypeIdentifiers
+                    registeredTypeIdentifiers
             )
         let diagnosticsSeed =
             PhotoMemoShareIntakeOperationSeed(
@@ -596,6 +641,20 @@ private extension PhotoMemoShareExtensionIntakeService {
         PhotoMemoShareIntakeLog.notice(
             "Provider[\(index)] selectedUTType=\(UTType.image.identifier) preferredUTType=\(preferredTypeIdentifier ?? "unknown")"
         )
+
+        if let livePhotoTypeIdentifier =
+            PhotoMemoShareProviderTypeSelection
+            .preferredLivePhotoTypeIdentifier(
+                from: registeredTypeIdentifiers
+            ) {
+            await probeLivePhotoRepresentation(
+                from: provider,
+                typeIdentifier:
+                    livePhotoTypeIdentifier,
+                requestID: requestID,
+                index: index
+            )
+        }
 
         let fileLoadResult =
             await loadFileRepresentationResult(
@@ -921,6 +980,219 @@ private extension PhotoMemoShareExtensionIntakeService {
                             failureContext: nil
                         )
                 )
+            }
+        }
+    }
+
+    func probeLivePhotoRepresentation(
+        from provider: NSItemProvider,
+        typeIdentifier: String,
+        requestID: UUID,
+        index: Int
+    ) async {
+
+        await probeLivePhotoFileRepresentation(
+            from: provider,
+            typeIdentifier: typeIdentifier,
+            requestID: requestID,
+            index: index
+        )
+        await probeLivePhotoItemRepresentation(
+            from: provider,
+            typeIdentifier: typeIdentifier,
+            requestID: requestID,
+            index: index
+        )
+        await probeLivePhotoDataRepresentation(
+            from: provider,
+            typeIdentifier: typeIdentifier,
+            requestID: requestID,
+            index: index
+        )
+        await probeLivePhotoObjectRepresentation(
+            from: provider,
+            typeIdentifier: typeIdentifier,
+            requestID: requestID,
+            index: index
+        )
+    }
+
+    func probeLivePhotoFileRepresentation(
+        from provider: NSItemProvider,
+        typeIdentifier: String,
+        requestID: UUID,
+        index: Int
+    ) async {
+
+        await withCheckedContinuation {
+            (continuation: CheckedContinuation<Void, Never>) in
+
+            provider.loadFileRepresentation(
+                forTypeIdentifier:
+                    typeIdentifier
+            ) { url, error in
+
+                let message =
+                    PhotoMemoShareLivePhotoRepresentationProbe
+                    .message(
+                        operation: "loadFileRepresentation",
+                        providerIndex: index,
+                        typeIdentifier:
+                            typeIdentifier,
+                        resultDescription: nil,
+                        url: url,
+                        error: error
+                    )
+
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionLivePhotoRepresentationProbe,
+                    message: message,
+                    requestID: requestID
+                )
+
+                continuation.resume()
+            }
+        }
+    }
+
+    func probeLivePhotoItemRepresentation(
+        from provider: NSItemProvider,
+        typeIdentifier: String,
+        requestID: UUID,
+        index: Int
+    ) async {
+
+        await withCheckedContinuation {
+            (continuation: CheckedContinuation<Void, Never>) in
+
+            provider.loadItem(
+                forTypeIdentifier:
+                    typeIdentifier,
+                options: nil
+            ) { item, error in
+
+                let resultDescription =
+                    Self.livePhotoItemProbeResultDescription(
+                        item
+                    )
+                let message =
+                    PhotoMemoShareLivePhotoRepresentationProbe
+                    .message(
+                        operation: "loadItem",
+                        providerIndex: index,
+                        typeIdentifier:
+                            typeIdentifier,
+                        resultDescription:
+                            resultDescription,
+                        url: item as? URL,
+                        error: error
+                    )
+
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionLivePhotoRepresentationProbe,
+                    message: message,
+                    requestID: requestID
+                )
+
+                continuation.resume()
+            }
+        }
+    }
+
+    func probeLivePhotoDataRepresentation(
+        from provider: NSItemProvider,
+        typeIdentifier: String,
+        requestID: UUID,
+        index: Int
+    ) async {
+
+        await withCheckedContinuation {
+            (continuation: CheckedContinuation<Void, Never>) in
+
+            provider.loadDataRepresentation(
+                forTypeIdentifier:
+                    typeIdentifier
+            ) { data, error in
+
+                let resultDescription =
+                    data.map {
+                        "dataBytes=\($0.count)"
+                    }
+                let message =
+                    PhotoMemoShareLivePhotoRepresentationProbe
+                    .message(
+                        operation: "loadDataRepresentation",
+                        providerIndex: index,
+                        typeIdentifier:
+                            typeIdentifier,
+                        resultDescription:
+                            resultDescription,
+                        url: nil,
+                        error: error
+                    )
+
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionLivePhotoRepresentationProbe,
+                    message: message,
+                    requestID: requestID
+                )
+
+                continuation.resume()
+            }
+        }
+    }
+
+    func probeLivePhotoObjectRepresentation(
+        from provider: NSItemProvider,
+        typeIdentifier: String,
+        requestID: UUID,
+        index: Int
+    ) async {
+
+        let canLoadObject =
+            provider.canLoadObject(
+                ofClass:
+                    PHLivePhoto.self
+            )
+
+        await withCheckedContinuation {
+            (continuation: CheckedContinuation<Void, Never>) in
+
+            provider.loadObject(
+                ofClass:
+                    PHLivePhoto.self
+            ) { object, error in
+
+                let resultDescription =
+                    Self.livePhotoObjectProbeResultDescription(
+                        object,
+                        canLoadObject:
+                            canLoadObject
+                    )
+                let message =
+                    PhotoMemoShareLivePhotoRepresentationProbe
+                    .message(
+                        operation: "loadObject(PHLivePhoto)",
+                        providerIndex: index,
+                        typeIdentifier:
+                            typeIdentifier,
+                        resultDescription:
+                            resultDescription,
+                        url: nil,
+                        error: error
+                    )
+
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionLivePhotoRepresentationProbe,
+                    message: message,
+                    requestID: requestID
+                )
+
+                continuation.resume()
             }
         }
     }
@@ -1309,12 +1581,49 @@ private extension PhotoMemoShareExtensionIntakeService {
             [String]
     ) -> String? {
 
-        registeredTypeIdentifiers
-            .compactMap(UTType.init)
-            .first { type in
-                type.conforms(to: .image)
-            }?
-            .identifier
+        PhotoMemoShareProviderTypeSelection
+            .preferredImageTypeIdentifier(
+                from: registeredTypeIdentifiers
+            )
+    }
+
+    nonisolated static
+    func livePhotoItemProbeResultDescription(
+        _ item: NSSecureCoding?
+    ) -> String {
+
+        guard let item else {
+            return "item=nil"
+        }
+
+        if let data = item as? Data {
+            return "itemClass=Data, itemBytes=\(data.count)"
+        }
+
+        if let url = item as? URL {
+            return "itemClass=URL, itemURLLastPathComponent=\(url.lastPathComponent)"
+        }
+
+        return "itemClass=\(String(describing: type(of: item)))"
+    }
+
+    nonisolated static
+    func livePhotoObjectProbeResultDescription(
+        _ object: (any NSItemProviderReading)?,
+        canLoadObject: Bool
+    ) -> String {
+
+        guard let livePhoto =
+            object as? PHLivePhoto else {
+            return "canLoadObject=\(canLoadObject), object=nil"
+        }
+
+        return [
+            "canLoadObject=\(canLoadObject)",
+            "objectClass=PHLivePhoto",
+            "size=\(Int(livePhoto.size.width))x\(Int(livePhoto.size.height))"
+        ]
+        .joined(separator: ", ")
     }
 
     nonisolated static

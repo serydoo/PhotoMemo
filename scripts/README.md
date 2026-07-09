@@ -9,6 +9,9 @@ Current scripts:
 - `com.serydoo.photomemo.autosync.plist`
 - `export_options_v1_testing.plist` - local debugging export options
 - `export_options_testflight.plist` - App Store Connect/TestFlight upload export options
+- `collect-ios-runtime-evidence.sh` - pulls iPhone runtime diagnostics,
+  shared defaults, queue summaries, and PhotoMemo crash reports for MGF-2B
+  evidence review without copying private media.
 
 ## TestFlight Export
 
