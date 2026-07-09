@@ -433,11 +433,13 @@ struct MemoryResultContractTests {
                 "badge",
                 "anchor",
                 "memorySubjectText",
+                "locationDisplayConfiguration",
                 "frozenMemorySubject",
                 "frozenConfigurationSnapshot",
                 "shouldWritePhotoDescription",
                 "photoDescriptionOverride",
-                "selectedAlbumIdentifier"
+                "selectedAlbumIdentifier",
+                "mediaOutputModeRawValue"
             ]
         )
     }

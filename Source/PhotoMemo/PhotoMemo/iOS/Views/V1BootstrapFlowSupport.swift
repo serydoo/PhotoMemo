@@ -20,6 +20,8 @@ struct V1BootstrapFlowPatch {
     let logoMode: V1LogoMode
     let logoStatusMessage: String?
     let outputTarget: V1IOSOutputTarget
+    let mediaOutputMode:
+        V1MediaOutputMode
     let selectedExistingAlbumIdentifier: String
     let suggestedNewAlbumName: String?
     let locationDisplayConfiguration:
@@ -146,6 +148,8 @@ struct V1BootstrapFlowCoordinator {
                 : nil,
             outputTarget:
                 projection.outputTarget,
+            mediaOutputMode:
+                projection.mediaOutputMode,
             selectedExistingAlbumIdentifier:
                 projection
                 .selectedExistingAlbumIdentifier,

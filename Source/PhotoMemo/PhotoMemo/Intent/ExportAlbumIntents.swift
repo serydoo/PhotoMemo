@@ -42,6 +42,54 @@ enum V1IOSOutputTarget:
     }
 }
 
+enum V1MediaOutputMode:
+    String,
+    CaseIterable,
+    Identifiable,
+    Codable,
+    Hashable {
+
+    case originalFormat
+    case staticImage
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .originalFormat:
+            return "原格式"
+        case .staticImage:
+            return "静态图片"
+        }
+    }
+
+    var note: String {
+        switch self {
+        case .originalFormat:
+            return "普通照片按现有规则输出；Live Photo 会保留动态，并自动生成可配对的照片与视频资源。"
+        case .staticImage:
+            return "Live Photo 只输出加边框后的静态图片；普通照片继续按现有静态图片规则处理。"
+        }
+    }
+
+    var mediaProcessingIntent: MediaProcessingIntent {
+        switch self {
+        case .originalFormat:
+            return MediaProcessingIntent(
+                motionMode: .automatic,
+                outputPreference: .sourceCompatible
+            )
+        case .staticImage:
+            return MediaProcessingIntent(
+                motionMode: .stillImageOnly,
+                outputPreference: .sourceCompatible
+            )
+        }
+    }
+}
+
 struct V1ResolvedAlbumSelection:
     Hashable {
 

@@ -66,6 +66,73 @@ struct PhotoImportServiceTests {
         }
     }
 
+    @Test("Allows Live Photo still frames only when internal policy is supplied")
+    func allowsLivePhotoStillFramesWithInternalPolicy() async throws {
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let sourceData =
+            try Data(contentsOf: sourceURL)
+        let livePhotoType =
+            try #require(
+                UTType("com.apple.live-photo")
+            )
+
+        do {
+            _ =
+                try await PhotoImportService()
+                .importPhoto(
+                    from: sourceData,
+                    suggestedFileName:
+                        "IMG_6093.HEIC",
+                    contentType:
+                        livePhotoType,
+                    assetLocalIdentifier:
+                        "live-photo-local-identifier"
+                )
+
+            Issue.record(
+                "Expected the standard importer to reject Live Photo input."
+            )
+        } catch let error as PhotoImportError {
+            #expect(
+                error.inputPolicyReason
+                == .livePhoto
+            )
+        }
+
+        let importedPhoto =
+            try await PhotoImportService(
+                inputPolicy:
+                    PhotoProcessingInputPolicy(
+                        allowsLivePhoto: true
+                    )
+            )
+            .importPhoto(
+                from: sourceData,
+                suggestedFileName:
+                    "IMG_6093.HEIC",
+                contentType:
+                    livePhotoType,
+                assetLocalIdentifier:
+                    "live-photo-local-identifier"
+            )
+
+        #expect(
+            importedPhoto.mediaAsset.isLivePhoto
+        )
+        #expect(
+            importedPhoto.mediaAsset.sourceIdentifier
+            == "live-photo-local-identifier"
+        )
+        #expect(
+            importedPhoto.sourceInfo
+                .contentTypeIdentifier
+            == livePhotoType.identifier
+        )
+    }
+
     @Test("Rejects oversized media dimensions with input policy reason")
     func rejectsOversizedMediaDimensionsWithPolicyReason() async throws {
 

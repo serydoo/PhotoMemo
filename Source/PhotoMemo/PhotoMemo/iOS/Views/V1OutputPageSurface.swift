@@ -6,6 +6,9 @@ struct V1OutputPageSurface: View {
     @Binding
     var outputTarget: V1IOSOutputTarget
 
+    @Binding
+    var mediaOutputMode: V1MediaOutputMode
+
     let availableAlbums: [PhotoAlbumOption]
 
     @Binding
@@ -32,6 +35,8 @@ struct V1OutputPageSurface: View {
             VStack(spacing: 18) {
                 V1OutputSection(
                     outputTarget: $outputTarget,
+                    mediaOutputMode:
+                        $mediaOutputMode,
                     availableAlbums: availableAlbums,
                     selectedExistingAlbumIdentifier: $selectedExistingAlbumIdentifier,
                     newAlbumName: $newAlbumName,
@@ -71,6 +76,9 @@ private struct V1OutputSection: View {
     @Binding
     var outputTarget: V1IOSOutputTarget
 
+    @Binding
+    var mediaOutputMode: V1MediaOutputMode
+
     let availableAlbums: [PhotoAlbumOption]
 
     @Binding
@@ -92,6 +100,20 @@ private struct V1OutputSection: View {
                     }
                 }
                 .pickerStyle(.menu)
+
+                Divider()
+
+                Picker("媒体输出", selection: $mediaOutputMode) {
+                    ForEach(V1MediaOutputMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Text(mediaOutputMode.note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 switch outputTarget {
                 case .automatic,

@@ -25,6 +25,9 @@ final class BatchQueueExecution {
     private let exportCoordinator:
         ExportCoordinator
 
+    private let livePhotoProcessor:
+        any LivePhotoBatchTaskProcessing
+
     private let externalIntakeStore:
         ExternalPhotoIntakeStore
 
@@ -38,7 +41,9 @@ final class BatchQueueExecution {
         previewCoordinator:
             PreviewCoordinator? = nil,
         exportCoordinator:
-            ExportCoordinator? = nil
+            ExportCoordinator? = nil,
+        livePhotoProcessor:
+            (any LivePhotoBatchTaskProcessing)? = nil
     ) {
         self.coordinator =
             coordinator
@@ -74,6 +79,9 @@ final class BatchQueueExecution {
                 photoLibraryRepository:
                     resolvedPhotoLibraryRepository
             )
+        self.livePhotoProcessor =
+            livePhotoProcessor
+            ?? LivePhotoBatchTaskProcessor()
         self.externalIntakeStore =
             externalIntakeStore
             ?? .shared
@@ -290,6 +298,31 @@ final class BatchQueueExecution {
                 store.currentTask(
                     at: reference
                 ) else {
+                return
+            }
+
+            let usesLivePhotoProcessing =
+                shouldUseLivePhotoProcessing(
+                    for: task
+                )
+            PhotoMemoShareDiagnostics.record(
+                stage: .batchTaskRoute,
+                message:
+                    "fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), hasSourceIdentifier=\(task.sourceIdentifier?.isEmpty == false), route=\(usesLivePhotoProcessing ? "livePhoto" : "staticImage")",
+                jobID:
+                    store.currentJob(
+                        at: reference
+                    )?.id
+            )
+
+            if usesLivePhotoProcessing {
+                try await processLivePhotoTask(
+                    task: task,
+                    at: reference,
+                    in: store,
+                    totalProgressUnits:
+                        totalProgressUnits
+                )
                 return
             }
 
@@ -724,6 +757,117 @@ private extension BatchQueueExecution {
         return phase.isTerminal
     }
 
+    func shouldUseLivePhotoProcessing(
+        for task: BatchTask
+    ) -> Bool {
+        PhotoProcessingInputPolicy
+            .isLivePhotoContentType(
+                task
+                    .contentTypeIdentifier
+                    .flatMap(UTType.init)
+            )
+    }
+
+    func processLivePhotoTask(
+        task: BatchTask,
+        at reference: TaskReference,
+        in store: BatchQueueStore,
+        totalProgressUnits: Int
+    ) async throws {
+
+        guard let configuration =
+            store.currentJob(
+                at: reference
+            )?.configuration else {
+            return
+        }
+
+        store.updateTask(
+            at: reference
+        ) { task in
+            task.phase = .exporting
+            task.progress = BatchTaskProgress(
+                currentUnit:
+                    max(totalProgressUnits - 1, 1),
+                totalUnits:
+                    totalProgressUnits,
+                statusMessage:
+                    configuration
+                    .v1MediaOutputMode
+                    == .originalFormat
+                    ? "正在生成 Live Photo"
+                    : "正在生成静态图片"
+            )
+        }
+
+        let result =
+            try await livePhotoProcessor
+            .process(
+                task: task,
+                configuration:
+                    configuration
+            )
+
+        guard !shouldAbortFurtherProcessing(
+            at: reference,
+            in: store
+        ) else {
+            cleanupTemporaryFiles(
+                result.temporaryFileURLs
+            )
+            return
+        }
+
+        let notificationAttachmentURL =
+            result.notificationSourceURL
+            .flatMap {
+                makeNotificationAttachmentIfNeeded(
+                    from: $0,
+                    taskID: task.id
+                )
+            }
+
+        cleanupTemporaryFiles(
+            result.temporaryFileURLs
+        )
+
+        store.updateTask(
+            at: reference
+        ) { task in
+            task.renderedFileURL = nil
+            task.savedAlbumName =
+                result.saveResult.albumTitle
+            task.savedAssetIdentifier =
+                result.saveResult
+                .assetLocalIdentifier
+            task.notificationAttachmentURL =
+                notificationAttachmentURL
+            task.phase = .completed
+            task.progress = BatchTaskProgress(
+                currentUnit:
+                    totalProgressUnits,
+                totalUnits:
+                    totalProgressUnits,
+                statusMessage: "处理完成"
+            )
+        }
+
+        cleanupManagedTaskSourceIfNeeded(
+            at: reference,
+            in: store
+        )
+
+        if let jobID =
+            store.currentJobID(
+                at: reference
+            ) {
+            await store
+                .deliverFinalNotificationIfNeeded(
+                    for: jobID
+                )
+        }
+    }
+
     func cleanupManagedTaskSourceIfNeeded(
         at reference: TaskReference,
         in store: BatchQueueStore
@@ -740,6 +884,16 @@ private extension BatchQueueExecution {
             .cleanupManagedSourceIfNeeded(
                 at: sourceURL
             )
+    }
+
+    func cleanupTemporaryFiles(
+        _ urls: [URL]
+    ) {
+        for url in urls {
+            coordinator.cleanupTemporaryFile(
+                at: url
+            )
+        }
     }
 
     func makeNotificationAttachmentIfNeeded(

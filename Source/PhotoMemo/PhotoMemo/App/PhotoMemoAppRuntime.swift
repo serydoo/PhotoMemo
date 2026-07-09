@@ -164,6 +164,12 @@ final class PhotoMemoAppRuntime:
                     jobID:
                         receipt.job?.id
                 )
+
+                recordEnqueuedTaskRoutes(
+                    in: receipt.job,
+                    requestID:
+                        receipt.requestID
+                )
             case .failure(let error):
                 PhotoMemoShareDiagnostics.record(
                     stage: .appEnqueueFailed,
@@ -195,5 +201,32 @@ final class PhotoMemoAppRuntime:
                     batchQueueStore
                     .referencedManagedSourceURLs
             )
+    }
+
+    private func recordEnqueuedTaskRoutes(
+        in job: BatchJob?,
+        requestID: UUID
+    ) {
+
+        guard let job else {
+            return
+        }
+
+        for task in job.tasks.prefix(20) {
+            let contentType =
+                task.contentTypeIdentifier
+                ?? "nil"
+            let hasSourceIdentifier =
+                task.sourceIdentifier?
+                .isEmpty == false
+
+            PhotoMemoShareDiagnostics.record(
+                stage: .appEnqueueTaskRoute,
+                message:
+                    "fileName=\(task.fileName), contentType=\(contentType), hasSourceIdentifier=\(hasSourceIdentifier)",
+                requestID: requestID,
+                jobID: job.id
+            )
+        }
     }
 }

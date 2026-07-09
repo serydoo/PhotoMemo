@@ -93,6 +93,10 @@ struct PhotoMemoiOSV1View: View {
     private var outputTarget: V1IOSOutputTarget = .automatic
 
     @State
+    private var mediaOutputMode:
+        V1MediaOutputMode = .originalFormat
+
+    @State
     private var availableAlbums: [PhotoAlbumOption] = []
 
     @State
@@ -295,6 +299,8 @@ struct PhotoMemoiOSV1View: View {
 
                 outputTarget =
                     projection.outputTarget
+                mediaOutputMode =
+                    projection.mediaOutputMode
                 selectedExistingAlbumIdentifier =
                     projection
                     .selectedExistingAlbumIdentifier
@@ -625,14 +631,31 @@ struct PhotoMemoiOSV1View: View {
             bootstrapIfNeeded()
             refreshProcessingState()
         }
-        .photosPicker(
+        .sheet(
             isPresented:
                 $entryFlowState
-                .showsProcessingPhotoPicker,
-            selection: $selectedProcessingItems,
-            maxSelectionCount: 24,
-            matching: .images
-        )
+                .showsProcessingPhotoPicker
+        ) {
+            V1UIKitLivePhotoPicker(
+                selectionLimit: 24,
+                onCancel: {
+                    entryFlowState
+                        .showsProcessingPhotoPicker =
+                        false
+                },
+                onSelect: { results in
+                    entryFlowState
+                        .showsProcessingPhotoPicker =
+                        false
+
+                    Task {
+                        await importPickedPHPickerResults(
+                            results
+                        )
+                    }
+                }
+            )
+        }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else {
                 return
@@ -723,6 +746,9 @@ struct PhotoMemoiOSV1View: View {
             activeConfigurationStatus = .dirty
         }
         .onChange(of: outputTarget) { _, _ in
+            activeConfigurationStatus = .dirty
+        }
+        .onChange(of: mediaOutputMode) { _, _ in
             activeConfigurationStatus = .dirty
         }
         .onChange(of: selectedExistingAlbumIdentifier) { _, _ in
@@ -1093,6 +1119,8 @@ struct PhotoMemoiOSV1View: View {
     private var outputPage: some View {
         V1OutputPageSurface(
             outputTarget: $outputTarget,
+            mediaOutputMode:
+                $mediaOutputMode,
             availableAlbums: availableAlbums,
             selectedExistingAlbumIdentifier: $selectedExistingAlbumIdentifier,
             newAlbumName: $newAlbumName,
@@ -1892,6 +1920,8 @@ struct PhotoMemoiOSV1View: View {
                             birthdayDate,
                         outputTarget:
                             outputTarget,
+                        mediaOutputMode:
+                            mediaOutputMode,
                         availableAlbums:
                             availableAlbums,
                         selectedExistingAlbumIdentifier:
@@ -2253,7 +2283,12 @@ struct PhotoMemoiOSV1View: View {
                 preservingJobID:
                     backgroundStatusService
                     .currentSnapshot?
+                    .presentationState == .active
+                    ?
+                    backgroundStatusService
+                    .currentSnapshot?
                     .jobID
+                    : nil
             )
     }
 
@@ -2389,17 +2424,17 @@ struct PhotoMemoiOSV1View: View {
 
         let result =
             await V1PhotoProcessingQuickActionCoordinator
-            .processPickedPhotos(
+            .processPickedPhotoItems(
                 saveCurrentConfiguration: {
                     await applyCurrentV1Configuration()
                 },
-                importURLs: {
+                importItems: {
                     await V1PhotoIntakeImporter
-                        .importURLs(from: items)
+                        .importItems(from: items)
                 },
-                submit: { resolvedURLs in
+                submit: { resolvedItems in
                     externalIntakeCenter.submit(
-                        urls: resolvedURLs,
+                        items: resolvedItems,
                         source: .quickAction
                     )
                 }
@@ -2419,6 +2454,64 @@ struct PhotoMemoiOSV1View: View {
                                 .flatMap(
                                     \.supportedContentTypes
                                 )
+                        )
+                )
+        case .submitted:
+            refreshExternalIntake()
+            refreshProcessingState()
+        }
+
+        entryFlowState =
+            V1EntryFlowCoordinator
+            .applyQuickActionResult(
+                result,
+                to: entryFlowState
+            )
+    }
+
+    @MainActor
+    private func importPickedPHPickerResults(
+        _ results: [PHPickerResult]
+    ) async {
+        let result =
+            await V1PhotoProcessingQuickActionCoordinator
+            .processPickedPhotoItems(
+                saveCurrentConfiguration: {
+                    await applyCurrentV1Configuration()
+                },
+                importItems: {
+                    await V1PhotoIntakeImporter
+                        .importPHPickerResults(
+                            from: results
+                        )
+                },
+                submit: { resolvedItems in
+                    externalIntakeCenter.submit(
+                        items: resolvedItems,
+                        source: .quickAction
+                    )
+                }
+            )
+
+        switch result.status {
+        case .configurationSaveFailed:
+            return
+        case .noSupportedPhotos:
+            activeConfigurationStatus =
+                .failure(
+                    message:
+                        V1PhotoIntakeUnsupportedMessagePresenter
+                        .message(
+                            for:
+                                results
+                                .flatMap {
+                                    $0
+                                        .itemProvider
+                                        .registeredTypeIdentifiers
+                                        .compactMap(
+                                            UTType.init
+                                        )
+                                }
                         )
                 )
         case .submitted:

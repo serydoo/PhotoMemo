@@ -82,8 +82,8 @@ struct QueueStatusMigrationTests {
     }
 
     @MainActor
-    @Test("ClearCompletedQueueHistoryIntent removes completed external jobs through QueueCoordinator")
-    func clearCompletedQueueHistoryIntentRemovesCompletedExternalJobs() throws {
+    @Test("ClearCompletedQueueHistoryIntent removes terminal external jobs through QueueCoordinator")
+    func clearCompletedQueueHistoryIntentRemovesTerminalExternalJobs() throws {
 
         let suiteName =
             "PhotoMemo.QueueStatusMigrationTests.clear.\(UUID().uuidString)"
@@ -100,6 +100,10 @@ struct QueueStatusMigrationTests {
         let completedJobID =
             UUID()
         let failedJobID =
+            UUID()
+        let runningJobID =
+            UUID()
+        let inAppJobID =
             UUID()
         let configuration =
             BatchConfigurationSnapshot(
@@ -151,7 +155,45 @@ struct QueueStatusMigrationTests {
                                 phase: .exporting,
                                 message: "导出失败",
                                 canRetry: false
-                            )
+                        )
+                    )
+                ]
+            ),
+            BatchJob(
+                id: runningJobID,
+                title: "Running Share",
+                state: .running,
+                launchSource: .shareExtension,
+                configuration: configuration,
+                tasks: [
+                    BatchTask(
+                        sourceURL:
+                            URL(
+                                fileURLWithPath:
+                                    "/tmp/running.jpg"
+                            ),
+                        fileName:
+                            "running.jpg",
+                        phase: .exporting
+                    )
+                ]
+            ),
+            BatchJob(
+                id: inAppJobID,
+                title: "In App Preview",
+                state: .completed,
+                launchSource: .inAppPreview,
+                configuration: configuration,
+                tasks: [
+                    BatchTask(
+                        sourceURL:
+                            URL(
+                                fileURLWithPath:
+                                    "/tmp/in-app.jpg"
+                            ),
+                        fileName:
+                            "in-app.jpg",
+                        phase: .completed
                     )
                 ]
             )
@@ -189,10 +231,13 @@ struct QueueStatusMigrationTests {
 
         switch result {
         case .success:
-            #expect(batchQueueStore.jobs.count == 1)
+            #expect(batchQueueStore.jobs.count == 2)
             #expect(
-                batchQueueStore.jobs.first?.id
-                == failedJobID
+                batchQueueStore.jobs.map(\.id)
+                == [
+                    runningJobID,
+                    inAppJobID
+                ]
             )
         case .failure(let error):
             Issue.record(

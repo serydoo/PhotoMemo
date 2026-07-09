@@ -39,6 +39,9 @@ struct V1ConfigurationSaveRequest:
 
     let albumSelection: AlbumSelection
 
+    let mediaOutputMode:
+        V1MediaOutputMode
+
     init(
         subject: MemorySubject? = nil,
         subjects: [MemorySubject] = [],
@@ -51,7 +54,9 @@ struct V1ConfigurationSaveRequest:
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
         timeAnchor: TimeAnchor,
-        albumSelection: AlbumSelection
+        albumSelection: AlbumSelection,
+        mediaOutputMode:
+            V1MediaOutputMode = .originalFormat
     ) {
         self.subject = subject
         self.subjects = subjects
@@ -69,6 +74,8 @@ struct V1ConfigurationSaveRequest:
             photoDescriptionOverride
         self.timeAnchor = timeAnchor
         self.albumSelection = albumSelection
+        self.mediaOutputMode =
+            mediaOutputMode
     }
 }
 
@@ -95,6 +102,9 @@ struct V1ConfigurationBootstrapState:
     let outputTarget:
         V1IOSOutputTarget
 
+    let mediaOutputMode:
+        V1MediaOutputMode
+
     let selectedExistingAlbumIdentifier:
         String
 
@@ -113,6 +123,8 @@ struct V1ConfigurationBootstrapState:
         customLogoBadge: Badge?,
         logoMode: V1LogoMode,
         outputTarget: V1IOSOutputTarget,
+        mediaOutputMode:
+            V1MediaOutputMode = .originalFormat,
         selectedExistingAlbumIdentifier: String,
         suggestedNewAlbumName: String?,
         locationDisplayConfiguration:
@@ -127,6 +139,8 @@ struct V1ConfigurationBootstrapState:
         self.customLogoBadge = customLogoBadge
         self.logoMode = logoMode
         self.outputTarget = outputTarget
+        self.mediaOutputMode =
+            mediaOutputMode
         self.selectedExistingAlbumIdentifier =
             selectedExistingAlbumIdentifier
         self.suggestedNewAlbumName =

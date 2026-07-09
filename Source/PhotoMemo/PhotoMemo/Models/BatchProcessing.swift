@@ -234,6 +234,8 @@ struct BatchConfigurationSnapshot:
 
     var selectedAlbumIdentifier: String
 
+    var mediaOutputModeRawValue: String?
+
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
@@ -245,7 +247,8 @@ struct BatchConfigurationSnapshot:
             ExpressionModuleConfiguration? = nil,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
-        selectedAlbumIdentifier: String
+        selectedAlbumIdentifier: String,
+        mediaOutputModeRawValue: String? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -262,8 +265,30 @@ struct BatchConfigurationSnapshot:
             photoDescriptionOverride
         self.selectedAlbumIdentifier =
             selectedAlbumIdentifier
+        self.mediaOutputModeRawValue =
+            mediaOutputModeRawValue
     }
 }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+extension BatchConfigurationSnapshot {
+
+    var v1MediaOutputMode: V1MediaOutputMode {
+        guard
+            let mediaOutputModeRawValue,
+            let mode =
+                V1MediaOutputMode(
+                    rawValue:
+                        mediaOutputModeRawValue
+                )
+        else {
+            return .originalFormat
+        }
+
+        return mode
+    }
+}
+#endif
 
 #if !PHOTOMEMO_SHARE_EXTENSION
 extension BatchConfigurationSnapshot {

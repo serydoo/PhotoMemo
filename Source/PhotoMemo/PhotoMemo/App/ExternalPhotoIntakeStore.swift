@@ -77,6 +77,70 @@ final class ExternalPhotoIntakeStore {
         )
     }
 
+    func persistRequest(
+        items: [ExternalPhotoIntakeItem],
+        source: BatchJobLaunchSource,
+        importSummary:
+            ExternalPhotoImportSummary? = nil,
+        configurationSnapshot:
+            BatchConfigurationSnapshot
+    ) -> ExternalPhotoIntakeRequest? {
+
+        let normalizedItems =
+            uniqueIntakeItems(
+                from: items
+            )
+
+        let requestID = UUID()
+        let managedItems =
+            normalizedItems
+            .enumerated()
+            .compactMap {
+                index,
+                item -> ExternalPhotoIntakeItem? in
+
+                guard let managedURL =
+                    createManagedCopy(
+                        from: item.managedURL,
+                        requestID: requestID,
+                        index: index,
+                        preferredOriginalFileName:
+                            item.originalFileName
+                    )
+                else {
+                    return nil
+                }
+
+                return ExternalPhotoIntakeItem(
+                    managedURL: managedURL,
+                    originalFileName:
+                        item.originalFileName,
+                    sourceIdentifier:
+                        item.sourceIdentifier,
+                    contentTypeIdentifier:
+                        item.contentTypeIdentifier
+                )
+            }
+
+        guard !managedItems.isEmpty else {
+            return nil
+        }
+
+        return persistManagedRequest(
+            id: requestID,
+            urls:
+                managedItems.map(
+                    \.managedURL
+                ),
+            items: managedItems,
+            source: source,
+            importSummary:
+                importSummary,
+            configurationSnapshot:
+                configurationSnapshot
+        )
+    }
+
     func persistManagedRequest(
         id: UUID = UUID(),
         urls: [URL],
@@ -1023,6 +1087,45 @@ private extension ExternalPhotoIntakeStore {
             ) {
                 partialResult.append(
                     normalizedURL
+                )
+            }
+        }
+    }
+
+    func uniqueIntakeItems(
+        from items: [ExternalPhotoIntakeItem]
+    ) -> [ExternalPhotoIntakeItem] {
+
+        items.reduce(into: [ExternalPhotoIntakeItem]()) {
+            partialResult,
+            item in
+
+            let normalizedItem =
+                ExternalPhotoIntakeItem(
+                    managedURL:
+                        item.managedURL
+                        .standardizedFileURL,
+                    originalFileName:
+                        item.originalFileName,
+                    sourceIdentifier:
+                        item.sourceIdentifier,
+                    contentTypeIdentifier:
+                        item.contentTypeIdentifier
+                )
+
+            if !partialResult.contains(
+                where: {
+                    $0.managedURL
+                        .standardizedFileURL
+                        .path
+                    == normalizedItem
+                        .managedURL
+                        .standardizedFileURL
+                        .path
+                }
+            ) {
+                partialResult.append(
+                    normalizedItem
                 )
             }
         }

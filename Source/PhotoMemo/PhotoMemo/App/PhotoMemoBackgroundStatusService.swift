@@ -240,11 +240,13 @@ final class PhotoMemoBackgroundStatusService:
 
         let preservedJobID =
             preservingCurrentJob
+            && currentSnapshot?
+                .presentationState == .active
             ? currentSnapshot?.jobID
             : nil
 
         batchQueueStore
-            .clearCompletedExternalJobHistory(
+            .clearTerminalExternalJobHistory(
                 preserving: preservedJobID
             )
 
@@ -321,18 +323,6 @@ private extension PhotoMemoBackgroundStatusService {
             ) {
             return snapshot(
                 for: runningJob,
-                allExternalJobs:
-                    externalJobs,
-                activeTaskID: nil
-            )
-        }
-
-        if let retryableFailureJob =
-            externalJobs.first(
-                where: \.hasRetryableFailures
-            ) {
-            return snapshot(
-                for: retryableFailureJob,
                 allExternalJobs:
                     externalJobs,
                 activeTaskID: nil

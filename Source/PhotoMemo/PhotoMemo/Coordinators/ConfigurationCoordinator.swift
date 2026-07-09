@@ -130,6 +130,10 @@ final class ConfigurationCoordinator {
                 request.locationDisplayConfiguration
             )
         settingsRepository
+            .saveMediaOutputMode(
+                request.mediaOutputMode
+            )
+        settingsRepository
             .saveSelectedMemorySubject(
                 request.subject
             )

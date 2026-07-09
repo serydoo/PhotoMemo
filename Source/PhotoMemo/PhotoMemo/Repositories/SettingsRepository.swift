@@ -104,6 +104,13 @@ final class SettingsRepository {
             )
     }
 
+    func saveMediaOutputMode(
+        _ mode: V1MediaOutputMode
+    ) {
+        settingsService
+            .saveMediaOutputMode(mode)
+    }
+
     func saveEditorState(
         selectedAnchorID: UUID?,
         selectedAlbumIdentifier: String,
@@ -230,6 +237,9 @@ final class SettingsRepository {
                 logoMode,
             outputTarget:
                 outputTarget,
+            mediaOutputMode:
+                bootstrapReadState
+                .mediaOutputMode,
             selectedExistingAlbumIdentifier:
                 selectedExistingAlbumIdentifier,
             suggestedNewAlbumName:

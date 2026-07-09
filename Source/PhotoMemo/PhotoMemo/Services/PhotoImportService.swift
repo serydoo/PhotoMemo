@@ -5,15 +5,21 @@ final class PhotoImportService {
 
     private let metadataReader = PhotoMetadataReader()
     private let mediaDecodeService = MediaDecodeService()
+    private let inputPolicy:
+        PhotoProcessingInputPolicy
     private let locationMetadataEnricher:
         any PhotoLocationMetadataEnriching
 
     init(
+        inputPolicy:
+            PhotoProcessingInputPolicy = .standard,
         locationMetadataEnricher:
             any PhotoLocationMetadataEnriching =
                 PhotoLocationMetadataEnricher()
     ) {
 
+        self.inputPolicy =
+            inputPolicy
         self.locationMetadataEnricher =
             locationMetadataEnricher
     }
@@ -210,8 +216,7 @@ final class PhotoImportService {
                             image.photoMemoSize
                     ),
                 maxPixelDimension:
-                    PhotoProcessingInputPolicy
-                    .standard
+                    inputPolicy
                     .maximumPixelDimension
             )
 
@@ -246,7 +251,7 @@ final class PhotoImportService {
 
     func isSupported(_ url: URL) -> Bool {
 
-        PhotoProcessingInputPolicy.standard
+        inputPolicy
             .isSupportedContentType(
                 UTType(
                     filenameExtension:
@@ -260,7 +265,7 @@ final class PhotoImportService {
         _ contentType: UTType?
     ) -> Bool {
 
-        PhotoProcessingInputPolicy.standard
+        inputPolicy
             .isSupportedContentType(contentType)
     }
 
@@ -269,8 +274,7 @@ final class PhotoImportService {
     ) throws {
 
         let verdict =
-            PhotoProcessingInputPolicy
-            .standard
+            inputPolicy
             .verdict(
                 contentType:
                     mediaAsset.contentType,
