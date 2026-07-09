@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased - 2026-07-09
+
+### Added
+- Added Main App Picker Live Photo release-candidate support: selected Live Photo assets can be routed through the VNext media pipeline, composed with MemoMark geometry, and saved back as motion-preserving Live Photo output when using original-format output.
+- Added Media Geometry Foundation and CanonicalGeometry-based regression coverage for JPEG/HEIC geometry, Live Photo still/video composition, pairing identity, metadata readback, and batch queue routing.
+- Added runtime evidence tooling for iOS Live Photo validation without copying private media.
+
+### Changed
+- Updated Live Photo still output metadata so MemoMark description text is written through stable TIFF/IPTC fields while avoiding corrupted non-ASCII HEIC UserComment readback.
+- Clarified release scope: Main App Picker Live Photo is a release candidate, while Share Extension Live Photo remains a separate production-validation item.
+
 ## v1.0.0-test1 - 2026-07-02
 
 ### Added

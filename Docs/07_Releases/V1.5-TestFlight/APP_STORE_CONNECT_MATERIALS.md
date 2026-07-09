@@ -1,6 +1,6 @@
 # App Store Connect Materials - MemoMark 1.5
 
-Last updated: 2026-07-08
+Last updated: 2026-07-09
 
 Use this document as the copy source when creating or updating the App Store
 Connect app record and TestFlight information.
@@ -61,6 +61,8 @@ Please test the core Apple Photos workflow:
 4. Open MemoMark if needed to review processing state and configuration.
 5. Confirm that generated output is saved back as a new image.
 
+For builds created from commit c6b97d99 or later, please also test the Main App Picker Live Photo release-candidate path: select a normal Live Photo inside MemoMark, export with original-format output, and confirm Photos recognizes the saved result as a Live Photo with stable portrait/landscape geometry.
+
 Please focus feedback on share intake, permission prompts, preview consistency, memory text accuracy, export quality, saved-photo behavior, crashes, and confusing interactions.
 ```
 
@@ -74,6 +76,8 @@ Chinese:
 3. 确认时光记能接收照片并开始处理。
 4. 如有需要，打开时光记查看处理状态和当前配置。
 5. 确认处理结果会作为一张新图片保存回系统相册。
+
+如果测试的是 commit c6b97d99 或之后生成的构建，也请测试主程序 Picker 的 Live Photo release-candidate 路径：在时光记内选择一张正常 Live Photo，使用原格式输出，确认保存结果能被系统相册识别为 Live Photo，并且横竖图几何稳定。
 
 请重点反馈分享入口、权限弹窗、预览一致性、记忆文字准确性、导出质量、保存回相册行为、闪退以及不易理解的交互。
 ```
@@ -101,17 +105,21 @@ supports.
 English:
 
 ```text
-MemoMark 1.5 currently focuses on user-selected static photos shared from Apple Photos. It supports single-photo and small multi-photo share flows, photos with or without location metadata, and local generation of a memory-card result.
+MemoMark 1.5 primarily focuses on user-selected static photos shared from Apple Photos. It supports single-photo and small multi-photo share flows, photos with or without location metadata, and local generation of a memory-card result.
 
-The output is a new still image saved back to Apple Photos. MemoMark does not modify the original photo. Videos, motion playback from Live Photos, advanced batch management, cloud processing, account sync, and full custom layout editing are outside the current TestFlight scope.
+Builds created from commit c6b97d99 or later also include Main App Picker Live Photo release-candidate support. This path can save a new motion-preserving Live Photo or a static image depending on output settings. Share Extension Live Photo remains a known production-validation limitation.
+
+MemoMark does not modify the original photo. Videos, advanced batch management, cloud processing, account sync, and full custom layout editing are outside the current TestFlight scope.
 ```
 
 Chinese:
 
 ```text
-时光记 1.5 当前聚焦从 Apple Photos 主动分享的静态照片。它支持单张照片和少量多张照片分享，支持有位置信息或无位置信息的照片，并在本机生成记忆卡片结果。
+时光记 1.5 主要聚焦从 Apple Photos 主动分享的静态照片。它支持单张照片和少量多张照片分享，支持有位置信息或无位置信息的照片，并在本机生成记忆卡片结果。
 
-输出形式是一张保存回 Apple Photos 的新静态图片。时光记不会修改原始照片。视频、Live Photo 动态播放、高级批量管理、云端处理、账号同步和完整自定义布局编辑不属于当前 TestFlight 范围。
+commit c6b97d99 或之后生成的构建还包含主程序 Picker 的 Live Photo release-candidate 支持。该路径可根据输出设置保存新的动态 Live Photo 或静态图片。Share Extension 的 Live Photo 路径仍属于后续 production validation 的已知限制。
+
+时光记不会修改原始照片。视频、高级批量管理、云端处理、账号同步和完整自定义布局编辑不属于当前 TestFlight 范围。
 ```
 
 ## Feedback Channels

@@ -23,6 +23,15 @@
 6. 确认生成结果会作为新图片保存回 Apple Photos。
 7. 对比生成图片和原图。
 
+如果测试的是 commit `c6b97d99` 或之后生成的构建，也可以测试主程序
+Picker 的 Live Photo release-candidate 路径：
+
+1. 打开时光记。
+2. 从主程序 Picker 选择一张正常 Live Photo。
+3. 使用原格式输出。
+4. 确认系统相册能识别保存结果为 Live Photo。
+5. 长按播放，并检查横图/竖图几何是否稳定。
+
 ## 建议重点测试
 
 ### Apple Photos 分享流程
@@ -84,6 +93,8 @@
 - 支持单张照片和少量多张照片分享。
 - 支持有位置信息或无位置信息的照片。
 - 输出是一张保存回 Apple Photos 的新静态图片。
+- commit `c6b97d99` 或之后的构建：主程序 Picker Live Photo
+  release-candidate 输出，可根据输出设置保存动态 Live Photo 或静态图片。
 - 时光记不会修改原始照片。
 
 已知限制：
@@ -91,8 +102,9 @@
 - 高级自定义能力仍然有限。
 - 部分照片类型可能会被拒绝或跳过。
 - 当前优先支持静态照片。
+- Share Extension 的 Live Photo 路径仍属于后续 production validation。
 - 超大图、全景图或特殊长宽比图片可能不理想。
-- 视频、Live Photo 动态播放、高级批量管理、云端处理、账号同步和完整自定义布局编辑不属于当前 TestFlight 范围。
+- 视频、高级批量管理、云端处理、账号同步和完整自定义布局编辑不属于当前 TestFlight 范围。
 - Share Extension 外层展示会受到 iOS 系统分享面板限制。
 
 ## 后续开发计划

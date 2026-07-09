@@ -28,6 +28,15 @@ on the Apple Photos share workflow.
 6. Confirm that the generated image is saved back to Apple Photos.
 7. Compare the generated image with the original photo.
 
+For builds created from commit `c6b97d99` or later, you can also test the Main
+App Picker Live Photo release-candidate path:
+
+1. Open MemoMark.
+2. Select a normal Live Photo from the main app picker.
+3. Use original-format output.
+4. Confirm Photos recognizes the saved result as a Live Photo.
+5. Long-press playback and check portrait/landscape geometry.
+
 ## Suggested Test Scenarios
 
 ### Apple Photos Share Flow
@@ -90,6 +99,9 @@ Current supported scope and output format:
 - Single-photo and small multi-photo share flows.
 - Photos with or without location metadata.
 - Output is a new still image saved back to Apple Photos.
+- Builds from `c6b97d99` or later: Main App Picker Live Photo release-candidate
+  output, with motion-preserving Live Photo or static image output depending on
+  output settings.
 - MemoMark does not modify the original photo.
 
 Expected limitations:
@@ -97,8 +109,9 @@ Expected limitations:
 - Advanced customization is still limited.
 - Some photo types may be rejected or skipped.
 - Static photos are the preferred input.
+- Share Extension Live Photo remains a production-validation limitation.
 - Very large, panoramic, or unusual-ratio images may not be ideal.
-- Videos, Live Photo motion playback, advanced batch management, cloud processing, account sync, and full custom layout editing are outside the current TestFlight scope.
+- Videos, advanced batch management, cloud processing, account sync, and full custom layout editing are outside the current TestFlight scope.
 - The Share Extension may be constrained by iOS share-sheet behavior.
 
 ## Development Plan

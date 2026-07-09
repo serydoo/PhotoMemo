@@ -2,6 +2,33 @@
 
 Last updated: 2026-07-09
 
+## 2026-07-09 Live Photo Main App Picker Release Candidate Merged
+
+The Live Photo main app picker release candidate has been merged into `main`
+and pushed to `origin/main`.
+
+Merge checkpoint:
+
+- `c6b97d99` - `Merge Live Photo main picker release candidate`
+- feature checkpoint: `f7825e4f` - `Add Live Photo main picker release candidate`
+
+Current product status:
+
+- Main App Picker Live Photo path: release candidate / production candidate.
+- Share Extension Live Photo path: known limitation and future production
+  validation item.
+- Failed-item thumbnail/reason UI: deferred polish after the Live Photo main
+  app picker capability is safely on `main`.
+- Media Geometry Foundation remains closed/stable; do not reopen it unless
+  runtime evidence proves `CanonicalGeometry` itself is wrong.
+
+Release-materials follow-up:
+
+- V1.5 TestFlight materials now state that builds from `c6b97d99` or later
+  include Main App Picker Live Photo release-candidate support.
+- Version/build numbers are unchanged; Xcode Cloud / App Store Connect still
+  owns the build counter.
+
 ## 2026-07-09 Live Photo Description Metadata Parity Verified
 
 Live Photo runtime output now preserves the MemoMark description metadata path

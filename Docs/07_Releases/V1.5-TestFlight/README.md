@@ -1,9 +1,17 @@
 # MemoMark 1.5 TestFlight Release Materials
 
-Last updated: 2026-07-08
+Last updated: 2026-07-09
 
 This folder contains the prepared materials for MemoMark 1.5 TestFlight and
 App Store Connect setup.
+
+Post-merge note:
+
+- Builds created from `c6b97d99` or later include Main App Picker Live Photo
+  release-candidate support.
+- Share Extension Live Photo remains a separate production-validation item and
+  should still be treated as a known limitation unless a later release note
+  says otherwise.
 
 ## Build Identity
 

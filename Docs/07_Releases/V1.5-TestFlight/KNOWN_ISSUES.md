@@ -1,6 +1,6 @@
 # MemoMark 1.5 Known Issues And Current Limitations
 
-Last updated: 2026-07-08
+Last updated: 2026-07-09
 
 This document describes expected limitations for the MemoMark `1.5`
 TestFlight MVP.
@@ -24,21 +24,27 @@ Supported inputs:
 - single-photo share flows
 - small multi-photo share flows
 - photos with or without location metadata
+- post-merge builds from `c6b97d99` or later: Live Photos selected through the
+  Main App Picker as a release-candidate path
 
 Current output:
 
 - a new generated still image saved back to Apple Photos
+- post-merge Main App Picker Live Photo path: a new motion-preserving Live
+  Photo or static image, depending on the selected output mode
 - the original photo remains unchanged
 - generation is local to the device
 
 ## Known Limitations
 
 - Static photos are the preferred input for this build.
+- Live Photo support is currently scoped to the Main App Picker release
+  candidate path; Share Extension Live Photo remains under production
+  validation.
 - Very large images may take longer to process.
 - Panoramas, long screenshots, and unusual aspect ratios may be skipped or may
   not produce ideal output.
-- Videos and Live Photo motion playback are outside the current TestFlight
-  scope.
+- Videos remain outside the current TestFlight scope.
 - Account sync, cloud processing, advanced batch management, and full custom
   layout editing are outside the current TestFlight scope.
 - Some advanced customization options are intentionally unavailable.

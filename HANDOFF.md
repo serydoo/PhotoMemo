@@ -14,6 +14,12 @@
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
 - `main` is now the active V1 source line after merging the former latest
   `v1-checkpoint-20260702` checkpoint into it.
+- `main` now also contains the Live Photo main app picker release candidate via
+  merge commit `c6b97d99`.
+- Main App Picker Live Photo is release-candidate scope; Share Extension Live
+  Photo remains a known limitation and future production-validation item.
+- The temporary Live Photo integration worktree and local
+  `codex/ios-livephoto-internal-test` branch have been removed after merge.
 - Future V1 builds and IPA packages should come from `main`, not from a
   temporary checkout or a separate V1 branch.
 - The current V1 checkpoint is accepted as a functional baseline and now lives
@@ -24,6 +30,19 @@
 - `5f583093` is the V1 boundary hardening code checkpoint.
 - `e48508e9` remains the first accepted V1 maintenance freeze checkpoint.
 - `2218878d` remains the functional device checkpoint that preceded the maintenance freeze.
+
+## 2026-07-09 Live Photo main picker release candidate merged to main
+
+- Merge commit: `c6b97d99 Merge Live Photo main picker release candidate`
+- Feature checkpoint: `f7825e4f Add Live Photo main picker release candidate`
+- Release scope:
+  - Main App Picker Live Photo path is now on `main` as a release candidate.
+  - Share Extension Live Photo remains a separate production-validation item.
+  - Failed-item thumbnail/reason UI remains deferred polish.
+- Release materials were aligned so TestFlight docs no longer describe Live
+  Photo motion playback as entirely outside scope for builds from `c6b97d99`
+  or later.
+- Version/build numbers were not changed by this merge-doc follow-up.
 
 ## 2026-07-08 iOS release entry cleanup
 
