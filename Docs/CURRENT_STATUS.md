@@ -2,6 +2,49 @@
 
 Last updated: 2026-07-09
 
+## 2026-07-09 TestFlight Archive Readiness Dry-Run Passed
+
+The canonical `main` workspace passed a local Release archive dry-run for the
+`PhotoMemoiOS` scheme without uploading anything to App Store Connect.
+
+Verification command shape:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -configuration Release \
+  -destination 'generic/platform=iOS' \
+  -archivePath /tmp/PhotoMemoReleaseReadinessArchive.xcarchive \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet archive
+```
+
+Archive inspection:
+
+- archive was created at
+  `/tmp/PhotoMemoReleaseReadinessArchive.xcarchive`
+- archived app path: `Applications/PhotoMemoiOS.app`
+- app bundle identifier: `com.serydoo.PhotoMemo.iOS`
+- app version/build from project settings: `1.5` / `7`
+- embedded extensions:
+  - `PhotoMemoShareExtension.appex`
+  - `PhotoMemoWidgetExtension.appex`
+- extension bundle identifiers:
+  - `com.serydoo.PhotoMemo.iOS.ShareExtension`
+  - `com.serydoo.PhotoMemo.iOS.WidgetExtension`
+- app and Share Extension privacy manifests are present in the archive
+
+Release export options remain aligned for TestFlight upload:
+
+- `scripts/export_options_testflight.plist`
+- `method = app-store-connect`
+- `destination = upload`
+- `teamID = UK7ZR8G564`
+
+No upload was attempted in this local dry-run. Xcode Cloud / App Store Connect
+still owns the external build counter for TestFlight.
+
 ## 2026-07-09 Live Photo Main App Picker Post-Merge Verification Passed
 
 After `main` was cleaned and synchronized to `origin/main`, the Live Photo main

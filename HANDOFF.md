@@ -27,6 +27,14 @@
   - `PhotoMemoWidgetExtension` Debug generic iOS build
   - `PhotoMemo` Debug macOS build
   - focused Live Photo / Media Geometry / main picker intake tests
+- Release archive readiness dry-run also passed for `PhotoMemoiOS`:
+  - local unsigned Release archive generated successfully at
+    `/tmp/PhotoMemoReleaseReadinessArchive.xcarchive`
+  - archive contains `PhotoMemoiOS.app`
+  - archive embeds `PhotoMemoShareExtension.appex`
+  - archive embeds `PhotoMemoWidgetExtension.appex`
+  - archive app and extension bundle versions are `1.5` / `7`
+  - no App Store Connect upload was attempted
 - Local repository hygiene has been tightened:
   - only `main` remains as a local branch
   - only `/Users/rui/Desktop/PhotoMemo` remains as an active worktree
