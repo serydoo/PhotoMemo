@@ -2,6 +2,45 @@
 
 Last updated: 2026-07-09
 
+## 2026-07-09 Live Photo Main App Picker Post-Merge Verification Passed
+
+After `main` was cleaned and synchronized to `origin/main`, the Live Photo main
+app picker release-candidate line was verified again from the canonical
+workspace.
+
+Build matrix passed:
+
+- `PhotoMemoiOS` Debug generic iOS build
+- `PhotoMemoShareExtension` Debug generic iOS build
+- `PhotoMemoWidgetExtension` Debug generic iOS build
+- `PhotoMemo` Debug macOS build
+
+Focused tests passed:
+
+- `MediaGeometryArchitectureTests`
+- `MediaGeometryFoundationCoreTests`
+- `LivePhotoVideoCompositionServiceTests`
+- `LivePhotoStillImageCompositionServiceTests`
+- `LivePhotoPairCompositionServiceTests`
+- `LivePhotoAssetLoaderContractTests`
+- `LivePhotoAssetWriterContractTests`
+- `LivePhotoPairingIdentityVerifierTests`
+- `LivePhotoBatchQueueExecutionTests`
+- `PhotoMemoiOSV1PhotoIntakeTests`
+
+Known non-blocking warnings remain unchanged:
+
+- macOS deployment target `27.0` exceeds the installed SDK's supported range.
+- `GeocoderService.swift` still uses `CLGeocoder` APIs deprecated in macOS 26.
+
+Repository hygiene result:
+
+- local worktree is clean
+- `main` is synchronized with `origin/main`
+- local branches were reduced to `main`
+- the old Live Photo worktree was removed after preserving its dirty WIP in
+  `/Users/rui/Desktop/PhotoMemoWorktreeBackups/`
+
 ## 2026-07-09 Live Photo Main App Picker Release Candidate Merged
 
 The Live Photo main app picker release candidate has been merged into `main`

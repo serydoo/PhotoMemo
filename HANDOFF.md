@@ -20,6 +20,18 @@
   Photo remains a known limitation and future production-validation item.
 - The temporary Live Photo integration worktree and local
   `codex/ios-livephoto-internal-test` branch have been removed after merge.
+- Post-merge release verification has passed from the canonical `main`
+  workspace:
+  - `PhotoMemoiOS` Debug generic iOS build
+  - `PhotoMemoShareExtension` Debug generic iOS build
+  - `PhotoMemoWidgetExtension` Debug generic iOS build
+  - `PhotoMemo` Debug macOS build
+  - focused Live Photo / Media Geometry / main picker intake tests
+- Local repository hygiene has been tightened:
+  - only `main` remains as a local branch
+  - only `/Users/rui/Desktop/PhotoMemo` remains as an active worktree
+  - old WIP was preserved under `/Users/rui/Desktop/PhotoMemoWorktreeBackups/`
+    and in the Git stash list before cleanup
 - Future V1 builds and IPA packages should come from `main`, not from a
   temporary checkout or a separate V1 branch.
 - The current V1 checkpoint is accepted as a functional baseline and now lives
