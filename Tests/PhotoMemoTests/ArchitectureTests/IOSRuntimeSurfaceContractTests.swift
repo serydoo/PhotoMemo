@@ -15,8 +15,8 @@ struct IOSRuntimeSurfaceContractTests {
             )
 
         #expect(
-            rootSceneSource.contains("ConfigurationCenteriOSView("),
-            "Expected the iOS runtime root to render Configuration Center directly."
+            rootSceneSource.contains("PhotoMemoiOSV1View("),
+            "Expected the iOS runtime root to render the accepted V1 root view."
         )
         #expect(
             !rootSceneSource.contains("PhotoMemoiOSTemporaryEntryView("),

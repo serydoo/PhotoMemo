@@ -2343,6 +2343,72 @@ struct RecordCardBuildServiceTests {
         )
     }
 
+    @Test("Legacy anchor result is not calculated from current time when capture date is missing")
+    func legacyAnchorResultIsNotCalculatedFromCurrentTimeWhenCaptureDateIsMissing() {
+        let birthday =
+            Calendar(identifier: .gregorian)
+            .date(
+                from:
+                    DateComponents(
+                        year: 2020,
+                        month: 1,
+                        day: 1
+                    )
+            )!
+        let anchor =
+            Anchor(
+                type: .birthday,
+                title: "生日",
+                date: birthday,
+                isCountdown: false
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(
+                        fileURLWithPath:
+                            "/tmp/missing-capture-date.jpeg"
+                    ),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1200,
+                                height: 900
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: nil
+                    )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template:
+                    .template1
+                    .normalizedForEditing,
+                badge: nil,
+                anchor:
+                    anchor,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration:
+                    configuration
+            )
+
+        #expect(card.anchor?.id == anchor.id)
+        #expect(card.anchor?.type == anchor.type)
+        #expect(card.anchor?.title == anchor.title)
+        #expect(card.anchorResult == nil)
+    }
+
     @Test("Frozen MemoryResult clears legacy sub-day anchor components in production output")
     func frozenMemoryResultClearsLegacySubDayAnchorComponentsInProductionOutput() throws {
 

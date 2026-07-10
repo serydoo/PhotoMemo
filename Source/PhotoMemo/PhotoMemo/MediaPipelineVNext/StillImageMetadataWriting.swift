@@ -238,7 +238,8 @@ struct ImageIOStillImageMetadataPropertyReviser {
 
     static let quickTimeMetadataKey:
         CFString =
-            "QuickTime" as CFString
+            ImageIOStillImageMetadataCleanup
+            .quickTimeMetadataKey
 
     func revisedProperties(
         from sourceProperties:
@@ -311,14 +312,15 @@ private extension ImageIOStillImageMetadataPropertyReviser {
         plan: StillImageMetadataWritePlan
     ) {
         if plan.removes(.quickTimeMetadata) {
-            properties.removeValue(
-                forKey:
-                    Self.quickTimeMetadataKey
+            ImageIOStillImageMetadataCleanup
+            .removeQuickTimeMetadata(
+                from: &properties
             )
         }
 
         if plan.removes(.livePhotoPairingIdentifier) {
-            removeAppleLivePhotoPairingMetadata(
+            ImageIOStillImageMetadataCleanup
+            .removeAppleLivePhotoPairingIdentifier(
                 from: &properties
             )
         }
@@ -339,29 +341,95 @@ private extension ImageIOStillImageMetadataPropertyReviser {
         )
     }
 
-    func removeAppleLivePhotoPairingMetadata(
+}
+
+struct ImageIOStillImageMetadataCleanup {
+
+    static let quickTimeMetadataKey:
+        CFString =
+            "QuickTime" as CFString
+
+    static func removeInheritedLivePhotoMetadata(
         from properties: inout [CFString: Any]
     ) {
-        var makerApple =
-            properties[
-                kCGImagePropertyMakerAppleDictionary
-            ] as? [CFString: Any]
-
-        makerApple?.removeValue(
-            forKey:
-                "17" as CFString
+        removeQuickTimeMetadata(
+            from: &properties
         )
+        removeAppleLivePhotoPairingIdentifier(
+            from: &properties
+        )
+    }
 
-        if let makerApple,
-           !makerApple.isEmpty {
+    static func removeQuickTimeMetadata(
+        from properties: inout [CFString: Any]
+    ) {
+        properties.removeValue(
+            forKey:
+                quickTimeMetadataKey
+        )
+    }
+
+    static func removeAppleLivePhotoPairingIdentifier(
+        from properties: inout [CFString: Any]
+    ) {
+        guard let makerApple =
             properties[
                 kCGImagePropertyMakerAppleDictionary
-            ] = makerApple
+            ]
+        else {
+            return
+        }
+
+        let revisedMakerApple =
+            removingAppleLivePhotoPairingIdentifier(
+                from: makerApple
+            )
+
+        if let revisedMakerApple,
+           !revisedMakerApple.isEmpty {
+            properties[
+                kCGImagePropertyMakerAppleDictionary
+            ] = revisedMakerApple
         } else {
             properties.removeValue(
                 forKey:
                     kCGImagePropertyMakerAppleDictionary
             )
+        }
+    }
+
+    private static func removingAppleLivePhotoPairingIdentifier(
+        from makerApple: Any
+    ) -> [AnyHashable: Any]? {
+        guard var dictionary =
+            makerApple as? [AnyHashable: Any]
+        else {
+            return nil
+        }
+
+        dictionary = dictionary.filter { key, _ in
+            !isAppleLivePhotoPairingIdentifierKey(
+                key
+            )
+        }
+
+        return dictionary
+    }
+
+    private static func isAppleLivePhotoPairingIdentifierKey(
+        _ key: AnyHashable
+    ) -> Bool {
+        switch key.base {
+        case let numericKey as NSNumber:
+            return numericKey.compare(
+                NSNumber(value: 17)
+            ) == .orderedSame
+        case let stringKey as String:
+            return stringKey == "17"
+        case let stringKey as NSString:
+            return stringKey as String == "17"
+        default:
+            return false
         }
     }
 }

@@ -48,5 +48,19 @@ struct MemorySubjectAdapterTests {
         #expect(subject.timeAnchors.first?.anchorType == .birthday)
         #expect(subject.expressionSubjectSource == .displayName)
     }
+
+    @Test("uses a deterministic reference date when no profile or anchor date exists")
+    func usesDeterministicReferenceDateWhenNoProfileOrAnchorDateExists() {
+        let subject =
+            MemorySubjectAdapter.adapt(
+                profile: PersonalProfile(),
+                anchors: []
+            )
+
+        #expect(
+            subject.referenceDate
+            == Date(timeIntervalSince1970: 0)
+        )
+    }
 }
 #endif

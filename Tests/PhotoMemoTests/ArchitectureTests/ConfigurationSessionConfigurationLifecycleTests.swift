@@ -283,6 +283,74 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.state.selectedMemoryPresetID == createdPreset.id)
     }
 
+    @Test("persistence snapshot folds current output settings into the selected configuration")
+    func persistenceSnapshotFoldsCurrentOutputSettingsIntoSelectedConfiguration() {
+        let session = ConfigurationSession()
+
+        let snapshot =
+            session
+            .persistenceSnapshotForCurrentConfiguration(
+                logoMode: .customUpload,
+                outputConfiguration:
+                    V1SavedOutputConfiguration(
+                        outputTarget: .newAlbum,
+                        mediaOutputMode: .staticImage,
+                        selectedExistingAlbumIdentifier: "",
+                        newAlbumName: "成长记录"
+                    ),
+                savedAt:
+                    Date(
+                        timeIntervalSince1970: 123
+                    )
+            )
+
+        let savedPreset = try! #require(
+            snapshot.memoryPresets.first {
+                $0.id == snapshot.selectedMemoryPresetID
+            }
+        )
+
+        #expect(savedPreset.savedAt == Date(timeIntervalSince1970: 123))
+        #expect(savedPreset.logoMode == .customUpload)
+        #expect(
+            savedPreset.savedOutputConfiguration
+            == V1SavedOutputConfiguration(
+                outputTarget: .newAlbum,
+                mediaOutputMode: .staticImage,
+                selectedExistingAlbumIdentifier: "",
+                newAlbumName: "成长记录"
+            )
+        )
+    }
+
+    @Test("saving without output context preserves the selected configuration output settings")
+    func savingWithoutOutputContextPreservesSelectedConfigurationOutputSettings() {
+        let session = ConfigurationSession()
+        let outputConfiguration =
+            V1SavedOutputConfiguration(
+                outputTarget: .existingAlbum,
+                mediaOutputMode: .originalFormat,
+                selectedExistingAlbumIdentifier:
+                    "album-123",
+                newAlbumName: ""
+            )
+
+        session.saveCurrentMemoryPreset(
+            outputConfiguration:
+                outputConfiguration
+        )
+        session.selectedStorageOption = .targetAlbum
+        session.saveCurrentMemoryPreset()
+
+        #expect(
+            session
+                .state
+                .selectedMemoryPreset?
+                .savedOutputConfiguration
+            == outputConfiguration
+        )
+    }
+
     @Test("editing a saved configuration marks it pending again")
     func editingSavedConfigurationMarksPresetPending() {
         let storageSession = ConfigurationSession()

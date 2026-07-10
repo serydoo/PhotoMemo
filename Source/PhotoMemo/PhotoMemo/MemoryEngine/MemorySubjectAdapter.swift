@@ -3,6 +3,9 @@ import Foundation
 #if !PHOTOMEMO_SHARE_EXTENSION
 struct MemorySubjectAdapter {
 
+    private static let unspecifiedReferenceDate =
+        Date(timeIntervalSince1970: 0)
+
     static func adapt(
         profile: PersonalProfile,
         anchors: [Anchor],
@@ -24,7 +27,7 @@ struct MemorySubjectAdapter {
             referenceDate
             ?? normalizedProfile.babyBirthday
             ?? anchors.first?.date
-            ?? Date()
+            ?? unspecifiedReferenceDate
         let primaryAnchor =
             anchors.first {
                 $0.id == selectedAnchorID

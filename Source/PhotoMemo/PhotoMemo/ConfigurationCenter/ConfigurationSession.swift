@@ -544,7 +544,9 @@ final class ConfigurationSession:
     }
 
     func saveCurrentMemoryPreset(
-        logoMode: V1LogoMode? = nil
+        logoMode: V1LogoMode? = nil,
+        outputConfiguration:
+            V1SavedOutputConfiguration? = nil
     ) {
         guard let presetIndex =
             writableSelectedMemoryPresetIndex()
@@ -552,7 +554,9 @@ final class ConfigurationSession:
             createMemoryPresetFromCurrent(
                 savedAt: Date(),
                 applyImmediately: true,
-                logoMode: logoMode
+                logoMode: logoMode,
+                outputConfiguration:
+                    outputConfiguration
             )
             return
         }
@@ -561,7 +565,9 @@ final class ConfigurationSession:
             snapshotCurrentConfiguration(
                 in: state.memoryPresets[presetIndex],
                 savedAt: Date(),
-                logoMode: logoMode
+                logoMode: logoMode,
+                outputConfiguration:
+                    outputConfiguration
             )
         state.selectedMemoryPresetID =
             state.memoryPresets[presetIndex].id
@@ -570,19 +576,25 @@ final class ConfigurationSession:
     }
 
     func createMemoryPresetFromCurrent(
-        logoMode: V1LogoMode? = nil
+        logoMode: V1LogoMode? = nil,
+        outputConfiguration:
+            V1SavedOutputConfiguration? = nil
     ) {
         createMemoryPresetFromCurrent(
             savedAt: nil,
             applyImmediately: false,
-            logoMode: logoMode
+            logoMode: logoMode,
+            outputConfiguration:
+                outputConfiguration
         )
     }
 
     private func createMemoryPresetFromCurrent(
         savedAt: Date?,
         applyImmediately: Bool,
-        logoMode: V1LogoMode?
+        logoMode: V1LogoMode?,
+        outputConfiguration:
+            V1SavedOutputConfiguration?
     ) {
         let duplicatedPreset =
             snapshotCurrentConfiguration(
@@ -597,7 +609,9 @@ final class ConfigurationSession:
                         currentRegionTemplateIDs
                 ),
                 savedAt: savedAt,
-                logoMode: logoMode
+                logoMode: logoMode,
+                outputConfiguration:
+                    outputConfiguration
             )
 
         state.memoryPresets.append(
@@ -612,11 +626,12 @@ final class ConfigurationSession:
         refreshPresetDrivenPreview()
     }
 
-    func deleteSelectedMemoryPreset() {
+    @discardableResult
+    func deleteSelectedMemoryPreset() -> Bool {
         guard let presetIndex =
             writableSelectedMemoryPresetIndex()
         else {
-            return
+            return false
         }
 
         let deletedPresetID =
@@ -632,6 +647,60 @@ final class ConfigurationSession:
 
         alignSelectedMemoryPresetToSelectedSubject(
             restoreContext: true
+        )
+        return true
+    }
+
+    func persistenceSnapshotForCurrentConfiguration(
+        logoMode: V1LogoMode? = nil,
+        outputConfiguration:
+            V1SavedOutputConfiguration? = nil,
+        savedAt: Date = Date()
+    ) -> (
+        memoryPresets: [MemoryPreset],
+        selectedMemoryPresetID: MemoryPreset.ID
+    ) {
+        if let presetIndex =
+            writableSelectedMemoryPresetIndex() {
+            var memoryPresets =
+                state.memoryPresets
+            let selectedPreset =
+                snapshotCurrentConfiguration(
+                    in:
+                        memoryPresets[presetIndex],
+                    savedAt: savedAt,
+                    logoMode: logoMode,
+                    outputConfiguration:
+                        outputConfiguration
+                )
+            memoryPresets[presetIndex] =
+                selectedPreset
+            return (
+                memoryPresets,
+                selectedPreset.id
+            )
+        }
+
+        let selectedPreset =
+            snapshotCurrentConfiguration(
+                in: MemoryPreset(
+                    title:
+                        currentDefaultMemoryPresetTitle,
+                    summary:
+                        state.selectedMemoryPreset?
+                        .summary
+                        ?? "当前区域组合",
+                    regionTemplateIDs:
+                        currentRegionTemplateIDs
+                ),
+                savedAt: savedAt,
+                logoMode: logoMode,
+                outputConfiguration:
+                    outputConfiguration
+            )
+        return (
+            state.memoryPresets + [selectedPreset],
+            selectedPreset.id
         )
     }
 
@@ -990,7 +1059,9 @@ final class ConfigurationSession:
     private func snapshotCurrentConfiguration(
         in preset: MemoryPreset,
         savedAt: Date?,
-        logoMode: V1LogoMode?
+        logoMode: V1LogoMode?,
+        outputConfiguration:
+            V1SavedOutputConfiguration?
     ) -> MemoryPreset {
         var updatedPreset = preset
         updatedPreset.savedAt = savedAt
@@ -1011,6 +1082,9 @@ final class ConfigurationSession:
             usesCustomMemoryWriteText
         updatedPreset.customMemoryWriteText =
             customMemoryWriteText
+        updatedPreset.savedOutputConfiguration =
+            outputConfiguration
+            ?? preset.savedOutputConfiguration
         return updatedPreset
     }
 

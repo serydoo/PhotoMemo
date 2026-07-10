@@ -555,6 +555,10 @@ private extension RecordCardExportService {
     ) -> [CFString: Any] {
 
         var properties = sourceProperties
+        ImageIOStillImageMetadataCleanup
+            .removeInheritedLivePhotoMetadata(
+                from: &properties
+            )
 
         let pixelWidth = Int(renderSize.width)
         let pixelHeight = Int(renderSize.height)

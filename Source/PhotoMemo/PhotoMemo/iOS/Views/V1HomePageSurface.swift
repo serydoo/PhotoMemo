@@ -13,6 +13,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     let isEditingMemoryPresetTitle: Bool
     let memoryPresetTitleDraft: Binding<String>
     let memoryPresetTitleFieldFocused: FocusState<Bool>.Binding
+    let isConfigurationReady: Bool
     let onOpenSubject: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onOpenPhotoPicker: () -> Void
@@ -244,7 +245,11 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 HStack(spacing: 10) {
                     V1HomeProcessPhotoIcon()
 
-                    Text("处理照片")
+                    Text(
+                        isConfigurationReady
+                        ? "处理照片"
+                        : "先完成配置"
+                    )
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
                 }
@@ -624,7 +629,7 @@ private struct V1HomeEmptyPresetRow: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("在配置中心保存后，这里会显示对应对象的配置。")
+                Text("请先在配置中心保存一次完整配置，之后才能开始处理照片。输出部分如果不自定义，会继续按默认规则走。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

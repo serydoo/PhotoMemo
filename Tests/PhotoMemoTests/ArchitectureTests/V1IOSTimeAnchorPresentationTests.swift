@@ -89,5 +89,20 @@ struct V1IOSTimeAnchorPresentationTests {
             == "时间锚点"
         )
     }
+
+    @Test("loading anchor drafts keeps selection without auto-opening the edit sheet")
+    func loadingAnchorDraftsDoesNotAutoOpenEditSheet() throws {
+        let source =
+            try String(
+                contentsOfFile:
+                    "/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift",
+                encoding: .utf8
+            )
+
+        #expect(
+            source.contains("editingTimeAnchorID = nil"),
+            "Draft loading should clear editingTimeAnchorID so anchor maintenance does not auto-open edit."
+        )
+    }
 }
 #endif

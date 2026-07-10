@@ -1,5 +1,12 @@
 import Foundation
 
+struct V1SavedConfigurationReadiness:
+    Equatable {
+
+    let isReady: Bool
+    let presetTitle: String?
+}
+
 struct BatchConfigurationSnapshotProvider {
 
     private let defaults: UserDefaults
@@ -97,6 +104,37 @@ struct BatchConfigurationSnapshotProvider {
                     forKey:
                         Keys.mediaOutputMode
                 )
+        )
+    }
+
+    func loadV1ConfigurationReadiness()
+    -> V1SavedConfigurationReadiness {
+        guard
+            let data = defaults.data(
+                forKey: Keys.subjectLibrary
+            ),
+            let record =
+                try? JSONDecoder().decode(
+                    StoredV1SubjectLibraryRecord.self,
+                    from: data
+                )
+        else {
+            return V1SavedConfigurationReadiness(
+                isReady: false,
+                presetTitle: nil
+            )
+        }
+
+        let selectedPreset =
+            resolvedSelectedPreset(
+                from: record
+            )
+
+        return V1SavedConfigurationReadiness(
+            isReady: selectedPreset != nil,
+            presetTitle:
+                selectedPreset?
+                .trimmedTitle
         )
     }
 
@@ -270,6 +308,64 @@ struct BatchConfigurationSnapshotProvider {
 
 private extension BatchConfigurationSnapshotProvider {
 
+    struct StoredV1SubjectLibraryRecord:
+        Decodable {
+
+        let selectedSubjectID: UUID?
+        let memoryPresets:
+            [StoredMemoryPreset]
+        let selectedMemoryPresetID: UUID?
+
+        private enum CodingKeys:
+            String,
+            CodingKey {
+
+            case selectedSubjectID
+            case memoryPresets
+            case selectedMemoryPresetID
+        }
+
+        init(from decoder: Decoder) throws {
+            let container =
+                try decoder.container(
+                    keyedBy: CodingKeys.self
+                )
+            selectedSubjectID =
+                try container.decodeIfPresent(
+                    UUID.self,
+                    forKey: .selectedSubjectID
+                )
+            memoryPresets =
+                try container.decodeIfPresent(
+                    [StoredMemoryPreset].self,
+                    forKey: .memoryPresets
+                ) ?? []
+            selectedMemoryPresetID =
+                try container.decodeIfPresent(
+                    UUID.self,
+                    forKey: .selectedMemoryPresetID
+                )
+        }
+    }
+
+    struct StoredMemoryPreset:
+        Decodable {
+
+        let id: UUID
+        let title: String
+        let selectedSubjectID: UUID?
+
+        var trimmedTitle: String? {
+            let trimmedTitle =
+                title.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+            return trimmedTitle.isEmpty
+                ? nil
+                : trimmedTitle
+        }
+    }
+
     func loadAnchors() -> [Anchor] {
 
         switch loadAnchorsResult() {
@@ -280,6 +376,36 @@ private extension BatchConfigurationSnapshotProvider {
              .decodingFailed:
             return []
         }
+    }
+
+    func resolvedSelectedPreset(
+        from record:
+            StoredV1SubjectLibraryRecord
+    ) -> StoredMemoryPreset? {
+        if let selectedMemoryPresetID =
+            record.selectedMemoryPresetID,
+           let selectedPreset =
+            record.memoryPresets.first(
+                where: {
+                    $0.id == selectedMemoryPresetID
+                }
+            ) {
+            return selectedPreset
+        }
+
+        if let selectedSubjectID =
+            record.selectedSubjectID,
+           let selectedSubjectPreset =
+            record.memoryPresets.first(
+                where: {
+                    $0.selectedSubjectID
+                    == selectedSubjectID
+                }
+            ) {
+            return selectedSubjectPreset
+        }
+
+        return record.memoryPresets.first
     }
 
     func loadTemplate() -> Template? {

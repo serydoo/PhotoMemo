@@ -121,9 +121,9 @@ struct V1SettingsPageSurface: View {
             VStack(spacing: 0) {
                 settingsInfoRow(
                     title: "当前版本",
-                    headline: "时光记 1.5",
+                    headline: "时光记 1.6",
                     detail:
-                        "用户可见版本保持 1.5；TestFlight 构建号由 Xcode Cloud 与 App Store Connect 生成。",
+                        "用户可见版本更新为 1.6；TestFlight 构建号由 Xcode Cloud 与 App Store Connect 生成。",
                     systemImage: "number.circle.fill",
                     tint: .blue
                 )
@@ -165,9 +165,9 @@ struct V1SettingsPageSurface: View {
 
                 settingsInfoRow(
                     title: "当前边界",
-                    headline: "视频与动态 Live Photo 暂不在 1.5 范围",
+                    headline: "主程序选图已进入 Live Photo 验证，Share 仍以静态照片为主",
                     detail:
-                        "1.5 先验证分享、处理、保存回相册的主流程；Live Photo 支持进入 1.6 计划。",
+                        "当前适合验证静态照片与主程序选图的 Live Photo 路径；Share Extension 仍应按静态照片处理，不宣称完整 Live Photo 支持。",
                     systemImage: "livephoto",
                     tint: .indigo,
                     showsDivider: false
@@ -351,7 +351,7 @@ struct V1SettingsPageSurface: View {
         HStack(spacing: 10) {
             settingsOverviewStat(
                 title: "版本",
-                detail: "1.5",
+                detail: "1.6",
                 systemImage: "number.circle",
                 tint: .blue
             )
@@ -597,7 +597,7 @@ struct V1SettingsPageSurface: View {
         guard let url =
             URL(
                 string:
-                    "mailto:serydoo@gmail.com?subject=MemoMark%201.5%20TestFlight%20Feedback"
+                    "mailto:serydoo@gmail.com?subject=MemoMark%201.6%20TestFlight%20Feedback"
             )
         else {
             return

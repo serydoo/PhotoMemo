@@ -118,7 +118,10 @@ private extension ProductionMemoryResolver {
                 snapshot: completedSnapshot,
                 captureDate:
                     photo.metadata
-                    .captureDate
+                    .captureDate,
+                captureCalendar:
+                    photo.metadata
+                    .captureCalendar
             )
         let resolved =
             resolvedMemory(

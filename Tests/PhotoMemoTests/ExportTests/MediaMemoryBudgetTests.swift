@@ -70,6 +70,31 @@ struct MediaMemoryBudgetTests {
         #expect(budget.maxConcurrentExports == 1)
     }
 
+    @Test("treats 48MP still images as critical single-lane work")
+    func treats48MPStillImagesAsCriticalSingleLaneWork() {
+        let cost =
+            MediaCost(
+                pixelSize:
+                    MediaPixelSize(
+                        width: 8064,
+                        height: 6048
+                    ),
+                isRAW: false
+            )
+        let budget =
+            MediaMemoryBudget(
+                cost: cost
+            )
+
+        #expect(cost.pixelCount == 48_771_072)
+        #expect(cost.estimatedDecodedByteCount == 195_084_288)
+        #expect(budget.tier == .critical)
+        #expect(budget.requiresExtendedPreviewPreparation)
+        #expect(budget.maxConcurrentDecodes == 1)
+        #expect(budget.maxConcurrentRenders == 1)
+        #expect(budget.maxConcurrentExports == 1)
+    }
+
     @Test("derives cost from a media asset")
     func derivesCostFromMediaAsset() throws {
         let dngType =

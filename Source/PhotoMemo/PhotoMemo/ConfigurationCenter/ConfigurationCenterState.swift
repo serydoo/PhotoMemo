@@ -70,6 +70,8 @@ struct MemoryPreset:
     var logoMode: V1LogoMode
     var usesCustomMemoryWriteText: Bool
     var customMemoryWriteText: String
+    var savedOutputConfiguration:
+        V1SavedOutputConfiguration?
 
     init(
         id: UUID = UUID(),
@@ -83,7 +85,9 @@ struct MemoryPreset:
         storageOption: ConfigurationStorageOption = .appFolder,
         logoMode: V1LogoMode = .appleMini,
         usesCustomMemoryWriteText: Bool = false,
-        customMemoryWriteText: String = ""
+        customMemoryWriteText: String = "",
+        savedOutputConfiguration:
+            V1SavedOutputConfiguration? = nil
     ) {
         self.id = id
         self.title = title
@@ -97,12 +101,44 @@ struct MemoryPreset:
         self.logoMode = logoMode
         self.usesCustomMemoryWriteText = usesCustomMemoryWriteText
         self.customMemoryWriteText = customMemoryWriteText
+        self.savedOutputConfiguration =
+            savedOutputConfiguration
     }
 
     func templateID(
         for region: CardRegion
     ) -> String? {
         regionTemplateIDs[region]
+    }
+}
+
+struct V1SavedOutputConfiguration:
+    Codable,
+    Hashable {
+
+    var outputTarget: V1IOSOutputTarget
+    var mediaOutputMode: V1MediaOutputMode
+    var selectedExistingAlbumIdentifier: String
+    var newAlbumName: String
+
+    init(
+        outputTarget: V1IOSOutputTarget,
+        mediaOutputMode: V1MediaOutputMode,
+        selectedExistingAlbumIdentifier: String,
+        newAlbumName: String
+    ) {
+        self.outputTarget = outputTarget
+        self.mediaOutputMode = mediaOutputMode
+        self.selectedExistingAlbumIdentifier =
+            selectedExistingAlbumIdentifier
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+        self.newAlbumName =
+            newAlbumName
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
     }
 }
 #endif

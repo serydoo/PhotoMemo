@@ -3,7 +3,9 @@ import Foundation
 
 enum V1IOSOutputTarget:
     String,
+    Codable,
     CaseIterable,
+    Hashable,
     Identifiable {
 
     case automatic

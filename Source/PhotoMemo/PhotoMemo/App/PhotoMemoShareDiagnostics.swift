@@ -38,6 +38,8 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "app.enqueue.taskRoute")
     nonisolated static let batchTaskRoute =
         Self(rawValue: "batch.task.route")
+    nonisolated static let batchTaskDuration =
+        Self(rawValue: "batch.task.duration")
 
     nonisolated static let extensionError =
         Self(rawValue: "extension.error")
@@ -59,6 +61,8 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "extension.input")
     nonisolated static let extensionInputEmpty =
         Self(rawValue: "extension.input.empty")
+    nonisolated static let extensionInputTooManyPhotos =
+        Self(rawValue: "extension.input.tooManyPhotos")
     nonisolated static let extensionItemFailed =
         Self(rawValue: "extension.item.failed")
     nonisolated static let extensionItemImported =

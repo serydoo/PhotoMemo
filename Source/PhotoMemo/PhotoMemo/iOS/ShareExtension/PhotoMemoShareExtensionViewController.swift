@@ -103,6 +103,12 @@ final class PhotoMemoShareExtensionViewController:
 
     private var sharedPhotoCount = 0
 
+    private var configurationReadiness =
+        V1SavedConfigurationReadiness(
+            isReady: false,
+            presetTitle: nil
+        )
+
     private var firstPreviewTask:
         Task<Void, Never>?
 
@@ -733,6 +739,10 @@ private extension PhotoMemoShareExtensionViewController {
     @MainActor
     func applyWorkflowSummary() {
 
+        configurationReadiness =
+            snapshotService
+            .loadV1ConfigurationReadiness()
+
         let snapshot =
             snapshotService.loadSnapshot()
         let summary =
@@ -740,10 +750,19 @@ private extension PhotoMemoShareExtensionViewController {
                 from: snapshot
             )
 
-        currentStyleValueLabel.text =
-            summary.styleTitle
-        outputValueLabel.text =
-            summary.outputTitle
+        if configurationReadiness.isReady {
+            currentStyleValueLabel.text =
+                configurationReadiness
+                .presetTitle
+                ?? summary.styleTitle
+            outputValueLabel.text =
+                summary.outputTitle
+        } else {
+            currentStyleValueLabel.text =
+                "需要先保存配置"
+            outputValueLabel.text =
+                "打开时光记，在配置中心保存后再回来分享"
+        }
     }
 
     @MainActor
@@ -763,11 +782,39 @@ private extension PhotoMemoShareExtensionViewController {
             : "这次分享里没有可处理照片"
 
         subtitleLabel.text =
-            sharedPhotoCount > 0
+            configurationReadiness.isReady
+            ? (
+                sharedPhotoCount > 0
             ? "时光记会按当前配置继续处理，并把结果写回系统相册。"
             : "当前内容看起来不像可直接处理的静态照片。"
+            )
+            : "首次处理前，需要先在时光记里保存一个配置。"
 
-        if sharedPhotoCount > 0 {
+        if !configurationReadiness.isReady {
+            statusTitleLabel.text =
+                "需要先完成配置"
+            statusMessageLabel.text =
+                "请先打开时光记，在配置中心保存当前记忆对象的配置。输出部分默认可不改；如果你改了输出设置，保存后也会并入当前配置。"
+            footerLabel.text =
+                "配置保存完成后，再回到 Apple Photos 重新分享这批照片。"
+            applyPrimaryButton(
+                title:
+                    "打开时光记去配置"
+            )
+        } else if sharedPhotoCount
+            > PhotoMemoShareExtensionIntakeService
+            .maxSupportedPhotoCount {
+            statusTitleLabel.text =
+                "一次分享的照片太多"
+            statusMessageLabel.text =
+                "Share Extension 当前一次最多安全接收 \(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount) 张照片。"
+            footerLabel.text =
+                "请回到 Apple Photos 分批分享，避免系统在后台提前终止扩展。"
+            applyPrimaryButton(
+                title:
+                    "分批分享"
+            )
+        } else if sharedPhotoCount > 0 {
             statusTitleLabel.text =
                 "准备交给时光记"
             statusMessageLabel.text =
@@ -951,6 +998,28 @@ private extension PhotoMemoShareExtensionViewController {
         switch viewState {
 
         case .confirming:
+            guard configurationReadiness.isReady else {
+                Task { @MainActor in
+                    let opened =
+                        await requestMainAppRefresh(
+                            requestID: nil
+                        )
+
+                    if opened {
+                        extensionContext?
+                            .completeRequest(
+                                returningItems: nil
+                            )
+                    } else {
+                        cancelExtension(
+                            message:
+                                "请先打开时光记保存当前配置，再重新分享照片。"
+                        )
+                    }
+                }
+                return
+            }
+
             guard sharedPhotoCount > 0 else {
                 cancelExtension(
                     message:
@@ -958,6 +1027,22 @@ private extension PhotoMemoShareExtensionViewController {
                         .noSupportedImages
                         .errorDescription
                         ?? "没有可处理的照片。"
+                )
+                return
+            }
+
+            guard sharedPhotoCount <=
+                    PhotoMemoShareExtensionIntakeService
+                    .maxSupportedPhotoCount
+            else {
+                PhotoMemoShareDiagnostics.record(
+                    stage: .extensionInputTooManyPhotos,
+                    message:
+                        "supportedPhotos=\(sharedPhotoCount), max=\(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount)"
+                )
+                cancelExtension(
+                    message:
+                        "一次最多处理 \(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount) 张照片。请回到 Apple Photos 分批分享。"
                 )
                 return
             }

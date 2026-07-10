@@ -1165,9 +1165,7 @@ struct MemorySubjectEditorView: View {
             subject.primaryTimeAnchor?.id
             ?? subject.timeAnchors.first?.id
             ?? timeAnchors.first?.id
-        editingTimeAnchorID =
-            selectedTimeAnchorID
-            ?? timeAnchors.first?.id
+        editingTimeAnchorID = nil
     }
 
     private func defaultedTimeAnchors(

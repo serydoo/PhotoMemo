@@ -106,7 +106,7 @@ struct MemoryExpressionEngine {
                 captureDate:
                     captureDate,
                 calendar:
-                    Calendar.current
+                    context.captureCalendar
             )
         let anchorResult =
             MemoryAnchorResult(

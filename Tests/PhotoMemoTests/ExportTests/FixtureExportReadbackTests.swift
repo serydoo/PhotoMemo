@@ -412,6 +412,74 @@ struct FixtureExportReadbackTests {
             )
         )
     }
+
+    @MainActor
+    @Test("Static export removes inherited Live Photo pairing metadata")
+    func staticExportRemovesInheritedLivePhotoPairingMetadata() async throws {
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .gpsJPEG
+            )
+        var importedPhoto =
+            try await PhotoImportService()
+            .importPhoto(from: sourceURL)
+        importedPhoto.sourceProperties[
+            kCGImagePropertyMakerAppleDictionary
+        ] = [
+            "17" as CFString:
+                "stale-live-photo-pair"
+        ]
+        importedPhoto.sourceProperties[
+            ImageIOStillImageMetadataPropertyReviser
+                .quickTimeMetadataKey
+        ] = [
+            "com.apple.quicktime.content.identifier":
+                "stale-live-photo-pair"
+        ]
+
+        let card =
+            RecordCardBuildService().buildCard(
+                from: importedPhoto,
+                configuration:
+                    makeConfiguration(
+                        shouldWriteDescription: true,
+                        description:
+                            "Static export pairing cleanup"
+                    )
+            )
+        let exportURL =
+            try RecordCardExportService()
+            .exportToTemporaryFile(
+                photo: importedPhoto,
+                card: card
+            )
+
+        defer {
+            try? FileManager.default.removeItem(
+                at: exportURL
+            )
+        }
+
+        let exportedProperties =
+            try SyntheticFixtureLibrary
+            .properties(at: exportURL)
+        let makerApple =
+            exportedProperties[
+                kCGImagePropertyMakerAppleDictionary
+            ] as? [CFString: Any] ?? [:]
+
+        #expect(
+            makerApple[
+                "17" as CFString
+            ] == nil
+        )
+        #expect(
+            exportedProperties[
+                ImageIOStillImageMetadataPropertyReviser
+                    .quickTimeMetadataKey
+            ] == nil
+        )
+    }
 }
 
 private extension FixtureExportReadbackTests {

@@ -131,6 +131,11 @@ struct PhotoMemoShareDiagnosticsTests {
         )
         #expect(
             PhotoMemoShareDiagnosticStage(
+                rawValue: "batch.task.duration"
+            ) == .batchTaskDuration
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
                 rawValue: "extension.provider.observed"
             ) == .extensionProviderObserved
         )

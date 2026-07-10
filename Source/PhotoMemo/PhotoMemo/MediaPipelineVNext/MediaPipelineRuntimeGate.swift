@@ -6,6 +6,7 @@ nonisolated enum MediaPipelineRuntimeMode:
     Sendable {
     case disabled
     case shadow
+    case validationCandidate
     case internalTesting
 }
 
@@ -53,6 +54,21 @@ nonisolated struct MediaPipelineRuntimeGate:
             permitsUserVisibleOutputControls: false,
             permitsPhotoLibraryWrites: false
         )
+
+    nonisolated static func validationCandidate(
+        allowedRoutes: Set<MediaProcessingRoute>,
+        exposesUserVisibleOutputControls: Bool = false,
+        permitsPhotoLibraryWrites: Bool = false
+    ) -> MediaPipelineRuntimeGate {
+        MediaPipelineRuntimeGate(
+            mode: .validationCandidate,
+            allowedRoutes: allowedRoutes,
+            permitsUserVisibleOutputControls:
+                exposesUserVisibleOutputControls,
+            permitsPhotoLibraryWrites:
+                permitsPhotoLibraryWrites
+        )
+    }
 
     nonisolated static func internalTesting(
         allowedRoutes: Set<MediaProcessingRoute>,

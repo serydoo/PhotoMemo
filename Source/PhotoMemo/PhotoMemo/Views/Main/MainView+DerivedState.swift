@@ -69,15 +69,19 @@ extension MainView {
 
     var anchorPreviewResult: AnchorResult? {
 
-        guard let selectedAnchor else {
+        guard
+            let selectedAnchor,
+            let captureDate =
+                selectedPhoto?
+                .metadata
+                .captureDate
+        else {
             return nil
         }
 
         return anchorEngine.build(
             from: selectedAnchor,
-            photoDate:
-                selectedPhoto?.metadata.captureDate
-                ?? Date()
+            photoDate: captureDate
         )
     }
 

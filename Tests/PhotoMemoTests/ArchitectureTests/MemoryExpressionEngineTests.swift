@@ -108,6 +108,109 @@ struct MemoryExpressionEngineTests {
         )
     }
 
+    @Test("uses capture calendar when resolving birthday age across timezones")
+    func usesCaptureCalendarWhenResolvingBirthdayAgeAcrossTimezones() throws {
+        let originalDefaultTimeZone =
+            NSTimeZone.default
+        NSTimeZone.default =
+            try #require(
+                TimeZone(secondsFromGMT: -8 * 60 * 60)
+            )
+        defer {
+            NSTimeZone.default =
+                originalDefaultTimeZone
+        }
+
+        var captureCalendar =
+            Calendar(identifier: .gregorian)
+        captureCalendar.timeZone =
+            try #require(
+                TimeZone(secondsFromGMT: 8 * 60 * 60)
+            )
+        let birthday =
+            try #require(
+                captureCalendar.date(
+                    from:
+                        DateComponents(
+                            year: 2026,
+                            month: 1,
+                            day: 31
+                        )
+                )
+            )
+        let captureDate =
+            try #require(
+                captureCalendar.date(
+                    from:
+                        DateComponents(
+                            year: 2026,
+                            month: 3,
+                            day: 1
+                        )
+                )
+            )
+        let subject =
+            MemorySubject(
+                identity: .init(
+                    displayName: "王途途",
+                    shortName: "途途"
+                ),
+                relationship: .init(
+                    role: "宝宝",
+                    label: "妈妈眼里的宝宝"
+                ),
+                definition: "测试对象",
+                referenceDate: birthday,
+                timeAnchors: [
+                    .init(
+                        title: "生日",
+                        date: birthday,
+                        note: "出生日期",
+                        anchorType: .birthday,
+                        expressionStyle:
+                            .birthdayAgeToday
+                    )
+                ],
+                activeTimeAnchorID: nil,
+                expressionSubjectSource: .shortName,
+                behavior: MemoryBehavior(
+                    primaryAnchor: "生日",
+                    iconStrategy: .autoMatch,
+                    badgeStrategy: .autoMatch,
+                    memoryExpression: MemoryExpression(
+                        title: "生日记忆",
+                        blocks: [.text("生日智能模块")]
+                    )
+                ),
+                decorations: []
+            )
+        let snapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject,
+                smartModuleCarrierRegion: .slotD
+            )
+        let context =
+            MemoryExpressionContext(
+                subject: subject,
+                snapshot: snapshot,
+                captureDate: captureDate,
+                captureCalendar: captureCalendar
+            )
+        let result =
+            MemoryExpressionEngine()
+            .generateResult(
+                context: context
+            )
+        let elapsed =
+            try #require(
+                result.primaryAnchorResult?
+                    .elapsed
+            )
+
+        #expect(elapsed.months == 1)
+        #expect(elapsed.days == 1)
+    }
+
     @Test("falls back to display name when selected expression subject text is empty")
     func fallsBackToDisplayNameWhenExpressionSubjectIsEmpty() {
         let birthday =

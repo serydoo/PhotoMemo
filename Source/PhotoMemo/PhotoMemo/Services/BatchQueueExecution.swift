@@ -270,6 +270,8 @@ final class BatchQueueExecution {
             .requiresExtendedPreviewPreparation
         let totalProgressUnits =
             requiresExtendedPreviewPreparation ? 6 : 5
+        let startedAt = Date()
+        var route = "unknown"
 
         store.setActiveProcessingReference(
             reference
@@ -305,10 +307,14 @@ final class BatchQueueExecution {
                 shouldUseLivePhotoProcessing(
                     for: task
                 )
+            route =
+                usesLivePhotoProcessing
+                ? "livePhoto"
+                : "staticImage"
             PhotoMemoShareDiagnostics.record(
                 stage: .batchTaskRoute,
                 message:
-                    "fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), hasSourceIdentifier=\(task.sourceIdentifier?.isEmpty == false), route=\(usesLivePhotoProcessing ? "livePhoto" : "staticImage")",
+                    "fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), hasSourceIdentifier=\(task.sourceIdentifier?.isEmpty == false), route=\(route)",
                 jobID:
                     store.currentJob(
                         at: reference
@@ -322,6 +328,15 @@ final class BatchQueueExecution {
                     in: store,
                     totalProgressUnits:
                         totalProgressUnits
+                )
+                recordTaskDuration(
+                    startedAt: startedAt,
+                    route: route,
+                    phase: .completed,
+                    task: task,
+                    jobID: store.currentJobID(
+                        at: reference
+                    )
                 )
                 return
             }
@@ -511,6 +526,15 @@ final class BatchQueueExecution {
                     statusMessage: "处理完成"
                 )
             }
+            recordTaskDuration(
+                startedAt: startedAt,
+                route: route,
+                phase: .completed,
+                task: task,
+                jobID: store.currentJobID(
+                    at: reference
+                )
+            )
 
             cleanupManagedTaskSourceIfNeeded(
                 at: reference,
@@ -597,6 +621,15 @@ final class BatchQueueExecution {
                 (error as? LocalizedError)?
                 .errorDescription
                 ?? error.localizedDescription
+            )
+            recordTaskDuration(
+                startedAt: startedAt,
+                route: route,
+                phase: .failed,
+                task: initialTask,
+                jobID: store.currentJobID(
+                    at: reference
+                )
             )
 
             if let jobID =
@@ -925,6 +958,28 @@ private extension BatchQueueExecution {
                 at: url
             )
         }
+    }
+
+    func recordTaskDuration(
+        startedAt: Date,
+        route: String,
+        phase: BatchTaskPhase,
+        task: BatchTask,
+        jobID: UUID?
+    ) {
+        let durationSeconds =
+            max(
+                Date()
+                    .timeIntervalSince(startedAt),
+                0
+            )
+
+        PhotoMemoShareDiagnostics.record(
+            stage: .batchTaskDuration,
+            message:
+                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), phase=\(phase.rawValue), durationSeconds=\(String(format: "%.3f", durationSeconds))",
+            jobID: jobID
+        )
     }
 
     func makeNotificationAttachmentIfNeeded(

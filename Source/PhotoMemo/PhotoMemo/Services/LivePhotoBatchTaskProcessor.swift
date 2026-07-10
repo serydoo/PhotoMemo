@@ -76,7 +76,7 @@ final class LivePhotoBatchTaskProcessor:
     init(
         runtimeGate:
             MediaPipelineRuntimeGate =
-                .internalTesting(
+                .validationCandidate(
                     allowedRoutes: [.livePhoto],
                     exposesUserVisibleOutputControls: true,
                     permitsPhotoLibraryWrites: true

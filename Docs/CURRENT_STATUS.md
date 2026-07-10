@@ -2,6 +2,573 @@
 
 Last updated: 2026-07-10
 
+## 2026-07-10 V3 Validation Batch 6 In Progress
+
+The sixth V3 validation slice closed two remaining low-risk automated
+regression gaps and captured the latest iPhone7 Share Extension evidence.
+
+Closed / regression-guarded in this batch:
+
+- `MemoryExpressionContext` now carries a `captureCalendar`.
+- `MemoryExpressionEngine` resolves elapsed anchor values with the capture
+  calendar instead of `Calendar.current`.
+- `ProductionMemoryResolver` passes `photo.metadata.captureCalendar` into the
+  production Memory Engine path.
+- A cross-timezone regression test verifies birthday elapsed values near
+  month boundaries use the photo capture calendar rather than the processing
+  device timezone.
+- `StillImageMetadataWriterContractTests` now has a no-file HEIC regression
+  proving the VNext metadata reviser preserves a non-ASCII EXIF
+  `UserComment` dictionary value while revising HEIC metadata.
+- `scripts/summarize-ios-runtime-evidence.py` now emits privacy-safe
+  `newRequests` summaries with request ID, launch source, item count, import
+  counts, and content types.
+- `scripts/summarize-ios-runtime-evidence.py` now also emits per-job
+  `durationSeconds` and `savedTasksPerMinute` so real-device batch throughput
+  can be compared without inspecting private media.
+- Batch execution now records privacy-safe `batch.task.duration` diagnostics
+  for completed and failed tasks, giving the next real-device run per-task
+  route, terminal phase, and total duration evidence.
+- The user-facing release version has been raised to `1.6`
+  (`MARKETING_VERSION = 1.6`) for the next Xcode Cloud build.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/StillImageMetadataWriterContractTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/MemoryExpressionEngineTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/ProductionMemoryResolverTests \
+  -only-testing:PhotoMemoTests/MemoryResultContractTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 scripts/summarize-ios-runtime-evidence.py \
+  /tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-manual-open-check-20260710-214158 \
+  --baseline /tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-211400 \
+  --scenario manual \
+  --write
+
+PHOTOMEMO_RUNTIME_BASELINE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-211400 \
+PHOTOMEMO_RUNTIME_EVIDENCE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-stable-20260710-220803 \
+PHOTOMEMO_RUNTIME_SCENARIO=manual \
+  scripts/collect-ios-runtime-evidence.sh 863C2747-6742-5E93-B715-6F89DBF90B31
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+python3 scripts/summarize-ios-runtime-evidence.py \
+  /tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-stable-20260710-220803 \
+  --baseline /tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-211400 \
+  --scenario manual \
+  --write
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests/resolvesKnownStageRawValues \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3DurationLivePhotoTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3Batch6IOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+git diff --check
+```
+
+iPhone7 evidence:
+
+- Installed and launched the signed Debug device build from
+  `/tmp/PhotoMemoV3DeviceBuild_20260710/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
+  before the batch 6 code-only changes.
+- Baseline:
+  `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-211400`.
+- After user manual Apple Photos sharing:
+  `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-manual-open-check-20260710-214158`.
+- 21-photo rejection evidence is present:
+  `extension.input.tooManyPhotos supportedPhotos=21, max=20`, with no new
+  PhotoMemo crash and no new batch job.
+- Initial 20-photo and 1-photo Share Extension intake succeeded and persisted
+  App Group requests:
+  - `9AA52C1B-F386-4CA2-9354-868E51D2898F`, `items=20`, `imported=20`
+  - `EB573745-A90D-40C0-8B2F-1991846ED921`, `items=1`, `imported=1`
+- After iPhone7 was available again, launching MemoMark drained the pending
+  requests into completed `shareExtension` jobs:
+  - `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-launch-drain-20260710-220411`
+    captured `app.drain drainedRequests=2`, `app.request.validated`, and
+    `app.enqueue.created`.
+  - `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-stable-20260710-220803`
+    captured four new completed jobs across two 1-photo runs and two 20-photo
+    runs:
+    - `9C8CF1C6-19EF-40B7-90E4-364355304B75`, `tasks=1`, `saved=1`
+    - `76B280ED-82FB-4579-911B-8BE1CCD4ED48`, `tasks=20`, `saved=20`
+    - `9A65552C-4D21-4866-9294-391356F3B1EE`, `tasks=1`, `saved=1`
+    - `66B30197-2392-4FE6-AF27-CF143484DAC4`, `tasks=20`, `saved=20`
+  - The stable evidence has no pending external intake requests and no new
+    PhotoMemo crashes relative to the baseline.
+- Rebuilt the current dirty working tree for physical iPhone7 and installed it
+  after the batch 6 code-only changes:
+  - Build output:
+    `/tmp/PhotoMemoV3Batch6DeviceBuild_20260710_2/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
+  - Install target: `com.serydoo.PhotoMemo.iOS`, version `1.5`, build `7`
+    before the final `1.6` marketing-version bump.
+  - Post-install evidence:
+    `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-current-install-20260710-222315`
+  - Post-install launch produced no new requests, no new jobs, and no new
+    PhotoMemo crashes relative to
+    `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-stable-20260710-220803`.
+- The stable iPhone7 evidence now reports batch throughput:
+  - `76B280ED-82FB-4579-911B-8BE1CCD4ED48`, `tasks=20`,
+    `duration=21.56s`, `throughput=55.66/min`
+  - `66B30197-2392-4FE6-AF27-CF143484DAC4`, `tasks=20`,
+    `duration=25.082s`, `throughput=47.84/min`
+- The next real-device batch run will additionally include `batch.task.duration`
+  events, allowing per-task duration review before any MainActor refactor is
+  attempted.
+
+Open after this batch:
+
+- MainActor / Instruments evidence and real 48MP memory-pressure validation
+  remain open release-validation items.
+
+## 2026-07-10 V3 Validation Batch 5 Verified
+
+The fifth V3 validation slice tightened two remaining evidence gaps without
+changing rendering behavior or broad concurrency architecture.
+
+Closed / regression-guarded in this batch:
+
+- Share Extension 21-photo rejection now records a machine-readable
+  `extension.input.tooManyPhotos` diagnostic event before cancelling the
+  extension from the confirmation UI.
+- The runtime evidence summarizer recognizes that event for the
+  `share-21-reject` scenario, while still requiring no new handoff request, no
+  new batch job, and no new PhotoMemo crash relative to a baseline.
+- The 48MP memory budget model now explicitly covers non-RAW 48MP still images
+  (`8064x6048`) as critical single-lane work with extended preview preparation
+  and a `195,084,288` byte decoded-RGBA estimate.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/MediaMemoryBudgetTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 scripts/summarize-ios-runtime-evidence.py \
+  /var/folders/4t/983xkfjx51q_pv8sqp3tymkw0000gn/T/pm-cur-ibukuice \
+  --baseline /var/folders/4t/983xkfjx51q_pv8sqp3tymkw0000gn/T/pm-base-kw5sxvor \
+  --scenario share-21-reject
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3ShareTooManyDiagnosticsBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3RuntimeEvidenceIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Notes:
+
+- This batch does not claim real 48MP device performance safety. It closes the
+  model-level regression gap only. Real 48MP import/export/save memory pressure
+  remains a manual Instruments / real-device validation item.
+- Existing HEIC fixture export coverage verifies HEIC import and readable
+  normalized output through the current temporary export path. A true HEIC
+  file-writing parity regression should wait for a stable ImageIO writing lane;
+  the VNext file-writing test remains disabled because the current macOS test
+  runner can hang while finalizing logs for that fixture-writing case.
+
+## 2026-07-10 V3 Runtime Evidence Summarizer Added
+
+The V3 real-device validation path now has a reusable evidence summarizer for
+post-test review. This is a validation-support slice, not a runtime behavior
+change.
+
+Added / updated:
+
+- `scripts/summarize-ios-runtime-evidence.py` reads collected App Group
+  diagnostics, external intake requests, batch queue jobs, and PhotoMemo crash
+  listings without inspecting private photo contents.
+- `scripts/collect-ios-runtime-evidence.sh` now generates
+  `runtime-evidence-summary.md` and `runtime-evidence-summary.json` after each
+  collection.
+- The summarizer supports baseline comparison for `share-1`, `share-20`, and
+  `share-21-reject` scenarios so old queue entries do not contaminate V3
+  device evidence.
+- The 21-photo rejection scenario is intentionally split between script and
+  manual review: the script verifies that no new handoff request, batch job, or
+  crash appeared; the device UI must still confirm the split-batch rejection
+  copy.
+- `scripts/README.md` now documents the baseline and post-share commands for
+  iPhone7 evidence collection.
+
+Verification passed:
+
+```bash
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+python3 scripts/summarize-ios-runtime-evidence.py \
+  /tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-202508 \
+  --scenario baseline \
+  --write
+
+python3 scripts/summarize-ios-runtime-evidence.py \
+  /tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-202508 \
+  --baseline /tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-202508 \
+  --scenario share-21-reject
+```
+
+Device note:
+
+- `xcrun devicectl list devices` currently reports physical `iPhone7`
+  (`863C2747-6742-5E93-B715-6F89DBF90B31`) as `unavailable`, so the next
+  Apple Photos -> Share -> MemoMark smoke must wait for the device to be
+  online / trusted again.
+
+## 2026-07-10 V3 P1 Closure Batch 4 Verified
+
+The fourth V3 P1 closure batch completed the preview-only Capture-Time guard
+and the static export stale Live Photo metadata cleanup found during the
+parallel scans.
+
+Closed / regression-guarded in this batch:
+
+- `MainView+DerivedState.anchorPreviewResult` no longer substitutes current
+  time when the selected photo has no capture date. The preview quick facts now
+  disappear instead of presenting a fabricated time relationship.
+- A source-boundary regression test prevents the main anchor preview from
+  reintroducing `?? Date()` for missing capture time.
+- Static `RecordCardExportService` export now removes inherited Live Photo
+  pairing metadata from source properties before writing generated still-image
+  metadata.
+- The old static exporter and the VNext still-image writer now share the same
+  ImageIO cleanup helper for QuickTime metadata and Apple MakerApple pairing
+  identifiers.
+- Cleanup coverage now includes numeric MakerApple `17` keys, matching the key
+  shapes supported by the Live Photo pairing verifier.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/PreviewCompositionMigrationTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/StillImageMetadataWriterContractTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/FixtureExportReadbackTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3Batch4IOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3Batch4ShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+git diff --check
+```
+
+Remaining V3 P1 / validation work:
+
+- signed build / TestFlight / real-device Share Extension behavior smoke
+- real-device 20-photo accept / 21-photo reject validation from Apple Photos
+- MainActor / concurrency audit follow-up with measurable runtime evidence
+- 48MP / memory-pressure validation
+
+## 2026-07-10 V3 P1 Closure Batch 3 Verified
+
+The third V3 P1 closure batch completed the remaining production
+`MemorySubjectAdapter` current-time cleanup.
+
+Closed / regression-guarded in this batch:
+
+- `MemorySubjectAdapter` no longer uses the current clock when the explicit
+  reference date, profile birthday, and anchor dates are all missing.
+- The adapter now uses one deterministic unspecified reference date instead of
+  inventing user memory data from processing time.
+- Focused regression coverage verifies that empty profile / anchor input stays
+  deterministic.
+- A parallel scan found no remaining production Capture-Time `Date()` fallback
+  in `ProductionMemoryResolver`, `RecordCardBuildService`, `AnchorEngine`, or
+  `MemoryExpressionEngine`.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS' \
+  -only-testing:PhotoMemoTests/MemorySubjectAdapterTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3MemorySubjectAdapterIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+git diff --check
+```
+
+Parallel scan follow-up:
+
+- Preview-only fixed-date paths are separate from production semantics.
+- `MainView+DerivedState.anchorPreviewResult` still uses current time when no
+  preview photo capture date exists. It should be handled as a dedicated
+  preview-only guard slice, not folded into this production adapter change.
+- Static export can inherit stale Live Photo pairing metadata from source
+  properties. Metadata cleanup and regression coverage remain the next
+  code-level P1 closure candidate.
+- Signed TestFlight / real-device Share Extension smoke, 20/21-photo device
+  validation, MainActor performance evidence, and 48MP memory-pressure
+  validation remain open.
+
+## 2026-07-10 V3 P1 Closure Batch 2 Verified
+
+The second V3 P1 closure batch continued the Production Audit v2.0 follow-up
+after Batch 1.
+
+Closed / regression-guarded in this batch:
+
+- Share Extension now has an explicit safe intake cap of 20 supported photo
+  providers per handoff.
+- Oversized Share Extension batches are rejected before provider loading or
+  persistence, with user-facing copy asking the user to split the share from
+  Apple Photos.
+- The Share Extension confirmation UI uses the same intake cap as the service
+  layer, instead of only limiting preview thumbnails.
+- `RecordCardBuildService` no longer calculates legacy anchor results from the
+  current time when photo capture time is missing.
+- `AnchorEngine.build` no longer has an implicit `Date()` default argument;
+  callers must pass an explicit photo date.
+
+Verification passed:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -only-testing:PhotoMemoTests/RecordCardBuildServiceTests/legacyAnchorResultIsNotCalculatedFromCurrentTimeWhenCaptureDateIsMissing \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests/shareExtensionIntakeRejectsOversizedProviderBatchesBeforePersistence \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  test
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3CaptureIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3CaptureShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+git diff --check
+```
+
+Notes:
+
+- A broader `RecordCardBuildServiceTests` run exposed an unrelated
+  `exportNamingPrefersImportedOriginalFileName` `.writeFailed` failure under
+  the multi-destination/default macOS test invocation. The focused Capture-Time
+  and Share cap regressions passed with an explicit arm64 macOS destination.
+- Remaining Capture-Time work includes removing the `Date()` fallback in
+  `MemorySubjectAdapter` and reviewing preview-only current-time fallbacks so
+  they cannot migrate back into production semantics.
+
+## 2026-07-10 V3 P1 Closure Batch 1 Verified
+
+The first V3 P1 closure batch has been implemented and verified on top of
+`9430598 Add Production Audit v2.0 reports`.
+
+Closed / regression-guarded in this batch:
+
+- first-run processing is gated on a saved V1 configuration for the selected
+  memory subject in the main iOS app
+- Share Extension now detects missing saved configuration and routes the user
+  back to the main app instead of persisting incoming share items
+- V1 presets now carry saved output configuration so the Configuration Center
+  and Output page cooperate around one complete configuration object
+- output configuration is folded into apply/save persistence snapshots, while
+  legacy saves without output context preserve any previously saved output
+  settings
+- preset deletion now persists the updated subject library immediately
+- memory subject anchor maintenance no longer auto-opens the edit sheet when
+  drafts are loaded
+- Live Photo runtime wording and gate naming now reflect main-app picker
+  validation-candidate scope, not full Share Extension Live Photo support
+- iOS root-surface contract coverage now matches the current V1 root view
+
+Verification passed:
+
+```bash
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS' \
+  -only-testing:PhotoMemoTests/ConfigurationSessionConfigurationLifecycleTests \
+  -only-testing:PhotoMemoTests/V1SubjectLibrarySupportTests \
+  -only-testing:PhotoMemoTests/SharedBatchConfigurationSnapshotServiceTests \
+  -only-testing:PhotoMemoTests/MediaPipelineRuntimeGateTests \
+  -only-testing:PhotoMemoTests/V1IOSTimeAnchorPresentationTests \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  test
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3IOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3ShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+git diff --check
+```
+
+Remaining V3 P1 / validation work:
+
+- Share Extension intake count cap and large-provider regression tests
+- Capture-Time Principle closure for production `Date()` fallbacks
+- static export metadata parity and stale Live Photo pairing metadata cleanup
+- MainActor / concurrency audit follow-up with measurable runtime evidence
+- 48MP / memory-pressure validation
+- signed build / TestFlight / real-device Share Extension behavior smoke,
+  including the existing responder-chain open-url fallback risk
+
 ## 2026-07-10 Production Audit v2.0 Completed
 
 MemoMark Production Audit v2.0 has been completed as a modular engineering

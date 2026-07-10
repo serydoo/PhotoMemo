@@ -6,7 +6,7 @@ final class AnchorEngine {
 
     func build(
         from anchor: Anchor,
-        photoDate: Date = Date()
+        photoDate: Date
     ) -> AnchorResult {
 
         if photoDate < anchor.date {

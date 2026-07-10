@@ -42,4 +42,19 @@ struct MediaPipelineRuntimeGateTests {
         #expect(gate.permitsUserVisibleOutputControls)
         #expect(gate.permitsPhotoLibraryWrites == false)
     }
+
+    @Test("Validation candidate gate names the externally testable Live Photo runtime correctly")
+    func validationCandidateGateNamesExternallyTestableLivePhotoRuntimeCorrectly() {
+        let gate =
+            MediaPipelineRuntimeGate.validationCandidate(
+                allowedRoutes: [.stillImage, .livePhoto],
+                exposesUserVisibleOutputControls: true,
+                permitsPhotoLibraryWrites: true
+            )
+
+        #expect(gate.mode == .validationCandidate)
+        #expect(gate.permitsPlanning(for: .livePhoto))
+        #expect(gate.permitsUserVisibleOutputControls)
+        #expect(gate.permitsPhotoLibraryWrites)
+    }
 }

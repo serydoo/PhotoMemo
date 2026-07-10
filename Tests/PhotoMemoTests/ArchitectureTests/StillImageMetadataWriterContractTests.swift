@@ -392,6 +392,100 @@ struct StillImageMetadataWriterContractTests {
         )
     }
 
+    @Test("Preserves non-ASCII HEIC UserComment while revising metadata without writing files")
+    func preservesNonASCIIHEICUserCommentWithoutWritingFiles() throws {
+        let expectedComment =
+            "右下默认说明"
+        let policy =
+            MetadataPolicyResolver.standard.plan(
+                for:
+                    MediaProcessingPlan(
+                        route: .stillImage,
+                        sourceContentType: .heic,
+                        outputPlan:
+                            .stillImage(
+                                imageType: .heic
+                            ),
+                        preservesLivePhotoMotion: false,
+                        requiresLivePhotoPairedResources: false
+                    )
+            )
+        let plan =
+            try StillImageMetadataWritePlanner
+                .standard
+                .plan(
+                    StillImageMetadataWriteRequest(
+                        sourceImageURL:
+                            URL(fileURLWithPath: "/tmp/source.heic"),
+                        renderedImageURL:
+                            URL(fileURLWithPath: "/tmp/rendered.heic"),
+                        destinationImageURL:
+                            URL(fileURLWithPath: "/tmp/output.heic"),
+                        outputImageType: .heic,
+                        outputPixelWidth: 4032,
+                        outputPixelHeight: 3024,
+                        policyPlan: policy
+                    )
+                )
+
+        let revised =
+            ImageIOStillImageMetadataPropertyReviser()
+            .revisedProperties(
+                from: [
+                    kCGImagePropertyExifDictionary: [
+                        "UserComment" as CFString:
+                            expectedComment
+                    ]
+                ],
+                plan: plan
+            )
+        let exif =
+            try #require(
+                revised[
+                    kCGImagePropertyExifDictionary
+                ] as? [CFString: Any]
+            )
+
+        #expect(
+            exif[
+                "UserComment" as CFString
+            ] as? String == expectedComment
+        )
+    }
+
+    @Test("Removes numeric MakerApple Live Photo pairing keys")
+    func removesNumericMakerAppleLivePhotoPairingKeys() {
+        var properties: [CFString: Any] = [
+            kCGImagePropertyMakerAppleDictionary: [
+                AnyHashable(17):
+                    "numeric-live-photo-pair",
+                AnyHashable("31"):
+                    "keep-me"
+            ]
+        ]
+
+        ImageIOStillImageMetadataCleanup
+            .removeAppleLivePhotoPairingIdentifier(
+                from: &properties
+            )
+
+        let makerApple =
+            properties[
+                kCGImagePropertyMakerAppleDictionary
+            ] as? [AnyHashable: Any] ?? [:]
+
+        #expect(
+            makerApple[
+                AnyHashable(17)
+            ] == nil
+        )
+        #expect(
+            makerApple[
+                AnyHashable("31")
+            ] as? String == "keep-me"
+        )
+    }
+
     @Test("Revises PNG metadata using the container-limited policy")
     func revisesPNGMetadataUsingContainerLimitedPolicy() throws {
         let policy =

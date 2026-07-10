@@ -656,6 +656,90 @@ struct V1SubjectLibrarySupportTests {
         )
     }
 
+    @Test("deleting the selected preset persists the updated subject library immediately")
+    @MainActor
+    func deletingSelectedPresetPersistsUpdatedSubjectLibraryImmediately() throws {
+        let suiteName =
+            "PhotoMemo.V1SubjectLibrarySupportTests.deletePreset.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let coordinator =
+            Self.makeConfigurationCoordinator(
+                defaults: defaults
+            )
+        var state = ConfigurationCenterState.mock
+        let selectedSubject = try #require(
+            state.subjects.first
+        )
+        let preservedPreset = MemoryPreset(
+            title: "保留配置",
+            summary: "继续使用",
+            regionTemplateIDs:
+                state.memoryPresets[0]
+                .regionTemplateIDs,
+            selectedSubjectID:
+                selectedSubject.id
+        )
+        let deletedPreset = MemoryPreset(
+            title: "待删除配置",
+            summary: "删除后不应恢复",
+            regionTemplateIDs:
+                state.memoryPresets[0]
+                .regionTemplateIDs,
+            selectedSubjectID:
+                selectedSubject.id
+        )
+
+        state.memoryPresets = [
+            preservedPreset,
+            deletedPreset
+        ]
+        state.selectedSubjectID = selectedSubject.id
+        state.selectedMemoryPresetID =
+            deletedPreset.id
+
+        let session = ConfigurationSession(
+            state: state
+        )
+
+        _ =
+            V1PresetDeletionCoordinator
+            .deleteSelectedPreset(
+                in: session,
+                configurationCoordinator:
+                    coordinator
+            )
+
+        let bootstrap =
+            try requireSuccess(
+                coordinator
+                    .loadV1ConfigurationBootstrapState()
+            )
+
+        #expect(
+            bootstrap.memoryPresets
+                .map(\.id)
+            == [preservedPreset.id]
+        )
+        #expect(
+            bootstrap.selectedMemoryPresetID
+            == preservedPreset.id
+        )
+    }
+
     @Test("editor flow callback emits sync patch after saving")
     @MainActor
     func editorFlowCallbackEmitsSyncPatchAfterSaving() throws {

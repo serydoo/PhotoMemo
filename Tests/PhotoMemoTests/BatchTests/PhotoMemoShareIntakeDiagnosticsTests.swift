@@ -101,6 +101,57 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         )
     }
 
+    @Test("Share Extension intake rejects oversized provider batches before persistence")
+    func shareExtensionIntakeRejectsOversizedProviderBatchesBeforePersistence() throws {
+        let intakeSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+            )
+        let viewControllerSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+            )
+
+        #expect(
+            intakeSource
+            .contains(
+                "static let maxSupportedPhotoCount = 20"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "case tooManySharedItems"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "guard providers.count <= Self.maxSupportedPhotoCount"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "persistSharedItems.tooManySharedItems"
+            )
+        )
+        #expect(
+            viewControllerSource
+            .contains(
+                "PhotoMemoShareExtensionIntakeService\n            .maxSupportedPhotoCount"
+            )
+        )
+        #expect(
+            viewControllerSource
+            .contains(
+                "stage: .extensionInputTooManyPhotos"
+            )
+        )
+    }
+
     @Test("Captures nested underlying NSError summaries")
     func capturesNestedUnderlyingNSErrorSummaries() {
 

@@ -21,6 +21,13 @@ struct SharedBatchConfigurationSnapshotService {
         snapshotProvider.loadSnapshot()
     }
 
+    func loadV1ConfigurationReadiness()
+    -> V1SavedConfigurationReadiness {
+
+        snapshotProvider
+            .loadV1ConfigurationReadiness()
+    }
+
     func loadAnchorsResult()
     -> PhotoMemoSharedDefaultsReadResult<
         [Anchor]

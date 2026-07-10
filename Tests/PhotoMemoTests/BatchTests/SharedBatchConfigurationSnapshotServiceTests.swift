@@ -105,4 +105,65 @@ struct SharedBatchConfigurationSnapshotServiceTests {
             == configuration
         )
     }
+
+    @Test("configuration readiness requires at least one saved preset")
+    func configurationReadinessRequiresSavedPreset() throws {
+        let suiteName =
+            "PhotoMemo.SharedBatchConfigurationSnapshotServiceTests.readiness.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            SharedBatchConfigurationSnapshotService(
+                defaults: defaults
+            )
+        #expect(
+            service
+                .loadV1ConfigurationReadiness()
+            == V1SavedConfigurationReadiness(
+                isReady: false,
+                presetTitle: nil
+            )
+        )
+
+        let record: [String: Any] = [
+            "selectedSubjectID": UUID().uuidString,
+            "memoryPresets": [
+                [
+                    "id": UUID().uuidString,
+                    "title": "成长记录",
+                    "selectedSubjectID": UUID().uuidString
+                ]
+            ]
+        ]
+        let data =
+            try JSONSerialization.data(
+                withJSONObject: record
+            )
+        defaults.set(
+            data,
+            forKey: "photomemo.v1.subjectLibrary"
+        )
+
+        #expect(
+            service
+                .loadV1ConfigurationReadiness()
+            == V1SavedConfigurationReadiness(
+                isReady: true,
+                presetTitle: "成长记录"
+            )
+        )
+    }
 }

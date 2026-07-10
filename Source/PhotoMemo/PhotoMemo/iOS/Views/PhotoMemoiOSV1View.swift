@@ -128,6 +128,9 @@ struct PhotoMemoiOSV1View: View {
     private var isApplyingBootstrapState = false
 
     @State
+    private var isApplyingSavedOutputConfiguration = false
+
+    @State
     private var birthdayDateChangeBehavior:
         V1BirthdayDateChangeBehavior = .userInitiated
 
@@ -154,6 +157,9 @@ struct PhotoMemoiOSV1View: View {
 
     @State
     private var memoryPresetTitleDraft = ""
+
+    @State
+    private var showsConfigurationRequiredAlert = false
 
     @FocusState
     private var memoryPresetTitleFieldFocused: Bool
@@ -230,7 +236,9 @@ struct PhotoMemoiOSV1View: View {
             },
             saveCurrentMemoryPreset: {
                 session.saveCurrentMemoryPreset(
-                    logoMode: logoMode
+                    logoMode: logoMode,
+                    outputConfiguration:
+                        currentSavedOutputConfiguration
                 )
                 V1SubjectLibraryResolver
                     .persist(
@@ -710,6 +718,22 @@ struct PhotoMemoiOSV1View: View {
                 }
             )
         }
+        .alert(
+            "请先完成配置",
+            isPresented:
+                $showsConfigurationRequiredAlert
+        ) {
+            Button("去配置中心") {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openEditorTab(
+                        from: entryFlowState
+                    )
+            }
+            Button("稍后", role: .cancel) {}
+        } message: {
+            Text("首次处理前，请先在配置中心保存当前记忆对象的配置。输出部分默认会按系统推荐走；如果你改了输出设置，保存后也会一并写回当前配置。")
+        }
         .onAppear {
             bootstrapIfNeeded()
             refreshProcessingState()
@@ -765,6 +789,9 @@ struct PhotoMemoiOSV1View: View {
             if let selectedPreset =
                 session.state.selectedMemoryPreset {
                 logoMode = selectedPreset.logoMode
+                applySavedOutputConfiguration(
+                    selectedPreset
+                )
             }
             bootstrapDrafts()
         }
@@ -841,6 +868,12 @@ struct PhotoMemoiOSV1View: View {
             activeConfigurationStatus = .dirty
         }
         .onChange(of: outputTarget) { _, _ in
+            guard
+                !isApplyingBootstrapState,
+                !isApplyingSavedOutputConfiguration
+            else {
+                return
+            }
             activeConfigurationStatus = .dirty
 
             if outputTarget == .existingAlbum {
@@ -850,12 +883,30 @@ struct PhotoMemoiOSV1View: View {
             }
         }
         .onChange(of: mediaOutputMode) { _, _ in
+            guard
+                !isApplyingBootstrapState,
+                !isApplyingSavedOutputConfiguration
+            else {
+                return
+            }
             activeConfigurationStatus = .dirty
         }
         .onChange(of: selectedExistingAlbumIdentifier) { _, _ in
+            guard
+                !isApplyingBootstrapState,
+                !isApplyingSavedOutputConfiguration
+            else {
+                return
+            }
             activeConfigurationStatus = .dirty
         }
         .onChange(of: newAlbumName) { _, _ in
+            guard
+                !isApplyingBootstrapState,
+                !isApplyingSavedOutputConfiguration
+            else {
+                return
+            }
             activeConfigurationStatus = .dirty
         }
         .onChange(of: selectedProcessingItems) { _, items in
@@ -885,6 +936,8 @@ struct PhotoMemoiOSV1View: View {
             isEditingMemoryPresetTitle: isEditingMemoryPresetTitle,
             memoryPresetTitleDraft: $memoryPresetTitleDraft,
             memoryPresetTitleFieldFocused: $memoryPresetTitleFieldFocused,
+            isConfigurationReady:
+                hasSavedConfigurationForSelectedSubject,
             onOpenSubject: {
                 entryFlowState =
                     V1EntryFlowCoordinator
@@ -894,14 +947,8 @@ struct PhotoMemoiOSV1View: View {
                     )
             },
             onCommitMemoryPresetTitle: commitMemoryPresetTitle,
-            onOpenPhotoPicker: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openProcessingPhotoPicker(
-                        from:
-                            entryFlowState
-                    )
-            },
+            onOpenPhotoPicker:
+                beginPhotoProcessingFlow,
             onOpenSettings: {
                 entryFlowState =
                     V1EntryFlowCoordinator
@@ -1013,7 +1060,9 @@ struct PhotoMemoiOSV1View: View {
             },
             onCreateConfiguration: {
                 session.createMemoryPresetFromCurrent(
-                    logoMode: logoMode
+                    logoMode: logoMode,
+                    outputConfiguration:
+                        currentSavedOutputConfiguration
                 )
                 memoryPresetTitleDraft =
                     session.currentMemoryPresetTitle
@@ -1026,7 +1075,16 @@ struct PhotoMemoiOSV1View: View {
                 activeConfigurationStatus = .dirty
             },
             onDeleteConfiguration: {
-                session.deleteSelectedMemoryPreset()
+                guard
+                    V1PresetDeletionCoordinator
+                    .deleteSelectedPreset(
+                        in: session,
+                        configurationCoordinator:
+                            configurationCoordinator
+                    )
+                else {
+                    return
+                }
                 memoryPresetTitleDraft =
                     session.currentMemoryPresetTitle
                 bootstrapDrafts()
@@ -1179,12 +1237,7 @@ struct PhotoMemoiOSV1View: View {
             onOpenPhotoLibrary:
                 openPhotoLibrary,
             onStartProcessing: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openProcessingPhotoPicker(
-                        from:
-                            entryFlowState
-                    )
+                beginPhotoProcessingFlow()
             },
             onDismissKeyboard: dismissKeyboard
         )
@@ -1316,7 +1369,16 @@ struct PhotoMemoiOSV1View: View {
             session.selectMemoryPreset(preset)
         }
 
-        session.deleteSelectedMemoryPreset()
+        guard
+            V1PresetDeletionCoordinator
+            .deleteSelectedPreset(
+                in: session,
+                configurationCoordinator:
+                    configurationCoordinator
+            )
+        else {
+            return
+        }
         memoryPresetTitleDraft =
             session.currentMemoryPresetTitle
         bootstrapDrafts()
@@ -1923,6 +1985,14 @@ struct PhotoMemoiOSV1View: View {
             return false
         }
 
+        let presetPersistenceSnapshot =
+            session
+            .persistenceSnapshotForCurrentConfiguration(
+                logoMode: logoMode,
+                outputConfiguration:
+                    currentSavedOutputConfiguration
+            )
+
         let request =
             V1ConfigurationApplyRequestBuilder
             .buildRequest(
@@ -1943,12 +2013,10 @@ struct PhotoMemoiOSV1View: View {
                         shouldSaveSubjectLibrary:
                             shouldSaveSubjectLibrary,
                         memoryPresets:
-                            session
-                            .state
+                            presetPersistenceSnapshot
                             .memoryPresets,
                         selectedMemoryPresetID:
-                            session
-                            .state
+                            presetPersistenceSnapshot
                             .selectedMemoryPresetID,
                         presetTitle:
                             session
@@ -1999,6 +2067,68 @@ struct PhotoMemoiOSV1View: View {
                 request,
                 outputTarget: outputTarget
             )
+    }
+
+    private var hasSavedConfigurationForSelectedSubject: Bool {
+        !homeAvailablePresets.isEmpty
+    }
+
+    private var currentSavedOutputConfiguration:
+        V1SavedOutputConfiguration {
+        V1SavedOutputConfiguration(
+            outputTarget: outputTarget,
+            mediaOutputMode: mediaOutputMode,
+            selectedExistingAlbumIdentifier:
+                selectedExistingAlbumIdentifier,
+            newAlbumName: newAlbumName
+        )
+    }
+
+    private func beginPhotoProcessingFlow() {
+        guard hasSavedConfigurationForSelectedSubject else {
+            showsConfigurationRequiredAlert = true
+            return
+        }
+
+        entryFlowState =
+            V1EntryFlowCoordinator
+            .openProcessingPhotoPicker(
+                from:
+                    entryFlowState
+            )
+    }
+
+    private func applySavedOutputConfiguration(
+        _ preset: MemoryPreset
+    ) {
+        guard let savedOutputConfiguration =
+            preset.savedOutputConfiguration
+        else {
+            return
+        }
+
+        isApplyingSavedOutputConfiguration = true
+        outputTarget =
+            savedOutputConfiguration.outputTarget
+        mediaOutputMode =
+            savedOutputConfiguration.mediaOutputMode
+        selectedExistingAlbumIdentifier =
+            savedOutputConfiguration
+            .selectedExistingAlbumIdentifier
+        newAlbumName =
+            savedOutputConfiguration.newAlbumName
+                .isEmpty
+            ? PhotoMemoAlbumSelection
+                .defaultAlbumTitle
+            : savedOutputConfiguration
+                .newAlbumName
+        isApplyingSavedOutputConfiguration = false
+
+        if outputTarget == .existingAlbum {
+            Task {
+                await loadAlbumOptions()
+            }
+        }
     }
 
     private var timeAnchorTitle: String {

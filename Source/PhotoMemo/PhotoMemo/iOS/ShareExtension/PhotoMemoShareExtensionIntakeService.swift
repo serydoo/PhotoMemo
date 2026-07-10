@@ -12,6 +12,8 @@ struct PhotoMemoShareExtensionError:
 
         case noSupportedImages
 
+        case tooManySharedItems
+
         case allImportsFailed
 
         case persistFailed
@@ -87,6 +89,9 @@ struct PhotoMemoShareExtensionError:
         case .noSupportedImages:
             return "这次分享里没有找到可直接处理的照片。"
 
+        case .tooManySharedItems:
+            return "这次分享的照片数量超过当前 Share Extension 可安全处理的上限。"
+
         case .allImportsFailed:
             return "这次分享里的照片暂时没有成功交给时光记。"
 
@@ -102,6 +107,9 @@ struct PhotoMemoShareExtensionError:
         case .noSupportedImages:
             return "没有识别到可处理照片"
 
+        case .tooManySharedItems:
+            return "一次分享的照片太多"
+
         case .allImportsFailed:
             return "照片没有成功交给时光记"
 
@@ -116,6 +124,9 @@ struct PhotoMemoShareExtensionError:
 
         case .noSupportedImages:
             return "请尽量从系统相册直接分享原始照片；如果来自其他 App，请确认分享的是原图而不是预览图。"
+
+        case .tooManySharedItems:
+            return "请回到 Apple Photos 分批分享，每次最多 20 张。这样可以避免 Share Extension 被系统提前终止。"
 
         case .allImportsFailed:
             return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开时光记检查默认风格。"
@@ -185,6 +196,8 @@ final class PhotoMemoShareExtensionIntakeService {
     private let snapshotService:
         SharedBatchConfigurationSnapshotService
 
+    static let maxSupportedPhotoCount = 20
+
     init(
         intakeStore: ExternalPhotoIntakeStore,
         snapshotService:
@@ -226,6 +239,45 @@ final class PhotoMemoShareExtensionIntakeService {
         guard !providers.isEmpty else {
             throw PhotoMemoShareExtensionError
                 .noSupportedImages
+        }
+
+        guard providers.count <= Self.maxSupportedPhotoCount else {
+            let requestID = UUID()
+            let failureContext =
+                PhotoMemoShareIntakeOperationSeed(
+                    itemProviderCount:
+                        itemProviders.count,
+                    supportedProviderCount:
+                        providers.count,
+                    requestedTypeIdentifier:
+                        UTType.image.identifier
+                )
+                .failureContext(
+                    stage: .completion,
+                    operation:
+                        "persistSharedItems.tooManySharedItems",
+                    error:
+                        PhotoMemoShareIntakeDiagnosticError
+                        .make(
+                            description:
+                                "Share Extension received \(providers.count) supported image providers; maxSupportedPhotoCount is \(Self.maxSupportedPhotoCount).",
+                            code: 1010
+                        )
+                )
+
+            PhotoMemoShareDiagnostics.record(
+                stage: .extensionError,
+                message:
+                    "tooManySharedItems supported=\(providers.count), max=\(Self.maxSupportedPhotoCount)",
+                requestID:
+                    requestID
+            )
+
+            throw PhotoMemoShareExtensionError(
+                kind: .tooManySharedItems,
+                failureContext:
+                    failureContext
+            )
         }
 
         let requestID = UUID()

@@ -175,12 +175,17 @@ private extension RecordCardBuildService {
         photo selectedPhoto: SelectedPhoto
     ) -> AnchorResult? {
 
-        anchor.map {
+        guard let captureDate =
+            selectedPhoto.metadata.captureDate
+        else {
+            return nil
+        }
+
+        return anchor.map {
             anchorEngine.build(
                 from: $0,
                 photoDate:
-                    selectedPhoto.metadata.captureDate
-                    ?? Date()
+                    captureDate
             )
         }
     }
