@@ -31,6 +31,12 @@ Closed / regression-guarded in this batch:
   route, terminal phase, and total duration evidence.
 - The user-facing release version has been raised to `1.6`
   (`MARKETING_VERSION = 1.6`) for the next Xcode Cloud build.
+- RAW / ProRAW high-resolution handling is recorded as a V3 follow-up
+  engineering item, not a 1.6 blocker. Current real-device Share evidence shows
+  RAW-like / high-resolution Apple Photos inputs can arrive as `public.jpeg`
+  and complete successfully; future work should add explicit RAW input
+  detection, JPEG/HEIC output policy, and metadata-retention validation without
+  promising RAW output.
 
 Verification passed:
 
@@ -169,11 +175,27 @@ iPhone7 evidence:
 - The next real-device batch run will additionally include `batch.task.duration`
   events, allowing per-task duration review before any MainActor refactor is
   attempted.
+- After installing the local `1.6` Debug package, iPhone7 manual Share evidence
+  added high-resolution / RAW-like follow-up data:
+  - `/tmp/PhotoMemoRuntimeEvidence/v16-iphone7-48mp-heic-1-20260710-232603`
+    completed and saved 1 Share Extension static-image job; Apple Photos
+    delivered `public.jpeg`.
+  - `/tmp/PhotoMemoRuntimeEvidence/v16-iphone7-48mp-5-20260710-232840`
+    completed and saved 5 Share Extension static-image tasks in `5.9s`; Apple
+    Photos delivered `public.jpeg`.
+  - `/tmp/PhotoMemoRuntimeEvidence/v16-iphone7-raw-1-20260710-233025`
+    completed and saved 1 RAW-like Share Extension input after Apple Photos
+    delivered `public.jpeg`.
+  - These runs had no new PhotoMemo crashes and no failed tasks, but they do not
+    prove native RAW / ProRAW file-preserving intake.
 
 Open after this batch:
 
 - MainActor / Instruments evidence and real 48MP memory-pressure validation
   remain open release-validation items.
+- V3 follow-up: define RAW / ProRAW input policy as high-quality source intake
+  with generated JPEG/HEIC output, explicit user-facing copy, and metadata
+  retention tests.
 
 ## 2026-07-10 V3 Validation Batch 5 Verified
 

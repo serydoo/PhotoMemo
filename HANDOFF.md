@@ -58,6 +58,12 @@
   Xcode Cloud build counter has reached build `13`; the next successful cloud
   attempt is expected to appear as build `14`. Treat the cloud build number as
   owned by Xcode Cloud / App Store Connect, not as the product version.
+- RAW / ProRAW high-resolution handling is a V3 follow-up engineering item, not
+  a 1.6 blocker. Current iPhone7 Share evidence after installing local `1.6`
+  shows high-resolution / RAW-like Apple Photos inputs arrive as `public.jpeg`
+  and complete successfully. Future work should add explicit RAW input
+  detection, JPEG/HEIC output policy, user-facing copy, and metadata-retention
+  validation without promising RAW output.
 - External product branding is now `MemoMark` / `时光记`; internal engineering
   names such as `PhotoMemo` targets, bundle IDs, App Group, UserDefaults keys,
   source paths, and GitHub repository URL remain intentionally preserved until
