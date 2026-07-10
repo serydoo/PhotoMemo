@@ -11,14 +11,24 @@ enum ConfigurationCenterLocationDisplaySupport {
 
     static func summaryValue(
         module: IOSInsertedModule?,
-        presentation: LocationDisplayInspectorPresentation
+        presentation: LocationDisplayInspectorPresentation,
+        selectedConfiguration:
+            ExpressionModuleConfiguration? = nil
     ) -> String {
-        guard let module else {
-            return presentation.unavailableValue
+        if let module {
+            return LocationDisplayInspectorPresenter
+                .selectedValue(from: module)
         }
 
-        return LocationDisplayInspectorPresenter
-            .selectedValue(from: module)
+        if selectedConfiguration != nil {
+            return LocationDisplayInspectorPresenter
+                .selectedValue(
+                    fromConfiguration:
+                        selectedConfiguration
+                )
+        }
+
+        return presentation.unavailableValue
     }
 
     static func summaryDetail(

@@ -10,6 +10,9 @@ struct V1IOSSubjectOverviewSheet: View {
 
     let subject: MemorySubject?
 
+    @ObservedObject
+    var session: ConfigurationSession
+
     let selectedSubjectID: MemorySubject.ID?
 
     let onSelectSubject: (MemorySubject.ID) -> Void
@@ -18,7 +21,7 @@ struct V1IOSSubjectOverviewSheet: View {
 
     let onDeleteCurrentSubject: () -> Void
 
-    let onOpenEditor: () -> Void
+    let onPersistSubjectChanges: () -> Void
 
     @State
     private var showsDeleteConfirmation = false
@@ -47,6 +50,8 @@ struct V1IOSSubjectOverviewSheet: View {
                                 subjectID
                         },
                         onAddSubject: onAddSubject,
+                        onSaveSubject:
+                            onPersistSubjectChanges,
                         onBeginSwitch: {
                             switchCandidateSubjectID =
                                 selectedSubjectID
@@ -72,14 +77,11 @@ struct V1IOSSubjectOverviewSheet: View {
                         }
                     )
 
-                    V1IOSSubjectIdentitySection(
-                        presentation:
-                            presentation,
-                        subject: subject
-                    )
+                    basicInfoSection
 
-                    V1IOSSubjectOverviewFooter(
-                        onOpenEditor: onOpenEditor
+                    V1IOSSubjectAnchorSection(
+                        presentation: presentation,
+                        subject: subject
                     )
                 }
                 .padding(.horizontal, 18)
@@ -103,13 +105,6 @@ struct V1IOSSubjectOverviewSheet: View {
                         }
                     }
                 }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: onAddSubject) {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityLabel("新增记忆对象")
-                }
             }
             .confirmationDialog(
                 "删除这个记忆对象？",
@@ -129,6 +124,9 @@ struct V1IOSSubjectOverviewSheet: View {
                 Text("删除后会立即切换到仍然保留的记忆对象，并同步首页记忆对象。")
             }
         }
+        .onDisappear {
+            onPersistSubjectChanges()
+        }
         .onChange(of: selectedSubjectID) { _, newValue in
             guard !isSwitchingSubject else {
                 return
@@ -136,6 +134,106 @@ struct V1IOSSubjectOverviewSheet: View {
 
             switchCandidateSubjectID = newValue
         }
+    }
+
+    private var basicInfoSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            MemorySubjectEditorView(
+                session: session,
+                mode: .identityOverview
+            ) {
+                basicInfoNavigationTabs
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .v1CardChrome()
+    }
+
+    private var basicInfoNavigationTabs: some View {
+        HStack(spacing: 8) {
+            Label(
+                "基本资料",
+                systemImage: "person.text.rectangle"
+            )
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.accentColor)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 12,
+                    style: .continuous
+                )
+                .fill(Color.accentColor.opacity(0.10))
+            )
+
+            NavigationLink {
+                timeAnchorConfigurationPage
+            } label: {
+                Label(
+                    "锚点维护",
+                    systemImage: "calendar.badge.clock"
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 12,
+                        style: .continuous
+                    )
+                    .fill(ConfigurationUI.controlBackground.opacity(0.72))
+                )
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: 12,
+                        style: .continuous
+                    )
+                    .stroke(ConfigurationUI.faintHairline)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(4)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .fill(Color.white.opacity(0.92))
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
+    private var timeAnchorConfigurationPage: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                V1CardSurface(title: "锚点维护") {
+                    MemorySubjectEditorView(
+                        session: session,
+                        mode: .timeAnchors
+                    )
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 16)
+            .padding(.bottom, 34)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(
+            ConfigurationUI.appBackground
+                .ignoresSafeArea()
+        )
+        .navigationTitle("时间锚点配置")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 #endif

@@ -167,11 +167,11 @@ struct V1IOSHomeProjectionTests {
         let projection =
             V1IOSHomeProjection
             .emptyPresetSummary(
-                configurationLabel: "旅行对象 · 出发前"
+                configurationLabel: "事件对象 · 纪念日"
             )
 
         #expect(projection.title == "当前对象还没有配置")
-        #expect(projection.subtitle == "旅行对象 · 出发前")
+        #expect(projection.subtitle == "事件对象 · 纪念日")
         #expect(
             projection.detail
             == "请先到配置中心底部新建配置，之后这里就能直接下拉切换。"

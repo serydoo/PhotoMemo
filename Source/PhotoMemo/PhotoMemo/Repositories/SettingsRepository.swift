@@ -70,13 +70,18 @@ final class SettingsRepository {
 
     func saveV1SubjectLibrary(
         subjects: [MemorySubject],
-        selectedSubjectID: MemorySubject.ID?
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
 
         settingsService
             .saveV1SubjectLibrary(
                 subjects: subjects,
-                selectedSubjectID: selectedSubjectID
+                selectedSubjectID: selectedSubjectID,
+                memoryPresets: memoryPresets,
+                selectedMemoryPresetID:
+                    selectedMemoryPresetID
             )
     }
 
@@ -225,6 +230,10 @@ final class SettingsRepository {
                 subjectLibrary?.subjects,
             selectedSubjectID:
                 subjectLibrary?.selectedSubjectID,
+            memoryPresets:
+                subjectLibrary?.memoryPresets ?? [],
+            selectedMemoryPresetID:
+                subjectLibrary?.selectedMemoryPresetID,
             selectedSubject:
                 savedSubject,
             subjectLibraryReadFailure:

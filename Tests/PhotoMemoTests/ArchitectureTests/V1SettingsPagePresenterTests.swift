@@ -20,7 +20,20 @@ struct V1SettingsPagePresenterTests {
                 currentFileName: "family.jpg",
                 statusMessage: "正在保留元数据并生成新图片。",
                 displayMode: .singleTask,
-                pipelineSteps: [],
+                pipelineSteps: [
+                    PhotoMemoBackgroundPipelineStep(
+                        title: "接收照片",
+                        state: .completed
+                    ),
+                    PhotoMemoBackgroundPipelineStep(
+                        title: "生成卡片",
+                        state: .active
+                    ),
+                    PhotoMemoBackgroundPipelineStep(
+                        title: "写入图库",
+                        state: .pending
+                    )
+                ],
                 activePipelineStepIndex: 2,
                 queueLines: [],
                 overflowQueueCount: 2,
@@ -32,7 +45,11 @@ struct V1SettingsPagePresenterTests {
                 hasOnlyUnsupportedFailures: false,
                 updatedAt: Date(
                     timeIntervalSince1970: 1_720_000_000
-                )
+                ),
+                configurationName: "成长记录",
+                templateName: "Classic White",
+                previewSourceURL:
+                    URL(fileURLWithPath: "/tmp/family.jpg")
             )
         let header =
             PhotoMemoiOSQueueDiagnosticsHeaderProjection(
@@ -65,7 +82,11 @@ struct V1SettingsPagePresenterTests {
 
         #expect(
             presentation.currentTask.headline
-            == "家庭周末记录 处理中"
+            == "成长记录"
+        )
+        #expect(
+            presentation.currentTask.subtitleText
+            == "基础白 模板"
         )
         #expect(
             presentation.currentTask.statusText
@@ -84,7 +105,12 @@ struct V1SettingsPagePresenterTests {
             == "正在保留元数据并生成新图片。"
         )
         #expect(
-            presentation.canClearCompletedHistory
+            presentation.currentTask.stepRows.map(\.statusText)
+            == [
+                "已完成",
+                "处理中...",
+                "等待中"
+            ]
         )
         #expect(
             presentation.historyRows.count
@@ -213,8 +239,90 @@ struct V1SettingsPagePresenterTests {
             presentation.currentTask.progressText
             == "1 张暂不支持"
         )
+    }
+
+    @Test("builds task overview and recent rows from queue job summaries")
+    func presentationUsesQueueSummariesForTaskPage() {
+        let presentation =
+            V1SettingsPagePresenter
+            .presentation(
+                header:
+                    PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+                        headline: "等待下一次分享",
+                        subheadline: "分享一次照片后会显示处理状态。",
+                        symbolName: "square.stack.3d.down.forward",
+                        tint: .secondary
+                    ),
+                snapshot: nil,
+                recoveryMessage: nil,
+                events: [
+                    PhotoMemoShareDiagnosticEvent(
+                        timestamp: Date(timeIntervalSince1970: 1),
+                        stage: .appEnqueueCreated,
+                        message: "tasks=9"
+                    )
+                ],
+                overview:
+                    PhotoMemoBackgroundTaskOverview(
+                        activeJobCount: 1,
+                        completedPhotoCount: 28,
+                        failedPhotoCount: 0,
+                        todayProcessingCount: 12
+                    ),
+                recentJobs: [
+                    PhotoMemoBackgroundJobSummary(
+                        jobID: UUID(
+                            uuidString:
+                                "11111111-1111-1111-1111-111111111111"
+                        )!,
+                        configurationName: "旅行记录",
+                        templateName: "Classic White",
+                        presentationState: .completed,
+                        jobState: .completed,
+                        completedCount: 8,
+                        failedCount: 0,
+                        totalCount: 8,
+                        previewSourceURL:
+                            URL(fileURLWithPath: "/tmp/travel.jpg"),
+                        savedAlbumName: "时光记",
+                        savedAssetIdentifier: "asset-local-id",
+                        updatedAt:
+                            Date(timeIntervalSince1970: 1_720_000_000)
+                    )
+                ],
+                fallbackConfigurationName: "成长记录"
+            )
+
         #expect(
-            presentation.canClearCompletedHistory
+            presentation.overviewItems.map(\.value)
+            == [
+                "1",
+                "28",
+                "0",
+                "12"
+            ]
+        )
+        #expect(
+            presentation.historyRows.count
+            == 1
+        )
+        #expect(
+            presentation.historyRows[0].title
+            == "旅行记录"
+        )
+        #expect(
+            presentation.historyRows[0].detailText
+            == "基础白 模板 · 8 张照片"
+        )
+        #expect(
+            presentation.historyRows[0].statusText
+            == "已完成"
+        )
+        #expect(
+            presentation.historyRows[0]
+                .photoLibraryLink?
+                .displayTitle
+            == "时光记"
         )
     }
 }

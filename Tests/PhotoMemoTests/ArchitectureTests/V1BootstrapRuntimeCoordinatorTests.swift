@@ -41,7 +41,9 @@ struct V1BootstrapRuntimeCoordinatorTests {
                     ),
                 sessionRestorePlan: .restoreLibrary(
                     subjects: [earlierSubject, selectedSubject],
-                    selectedSubjectID: selectedSubject.id
+                    selectedSubjectID: selectedSubject.id,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil
                 ),
                 birthdayDate: selectedSubject.primaryTimeAnchor?.date,
                 welcomeState: V1WelcomeFlowState(
@@ -56,7 +58,9 @@ struct V1BootstrapRuntimeCoordinatorTests {
         var receivedProjection: V1BootstrapViewProjection?
         var restoredLibrary: (
             subjects: [MemorySubject],
-            selectedID: MemorySubject.ID?
+            selectedID: MemorySubject.ID?,
+            memoryPresets: [MemoryPreset],
+            selectedMemoryPresetID: MemoryPreset.ID?
         )?
         var restoredSubject: MemorySubject?
         var receivedWelcomeState: V1WelcomeFlowState?
@@ -71,7 +75,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                     receivedProjection = $0
                 },
                 restoreSubjectLibrary: {
-                    restoredLibrary = ($0, $1)
+                    restoredLibrary = ($0, $1, $2, $3)
                 },
                 restoreSelectedSubject: {
                     restoredSubject = $0
@@ -116,6 +120,8 @@ struct V1BootstrapRuntimeCoordinatorTests {
             restoredLibrary?.selectedID
             == selectedSubject.id
         )
+        #expect(restoredLibrary?.memoryPresets.isEmpty == true)
+        #expect(restoredLibrary?.selectedMemoryPresetID == nil)
         #expect(restoredSubject == nil)
         #expect(
             receivedWelcomeState
@@ -168,7 +174,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
             V1BootstrapRuntimeCoordinator(
                 setApplyingBootstrapState: { _ in },
                 updateProjection: { _ in },
-                restoreSubjectLibrary: { _, _ in
+                restoreSubjectLibrary: { _, _, _, _ in
                     didRestoreLibrary = true
                 },
                 restoreSelectedSubject: {

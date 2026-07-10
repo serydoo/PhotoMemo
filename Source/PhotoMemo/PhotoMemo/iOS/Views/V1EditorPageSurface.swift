@@ -9,6 +9,8 @@ struct V1EditorPageSurface<
 
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
+    let pageTitle: String
+    let pageSubtitle: String
     let onDismissKeyboard: () -> Void
     @ViewBuilder var previewContent: PreviewContent
     @ViewBuilder var editorContent: EditorContent
@@ -17,6 +19,8 @@ struct V1EditorPageSurface<
     init(
         previewPinProgress: CGFloat,
         editorRevealProgress: CGFloat,
+        pageTitle: String,
+        pageSubtitle: String,
         onDismissKeyboard: @escaping () -> Void,
         @ViewBuilder previewContent: () -> PreviewContent,
         @ViewBuilder editorContent: () -> EditorContent,
@@ -24,6 +28,8 @@ struct V1EditorPageSurface<
     ) {
         self.previewPinProgress = previewPinProgress
         self.editorRevealProgress = editorRevealProgress
+        self.pageTitle = pageTitle
+        self.pageSubtitle = pageSubtitle
         self.onDismissKeyboard = onDismissKeyboard
         self.previewContent = previewContent()
         self.editorContent = editorContent()
@@ -33,24 +39,31 @@ struct V1EditorPageSurface<
     var body: some View {
         GeometryReader { _ in
             VStack(spacing: 0) {
-                previewContent
-                    .padding(.horizontal, 12)
+                VStack(alignment: .leading, spacing: 12) {
+                    V1PageHeader(
+                        pageTitle,
+                        subtitle: pageSubtitle
+                    )
+
+                    previewContent
+                }
+                    .padding(.horizontal, 16)
                     .padding(.top, 10)
-                    .padding(.bottom, 8)
+                    .padding(.bottom, 10)
                     .background(
                         ConfigurationUI.appBackground
                     )
                     .zIndex(1)
 
                 ScrollView {
-                    VStack(spacing: 18) {
+                    VStack(spacing: 14) {
                         editorContent
 
                         accessoryContent
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.top, 10)
-                    .padding(.bottom, 34)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 26)
                 }
                 .scrollDismissesKeyboard(.interactively)
             }

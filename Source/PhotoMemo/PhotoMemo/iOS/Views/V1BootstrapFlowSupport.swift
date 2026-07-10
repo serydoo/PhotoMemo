@@ -6,7 +6,9 @@ enum V1BootstrapSessionRestorePlan {
     case none
     case restoreLibrary(
         subjects: [MemorySubject],
-        selectedSubjectID: MemorySubject.ID?
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset],
+        selectedMemoryPresetID: MemoryPreset.ID?
     )
     case restoreSelectedSubject(
         MemorySubject
@@ -111,10 +113,15 @@ struct V1BootstrapFlowCoordinator {
         let projection =
             V1ConfigurationBootstrapPresenter
             .projection(from: state)
+        let resolvedSubjects =
+            state.subjects.map {
+                V1SubjectLibraryResolver
+                    .sanitizedSubjectLibrary($0)
+            }
         let resolvedSubject =
             V1SubjectLibraryResolver
             .resolvedBootstrapSubject(
-                subjects: state.subjects,
+                subjects: resolvedSubjects,
                 selectedSubjectID:
                     state.selectedSubjectID,
                 fallbackSubject:
@@ -162,6 +169,8 @@ struct V1BootstrapFlowCoordinator {
             sessionRestorePlan:
                 sessionRestorePlan(
                     state: state,
+                    resolvedSubjects:
+                        resolvedSubjects,
                     resolvedSubject:
                         resolvedSubject
                 ),
@@ -181,14 +190,19 @@ struct V1BootstrapFlowCoordinator {
 
     private func sessionRestorePlan(
         state: V1ConfigurationBootstrapState,
+        resolvedSubjects: [MemorySubject]?,
         resolvedSubject: MemorySubject?
     ) -> V1BootstrapSessionRestorePlan {
-        if let subjects = state.subjects,
+        if let subjects = resolvedSubjects,
            !subjects.isEmpty {
             return .restoreLibrary(
                 subjects: subjects,
                 selectedSubjectID:
-                    state.selectedSubjectID
+                    state.selectedSubjectID,
+                memoryPresets:
+                    state.memoryPresets,
+                selectedMemoryPresetID:
+                    state.selectedMemoryPresetID
             )
         }
 

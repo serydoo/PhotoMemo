@@ -45,7 +45,7 @@ enum ConfigurationUI {
         Color.primary.opacity(0.038)
 
     static let cardShadow =
-        Color.primary.opacity(0.022)
+        Color.black.opacity(0.05)
 
 }
 

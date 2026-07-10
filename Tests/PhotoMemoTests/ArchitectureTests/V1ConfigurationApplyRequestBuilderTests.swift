@@ -30,6 +30,9 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 subjects: baseState.subjects,
                 selectedSubjectID: baseState.selectedSubjectID,
                 shouldSaveSubjectLibrary: true,
+                memoryPresets: baseState.memoryPresets,
+                selectedMemoryPresetID:
+                    baseState.selectedMemoryPresetID,
                 presetTitle: "V1.0 默认配置",
                 templateTextsByRegion: [
                     .slotA: "记录者内容",
@@ -70,6 +73,11 @@ struct V1ConfigurationApplyRequestBuilderTests {
             )
         )
         #expect(request.selectedSubjectID == expectedSubject?.id)
+        #expect(request.memoryPresets == baseState.memoryPresets)
+        #expect(
+            request.selectedMemoryPresetID
+            == baseState.selectedMemoryPresetID
+        )
         #expect(request.template.name == "V1.0 默认配置")
         #expect(request.template.leftTopArea.items.first?.value == "记录者内容")
         #expect(request.template.leftBottomArea.items.first?.value == "时间线内容")
@@ -95,6 +103,54 @@ struct V1ConfigurationApplyRequestBuilderTests {
             )
         )
         #expect(request.timeAnchorDate == resolvedAnchorDate)
+    }
+
+    @Test("build request preserves preselected location display without inserting a location module")
+    func buildRequestPreservesPreselectedLocationDisplayWithoutLocationModule() {
+        let baseState = ConfigurationCenterState.mock
+        let locationConfiguration =
+            LocationDisplayInspectorPresenter
+            .configuration(for: "cityDistrict")
+
+        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+            from: V1ConfigurationApplyBuildInput(
+                selectedSubject: baseState.selectedSubject,
+                subjects: baseState.subjects,
+                selectedSubjectID: baseState.selectedSubjectID,
+                shouldSaveSubjectLibrary: false,
+                memoryPresets: baseState.memoryPresets,
+                selectedMemoryPresetID:
+                    baseState.selectedMemoryPresetID,
+                presetTitle: "位置预选配置",
+                templateTextsByRegion: [
+                    .slotA: "记录者内容",
+                    .slotB: "时间线内容",
+                    .slotC: "",
+                    .slotD: "智能模块内容"
+                ],
+                locationDisplayConfiguration:
+                    locationConfiguration,
+                badge: nil,
+                usesCustomMemoryWriteText: false,
+                customMemoryWriteText: "",
+                birthdayDate:
+                    Date(timeIntervalSince1970: 1_735_689_600),
+                outputTarget: .applePhotos,
+                mediaOutputMode: .staticImage,
+                availableAlbums: [],
+                selectedExistingAlbumIdentifier: "",
+                newAlbumName: ""
+            )
+        )
+
+        #expect(
+            request.locationDisplayConfiguration
+            == locationConfiguration
+        )
+        #expect(
+            request.template.rightTopArea.items.first?.value
+            == ""
+        )
     }
 
     @Test("build request preserves the selected subject anchor date over stale transient birthday state")
@@ -145,6 +201,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
                     subjects: [subject],
                     selectedSubjectID: subject.id,
                     shouldSaveSubjectLibrary: true,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil,
                     presetTitle: "当前配置",
                     templateTextsByRegion: [
                         .slotD: "{{memory_summary}}啦！"
@@ -213,6 +271,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
                     subjects: [staleSubject],
                     selectedSubjectID: selectedSubject.id,
                     shouldSaveSubjectLibrary: true,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil,
                     presetTitle: "当前配置",
                     templateTextsByRegion: [
                         .slotD: "{{memory_summary}}啦！"
@@ -250,8 +310,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
         )
     }
 
-    @Test("build request clears photo description override when custom write text is off and falls back to stored selection when subject is nil")
-    func buildRequestClearsPhotoDescriptionOverrideWhenCustomWriteTextIsOffAndFallsBackToStoredSelectionWhenSubjectIsNil() {
+    @Test("build request keeps smart memory writing enabled by default and falls back to stored selection when subject is nil")
+    func buildRequestKeepsSmartMemoryWritingEnabledByDefaultAndFallsBackToStoredSelectionWhenSubjectIsNil() {
         let baseState = ConfigurationCenterState.mock
 
         let request = V1ConfigurationApplyRequestBuilder.buildRequest(
@@ -260,6 +320,9 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 subjects: baseState.subjects,
                 selectedSubjectID: baseState.selectedSubjectID,
                 shouldSaveSubjectLibrary: false,
+                memoryPresets: baseState.memoryPresets,
+                selectedMemoryPresetID:
+                    baseState.selectedMemoryPresetID,
                 presetTitle: "V1.0",
                 templateTextsByRegion: [
                     .slotA: "A"
@@ -283,7 +346,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             request.selectedSubjectID
             == baseState.selectedSubjectID
         )
-        #expect(request.shouldWritePhotoDescription == false)
+        #expect(request.shouldWritePhotoDescription == true)
         #expect(request.photoDescriptionOverride.isEmpty)
     }
 }

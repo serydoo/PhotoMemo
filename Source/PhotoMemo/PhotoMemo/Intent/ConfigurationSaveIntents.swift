@@ -24,6 +24,8 @@ struct V1ConfigurationSaveRequest:
     let subjects: [MemorySubject]
     let selectedSubjectID: MemorySubject.ID?
     let shouldSaveSubjectLibrary: Bool
+    let memoryPresets: [MemoryPreset]
+    let selectedMemoryPresetID: MemoryPreset.ID?
     let template: Template
 
     let badge: Badge?
@@ -47,6 +49,8 @@ struct V1ConfigurationSaveRequest:
         subjects: [MemorySubject] = [],
         selectedSubjectID: MemorySubject.ID? = nil,
         shouldSaveSubjectLibrary: Bool = true,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil,
         template: Template,
         badge: Badge?,
         locationDisplayConfiguration:
@@ -64,6 +68,10 @@ struct V1ConfigurationSaveRequest:
             selectedSubjectID
         self.shouldSaveSubjectLibrary =
             shouldSaveSubjectLibrary
+        self.memoryPresets =
+            memoryPresets
+        self.selectedMemoryPresetID =
+            selectedMemoryPresetID
         self.template = template
         self.badge = badge
         self.locationDisplayConfiguration =
@@ -90,6 +98,8 @@ struct V1ConfigurationBootstrapState:
 
     let subjects: [MemorySubject]?
     let selectedSubjectID: MemorySubject.ID?
+    let memoryPresets: [MemoryPreset]
+    let selectedMemoryPresetID: MemoryPreset.ID?
     let selectedSubject: MemorySubject?
     let subjectLibraryReadFailure:
         PhotoMemoSharedDefaultsReadFailure?
@@ -117,6 +127,8 @@ struct V1ConfigurationBootstrapState:
     init(
         subjects: [MemorySubject]? = nil,
         selectedSubjectID: MemorySubject.ID? = nil,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil,
         selectedSubject: MemorySubject? = nil,
         subjectLibraryReadFailure:
             PhotoMemoSharedDefaultsReadFailure? = nil,
@@ -133,6 +145,9 @@ struct V1ConfigurationBootstrapState:
         self.subjects = subjects
         self.selectedSubjectID =
             selectedSubjectID
+        self.memoryPresets = memoryPresets
+        self.selectedMemoryPresetID =
+            selectedMemoryPresetID
         self.selectedSubject = selectedSubject
         self.subjectLibraryReadFailure =
             subjectLibraryReadFailure

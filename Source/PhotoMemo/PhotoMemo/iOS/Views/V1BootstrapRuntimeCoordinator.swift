@@ -29,7 +29,9 @@ struct V1BootstrapRuntimeCoordinator {
     private let restoreSubjectLibrary:
         (
             [MemorySubject],
-            MemorySubject.ID?
+            MemorySubject.ID?,
+            [MemoryPreset],
+            MemoryPreset.ID?
         ) -> Void
     private let restoreSelectedSubject:
         (MemorySubject) -> Void
@@ -47,7 +49,9 @@ struct V1BootstrapRuntimeCoordinator {
         ) -> Void,
         restoreSubjectLibrary: @escaping (
             [MemorySubject],
-            MemorySubject.ID?
+            MemorySubject.ID?,
+            [MemoryPreset],
+            MemoryPreset.ID?
         ) -> Void,
         restoreSelectedSubject: @escaping (
             MemorySubject
@@ -105,11 +109,15 @@ struct V1BootstrapRuntimeCoordinator {
         switch patch.sessionRestorePlan {
         case .restoreLibrary(
             let subjects,
-            let selectedSubjectID
+            let selectedSubjectID,
+            let memoryPresets,
+            let selectedMemoryPresetID
         ):
             restoreSubjectLibrary(
                 subjects,
-                selectedSubjectID
+                selectedSubjectID,
+                memoryPresets,
+                selectedMemoryPresetID
             )
         case .restoreSelectedSubject(let subject):
             restoreSelectedSubject(subject)

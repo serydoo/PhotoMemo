@@ -161,7 +161,7 @@ extension MainView {
         guard let badge = settings.selectedBadge,
               badge.type != .none else {
             if currentPreset == .immersWhite {
-                return "未自定义时，Immers 白边会自动使用经典 Apple 小标识，并贴近右侧信息区显示。"
+                return "未自定义时，Classic White 会自动使用经典 Apple 小标识，并贴近右侧信息区显示。"
             }
 
             return "当前风格会保留标识区域留白，适合更极简的版式。"

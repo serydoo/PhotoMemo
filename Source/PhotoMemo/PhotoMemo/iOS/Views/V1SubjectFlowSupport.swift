@@ -33,6 +33,8 @@ enum V1SubjectLibraryPersistenceCoordinator {
     static func persistSelectedSubject(
         _ subject: MemorySubject,
         subjects: [MemorySubject],
+        memoryPresets: [MemoryPreset],
+        selectedMemoryPresetID: MemoryPreset.ID?,
         shouldSaveSubjectLibrary: Bool,
         configurationCoordinator: ConfigurationCoordinator?
     ) {
@@ -50,9 +52,12 @@ enum V1SubjectLibraryPersistenceCoordinator {
                     .subjectsForSaving(
                         selectedSubject: subject,
                         subjects: subjects
-                    ),
+                ),
                 selectedSubjectID: subject.id,
-                coordinator: configurationCoordinator
+                coordinator: configurationCoordinator,
+                memoryPresets: memoryPresets,
+                selectedMemoryPresetID:
+                    selectedMemoryPresetID
             )
     }
 
@@ -60,6 +65,8 @@ enum V1SubjectLibraryPersistenceCoordinator {
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
         selectedSubject: MemorySubject?,
+        memoryPresets: [MemoryPreset],
+        selectedMemoryPresetID: MemoryPreset.ID?,
         shouldSaveSubjectLibrary: Bool,
         configurationCoordinator: ConfigurationCoordinator?
     ) {
@@ -78,7 +85,10 @@ enum V1SubjectLibraryPersistenceCoordinator {
             .persist(
                 subjects: subjects,
                 selectedSubjectID: selectedSubjectID,
-                coordinator: configurationCoordinator
+                coordinator: configurationCoordinator,
+                memoryPresets: memoryPresets,
+                selectedMemoryPresetID:
+                    selectedMemoryPresetID
             )
     }
 }
@@ -134,6 +144,10 @@ enum V1SubjectOverviewActionCoordinator {
                     session.state.selectedSubjectID,
                 selectedSubject:
                     session.state.selectedSubject,
+                memoryPresets:
+                    session.state.memoryPresets,
+                selectedMemoryPresetID:
+                    session.state.selectedMemoryPresetID,
                 shouldSaveSubjectLibrary:
                     shouldSaveSubjectLibrary,
                 configurationCoordinator:
@@ -171,6 +185,10 @@ enum V1SubjectOverviewActionCoordinator {
                 subjects: session.state.subjects,
                 selectedSubjectID: subject.id,
                 selectedSubject: subject,
+                memoryPresets:
+                    session.state.memoryPresets,
+                selectedMemoryPresetID:
+                    session.state.selectedMemoryPresetID,
                 shouldSaveSubjectLibrary:
                     shouldSaveSubjectLibrary,
                 configurationCoordinator:
@@ -212,6 +230,10 @@ enum V1SubjectOverviewActionCoordinator {
                 subjects: session.state.subjects,
                 selectedSubjectID: subject.id,
                 selectedSubject: subject,
+                memoryPresets:
+                    session.state.memoryPresets,
+                selectedMemoryPresetID:
+                    session.state.selectedMemoryPresetID,
                 shouldSaveSubjectLibrary:
                     shouldPersistLibrary,
                 configurationCoordinator:
@@ -269,6 +291,10 @@ enum V1SubjectOverviewActionCoordinator {
                     session.state.selectedSubjectID,
                 selectedSubject:
                     session.state.selectedSubject,
+                memoryPresets:
+                    session.state.memoryPresets,
+                selectedMemoryPresetID:
+                    session.state.selectedMemoryPresetID,
                 shouldSaveSubjectLibrary:
                     shouldSaveSubjectLibrary,
                 configurationCoordinator:
@@ -307,6 +333,10 @@ enum V1SubjectOverviewActionCoordinator {
                         .persistSelectedSubject(
                             subject,
                             subjects: session.state.subjects,
+                            memoryPresets:
+                                session.state.memoryPresets,
+                            selectedMemoryPresetID:
+                                session.state.selectedMemoryPresetID,
                             shouldSaveSubjectLibrary:
                                 shouldSaveSubjectLibrary,
                             configurationCoordinator:

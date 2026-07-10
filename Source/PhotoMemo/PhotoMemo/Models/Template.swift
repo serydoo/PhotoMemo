@@ -108,7 +108,7 @@ extension Template {
 
     static let immersWhite = Template(
         preset: .immersWhite,
-        name: "Immers 白边",
+        name: "Classic White",
         leftTopArea: .leftTop,
         leftBottomArea: .leftBottom,
         rightTopArea: TemplateArea(

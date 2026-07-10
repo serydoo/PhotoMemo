@@ -330,6 +330,12 @@ final class BatchQueueExecution {
                 try await requireValue(
                     ImportBatchPhotoIntent(
                         task: task,
+                        contentTypeIdentifierOverride:
+                            staticImportContentTypeIdentifier(
+                                for: task,
+                                usesLivePhotoProcessing:
+                                    usesLivePhotoProcessing
+                            ),
                         repository:
                             photoRepository
                     )
@@ -761,11 +767,36 @@ private extension BatchQueueExecution {
         for task: BatchTask
     ) -> Bool {
         PhotoProcessingInputPolicy
+            .canUseLivePhotoProcessing(
+                contentTypeIdentifier:
+                    task.contentTypeIdentifier,
+                sourceIdentifier:
+                    task.sourceIdentifier
+            )
+    }
+
+    func staticImportContentTypeIdentifier(
+        for task: BatchTask,
+        usesLivePhotoProcessing: Bool
+    ) -> String? {
+
+        guard !usesLivePhotoProcessing,
+              PhotoProcessingInputPolicy
             .isLivePhotoContentType(
                 task
                     .contentTypeIdentifier
                     .flatMap(UTType.init)
             )
+        else {
+            return task.contentTypeIdentifier
+        }
+
+        return UTType(
+            filenameExtension:
+                task.sourceURL
+                .pathExtension
+                .lowercased()
+        )?.identifier
     }
 
     func processLivePhotoTask(

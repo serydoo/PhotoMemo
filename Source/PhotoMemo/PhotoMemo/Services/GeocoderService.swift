@@ -239,26 +239,10 @@ private func cleanedAdministrativeName(
         return nil
     }
 
-    var cleanedValue =
+    let cleanedValue =
         value.trimmingCharacters(
             in: .whitespacesAndNewlines
         )
-
-    for suffix in [
-        "特别行政区",
-        "自治州",
-        "自治区",
-        "地区",
-        "盟",
-        "省",
-        "市",
-        "区",
-        "县"
-    ] where cleanedValue.hasSuffix(suffix) {
-
-        cleanedValue.removeLast(suffix.count)
-        break
-    }
 
     return cleanedValue.isEmpty
         ? nil

@@ -113,6 +113,97 @@ struct LivePhotoBatchQueueExecutionTests {
             == "rendered-live-photo-asset"
         )
     }
+
+    @MainActor
+    @Test("Live Photo content type without asset identity falls back to still processing")
+    func livePhotoPayloadWithoutAssetIdentityDoesNotUseInternalLivePhotoProcessor() async throws {
+        let suiteName =
+            "PhotoMemo.LivePhotoBatchQueueExecutionTests.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let intakeDirectoryURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        defer {
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let livePhotoType =
+            try #require(
+                UTType("com.apple.live-photo")
+            )
+        let processor =
+            RecordingLivePhotoBatchTaskProcessor()
+        let store =
+            BatchQueueStore(
+                defaults: defaults,
+                settingsService:
+                    SettingsService(
+                        defaults: defaults
+                    ),
+                externalIntakeStore:
+                    ExternalPhotoIntakeStore(
+                        defaults: defaults,
+                        intakeDirectoryURL:
+                            intakeDirectoryURL
+                    ),
+                livePhotoProcessor:
+                    processor
+            )
+        let configuration =
+            makeConfiguration(
+                outputMode:
+                    .originalFormat
+            )
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .portraitJPEG
+            )
+
+        _ = store.enqueue(
+            payloads: [
+                BatchTaskIntakePayload(
+                    sourceURL: sourceURL,
+                    sourceIdentifier: nil,
+                    fileName: "IMG_6093.jpeg",
+                    contentTypeIdentifier:
+                        livePhotoType.identifier
+                )
+            ],
+            configuration:
+                configuration,
+            launchSource:
+                .shareExtension
+        )
+
+        let didFinish =
+            await waitForQueueToFinish(
+                store
+            )
+
+        #expect(didFinish)
+        #expect(processor.requests.isEmpty)
+        #expect(
+            store.jobs.first?.tasks.first?.phase
+            == .completed
+        )
+    }
 }
 
 private extension LivePhotoBatchQueueExecutionTests {

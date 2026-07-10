@@ -35,6 +35,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         var didSaveCurrentPreset = false
         var didApplySelectedPreset = false
         var selectedExistingAlbumIdentifier = ""
+        var outputTarget = V1IOSOutputTarget.newAlbum
         var statuses: [V1ConfigurationApplyViewStatus] = []
 
         let coordinator =
@@ -45,6 +46,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
                 },
                 reloadAlbums: {
                     didReloadAlbums = true
+                },
+                setOutputTarget: {
+                    outputTarget = $0
                 },
                 setSelectedExistingAlbumIdentifier: {
                     selectedExistingAlbumIdentifier = $0
@@ -71,6 +75,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
 
         #expect(wasSuccessful == true)
         #expect(didReloadAlbums == true)
+        #expect(outputTarget == .existingAlbum)
         #expect(
             selectedExistingAlbumIdentifier
             == "picker-album-1"

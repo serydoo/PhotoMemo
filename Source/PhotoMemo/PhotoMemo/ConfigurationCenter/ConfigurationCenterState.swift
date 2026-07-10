@@ -55,6 +55,7 @@ struct ConfigurationCenterState:
 
 struct MemoryPreset:
     Identifiable,
+    Codable,
     Hashable {
 
     let id: UUID
@@ -66,6 +67,7 @@ struct MemoryPreset:
     var selectedTimeAnchorID: UUID?
     var outputOption: ConfigurationOutputOption
     var storageOption: ConfigurationStorageOption
+    var logoMode: V1LogoMode
     var usesCustomMemoryWriteText: Bool
     var customMemoryWriteText: String
 
@@ -79,6 +81,7 @@ struct MemoryPreset:
         selectedTimeAnchorID: UUID? = nil,
         outputOption: ConfigurationOutputOption = .processedImage,
         storageOption: ConfigurationStorageOption = .appFolder,
+        logoMode: V1LogoMode = .appleMini,
         usesCustomMemoryWriteText: Bool = false,
         customMemoryWriteText: String = ""
     ) {
@@ -91,6 +94,7 @@ struct MemoryPreset:
         self.selectedTimeAnchorID = selectedTimeAnchorID
         self.outputOption = outputOption
         self.storageOption = storageOption
+        self.logoMode = logoMode
         self.usesCustomMemoryWriteText = usesCustomMemoryWriteText
         self.customMemoryWriteText = customMemoryWriteText
     }

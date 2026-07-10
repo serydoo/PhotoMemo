@@ -88,13 +88,18 @@ final class ConfigurationCoordinator {
 
     func saveV1SubjectLibrary(
         subjects: [MemorySubject],
-        selectedSubjectID: MemorySubject.ID?
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) -> PhotoMemoResult<Void> {
 
         settingsRepository
             .saveV1SubjectLibrary(
                 subjects: subjects,
-                selectedSubjectID: selectedSubjectID
+                selectedSubjectID: selectedSubjectID,
+                memoryPresets: memoryPresets,
+                selectedMemoryPresetID:
+                    selectedMemoryPresetID
             )
         return .success(())
     }
@@ -150,7 +155,11 @@ final class ConfigurationCoordinator {
                         ),
                     selectedSubjectID:
                         request.selectedSubjectID
-                        ?? request.subject?.id
+                        ?? request.subject?.id,
+                    memoryPresets:
+                        request.memoryPresets,
+                    selectedMemoryPresetID:
+                        request.selectedMemoryPresetID
                 )
         }
         settingsRepository

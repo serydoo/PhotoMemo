@@ -6,7 +6,7 @@ import Testing
 @Suite("Memory write option presenter")
 struct MemoryWriteOptionPresenterTests {
 
-    @Test("uses custom text wording when separate entry is enabled")
+    @Test("uses replacement wording when smart memory write is disabled")
     func customEntryEnabledCopy() {
         let presentation =
             MemoryWriteOptionPresenter
@@ -17,19 +17,19 @@ struct MemoryWriteOptionPresenterTests {
 
         #expect(
             presentation.toggleTitle
-            == "单独录入相册说明"
+            == "写入记忆信息"
         )
         #expect(
             presentation.toggleDescription
-            == "开启后，优先写入你单独录入的内容；关闭后，默认写入当前生成的智能模块结果。"
+            == "关闭后，将使用下方录入内容替换图片说明。"
         )
         #expect(
             presentation.inputPlaceholder
-            == "输入想单独写入 Apple Photos 说明栏的文字"
+            == "输入准备替换写入到图片说明框的信息"
         )
         #expect(
             presentation.resolvedTitle
-            == "实际写入"
+            == "替换写入"
         )
         #expect(
             presentation.resolvedDescription
@@ -37,11 +37,11 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "关闭后，默认写入当前生成的智能模块完整结果。"
+            == "重新打开后，将恢复写入当前智能模块结果。"
         )
     }
 
-    @Test("uses smart-module fallback wording when separate entry is disabled")
+    @Test("uses smart-module wording when memory write is enabled")
     func customEntryDisabledCopy() {
         let presentation =
             MemoryWriteOptionPresenter
@@ -52,7 +52,11 @@ struct MemoryWriteOptionPresenterTests {
 
         #expect(
             presentation.toggleTitle
-            == "单独录入相册说明"
+            == "写入记忆信息"
+        )
+        #expect(
+            presentation.toggleDescription
+            == "开启后，默认将当前智能模块结果写入图片说明。"
         )
         #expect(
             presentation.resolvedTitle
@@ -64,7 +68,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "未开启单独录入时，将默认写入当前生成的智能模块完整结果。"
+            == "智能模块会结合拍摄时间、记忆对象和时间锚点生成说明。"
         )
     }
 }

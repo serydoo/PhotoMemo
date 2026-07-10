@@ -155,126 +155,129 @@ struct V1IOSSubjectAnchorSection: View {
 
     let subject: MemorySubject?
 
-    @Binding
-    var selectedAnchorID: UUID?
-
     var body: some View {
-        let selectedAnchor =
-            resolvedAnchor
-
-        return V1CardSurface(title: "当前生效时间锚点") {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(
-                            selectedAnchor?.title
-                            ?? presentation.anchorTitle
-                        )
-                            .font(.subheadline.weight(.semibold))
-
-                        Text(
-                            selectedAnchor?.date.formatted(
-                                .dateTime
-                                    .year()
-                                    .month()
-                                    .day()
-                            )
-                            ?? presentation.anchorDateLabel
-                        )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                Text(
-                    normalizedDescription(
-                        for: selectedAnchor
-                    )
-                )
+        V1CardSurface(title: "可用时间锚点") {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("展示当前记忆对象下可用于配置的全部时间锚点；具体使用哪个锚点，由配置中心的当前配置决定。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fixedSize(
-                        horizontal: false,
-                        vertical: true
-                    )
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let subject,
                    !subject.timeAnchors.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("选择要立即生效的时间锚点")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                    VStack(spacing: 0) {
+                        ForEach(subject.timeAnchors) { anchor in
+                            anchorRow(anchor)
 
-                        Picker(
-                            "当前生效时间锚点",
-                            selection:
-                                Binding(
-                                    get: {
-                                        selectedAnchorID
-                                        ?? subject
-                                        .primaryTimeAnchor?
-                                        .id
-                                        ?? subject
-                                        .timeAnchors
-                                        .first?
-                                        .id
-                                        ?? UUID()
-                                    },
-                                    set: {
-                                        selectedAnchorID = $0
-                                    }
-                                )
-                        ) {
-                            ForEach(subject.timeAnchors) { anchor in
-                                Text(anchor.title)
-                                    .tag(anchor.id)
+                            if anchor.id != subject.timeAnchors.last?.id {
+                                Rectangle()
+                                    .fill(ConfigurationUI.faintHairline)
+                                    .frame(height: 0.5)
+                                    .padding(.leading, 52)
                             }
                         }
-                        .pickerStyle(.menu)
                     }
-                    .padding(12)
-                    .background(
+                    .background(Color.white.opacity(0.94))
+                    .clipShape(
                         RoundedRectangle(
-                            cornerRadius: 12,
+                            cornerRadius: 18,
                             style: .continuous
                         )
-                        .fill(Color(.secondarySystemBackground))
                     )
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: 18,
+                            style: .continuous
+                        )
+                        .stroke(ConfigurationUI.faintHairline)
+                    )
+                } else {
+                    Text("暂无可用时间锚点。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
     }
 
-    private var resolvedAnchor: MemorySubject.TimeAnchor? {
-        guard let subject else {
-            return nil
-        }
-
-        if let selectedAnchorID {
-            return subject.timeAnchors.first {
-                $0.id == selectedAnchorID
-            }
-        }
-
-        return subject.primaryTimeAnchor
-    }
-
-    private func normalizedDescription(
-        for anchor: MemorySubject.TimeAnchor?
-    ) -> String {
+    private func anchorRow(
+        _ anchor: MemorySubject.TimeAnchor
+    ) -> some View {
         let trimmedNote =
-            anchor?.note
+            anchor.note
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
-            ) ?? ""
+            )
 
-        if !trimmedNote.isEmpty {
-            return trimmedNote
+        return HStack(alignment: .center, spacing: 12) {
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .fill(
+                Color.primary.opacity(0.045)
+            )
+            .frame(width: 38, height: 38)
+            .overlay {
+                Image(
+                    systemName:
+                        iconName(for: anchor.resolvedAnchorType)
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(anchor.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(
+                    trimmedNote.isEmpty
+                    ? anchor.date.formatted(
+                        date: .abbreviated,
+                        time: .omitted
+                    )
+                    : "\(anchor.date.formatted(date: .abbreviated, time: .omitted)) · \(trimmedNote)"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+
+            Text(anchor.resolvedAnchorType.displayName)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.primary.opacity(0.045))
+                )
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+    }
 
-        return presentation.anchorDescription
+    private func iconName(
+        for anchorType: AnchorType
+    ) -> String {
+        switch anchorType {
+        case .birthday:
+            return "birthday.cake.fill"
+        case .relationship:
+            return "heart.fill"
+        case .marriage:
+            return "sparkles"
+        case .exam:
+            return "flag.checkered"
+        case .custom:
+            return "calendar"
+        }
     }
 }
 #endif

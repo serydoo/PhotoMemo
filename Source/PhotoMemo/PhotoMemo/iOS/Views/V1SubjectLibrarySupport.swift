@@ -15,6 +15,34 @@ enum V1SubjectLibraryFactory {
                 expressionStyle:
                     .defaultStyle(for: .birthday)
             )
+        let hundredDaysAnchor =
+            MemorySubject.TimeAnchor(
+                title: "百天",
+                date:
+                    Calendar.current.date(
+                        byAdding: .day,
+                        value: 99,
+                        to: referenceDate
+                    ) ?? referenceDate,
+                note: "对象出生后的第 100 天。",
+                anchorType: .birthday,
+                expressionStyle:
+                    .defaultStyle(for: .birthday)
+            )
+        let customAnchor =
+            MemorySubject.TimeAnchor(
+                title: "重要日子",
+                date:
+                    Calendar.current.date(
+                        byAdding: .month,
+                        value: 6,
+                        to: referenceDate
+                    ) ?? referenceDate,
+                note: "自定义纪念日或重要时间点。",
+                anchorType: .custom,
+                expressionStyle:
+                    .defaultStyle(for: .custom)
+            )
 
         return MemorySubject(
             identity: .init(
@@ -27,7 +55,11 @@ enum V1SubjectLibraryFactory {
             ),
             definition: "在这里补充对象身份、头像与时间锚点。",
             referenceDate: referenceDate,
-            timeAnchors: [birthdayAnchor],
+            timeAnchors: [
+                birthdayAnchor,
+                hundredDaysAnchor,
+                customAnchor
+            ],
             activeTimeAnchorID: birthdayAnchor.id,
             expressionSubjectSource: .displayName,
             behavior: .init(
@@ -51,8 +83,14 @@ enum V1SubjectLibraryResolver {
         selectedSubjectID: MemorySubject.ID?,
         fallbackSubject: MemorySubject?
     ) -> MemorySubject? {
-        if let subjects,
-           !subjects.isEmpty {
+        if let subjects {
+            let subjects =
+                sanitizedSubjectLibrary(subjects)
+
+            guard !subjects.isEmpty else {
+                return fallbackSubject
+            }
+
             if let selectedSubjectID,
                let selectedSubject =
                 subjects.first(
@@ -77,7 +115,13 @@ enum V1SubjectLibraryResolver {
             return subjects
         }
 
-        var resolvedSubjects = subjects
+        var resolvedSubjects =
+            sanitizedSubjectLibrary(subjects)
+
+        guard !isLegacyDemoSubject(selectedSubject) else {
+            return resolvedSubjects
+        }
+
         if let index =
             resolvedSubjects.firstIndex(
                 where: {
@@ -92,10 +136,27 @@ enum V1SubjectLibraryResolver {
         return resolvedSubjects
     }
 
+    static func sanitizedSubjectLibrary(
+        _ subjects: [MemorySubject]
+    ) -> [MemorySubject] {
+        subjects.filter {
+            !isLegacyDemoSubject($0)
+        }
+    }
+
+    private static func isLegacyDemoSubject(
+        _ subject: MemorySubject
+    ) -> Bool {
+        subject.identity.displayName == "Kyoto Spring"
+        && subject.identity.shortName == "Kyoto"
+    }
+
     static func persist(
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
-        coordinator: ConfigurationCoordinator?
+        coordinator: ConfigurationCoordinator?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
         guard let coordinator else {
             return
@@ -104,9 +165,14 @@ enum V1SubjectLibraryResolver {
         _ =
             coordinator
             .saveV1SubjectLibrary(
-                subjects: subjects,
+                subjects:
+                    sanitizedSubjectLibrary(subjects),
                 selectedSubjectID:
-                    selectedSubjectID
+                    selectedSubjectID,
+                memoryPresets:
+                    memoryPresets,
+                selectedMemoryPresetID:
+                    selectedMemoryPresetID
             )
     }
 }

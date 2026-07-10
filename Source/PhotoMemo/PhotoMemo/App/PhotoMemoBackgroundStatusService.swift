@@ -131,6 +131,94 @@ struct PhotoMemoBackgroundPipelineStep: Hashable {
     let state: PhotoMemoBackgroundPipelineStepState
 }
 
+struct PhotoMemoBackgroundTaskOverview: Hashable {
+
+    let activeJobCount: Int
+
+    let completedPhotoCount: Int
+
+    let failedPhotoCount: Int
+
+    let todayProcessingCount: Int
+
+    static let empty =
+        PhotoMemoBackgroundTaskOverview(
+            activeJobCount: 0,
+            completedPhotoCount: 0,
+            failedPhotoCount: 0,
+            todayProcessingCount: 0
+        )
+}
+
+struct PhotoMemoBackgroundJobSummary:
+    Identifiable,
+    Hashable {
+
+    var id: UUID {
+        jobID
+    }
+
+    let jobID: UUID
+
+    let configurationName: String
+
+    let templateName: String
+
+    let presentationState:
+        PhotoMemoBackgroundPresentationState
+
+    let jobState: BatchJobState
+
+    let completedCount: Int
+
+    let failedCount: Int
+
+    let totalCount: Int
+
+    let previewSourceURL: URL?
+
+    let savedAlbumName: String?
+
+    let savedAssetIdentifier: String?
+
+    let updatedAt: Date
+
+    init(
+        jobID: UUID,
+        configurationName: String,
+        templateName: String,
+        presentationState:
+            PhotoMemoBackgroundPresentationState,
+        jobState: BatchJobState,
+        completedCount: Int,
+        failedCount: Int,
+        totalCount: Int,
+        previewSourceURL: URL?,
+        savedAlbumName: String? = nil,
+        savedAssetIdentifier: String? = nil,
+        updatedAt: Date
+    ) {
+        self.jobID = jobID
+        self.configurationName =
+            configurationName
+        self.templateName = templateName
+        self.presentationState =
+            presentationState
+        self.jobState = jobState
+        self.completedCount =
+            completedCount
+        self.failedCount = failedCount
+        self.totalCount = totalCount
+        self.previewSourceURL =
+            previewSourceURL
+        self.savedAlbumName =
+            savedAlbumName
+        self.savedAssetIdentifier =
+            savedAssetIdentifier
+        self.updatedAt = updatedAt
+    }
+}
+
 struct PhotoMemoBackgroundJobSnapshot: Hashable {
 
     let jobID: UUID
@@ -175,6 +263,96 @@ struct PhotoMemoBackgroundJobSnapshot: Hashable {
 
     let updatedAt: Date
 
+    let configurationName: String
+
+    let templateName: String
+
+    let previewSourceURL: URL?
+
+    let savedAlbumName: String?
+
+    let savedAssetIdentifier: String?
+
+    init(
+        jobID: UUID,
+        title: String,
+        launchSource: BatchJobLaunchSource,
+        presentationState:
+            PhotoMemoBackgroundPresentationState,
+        jobState: BatchJobState,
+        currentPhase: BatchTaskPhase?,
+        currentPhaseTitle: String?,
+        currentFileName: String?,
+        statusMessage: String,
+        displayMode: PhotoMemoBackgroundDisplayMode,
+        pipelineSteps:
+            [PhotoMemoBackgroundPipelineStep],
+        activePipelineStepIndex: Int,
+        queueLines: [String],
+        overflowQueueCount: Int,
+        completedCount: Int,
+        failedCount: Int,
+        totalCount: Int,
+        progressFraction: Double,
+        canRetryFailures: Bool,
+        hasOnlyUnsupportedFailures: Bool,
+        updatedAt: Date,
+        configurationName: String = "",
+        templateName: String = "Classic White",
+        previewSourceURL: URL? = nil,
+        savedAlbumName: String? = nil,
+        savedAssetIdentifier: String? = nil
+    ) {
+        self.jobID = jobID
+        self.title = title
+        self.launchSource = launchSource
+        self.presentationState =
+            presentationState
+        self.jobState = jobState
+        self.currentPhase = currentPhase
+        self.currentPhaseTitle =
+            currentPhaseTitle
+        self.currentFileName =
+            currentFileName
+        self.statusMessage =
+            statusMessage
+        self.displayMode = displayMode
+        self.pipelineSteps =
+            pipelineSteps
+        self.activePipelineStepIndex =
+            activePipelineStepIndex
+        self.queueLines = queueLines
+        self.overflowQueueCount =
+            overflowQueueCount
+        self.completedCount =
+            completedCount
+        self.failedCount = failedCount
+        self.totalCount = totalCount
+        self.progressFraction =
+            progressFraction
+        self.canRetryFailures =
+            canRetryFailures
+        self.hasOnlyUnsupportedFailures =
+            hasOnlyUnsupportedFailures
+        self.updatedAt = updatedAt
+        let trimmedConfigurationName =
+            configurationName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        self.configurationName =
+            trimmedConfigurationName.isEmpty
+            ? title
+            : trimmedConfigurationName
+        self.templateName = templateName
+        self.previewSourceURL =
+            previewSourceURL
+        self.savedAlbumName =
+            savedAlbumName
+        self.savedAssetIdentifier =
+            savedAssetIdentifier
+    }
+
     var feedbackState:
         PhotoMemoBackgroundFeedbackState {
 
@@ -217,6 +395,14 @@ final class PhotoMemoBackgroundStatusService:
     @Published private(set)
     var currentSnapshot:
         PhotoMemoBackgroundJobSnapshot?
+
+    @Published private(set)
+    var taskOverview =
+        PhotoMemoBackgroundTaskOverview.empty
+
+    @Published private(set)
+    var recentJobSummaries:
+        [PhotoMemoBackgroundJobSummary] = []
 
     private let batchQueueStore:
         BatchQueueStore
@@ -271,30 +457,40 @@ private extension PhotoMemoBackgroundStatusService {
 
     func refreshSnapshot() {
 
+        let externalJobs =
+            resolvedExternalJobs(
+                from: batchQueueStore.jobs
+            )
+
         currentSnapshot =
             resolvedSnapshot(
-                jobs: batchQueueStore.jobs,
+                externalJobs: externalJobs,
                 activeJobID:
                     batchQueueStore.activeJobID,
                 activeTaskID:
                     batchQueueStore.activeTaskID
             )
+
+        taskOverview =
+            resolvedTaskOverview(
+                from: externalJobs
+            )
+
+        recentJobSummaries =
+            externalJobs
+            .prefix(10)
+            .map {
+                summary(
+                    for: $0
+                )
+            }
     }
 
     func resolvedSnapshot(
-        jobs: [BatchJob],
+        externalJobs: [BatchJob],
         activeJobID: UUID?,
         activeTaskID: UUID?
     ) -> PhotoMemoBackgroundJobSnapshot? {
-
-        let externalJobs =
-            jobs
-            .filter {
-                $0.launchSource != .inAppPreview
-            }
-            .sorted {
-                $0.updatedAt > $1.updatedAt
-            }
 
         guard !externalJobs.isEmpty else {
             return nil
@@ -427,8 +623,152 @@ private extension PhotoMemoBackgroundStatusService {
                 job.hasRetryableFailures,
             hasOnlyUnsupportedFailures:
                 job.hasOnlyUnsupportedFailures,
+            updatedAt: job.updatedAt,
+            configurationName:
+                resolvedConfigurationName(
+                    for: job
+                ),
+            templateName:
+                job.configuration
+                .template
+                .preset
+                .displayName,
+            previewSourceURL:
+                activeTask?
+                .sourceURL
+                ?? job.tasks.first?
+                .sourceURL,
+            savedAlbumName:
+                latestSavedTask(
+                    in: job
+                )?
+                .savedAlbumName,
+            savedAssetIdentifier:
+                latestSavedTask(
+                    in: job
+                )?
+                .savedAssetIdentifier
+        )
+    }
+
+    func resolvedExternalJobs(
+        from jobs: [BatchJob]
+    ) -> [BatchJob] {
+        jobs
+            .filter {
+                $0.launchSource != .inAppPreview
+            }
+            .sorted {
+                $0.updatedAt > $1.updatedAt
+            }
+    }
+
+    func resolvedTaskOverview(
+        from jobs: [BatchJob],
+        calendar: Calendar = .current,
+        now: Date = Date()
+    ) -> PhotoMemoBackgroundTaskOverview {
+        let tasks =
+            jobs.flatMap(\.tasks)
+
+        return PhotoMemoBackgroundTaskOverview(
+            activeJobCount:
+                jobs.filter { job in
+                    job.tasks.contains {
+                        !$0.phase.isTerminal
+                    }
+                }.count,
+            completedPhotoCount:
+                tasks.filter {
+                    $0.phase == .completed
+                }.count,
+            failedPhotoCount:
+                tasks.filter {
+                    $0.phase == .failed
+                }.count,
+            todayProcessingCount:
+                jobs.filter {
+                    calendar.isDate(
+                        $0.updatedAt,
+                        inSameDayAs: now
+                    )
+                }.count
+        )
+    }
+
+    func summary(
+        for job: BatchJob
+    ) -> PhotoMemoBackgroundJobSummary {
+        PhotoMemoBackgroundJobSummary(
+            jobID: job.id,
+            configurationName:
+                resolvedConfigurationName(
+                    for: job
+                ),
+            templateName:
+                job.configuration
+                .template
+                .preset
+                .displayName,
+            presentationState:
+                resolvedPresentationState(
+                    for: job
+                ),
+            jobState: job.state,
+            completedCount:
+                job.completedTaskCount,
+            failedCount:
+                job.failedTaskCount,
+            totalCount:
+                job.totalTaskCount,
+            previewSourceURL:
+                job.tasks.first?
+                .sourceURL,
+            savedAlbumName:
+                latestSavedTask(
+                    in: job
+                )?
+                .savedAlbumName,
+            savedAssetIdentifier:
+                latestSavedTask(
+                    in: job
+                )?
+                .savedAssetIdentifier,
             updatedAt: job.updatedAt
         )
+    }
+
+    func latestSavedTask(
+        in job: BatchJob
+    ) -> BatchTask? {
+        job.tasks
+            .filter {
+                $0.savedAssetIdentifier != nil
+                || $0.savedAlbumName != nil
+            }
+            .sorted {
+                $0.createdAt > $1.createdAt
+            }
+            .first
+    }
+
+    func resolvedConfigurationName(
+        for job: BatchJob
+    ) -> String {
+        let trimmedName =
+            job.configuration
+            .template
+            .name
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmedName.isEmpty
+            ? job.configuration
+                .template
+                .preset
+                .displayName
+            : trimmedName
     }
 
     func resolvedDisplayMode(

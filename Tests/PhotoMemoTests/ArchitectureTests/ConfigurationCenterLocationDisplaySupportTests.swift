@@ -29,6 +29,33 @@ struct ConfigurationCenterLocationDisplaySupportTests {
         )
     }
 
+    @Test("summary value can show a preselected display mode before the location module is inserted")
+    func summaryValueShowsPreselectedModeBeforeModuleInsertion() {
+        let presentation =
+            LocationDisplayInspectorPresenter.presentation
+        let configuration =
+            LocationDisplayInspectorPresenter
+            .configuration(for: "cityDistrict")
+
+        #expect(
+            ConfigurationCenterLocationDisplaySupport
+                .summaryValue(
+                    module: nil,
+                    presentation: presentation,
+                    selectedConfiguration: configuration
+                )
+            == "城市 · 区县"
+        )
+        #expect(
+            ConfigurationCenterLocationDisplaySupport
+                .summaryDetail(
+                    module: nil,
+                    selectedValue: "城市 · 区县"
+                )
+                .contains("还没有插入位置模块")
+        )
+    }
+
     @Test("selection change keeps the requested region and updates the location module configuration")
     func selectionChangeKeepsRequestedRegion() throws {
         let subject = ConfigurationCenterState.mock.selectedSubject

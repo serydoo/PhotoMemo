@@ -31,6 +31,7 @@ struct V1ConfigurationApplyReconciliationTests {
         )
 
         #expect(patch.shouldReloadAlbums == true)
+        #expect(patch.outputTarget == .existingAlbum)
         #expect(patch.selectedExistingAlbumIdentifier == "picker-album-1")
         #expect(patch.subjectToRestore == subject)
         #expect(patch.shouldApplySelectedMemoryPreset == true)
@@ -48,6 +49,7 @@ struct V1ConfigurationApplyReconciliationTests {
         )
 
         #expect(patch.shouldReloadAlbums == false)
+        #expect(patch.outputTarget == nil)
         #expect(patch.selectedExistingAlbumIdentifier == nil)
         #expect(patch.subjectToRestore == nil)
         #expect(patch.shouldApplySelectedMemoryPreset == false)

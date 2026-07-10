@@ -7,6 +7,8 @@ struct V1ConfigurationApplyBuildInput: Hashable {
     let subjects: [MemorySubject]
     let selectedSubjectID: MemorySubject.ID?
     let shouldSaveSubjectLibrary: Bool
+    let memoryPresets: [MemoryPreset]
+    let selectedMemoryPresetID: MemoryPreset.ID?
     let presetTitle: String
     let templateTextsByRegion: [CardRegion: String]
     let locationDisplayConfiguration:
@@ -26,6 +28,7 @@ struct V1ConfigurationApplyBuildInput: Hashable {
 struct V1ConfigurationApplyResultPatch: Hashable {
 
     let shouldReloadAlbums: Bool
+    let outputTarget: V1IOSOutputTarget?
     let selectedExistingAlbumIdentifier: String?
     let subjectToRestore: MemorySubject?
     let shouldApplySelectedMemoryPreset: Bool
@@ -63,6 +66,10 @@ enum V1ConfigurationApplyRequestBuilder {
                 ?? input.selectedSubjectID,
             shouldSaveSubjectLibrary:
                 input.shouldSaveSubjectLibrary,
+            memoryPresets:
+                input.memoryPresets,
+            selectedMemoryPresetID:
+                input.selectedMemoryPresetID,
             template:
                 Template(
                     preset: .immersWhite,
@@ -109,7 +116,7 @@ enum V1ConfigurationApplyRequestBuilder {
             locationDisplayConfiguration:
                 input.locationDisplayConfiguration,
             shouldWritePhotoDescription:
-                input.usesCustomMemoryWriteText,
+                true,
             photoDescriptionOverride:
                 input.usesCustomMemoryWriteText
                 ? input.customMemoryWriteText
@@ -236,6 +243,10 @@ enum V1ConfigurationApplyResultPresenter {
         return V1ConfigurationApplyResultPatch(
             shouldReloadAlbums:
                 pickerSelectionIdentifier != nil,
+            outputTarget:
+                pickerSelectionIdentifier != nil
+                ? .existingAlbum
+                : nil,
             selectedExistingAlbumIdentifier:
                 pickerSelectionIdentifier,
             subjectToRestore:
@@ -253,6 +264,7 @@ enum V1ConfigurationApplyResultPresenter {
     ) -> V1ConfigurationApplyResultPatch {
         V1ConfigurationApplyResultPatch(
             shouldReloadAlbums: false,
+            outputTarget: nil,
             selectedExistingAlbumIdentifier:
                 nil,
             subjectToRestore: nil,

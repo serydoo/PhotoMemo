@@ -97,10 +97,11 @@ struct MemorySubjectListView: View {
                 $0.relationship.role == "家庭"
             }
 
-        let travel =
+        let events =
             session.state.subjects
             .filter {
-                $0.relationship.role == "旅行"
+                $0.relationship.role == "事件"
+                || $0.relationship.role == "旅行"
             }
 
         return [
@@ -109,8 +110,8 @@ struct MemorySubjectListView: View {
                 subjects: people
             ),
             MemorySubjectGroup(
-                title: "旅行",
-                subjects: travel
+                title: "事件",
+                subjects: events
             )
         ]
         .filter {

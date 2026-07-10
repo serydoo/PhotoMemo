@@ -55,7 +55,7 @@ struct ConfigurationCenteriOSView: View {
         V1DiagnosticsRefreshCoordinator
 
     private let currentBorderStyleName =
-        "Classic White"
+        "基础白"
 
     init(
         runtime: PhotoMemoAppRuntime
@@ -753,7 +753,8 @@ struct ConfigurationCenteriOSView: View {
                 items:
                     session.state.subjects
                     .filter {
-                        $0.relationship.role == "旅行"
+                        $0.relationship.role == "事件"
+                        || $0.relationship.role == "旅行"
                     }
                     .map(sidebarItem(for:)),
                 addAction: {

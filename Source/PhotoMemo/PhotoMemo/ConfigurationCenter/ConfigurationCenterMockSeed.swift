@@ -75,7 +75,7 @@ enum ConfigurationCenterMockSeed {
                         note: "途途出生日期"
                     ),
                     MemorySubject.TimeAnchor(
-                        title: "第一次旅行",
+                        title: "重要日子",
                         date:
                             Calendar.current.date(
                                 from:
@@ -83,9 +83,9 @@ enum ConfigurationCenterMockSeed {
                                         year: 2025,
                                         month: 10,
                                         day: 2
-                                    )
-                            ) ?? Date(),
-                        note: "途途第一次旅行"
+                            )
+                    ) ?? Date(),
+                        note: "途途的重要纪念日"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "入园",
@@ -111,101 +111,6 @@ enum ConfigurationCenterMockSeed {
                 decorations: [
                     icon,
                     badge
-                ]
-            )
-
-        let travelSubject =
-            MemorySubject(
-                identity:
-                    .init(
-                        displayName: "Kyoto Spring",
-                        shortName: "Kyoto"
-                    ),
-                relationship:
-                    .init(
-                        role: "旅行",
-                        label: "旅行"
-                    ),
-                definition: "一次值得反复回看的旅行记忆。",
-                referenceDate:
-                    Calendar.current.date(
-                        from:
-                            DateComponents(
-                                year: 2025,
-                                month: 3,
-                                day: 29
-                            )
-                    ) ?? Date(),
-                timeAnchors: [
-                    MemorySubject.TimeAnchor(
-                        title: "出发",
-                        date:
-                            Calendar.current.date(
-                                from:
-                                    DateComponents(
-                                        year: 2025,
-                                        month: 3,
-                                        day: 29
-                                    )
-                            ) ?? Date(),
-                        note: "京都出发日期"
-                    ),
-                    MemorySubject.TimeAnchor(
-                        title: "抵达",
-                        date:
-                            Calendar.current.date(
-                                from:
-                                    DateComponents(
-                                        year: 2025,
-                                        month: 3,
-                                        day: 30
-                                    )
-                            ) ?? Date(),
-                        note: "京都抵达日期"
-                    ),
-                    MemorySubject.TimeAnchor(
-                        title: "回程",
-                        date:
-                            Calendar.current.date(
-                                from:
-                                    DateComponents(
-                                        year: 2025,
-                                        month: 4,
-                                        day: 5
-                                    )
-                            ) ?? Date(),
-                        note: "京都回程日期"
-                    )
-                ],
-                behavior:
-                    MemoryBehavior(
-                        primaryAnchor: "初次到访",
-                        iconStrategy: .fixed,
-                        badgeStrategy: .autoMatch,
-                        memoryExpression:
-                            MemoryExpression(
-                                title: "旅行记忆",
-                                blocks: [
-                                    MemoryBlock(
-                                        type: .memory,
-                                        title: "生命时间",
-                                        value: "生命时间"
-                                    ),
-                                    .text(" · "),
-                                    MemoryBlock(
-                                        type: .photo,
-                                        title: "拍摄日期",
-                                        value: "拍摄日期"
-                                    )
-                                ]
-                            )
-                    ),
-                decorations: [
-                    DecorationAsset(
-                        kind: .icon,
-                        title: "位置",
-                        systemSymbolName: "location.fill"
-                    )
                 ]
             )
 
@@ -248,16 +153,16 @@ enum ConfigurationCenterMockSeed {
 
         let preset2 =
             MemoryPreset(
-                title: "第一次旅行",
-                summary: "更强调日期、地点和旅行记忆表达。",
+                title: "重要日子",
+                summary: "更强调日期、地点和纪念表达。",
                 regionTemplateIDs: [
                     .slotA: "recorder.configuration2",
                     .slotB: "timeline.configuration2",
                     .slotC: "context.configuration2",
                     .slotD: "memory.configuration2"
                 ],
-                selectedSubjectID: travelSubject.id,
-                selectedTimeAnchorID: travelSubject.timeAnchors[1].id
+                selectedSubjectID: subject.id,
+                selectedTimeAnchorID: subject.timeAnchors[1].id
             )
 
         let preset3 =
@@ -276,8 +181,7 @@ enum ConfigurationCenterMockSeed {
 
         return ConfigurationCenterState(
             subjects: [
-                subject,
-                travelSubject
+                subject
             ],
             selectedSubjectID: subject.id,
             memoryPresets: [

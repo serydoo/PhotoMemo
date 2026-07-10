@@ -61,8 +61,21 @@ struct ImportBatchPhotoIntent:
 
     let task: BatchTask
 
+    let contentTypeIdentifierOverride: String?
+
     let repository:
         PhotoRepository
+
+    init(
+        task: BatchTask,
+        contentTypeIdentifierOverride: String? = nil,
+        repository: PhotoRepository
+    ) {
+        self.task = task
+        self.contentTypeIdentifierOverride =
+            contentTypeIdentifierOverride
+        self.repository = repository
+    }
 
     func execute()
     async -> PhotoMemoResult<
@@ -78,7 +91,8 @@ struct ImportBatchPhotoIntent:
                     assetLocalIdentifier:
                         task.sourceIdentifier,
                     contentTypeIdentifier:
-                        task.contentTypeIdentifier
+                        contentTypeIdentifierOverride
+                        ?? task.contentTypeIdentifier
                 )
         )
     }

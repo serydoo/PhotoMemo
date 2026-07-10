@@ -20,6 +20,8 @@ struct V1OutputPageSurface: View {
     let isLoadingAlbums: Bool
     let albumStatusMessage: String
     let onReloadAlbums: () -> Void
+    let isSavingConfiguration: Bool
+    let onSaveConfiguration: () -> Void
 
     @Binding
     var usesCustomMemoryWriteText: Bool
@@ -32,11 +34,11 @@ struct V1OutputPageSurface: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 12) {
+                pageHeader
+
                 V1OutputSection(
                     outputTarget: $outputTarget,
-                    mediaOutputMode:
-                        $mediaOutputMode,
                     availableAlbums: availableAlbums,
                     selectedExistingAlbumIdentifier: $selectedExistingAlbumIdentifier,
                     newAlbumName: $newAlbumName,
@@ -51,9 +53,9 @@ struct V1OutputPageSurface: View {
                     resolvedMemoryWriteText: resolvedMemoryWriteText
                 )
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 16)
-            .padding(.bottom, 34)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 76)
         }
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(
@@ -66,8 +68,67 @@ struct V1OutputPageSurface: View {
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
         )
-        .navigationTitle("输出设置")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("")
+        .toolbar(.hidden, for: .navigationBar)
+        .safeAreaInset(edge: .bottom) {
+            outputConfigurationFooter
+        }
+    }
+
+    private var pageHeader: some View {
+        V1PageHeader(
+            "输出",
+            subtitle: "选择结果图的保存位置，并管理写入图片说明。"
+        )
+    }
+
+    private var outputConfigurationFooter: some View {
+        V1OutputSaveConfigurationButton(
+            isSaving: isSavingConfiguration,
+            action: onSaveConfiguration
+        )
+        .frame(maxWidth: .infinity)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(
+            ConfigurationUI.appBackground
+                .opacity(0.96)
+                .ignoresSafeArea()
+        )
+    }
+}
+
+private struct V1OutputSaveConfigurationButton: View {
+
+    let isSaving: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(
+                    systemName:
+                        isSaving
+                        ? "hourglass"
+                        : "square.and.arrow.down.fill"
+                )
+                .font(.caption.weight(.semibold))
+                .frame(width: 16)
+
+                Text(
+                    isSaving
+                    ? "正在保存"
+                    : "保存到当前配置"
+                )
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+            }
+            .v1CompactBottomPrimaryAction()
+        }
+        .buttonStyle(.plain)
+        .disabled(isSaving)
+        .opacity(isSaving ? 0.72 : 1)
+        .accessibilityLabel("保存到当前配置")
     }
 }
 
@@ -75,9 +136,6 @@ private struct V1OutputSection: View {
 
     @Binding
     var outputTarget: V1IOSOutputTarget
-
-    @Binding
-    var mediaOutputMode: V1MediaOutputMode
 
     let availableAlbums: [PhotoAlbumOption]
 
@@ -92,93 +150,100 @@ private struct V1OutputSection: View {
     let onReloadAlbums: () -> Void
 
     var body: some View {
-        V1CardSurface(title: "输出") {
-            VStack(alignment: .leading, spacing: 12) {
-                Picker("保存位置", selection: $outputTarget) {
-                    ForEach(V1IOSOutputTarget.allCases) { target in
-                        Text(target.title).tag(target)
+        VStack(alignment: .leading, spacing: 8) {
+            V1OutputCompactCard(title: "输出目标") {
+                VStack(alignment: .leading, spacing: 10) {
+                    V1OutputTargetGrid(
+                        outputTarget: $outputTarget
+                    )
+
+                    targetSpecificControls
+                }
+            }
+        }
+    }
+
+    private var presentedOutputTarget: V1IOSOutputTarget {
+        outputTarget == .automatic ? .applePhotos : outputTarget
+    }
+
+    @ViewBuilder
+    private var targetSpecificControls: some View {
+        switch presentedOutputTarget {
+        case .automatic,
+             .applePhotos:
+            EmptyView()
+
+        case .existingAlbum:
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 10) {
+                    Text("选择已有相册")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Spacer(minLength: 0)
+
+                    Button(
+                        isLoadingAlbums
+                        ? "读取中"
+                        : "刷新相册"
+                    ) {
+                        onReloadAlbums()
+                    }
+                    .font(.caption.weight(.semibold))
+                    .disabled(isLoadingAlbums)
+                }
+
+                Picker(
+                    "已有相册",
+                    selection: $selectedExistingAlbumIdentifier
+                ) {
+                    if availableAlbums.isEmpty {
+                        Text("暂无可用相册").tag("")
+                    } else {
+                        ForEach(availableAlbums) { album in
+                            Text(album.title).tag(album.id)
+                        }
                     }
                 }
                 .pickerStyle(.menu)
+                .disabled(availableAlbums.isEmpty)
 
-                Divider()
-
-                Picker("媒体输出", selection: $mediaOutputMode) {
-                    ForEach(V1MediaOutputMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                Text(mediaOutputMode.note)
-                    .font(.caption)
+                Text("读取当前系统相册，只显示可直接加入结果图的相册。")
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                switch outputTarget {
-                case .automatic,
-                     .applePhotos:
-                    EmptyView()
-
-                case .existingAlbum:
-                    HStack(spacing: 10) {
-                        Text("目标相册")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Spacer(minLength: 0)
-
-                        Button(
-                            isLoadingAlbums
-                                ? "刷新中"
-                                : "刷新相册"
-                        ) {
-                            onReloadAlbums()
-                        }
-                        .font(.caption.weight(.semibold))
-                        .disabled(isLoadingAlbums)
-                    }
-
-                    Picker(
-                        "相册",
-                        selection: $selectedExistingAlbumIdentifier
-                    ) {
-                        if availableAlbums.isEmpty {
-                            Text("暂无可用相册").tag("")
-                        } else {
-                            ForEach(availableAlbums) { album in
-                                Text(album.title).tag(album.id)
-                            }
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .disabled(availableAlbums.isEmpty)
-
-                    Text("这里只显示可直接加入结果图的已有相册；如果你只是想让新图回到系统图库，请使用上面的“系统图库”。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                case .newAlbum:
-                    TextField("相册名称", text: $newAlbumName)
-                        .textFieldStyle(.roundedBorder)
-                }
-
-                Text(outputTarget.note)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if isLoadingAlbums {
-                    Label("正在读取相册", systemImage: "photo.on.rectangle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if !albumStatusMessage.isEmpty {
-                    Text(albumStatusMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                albumStatusView
             }
+
+        case .newAlbum:
+            VStack(alignment: .leading, spacing: 6) {
+                TextField("相册名称", text: $newAlbumName)
+                    .textFieldStyle(.plain)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .configurationFieldChrome(isActive: true)
+
+                Text("保存配置时创建相册；后续自动存入这个已有相册。")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var albumStatusView: some View {
+        if isLoadingAlbums {
+            Label("正在读取系统相册", systemImage: "photo.on.rectangle")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        } else if !albumStatusMessage.isEmpty {
+            Text(albumStatusMessage)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -199,48 +264,340 @@ private struct V1MemoryWriteSection: View {
             resolvedText: resolvedMemoryWriteText
         )
 
-        V1CardSurface(title: "智能模块") {
-            VStack(alignment: .leading, spacing: 12) {
-                Toggle(isOn: $usesCustomMemoryWriteText) {
-                    VStack(
-                        alignment: .leading,
-                        spacing: 3
-                    ) {
-                        Text(presentation.toggleTitle)
-                            .font(.subheadline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            V1SectionHeading("写入与保留")
 
-                        Text(presentation.toggleDescription)
-                            .font(.caption)
+            V1OutputCompactCard(title: "保存选项") {
+                VStack(alignment: .leading, spacing: 0) {
+                    V1OutputRetentionRow(
+                        systemImage: "doc.text.magnifyingglass",
+                        tint: .blue,
+                        title: "保留 EXIF 信息",
+                        subtitle: "保留拍摄参数与元数据"
+                    )
+
+                    V1OutputDivider()
+
+                    V1OutputRetentionRow(
+                        systemImage: "livephoto",
+                        tint: .pink,
+                        title: "保留 Live Photo",
+                        subtitle: "原格式输出时保留动态效果"
+                    )
+
+                    V1OutputDivider()
+
+                    Toggle(isOn: writesMemoryInfoBinding) {
+                        V1OutputRetentionLabel(
+                            systemImage: "text.badge.checkmark",
+                            tint: .green,
+                            title: presentation.toggleTitle,
+                            subtitle: presentation.toggleDescription
+                        )
+                    }
+                    .toggleStyle(.switch)
+                    .padding(
+                        .vertical,
+                        V1CompactInformationRowMetrics
+                        .verticalPadding
+                    )
+
+                    if usesCustomMemoryWriteText {
+                        TextField(
+                            presentation.inputPlaceholder,
+                            text: $customMemoryWriteText,
+                            axis: .vertical
+                        )
+                        .textFieldStyle(.plain)
+                        .font(.subheadline)
+                        .lineLimit(1...3)
+                        .configurationFieldChrome(isActive: true)
+                        .padding(.bottom, 8)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(presentation.resolvedTitle)
+                            .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+
+                        Text(presentation.resolvedDescription)
+                            .font(.callout.weight(.semibold))
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(presentation.fallbackNote)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                }
 
-                Text(presentation.fallbackNote)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if usesCustomMemoryWriteText {
-                    TextField(
-                        presentation.inputPlaceholder,
-                        text: $customMemoryWriteText,
-                        axis: .vertical
-                    )
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(2...4)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(presentation.resolvedTitle)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Text(presentation.resolvedDescription)
-                        .font(.subheadline.weight(.semibold))
+                    V1MemoryWriteExplanation()
+                        .padding(.top, 8)
                 }
             }
+        }
+    }
+
+    private var writesMemoryInfoBinding: Binding<Bool> {
+        Binding(
+            get: {
+                !usesCustomMemoryWriteText
+            },
+            set: { newValue in
+                usesCustomMemoryWriteText = !newValue
+            }
+        )
+    }
+}
+
+private struct V1OutputTargetGrid: View {
+
+    @Binding
+    var outputTarget: V1IOSOutputTarget
+
+    private let targets: [V1IOSOutputTarget] = [
+        .applePhotos,
+        .existingAlbum,
+        .newAlbum
+    ]
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ForEach(targets) { target in
+                Button {
+                    outputTarget = target
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: target.symbolName)
+                            .font(.caption.weight(.semibold))
+                            .frame(width: 14)
+
+                        Text(target.title)
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.82)
+                    }
+                    .foregroundStyle(
+                        isSelected(target)
+                        ? Color.white
+                        : Color.primary
+                    )
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 38)
+                    .background(
+                        RoundedRectangle(
+                            cornerRadius: 12,
+                            style: .continuous
+                        )
+                        .fill(
+                            isSelected(target)
+                            ? Color.blue
+                            : ConfigurationUI.controlBackground
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: 12,
+                            style: .continuous
+                        )
+                        .stroke(
+                            isSelected(target)
+                            ? Color.blue
+                            : ConfigurationUI.faintHairline
+                        )
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("输出目标：\(target.title)")
+            }
+        }
+    }
+
+    private func isSelected(_ target: V1IOSOutputTarget) -> Bool {
+        outputTarget == target
+            || (outputTarget == .automatic && target == .applePhotos)
+    }
+}
+
+private struct V1OutputRetentionRow: View {
+
+    let systemImage: String
+    let tint: Color
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        V1OutputRetentionLabel(
+            systemImage: systemImage,
+            tint: tint,
+            title: title,
+            subtitle: subtitle
+        )
+        .padding(
+            .vertical,
+            V1CompactInformationRowMetrics.verticalPadding
+        )
+    }
+}
+
+private struct V1OutputRetentionLabel: View {
+
+    let systemImage: String
+    let tint: Color
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(
+            alignment: .center,
+            spacing:
+                V1CompactInformationRowMetrics
+                .contentSpacing
+        ) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(
+                    width: V1CompactInformationRowMetrics.iconSize,
+                    height: V1CompactInformationRowMetrics.iconSize
+                )
+                .background(
+                    RoundedRectangle(
+                        cornerRadius:
+                            V1CompactInformationRowMetrics
+                            .iconCornerRadius,
+                        style: .continuous
+                    )
+                    .fill(tint.opacity(0.11))
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+private struct V1OutputDivider: View {
+
+    var body: some View {
+        Rectangle()
+            .fill(ConfigurationUI.faintHairline)
+            .frame(height: 0.5)
+            .padding(
+                .leading,
+                V1CompactInformationRowMetrics.iconSize
+                + V1CompactInformationRowMetrics.contentSpacing
+            )
+    }
+}
+
+private struct V1MemoryWriteExplanation: View {
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.blue)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("写入图片说明")
+                    .font(.callout.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("开启使用智能模块结果；关闭后使用手动录入内容。示例：记录于｜2026.07.01｜1岁2个月18天。")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
+            .fill(Color.blue.opacity(0.10))
+        )
+    }
+}
+
+private struct V1OutputCompactCard<Content: View>: View {
+
+    let title: String
+    @ViewBuilder var content: Content
+
+    init(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .v1CardChrome()
+    }
+}
+
+private extension V1IOSOutputTarget {
+
+    var symbolName: String {
+        switch self {
+        case .automatic:
+            return "wand.and.stars"
+        case .applePhotos:
+            return "photo.on.rectangle"
+        case .existingAlbum:
+            return "folder"
+        case .newAlbum:
+            return "folder.badge.plus"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .automatic:
+            return .blue
+        case .applePhotos:
+            return .green
+        case .existingAlbum:
+            return .orange
+        case .newAlbum:
+            return .purple
+        }
+    }
+
+    var summaryTitle: String {
+        switch self {
+        case .automatic:
+            return "自动选择保存位置"
+        case .applePhotos:
+            return "存储到系统图库"
+        case .existingAlbum:
+            return "存储到已有相册"
+        case .newAlbum:
+            return "创建或复用新相册"
         }
     }
 }

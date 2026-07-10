@@ -39,7 +39,7 @@ struct V1SubjectLibrarySupportTests {
         #expect(session.state.subjects.count == 2)
         #expect(session.state.selectedSubjectID == insertedSubject.id)
         #expect(session.state.selectedSubject?.id == insertedSubject.id)
-        #expect(insertedSubject.timeAnchors.count == 1)
+        #expect(insertedSubject.timeAnchors.count == 3)
         #expect(insertedSubject.primaryTimeAnchor?.title == "生日")
     }
 
@@ -234,10 +234,10 @@ struct V1SubjectLibrarySupportTests {
             anchorDate: Date(timeIntervalSince1970: 0)
         )
         let secondSubject = makeSubject(
-            displayName: "京都旅行",
-            shortName: "京都",
-            relationship: "旅行",
-            anchorTitle: "出发日",
+            displayName: "纪念对象",
+            shortName: "纪念",
+            relationship: "事件",
+            anchorTitle: "纪念日",
             anchorDate: Date(timeIntervalSince1970: 86_400)
         )
         let session = ConfigurationSession(
@@ -275,6 +275,127 @@ struct V1SubjectLibrarySupportTests {
                 .rebootstrapPreviewDrafts
             )
         )
+    }
+
+    @Test("legacy demo subject is removed without deleting custom event subjects")
+    func legacyDemoSubjectIsRemovedWithoutDeletingCustomEvents() throws {
+        let demoSubject = makeSubject(
+            displayName: "Kyoto Spring",
+            shortName: "Kyoto",
+            relationship: "事件",
+            anchorTitle: "纪念日",
+            anchorDate: Date(timeIntervalSince1970: 0)
+        )
+        let eventSubject = makeSubject(
+            displayName: "纪念对象",
+            shortName: "纪念",
+            relationship: "事件",
+            anchorTitle: "纪念日",
+            anchorDate: Date(timeIntervalSince1970: 86_400)
+        )
+
+        let sanitized =
+            V1SubjectLibraryResolver
+            .sanitizedSubjectLibrary(
+                [
+                    demoSubject,
+                    eventSubject
+                ]
+            )
+
+        #expect(sanitized == [eventSubject])
+    }
+
+    @Test("subject switch persistence preserves saved memory presets")
+    @MainActor
+    func subjectSwitchPersistencePreservesMemoryPresets() async throws {
+        let suiteName =
+            "PhotoMemo.V1SubjectLibrarySupportTests.presetPreserve.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let firstSubject = makeSubject(
+            displayName: "途途成长记录",
+            shortName: "途途",
+            relationship: "成长记录",
+            anchorTitle: "生日",
+            anchorDate: Date(timeIntervalSince1970: 0)
+        )
+        let secondSubject = makeSubject(
+            displayName: "纪念对象",
+            shortName: "纪念",
+            relationship: "事件",
+            anchorTitle: "纪念日",
+            anchorDate: Date(timeIntervalSince1970: 86_400)
+        )
+        let selectedPreset = MemoryPreset(
+            title: "纪念配置",
+            summary: "对象二配置",
+            regionTemplateIDs: [
+                .slotA: "recorder.configuration1",
+                .slotB: "timeline.configuration1",
+                .slotC: "context.configuration1",
+                .slotD: "memory.configuration1"
+            ],
+            selectedSubjectID: secondSubject.id,
+            selectedTimeAnchorID:
+                secondSubject.primaryTimeAnchor?.id
+        )
+        let session = ConfigurationSession(
+            state: ConfigurationCenterState(
+                subjects: [firstSubject, secondSubject],
+                selectedSubjectID: firstSubject.id,
+                memoryPresets: [selectedPreset],
+                selectedMemoryPresetID: selectedPreset.id,
+                cardSelection: .init(selectedRegion: .subject),
+                selectedBlockID: nil,
+                tokenLibrary: .init(),
+                availableDecorations: [],
+                regionPreviewTexts: [:]
+            )
+        )
+        let coordinator =
+            Self.makeConfigurationCoordinator(
+                defaults: defaults
+            )
+
+        _ = try #require(
+            V1SubjectOverviewActionCoordinator
+                .selectSubject(
+                    secondSubject.id,
+                    in: session,
+                    shouldSaveSubjectLibrary: true,
+                    configurationCoordinator: coordinator
+                )
+        )
+
+        let savedData =
+            try #require(
+                defaults.data(
+                    forKey:
+                        "photomemo.v1.subjectLibrary"
+                )
+            )
+        let savedRecord =
+            try JSONDecoder().decode(
+                V1SubjectLibraryRecord.self,
+                from: savedData
+            )
+
+        #expect(savedRecord.memoryPresets == [selectedPreset])
+        #expect(savedRecord.selectedMemoryPresetID == selectedPreset.id)
     }
 
     @Test("adding default subject keeps editing enabled without reopening corrupt-library persistence")

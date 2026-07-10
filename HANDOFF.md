@@ -51,6 +51,204 @@
 - `e48508e9` remains the first accepted V1 maintenance freeze checkpoint.
 - `2218878d` remains the functional device checkpoint that preceded the maintenance freeze.
 
+## 2026-07-10 V1 iOS feedback stabilization pass
+
+- A feedback-driven stabilization pass was applied on top of the existing dirty
+  iOS polish worktree.
+- Follow-up Live Photo intake correction:
+  - The main app processing picker now opens the normal image library instead
+    of filtering the picker to Live Photos only. It still uses the UIKit
+    `PHPickerViewController` path with `PHPickerConfiguration(photoLibrary:
+    .shared())`, `.current` representation mode, and `PHPickerResult
+    .assetIdentifier` so selected Live Photos can retain PhotoKit asset
+    identity.
+  - Live Photo motion-preserving queue routing now requires both a Live Photo
+    content type and a non-empty PhotoKit asset identity. This prevents Share
+    Extension payloads that only contain flattened JPEG/HEIC representations
+    from being misrouted into the Live Photo processor.
+  - When a Live Photo-typed payload lacks asset identity and falls back to
+    static processing, static import now uses the still-file extension/type
+    rather than treating the copied still file as a Live Photo package.
+  - Share Extension Live Photo remains a separate production-validation /
+    implementation item because current runtime evidence shows Photos sharing
+    can expose `com.apple.live-photo` while the extension persists only a
+    static JPEG/HEIC representation without a usable `PHAsset.localIdentifier`
+    or paired video resource.
+- Fixed likely configuration reset cause by carrying `memoryPresets` and
+  `selectedMemoryPresetID` through the V1 configuration apply/save request path
+  instead of allowing subject-library saves to persist an empty preset list.
+- Closed the remaining subject-flow reset path by preserving `memoryPresets`
+  and `selectedMemoryPresetID` during memory-subject switch, add, delete, and
+  editor-save persistence.
+- Fixed repeated default time-anchor reappearance in the memory subject editor:
+  default anchors are now only generated for subjects with no anchors, not every
+  time an existing subject is opened for editing.
+- Removed the temporary `旅行对象` fixture dependency from configuration
+  lifecycle tests and neutralized default custom-anchor wording from
+  `第一次旅行` to `重要日子` while preserving the `.custom` time-anchor type.
+- Fixed district/county name truncation by preserving full reverse-geocoder
+  administrative names instead of stripping suffixes such as `区` and `县`.
+- Restored the main app processing picker to the UIKit Live Photo picker path
+  so it keeps the `.livePhotos` filter and `PHPickerResult.itemIdentifier`
+  behavior needed by the motion-preserving Live Photo pipeline.
+- Added the recent-task expansion behavior: the task page still shows two rows,
+  while the full recent list can be opened from the `…` button and upstream
+  summaries keep the latest ten jobs.
+- Adjusted memory-object UI polish around the identity overview, avatar sizing,
+  and home statistics text sizing.
+- Reverted the Home top area back to the previous lightweight header after
+  device feedback; broader Home-top redesign is deferred until the next
+  user-directed visual pass.
+- Refined the Home memory-object card so the middle metadata row adapts when
+  width is tight, and reduced the `可用配置` / `累计完成` statistics emphasis.
+- Moved the `基本资料` / `锚点维护` navigation row inside the memory-object
+  identity overview, directly below the avatar/header area and above the
+  editable basic-profile fields.
+- Verification:
+  - `git diff --check` passed.
+  - `PhotoMemoiOS` Debug generic iOS build passed with
+    `CODE_SIGNING_ALLOWED=NO`.
+  - `PhotoMemoShareExtension` Debug generic iOS build passed with
+    `CODE_SIGNING_ALLOWED=NO`.
+  - Focused Live Photo intake/routing tests passed for
+    `PhotoProcessingInputPolicyTests`,
+    `LivePhotoBatchQueueExecutionTests`,
+    `PhotoMemoiOSV1PhotoIntakeTests`,
+    `ExternalPhotoIntakeCenterTests`, and
+    `PhotoMemoShareDiagnosticsTests`.
+  - Earlier in this pass, `PhotoMemoiOS` Debug physical-device build passed for
+    iPhone7 (`00008150-000A043136A1401C`), installed successfully, and launched
+    successfully on the paired device.
+  - Focused macOS `PhotoMemoTests` passed for configuration lifecycle, subject
+    library support, Home projection, V1 apply request builder, and bootstrap
+    flow/runtime suites.
+- Not completed:
+  - The latest Live Photo picker correction was not reinstalled to iPhone7
+    because Xcode/CoreDevice currently reports the physical device as offline /
+    unavailable.
+  - Share Extension motion-preserving Live Photo still needs a dedicated intake
+    implementation that can persist a real PhotoKit asset identity or paired
+    still/video resources.
+
+## 2026-07-09 V1 iOS task page visual redesign installed on device
+
+- The V1 iOS `任务` page has been redesigned from a diagnostics-card surface
+  into a compact processing overview:
+  - top title and local-processing subtitle
+  - four-item overview for active jobs, completed photos, failed photos, and
+    today's processing count
+  - current task card using the effective configuration name, template name,
+    progress, first source thumbnail, and pipeline step statuses
+  - recent task rows using real queue job summaries and configuration names
+- The previous current-task control row was removed. There is no pause,
+  restart, or task-operation menu because current processing jobs are short
+  lifecycle tasks that auto-start from Apple Photos/share intake.
+- A compact `查看相册` row is now shown in the current task card. Completed
+  current/recent jobs carry the saved album name and saved asset identifier
+  when available. For this V1 pass, tapping current/recent task album affordances
+  opens the system Photos app to its recent-save experience. MemoMark still
+  records and displays the target album name for continuity, but iOS does not
+  expose a public API for deep-linking Photos directly into a specific user
+  album and image position.
+- Verification passed:
+  - `V1SettingsPagePresenterTests`
+  - `PhotoMemoiOS` Debug build for the connected physical device named
+    `iPhone7`
+  - install via `devicectl`
+  - launch via `devicectl`
+
+## 2026-07-09 V1 iOS design-language first polish pass installed on device
+
+- The first low-risk MemoMark design-language polish pass is installed on the
+  connected physical device named `iPhone7`.
+- Scope intentionally stayed below information-architecture changes:
+  - added shared V1 page header, section heading, and card chrome primitives
+  - moved the Configuration Center preview title above the preview card border
+    so it matches Output and Task page structure
+  - aligned Output, Task, and preview/configuration headers around the same
+    title/subtitle hierarchy
+  - aligned compact card titles and section titles away from mixed uppercase
+    caption styling toward one Apple-native type rhythm
+  - unified the shared card shadow token for the current V1 surfaces
+- Deferred to a separate design-system slice:
+  - Home hero redesign
+  - Configuration Center regrouping
+  - floating Output save action
+  - broader icon/color/token inventory
+- Verification passed:
+  - `git diff --check`
+  - `PhotoMemoiOS` Debug build for the connected physical device named
+    `iPhone7`
+  - install via `devicectl`
+  - launch via `devicectl`
+  - `V1SettingsPagePresenterTests`
+
+## 2026-07-09 V1 iOS Configuration Center grouped layout installed on device
+
+- The Configuration Center top preview area remains on the existing V1 design.
+  This pass did not change the preview card itself and did not add the reference
+  mockup's top-right save action.
+- The content below the preview is now grouped into three sections:
+  - `记忆来源`: current memory subject, time anchor, and memory display style.
+    The subject row is read-only and follows the same selected subject used on
+    Home.
+  - `卡片布局与内容`: Logo 标识, border style, location display, and a single
+    region-content entry.
+  - `配置操作`: save current configuration, save as new configuration, restore
+    defaults, and delete current configuration.
+- The previous always-visible A/B/C/D region editor list has been moved behind
+  the `区域内容设置` row. Tapping it opens a large sheet that reuses the existing
+  region editor cards, module insertion, text editing, and preview-refresh
+  behavior.
+- The `卡片布局与内容` rows were tightened after device review: the first three
+  rows no longer show trailing navigation chevrons, `边框样式` is rendered as
+  static text, and `区域内容设置` now exposes a single `进入设置` action label.
+- Configuration naming now defaults new configurations to the current effective
+  subject name plus active anchor name, for example `途途 生日`. Users can still
+  edit the name from the Home current-configuration module.
+- Saving while the current subject has no existing configuration now creates a
+  saved configuration for that subject so it appears in Home's current
+  configuration picker.
+- Verification passed:
+  - `git diff --check`
+  - `ConfigurationSessionConfigurationLifecycleTests`
+  - `PhotoMemoiOS` Debug build for the connected physical device named
+    `iPhone7`
+  - install via `devicectl`
+  - launch via `devicectl`
+
+## 2026-07-09 V1 iOS Home configuration list polish installed on device
+
+- The Home page no longer shows the old `快捷操作` card. A single fixed bottom
+  `处理照片` action now remains visible while the page scrolls.
+- The previous `当前配置` module is now `我的配置`, with a compact `勾选生效`
+  note. It lists the configurations belonging to the currently selected memory
+  subject, so switching subjects refreshes Home to that subject's saved
+  configurations.
+- Home configuration rows now show the preset name, current border style, and
+  saved/detail text. The old trailing picker and `管理` menu were removed.
+  Tapping a row applies it, the selected row shows a checkmark and `重命名`,
+  and swiping left reveals a delete action.
+- Follow-up polish tightened Home configuration rows, made the swipe-to-delete
+  interaction follow the drag more naturally, fully hides the delete action
+  until the row is swiped, and aligned the Home rename input with the
+  Configuration Center field chrome. The Output page `保存到当前配置` action was
+  reduced from a large blue prominent button to a lower, lighter control.
+- The Configuration Center `记忆来源` rows for `时间锚点` and `记忆显示` no longer
+  show trailing navigation chevrons, matching the lower layout/content rows.
+- The Task page current-task card was further softened:
+  - active tasks now use a compact summary block, quieter pipeline rows, and a
+    short Home-style `查看相册` action button instead of a heavy inset row
+  - the no-current-task state now shows a camera icon, `还没有处理任务`,
+    `从首页选择照片开始。`, and a direct `开始处理` button wired to the same photo
+    picker entry flow
+- Verification passed:
+  - `git diff --check`
+  - `PhotoMemoiOS` Debug build for the connected physical device named
+    `iPhone7`
+  - install via `devicectl`
+  - launch via `devicectl`
+
 ## 2026-07-09 Live Photo main picker release candidate merged to main
 
 - Merge commit: `c6b97d99 Merge Live Photo main picker release candidate`
@@ -12276,3 +12474,201 @@ Recommended next action:
 - keep Share Extension Live Photo validation as follow-up production validation
 - do not reopen Media Geometry Foundation unless runtime evidence proves
   `CanonicalGeometry` itself is wrong
+
+## 2026-07-09 Memory Subject iOS Polish
+
+Implemented the first pass of the iOS Memory Subject configuration polish:
+
+- the subject overview sheet now embeds editable basic subject information
+  directly on the overview page
+- avatar editing reuses the existing PhotosPicker/crop flow in a compact
+  overview layout
+- the overview has explicit `保存` and `切换` actions in the object rail
+- single-subject switching now exposes `新增对象`; multi-subject switching keeps
+  horizontal card selection plus `保存切换`
+- the basic info header includes a `锚点维护` navigation entry
+- the available anchor section is now titled `可用时间锚点` and uses tap rows
+  with immediate active-anchor selection
+- newly created subjects now receive three default anchors: `生日`, `百天`,
+  and `第一次旅行`
+- the anchor maintenance page lists the preset anchors first, then expands the
+  selected anchor into editable name/date/type controls with `保存设定`
+
+Verification:
+
+- `git diff --check`
+- `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'platform=iOS,id=00008150-000A043136A1401C' -derivedDataPath /tmp/PhotoMemoSubjectPolishBuild COMPILER_INDEX_STORE_ENABLE=NO -quiet build`
+- installed to device `863C2747-6742-5E93-B715-6F89DBF90B31`
+- launched bundle `com.serydoo.PhotoMemo.iOS`
+
+Follow-up polish notes:
+
+- review the object rail card height and empty/new-subject state on device
+- decide whether anchor maintenance edits should persist only on `保存设定` or
+  continue saving anchor draft changes live while the save button controls which
+  anchor becomes active
+
+## 2026-07-09 Memory Subject Overview Trim
+
+Refined the iOS Memory Subject overview again based on device feedback:
+
+- removed the large `对象浏览` overview card from the subject overview top area
+- kept a compact current-subject summary with `保存` and `切换`
+- single-subject switch mode now shifts the current subject chip left and shows
+  a vertically centered plus button on the right
+- multi-subject switch mode uses smaller horizontal subject chips with
+  `保存切换`
+- the basic info card header now presents `基本资料` and `锚点维护` side by side
+  inside one bordered control
+- removed the default `Kyoto Spring / Kyoto` demo subject from mock seed data
+- added a narrow legacy demo filter so persisted `Kyoto Spring / Kyoto` entries
+  are dropped during iOS subject-library restore/save
+
+Verification:
+
+- `git diff --check`
+- `PhotoMemoiOS` Debug real-device build to
+  `00008150-000A043136A1401C`
+- installed to device `863C2747-6742-5E93-B715-6F89DBF90B31`
+- launch was blocked by iOS because the device was locked; install succeeded
+
+## 2026-07-09 Time Anchor Maintenance And Compact Identity
+
+Refined Memory Subject editing again:
+
+- time anchor maintenance now acts as source management rather than active
+  selection
+- the anchor page uses row-based anchors: numbered title, date, and type
+- top copy now explains what anchors decide and how date/type/name affect
+  memory calculations
+- anchors can be configured by expanding a four-row editor:
+  `锚点时间`, `锚点类型`, `锚点名称`, `保存当前锚点`
+- added inline `新增时间锚点`, capped at 5 anchors
+- custom swipe-delete is supported for every anchor, including presets, while
+  preserving at least 1 anchor
+- saving an anchor collapses its editor and refreshes the session
+- the subject overview basic-info area is more compact:
+  - removed per-row `主体已生效` controls from the overview mode
+  - added one `主体名称` menu for display name / nickname / relation / relation note
+  - shows the selected subject text on the right
+  - reduced the four identity inputs to compact left-title/right-field rows
+
+Verification:
+
+- `git diff --check`
+- `PhotoMemoiOS` Debug real-device build to
+  `00008150-000A043136A1401C`
+- installed and launched on device
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+## 2026-07-09 Anchor Sheet And Home Metrics
+
+Further refined the iOS subject and bottom-action surfaces:
+
+- anchor configuration no longer stays expanded under the anchor list
+- tapping an anchor row opens a compact configuration sheet; saving or
+  dismissing the sheet closes it
+- removed the `收起` label from anchor rows
+- the subject overview `可用时间锚点` section is now read-only:
+  no active badge, checkbox, or selection action
+- subject and anchor field titles now follow the Configuration Center row
+  hierarchy with `subheadline semibold` titles and `caption` helper text
+- Home `处理照片` and Output `保存到当前配置` now share a centered
+  184 × 40 bottom-action size
+- Output save moved from scroll content into the bottom safe-area footer
+- Home subject card no longer shows a globally active anchor
+- Home now shows one compact record row with:
+  `可用配置 X 个` and `累计完成 X 张`
+- completed count reuses the task overview's real
+  `completedPhotoCount`
+
+Verification:
+
+- `git diff --check`
+- `PhotoMemoiOS` Debug real-device build
+- installed and launched on device
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+## 2026-07-09 Preset Logo And Output Icon Polish
+
+Aligned Home configuration identity and Output actions with the current
+Configuration Center design language:
+
+- `MemoryPreset` now records only the selected three-state Logo mode:
+  Apple mark, custom mark, or subject avatar
+- custom Logo image paths remain owned by the existing global Logo asset flow;
+  they are not copied into each preset
+- saving or creating a configuration snapshots the current Logo mode
+- selecting a configuration restores its Logo mode
+- each Home configuration row replaces the generic card thumbnail with its
+  mapped Logo mark; subject-avatar mode reads the current subject's existing
+  avatar and falls back to the system avatar symbol
+- Output `保存选项` icons now use compact semantic color containers for EXIF,
+  Live Photo, and memory-description writing
+- Home `处理照片` and Output `保存到当前配置` now share the same filled compact
+  bottom-action treatment; the Output action uses a save icon
+
+Verification:
+
+- `git diff --check`
+- focused configuration lifecycle tests for Logo-mode save/create passed
+- `PhotoMemoTests` build-for-testing passed
+- full lifecycle-suite execution remains blocked by existing tests that still
+  index the removed second mock subject
+- `PhotoMemoiOS` Debug real-device build passed
+- installed and launched on device
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+## 2026-07-09 Row Rhythm And Preset Identity Icon Polish
+
+Refined the iOS page rhythm after comparing Configuration Center, Output, and
+Task surfaces:
+
+- added shared compact information-row metrics:
+  36pt icon, 9pt vertical padding, 12pt horizontal/content spacing
+- Configuration Center source/layout rows now use the shared compact row
+  metrics
+- Output `写入与保留` rows now use the same row height and icon size as
+  Configuration Center rows
+- Configuration Center, Output, and Task continue sharing `V1PageHeader`; the
+  header now has a stable minimum height
+- Configuration Center and Output hide the extra navigation-bar title so the
+  visible page header matches Task's title hierarchy
+- Home configuration rows now use the selected preset's time-anchor type as the
+  main identity icon, with the saved Logo mode shown as a small badge
+- this keeps configuration meaning and output Logo choice visible at the same
+  time instead of letting Logo mode replace the preset's semantic identity
+
+Verification:
+
+- `git diff --check`
+- `PhotoMemoTests` build-for-testing passed
+- `PhotoMemoiOS` Debug real-device build passed
+- installed and launched on device
+  `863C2747-6742-5E93-B715-6F89DBF90B31`
+
+## 2026-07-09 Task Header And Location Preselection Polish
+
+Refined the iOS task/header and Configuration Center location behavior:
+
+- active Configuration Center, Output, and Task pages now share the same
+  `V1PageHeader` rhythm with 16pt horizontal inset, 10pt top inset, and 12pt
+  header-to-content spacing
+- Task title was moved upward by reducing its top inset; no task icon optical
+  offset is kept
+- Output `写入与保留` rows now fully reuse the compact information-row metrics
+  for toggle padding, label spacing, and divider inset/height
+- Configuration Center `位置显示` can now be selected before a location module
+  is inserted into any card region
+- the missing-module reminder remains visible through the existing
+  `未插入位置模块` detail text
+- the selected location-display configuration continues to save independently
+  through the existing `locationDisplayConfiguration` path
+
+Verification:
+
+- `git diff --check`
+- `PhotoMemoTests` build-for-testing passed
+- `PhotoMemoiOS` Debug real-device build passed
+- installed and launched on device
+  `863C2747-6742-5E93-B715-6F89DBF90B31`

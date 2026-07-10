@@ -7,10 +7,10 @@ import Testing
 @Suite("Configuration session configuration lifecycle")
 struct ConfigurationSessionConfigurationLifecycleTests {
 
-    @Test("saving the current configuration captures subject, anchor, output, and custom memory-write state")
+    @Test("saving the current configuration captures subject, anchor, output, logo, and custom memory-write state")
     func savingCurrentConfigurationCapturesContext() {
         let session = ConfigurationSession()
-        let selectedSubject = session.state.subjects[1]
+        let selectedSubject = session.state.subjects[0]
 
         session.selectSubject(selectedSubject)
 
@@ -23,9 +23,11 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         session.selectedStorageOption = .targetAlbum
         session.usesCustomMemoryWriteText = true
-        session.customMemoryWriteText = "京都之旅说明"
+        session.customMemoryWriteText = "纪念相册说明"
 
-        session.saveCurrentMemoryPreset()
+        session.saveCurrentMemoryPreset(
+            logoMode: .subjectAvatar
+        )
 
         let savedPreset = try! #require(
             session.state.selectedMemoryPreset
@@ -36,8 +38,9 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(savedPreset.selectedTimeAnchorID == selectedAnchor.id)
         #expect(savedPreset.outputOption == .processedImage)
         #expect(savedPreset.storageOption == .targetAlbum)
+        #expect(savedPreset.logoMode == .subjectAvatar)
         #expect(savedPreset.usesCustomMemoryWriteText == true)
-        #expect(savedPreset.customMemoryWriteText == "京都之旅说明")
+        #expect(savedPreset.customMemoryWriteText == "纪念相册说明")
         #expect(session.selectedMemoryPresetIsApplied)
     }
 
@@ -84,7 +87,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
     @Test("selecting a configuration restores the saved subject, anchor, and output context")
     func selectingConfigurationRestoresSavedContext() {
-        var state = ConfigurationCenterState.mock
+        var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
 
@@ -100,9 +103,9 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             usesCustomMemoryWriteText: false,
             customMemoryWriteText: ""
         )
-        let travelPreset = MemoryPreset(
-            title: "京都之旅",
-            summary: "旅行对象配置",
+        let secondPreset = MemoryPreset(
+            title: "纪念配置",
+            summary: "第二对象配置",
             regionTemplateIDs: state.memoryPresets[1].regionTemplateIDs,
             savedAt: Date(timeIntervalSince1970: 20),
             selectedSubjectID: secondSubject.id,
@@ -110,32 +113,32 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             outputOption: .processedImage,
             storageOption: .targetAlbum,
             usesCustomMemoryWriteText: true,
-            customMemoryWriteText: "旅行相册说明"
+            customMemoryWriteText: "纪念相册说明"
         )
 
-        state.memoryPresets = [defaultPreset, travelPreset]
+        state.memoryPresets = [defaultPreset, secondPreset]
         state.selectedMemoryPresetID = defaultPreset.id
 
         let session = ConfigurationSession(state: state)
 
-        session.selectMemoryPreset(travelPreset)
+        session.selectMemoryPreset(secondPreset)
 
-        #expect(session.state.selectedMemoryPresetID == travelPreset.id)
+        #expect(session.state.selectedMemoryPresetID == secondPreset.id)
         #expect(session.state.selectedSubject?.id == secondSubject.id)
         #expect(session.state.selectedSubject?.primaryTimeAnchor?.id == secondSubject.timeAnchors[1].id)
         #expect(session.selectedStorageOption == .targetAlbum)
         #expect(session.usesCustomMemoryWriteText == true)
-        #expect(session.customMemoryWriteText == "旅行相册说明")
+        #expect(session.customMemoryWriteText == "纪念相册说明")
         #expect(session.selectedMemoryPresetIsApplied)
     }
 
     @Test("restoring a saved configuration does not mark it pending")
     func restoringSavedConfigurationDoesNotMarkItPending() {
-        var state = ConfigurationCenterState.mock
+        var state = Self.makeStateWithSecondSubject()
         let selectedSubject = state.subjects[1]
         let selectedAnchor = selectedSubject.timeAnchors[1]
         let savedPreset = MemoryPreset(
-            title: "旅行配置",
+            title: "纪念配置",
             summary: "已保存配置",
             regionTemplateIDs: state.memoryPresets[0].regionTemplateIDs,
             savedAt: Date(timeIntervalSince1970: 20),
@@ -144,7 +147,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             outputOption: .processedImage,
             storageOption: .targetAlbum,
             usesCustomMemoryWriteText: true,
-            customMemoryWriteText: "旅行说明"
+            customMemoryWriteText: "纪念说明"
         )
 
         state.memoryPresets = [savedPreset]
@@ -156,7 +159,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.state.selectedMemoryPresetID == savedPreset.id)
         #expect(session.selectedStorageOption == .targetAlbum)
         #expect(session.usesCustomMemoryWriteText == true)
-        #expect(session.customMemoryWriteText == "旅行说明")
+        #expect(session.customMemoryWriteText == "纪念说明")
         #expect(session.currentTimeAnchorTitle == selectedAnchor.title)
         #expect(session.selectedMemoryPresetIsApplied)
     }
@@ -164,18 +167,19 @@ struct ConfigurationSessionConfigurationLifecycleTests {
     @Test("creating a configuration from the current state duplicates context and switches to the new unsaved configuration")
     func creatingConfigurationFromCurrentDuplicatesContext() {
         let session = ConfigurationSession()
-        let selectedSubject = session.state.subjects[1]
+        let selectedSubject = session.state.subjects[0]
         let originalPresetID = session.state.selectedMemoryPreset?.id
 
         session.selectSubject(selectedSubject)
-        let originalTitle = session.currentMemoryPresetTitle
         session.selectedStorageOption = .existingFolder
         session.usesCustomMemoryWriteText = true
-        session.customMemoryWriteText = "批量旅行说明"
+        session.customMemoryWriteText = "批量纪念说明"
 
         let originalCount = session.state.memoryPresets.count
 
-        session.createMemoryPresetFromCurrent()
+        session.createMemoryPresetFromCurrent(
+            logoMode: .customUpload
+        )
 
         let createdPreset = try! #require(
             session.state.selectedMemoryPreset
@@ -183,19 +187,60 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         #expect(session.state.memoryPresets.count == originalCount + 1)
         #expect(createdPreset.id != originalPresetID)
-        #expect(createdPreset.title == "\(originalTitle) 副本")
+        #expect(createdPreset.title == "途途 生日")
         #expect(createdPreset.savedAt == nil)
         #expect(createdPreset.selectedSubjectID == selectedSubject.id)
         #expect(createdPreset.outputOption == .processedImage)
         #expect(createdPreset.storageOption == .existingFolder)
+        #expect(createdPreset.logoMode == .customUpload)
         #expect(createdPreset.usesCustomMemoryWriteText == true)
-        #expect(createdPreset.customMemoryWriteText == "批量旅行说明")
+        #expect(createdPreset.customMemoryWriteText == "批量纪念说明")
         #expect(session.selectedMemoryPresetIsApplied == false)
+    }
+
+    @Test("saving for a subject without configurations creates a default-named configuration for the home picker")
+    func savingSubjectWithoutConfigurationsCreatesDefaultNamedConfiguration() {
+        var state = Self.makeStateWithSecondSubject()
+        let firstSubject = state.subjects[0]
+        let secondSubject = state.subjects[1]
+
+        let firstPreset = MemoryPreset(
+            title: "宝宝配置",
+            summary: "对象一配置",
+            regionTemplateIDs: state.memoryPresets[0].regionTemplateIDs,
+            selectedSubjectID: firstSubject.id
+        )
+
+        state.memoryPresets = [firstPreset]
+        state.selectedSubjectID = secondSubject.id
+        state.selectedMemoryPresetID = nil
+
+        let session = ConfigurationSession(state: state)
+
+        #expect(
+            session.availableMemoryPresetsForSelectedSubject.isEmpty
+        )
+
+        session.saveCurrentMemoryPreset()
+
+        let createdPreset = try! #require(
+            session.state.selectedMemoryPreset
+        )
+
+        #expect(createdPreset.title == "纪念对象 纪念日")
+        #expect(createdPreset.savedAt != nil)
+        #expect(createdPreset.selectedSubjectID == secondSubject.id)
+        #expect(
+            session.availableMemoryPresetsForSelectedSubject
+                .map(\.id)
+            == [createdPreset.id]
+        )
+        #expect(session.selectedMemoryPresetIsApplied)
     }
 
     @Test("creating a configuration in the configuration center immediately makes it available in the home-page picker for the same subject")
     func creatingConfigurationImmediatelyAppearsInSubjectPicker() {
-        var state = ConfigurationCenterState.mock
+        var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
 
@@ -206,7 +251,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             selectedSubjectID: firstSubject.id
         )
         let secondPreset = MemoryPreset(
-            title: "旅行配置",
+            title: "纪念配置",
             summary: "对象二配置",
             regionTemplateIDs: state.memoryPresets[1].regionTemplateIDs,
             selectedSubjectID: secondSubject.id
@@ -248,7 +293,9 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         #expect(storageSession.selectedMemoryPresetIsApplied == false)
 
-        let subjectSession = ConfigurationSession()
+        let subjectSession = ConfigurationSession(
+            state: Self.makeStateWithSecondSubject()
+        )
         subjectSession.saveCurrentMemoryPreset()
         #expect(subjectSession.selectedMemoryPresetIsApplied)
 
@@ -261,7 +308,9 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
     @Test("selecting a time anchor updates the selected subject context")
     func selectingTimeAnchorUpdatesSelectedSubjectContext() {
-        let session = ConfigurationSession()
+        let session = ConfigurationSession(
+            state: Self.makeStateWithSecondSubject()
+        )
         let subject = session.state.subjects[1]
         let targetAnchor = subject.timeAnchors[2]
 
@@ -280,7 +329,9 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
     @Test("changing the current time-anchor expression style updates the active anchor context")
     func changingCurrentTimeAnchorExpressionStyleUpdatesActiveAnchor() {
-        let session = ConfigurationSession()
+        let session = ConfigurationSession(
+            state: Self.makeStateWithSecondSubject()
+        )
         let subject = session.state.subjects[1]
         let targetAnchor = subject.timeAnchors[0]
 
@@ -302,7 +353,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
     @Test("available configurations are filtered to the selected memory subject")
     func availableConfigurationsAreFilteredToSelectedSubject() {
-        var state = ConfigurationCenterState.mock
+        var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
 
@@ -313,7 +364,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             selectedSubjectID: firstSubject.id
         )
         let secondPreset = MemoryPreset(
-            title: "旅行记录",
+            title: "纪念记录",
             summary: "对象二",
             regionTemplateIDs: state.memoryPresets[1].regionTemplateIDs,
             selectedSubjectID: secondSubject.id
@@ -342,7 +393,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
     @Test("switching memory subjects aligns the current configuration to that subject")
     func switchingMemorySubjectsAlignsCurrentConfiguration() {
-        var state = ConfigurationCenterState.mock
+        var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
 
@@ -359,7 +410,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             customMemoryWriteText: ""
         )
         let secondPreset = MemoryPreset(
-            title: "旅行配置",
+            title: "纪念配置",
             summary: "对象二配置",
             regionTemplateIDs: state.memoryPresets[1].regionTemplateIDs,
             savedAt: Date(timeIntervalSince1970: 20),
@@ -368,7 +419,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             outputOption: .processedImage,
             storageOption: .targetAlbum,
             usesCustomMemoryWriteText: true,
-            customMemoryWriteText: "旅行说明"
+            customMemoryWriteText: "纪念说明"
         )
 
         state.memoryPresets = [firstPreset, secondPreset]
@@ -381,16 +432,16 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         #expect(session.state.selectedSubjectID == secondSubject.id)
         #expect(session.state.selectedMemoryPresetID == secondPreset.id)
-        #expect(session.currentMemoryPresetTitle == "旅行配置")
+        #expect(session.currentMemoryPresetTitle == "纪念配置")
         #expect(session.selectedStorageOption == .targetAlbum)
         #expect(session.usesCustomMemoryWriteText == true)
-        #expect(session.customMemoryWriteText == "旅行说明")
+        #expect(session.customMemoryWriteText == "纪念说明")
         #expect(session.currentTimeAnchorTitle == secondSubject.timeAnchors[1].title)
     }
 
     @Test("switching memory subjects rebuilds region preview text from that subject's configuration")
     func switchingMemorySubjectsRebuildsRegionPreviewTextFromConfiguration() {
-        var state = ConfigurationCenterState.mock
+        var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
 
@@ -408,7 +459,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             selectedTimeAnchorID: firstSubject.timeAnchors[0].id
         )
         let secondPreset = MemoryPreset(
-            title: "旅行配置",
+            title: "纪念配置",
             summary: "对象二配置",
             regionTemplateIDs: [
                 .slotA: "recorder.configuration2",
@@ -442,7 +493,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
     @Test("switching to a memory subject without configurations clears the stale current configuration")
     func switchingToSubjectWithoutConfigurationsClearsStaleCurrentConfiguration() {
-        var state = ConfigurationCenterState.mock
+        var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
 
@@ -469,6 +520,93 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.currentMemoryPresetTitle == "当前对象还没有配置")
         #expect(session.currentMemoryPresetSummary == "为当前记忆对象新建配置后即可使用。")
         #expect(session.selectedMemoryPresetIsApplied == false)
+    }
+
+    private static func makeStateWithSecondSubject()
+        -> ConfigurationCenterState {
+        var state = ConfigurationCenterState.mock
+        let calendar = Calendar(identifier: .gregorian)
+        let date = { (year: Int, month: Int, day: Int) in
+            calendar.date(
+                from: DateComponents(
+                    year: year,
+                    month: month,
+                    day: day
+                )
+            ) ?? Date()
+        }
+
+        let icon = DecorationAsset(
+            kind: .icon,
+            title: "星标",
+            systemSymbolName: "star.fill"
+        )
+        let badge = DecorationAsset(
+            kind: .badge,
+            title: "纪念",
+            systemSymbolName: "sparkles"
+        )
+        let anchors = [
+            MemorySubject.TimeAnchor(
+                title: "纪念日",
+                date: date(2025, 8, 18),
+                note: "重要纪念日"
+            ),
+            MemorySubject.TimeAnchor(
+                title: "相识",
+                date: date(2025, 8, 20),
+                note: "相识日期"
+            ),
+            MemorySubject.TimeAnchor(
+                title: "入学",
+                date: date(2026, 9, 1),
+                note: "入学日期"
+            )
+        ]
+
+        let subject = MemorySubject(
+            identity: .init(
+                displayName: "纪念对象",
+                shortName: "纪念"
+            ),
+            relationship: .init(
+                role: "事件",
+                label: "纪念"
+            ),
+            definition: "用于覆盖多记忆对象配置切换的测试对象。",
+            referenceDate: anchors[0].date,
+            timeAnchors: anchors,
+            activeTimeAnchorID: anchors[0].id,
+            behavior: MemoryBehavior(
+                primaryAnchor: anchors[0].title,
+                iconStrategy: .fixed,
+                badgeStrategy: .autoMatch,
+                memoryExpression: MemoryExpression(
+                    title: "纪念表达",
+                    blocks: [
+                        .text(""),
+                        MemoryBlock(
+                            type: .memory,
+                            title: "对象",
+                            value: "对象"
+                        ),
+                        .text(" · "),
+                        MemoryBlock(
+                            type: .memory,
+                            title: "时间锚点",
+                            value: "时间锚点"
+                        )
+                    ]
+                )
+            ),
+            decorations: [
+                icon,
+                badge
+            ]
+        )
+
+        state.subjects.append(subject)
+        return state
     }
 }
 #endif

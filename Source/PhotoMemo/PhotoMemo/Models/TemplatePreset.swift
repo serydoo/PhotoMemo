@@ -48,7 +48,7 @@ extension TemplatePreset {
             return "模板 3"
 
         case .immersWhite:
-            return "Immers 白边"
+            return "Classic White"
         }
     }
 

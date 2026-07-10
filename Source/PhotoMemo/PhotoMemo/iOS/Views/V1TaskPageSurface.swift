@@ -1,15 +1,23 @@
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+import ImageIO
 import SwiftUI
+import UIKit
 
 struct V1TaskPageSurface: View {
 
     let header: PhotoMemoiOSQueueDiagnosticsHeaderProjection
     let snapshot: PhotoMemoBackgroundJobSnapshot?
+    let taskOverview: PhotoMemoBackgroundTaskOverview
+    let recentJobSummaries: [PhotoMemoBackgroundJobSummary]
     let recoveryMessage: String?
     let events: [PhotoMemoShareDiagnosticEvent]
-    let onRefresh: () -> Void
-    let onClearCompletedHistory: () -> Void
+    let fallbackConfigurationName: String
+    let onOpenPhotoLibrary: (V1TaskPhotoLibraryLink) -> Void
+    let onStartProcessing: () -> Void
     let onDismissKeyboard: () -> Void
+
+    @State
+    private var isRecentTasksSheetPresented = false
 
     private var presentation:
         V1SettingsPagePresentation {
@@ -18,441 +26,625 @@ struct V1TaskPageSurface: View {
                 header: header,
                 snapshot: snapshot,
                 recoveryMessage: recoveryMessage,
-                events: events
+                events: events,
+                overview: taskOverview,
+                recentJobs: recentJobSummaries,
+                fallbackConfigurationName:
+                    fallbackConfigurationName
             )
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                currentTaskSection
-                historySection
-            }
-            .padding(.horizontal, 18)
-            .padding(.top, 16)
-            .padding(.bottom, 34)
+        VStack(alignment: .leading, spacing: 12) {
+            pageHeader
+            overviewStrip
+            currentTaskCard
+            recentTasksSection
+            Spacer(minLength: 0)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(
+            ConfigurationUI.appBackground
+                .ignoresSafeArea()
+        )
         .simultaneousGesture(
             TapGesture()
                 .onEnded {
                     onDismissKeyboard()
                 }
         )
-        .background(
-            ConfigurationUI.appBackground
-                .ignoresSafeArea()
+        .navigationTitle("")
+        .toolbar(.hidden, for: .navigationBar)
+        .sheet(
+            isPresented: $isRecentTasksSheetPresented
+        ) {
+            recentTasksSheet
+        }
+    }
+
+    private var pageHeader: some View {
+        V1PageHeader(
+            "任务",
+            subtitle: "所有处理都在本地完成，原图不会被修改。"
         )
-        .navigationTitle("任务")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var currentTaskSection: some View {
-        V1CardSurface(title: "当前处理") {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("这里集中查看当前批次的处理状态、结果回执和需要你介入的项目。原图不会被修改，生成结果仍按既有本地流程写回目标位置。")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+    private var overviewStrip: some View {
+        HStack(spacing: 0) {
+            ForEach(presentation.overviewItems) { item in
+                overviewItem(item)
 
-                HStack(alignment: .top, spacing: 14) {
-                    currentTaskThumbnail
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .center, spacing: 10) {
-                            Text(presentation.currentTask.headline)
-                                .font(.headline.weight(.semibold))
-                                .fixedSize(horizontal: false, vertical: true)
-
-                            Spacer(minLength: 0)
-
-                            taskStatusPill(
-                                title: presentation.currentTask.statusText,
-                                tint:
-                                    presentation
-                                    .currentTask
-                                    .tint
-                            )
-                        }
-
-                        Text(presentation.currentTask.subtitleText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        taskMetaFlow
-
-                        if let progressFraction =
-                            presentation
-                            .currentTask
-                            .progressFraction {
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack(spacing: 8) {
-                                    Text("当前进度")
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-
-                                    Spacer(minLength: 0)
-
-                                    Text(
-                                        progressPercentText(
-                                            progressFraction
-                                        )
-                                    )
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(
-                                        presentation
-                                        .currentTask
-                                        .tint
-                                        .color
-                                    )
-                                }
-
-                                ProgressView(value: progressFraction)
-                                    .progressViewStyle(.linear)
-                                    .tint(
-                                        presentation
-                                        .currentTask
-                                        .tint
-                                        .color
-                                    )
-                            }
-                        }
-
-                        Text(presentation.currentTask.detailText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(10)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                RoundedRectangle(
-                                    cornerRadius: 12,
-                                    style: .continuous
-                                )
-                                .fill(
-                                    ConfigurationUI
-                                    .controlBackground
-                                    .opacity(0.78)
-                                )
-                            )
-                    }
-                }
-
-                HStack(spacing: 10) {
-                    Button(action: onRefresh) {
-                        Label("刷新状态", systemImage: "arrow.clockwise")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-
-                    if presentation.canClearCompletedHistory {
-                        Button(action: onClearCompletedHistory) {
-                            Label("清理历史", systemImage: "trash")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                    }
+                if item.id != presentation.overviewItems.last?.id {
+                    Rectangle()
+                        .fill(ConfigurationUI.faintHairline)
+                        .frame(width: 1, height: 36)
                 }
             }
         }
+        .frame(height: 86)
+        .v1CardChrome()
     }
 
-    private var historySection: some View {
-        V1CardSurface(title: "最近记录") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("按行查看最近的接收、交接、完成和需处理结果。这里展示结果摘要，详细原因仍以当前批次状态页为准。")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if presentation.historyRows.isEmpty {
-                    emptyHistoryState
-                } else {
-                    VStack(spacing: 10) {
-                        ForEach(
-                            presentation.historyRows
-                        ) { row in
-                            historyRow(
-                                row
-                            )
-                        }
-                    }
-                }
+    private func overviewItem(
+        _ item: V1TaskOverviewItemPresentation
+    ) -> some View {
+        VStack(spacing: 5) {
+            Label {
+                Text(item.title)
+                    .font(.caption.weight(.semibold))
+            } icon: {
+                Image(systemName: item.symbolName)
+                    .font(.caption.weight(.bold))
             }
+            .foregroundStyle(item.tint.color)
+            .lineLimit(1)
+
+            Text(item.value)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+
+            Text(item.unit)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var currentTaskCard: some View {
+        if snapshot == nil {
+            currentTaskEmptyState
+        } else {
+            currentTaskActiveCard
         }
     }
 
-    private var currentTaskThumbnail: some View {
-        ZStack {
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .fill(
-                LinearGradient(
-                    colors: [
-                        presentation.currentTask.tint.color.opacity(0.22),
-                        Color.white,
-                        presentation.currentTask.tint.color.opacity(0.08)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .frame(width: 98, height: 126)
-            .overlay(
+    private var currentTaskEmptyState: some View {
+        VStack(alignment: .center, spacing: 12) {
+            ZStack {
                 RoundedRectangle(
-                    cornerRadius: 22,
+                    cornerRadius: 18,
                     style: .continuous
                 )
-                .stroke(ConfigurationUI.faintHairline)
-            )
+                .fill(Color.accentColor.opacity(0.10))
 
-            VStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(
-                        cornerRadius: 18,
-                        style: .continuous
-                    )
-                    .fill(
-                        presentation
-                            .currentTask
-                            .tint
-                            .color
-                            .opacity(0.14)
-                    )
-                    .frame(width: 56, height: 56)
-
-                    Image(systemName: presentation.currentTask.thumbnailSymbolName)
-                        .font(.system(size: 27, weight: .semibold))
-                        .foregroundStyle(
-                            presentation.currentTask.tint.color
-                        )
-                }
-
-                Text(
-                    presentation.currentTask.itemCountText
-                    ?? presentation.currentTask.statusText
-                )
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal, 8)
+                Image(systemName: "camera.viewfinder")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
             }
-            .frame(width: 98, height: 126)
-        }
-    }
+            .frame(width: 58, height: 58)
 
-    private var emptyHistoryState: some View {
-        HStack(alignment: .center, spacing: 12) {
-            RoundedRectangle(
-                cornerRadius: 12,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.controlBackground)
-            .frame(width: 52, height: 52)
-            .overlay {
-                Image(systemName: "clock.badge.questionmark")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
+            VStack(spacing: 4) {
+                Text("还没有处理任务")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("还没有可展示的最近记录")
-                    .font(.subheadline.weight(.semibold))
-
-                Text("下一次从 Apple Photos 分享照片后，这里会开始按时间沉淀最近的处理状态。")
+                Text("从首页选择照片开始。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
+
+            Button(action: onStartProcessing) {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.caption.weight(.semibold))
+
+                    Text("开始处理")
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.white.opacity(0.82))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .frame(width: 168)
+                .frame(height: 44)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 14,
+                        style: .continuous
+                    )
+                    .fill(Color.accentColor)
+                )
+                .shadow(
+                    color: Color.accentColor.opacity(0.16),
+                    radius: 10,
+                    y: 4
+                )
+            }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 22)
+        .v1CardChrome()
+    }
+
+    private var currentTaskActiveCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(presentation.currentTask.tint.color)
+                    .frame(width: 7, height: 7)
+
+                Text("当前任务")
+                    .font(.subheadline.weight(.semibold))
+
+                Spacer(minLength: 0)
+
+                taskStatusPill(
+                    title:
+                        presentation.currentTask.statusText,
+                    tint:
+                        presentation.currentTask.tint
+                )
+            }
+
+            currentTaskSummary
+
+            pipelineRows
+            photoLibraryLinkRow
+        }
+        .padding(14)
+        .v1CardChrome()
+    }
+
+    private var currentTaskSummary: some View {
+        HStack(alignment: .center, spacing: 12) {
+            taskThumbnail(
+                url:
+                    presentation
+                    .currentTask
+                    .previewSourceURL,
+                symbolName:
+                    presentation
+                    .currentTask
+                    .thumbnailSymbolName,
+                tint:
+                    presentation.currentTask.tint,
+                size:
+                    CGSize(width: 64, height: 64)
+            )
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(presentation.currentTask.headline)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(taskSummarySubtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                currentProgressLine
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(10)
         .background(
             RoundedRectangle(
-                cornerRadius: 14,
+                cornerRadius: 16,
                 style: .continuous
             )
-            .fill(ConfigurationUI.controlBackground.opacity(0.78))
+            .fill(ConfigurationUI.controlBackground.opacity(0.54))
         )
         .overlay(
             RoundedRectangle(
-                cornerRadius: 14,
+                cornerRadius: 16,
                 style: .continuous
             )
             .stroke(ConfigurationUI.faintHairline)
         )
     }
 
-    private func historyRow(
-        _ row:
-            V1SettingsHistoryRowPresentation
-    ) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            historyThumbnail(
-                row
-            )
+    private var taskSummarySubtitle: String {
+        guard presentation.currentTask.itemCountText != nil else {
+            return presentation.currentTask.subtitleText
+        }
 
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .center, spacing: 8) {
-                    Text(row.title)
-                        .font(.subheadline.weight(.semibold))
+        return [
+            presentation.currentTask.templateName,
+            presentation.currentTask.itemCountText
+        ]
+        .compactMap { item in
+            guard let item,
+                  !item.isEmpty else {
+                return nil
+            }
+
+            return item
+        }
+        .joined(separator: " · ")
+    }
+
+    private var currentProgressLine: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Text(
+                    presentation.currentTask.progressText
+                    ?? presentation.currentTask.itemCountText
+                    ?? "等待照片进入处理"
+                )
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+                Spacer(minLength: 0)
+
+                if let progressFraction =
+                    presentation.currentTask.progressFraction {
+                    Text(progressPercentText(progressFraction))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(
+                            presentation.currentTask.tint.color
+                        )
+                        .monospacedDigit()
+                }
+            }
+
+            ProgressView(
+                value:
+                    presentation
+                    .currentTask
+                    .progressFraction
+                    ?? 0
+            )
+            .progressViewStyle(.linear)
+            .tint(presentation.currentTask.tint.color)
+        }
+    }
+
+    private var pipelineRows: some View {
+        VStack(spacing: 0) {
+            ForEach(
+                presentation.currentTask.stepRows
+            ) { step in
+                pipelineRow(step)
+
+                if step.id != presentation.currentTask.stepRows.last?.id {
+                    Divider()
+                        .padding(.leading, 28)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 14,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.controlBackground.opacity(0.36))
+        )
+    }
+
+    private func pipelineRow(
+        _ step: V1TaskPipelineStepPresentation
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: step.symbolName)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(step.tint.color)
+                .frame(width: 16, height: 16)
+
+            Text(step.title)
+                .font(
+                    .callout
+                    .weight(
+                        step.emphasizesTitle
+                        ? .semibold
+                        : .regular
+                    )
+                )
+                .foregroundStyle(step.tint == .secondary ? .secondary : .primary)
+                .lineLimit(1)
+
+            Text(step.statusText)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(step.tint.color)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+
+            if let timeText = step.timeText {
+                Text(timeText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 28)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var recentTasksSection: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .center, spacing: 12) {
+                V1SectionHeading("最近任务")
+
+                if presentation.historyRows.count > 2 {
+                    Button {
+                        isRecentTasksSheetPresented = true
+                    } label: {
+                        Text("…")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 34, height: 30)
+                            .background(
+                                Capsule(style: .continuous)
+                                    .fill(ConfigurationUI.controlBackground)
+                            )
+                            .overlay(
+                                Capsule(style: .continuous)
+                                    .stroke(ConfigurationUI.faintHairline)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("查看更多最近任务")
+                }
+            }
+
+            if presentation.historyRows.isEmpty {
+                emptyRecentState
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(
+                        presentation.historyRows.prefix(2)
+                    ) { row in
+                        recentTaskRow(row)
+
+                        if row.id != presentation.historyRows.prefix(2).last?.id {
+                            Divider()
+                                .padding(.leading, 86)
+                        }
+                    }
+                }
+                .v1CardChrome()
+            }
+        }
+    }
+
+    private var recentTasksSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 12) {
+                    VStack(spacing: 0) {
+                        ForEach(
+                            presentation.historyRows
+                        ) { row in
+                            recentTaskRow(row)
+
+                            if row.id != presentation.historyRows.last?.id {
+                                Divider()
+                                    .padding(.leading, 86)
+                            }
+                        }
+                    }
+                    .v1CardChrome()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
+            }
+            .background(
+                ConfigurationUI.appBackground
+                    .ignoresSafeArea()
+            )
+            .navigationTitle("近期完成任务")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var emptyRecentState: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "clock.badge.questionmark")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 34, height: 34)
+                .background(
+                    Circle()
+                        .fill(ConfigurationUI.controlBackground)
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("还没有最近任务")
+                    .font(.subheadline.weight(.semibold))
+                Text("从 Apple Photos 分享照片后，这里会显示最近处理。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .v1CardChrome()
+    }
+
+    @ViewBuilder
+    private func recentTaskRow(
+        _ row: V1SettingsHistoryRowPresentation
+    ) -> some View {
+        if let link = row.photoLibraryLink {
+            Button {
+                onOpenPhotoLibrary(link)
+            } label: {
+                recentTaskRowContent(row)
+            }
+            .buttonStyle(.plain)
+        } else {
+            recentTaskRowContent(row)
+        }
+    }
+
+    private var photoLibraryLinkRow: some View {
+        HStack {
+            Spacer(minLength: 0)
+
+            Button {
+                guard let link =
+                    presentation
+                    .currentTask
+                    .photoLibraryLink else {
+                    return
+                }
+
+                onOpenPhotoLibrary(link)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "photo.stack")
+                        .font(.caption.weight(.semibold))
+                        .frame(width: 16)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("查看相册")
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+
+                        Text(
+                            presentation
+                            .currentTask
+                            .photoLibraryLink?
+                            .displayTitle
+                            ?? "系统照片"
+                        )
+                        .font(.caption2)
+                        .lineLimit(1)
+                    }
 
                     Spacer(minLength: 0)
 
-                    taskStatusPill(
-                        title: row.statusText,
-                        tint: row.tint
-                    )
+                    Image(systemName: "arrow.up.forward")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.white.opacity(0.82))
                 }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .frame(width: 178)
+                .frame(height: 44)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 14,
+                        style: .continuous
+                    )
+                    .fill(Color.accentColor)
+                )
+                .shadow(
+                    color: Color.accentColor.opacity(0.16),
+                    radius: 10,
+                    y: 4
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(
+                presentation.currentTask.photoLibraryLink == nil
+            )
+            .opacity(
+                presentation.currentTask.photoLibraryLink == nil
+                ? 0.56
+                : 1
+            )
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func recentTaskRowContent(
+        _ row: V1SettingsHistoryRowPresentation
+    ) -> some View {
+        HStack(spacing: 12) {
+            taskThumbnail(
+                url: row.previewSourceURL,
+                symbolName: row.symbolName,
+                tint: row.tint,
+                size: CGSize(width: 64, height: 54)
+            )
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(row.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
 
                 Text(row.detailText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    taskInfoChip(
-                        title:
-                            row.timestamp.formatted(
-                                date: .omitted,
-                                time: .shortened
-                            ),
+                HStack(spacing: 12) {
+                    Label(
+                        row.timestamp.formatted(
+                            date: .numeric,
+                            time: .shortened
+                        ),
                         systemImage: "clock"
                     )
 
-                    if let itemCountText =
-                        row.itemCountText {
-                        taskInfoChip(
-                            title: itemCountText,
-                            systemImage: "photo.stack"
-                        )
-                    }
-
-                    taskInfoChip(
-                        title: row.statusText,
+                    Label(
+                        row.statusText,
                         systemImage: row.symbolName
                     )
+                    .foregroundStyle(row.tint.color)
                 }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.controlBackground.opacity(0.82))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
-    }
-
-    private var taskMetaFlow: some View {
-        ViewThatFits(in: .vertical) {
-            HStack(spacing: 8) {
-                taskMetaChips
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                taskMetaChips
-            }
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
         }
+        .padding(.horizontal, 12)
+        .frame(height: 78)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
-    private var taskMetaChips: some View {
-        if let itemCountText =
-            presentation
-            .currentTask
-            .itemCountText {
-            taskInfoChip(
-                title: itemCountText,
-                systemImage: "photo.on.rectangle"
-            )
-        }
-
-        if let progressText =
-            presentation
-            .currentTask
-            .progressText {
-            taskInfoChip(
-                title: progressText,
-                systemImage: "chart.bar.fill"
-            )
-        }
-
-        if let updatedAt =
-            presentation
-            .currentTask
-            .updatedAt {
-            taskInfoChip(
-                title:
-                    updatedAt
-                    .formatted(
-                        date: .omitted,
-                        time: .shortened
-                    ),
-                systemImage: "clock"
-            )
-        }
-    }
-
-    private func historyThumbnail(
-        _ row:
-            V1SettingsHistoryRowPresentation
+    private func taskThumbnail(
+        url: URL?,
+        symbolName: String,
+        tint: PhotoMemoiOSQueueDiagnosticsTint,
+        size: CGSize
     ) -> some View {
-        ZStack {
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .fill(
-                LinearGradient(
-                    colors: [
-                        row.tint.color.opacity(0.22),
-                        Color.white
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .frame(width: 62, height: 74)
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
-                )
-                .stroke(ConfigurationUI.faintHairline)
-            )
-
-            VStack(spacing: 6) {
-                Image(systemName: row.symbolName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(row.tint.color)
-
-                Text(
-                    row.itemCountText
-                    ?? row.statusText
-                )
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 6)
-            }
-            .frame(width: 62, height: 74)
-        }
-        .frame(width: 72, height: 80)
+        V1TaskLocalThumbnail(
+            sourceURL: url,
+            symbolName: symbolName,
+            tint: tint,
+            size: size
+        )
     }
 
     private func progressPercentText(
@@ -476,21 +668,94 @@ struct V1TaskPageSurface: View {
                     .fill(tint.color.opacity(0.14))
             )
     }
+}
 
-    private func taskInfoChip(
-        title: String,
-        systemImage: String
-    ) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.caption2.weight(.medium))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(ConfigurationUI.controlBackground)
-            )
+private struct V1TaskLocalThumbnail: View {
+
+    let sourceURL: URL?
+    let symbolName: String
+    let tint: PhotoMemoiOSQueueDiagnosticsTint
+    let size: CGSize
+
+    @State
+    private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    tint.color.opacity(0.12)
+                )
+
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: symbolName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(tint.color)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .clipShape(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(ConfigurationUI.faintHairline)
+        )
+        .task(id: sourceURL) {
+            image =
+                await loadThumbnail(
+                    from: sourceURL,
+                    maxPixelSize:
+                        max(size.width, size.height) * 3
+                )
+        }
+    }
+
+    private func loadThumbnail(
+        from url: URL?,
+        maxPixelSize: CGFloat
+    ) async -> UIImage? {
+        guard let url else {
+            return nil
+        }
+
+        return await Task.detached(priority: .utility) {
+            guard let source =
+                CGImageSourceCreateWithURL(
+                    url as CFURL,
+                    nil
+                )
+            else {
+                return UIImage(contentsOfFile: url.path)
+            }
+
+            let options:
+                [CFString: Any] = [
+                    kCGImageSourceCreateThumbnailFromImageAlways:
+                        true,
+                    kCGImageSourceCreateThumbnailWithTransform:
+                        true,
+                    kCGImageSourceThumbnailMaxPixelSize:
+                        Int(maxPixelSize)
+                ]
+
+            guard let cgImage =
+                CGImageSourceCreateThumbnailAtIndex(
+                    source,
+                    0,
+                    options as CFDictionary
+                )
+            else {
+                return UIImage(contentsOfFile: url.path)
+            }
+
+            return UIImage(cgImage: cgImage)
+        }
+        .value
     }
 }
 #endif

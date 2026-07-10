@@ -252,7 +252,9 @@ final class ConfigurationSession:
 
     func restoreSubjectLibrary(
         _ subjects: [MemorySubject],
-        selectedSubjectID: MemorySubject.ID?
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset]? = nil,
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
         guard !subjects.isEmpty else {
             return
@@ -272,6 +274,18 @@ final class ConfigurationSession:
             }
             ? selectedSubjectID
             : subjects.first?.id
+
+        if let memoryPresets {
+            state.memoryPresets = memoryPresets
+            state.selectedMemoryPresetID =
+                memoryPresets.contains {
+                    $0.id == selectedMemoryPresetID
+                }
+                ? selectedMemoryPresetID
+                : memoryPresets.first {
+                    $0.selectedSubjectID == state.selectedSubjectID
+                }?.id
+        }
 
         let selectedSubject =
             state.selectedSubject
@@ -529,15 +543,25 @@ final class ConfigurationSession:
         refreshPresetDrivenPreview()
     }
 
-    func saveCurrentMemoryPreset() {
-        guard let presetIndex = selectedMemoryPresetIndex else {
+    func saveCurrentMemoryPreset(
+        logoMode: V1LogoMode? = nil
+    ) {
+        guard let presetIndex =
+            writableSelectedMemoryPresetIndex()
+        else {
+            createMemoryPresetFromCurrent(
+                savedAt: Date(),
+                applyImmediately: true,
+                logoMode: logoMode
+            )
             return
         }
 
         state.memoryPresets[presetIndex] =
             snapshotCurrentConfiguration(
                 in: state.memoryPresets[presetIndex],
-                savedAt: Date()
+                savedAt: Date(),
+                logoMode: logoMode
             )
         state.selectedMemoryPresetID =
             state.memoryPresets[presetIndex].id
@@ -545,25 +569,35 @@ final class ConfigurationSession:
             state.memoryPresets[presetIndex].id
     }
 
-    func createMemoryPresetFromCurrent() {
-        guard let currentPreset = state.selectedMemoryPreset else {
-            return
-        }
+    func createMemoryPresetFromCurrent(
+        logoMode: V1LogoMode? = nil
+    ) {
+        createMemoryPresetFromCurrent(
+            savedAt: nil,
+            applyImmediately: false,
+            logoMode: logoMode
+        )
+    }
 
-        let duplicatedTitle =
-            duplicatedMemoryPresetTitle(
-                from: currentPreset.title
-            )
-
+    private func createMemoryPresetFromCurrent(
+        savedAt: Date?,
+        applyImmediately: Bool,
+        logoMode: V1LogoMode?
+    ) {
         let duplicatedPreset =
             snapshotCurrentConfiguration(
                 in: MemoryPreset(
-                    title: duplicatedTitle,
-                    summary: currentPreset.summary,
+                    title:
+                        currentDefaultMemoryPresetTitle,
+                    summary:
+                        state.selectedMemoryPreset?
+                        .summary
+                        ?? "当前区域组合",
                     regionTemplateIDs:
-                        currentPreset.regionTemplateIDs
+                        currentRegionTemplateIDs
                 ),
-                savedAt: nil
+                savedAt: savedAt,
+                logoMode: logoMode
             )
 
         state.memoryPresets.append(
@@ -571,8 +605,34 @@ final class ConfigurationSession:
         )
         state.selectedMemoryPresetID =
             duplicatedPreset.id
-        appliedMemoryPresetID = nil
+        appliedMemoryPresetID =
+            applyImmediately
+            ? duplicatedPreset.id
+            : nil
         refreshPresetDrivenPreview()
+    }
+
+    func deleteSelectedMemoryPreset() {
+        guard let presetIndex =
+            writableSelectedMemoryPresetIndex()
+        else {
+            return
+        }
+
+        let deletedPresetID =
+            state.memoryPresets[presetIndex].id
+
+        state.memoryPresets.remove(
+            at: presetIndex
+        )
+
+        if appliedMemoryPresetID == deletedPresetID {
+            appliedMemoryPresetID = nil
+        }
+
+        alignSelectedMemoryPresetToSelectedSubject(
+            restoreContext: true
+        )
     }
 
     func updateSelectedMemoryPresetTitle(
@@ -589,10 +649,12 @@ final class ConfigurationSession:
                 trimmed.prefix(Self.maximumMemoryPresetTitleLength)
             )
 
-        state.memoryPresets[presetIndex].title =
+        var updatedState = state
+        updatedState.memoryPresets[presetIndex].title =
             normalizedTitle.isEmpty
             ? "记忆预设"
             : normalizedTitle
+        state = updatedState
         markSelectedMemoryPresetNeedsApply()
     }
 
@@ -681,6 +743,42 @@ final class ConfigurationSession:
             ?? "自定义时间"
 
         return "\(subjectName) · \(anchorName)"
+    }
+
+    var currentDefaultMemoryPresetTitle: String {
+        let subjectName =
+            state.selectedSubject?
+            .identity
+            .displayName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        let anchorName =
+            currentTimeAnchorTitle
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        let rawTitle =
+            [
+                subjectName?.isEmpty == false
+                ? subjectName
+                : nil,
+                anchorName.isEmpty ? nil : anchorName
+            ]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        let normalizedTitle =
+            rawTitle.isEmpty
+            ? "记忆预设"
+            : rawTitle
+
+        return String(
+            normalizedTitle
+                .prefix(
+                    Self.maximumMemoryPresetTitleLength
+                )
+        )
     }
 
     var currentTimeAnchorTitle: String {
@@ -891,7 +989,8 @@ final class ConfigurationSession:
 
     private func snapshotCurrentConfiguration(
         in preset: MemoryPreset,
-        savedAt: Date?
+        savedAt: Date?,
+        logoMode: V1LogoMode?
     ) -> MemoryPreset {
         var updatedPreset = preset
         updatedPreset.savedAt = savedAt
@@ -905,6 +1004,9 @@ final class ConfigurationSession:
             selectedOutputOption
         updatedPreset.storageOption =
             selectedStorageOption
+        updatedPreset.logoMode =
+            logoMode
+            ?? preset.logoMode
         updatedPreset.usesCustomMemoryWriteText =
             usesCustomMemoryWriteText
         updatedPreset.customMemoryWriteText =
@@ -982,34 +1084,6 @@ final class ConfigurationSession:
         refreshPresetDrivenPreview()
     }
 
-    private func duplicatedMemoryPresetTitle(
-        from title: String
-    ) -> String {
-        let suffix = " 副本"
-        let trimmedTitle =
-            title.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-        let baseTitle =
-            trimmedTitle.isEmpty
-            ? "记忆预设"
-            : trimmedTitle
-        let availableTitleLength =
-            max(
-                Self.maximumMemoryPresetTitleLength
-                - suffix.count,
-                1
-            )
-        let normalizedBaseTitle =
-            String(
-                baseTitle.prefix(
-                    availableTitleLength
-                )
-            )
-
-        return normalizedBaseTitle + suffix
-    }
-
     static func defaultPreviewText(
         for region: CardRegion,
         subject: MemorySubject?
@@ -1064,6 +1138,43 @@ final class ConfigurationSession:
         return state.memoryPresets.firstIndex {
             $0.id == preset.id
         }
+    }
+
+    private func writableSelectedMemoryPresetIndex() -> Int? {
+        guard
+            let presetIndex = selectedMemoryPresetIndex
+        else {
+            return nil
+        }
+
+        let selectedSubjectID =
+            state.selectedSubject?.id
+        let presetSubjectID =
+            state.memoryPresets[presetIndex]
+            .selectedSubjectID
+
+        guard presetSubjectID == nil
+            || presetSubjectID == selectedSubjectID else {
+            return nil
+        }
+
+        return presetIndex
+    }
+
+    private var currentRegionTemplateIDs:
+        [CardRegion: String] {
+
+        if let selectedPreset =
+            state.selectedMemoryPreset {
+            return selectedPreset.regionTemplateIDs
+        }
+
+        return ConfigurationCenterMockSeed
+            .makeState()
+            .memoryPresets
+            .first?
+            .regionTemplateIDs
+        ?? [:]
     }
 
     private var preferredMemoryPresetForSelectedSubject:
@@ -1136,6 +1247,7 @@ struct MemoryModuleInsertion:
 
 enum ConfigurationOutputOption:
     String,
+    Codable,
     CaseIterable,
     Identifiable {
 
@@ -1162,6 +1274,7 @@ enum ConfigurationOutputOption:
 
 enum ConfigurationStorageOption:
     String,
+    Codable,
     CaseIterable,
     Identifiable {
 

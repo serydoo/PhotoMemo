@@ -150,6 +150,9 @@ struct PhotoMemoiOSV1View: View {
     private var isEditingMemoryPresetTitle = false
 
     @State
+    private var showsRegionContentSheet = false
+
+    @State
     private var memoryPresetTitleDraft = ""
 
     @FocusState
@@ -162,10 +165,10 @@ struct PhotoMemoiOSV1View: View {
     private var hasSeenWelcome = false
 
     private let currentBorderStyleName =
-        "Classic White"
+        "基础白"
 
     private let currentBorderStyleDescription =
-        "当前唯一公开边框，预览与生成保持同一套锁定规范。"
+        "Classic White 当前唯一公开边框，预览与生成保持同一套锁定规范。"
 
     private let previewCompositionEngine =
         V1PreviewCompositionEngine()
@@ -212,6 +215,9 @@ struct PhotoMemoiOSV1View: View {
             reloadAlbums: {
                 await loadAlbumOptions()
             },
+            setOutputTarget: {
+                outputTarget = $0
+            },
             setSelectedExistingAlbumIdentifier: {
                 selectedExistingAlbumIdentifier in
                 self.selectedExistingAlbumIdentifier =
@@ -223,7 +229,22 @@ struct PhotoMemoiOSV1View: View {
                 )
             },
             saveCurrentMemoryPreset: {
-                session.saveCurrentMemoryPreset()
+                session.saveCurrentMemoryPreset(
+                    logoMode: logoMode
+                )
+                V1SubjectLibraryResolver
+                    .persist(
+                        subjects:
+                            session.state.subjects,
+                        selectedSubjectID:
+                            session.state.selectedSubjectID,
+                        coordinator:
+                            configurationCoordinator,
+                        memoryPresets:
+                            session.state.memoryPresets,
+                        selectedMemoryPresetID:
+                            session.state.selectedMemoryPresetID
+                    )
             },
             applySelectedMemoryPreset: {
                 session.applySelectedMemoryPreset()
@@ -330,11 +351,19 @@ struct PhotoMemoiOSV1View: View {
             },
             restoreSubjectLibrary: {
                 subjects,
-                selectedSubjectID in
+                selectedSubjectID,
+                memoryPresets,
+                selectedMemoryPresetID in
                 session.restoreSubjectLibrary(
                     subjects,
                     selectedSubjectID:
-                        selectedSubjectID
+                        selectedSubjectID,
+                    memoryPresets:
+                        memoryPresets.isEmpty
+                        ? nil
+                        : memoryPresets,
+                    selectedMemoryPresetID:
+                        selectedMemoryPresetID
                 )
             },
             restoreSelectedSubject: { subject in
@@ -520,6 +549,54 @@ struct PhotoMemoiOSV1View: View {
             }
         }
         .sheet(
+            isPresented: $showsRegionContentSheet
+        ) {
+            NavigationStack {
+                ScrollView {
+                    editorCluster
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                        .padding(.bottom, 28)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .simultaneousGesture(
+                    TapGesture()
+                        .onEnded {
+                            dismissKeyboard()
+                        }
+                )
+                .background(
+                    ConfigurationUI.appBackground
+                        .ignoresSafeArea()
+                )
+                .navigationTitle("区域内容设置")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("完成") {
+                            dismissKeyboard()
+                            showsRegionContentSheet = false
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+
+                        Button("收起") {
+                            dismissKeyboard()
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+                }
+            }
+            .presentationDetents([.fraction(0.58)])
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(
+                .enabled(upThrough: .fraction(0.58))
+            )
+        }
+        .sheet(
             isPresented: $entryFlowState.showsSubjectOverview
         ) {
             V1IOSSubjectOverviewSheet(
@@ -528,6 +605,7 @@ struct PhotoMemoiOSV1View: View {
                 subjects: session.state.subjects,
                 subject:
                     session.state.selectedSubject,
+                session: session,
                 selectedSubjectID:
                     session.state.selectedSubjectID,
                 onSelectSubject: {
@@ -582,31 +660,36 @@ struct PhotoMemoiOSV1View: View {
 
                     applySubjectFlowPatch(patch)
                 },
-                onOpenEditor: {
-                    let flowState =
-                        V1SubjectOverviewActionCoordinator
-                        .makeConfigurationFlowState(
-                            from: session,
-                                shouldSaveSubjectLibrary:
-                                    shouldSaveSubjectLibrary,
+                onPersistSubjectChanges: {
+                    V1SubjectLibraryPersistenceCoordinator
+                        .persistSubjectLibrary(
+                            subjects: session.state.subjects,
+                            selectedSubjectID:
+                                session.state.selectedSubjectID,
+                            selectedSubject:
+                                session.state.selectedSubject,
+                            memoryPresets:
+                                session.state.memoryPresets,
+                            selectedMemoryPresetID:
+                                session
+                                .state
+                                .selectedMemoryPresetID,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
                             configurationCoordinator:
-                                configurationCoordinator,
-                            savedStatus:
-                                .dirty,
-                            onPersistedSubject: {
-                                patch in
-                                applySubjectFlowPatch(
-                                    patch
-                                )
-                            }
+                                configurationCoordinator
                         )
-                    entryFlowState =
-                        V1EntryFlowCoordinator
-                        .openSubjectConfiguration(
-                            flowState,
-                            from:
-                                entryFlowState
-                        )
+
+                    if let anchor =
+                        session
+                        .state
+                        .selectedSubject?
+                        .primaryTimeAnchor {
+                        birthdayDate = anchor.date
+                    }
+
+                    activeConfigurationStatus = .subjectSynced
+                    refreshDynamicPreview()
                 }
             )
             .presentationDetents([.large])
@@ -636,7 +719,7 @@ struct PhotoMemoiOSV1View: View {
                 $entryFlowState
                 .showsProcessingPhotoPicker
         ) {
-            V1UIKitLivePhotoPicker(
+            V1UIKitPhotoPicker(
                 selectionLimit: 24,
                 onCancel: {
                     entryFlowState
@@ -679,6 +762,10 @@ struct PhotoMemoiOSV1View: View {
         .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
             isEditingMemoryPresetTitle = false
             memoryPresetTitleFieldFocused = false
+            if let selectedPreset =
+                session.state.selectedMemoryPreset {
+                logoMode = selectedPreset.logoMode
+            }
             bootstrapDrafts()
         }
         .onChange(of: birthdayDate) { _, _ in
@@ -742,11 +829,25 @@ struct PhotoMemoiOSV1View: View {
                 await optimizeSelectedLogo(item)
             }
         }
-        .onChange(of: logoMode) { _, _ in
+        .onChange(of: logoMode) { _, newMode in
+            guard
+                session.state
+                .selectedMemoryPreset?
+                .logoMode != newMode
+            else {
+                return
+            }
+
             activeConfigurationStatus = .dirty
         }
         .onChange(of: outputTarget) { _, _ in
             activeConfigurationStatus = .dirty
+
+            if outputTarget == .existingAlbum {
+                Task {
+                    await loadAlbumOptions()
+                }
+            }
         }
         .onChange(of: mediaOutputMode) { _, _ in
             activeConfigurationStatus = .dirty
@@ -772,12 +873,15 @@ struct PhotoMemoiOSV1View: View {
         V1HomePageSurface(
             subjectSummary: homeSubjectSummaryProjection,
             subject: session.state.selectedSubject,
+            completedPhotoCount:
+                backgroundStatusService
+                .taskOverview
+                .completedPhotoCount,
             borderStyleName: currentBorderStyleName,
             borderStyleDescription: currentBorderStyleDescription,
-            presetSummary: homePresetSummaryProjection,
-            presetStatusTone: currentPresetStatusTone,
-            presetSavedStatusText: homePresetSavedStatusText,
-            hasHomePresetSelection: !homeAvailablePresets.isEmpty,
+            memoryPresets: homeAvailablePresets,
+            selectedMemoryPresetID:
+                session.state.selectedMemoryPreset?.id,
             isEditingMemoryPresetTitle: isEditingMemoryPresetTitle,
             memoryPresetTitleDraft: $memoryPresetTitleDraft,
             memoryPresetTitleFieldFocused: $memoryPresetTitleFieldFocused,
@@ -798,30 +902,6 @@ struct PhotoMemoiOSV1View: View {
                             entryFlowState
                     )
             },
-            onOpenEditor: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openEditorTab(
-                        from:
-                            entryFlowState
-                    )
-            },
-            onOpenTimeAnchor: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openSubjectOverview(
-                        from:
-                            entryFlowState
-                    )
-            },
-            onOpenUsageGuide: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openSettingsPage(
-                        from:
-                            entryFlowState
-                    )
-            },
             onOpenSettings: {
                 entryFlowState =
                     V1EntryFlowCoordinator
@@ -830,9 +910,10 @@ struct PhotoMemoiOSV1View: View {
                             entryFlowState
                     )
             },
+            onSelectMemoryPreset: activateHomePreset,
+            onRenameMemoryPreset: beginEditingMemoryPresetTitle,
+            onDeleteMemoryPreset: deleteHomePreset,
             onDismissKeyboard: dismissKeyboard,
-            presetPicker: presetPicker,
-            presetOperationsMenu: presetOperationsMenu,
             profileTrackingBackground: offsetReader(for: .profile)
         )
     }
@@ -841,6 +922,9 @@ struct PhotoMemoiOSV1View: View {
         V1EditorPageSurface(
             previewPinProgress: previewPinProgress,
             editorRevealProgress: editorRevealProgress,
+            pageTitle: "配置中心",
+            pageSubtitle:
+                "当前配置：\(session.currentMemoryPresetTitle)",
             onDismissKeyboard: dismissKeyboard
         ) {
             previewSection
@@ -851,12 +935,11 @@ struct PhotoMemoiOSV1View: View {
                 )
         } editorContent: {
             configurationOptionList
-            editorCluster
         } accessoryContent: {
-            configurationPresetActionPanel
+            EmptyView()
         }
-        .navigationTitle("配置中心")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("")
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private var configurationOptionList: some View {
@@ -866,16 +949,20 @@ struct PhotoMemoiOSV1View: View {
             ConfigurationCenterLocationDisplaySupport
             .summaryValue(
                 module: locationDisplayModule,
-                presentation: locationPresentation
+                presentation: locationPresentation,
+                selectedConfiguration:
+                    locationDisplayConfiguration
             )
 
         return V1ConfigurationOptionList(
+            subject:
+                session.state.selectedSubject,
+            subjectAvatarPreviewImagePath:
+                resolvedSubjectAvatarPreviewImagePath,
             logoMode: $logoMode,
             selectedLogoItem: $selectedLogoItem,
             logoValue: logoMode.title,
             logoDetail: logoRowDetail,
-            subjectAvatarPreviewImagePath:
-                resolvedSubjectAvatarPreviewImagePath,
             customLogoImagePath:
                 customLogoBadge?.imagePath,
             isOptimizingLogo: isOptimizingLogo,
@@ -913,7 +1000,38 @@ struct PhotoMemoiOSV1View: View {
             selectedMemoryDisplayStyle:
                 selectedMemoryDisplayStyleBinding,
             borderStyleName:
-                currentBorderStyleName
+                currentBorderStyleName,
+            isSavingConfiguration:
+                isSavingConfiguration,
+            onOpenRegionContent: {
+                showsRegionContentSheet = true
+            },
+            onSaveCurrentConfiguration: {
+                Task {
+                    await applyCurrentV1Configuration()
+                }
+            },
+            onCreateConfiguration: {
+                session.createMemoryPresetFromCurrent(
+                    logoMode: logoMode
+                )
+                memoryPresetTitleDraft =
+                    session.currentMemoryPresetTitle
+                isEditingMemoryPresetTitle = true
+                activeConfigurationStatus = .dirty
+            },
+            onResetConfiguration: {
+                session.resetSelectedMemoryPreset()
+                bootstrapDrafts()
+                activeConfigurationStatus = .dirty
+            },
+            onDeleteConfiguration: {
+                session.deleteSelectedMemoryPreset()
+                memoryPresetTitleDraft =
+                    session.currentMemoryPresetTitle
+                bootstrapDrafts()
+                activeConfigurationStatus = .dirty
+            }
         )
     }
 
@@ -934,7 +1052,7 @@ struct PhotoMemoiOSV1View: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("配置中心")
-                        .font(.headline.weight(.semibold))
+                        .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
 
                     Text("这里负责把当前记忆对象、时间锚点、显示方式和四个区域整理成一套可保存的当前配置。对象资料继续在对象页维护，配置页只负责选择与生效。")
@@ -968,7 +1086,9 @@ struct PhotoMemoiOSV1View: View {
             ConfigurationCenterLocationDisplaySupport
             .summaryValue(
                 module: locationDisplayModule,
-                presentation: presentation
+                presentation: presentation,
+                selectedConfiguration:
+                    locationDisplayConfiguration
             )
 
         return ConfigurationCenterSummarySection(
@@ -1014,108 +1134,6 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private var configurationPresetActionPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
-                RoundedRectangle(
-                    cornerRadius: 12,
-                    style: .continuous
-                )
-                .fill(Color.accentColor.opacity(0.10))
-                .frame(width: 38, height: 38)
-                .overlay {
-                    Image(systemName: "rectangle.stack.badge.plus")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("配置操作")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    Text(configurationPresetActionDetail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            ViewThatFits {
-                HStack(spacing: 10) {
-                    createConfigurationButton
-                    saveCurrentConfigurationButton
-                }
-
-                VStack(spacing: 10) {
-                    createConfigurationButton
-                    saveCurrentConfigurationButton
-                }
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.controlBackground.opacity(0.72))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
-    }
-
-    private var createConfigurationButton: some View {
-        Button {
-            session.createMemoryPresetFromCurrent()
-            memoryPresetTitleDraft = session.currentMemoryPresetTitle
-            isEditingMemoryPresetTitle = true
-            activeConfigurationStatus = .dirty
-        } label: {
-            Label("新建配置", systemImage: "plus")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.large)
-    }
-
-    private var saveCurrentConfigurationButton: some View {
-        Button {
-            Task {
-                await applyCurrentV1Configuration()
-            }
-        } label: {
-            Label(
-                isSavingConfiguration
-                ? "正在保存"
-                : "保存为当前配置",
-                systemImage:
-                    isSavingConfiguration
-                    ? "hourglass"
-                    : "checkmark.circle"
-            )
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .disabled(isSavingConfiguration)
-    }
-
-    private var configurationPresetActionDetail: String {
-        if session.selectedMemoryPresetIsApplied {
-            return "当前配置已同步，后续新建配置会从现在的对象、锚点、区域和输出设置复制。"
-        }
-
-        return "保存会同步当前对象、锚点、区域内容与输出设置；新建配置只在配置中心底部创建。"
-    }
-
     private var outputPage: some View {
         V1OutputPageSurface(
             outputTarget: $outputTarget,
@@ -1131,6 +1149,12 @@ struct PhotoMemoiOSV1View: View {
                     await loadAlbumOptions()
                 }
             },
+            isSavingConfiguration: isSavingConfiguration,
+            onSaveConfiguration: {
+                Task {
+                    await applyCurrentV1Configuration()
+                }
+            },
             usesCustomMemoryWriteText: $session.usesCustomMemoryWriteText,
             customMemoryWriteText: $session.customMemoryWriteText,
             resolvedMemoryWriteText: resolvedMemoryWriteText,
@@ -1142,10 +1166,26 @@ struct PhotoMemoiOSV1View: View {
         V1TaskPageSurface(
             header: shareDiagnosticsHeaderProjection,
             snapshot: backgroundStatusService.currentSnapshot,
+            taskOverview:
+                backgroundStatusService
+                .taskOverview,
+            recentJobSummaries:
+                backgroundStatusService
+                .recentJobSummaries,
             recoveryMessage: processingDiagnosticsSnapshot.recoveryMessage,
             events: shareDiagnosticEvents,
-            onRefresh: refreshProcessingState,
-            onClearCompletedHistory: clearCompletedQueueHistory,
+            fallbackConfigurationName:
+                session.currentMemoryPresetTitle,
+            onOpenPhotoLibrary:
+                openPhotoLibrary,
+            onStartProcessing: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openProcessingPhotoPicker(
+                        from:
+                            entryFlowState
+                    )
+            },
             onDismissKeyboard: dismissKeyboard
         )
     }
@@ -1259,6 +1299,7 @@ struct PhotoMemoiOSV1View: View {
     private func activateHomePreset(
         _ preset: MemoryPreset
     ) {
+        logoMode = preset.logoMode
         session.selectMemoryPreset(preset)
         bootstrapDrafts()
         activeConfigurationStatus = .saving
@@ -1266,6 +1307,20 @@ struct PhotoMemoiOSV1View: View {
         Task {
             await applyCurrentV1Configuration()
         }
+    }
+
+    private func deleteHomePreset(
+        _ preset: MemoryPreset
+    ) {
+        if session.state.selectedMemoryPreset?.id != preset.id {
+            session.selectMemoryPreset(preset)
+        }
+
+        session.deleteSelectedMemoryPreset()
+        memoryPresetTitleDraft =
+            session.currentMemoryPresetTitle
+        bootstrapDrafts()
+        activeConfigurationStatus = .dirty
     }
 
     private func applySubjectFlowPatch(
@@ -1887,6 +1942,14 @@ struct PhotoMemoiOSV1View: View {
                             .selectedSubjectID,
                         shouldSaveSubjectLibrary:
                             shouldSaveSubjectLibrary,
+                        memoryPresets:
+                            session
+                            .state
+                            .memoryPresets,
+                        selectedMemoryPresetID:
+                            session
+                            .state
+                            .selectedMemoryPresetID,
                         presetTitle:
                             session
                             .currentMemoryPresetTitle,
@@ -2257,6 +2320,27 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
+    private func openPhotoLibrary(
+        _ link: V1TaskPhotoLibraryLink
+    ) {
+        guard let primaryURL =
+            URL(string: "photos-redirect://")
+        else {
+            return
+        }
+
+        UIApplication.shared.open(primaryURL) { success in
+            guard !success,
+                  let fallbackURL =
+                    URL(string: "photos://")
+            else {
+                return
+            }
+
+            UIApplication.shared.open(fallbackURL)
+        }
+    }
+
     private func applyDiagnosticsRefreshState(
         _ state:
             V1DiagnosticsRefreshState
@@ -2275,21 +2359,6 @@ struct PhotoMemoiOSV1View: View {
             state.activeRegion
         moduleUsageCountsStorage =
             state.usageStorage
-    }
-
-    private func clearCompletedQueueHistory() {
-        diagnosticsRefreshCoordinator
-            .clearCompletedQueueHistory(
-                preservingJobID:
-                    backgroundStatusService
-                    .currentSnapshot?
-                    .presentationState == .active
-                    ?
-                    backgroundStatusService
-                    .currentSnapshot?
-                    .jobID
-                    : nil
-            )
     }
 
     private var editorRevealProgress: CGFloat {
@@ -2585,11 +2654,12 @@ struct PhotoMemoiOSV1View: View {
 
 private struct V1ConfigurationOptionList: View {
 
+    let subject: MemorySubject?
+    let subjectAvatarPreviewImagePath: String?
     @Binding var logoMode: V1LogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
     let logoValue: String
     let logoDetail: String
-    let subjectAvatarPreviewImagePath: String?
     let customLogoImagePath: String?
     let isOptimizingLogo: Bool
     let timeAnchorTitle: String
@@ -2609,55 +2679,84 @@ private struct V1ConfigurationOptionList: View {
     let selectedMemoryDisplayStyle:
         Binding<MemoryAnchorExpressionStyle>
     let borderStyleName: String
+    let isSavingConfiguration: Bool
+    let onOpenRegionContent: () -> Void
+    let onSaveCurrentConfiguration: () -> Void
+    let onCreateConfiguration: () -> Void
+    let onResetConfiguration: () -> Void
+    let onDeleteConfiguration: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            logoRow
+        VStack(alignment: .leading, spacing: 14) {
+            groupedSection(
+                index: "1.",
+                title: "记忆来源",
+                subtitle: "决定智能模块生成的内容"
+            ) {
+                subjectRow
+                optionDivider
+                timeAnchorRow
+                optionDivider
+                memoryDisplayRow
+            }
 
-            optionDivider
+            groupedSection(
+                index: "2.",
+                title: "卡片布局与内容",
+                subtitle: "决定卡片各区域的内容与显示形式"
+            ) {
+                logoRow
+                optionDivider
+                borderStyleRow
+                optionDivider
+                locationRow
+                optionDivider
+                regionContentRow
+            }
 
-            timeAnchorRow
+            groupedSection(
+                index: "3.",
+                title: "配置操作",
+                subtitle: "保存或管理当前配置"
+            ) {
+                configurationActionGrid
 
-            optionDivider
-
-            locationRow
-
-            optionDivider
-
-            memoryDisplayRow
-
-            optionDivider
-
-            borderStyleRow
+                Label(
+                    "保存后，配置会应用于后续所有处理任务。",
+                    systemImage: "info.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
+            }
         }
-        .background(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .fill(Color.white.opacity(0.94))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
-        .shadow(
-            color: Color.black.opacity(0.045),
-            radius: 14,
-            y: 6
-        )
+    }
+
+    private var subjectRow: some View {
+        configurationRow(
+            icon: subjectIcon,
+            title: "记忆对象",
+            subtitle: "当前生效主体",
+            value: subjectDisplayName,
+            detail: "随首页同步",
+            showsTrailingChevron: false
+        ) {
+            Text(subjectDisplayName)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
     }
 
     private var logoRow: some View {
         configurationRow(
             icon: logoIcon,
-            title: "头像与标识",
-            subtitle: "设置头像、Logo 与身份标识",
+            title: "Logo 标识",
+            subtitle: "设置输出卡片左侧标识",
             value: logoValue,
-            detail: logoDetail
+            detail: logoDetail,
+            showsTrailingChevron: false
         ) {
             HStack(spacing: 6) {
                 Menu {
@@ -2690,7 +2789,7 @@ private struct V1ConfigurationOptionList: View {
                                 : "photo.badge.plus"
                         )
                         .font(.caption.weight(.semibold))
-                        .frame(width: 26, height: 26)
+                        .frame(width: 24, height: 24)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.accentColor)
@@ -2712,7 +2811,8 @@ private struct V1ConfigurationOptionList: View {
                 ? "暂无"
                 : timeAnchorTitle,
             detail:
-                "\(timeAnchorCount) 个锚点"
+                "\(timeAnchorCount) 个锚点",
+            showsTrailingChevron: false
         ) {
             if availableTimeAnchors.isEmpty {
                 optionSelectionPill(title: "暂无")
@@ -2752,7 +2852,8 @@ private struct V1ConfigurationOptionList: View {
             detail:
                 isLocationSelectable
                 ? locationValueDetail
-                : "未插入位置模块"
+                : "未插入位置模块",
+            showsTrailingChevron: false
         ) {
             Menu {
                 ForEach(locationPresentation.options) { option in
@@ -2774,8 +2875,6 @@ private struct V1ConfigurationOptionList: View {
             } label: {
                 optionSelectionPill(title: selectedLocationValue)
             }
-            .disabled(isLocationSelectable == false)
-            .opacity(isLocationSelectable ? 1 : 0.62)
         }
     }
 
@@ -2786,7 +2885,8 @@ private struct V1ConfigurationOptionList: View {
             title: "记忆显示",
             subtitle: "自定义表达方式与记忆内容",
             value: memoryDisplayValue,
-            detail: memoryDisplayDetail
+            detail: memoryDisplayDetail,
+            showsTrailingChevron: false
         ) {
             if availableMemoryDisplayStyles.isEmpty {
                 optionSelectionPill(title: "暂无")
@@ -2824,18 +2924,205 @@ private struct V1ConfigurationOptionList: View {
             systemImage: "paintpalette",
             tint: .orange,
             title: "边框样式",
-            subtitle: "选择边框样式与整体风格",
+            subtitle: "当前公开边框样式",
             value: borderStyleName,
-            detail: "当前锁定"
+            detail: "当前锁定",
+            showsTrailingChevron: false
         ) {
-            optionSelectionPill(title: borderStyleName)
+            rowValueText(borderStyleName)
         }
     }
+
+    private var regionContentRow: some View {
+        Button(action: onOpenRegionContent) {
+            configurationRow(
+                systemImage: "square.grid.2x2",
+                tint: .blue,
+                title: "区域内容设置",
+                subtitle: "编辑卡片四个区域的模块与文字",
+                value: "进入设置",
+                detail: "",
+                showsTrailingChevron: false
+            ) {
+                rowValueText("进入设置", isAction: true)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var configurationActionGrid: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible(), spacing: 10)
+            ],
+            spacing: 10
+        ) {
+            actionButton(
+                title: isSavingConfiguration
+                    ? "正在保存"
+                    : "保存当前配置",
+                systemImage: isSavingConfiguration
+                    ? "hourglass"
+                    : "tray.and.arrow.down",
+                tint: .blue,
+                isProminent: true,
+                action: onSaveCurrentConfiguration
+            )
+            .disabled(isSavingConfiguration)
+
+            actionButton(
+                title: "另存为新配置",
+                systemImage: "plus.square.fill",
+                tint: .green,
+                action: onCreateConfiguration
+            )
+
+            actionButton(
+                title: "恢复默认",
+                systemImage: "arrow.counterclockwise.circle.fill",
+                tint: .orange,
+                action: onResetConfiguration
+            )
+
+            actionButton(
+                title: "删除当前配置",
+                systemImage: "trash.fill",
+                tint: .red,
+                action: onDeleteConfiguration
+            )
+        }
+    }
+
+    private func actionButton(
+        title: String,
+        systemImage: String,
+        tint: Color,
+        isProminent: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(isProminent ? Color.white : tint)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    isProminent
+                    ? tint
+                    : ConfigurationUI.controlBackground
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(
+                    isProminent
+                    ? tint
+                    : ConfigurationUI.faintHairline
+                )
+        )
+    }
+
+    private func groupedSection<Content: View>(
+        index: String,
+        title: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(index)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text(title)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .fill(ConfigurationUI.panelBackground)
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .stroke(ConfigurationUI.faintHairline)
+            )
+        }
+        .padding(14)
+        .v1CardChrome()
+    }
+
+    private var subjectDisplayName: String {
+        let name =
+            subject?
+            .identity
+            .displayName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard let name,
+              !name.isEmpty else {
+            return "记忆对象"
+        }
+
+        return name
+    }
+
+    private var subjectIcon: some View {
+        ZStack {
+            Circle()
+                .fill(Color.purple.opacity(0.11))
+
+            if let subjectAvatarPreviewImagePath,
+               let image = UIImage(
+                contentsOfFile:
+                    subjectAvatarPreviewImagePath
+               ) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "person.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.purple)
+            }
+        }
+        .frame(
+            width: V1CompactInformationRowMetrics.iconSize,
+            height: V1CompactInformationRowMetrics.iconSize
+        )
+    }
+
 
     private var logoIcon: some View {
         ZStack {
             RoundedRectangle(
-                cornerRadius: 14,
+                cornerRadius:
+                    V1CompactInformationRowMetrics.iconCornerRadius,
                 style: .continuous
             )
             .fill(Color.blue.opacity(0.10))
@@ -2851,7 +3138,9 @@ private struct V1ConfigurationOptionList: View {
                     .scaledToFill()
                     .clipShape(
                         RoundedRectangle(
-                            cornerRadius: 14,
+                            cornerRadius:
+                                V1CompactInformationRowMetrics
+                                .iconCornerRadius,
                             style: .continuous
                         )
                     )
@@ -2864,14 +3153,17 @@ private struct V1ConfigurationOptionList: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .padding(8)
+                    .padding(7)
             } else {
                 Image(systemName: "apple.logo")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.primary.opacity(0.78))
             }
         }
-        .frame(width: 48, height: 48)
+        .frame(
+            width: V1CompactInformationRowMetrics.iconSize,
+            height: V1CompactInformationRowMetrics.iconSize
+        )
     }
 
     private var locationValueDetail: String {
@@ -2890,6 +3182,7 @@ private struct V1ConfigurationOptionList: View {
         subtitle: String,
         value: String,
         detail: String,
+        showsTrailingChevron: Bool = true,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         configurationRow(
@@ -2902,6 +3195,8 @@ private struct V1ConfigurationOptionList: View {
             subtitle: subtitle,
             value: value,
             detail: detail,
+            showsTrailingChevron:
+                showsTrailingChevron,
             trailing: trailing
         )
     }
@@ -2912,14 +3207,23 @@ private struct V1ConfigurationOptionList: View {
         subtitle: String,
         value: String,
         detail: String,
+        showsTrailingChevron: Bool = true,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
-        HStack(alignment: .center, spacing: 14) {
+        let trailingSpacing: CGFloat =
+            detail.isEmpty && showsTrailingChevron == false
+            ? 0
+            : 4
+
+        return HStack(
+            alignment: .center,
+            spacing: V1CompactInformationRowMetrics.contentSpacing
+        ) {
             icon
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.body.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -2932,24 +3236,54 @@ private struct V1ConfigurationOptionList: View {
 
             Spacer(minLength: 8)
 
-            VStack(alignment: .trailing, spacing: 6) {
+            VStack(alignment: .trailing, spacing: trailingSpacing) {
                 trailing()
 
-                Text(detail)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
+                if !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+
+                if showsTrailingChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.tertiary)
+                }
             }
             .frame(
-                minWidth: 92,
-                maxWidth: 132,
+                minWidth: 72,
+                maxWidth: 128,
                 alignment: .trailing
             )
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 15)
+        .padding(
+            .horizontal,
+            V1CompactInformationRowMetrics.horizontalPadding
+        )
+        .padding(
+            .vertical,
+            V1CompactInformationRowMetrics.verticalPadding
+        )
         .contentShape(Rectangle())
+    }
+
+    private func rowValueText(
+        _ title: String,
+        isAction: Bool = false
+    ) -> some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(
+                isAction
+                ? Color.accentColor
+                : Color.primary.opacity(0.72)
+            )
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     private func optionSelectionPill(title: String) -> some View {
@@ -2964,8 +3298,8 @@ private struct V1ConfigurationOptionList: View {
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(Color.accentColor)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
         .frame(maxWidth: .infinity, alignment: .trailing)
         .background(
             Capsule(style: .continuous)
@@ -2979,24 +3313,33 @@ private struct V1ConfigurationOptionList: View {
     ) -> some View {
         ZStack {
             RoundedRectangle(
-                cornerRadius: 14,
+                cornerRadius:
+                    V1CompactInformationRowMetrics.iconCornerRadius,
                 style: .continuous
             )
             .fill(tint.opacity(0.11))
 
             Image(systemName: systemImage)
-                .font(.title3.weight(.semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(tint)
                 .symbolRenderingMode(.hierarchical)
         }
-        .frame(width: 48, height: 48)
+        .frame(
+            width: V1CompactInformationRowMetrics.iconSize,
+            height: V1CompactInformationRowMetrics.iconSize
+        )
     }
 
     private var optionDivider: some View {
         Rectangle()
             .fill(ConfigurationUI.faintHairline)
             .frame(height: 0.5)
-            .padding(.leading, 76)
+            .padding(
+                .leading,
+                V1CompactInformationRowMetrics.horizontalPadding
+                + V1CompactInformationRowMetrics.iconSize
+                + V1CompactInformationRowMetrics.contentSpacing
+            )
     }
 }
 

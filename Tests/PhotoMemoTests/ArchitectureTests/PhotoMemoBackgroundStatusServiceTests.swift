@@ -133,5 +133,99 @@ struct PhotoMemoBackgroundStatusServiceTests {
             forName: suiteName
         )
     }
+
+    @Test("Recent external job summaries keep the latest ten jobs")
+    func recentExternalJobSummariesKeepLatestTenJobs() throws {
+
+        let suiteName =
+            "PhotoMemo.BackgroundStatusServiceTests.recent.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: .template1,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: true,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let jobs =
+            (0..<12).map { index in
+                BatchJob(
+                    id: UUID(),
+                    title: "任务 \(index)",
+                    createdAt:
+                        Date(
+                            timeIntervalSince1970:
+                                Double(index)
+                        ),
+                    updatedAt:
+                        Date(
+                            timeIntervalSince1970:
+                                Double(index)
+                        ),
+                    state: .completed,
+                    launchSource: .quickAction,
+                    configuration: configuration,
+                    tasks: [
+                        BatchTask(
+                            sourceURL:
+                                URL(
+                                    fileURLWithPath:
+                                        "/tmp/recent-\(index).heic"
+                                ),
+                            fileName:
+                                "recent-\(index).heic",
+                            phase: .completed
+                        )
+                    ]
+                )
+            }
+
+        defaults.set(
+            try JSONEncoder().encode(jobs),
+            forKey:
+                "photomemo.batchQueue.jobs"
+        )
+
+        let store =
+            BatchQueueStore(
+                defaults: defaults,
+                settingsService:
+                    SettingsService(
+                        defaults: defaults
+                    )
+            )
+        let service =
+            PhotoMemoBackgroundStatusService(
+                batchQueueStore: store
+            )
+
+        #expect(
+            service.recentJobSummaries.count
+            == 10
+        )
+        #expect(
+            service.recentJobSummaries.first?.configurationName
+            == "任务 11"
+        )
+        #expect(
+            service.recentJobSummaries.last?.configurationName
+            == "任务 2"
+        )
+
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
 }
 #endif

@@ -9,32 +9,23 @@ struct V1IOSSubjectOverviewSubjectRail: View {
     let isSwitchingSubject: Bool
     let onSelectSubject: (MemorySubject.ID) -> Void
     let onAddSubject: () -> Void
+    let onSaveSubject: () -> Void
     let onBeginSwitch: () -> Void
     let onCancelSwitch: () -> Void
     let onCommitSwitch: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("对象浏览")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    Text(helperText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                currentSubjectSummary
 
                 Spacer(minLength: 0)
 
                 headerActions
             }
 
-            if subjects.count <= 1 {
-                singleCardLayout
-            } else {
-                multiCardLayout
+            if isSwitchingSubject {
+                switchingLayout
             }
         }
     }
@@ -49,21 +40,32 @@ struct V1IOSSubjectOverviewSubjectRail: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
 
-                Button {
-                    onCommitSwitch()
-                } label: {
-                    Label("保存切换", systemImage: "checkmark")
+                if subjects.count > 1 {
+                    Button {
+                        onCommitSwitch()
+                    } label: {
+                        Label("保存切换", systemImage: "checkmark")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(
+                        switchCandidateSubjectID == nil
+                        || switchCandidateSubjectID
+                        == resolvedSelectedSubjectID
+                    )
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .disabled(
-                    switchCandidateSubjectID == nil
-                    || switchCandidateSubjectID
-                    == resolvedSelectedSubjectID
-                )
             }
         } else {
             HStack(spacing: 8) {
+                Button {
+                    onSaveSubject()
+                } label: {
+                    Label("保存", systemImage: "checkmark")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .accessibilityLabel("保存当前记忆对象信息")
+
                 Button {
                     onBeginSwitch()
                 } label: {
@@ -76,48 +78,109 @@ struct V1IOSSubjectOverviewSubjectRail: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .accessibilityLabel("切换当前对象")
-
-                V1IOSSubjectRailAddButton(
-                    compact: true,
-                    action: onAddSubject
-                )
             }
         }
     }
 
-    private var singleCardLayout: some View {
+    private var currentSubjectSummary: some View {
+        HStack(spacing: 10) {
+            if let subject = currentSubject {
+                V1SubjectAvatarView(
+                    imagePath:
+                        subject.identity.avatarImagePath
+                        ?? subject.identity.avatarPreviewImagePath,
+                    size: 38
+                )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(subjectDisplayName(subject))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        V1IOSHomeStatusBadge(
+                            text:
+                                isSwitchingSubject
+                                ? "选择对象"
+                                : "当前使用",
+                            tone:
+                                isSwitchingSubject
+                                ? .neutral
+                                : .accent
+                        )
+                    }
+
+                    Text(
+                        isSwitchingSubject
+                        ? "选择后保存切换生效"
+                        : subjectRelationship(subject)
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("记忆对象")
+                        .font(.subheadline.weight(.semibold))
+
+                    Text("先新增一个记忆对象")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var switchingLayout: some View {
+        if subjects.count <= 1 {
+            singleSubjectSwitchLayout
+        } else {
+            multiCardLayout
+        }
+    }
+
+    private var singleSubjectSwitchLayout: some View {
         HStack(spacing: 12) {
-            if let subject = subjects.first {
-                V1IOSSubjectRailCard(
+            if let subject = currentSubject {
+                V1IOSSubjectSwitchChip(
                     subject: subject,
-                    isCurrent:
-                        subject.id
-                        == resolvedSelectedSubjectID,
-                    isCandidate:
-                        subject.id
-                        == resolvedSwitchCandidateSubjectID,
-                    isSwitchingSubject:
-                        isSwitchingSubject,
+                    isCurrent: true,
+                    isCandidate: true,
                     action: {
                         onSelectSubject(subject.id)
                     }
                 )
                 .frame(maxWidth: .infinity)
-            } else {
-                V1IOSSubjectRailEmptyState(
-                    action: onAddSubject
-                )
             }
 
-            V1IOSSubjectRailAddSpacer()
+            Button(action: onAddSubject) {
+                Image(systemName: "plus")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 58, height: 58)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.96))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(ConfigurationUI.faintHairline)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("新增记忆对象")
         }
+        .padding(.top, 2)
     }
 
     private var multiCardLayout: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 14) {
                 ForEach(subjects) { subject in
-                    V1IOSSubjectRailCard(
+                    V1IOSSubjectSwitchChip(
                         subject: subject,
                         isCurrent:
                             subject.id
@@ -125,13 +188,11 @@ struct V1IOSSubjectOverviewSubjectRail: View {
                         isCandidate:
                             subject.id
                             == resolvedSwitchCandidateSubjectID,
-                        isSwitchingSubject:
-                            isSwitchingSubject,
                         action: {
                             onSelectSubject(subject.id)
                         }
                     )
-                    .frame(width: 286)
+                    .frame(width: 222)
                 }
             }
             .padding(.horizontal, 2)
@@ -154,189 +215,119 @@ struct V1IOSSubjectOverviewSubjectRail: View {
         ?? resolvedSelectedSubjectID
     }
 
-    private var helperText: String {
-        if isSwitchingSubject {
-            return "选择一个对象后保存，首页当前配置会切到这个对象名下。"
+    private var currentSubject: MemorySubject? {
+        subjects.first {
+            $0.id == resolvedSelectedSubjectID
+        } ?? subjects.first
+    }
+
+    private func subjectDisplayName(
+        _ subject: MemorySubject
+    ) -> String {
+        let shortName =
+            subject.identity.shortName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        if !shortName.isEmpty {
+            return shortName
         }
 
-        return "左右滑动查看不同记忆对象；需要生效时点击切换当前对象。"
+        return subject.identity.displayName
+    }
+
+    private func subjectRelationship(
+        _ subject: MemorySubject
+    ) -> String {
+        let trimmed =
+            subject.relationship.label
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmed.isEmpty
+            ? "补充关系信息"
+            : trimmed
     }
 }
 
-private struct V1IOSSubjectRailCard: View {
+private struct V1IOSSubjectSwitchChip: View {
 
     let subject: MemorySubject
     let isCurrent: Bool
     let isCandidate: Bool
-    let isSwitchingSubject: Bool
     let action: () -> Void
 
     var body: some View {
-        if isSwitchingSubject {
-            Button(action: action) {
-                cardContent
-            }
-            .buttonStyle(.plain)
-        } else {
-            cardContent
-        }
-    }
-
-    private var cardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        V1IOSHomeStatusBadge(
-                            text: statusLabel,
-                            tone:
-                                isHighlighted
-                                ? .accent
-                                : .neutral
-                        )
-
-                        Text(subjectAnchorTitle)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-
-                    Text(subjectDisplayName)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    Text(subjectRelationship)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-
-                Spacer(minLength: 0)
-
+        Button(action: action) {
+            HStack(spacing: 12) {
                 V1SubjectAvatarView(
                     imagePath:
                         subject.identity.avatarImagePath
                         ?? subject.identity.avatarPreviewImagePath,
-                    size: 56
-                )
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                V1IOSSubjectRailMetaRow(
-                    title: "显示名称",
-                    value: subject.identity.displayName
+                    size: 44
                 )
 
-                V1IOSSubjectRailMetaRow(
-                    title: "时间锚点",
-                    value: "\(subject.timeAnchors.count) 个"
-                )
-            }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(subjectDisplayName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
 
-            HStack(spacing: 8) {
-                Image(systemName: footerSymbolName)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(
-                        isHighlighted
-                        ? Color.accentColor
-                        : .secondary
-                    )
+                        if isCurrent {
+                            V1IOSHomeStatusBadge(
+                                text: "当前",
+                                tone: .accent
+                            )
+                        }
+                    }
 
-                Text(footerText)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    Text(subjectRelationship)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
 
                 Spacer(minLength: 0)
+
+                Image(
+                    systemName:
+                        isCandidate
+                        ? "checkmark.circle.fill"
+                        : "circle"
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(
+                    isCandidate
+                    ? Color.accentColor
+                    : Color.secondary.opacity(0.55)
+                )
             }
-        }
-        .padding(18)
-        .frame(
-            maxWidth: .infinity,
-            minHeight: 188,
-            alignment: .topLeading
-        )
-        .background(cardBackground)
-        .overlay(cardBorder)
-        .shadow(
-            color:
-                isHighlighted
-                ? ConfigurationUI.cardShadow.opacity(1.15)
-                : ConfigurationUI.cardShadow.opacity(0.5),
-            radius: isHighlighted ? 12 : 7,
-            y: isHighlighted ? 5 : 3
-        )
-    }
-
-    private var cardBackground: some View {
-        RoundedRectangle(
-            cornerRadius: 24,
-            style: .continuous
-        )
-        .fill(
-            LinearGradient(
-                colors: isHighlighted
-                    ? [
-                        Color.white,
-                        Color.white.opacity(0.96)
-                    ]
-                    : [
-                        Color.white.opacity(0.93),
-                        Color.white.opacity(0.88)
-                    ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 72)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .fill(Color.white.opacity(0.95))
             )
-        )
-    }
-
-    private var cardBorder: some View {
-        RoundedRectangle(
-            cornerRadius: 24,
-            style: .continuous
-        )
-        .stroke(
-            isHighlighted
-            ? Color.accentColor.opacity(0.34)
-            : ConfigurationUI.faintHairline,
-            lineWidth: isHighlighted ? 1.1 : 0.8
-        )
-    }
-
-    private var isHighlighted: Bool {
-        isSwitchingSubject ? isCandidate : isCurrent
-    }
-
-    private var statusLabel: String {
-        if isSwitchingSubject {
-            return isCandidate ? "待切换" : "可选择"
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .stroke(
+                    isCandidate
+                    ? Color.accentColor.opacity(0.26)
+                    : ConfigurationUI.faintHairline,
+                    lineWidth: isCandidate ? 1 : 0.75
+                )
+            )
         }
-
-        return isCurrent ? "当前对象" : "可浏览"
-    }
-
-    private var footerSymbolName: String {
-        if isSwitchingSubject {
-            return isCandidate
-                ? "checkmark.circle.fill"
-                : "circle"
-        }
-
-        return isCurrent
-            ? "checkmark.circle.fill"
-            : "eye"
-    }
-
-    private var footerText: String {
-        if isSwitchingSubject {
-            return isCandidate
-                ? "将保存为当前对象"
-                : "点按选择这个对象"
-        }
-
-        return isCurrent
-            ? "当前用于生成与预览"
-            : "滑动查看对象信息"
+        .buttonStyle(.plain)
     }
 
     private var subjectDisplayName: String {
@@ -363,148 +354,6 @@ private struct V1IOSSubjectRailCard: View {
         return trimmed.isEmpty
             ? "补充关系信息"
             : trimmed
-    }
-
-    private var subjectAnchorTitle: String {
-        subject.primaryTimeAnchor?.title
-        ?? subject.behavior.primaryAnchor
-    }
-}
-
-private struct V1IOSSubjectRailMetaRow: View {
-
-    let title: String
-    let value: String
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 0)
-
-            Text(value)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-        }
-    }
-}
-
-private struct V1IOSSubjectRailAddButton: View {
-
-    let compact: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: compact ? 0 : 6) {
-                Image(systemName: "plus")
-                    .font(.subheadline.weight(.semibold))
-
-                if !compact {
-                    Text("新增对象")
-                        .font(.caption.weight(.semibold))
-                }
-            }
-            .foregroundStyle(Color.accentColor)
-            .frame(
-                width: compact ? 36 : 88,
-                height: 36
-            )
-            .background(
-                Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.94))
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .stroke(ConfigurationUI.faintHairline)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("新增记忆对象")
-    }
-}
-
-private struct V1IOSSubjectRailAddSpacer: View {
-
-    var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "plus.circle")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.accentColor.opacity(0.72))
-
-            Text("为新增入口留出位置")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(width: 78)
-        .frame(minHeight: 188)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .fill(Color.white.opacity(0.45))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .stroke(
-                ConfigurationUI.faintHairline,
-                style: StrokeStyle(
-                    lineWidth: 0.8,
-                    dash: [5, 6]
-                )
-            )
-        )
-        .accessibilityHidden(true)
-    }
-}
-
-private struct V1IOSSubjectRailEmptyState: View {
-
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: "person.crop.rectangle.badge.plus")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-
-                Text("还没有记忆对象")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text("先新增一个对象，再为它补充昵称、关系与时间锚点。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(18)
-            .frame(maxWidth: .infinity, minHeight: 188, alignment: .topLeading)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 24,
-                    style: .continuous
-                )
-                .fill(Color.white.opacity(0.9))
-            )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 24,
-                    style: .continuous
-                )
-                .stroke(ConfigurationUI.faintHairline)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("新增记忆对象")
     }
 }
 #endif

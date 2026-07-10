@@ -445,12 +445,17 @@ final class SettingsService: ObservableObject {
 
     func saveV1SubjectLibrary(
         subjects: [MemorySubject],
-        selectedSubjectID: MemorySubject.ID?
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
         let record =
             V1SubjectLibraryRecord(
                 subjects: subjects,
-                selectedSubjectID: selectedSubjectID
+                selectedSubjectID: selectedSubjectID,
+                memoryPresets: memoryPresets,
+                selectedMemoryPresetID:
+                    selectedMemoryPresetID
             )
 
         guard let data =

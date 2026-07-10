@@ -2,6 +2,159 @@
 import SwiftUI
 import UIKit
 
+struct V1PageHeader: View {
+
+    let title: String
+    let subtitle: String?
+
+    init(
+        _ title: String,
+        subtitle: String? = nil
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.primary)
+
+            if let subtitle,
+               !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(minHeight: 52, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+enum V1CompactInformationRowMetrics {
+
+    static let iconSize: CGFloat = 36
+    static let iconCornerRadius: CGFloat = 11
+    static let horizontalPadding: CGFloat = 12
+    static let verticalPadding: CGFloat = 9
+    static let contentSpacing: CGFloat = 12
+}
+
+struct V1SectionHeading: View {
+
+    let title: String
+    let subtitle: String?
+
+    init(
+        _ title: String,
+        subtitle: String? = nil
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            if let subtitle,
+               !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct V1CardChrome: ViewModifier {
+
+    let cornerRadius: CGFloat
+    let shadowRadius: CGFloat
+    let shadowY: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .continuous
+                )
+                .fill(ConfigurationUI.panelBackground)
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .continuous
+                )
+                .stroke(ConfigurationUI.faintHairline)
+            )
+            .shadow(
+                color: ConfigurationUI.cardShadow,
+                radius: shadowRadius,
+                y: shadowY
+            )
+    }
+}
+
+extension View {
+
+    func v1CardChrome(
+        cornerRadius: CGFloat = 18,
+        shadowRadius: CGFloat = 8,
+        shadowY: CGFloat = 3
+    ) -> some View {
+        modifier(
+            V1CardChrome(
+                cornerRadius: cornerRadius,
+                shadowRadius: shadowRadius,
+                shadowY: shadowY
+            )
+        )
+    }
+}
+
+enum V1CompactBottomActionMetrics {
+
+    static let width: CGFloat = 184
+    static let height: CGFloat = 40
+    static let cornerRadius: CGFloat = 12
+}
+
+extension View {
+
+    func v1CompactBottomPrimaryAction() -> some View {
+        self
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, 14)
+            .frame(
+                width: V1CompactBottomActionMetrics.width,
+                height: V1CompactBottomActionMetrics.height
+            )
+            .background(
+                RoundedRectangle(
+                    cornerRadius:
+                        V1CompactBottomActionMetrics.cornerRadius,
+                    style: .continuous
+                )
+                .fill(Color.accentColor)
+            )
+            .shadow(
+                color: Color.accentColor.opacity(0.20),
+                radius: 12,
+                y: 5
+            )
+    }
+}
+
 struct V1CardSurface<Content: View>: View {
 
     let title: String
@@ -18,29 +171,14 @@ struct V1CardSurface<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
 
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(
-            RoundedRectangle(
-                cornerRadius: ConfigurationUI.cornerRadius,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.panelBackground)
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: ConfigurationUI.cornerRadius,
-                style: .continuous
-            )
-                .stroke(ConfigurationUI.faintHairline)
-        )
-        .shadow(color: ConfigurationUI.cardShadow, radius: 8, y: 3)
+        .v1CardChrome()
     }
 }
 
@@ -55,8 +193,7 @@ struct V1PreviewCard: View {
     let memoryText: String
 
     var body: some View {
-        V1CardSurface(title: "预览") {
-            Color.clear
+        Color.clear
             .aspectRatio(compactPreviewAspectRatio, contentMode: .fit)
             .overlay {
                 GeometryReader { proxy in
@@ -76,7 +213,8 @@ struct V1PreviewCard: View {
                 )
                     .stroke(ConfigurationUI.faintHairline)
             )
-        }
+            .padding(12)
+            .v1CardChrome()
     }
 
     private var compactSpec: CompactInformationBarSpec {

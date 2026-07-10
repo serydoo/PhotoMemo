@@ -106,6 +106,51 @@ struct PhotoProcessingInputPolicyTests {
         #expect(verdict.reason == nil)
     }
 
+    @Test("Requires PhotoKit asset identity for Live Photo motion processing")
+    func requiresPhotoKitAssetIdentityForLivePhotoMotionProcessing() throws {
+        let livePhotoType =
+            try #require(
+                UTType("com.apple.live-photo")
+            )
+
+        #expect(
+            PhotoProcessingInputPolicy
+                .canUseLivePhotoProcessing(
+                    contentTypeIdentifier:
+                        livePhotoType.identifier,
+                    sourceIdentifier:
+                        "asset-local-identifier"
+                )
+        )
+        #expect(
+            !PhotoProcessingInputPolicy
+                .canUseLivePhotoProcessing(
+                    contentTypeIdentifier:
+                        livePhotoType.identifier,
+                    sourceIdentifier:
+                        nil
+                )
+        )
+        #expect(
+            !PhotoProcessingInputPolicy
+                .canUseLivePhotoProcessing(
+                    contentTypeIdentifier:
+                        livePhotoType.identifier,
+                    sourceIdentifier:
+                        "   "
+                )
+        )
+        #expect(
+            !PhotoProcessingInputPolicy
+                .canUseLivePhotoProcessing(
+                    contentTypeIdentifier:
+                        UTType.heic.identifier,
+                    sourceIdentifier:
+                        "asset-local-identifier"
+                )
+        )
+    }
+
     @Test("Accepts current highest standard iPhone still-photo dimensions")
     func acceptsHighestStandardIPhoneStillPhotoDimensions() {
 

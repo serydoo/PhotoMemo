@@ -239,6 +239,26 @@ extension PhotoProcessingInputPolicy {
                 == livePhotoType.identifier
     }
 
+    nonisolated static func canUseLivePhotoProcessing(
+        contentTypeIdentifier: String?,
+        sourceIdentifier: String?
+    ) -> Bool {
+
+        let normalizedSourceIdentifier =
+            sourceIdentifier?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard normalizedSourceIdentifier?.isEmpty == false else {
+            return false
+        }
+
+        return isLivePhotoContentType(
+            contentTypeIdentifier.flatMap(UTType.init)
+        )
+    }
+
     nonisolated static let rawFileExtensions: Set<String> = [
         "dng",
         "raw",

@@ -1017,7 +1017,7 @@ enum V1PhotoIntakeImporter {
     }
 }
 
-struct V1UIKitLivePhotoPicker:
+struct V1UIKitPhotoPicker:
     UIViewControllerRepresentable {
 
     let selectionLimit: Int
@@ -1036,7 +1036,7 @@ struct V1UIKitLivePhotoPicker:
                 photoLibrary:
                     .shared()
             )
-        configuration.filter = .livePhotos
+        configuration.filter = .images
         configuration.selectionLimit =
             selectionLimit
         configuration
@@ -1064,11 +1064,11 @@ struct V1UIKitLivePhotoPicker:
         PHPickerViewControllerDelegate {
 
         private let parent:
-            V1UIKitLivePhotoPicker
+            V1UIKitPhotoPicker
 
         init(
             parent:
-                V1UIKitLivePhotoPicker
+                V1UIKitPhotoPicker
         ) {
             self.parent = parent
         }

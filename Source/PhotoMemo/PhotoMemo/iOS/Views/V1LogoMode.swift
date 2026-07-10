@@ -3,6 +3,7 @@ import Foundation
 
 enum V1LogoMode:
     String,
+    Codable,
     CaseIterable,
     Identifiable,
     Hashable {

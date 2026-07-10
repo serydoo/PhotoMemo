@@ -16,6 +16,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         >
 
     private let reloadAlbums: () async -> Void
+    private let setOutputTarget:
+        (V1IOSOutputTarget) -> Void
     private let setSelectedExistingAlbumIdentifier:
         (String) -> Void
     private let restoreSubject:
@@ -34,6 +36,9 @@ struct V1ConfigurationApplyRuntimeCoordinator {
             V1ConfigurationApplyReceipt
         >,
         reloadAlbums: @escaping () async -> Void,
+        setOutputTarget: @escaping (
+            V1IOSOutputTarget
+        ) -> Void = { _ in },
         setSelectedExistingAlbumIdentifier: @escaping (
             String
         ) -> Void,
@@ -48,6 +53,7 @@ struct V1ConfigurationApplyRuntimeCoordinator {
     ) {
         self.applyRequest = applyRequest
         self.reloadAlbums = reloadAlbums
+        self.setOutputTarget = setOutputTarget
         self.setSelectedExistingAlbumIdentifier =
             setSelectedExistingAlbumIdentifier
         self.restoreSubject = restoreSubject
@@ -61,6 +67,9 @@ struct V1ConfigurationApplyRuntimeCoordinator {
     init(
         coordinator: V1ConfigurationApplyCoordinator,
         reloadAlbums: @escaping () async -> Void,
+        setOutputTarget: @escaping (
+            V1IOSOutputTarget
+        ) -> Void = { _ in },
         setSelectedExistingAlbumIdentifier: @escaping (
             String
         ) -> Void,
@@ -78,6 +87,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
                 await coordinator.apply(request)
             },
             reloadAlbums: reloadAlbums,
+            setOutputTarget:
+                setOutputTarget,
             setSelectedExistingAlbumIdentifier:
                 setSelectedExistingAlbumIdentifier,
             restoreSubject: restoreSubject,
@@ -131,6 +142,10 @@ struct V1ConfigurationApplyRuntimeCoordinator {
     ) async {
         if patch.shouldReloadAlbums {
             await reloadAlbums()
+        }
+
+        if let outputTarget = patch.outputTarget {
+            setOutputTarget(outputTarget)
         }
 
         if let selectedExistingAlbumIdentifier =

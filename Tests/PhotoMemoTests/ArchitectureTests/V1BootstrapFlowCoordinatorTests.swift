@@ -129,7 +129,9 @@ struct V1BootstrapFlowCoordinatorTests {
         switch patch.sessionRestorePlan {
         case .restoreLibrary(
             let restoredSubjects,
-            let selectedSubjectID
+            let selectedSubjectID,
+            let memoryPresets,
+            let selectedMemoryPresetID
         ):
             #expect(
                 restoredSubjects
@@ -139,6 +141,8 @@ struct V1BootstrapFlowCoordinatorTests {
                 selectedSubjectID
                 == selectedSubject.id
             )
+            #expect(memoryPresets.isEmpty)
+            #expect(selectedMemoryPresetID == nil)
         default:
             Issue.record(
                 "Expected bootstrap patch to restore the saved subject library."

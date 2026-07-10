@@ -46,7 +46,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteNote
-            == "未开启单独录入时，将默认写入当前生成的智能模块完整结果。"
+            == "智能模块会结合拍摄时间、记忆对象和时间锚点生成说明。"
         )
         #expect(
             presentation.memoryWriteActionTitle
@@ -73,14 +73,14 @@ struct ConfigurationCenterOutputPanelPresenterTests {
             )
 
         #expect(presentation.storageTitle == "时光记文件夹")
-        #expect(presentation.memoryWriteTitle == "实际写入")
+        #expect(presentation.memoryWriteTitle == "替换写入")
         #expect(
             presentation.memoryWriteDescription
             == "宝宝周岁纪念说明"
         )
         #expect(
             presentation.memoryWriteNote
-            == "关闭后，默认写入当前生成的智能模块完整结果。"
+            == "重新打开后，将恢复写入当前智能模块结果。"
         )
     }
 }

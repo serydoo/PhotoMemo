@@ -236,7 +236,7 @@ struct ConfigurationCenterTopPreviewSection<
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            Text(session.currentMemoryPresetTitle)
+            Text(profileTitle.wrappedValue)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
