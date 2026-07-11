@@ -177,7 +177,11 @@ private extension MetadataPolicyResolver {
                 operations:
                     stillImagePreservationOperations()
                     + outputGeometryOverrideOperations()
-                    + staticOutputRemovalOperations()
+                    + staticOutputRemovalOperations(),
+                warnings:
+                    rawGeneratedStillWarnings(
+                        route: route
+                    )
             )
         }
 
@@ -189,18 +193,15 @@ private extension MetadataPolicyResolver {
                     pngPreservationOperations()
                     + outputGeometryOverrideOperations()
                     + staticOutputRemovalOperations(),
-                warnings: [
+                warnings:
+                    rawGeneratedStillWarnings(
+                        route: route
+                    )
+                    + [
                     "PNG metadata support is container-limited and may not round-trip all EXIF/IPTC/XMP fields in Apple Photos."
-                ]
+                    ]
             )
         }
-
-        let warnings =
-            route == .rawStillImage
-            ? [
-                "RAW output is rendered to a still-image container; original RAW sensor metadata is not preserved as RAW."
-            ]
-            : []
 
         return MetadataPolicyPlan(
             identifier: "heic",
@@ -215,7 +216,10 @@ private extension MetadataPolicyResolver {
                 ]
                 + outputGeometryOverrideOperations()
                 + staticOutputRemovalOperations(),
-            warnings: warnings
+            warnings:
+                rawGeneratedStillWarnings(
+                    route: route
+                )
         )
     }
 
@@ -369,6 +373,19 @@ private extension MetadataPolicyResolver {
                 .remove,
                 .quickTimeMetadata
             )
+        ]
+    }
+
+    nonisolated func rawGeneratedStillWarnings(
+        route: MediaProcessingRoute
+    ) -> [String] {
+
+        guard route == .rawStillImage else {
+            return []
+        }
+
+        return [
+            "MemoMark generates a normal still image output from RAW/ProRAW input; it does not preserve RAW/ProRAW as output."
         ]
     }
 

@@ -5,6 +5,21 @@ struct V1SavedConfigurationReadiness:
 
     let isReady: Bool
     let presetTitle: String?
+    let configurationID: UUID?
+    let configurationRevision: Int?
+
+    init(
+        isReady: Bool,
+        presetTitle: String?,
+        configurationID: UUID? = nil,
+        configurationRevision: Int? = nil
+    ) {
+        self.isReady = isReady
+        self.presetTitle = presetTitle
+        self.configurationID = configurationID
+        self.configurationRevision =
+            configurationRevision
+    }
 }
 
 struct BatchConfigurationSnapshotProvider {
@@ -226,7 +241,7 @@ struct BatchConfigurationSnapshotProvider {
         let snapshot =
             BatchConfigurationSnapshot(
             template:
-                (template ?? .template1)
+                (template ?? .classicWhite)
                 .normalizedForEditing,
             badge:
                 badge?.type == BadgeType.none

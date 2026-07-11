@@ -190,9 +190,14 @@ extension PhotoProcessingInputPolicy {
         UTType("public.camera-raw-image"),
         UTType("com.adobe.raw-image"),
         UTType("com.adobe.digital-negative"),
-        UTType("com.apple.proraw")
+        UTType(exportedAs: "com.apple.proraw")
     ]
     .compactMap { $0 }
+
+    nonisolated static let livePhotoTypeIdentifiers: Set<String> = [
+        "com.apple.live-photo",
+        "com.apple.live-photo-bundle"
+    ]
 
     nonisolated static func isRawContentType(
         _ contentType: UTType?
@@ -226,17 +231,18 @@ extension PhotoProcessingInputPolicy {
         _ contentType: UTType?
     ) -> Bool {
 
-        guard
-            let contentType,
-            let livePhotoType =
-                UTType("com.apple.live-photo")
-        else {
+        guard let contentType else {
             return false
         }
 
-        return contentType.conforms(to: livePhotoType)
-            || contentType.identifier
-                == livePhotoType.identifier
+        return Self.livePhotoTypeIdentifiers
+            .contains {
+                identifier in
+                contentType.identifier == identifier
+                || UTType(identifier).map {
+                    contentType.conforms(to: $0)
+                } == true
+            }
     }
 
     nonisolated static func canUseLivePhotoProcessing(
@@ -276,7 +282,7 @@ extension PhotoProcessingInputPolicy {
     ]
 
     nonisolated static let supportedFormatDescription =
-        "JPEG/JPG、HEIC/HEIF、PNG、TIFF、RAW/DNG"
+        "JPEG/JPG、HEIC/HEIF、PNG、TIFF、RAW/ProRAW/DNG"
 }
 
 private extension PhotoProcessingInputPolicy {

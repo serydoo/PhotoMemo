@@ -103,6 +103,57 @@ struct StillImageMetadataWriterContractTests {
         #expect(!plan.warnings.isEmpty)
     }
 
+    @Test("Carries RAW generated-still warnings into the write plan")
+    func carriesRAWGeneratedStillWarningsIntoWritePlan() throws {
+        let policy =
+            MetadataPolicyResolver.standard.plan(
+                for:
+                    MediaProcessingPlan(
+                        route: .rawStillImage,
+                        sourceContentType:
+                            UTType(filenameExtension: "dng"),
+                        outputPlan:
+                            .stillImage(
+                                imageType: .png
+                            ),
+                        preservesLivePhotoMotion: false,
+                        requiresLivePhotoPairedResources: false
+                    )
+            )
+
+        let plan =
+            try StillImageMetadataWritePlanner.standard.plan(
+                StillImageMetadataWriteRequest(
+                    sourceImageURL:
+                        URL(fileURLWithPath: "/tmp/source.dng"),
+                    renderedImageURL:
+                        URL(fileURLWithPath: "/tmp/rendered.png"),
+                    destinationImageURL:
+                        URL(fileURLWithPath: "/tmp/output.png"),
+                    outputImageType: .png,
+                    outputPixelWidth: 8064,
+                    outputPixelHeight: 6048,
+                    policyPlan: policy
+                )
+            )
+
+        #expect(plan.outputImageType == .png)
+        #expect(plan.shouldCopySourceMetadata)
+        #expect(plan.shouldCopyRenderedPixels)
+        #expect(
+            plan.warnings.contains {
+                $0.contains("RAW/ProRAW")
+                    && $0.contains("normal still image")
+                    && $0.contains("does not preserve")
+            }
+        )
+        #expect(
+            plan.warnings.contains {
+                $0.contains("PNG metadata support")
+            }
+        )
+    }
+
     @Test("Rejects Live Photo pair policies in the still-image writer contract")
     func rejectsLivePhotoPairPolicies() throws {
         let livePhotoPolicy =

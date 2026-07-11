@@ -48,6 +48,181 @@ enum LivePhotoBatchTaskProcessingError:
     }
 }
 
+nonisolated enum LivePhotoSourceBundleLocator {
+
+    static func canResolveBundle(
+        at sourceURL: URL,
+        fileManager: FileManager = .default
+    ) -> Bool {
+
+        preparedBundle(
+            at: sourceURL,
+            fileManager:
+                fileManager
+        ) != nil
+    }
+
+    static func preparedBundle(
+        at sourceURL: URL,
+        fileManager: FileManager = .default
+    ) -> LivePhotoPreparedAssetBundle? {
+
+        let standardizedURL =
+            sourceURL.standardizedFileURL
+        var isDirectory:
+            ObjCBool = false
+
+        guard fileManager.fileExists(
+            atPath: standardizedURL.path,
+            isDirectory: &isDirectory
+        ),
+              isDirectory.boolValue else {
+            return nil
+        }
+
+        guard let enumerator =
+            fileManager.enumerator(
+                at: standardizedURL,
+                includingPropertiesForKeys: [
+                    .isRegularFileKey
+                ],
+                options: [
+                    .skipsHiddenFiles,
+                    .skipsPackageDescendants
+                ]
+            ) else {
+            return nil
+        }
+
+        let fileURLs =
+            enumerator
+            .compactMap {
+                $0 as? URL
+            }
+            .filter { url in
+                (
+                    try? url
+                        .resourceValues(
+                            forKeys: [
+                                .isRegularFileKey
+                            ]
+                        )
+                        .isRegularFile
+                ) == true
+            }
+
+        let stillURLs =
+            fileURLs.filter(
+                isSupportedStillPhotoURL
+            )
+        let videoURLs =
+            fileURLs.filter(
+                isSupportedPairedVideoURL
+            )
+
+        guard stillURLs.count == 1,
+              videoURLs.count == 1,
+              let stillURL = stillURLs.first,
+              let videoURL = videoURLs.first,
+              resourceBasename(stillURL)
+              == resourceBasename(videoURL)
+        else {
+            return nil
+        }
+
+        let stillResource =
+            LivePhotoAssetResourceDescriptor(
+                id: "shared-still",
+                kind: .fullSizePhoto,
+                originalFilename:
+                    stillURL.lastPathComponent,
+                uniformTypeIdentifier:
+                    UTType(
+                        filenameExtension:
+                            stillURL
+                            .pathExtension
+                            .lowercased()
+                    )?
+                    .identifier
+            )
+        let videoResource =
+            LivePhotoAssetResourceDescriptor(
+                id: "shared-paired-video",
+                kind: .fullSizePairedVideo,
+                originalFilename:
+                    videoURL.lastPathComponent,
+                uniformTypeIdentifier:
+                    UTType(
+                        filenameExtension:
+                            videoURL
+                            .pathExtension
+                            .lowercased()
+                    )?
+                    .identifier
+            )
+
+        return LivePhotoPreparedAssetBundle(
+            assetLocalIdentifier:
+                standardizedURL.path,
+            stillPhotoResource:
+                stillResource,
+            pairedVideoResource:
+                videoResource,
+            stillPhotoFileURL:
+                stillURL.standardizedFileURL,
+            pairedVideoFileURL:
+                videoURL.standardizedFileURL
+        )
+    }
+
+    private nonisolated static func isSupportedStillPhotoURL(
+        _ url: URL
+    ) -> Bool {
+
+        guard let type =
+            UTType(
+                filenameExtension:
+                    url
+                    .pathExtension
+                    .lowercased()
+            )
+        else {
+            return false
+        }
+
+        return type.conforms(to: .image)
+            && !type.conforms(to: .movie)
+    }
+
+    private nonisolated static func isSupportedPairedVideoURL(
+        _ url: URL
+    ) -> Bool {
+
+        guard let type =
+            UTType(
+                filenameExtension:
+                    url
+                    .pathExtension
+                    .lowercased()
+            )
+        else {
+            return false
+        }
+
+        return type.conforms(to: .movie)
+    }
+
+    private nonisolated static func resourceBasename(
+        _ url: URL
+    ) -> String {
+
+        url
+            .deletingPathExtension()
+            .lastPathComponent
+            .lowercased()
+    }
+}
+
 @MainActor
 final class LivePhotoBatchTaskProcessor:
     LivePhotoBatchTaskProcessing {
@@ -57,7 +232,7 @@ final class LivePhotoBatchTaskProcessor:
     private let assetLoader:
         any LivePhotoAssetLoading
     private let pairComposer:
-        LivePhotoPairCompositionService
+        any LivePhotoPairComposing
     private let assetWriter:
         any LivePhotoAssetWriting
     private let importService:
@@ -86,7 +261,7 @@ final class LivePhotoBatchTaskProcessor:
         assetLoader:
             (any LivePhotoAssetLoading)? = nil,
         pairComposer:
-            LivePhotoPairCompositionService? = nil,
+            (any LivePhotoPairComposing)? = nil,
         assetWriter:
             (any LivePhotoAssetWriting)? = nil,
         importService:
@@ -190,6 +365,26 @@ final class LivePhotoBatchTaskProcessor:
     }
 }
 
+extension LivePhotoBatchTaskProcessor {
+
+    static func stillPhotoOriginalFilename(
+        task: BatchTask,
+        preparedBundle: LivePhotoPreparedAssetBundle
+    ) -> String? {
+        let stillResourceName =
+            preparedBundle
+            .stillPhotoResource
+            .originalFilename
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return !stillResourceName.isEmpty
+            ? stillResourceName
+            : task.fileName
+    }
+}
+
 private extension LivePhotoBatchTaskProcessor {
 
     func processStaticStillImage(
@@ -237,18 +432,6 @@ private extension LivePhotoBatchTaskProcessor {
         configuration: BatchConfigurationSnapshot,
         outputStillType: UTType
     ) async throws -> LivePhotoBatchTaskResult {
-        guard
-            let assetLocalIdentifier =
-                task.sourceIdentifier?
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                ),
-            !assetLocalIdentifier.isEmpty
-        else {
-            throw LivePhotoBatchTaskProcessingError
-                .assetLocalIdentifierMissing
-        }
-
         let workDirectoryURL =
             try makeWorkDirectory()
         var temporaryFileURLs: [URL] = [
@@ -256,12 +439,21 @@ private extension LivePhotoBatchTaskProcessor {
         ]
 
         do {
-            let bundle =
-                try await assetLoader.bundle(
-                    for: assetLocalIdentifier
-                )
-            let preparedBundle =
-                try await assetLoader
+            let preparedBundle:
+                LivePhotoPreparedAssetBundle
+
+            if let assetLocalIdentifier =
+                task.sourceIdentifier?
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ),
+               !assetLocalIdentifier.isEmpty {
+                let bundle =
+                    try await assetLoader.bundle(
+                        for: assetLocalIdentifier
+                    )
+                preparedBundle =
+                    try await assetLoader
                 .exportResources(
                     for: bundle,
                     to:
@@ -271,6 +463,18 @@ private extension LivePhotoBatchTaskProcessor {
                             isDirectory: true
                         )
                 )
+            } else if let sourceBundle =
+                LivePhotoSourceBundleLocator
+                .preparedBundle(
+                    at: task.sourceURL,
+                    fileManager:
+                        fileManager
+                ) {
+                preparedBundle = sourceBundle
+            } else {
+                throw LivePhotoBatchTaskProcessingError
+                    .assetLocalIdentifierMissing
+            }
             let importedPhoto =
                 try await importLivePhotoStill(
                     from:
@@ -375,7 +579,11 @@ private extension LivePhotoBatchTaskProcessor {
                                 from: configuration
                             ),
                         stillPhotoOriginalFilename:
-                            task.fileName,
+                            Self.stillPhotoOriginalFilename(
+                                task: task,
+                                preparedBundle:
+                                    preparedBundle
+                            ),
                         pairedVideoOriginalFilename:
                             preparedBundle
                             .pairedVideoResource
@@ -480,30 +688,22 @@ private extension LivePhotoBatchTaskProcessor {
             CGFloat(
                 renderedImage.height
             )
-        let footerHeight: CGFloat =
-            switch card.template.preset.renderLayout {
-            case .classicWhite:
-                ClassicWhiteRenderer
-                    .theme
-                    .bottomBar
-                    .height
-            case .immersWhite:
-                renderedHeight
-                    - renderedHeight
-                    / (
-                        1
-                        + ImmersWhiteRenderer
-                            .layout(
+        let footerHeight =
+            renderedHeight
+            - renderedHeight
+            / (
+                1
+                + ClassicWhiteRenderer
+                    .layout(
+                        for:
+                            ClassicWhiteRenderer
+                            .orientation(
                                 for:
-                                    ImmersWhiteRenderer
-                                    .orientation(
-                                        for:
-                                            card.metadata
-                                    )
+                                    card.metadata
                             )
-                            .borderToImageHeightRatio
                     )
-            }
+                    .borderToImageHeightRatio
+            )
 
         return min(
             max(

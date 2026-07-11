@@ -6,6 +6,206 @@ import Testing
 @Suite("V1 configuration apply request builder")
 struct V1ConfigurationApplyRequestBuilderTests {
 
+    @Test("aggregate candidate replaces active record from the complete current draft")
+    func aggregateCandidateReplacesActiveRecordFromCompleteDraft() throws {
+        let state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let existing = MemoryConfigurationRecord(
+            id: UUID(uuidString: "A1A1A1A1-A1A1-A1A1-A1A1-A1A1A1A1A1A1")!,
+            title: "Before",
+            revision: 3,
+            savedAt: Date(timeIntervalSince1970: 300),
+            selectedTimeAnchorID: nil,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [.slotA: "before.recorder"],
+                memoryCopy: .init(usesCustomText: false, customText: "")
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(mode: .appleMini, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(isEnabled: false, overrideText: ""),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 7,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [existing],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: existing.id
+        )
+        let anchorID = try #require(subject.primaryTimeAnchor?.id)
+        let input = V1ConfigurationAggregateDraft(
+            title: "After",
+            regionDrafts: [
+                .slotA: V1EditorDraft(items: [
+                    .text("Recorder "),
+                    V1ContentItem(
+                        id: UUID(),
+                        kind: .token,
+                        title: "Date",
+                        value: "2026.07.11",
+                        savedValue: "{{capture_date}}",
+                        systemImage: "calendar"
+                    )
+                ]),
+                .slotD: V1EditorDraft(items: [.text("Memory")])
+            ],
+            regionTemplateIDs: [.slotA: "after.recorder"],
+            locationConfiguration: .init(
+                token: "{{location}}",
+                options: ["displayStyle": "cityDistrict"]
+            ),
+            logoMode: .customUpload,
+            badge: .travel,
+            usesCustomMemoryWriteText: true,
+            customMemoryWriteText: "Memory Copy",
+            shouldWritePhotosDescription: true,
+            photosDescriptionOverride: "Photos Description",
+            outputTarget: .existingAlbum,
+            selectedAlbumIdentifier: "album-after",
+            albumTitle: "After Album",
+            mediaOutputMode: .originalFormat,
+            livePhotoPolicy: .preserveMotion,
+            selectedTimeAnchorID: anchorID,
+            savedAt: Date(timeIntervalSince1970: 800)
+        )
+
+        let result = try V1ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: input
+        )
+
+        #expect(result.configuration.id == existing.id)
+        #expect(result.configuration.revision == 4)
+        #expect(result.configuration.title == "After")
+        #expect(result.configuration.editor.template.leftTopArea.items.count == 2)
+        #expect(result.configuration.editor.template.leftTopArea.items[1].value == "{{capture_date}}")
+        #expect(result.configuration.editor.regionTemplateIDs[.slotA] == "after.recorder")
+        #expect(result.configuration.presentation.locationConfiguration == input.locationConfiguration)
+        #expect(result.configuration.presentation.logo.mode == .customUpload)
+        #expect(result.configuration.presentation.logo.badge?.id == Badge.travel.id)
+        #expect(result.configuration.editor.memoryCopy.customText == "Memory Copy")
+        #expect(result.configuration.output.photosDescriptionPolicy.overrideText == "Photos Description")
+        #expect(result.configuration.output.album.identifier == "album-after")
+        #expect(result.configuration.output.mediaMode == .originalFormat)
+        #expect(result.configuration.output.livePhotoPolicy == .preserveMotion)
+        #expect(result.configuration.selectedTimeAnchorID == anchorID)
+        #expect(result.aggregate.activeConfigurationID == existing.id)
+        #expect(result.aggregate.revision == aggregate.revision)
+    }
+
+    @Test("build request uses complete candidate without conflating memory copy and Photos description")
+    func buildRequestUsesCompleteCandidateWithoutConflatingCopyAndDescription() throws {
+        let state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        var template = Template.classicWhite
+        template.name = "完整配置"
+        template.leftTopArea.items = [
+            TemplateItem(
+                type: .text,
+                name: "第一项",
+                value: "保留一",
+                isEnabled: true
+            ),
+            TemplateItem(
+                type: .variable,
+                name: "第二项",
+                value: "保留二",
+                isEnabled: false
+            )
+        ]
+        let candidate = MemoryConfigurationRecord(
+            title: "完整配置",
+            revision: 4,
+            savedAt: Date(timeIntervalSince1970: 400),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: template,
+                regionTemplateIDs: [.slotA: "complete.recorder"],
+                memoryCopy: .init(
+                    usesCustomText: true,
+                    customText: "Memory Card 文案"
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: .init(
+                    token: "{{location}}",
+                    options: ["displayStyle": "cityDistrict"]
+                ),
+                logo: .init(
+                    mode: .subjectAvatar,
+                    badge: .init(
+                        id: Badge.travel.id,
+                        name: Badge.travel.name,
+                        type: Badge.travel.type,
+                        imageName: Badge.travel.imageName,
+                        systemSymbol: Badge.travel.systemSymbol,
+                        isSystemDefault: Badge.travel.isSystemDefault
+                    )
+                )
+            ),
+            output: .init(
+                mediaMode: .originalFormat,
+                livePhotoPolicy: .preserveMotion,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: "Photos 独立说明"
+                ),
+                album: .init(
+                    destination: .existingAlbum,
+                    identifier: "album-complete",
+                    title: "完整相册"
+                )
+            )
+        )
+
+        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+            from: V1ConfigurationApplyBuildInput(
+                selectedSubject: subject,
+                subjects: state.subjects,
+                selectedSubjectID: subject.id,
+                shouldSaveSubjectLibrary: true,
+                memoryPresets: state.memoryPresets,
+                selectedMemoryPresetID: candidate.id,
+                candidateConfiguration: candidate,
+                presetTitle: "不应使用",
+                templateTextsByRegion: [.slotA: "不应重建"],
+                locationDisplayConfiguration: nil,
+                badge: nil,
+                usesCustomMemoryWriteText: false,
+                customMemoryWriteText: "不应写入 Photos",
+                birthdayDate: subject.referenceDate,
+                outputTarget: .automatic,
+                mediaOutputMode: .staticImage,
+                availableAlbums: [],
+                selectedExistingAlbumIdentifier: "",
+                newAlbumName: ""
+            )
+        )
+
+        #expect(request.template == template)
+        #expect(request.template.leftTopArea.items.count == 2)
+        #expect(request.badge?.id == Badge.travel.id)
+        #expect(request.locationDisplayConfiguration == candidate.presentation.locationConfiguration)
+        #expect(request.shouldWritePhotoDescription == false)
+        #expect(request.photoDescriptionOverride == "Photos 独立说明")
+        #expect(request.selectedExistingAlbumIdentifier == "album-complete")
+        #expect(request.mediaOutputMode == .originalFormat)
+    }
+
     @Test("build request uses aligned subject resolved library preset drafts and output selection")
     func buildRequestUsesAlignedSubjectResolvedLibraryPresetDraftsAndOutputSelection() {
         let baseState = ConfigurationCenterState.mock

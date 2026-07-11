@@ -2,6 +2,12 @@
 import Foundation
 import Combine
 
+enum ConfigurationPersistenceReconciliationOutcome:
+    Equatable {
+    case applied
+    case newerEditsPreserved
+}
+
 @MainActor
 final class ConfigurationSession:
     ObservableObject {
@@ -24,9 +30,16 @@ final class ConfigurationSession:
         self.presentationState =
             ConfigurationSessionPresentationState(
                 appliedMemoryPresetID:
-                    resolvedState
-                    .selectedMemoryPreset?
-                    .id
+                    resolvedState.configurationLibrary?
+                    .activeConfigurationID
+                    ?? resolvedState
+                        .selectedMemoryPreset?
+                        .id,
+                draftMemoryConfiguration:
+                    Self.configuration(
+                        id: resolvedState.selectedMemoryPresetID,
+                        in: resolvedState.configurationLibrary
+                    )
             )
         alignSelectedMemoryPresetToSelectedSubject(
             restoreContext: true
@@ -83,6 +96,16 @@ final class ConfigurationSession:
         }
     }
 
+    func restoreMemoryCopy(
+        usesCustomText: Bool,
+        customText: String
+    ) {
+        presentationState.usesCustomMemoryWriteText =
+            usesCustomText
+        presentationState.customMemoryWriteText =
+            customText
+    }
+
     var latestModuleInsertion:
         MemoryModuleInsertion? {
         get {
@@ -105,6 +128,21 @@ final class ConfigurationSession:
             presentationState
                 .appliedMemoryPresetID = newValue
         }
+    }
+
+    var selectedMemoryConfiguration:
+        MemoryConfigurationRecord? {
+        if presentationState
+            .draftMemoryConfiguration?
+            .id == state.selectedMemoryPresetID {
+            return presentationState
+                .draftMemoryConfiguration
+        }
+
+        return Self.configuration(
+            id: state.selectedMemoryPresetID,
+            in: state.configurationLibrary
+        )
     }
 
     func selectSubject(
@@ -308,6 +346,73 @@ final class ConfigurationSession:
         alignSelectedMemoryPresetToSelectedSubject(
             restoreContext: true
         )
+    }
+
+    func restoreConfigurationLibrary(
+        _ aggregate: ConfigurationLibraryRecord
+    ) {
+        state.configurationLibrary = aggregate
+        state.subjects = aggregate.subjects.map(\.subject)
+        state.memoryPresets = aggregate.subjects.flatMap {
+            subjectRecord in
+            subjectRecord.configurations.map { configuration in
+                MemoryPreset(
+                    id: configuration.id,
+                    title: configuration.title,
+                    summary: "",
+                    regionTemplateIDs:
+                        configuration.editor.regionTemplateIDs,
+                    savedAt: configuration.savedAt,
+                    selectedSubjectID:
+                        subjectRecord.subject.id,
+                    selectedTimeAnchorID:
+                        configuration.selectedTimeAnchorID,
+                    logoMode:
+                        configuration.presentation.logo.mode,
+                    usesCustomMemoryWriteText:
+                        configuration.editor.memoryCopy.usesCustomText,
+                    customMemoryWriteText:
+                        configuration.editor.memoryCopy.customText
+                )
+            }
+        }
+        state.selectedSubjectID = aggregate.activeSubjectID
+        state.selectedMemoryPresetID =
+            aggregate.activeConfigurationID
+        appliedMemoryPresetID = aggregate.activeConfigurationID
+
+        guard let activeConfiguration = Self.configuration(
+            id: aggregate.activeConfigurationID,
+            in: aggregate
+        ) else {
+            presentationState.draftMemoryConfiguration = nil
+            return
+        }
+
+        restoreConfigurationContext(
+            from: activeConfiguration
+        )
+        refreshPresetDrivenPreview()
+    }
+
+    @discardableResult
+    func reconcileConfigurationLibrarySave(
+        candidate: V1ConfigurationAggregateCandidate,
+        receipt: ConfigurationLibrarySaveReceipt
+    ) -> ConfigurationPersistenceReconciliationOutcome {
+        guard candidate.aggregate.activeSubjectID
+                == receipt.subjectID,
+              candidate.aggregate.activeConfigurationID
+                == receipt.configurationID,
+              state.selectedMemoryPresetID
+                == receipt.configurationID else {
+            return .newerEditsPreserved
+        }
+
+        var durableAggregate = candidate.aggregate
+        durableAggregate.revision = receipt.revision
+        restoreConfigurationLibrary(durableAggregate)
+        return .applied
     }
 
     func appendSubject(
@@ -534,12 +639,18 @@ final class ConfigurationSession:
         _ preset: MemoryPreset
     ) {
         state.selectedMemoryPresetID = preset.id
-        restoreConfigurationContext(
-            from: state.selectedMemoryPreset ?? preset
-        )
-        appliedMemoryPresetID =
-            state.selectedMemoryPreset?.id
-            ?? preset.id
+        if let configuration = Self.configuration(
+            id: preset.id,
+            in: state.configurationLibrary
+        ) {
+            restoreConfigurationContext(
+                from: configuration
+            )
+        } else {
+            restoreConfigurationContext(
+                from: state.selectedMemoryPreset ?? preset
+            )
+        }
         refreshPresetDrivenPreview()
     }
 
@@ -702,6 +813,116 @@ final class ConfigurationSession:
             state.memoryPresets + [selectedPreset],
             selectedPreset.id
         )
+    }
+
+    @discardableResult
+    func reconcilePersistenceSnapshot(
+        memoryPresets: [MemoryPreset],
+        selectedMemoryPresetID: MemoryPreset.ID?,
+        configurationID: UUID? = nil,
+        configurationRevision: Int? = nil
+    ) -> ConfigurationPersistenceReconciliationOutcome {
+        guard
+            let selectedMemoryPresetID,
+            let selectedPreset = memoryPresets.first(where: {
+                $0.id == selectedMemoryPresetID
+            })
+        else {
+            return .newerEditsPreserved
+        }
+
+        if let currentPresetIndex =
+            state.memoryPresets.firstIndex(where: {
+                $0.id == selectedMemoryPresetID
+            }) {
+            let currentPersistenceCandidate =
+                snapshotCurrentConfiguration(
+                    in: state.memoryPresets[currentPresetIndex],
+                    savedAt: selectedPreset.savedAt,
+                    logoMode: selectedPreset.logoMode,
+                    outputConfiguration:
+                        selectedPreset.savedOutputConfiguration
+                )
+
+            guard currentPersistenceCandidate == selectedPreset else {
+                state.selectedMemoryPresetID =
+                    selectedMemoryPresetID
+                appliedMemoryPresetID = nil
+                return .newerEditsPreserved
+            }
+
+            state.memoryPresets[currentPresetIndex] =
+                selectedPreset.replacingID(
+                    with: configurationID
+                        ?? selectedMemoryPresetID
+                )
+        } else {
+            state.memoryPresets.append(
+                selectedPreset.replacingID(
+                    with: configurationID
+                        ?? selectedMemoryPresetID
+                )
+            )
+        }
+        let reconciledConfigurationID =
+            configurationID ?? selectedMemoryPresetID
+        state.selectedMemoryPresetID =
+            reconciledConfigurationID
+        appliedMemoryPresetID = reconciledConfigurationID
+        reconcileConfigurationLibraryIdentity(
+            candidateID: selectedMemoryPresetID,
+            configurationID: reconciledConfigurationID,
+            configurationRevision:
+                configurationRevision
+        )
+        restorePresentationContext(from: selectedPreset)
+        refreshPresetDrivenPreview()
+        return .applied
+    }
+
+    private func reconcileConfigurationLibraryIdentity(
+        candidateID: UUID,
+        configurationID: UUID,
+        configurationRevision: Int?
+    ) {
+        guard var library = state.configurationLibrary else {
+            return
+        }
+
+        for subjectIndex in library.subjects.indices {
+            guard let configurationIndex =
+                library.subjects[subjectIndex]
+                .configurations.firstIndex(where: {
+                    $0.id == candidateID
+                })
+            else {
+                continue
+            }
+
+            let candidate = library.subjects[subjectIndex]
+                .configurations[configurationIndex]
+            library.subjects[subjectIndex]
+                .configurations[configurationIndex] =
+                MemoryConfigurationRecord(
+                    id: configurationID,
+                    title: candidate.title,
+                    revision:
+                        configurationRevision
+                        ?? candidate.revision,
+                    savedAt: candidate.savedAt,
+                    selectedTimeAnchorID:
+                        candidate.selectedTimeAnchorID,
+                    editor: candidate.editor,
+                    presentation: candidate.presentation,
+                    output: candidate.output
+                )
+            break
+        }
+        library.activeConfigurationID = configurationID
+        if let configurationRevision {
+            library.revision = configurationRevision
+        }
+        state.configurationLibrary = library
     }
 
     func updateSelectedMemoryPresetTitle(
@@ -1121,6 +1342,51 @@ final class ConfigurationSession:
         )
     }
 
+    private func restoreConfigurationContext(
+        from configuration: MemoryConfigurationRecord
+    ) {
+        presentationState.draftMemoryConfiguration =
+            configuration
+
+        if let subjectRecord = state.configurationLibrary?
+            .subjects.first(where: {
+                $0.configurations.contains {
+                    $0.id == configuration.id
+                }
+            }) {
+            var restoredSubject = subjectRecord.subject
+            if let anchorID = configuration.selectedTimeAnchorID,
+               let anchor = restoredSubject.timeAnchor(id: anchorID) {
+                restoredSubject.activeTimeAnchorID = anchor.id
+                restoredSubject.behavior.primaryAnchor = anchor.title
+                restoredSubject.referenceDate = anchor.date
+            }
+            restoreSelectedSubject(restoredSubject)
+        }
+
+        presentationState.usesCustomMemoryWriteText =
+            configuration.editor.memoryCopy.usesCustomText
+        presentationState.customMemoryWriteText =
+            configuration.editor.memoryCopy.customText
+
+        if let presetIndex = state.memoryPresets.firstIndex(
+            where: { $0.id == configuration.id }
+        ) {
+            state.memoryPresets[presetIndex].title =
+                configuration.title
+            state.memoryPresets[presetIndex].regionTemplateIDs =
+                configuration.editor.regionTemplateIDs
+            state.memoryPresets[presetIndex].logoMode =
+                configuration.presentation.logo.mode
+            state.memoryPresets[presetIndex]
+                .usesCustomMemoryWriteText =
+                configuration.editor.memoryCopy.usesCustomText
+            state.memoryPresets[presetIndex]
+                .customMemoryWriteText =
+                configuration.editor.memoryCopy.customText
+        }
+    }
+
     private func restorePresentationContext(
         from preset: MemoryPreset
     ) {
@@ -1237,36 +1503,26 @@ final class ConfigurationSession:
 
     private var currentRegionTemplateIDs:
         [CardRegion: String] {
-
-        if let selectedPreset =
-            state.selectedMemoryPreset {
-            return selectedPreset.regionTemplateIDs
-        }
-
-        return ConfigurationCenterMockSeed
-            .makeState()
-            .memoryPresets
-            .first?
+        state.selectedMemoryPreset?
             .regionTemplateIDs
         ?? [:]
     }
 
     private var preferredMemoryPresetForSelectedSubject:
         MemoryPreset? {
+        if let selectedPreset =
+            state.selectedMemoryPreset,
+           selectedPreset.selectedSubjectID == nil
+            || selectedPreset.selectedSubjectID
+                == state.selectedSubject?.id {
+            return selectedPreset
+        }
+
         let presets =
             availableMemoryPresetsForSelectedSubject
 
         guard !presets.isEmpty else {
             return nil
-        }
-
-        if let selectedMemoryPresetID =
-            state.selectedMemoryPresetID,
-           let selectedPreset =
-            presets.first(where: {
-                $0.id == selectedMemoryPresetID
-            }) {
-            return selectedPreset
         }
 
         if let appliedMemoryPresetID,
@@ -1288,6 +1544,20 @@ final class ConfigurationSession:
         }
 
         return presets.first
+    }
+
+    private static func configuration(
+        id: UUID?,
+        in library: ConfigurationLibraryRecord?
+    ) -> MemoryConfigurationRecord? {
+        guard let id else {
+            return nil
+        }
+
+        return library?.subjects
+            .lazy
+            .flatMap(\.configurations)
+            .first { $0.id == id }
     }
 }
 

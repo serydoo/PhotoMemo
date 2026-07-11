@@ -8,6 +8,8 @@ struct ConfigurationSnapshot:
 
     let id: UUID
     let createdAt: Date
+    var configurationID: UUID?
+    var configurationRevision: Int?
     var subjectID: MemorySubject.ID
     var memorySubject: MemorySubject?
     var expression: MemoryExpression
@@ -18,6 +20,8 @@ struct ConfigurationSnapshot:
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
+        configurationID: UUID? = nil,
+        configurationRevision: Int? = nil,
         subjectID: MemorySubject.ID,
         memorySubject: MemorySubject? = nil,
         expression: MemoryExpression,
@@ -27,6 +31,9 @@ struct ConfigurationSnapshot:
     ) {
         self.id = id
         self.createdAt = createdAt
+        self.configurationID = configurationID
+        self.configurationRevision =
+            configurationRevision
         self.subjectID = subjectID
         self.memorySubject = memorySubject
         self.expression = expression

@@ -118,7 +118,9 @@ final class ExternalPhotoIntakeStore {
                     sourceIdentifier:
                         item.sourceIdentifier,
                     contentTypeIdentifier:
-                        item.contentTypeIdentifier
+                        item.contentTypeIdentifier,
+                    livePhotoRecoveryHint:
+                        item.livePhotoRecoveryHint
                 )
             }
 
@@ -305,6 +307,7 @@ final class ExternalPhotoIntakeStore {
         requestID: UUID,
         index: Int,
         preferredOriginalFileName: String? = nil,
+        requiresReadableImage: Bool = true,
         diagnosticsSeed:
             PhotoMemoShareIntakeOperationSeed = .init()
     ) -> PhotoMemoShareIntakeManagedCopyResult {
@@ -344,7 +347,8 @@ final class ExternalPhotoIntakeStore {
         if normalizedURL.path.hasPrefix(
             intakeDirectoryURL.path
         ) {
-            guard PhotoMemoImageFileReadiness
+            guard !requiresReadableImage
+                    || PhotoMemoImageFileReadiness
                 .waitForReadableImageFile(
                     at: normalizedURL
                 ) else {
@@ -452,7 +456,8 @@ final class ExternalPhotoIntakeStore {
         }
 
         do {
-            guard PhotoMemoImageFileReadiness
+            guard !requiresReadableImage
+                    || PhotoMemoImageFileReadiness
                 .waitForReadableImageFile(
                     at: normalizedURL
                 ) else {
@@ -486,7 +491,8 @@ final class ExternalPhotoIntakeStore {
                 destinationURL
                 .standardizedFileURL
 
-            guard PhotoMemoImageFileReadiness
+            guard !requiresReadableImage
+                    || PhotoMemoImageFileReadiness
                 .waitForReadableImageFile(
                     at: managedURL
                 ) else {
@@ -737,6 +743,19 @@ final class ExternalPhotoIntakeStore {
                     )
             )
         }
+
+        let sharedContainerReadiness =
+            PhotoMemoSharedContainer
+            .handoffReadiness()
+        _ = PhotoMemoShareDiagnostics
+            .recordResult(
+                stage: .appSharedContainerReadiness,
+                message:
+                    sharedContainerReadiness
+                    .diagnosticMessage,
+                requestID: id,
+                defaults: defaults
+            )
 
         let request =
             ExternalPhotoIntakeRequest(
@@ -1110,7 +1129,9 @@ private extension ExternalPhotoIntakeStore {
                     sourceIdentifier:
                         item.sourceIdentifier,
                     contentTypeIdentifier:
-                        item.contentTypeIdentifier
+                        item.contentTypeIdentifier,
+                    livePhotoRecoveryHint:
+                        item.livePhotoRecoveryHint
                 )
 
             if !partialResult.contains(

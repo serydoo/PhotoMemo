@@ -74,7 +74,7 @@ struct SharedBatchQueueSnapshotServiceTests {
                 launchSource: .shareExtension,
                 configuration:
                     BatchConfigurationSnapshot(
-                        template: .template1,
+                        template: .classicWhite,
                         badge: nil,
                         anchor: nil,
                         shouldWritePhotoDescription: true,
@@ -213,7 +213,7 @@ struct SharedBatchQueueSnapshotServiceTests {
                 launchSource: .shareExtension,
                 configuration:
                     BatchConfigurationSnapshot(
-                        template: .template1,
+                        template: .classicWhite,
                         badge: nil,
                         anchor: nil,
                         shouldWritePhotoDescription: true,

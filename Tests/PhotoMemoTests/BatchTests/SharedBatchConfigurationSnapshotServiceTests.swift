@@ -54,7 +54,7 @@ struct SharedBatchConfigurationSnapshotServiceTests {
 
         #expect(
             service.loadSnapshot().template
-            == Template.template1
+            == Template.classicWhite
             .normalizedForEditing
         )
     }
@@ -134,7 +134,9 @@ struct SharedBatchConfigurationSnapshotServiceTests {
                 .loadV1ConfigurationReadiness()
             == V1SavedConfigurationReadiness(
                 isReady: false,
-                presetTitle: nil
+                presetTitle: nil,
+                configurationID: nil,
+                configurationRevision: nil
             )
         )
 
@@ -162,8 +164,14 @@ struct SharedBatchConfigurationSnapshotServiceTests {
                 .loadV1ConfigurationReadiness()
             == V1SavedConfigurationReadiness(
                 isReady: true,
-                presetTitle: "成长记录"
+                presetTitle: "成长记录",
+                configurationID: nil,
+                configurationRevision: nil
             )
         )
+
+        let snapshot = service.loadSnapshot()
+        #expect(snapshot.configurationID == nil)
+        #expect(snapshot.configurationRevision == nil)
     }
 }

@@ -41,8 +41,8 @@ struct Template: Identifiable, Codable, Hashable {
 
 extension Template {
 
-    static let template1 = Template(
-        preset: .template1,
+    static let classicWhite = Template(
+        preset: .classicWhite,
         name: "模板 1",
         leftTopArea: .leftTop,
         leftBottomArea: .leftBottom,
@@ -60,73 +60,6 @@ extension Template {
         ),
         badgeArea: .badge
     )
-
-    static let template2 = Template(
-        preset: .template2,
-        name: "模板 2",
-        leftTopArea: .leftTop,
-        leftBottomArea: .leftBottom,
-        rightTopArea: TemplateArea(
-            name: "Right Top",
-            items: [
-                .deviceCameraLine
-            ]
-        ),
-        rightBottomArea: TemplateArea(
-            name: "Right Bottom",
-            items: [
-                .memorySummary
-            ]
-        ),
-        badgeArea: .badge
-    )
-
-    static let template3 = Template(
-        preset: .template3,
-        name: "模板 3",
-        leftTopArea: .leftTop,
-        leftBottomArea: TemplateArea(
-            name: "Left Bottom",
-            items: [
-                .captureDateCompact
-            ]
-        ),
-        rightTopArea: TemplateArea(
-            name: "Right Top",
-            items: [
-                .gearLine
-            ]
-        ),
-        rightBottomArea: TemplateArea(
-            name: "Right Bottom",
-            items: [
-                .memorySummary
-            ]
-        ),
-        badgeArea: .badge
-    )
-
-    static let immersWhite = Template(
-        preset: .immersWhite,
-        name: "Classic White",
-        leftTopArea: .leftTop,
-        leftBottomArea: .leftBottom,
-        rightTopArea: TemplateArea(
-            name: "Right Top",
-            items: [
-                .deviceCameraLine
-            ]
-        ),
-        rightBottomArea: TemplateArea(
-            name: "Right Bottom",
-            items: [
-                .memorySummary
-            ]
-        ),
-        badgeArea: .badge
-    )
-
-    static let classicWhite = template1
 
     var normalizedForEditing: Template {
 

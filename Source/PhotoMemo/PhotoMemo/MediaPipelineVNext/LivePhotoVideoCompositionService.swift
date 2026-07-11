@@ -256,7 +256,21 @@ struct LivePhotoComposedPair:
         LivePhotoPairingIdentityPlan
 }
 
-final class LivePhotoPairCompositionService {
+protocol LivePhotoPairComposing {
+
+    func composePair(
+        sourceStillURL: URL,
+        sourceVideoURL: URL,
+        overlay: FixedFooterOverlayDescriptor,
+        outputStillURL: URL,
+        outputVideoURL: URL,
+        outputStillType: UTType,
+        outputDescription: String?
+    ) async throws -> LivePhotoComposedPair
+}
+
+final class LivePhotoPairCompositionService:
+    LivePhotoPairComposing {
 
     private let pairingIdentityPlanner:
         LivePhotoPairingIdentityPlanner

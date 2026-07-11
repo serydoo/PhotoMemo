@@ -6,24 +6,7 @@ final class TemplatePresetEngine {
         preset: TemplatePreset
     ) -> Template {
 
-        switch preset {
-
-        case .template1:
-
-            return .template1
-
-        case .template2:
-
-            return .template2
-
-        case .template3:
-
-            return .template3
-
-        case .immersWhite:
-
-            return .immersWhite
-        }
+        .classicWhite
     }
 
     func allPresets() -> [TemplatePreset] {

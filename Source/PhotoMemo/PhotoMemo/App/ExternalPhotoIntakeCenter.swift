@@ -257,7 +257,9 @@ private extension ExternalPhotoIntakeCenter {
             sourceIdentifier:
                 item.sourceIdentifier,
             contentTypeIdentifier:
-                item.contentTypeIdentifier
+                item.contentTypeIdentifier,
+            livePhotoRecoveryHint:
+                item.livePhotoRecoveryHint
         )
     }
 

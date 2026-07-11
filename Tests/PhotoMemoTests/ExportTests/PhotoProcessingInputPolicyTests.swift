@@ -43,13 +43,17 @@ struct PhotoProcessingInputPolicyTests {
             try #require(
                 UTType(filenameExtension: "dng")
             )
+        let proRawType =
+            UTType(exportedAs: "com.apple.proraw")
 
         #expect(policy.isSupportedContentType(cameraRawType))
         #expect(policy.isSupportedContentType(adobeRawType))
         #expect(policy.isSupportedContentType(dngType))
+        #expect(policy.isSupportedContentType(proRawType))
         #expect(PhotoProcessingInputPolicy.isRawContentType(cameraRawType))
         #expect(PhotoProcessingInputPolicy.isRawContentType(adobeRawType))
         #expect(PhotoProcessingInputPolicy.isRawContentType(dngType))
+        #expect(PhotoProcessingInputPolicy.isRawContentType(proRawType))
     }
 
     @Test("Rejects Live Photo packages explicitly")
@@ -104,6 +108,39 @@ struct PhotoProcessingInputPolicyTests {
 
         #expect(verdict.isSupported)
         #expect(verdict.reason == nil)
+    }
+
+    @Test("Allows Live Photo bundle identifiers through the internal runtime gate")
+    func allowsLivePhotoBundleIdentifiersThroughInternalRuntimeGate() throws {
+        let livePhotoBundleType =
+            UTType(exportedAs: "com.apple.live-photo-bundle")
+        let policy =
+            PhotoProcessingInputPolicy(
+                allowsLivePhoto: true
+            )
+
+        #expect(
+            !PhotoProcessingInputPolicy
+                .standard
+                .isSupportedContentType(
+                    livePhotoBundleType
+                )
+        )
+        #expect(
+            policy.isSupportedContentType(
+                livePhotoBundleType
+            )
+        )
+        #expect(
+            PhotoProcessingInputPolicy
+                .canUseLivePhotoProcessing(
+                    contentTypeIdentifier:
+                        livePhotoBundleType
+                        .identifier,
+                    sourceIdentifier:
+                        "asset-local-identifier"
+                )
+        )
     }
 
     @Test("Requires PhotoKit asset identity for Live Photo motion processing")

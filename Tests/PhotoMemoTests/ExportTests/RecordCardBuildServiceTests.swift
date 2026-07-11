@@ -10,7 +10,7 @@ struct RecordCardBuildServiceTests {
     func locationDisplayConfigurationFeedsProductionRenderText() throws {
         let template =
             Template(
-                preset: .template2,
+                preset: .classicWhite,
                 name: "Location Display",
                 leftTopArea:
                     TemplateArea(
@@ -85,7 +85,7 @@ struct RecordCardBuildServiceTests {
     func explicitLocationDisplayConfigurationDoesNotFallBackToLegacyCoordinates() throws {
         let template =
             Template(
-                preset: .template2,
+                preset: .classicWhite,
                 name: "Location Display",
                 leftTopArea:
                     TemplateArea(
@@ -221,7 +221,7 @@ struct RecordCardBuildServiceTests {
             )
         let configuration =
             BatchConfigurationSnapshot(
-            template: .template1.normalizedForEditing,
+            template: .classicWhite.normalizedForEditing,
             badge: nil,
             anchor: anchor,
             shouldWritePhotoDescription: false,
@@ -354,7 +354,7 @@ struct RecordCardBuildServiceTests {
             )
         let snapshot =
             BatchConfigurationSnapshot(
-                template: .template1.normalizedForEditing,
+                template: .classicWhite.normalizedForEditing,
                 badge: nil,
                 anchor: anchor,
                 shouldWritePhotoDescription: false,
@@ -496,7 +496,7 @@ struct RecordCardBuildServiceTests {
         frozenSnapshot.memorySubject = nil
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1.normalizedForEditing,
+                template: .classicWhite.normalizedForEditing,
                 badge: nil,
                 anchor: anchor,
                 shouldWritePhotoDescription: false,
@@ -608,7 +608,7 @@ struct RecordCardBuildServiceTests {
 
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1.normalizedForEditing,
+                template: .classicWhite.normalizedForEditing,
                 badge: nil,
                 anchor: legacyAnchor,
                 shouldWritePhotoDescription: false,
@@ -684,7 +684,7 @@ struct RecordCardBuildServiceTests {
         )
 
         let template = Template(
-            preset: .template1,
+            preset: .classicWhite,
             name: "模板 1",
             leftTopArea: .leftTop,
             leftBottomArea: .leftBottom,
@@ -741,7 +741,7 @@ struct RecordCardBuildServiceTests {
         )
 
         let configuration = BatchConfigurationSnapshot(
-            template: .template1.normalizedForEditing,
+            template: .classicWhite.normalizedForEditing,
             badge: nil,
             anchor: nil,
             shouldWritePhotoDescription: true,
@@ -827,7 +827,7 @@ struct RecordCardBuildServiceTests {
                 base:
                     BatchConfigurationSnapshot(
                         template:
-                            .template1
+                            .classicWhite
                             .normalizedForEditing,
                         badge: nil,
                         anchor: Anchor(
@@ -955,7 +955,7 @@ struct RecordCardBuildServiceTests {
             )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "Preview Export Memory Expression",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -1124,7 +1124,7 @@ struct RecordCardBuildServiceTests {
             )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "Legacy Transport Smart Module",
                 leftTopArea: .empty,
                 leftBottomArea: .empty,
@@ -1282,7 +1282,7 @@ struct RecordCardBuildServiceTests {
             )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "Subject Nickname Token",
                 leftTopArea: .empty,
                 leftBottomArea: .empty,
@@ -1442,7 +1442,7 @@ struct RecordCardBuildServiceTests {
         )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "MemoryResult Authority",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -1653,7 +1653,7 @@ struct RecordCardBuildServiceTests {
         )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "MemoryResult Display Copy",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -1845,7 +1845,7 @@ struct RecordCardBuildServiceTests {
         )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "MemoryResult Title Authority",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -2036,7 +2036,7 @@ struct RecordCardBuildServiceTests {
         )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "Unsupported Frozen Anchor",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -2229,7 +2229,7 @@ struct RecordCardBuildServiceTests {
         )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "No Frozen Primary Anchor",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -2385,7 +2385,7 @@ struct RecordCardBuildServiceTests {
         let configuration =
             BatchConfigurationSnapshot(
                 template:
-                    .template1
+                    .classicWhite
                     .normalizedForEditing,
                 badge: nil,
                 anchor:
@@ -2482,7 +2482,7 @@ struct RecordCardBuildServiceTests {
         )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "MemoryResult SubDay Authority",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -2674,7 +2674,7 @@ struct RecordCardBuildServiceTests {
         )
         let template =
             Template(
-                preset: .template1,
+                preset: .classicWhite,
                 name: "MemoryResult Milestone Authority",
                 leftTopArea: .leftTop,
                 leftBottomArea: .leftBottom,
@@ -2807,7 +2807,7 @@ struct RecordCardBuildServiceTests {
         let card = RecordCardBuildService().buildCard(
             from: photo,
             configuration: BatchConfigurationSnapshot(
-                template: .template1.normalizedForEditing,
+                template: .classicWhite.normalizedForEditing,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: false,
@@ -2882,7 +2882,7 @@ struct RecordCardBuildServiceTests {
         let card = RecordCardBuildService().buildCard(
             from: photo,
             configuration: BatchConfigurationSnapshot(
-                template: .template1.normalizedForEditing,
+                template: .classicWhite.normalizedForEditing,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: false,
@@ -2967,7 +2967,7 @@ struct RecordCardBuildServiceTests {
         let card = RecordCardBuildService().buildCard(
             from: photo,
             configuration: BatchConfigurationSnapshot(
-                template: .template1.normalizedForEditing,
+                template: .classicWhite.normalizedForEditing,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: false,

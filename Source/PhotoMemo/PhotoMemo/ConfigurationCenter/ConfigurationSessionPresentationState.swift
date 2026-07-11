@@ -19,5 +19,8 @@ struct ConfigurationSessionPresentationState:
 
     var appliedMemoryPresetID:
         MemoryPreset.ID?
+
+    var draftMemoryConfiguration:
+        MemoryConfigurationRecord?
 }
 #endif

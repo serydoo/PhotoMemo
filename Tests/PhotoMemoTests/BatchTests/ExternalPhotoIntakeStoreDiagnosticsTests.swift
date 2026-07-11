@@ -49,7 +49,7 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
                     source: .shareExtension,
                     configurationSnapshot:
                         BatchConfigurationSnapshot(
-                            template: .template1,
+                            template: .classicWhite,
                             badge: nil,
                             anchor: nil,
                             shouldWritePhotoDescription: true,
@@ -609,6 +609,33 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
                 defaults: defaults,
                 intakeDirectoryURL: directoryURL
             )
+        let captureDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 11,
+                        hour: 9,
+                        minute: 18,
+                        second: 12
+                    )
+                )
+            )
+        let recoveryHint =
+            LivePhotoStaticFallbackRecoveryHint(
+                originalFileName:
+                    "IMG_9558.jpg",
+                advertisedLivePhotoTypeIdentifier:
+                    "com.apple.live-photo",
+                staticContentTypeIdentifier:
+                    "public.jpeg",
+                captureDate:
+                    captureDate,
+                pixelWidth: 4032,
+                pixelHeight: 3024
+            )
 
         let result =
             store.persistManagedRequestDetailed(
@@ -618,13 +645,15 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
                         managedURL: managedURL,
                         originalFileName: "IMG_9558.HEIC",
                         sourceIdentifier: "asset-local-9558",
-                        contentTypeIdentifier: "public.heic"
+                        contentTypeIdentifier: "public.heic",
+                        livePhotoRecoveryHint:
+                            recoveryHint
                     )
                 ],
                 source: .shareExtension,
                 configurationSnapshot:
                     BatchConfigurationSnapshot(
-                        template: .template1.normalizedForEditing,
+                        template: .classicWhite.normalizedForEditing,
                         badge: nil,
                         anchor: nil,
                         shouldWritePhotoDescription: false,
@@ -644,9 +673,97 @@ struct ExternalPhotoIntakeStoreDiagnosticsTests {
         #expect(intakeItem.originalFileName == "IMG_9558.HEIC")
         #expect(intakeItem.sourceIdentifier == "asset-local-9558")
         #expect(intakeItem.contentTypeIdentifier == "public.heic")
+        #expect(
+            intakeItem.livePhotoRecoveryHint
+            == recoveryHint
+        )
         #expect(payload.fileName == "IMG_9558.HEIC")
         #expect(payload.sourceIdentifier == "asset-local-9558")
         #expect(payload.contentTypeIdentifier == "public.heic")
+
+        try? FileManager.default.removeItem(
+            at: directoryURL
+        )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+    }
+
+    @Test("Persisting managed requests records shared-container readiness diagnostics")
+    func persistingManagedRequestsRecordsSharedContainerReadinessDiagnostics() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeStoreDiagnosticsTests.Readiness.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+
+        let directoryURL =
+            FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let managedURL =
+            directoryURL
+            .appendingPathComponent(
+                "managed.jpg"
+            )
+
+        let store =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: directoryURL
+            )
+
+        let requestID =
+            UUID()
+        let result =
+            store.persistManagedRequestDetailed(
+                id: requestID,
+                urls: [managedURL],
+                source: .shareExtension,
+                configurationSnapshot:
+                    BatchConfigurationSnapshot(
+                        template: .classicWhite.normalizedForEditing,
+                        badge: nil,
+                        anchor: nil,
+                        shouldWritePhotoDescription: false,
+                        photoDescriptionOverride: "",
+                        selectedAlbumIdentifier: ""
+                    )
+            )
+
+        #expect(result.request?.id == requestID)
+
+        let events =
+            PhotoMemoShareDiagnostics
+            .loadEvents(
+                defaults: defaults
+            )
+        let readinessEvent =
+            try #require(
+                events.first {
+                    $0.stage == .appSharedContainerReadiness
+                }
+            )
+
+        #expect(readinessEvent.requestID == requestID)
+        #expect(
+            readinessEvent.message
+            .contains("handoffReady=")
+        )
+        #expect(
+            readinessEvent.message
+            .contains("usesFallbackBaseDirectory=")
+        )
 
         try? FileManager.default.removeItem(
             at: directoryURL

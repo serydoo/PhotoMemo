@@ -6,6 +6,206 @@ import Testing
 @Suite("V1 bootstrap flow coordinator")
 struct V1BootstrapFlowCoordinatorTests {
 
+    @Test("aggregate runtime applies the active configuration draft after restoring the library")
+    @MainActor
+    func aggregateRuntimeAppliesActiveConfigurationDraftAfterRestore() throws {
+        let subject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        var template = Template.classicWhite
+        template.leftTopArea.items = [
+            TemplateItem(
+                type: .text,
+                name: "Recorder",
+                value: "Aggregate Recorder",
+                isEnabled: true
+            )
+        ]
+        let configuration = MemoryConfigurationRecord(
+            id: UUID(uuidString: "91919191-9191-9191-9191-919191919191")!,
+            title: "Aggregate Active",
+            revision: 5,
+            savedAt: Date(timeIntervalSince1970: 500),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: template,
+                regionTemplateIDs: [.slotA: "aggregate.recorder"],
+                memoryCopy: .init(
+                    usesCustomText: true,
+                    customText: "Aggregate Memory"
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(for: "cityDistrict"),
+                logo: .init(mode: .customUpload, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .originalFormat,
+                livePhotoPolicy: .preserveMotion,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: "Aggregate Description"
+                ),
+                album: .init(
+                    destination: .existingAlbum,
+                    identifier: "aggregate-album",
+                    title: "Aggregate Album"
+                )
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 9,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [configuration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configuration.id
+        )
+        var events: [String] = []
+        var appliedProjection: V1ConfigurationDraftProjection?
+        let runtime = V1BootstrapRuntimeCoordinator(
+            setApplyingBootstrapState: { _ in },
+            updateProjection: { _ in },
+            restoreSubjectLibrary: { _, _, _, _ in },
+            restoreConfigurationLibrary: { restored in
+                #expect(restored == aggregate)
+                events.append("restore")
+            },
+            applyConfigurationDraftProjection: { projection in
+                events.append("project")
+                appliedProjection = projection
+            },
+            restoreSelectedSubject: { _ in },
+            applyWelcomeState: { _ in },
+            refreshDynamicPreview: {}
+        )
+
+        runtime.apply(
+            V1BootstrapFlowPatch(
+                shouldSaveSubjectLibrary: true,
+                customLogoBadge: nil,
+                logoMode: .appleMini,
+                logoStatusMessage: nil,
+                outputTarget: .automatic,
+                mediaOutputMode: .staticImage,
+                selectedExistingAlbumIdentifier: "",
+                suggestedNewAlbumName: nil,
+                locationDisplayConfiguration: nil,
+                sessionRestorePlan:
+                    .restoreConfigurationLibrary(aggregate),
+                birthdayDate: nil,
+                welcomeState: .init(
+                    hasSeenWelcome: true,
+                    showsWelcomePage: false,
+                    showsWorkflowGuide: false
+                ),
+                regionDrafts: [:]
+            )
+        )
+
+        #expect(events == ["restore", "project"])
+        #expect(appliedProjection?.configurationID == configuration.id)
+        #expect(appliedProjection?.customMemoryWriteText == "Aggregate Memory")
+        #expect(appliedProjection?.photosDescriptionOverride == "Aggregate Description")
+        #expect(appliedProjection?.selectedAlbumIdentifier == "aggregate-album")
+        #expect(
+            appliedProjection?.regionDrafts[.slotA]?.items.first?.value
+            == "Aggregate Recorder"
+        )
+    }
+
+    @Test("aggregate bootstrap restores the configuration library instead of legacy slots")
+    @MainActor
+    func aggregateBootstrapRestoresConfigurationLibrary() throws {
+        var state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let configuration = MemoryConfigurationRecord(
+            id: UUID(uuidString: "81818181-8181-8181-8181-818181818181")!,
+            title: "Aggregate Active",
+            revision: 4,
+            savedAt: Date(timeIntervalSince1970: 400),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [.slotA: "aggregate.recorder"],
+                memoryCopy: .init(
+                    usesCustomText: true,
+                    customText: "Aggregate Memory"
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(mode: .appleMini, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .originalFormat,
+                livePhotoPolicy: .preserveMotion,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: ""
+                ),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 9,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [configuration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configuration.id
+        )
+        let bootstrapState = V1ConfigurationBootstrapState(
+            configurationLibrary: aggregate,
+            draftProjection: .init(configuration: configuration),
+            subjects: [subject],
+            selectedSubjectID: subject.id,
+            memoryPresets: [],
+            selectedMemoryPresetID: nil,
+            selectedSubject: subject,
+            customLogoBadge: nil,
+            logoMode: .appleMini,
+            outputTarget: .automatic,
+            selectedExistingAlbumIdentifier: "",
+            suggestedNewAlbumName: nil
+        )
+        let coordinator = V1BootstrapFlowCoordinator(
+            loadConfigurationState: { bootstrapState },
+            loadDrafts: { _, makeDefaultDraft in
+                Dictionary(
+                    uniqueKeysWithValues: CardRegion.memoryCardRegions.map {
+                        ($0, makeDefaultDraft($0))
+                    }
+                )
+            }
+        )
+
+        let patch = coordinator.bootstrap(
+            hasSeenWelcome: true,
+            fallbackBirthdayDate: Date(timeIntervalSince1970: 1),
+            makeDefaultDraft: { _ in V1EditorDraft(items: []) }
+        )
+
+        guard case .restoreConfigurationLibrary(let restored) =
+            patch.sessionRestorePlan else {
+            Issue.record("Expected aggregate restore plan")
+            return
+        }
+        #expect(restored == aggregate)
+    }
+
     @Test("bootstrap composes persisted restore welcome state and draft bootstrap into one compact patch")
     func bootstrapComposesPersistedRestoreWelcomeStateAndDraftBootstrapIntoOneCompactPatch() {
         let selectedAnchorDate =

@@ -81,7 +81,9 @@ final class BatchQueueStore: ObservableObject {
                 exportCoordinator:
                     exportCoordinator,
                 livePhotoProcessor:
-                    livePhotoProcessor
+                    livePhotoProcessor,
+                diagnosticsDefaults:
+                    resolvedDefaults
             )
         self.persistence =
             BatchQueuePersistence(

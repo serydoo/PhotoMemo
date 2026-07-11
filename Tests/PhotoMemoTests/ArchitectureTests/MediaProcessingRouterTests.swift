@@ -39,6 +39,25 @@ struct MediaProcessingRouterTests {
         #expect(decision.rejectionReason == nil)
     }
 
+    @Test("Routes broad image declarations with RAW filename to the RAW path")
+    func routesBroadImageDeclarationsWithRAWFilename() {
+        let decision = MediaProcessingRouter().decision(
+            for: MediaProcessingInputDescriptor(
+                contentType: .image,
+                fileURL:
+                    URL(
+                        fileURLWithPath:
+                            "/tmp/IMG_9001.DNG"
+                    ),
+                pixelWidth: 8064,
+                pixelHeight: 6048
+            )
+        )
+
+        #expect(decision.route == .rawStillImage)
+        #expect(decision.rejectionReason == nil)
+    }
+
     @Test("Routes explicit Live Photo assets to the Live Photo path")
     func routesExplicitLivePhotoAssets() {
         let decision = MediaProcessingRouter().decision(

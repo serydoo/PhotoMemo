@@ -3,6 +3,76 @@
 ## Current Truth
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
+- V3 evidence parser / 21-reject gate slice is implemented and locally
+  verified. Runtime summaries now use stage-specific ordered parsing for
+  `batch.task.duration`, `batch.task.route`, `batch.task.admission`, and
+  `batch.task.stageDuration`, preserving filenames with key-like text while
+  keeping route/admission/stage fields intact. The `share-21-reject` scenario
+  now requires the machine-readable `extension.input.tooManyPhotos` event to
+  pass; without it the run is `needs-review`, even if no request/job/crash was
+  created.
+- V3 Live Photo / 48MP evidence duration gate slice is implemented and locally
+  verified. Runtime evidence evaluation for `share-livephoto-1`,
+  `share-livephoto-mixed`, and `share-48mp` now requires matching completed
+  total-duration evidence from the same completed Share job before route or
+  admission evidence can pass. Route and 48MP admission evidence are scoped to
+  completed jobs that also have duration evidence to prevent false passes from
+  unrelated events. Known-bad Live Photo routes still fail before duration
+  completeness is considered, so missing duration cannot hide static fallback.
+- V3 diagnostics retention matrix slice is implemented and locally verified.
+  Share diagnostics now retain a full 20-photo mixed evidence matrix
+  (readiness plus provider/source/probe/static-fallback/recovery/route/
+  stage-duration/total-duration events) by raising the bounded event cap from
+  640 to 768. Stage-duration retention now covers future main-thread,
+  thread-name, and peak-memory fields. Live Photo readiness helper dedupe is
+  intentionally left as a future simplification, not a blocker before the next
+  signed device pass.
+- V3 share duration evidence gate slice is implemented and locally verified.
+  Runtime evidence evaluation for `share-1` and `share-20` now requires
+  shared-container readiness plus matching per-task `batch.task.duration`
+  evidence for the completed Share job before it can pass. Scenario evaluation
+  uses the full new event set instead of the Markdown tail, and
+  `batch.task.stageDuration` summaries now preserve optional main-thread,
+  thread-name, and peak-memory fields when present.
+- V3 evidence scenario / RAW filename fallback slice is implemented and locally
+  verified. Runtime evidence summaries now support `share-livephoto-1`,
+  `share-livephoto-mixed`, and `share-48mp`; Live Photo route evaluation is
+  scoped to the completed Share job; 48MP evaluation requires critical
+  single-lane admission evidence; broad `public.image` declarations with RAW
+  filename extensions now route and plan as RAW still-image input.
+- V3 orientation / location / landscape logo closure slice is implemented and
+  locally verified. Orientation-aware metadata dimensions now prevent
+  EXIF-rotated portrait images from being classified as landscape; V1
+  configuration saves no longer clear saved location display configuration
+  when the request has no location update; Configuration Center summary shows
+  saved location display mode even before the location module is inserted; the
+  landscape Immers output logo now matches divider height while preserving the
+  prior visual center.
+- V3 Live Photo Share hardening / recovery confidence slice is implemented and
+  locally verified. `PhotoProcessingInputPolicy` now owns shared Live Photo
+  type identifiers; Share Extension Live Photo intake no longer preflights
+  destructive provider loads before real import; mixed still + Live Photo
+  batches route each task independently; static-fallback identity recovery now
+  requires filename-basename agreement in addition to capture-date agreement.
+  Signed real-device Live Photo Share validation is still required.
+- V3 real Live Photo processor seam is implemented and locally verified. The
+  real processor source-bundle branch now has a narrow pair-composer protocol
+  seam proving it skips PhotoKit loading for valid source bundles, passes the
+  inner still/movie URLs to composition, and saves with inner resource
+  filenames. Route diagnostics now include `taskID`.
+- V3 route evidence / Live Photo bundle type hardening is implemented and
+  locally verified. Runtime evidence now preserves normal comma-space filenames,
+  structures `batch.task.route` events, and makes `share-1` / `share-20`
+  evaluation require shared-container readiness. `com.apple.live-photo-bundle`
+  is now treated consistently as Live Photo content by policy and routing.
+- V3 Live Photo bundle contract hardening is implemented and locally verified.
+  Share drain now keeps valid `.livephoto` source bundles instead of filtering
+  directories before queue enqueue; source-bundle resolution now requires one
+  still, one movie, and matching basenames; Live Photo save requests use the
+  still resource original filename; the Share Extension readiness mirror uses
+  the same unique-pair rule; runtime evidence decoding now falls back from App
+  Group preferences to app data preferences so App Group readiness fallback
+  diagnostics are not hidden when the group plist is unavailable.
 - V3 P1 closure batch 1 is implemented and locally verified on top of
   `9430598 Add Production Audit v2.0 reports`. This is not full V3 completion.
   It closes the first saved-configuration gate / output-configuration
@@ -34,7 +104,8 @@
   Extension rejection path and adds a model-level regression that treats
   non-RAW 48MP still images as critical single-lane work. Real 48MP device
   performance remains an Instruments / real-device evidence item.
-- V3 validation batch 6 is in progress. It closes the Memory Engine
+- V3 validation batch 6 is locally verified and superseded by later V3 slices.
+  It closed the Memory Engine
   capture-calendar regression and adds a no-file HEIC non-ASCII UserComment
   metadata-preservation regression. iPhone7 evidence now proves 21-photo
   rejection and proves 1-photo plus 20-photo Share Extension requests drain
@@ -58,12 +129,14 @@
   Xcode Cloud build counter has reached build `13`; the next successful cloud
   attempt is expected to appear as build `14`. Treat the cloud build number as
   owned by Xcode Cloud / App Store Connect, not as the product version.
-- RAW / ProRAW high-resolution handling is a V3 follow-up engineering item, not
-  a 1.6 blocker. Current iPhone7 Share evidence after installing local `1.6`
-  shows high-resolution / RAW-like Apple Photos inputs arrive as `public.jpeg`
-  and complete successfully. Future work should add explicit RAW input
-  detection, JPEG/HEIC output policy, user-facing copy, and metadata-retention
-  validation without promising RAW output.
+- RAW / ProRAW high-resolution handling remains a V3 real-device validation
+  item, not a 1.6 blocker. Current code has explicit RAW/ProRAW/DNG input
+  policy, generated still-output policy, user-facing supported-format copy, and
+  metadata-warning coverage without promising RAW output preservation. Current
+  iPhone7 Share evidence after installing local `1.6` shows high-resolution /
+  RAW-like Apple Photos inputs can arrive as `public.jpeg` and complete
+  successfully; true RAW/ProRAW provider behavior still needs real-device
+  evidence.
 - External product branding is now `MemoMark` / `时光记`; internal engineering
   names such as `PhotoMemo` targets, bundle IDs, App Group, UserDefaults keys,
   source paths, and GitHub repository URL remain intentionally preserved until
@@ -84,7 +157,8 @@
   - `PhotoMemoWidgetExtension` Debug generic iOS build
   - `PhotoMemo` Debug macOS build
   - focused Live Photo / Media Geometry / main picker intake tests
-- Release archive readiness dry-run also passed for `PhotoMemoiOS`:
+- Historical release archive readiness dry-run also passed for `PhotoMemoiOS`
+  before the 1.6 version bump:
   - local unsigned Release archive generated successfully at
     `/tmp/PhotoMemoReleaseReadinessArchive.xcarchive`
   - archive contains `PhotoMemoiOS.app`
@@ -12950,3 +13024,116 @@ Verification:
 - `PhotoMemoiOS` Debug real-device build passed
 - installed and launched on device
   `863C2747-6742-5E93-B715-6F89DBF90B31`
+## 2026-07-11 V3 Configuration And Rendering Handoff
+
+The configuration engineering slice is implemented and unsigned-build clean.
+The durable model is `ConfigurationLibraryRecord`; old UserDefaults fields and
+configuration slots are compatibility projections only. Home local backup,
+restore, restore-current and live deletion now operate around the aggregate and
+hidden UUID identity. External Files import and self-contained export remain
+disabled until their resource-package UI is complete.
+
+The intermittent bottom-edge line was reproduced with odd source dimensions
+and fixed by integer-rounding the Classic White output canvas height. Automated
+coverage includes odd/even landscape and portrait Renderer output, JPEG
+readback, and Live Photo still footer preservation.
+
+Do not repeat 48MP/RAW work before the next product decision. Record it as a
+later high-quality-output enhancement. When the user returns, perform signed
+device validation last, beginning with `share-21-reject`, then `share-1`, mixed
+Live Photo + still, and the 20-photo orientation/location batch. Instruments,
+real AV Live Photo composition and PhotoKit save/readback follow those checks.
+
+No commit or push was created in this slice. The worktree still contains the
+broader uncommitted V3 body and must be reviewed as one intentional release
+scope before syncing to GitHub or Xcode Cloud.
+
+## 2026-07-11 Configuration Real-Device Regression Fixes
+
+Real-device feedback identified four related configuration regressions. The
+complete aggregate draft now wins over legacy template bootstrap after launch,
+so saved region content is not replaced during restart. Home-row backup now
+applies a dirty or newly created configuration before writing its local backup,
+and backup/delete outcomes are shown immediately on Home. Deleting the oldest
+durable configuration first persists a dirty sibling when necessary. The
+configuration-row swipe uses continuous geometry for reveal, opacity, hit
+testing, and snapping.
+
+Focused configuration lifecycle, local-library presenter, and Home action
+tests passed. A signed `PhotoMemoiOS` Debug build, including Share and Widget
+extensions, was installed and launched on device
+`863C2747-6742-5E93-B715-6F89DBF90B31`. Manual confirmation remains for region
+content after restart, local-backup visibility, oldest-configuration deletion,
+and swipe feel.
+
+## 2026-07-11 Saved Preview Projection Regression
+
+Fixed a save-time preview divergence where custom region drafts remained in the
+Configuration Center but the renderer reverted to preset defaults. Aggregate
+save reconciliation now emits the saved complete configuration for projection
+only when the receipt is actually applied; a stale receipt never overwrites
+newer concurrent edits. The iOS view reapplies the complete configuration and
+refreshes all dynamic region previews after successful reconciliation.
+
+Focused apply-runtime and configuration-lifecycle tests passed, and the signed
+iOS build succeeded. The app was fully uninstalled and reinstalled on device
+`863C2747-6742-5E93-B715-6F89DBF90B31`, intentionally clearing its container.
+The first remote launch was denied until the development profile is trusted
+again on the device.
+
+## 2026-07-11 Unresolved Configuration Region Persistence Blocker
+
+Status: unresolved and reproducible on the clean-installed physical device.
+
+Exact reproduction:
+
+1. Fully delete MemoMark from the device and install the signed `1.6 (7)` build.
+2. Customize modules/content in the four Configuration Center regions.
+3. Confirm the renderer updates correctly while editing.
+4. Tap `保存为当前配置`.
+5. The region editors still show the custom content, but the renderer returns
+   to default content.
+6. Terminate and relaunch the app.
+7. The custom region content is then missing from the region editors as well.
+
+Confirmed facts:
+
+- this is not stale data left by an older installation; the device app
+  container was deleted before the latest reproduction
+- live editor state and renderer state are different sources: the editor reads
+  local `regionDrafts`, while the renderer reads session `regionPreviewTexts`
+- aggregate reconciliation calls `restoreConfigurationLibrary`, whose legacy
+  `refreshPresetDrivenPreview` replaces preview text with template-ID defaults
+- the first attempted fix added `applySavedConfigurationProjection` after a
+  successful receipt and protected concurrent edits; its automated tests pass,
+  but real-device behavior proves this is not the complete root cause
+- restart loss means the durable aggregate written to disk, the aggregate
+  selected during bootstrap, or the draft-to-template conversion still loses
+  or bypasses the current four-region draft; do not treat this as a UI-only
+  refresh bug
+
+Files to resume from:
+
+- `PhotoMemoiOSV1View.applyCurrentV1Configuration`
+- `V1ConfigurationAggregateCandidateBuilder.build`
+- `V1ConfigurationAggregateCandidateBuilder.template/area`
+- `V1ConfigurationApplyRuntimeCoordinator.apply`
+- `ConfigurationSession.reconcileConfigurationLibrarySave`
+- `ConfigurationSession.restoreConfigurationLibrary`
+- `V1ConfigurationDraftProjection.regionDrafts`
+- `ConfigurationLibraryRepository` and `ConfigurationLibraryPersistence`
+- `V1BootstrapRuntimeCoordinator` and bootstrap restoration
+
+Required next test before another fix:
+
+- create four distinct region drafts with text and token modules
+- build the aggregate candidate
+- persist it through the real repository
+- construct a new session/runtime as an app restart would
+- reload the aggregate and project all four regions
+- assert the template items, projected drafts, and renderer preview text all
+  retain the same custom content
+
+Do not reinstall another device build until that repository-level round-trip
+test fails before the fix and passes after it. The currently installed clean
+device build still reproduces the blocker.

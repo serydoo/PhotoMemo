@@ -4,33 +4,13 @@ import Testing
 @Suite("RecordCardRenderer routing")
 struct RecordCardRendererRoutingTests {
 
-    @Test("Classic White presets route to the Classic White card renderer")
-    func classicWhitePresetsRouteToClassicWhiteCardRenderer() {
+    @Test("Canonical Classic White routes to the latest card renderer")
+    func classicWhiteRoutesToLatestCardRenderer() {
 
         #expect(
             RecordCardRenderer
-            .destination(for: .template2)
+            .destination(for: .classicWhite)
             == .classicWhite
-        )
-        #expect(
-            RecordCardRenderer
-            .destination(for: .template3)
-            == .classicWhite
-        )
-    }
-
-    @Test("Immers presets route to the Immers card renderer")
-    func immersPresetsRouteToImmersCardRenderer() {
-
-        #expect(
-            RecordCardRenderer
-            .destination(for: .template1)
-            == .immersWhite
-        )
-        #expect(
-            RecordCardRenderer
-            .destination(for: .immersWhite)
-            == .immersWhite
         )
     }
 }

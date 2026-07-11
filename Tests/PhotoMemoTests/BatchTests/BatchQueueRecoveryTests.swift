@@ -96,7 +96,7 @@ private extension BatchQueueRecoveryTests {
             launchSource: .shareExtension,
             configuration:
                 BatchConfigurationSnapshot(
-                    template: .template1,
+                    template: .classicWhite,
                     badge: nil,
                     anchor: nil,
                     shouldWritePhotoDescription: true,

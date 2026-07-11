@@ -118,13 +118,26 @@ final class PhotoMetadataReader {
 
         var metadata = PhotoMetadata()
 
-        metadata.imageWidth =
+        let pixelWidth =
             properties[kCGImagePropertyPixelWidth]
             as? Int
-
-        metadata.imageHeight =
+        let pixelHeight =
             properties[kCGImagePropertyPixelHeight]
             as? Int
+
+        if Self.orientationSwapsDisplayAxes(
+            properties[kCGImagePropertyOrientation]
+        ) {
+            metadata.imageWidth =
+                pixelHeight
+            metadata.imageHeight =
+                pixelWidth
+        } else {
+            metadata.imageWidth =
+                pixelWidth
+            metadata.imageHeight =
+                pixelHeight
+        }
 
         loadTIFF(
             properties,
@@ -146,6 +159,27 @@ final class PhotoMetadataReader {
 }
 
 private extension PhotoMetadataReader {
+
+    static func orientationSwapsDisplayAxes(
+        _ value: Any?
+    ) -> Bool {
+
+        let rawValue: Int?
+        switch value {
+        case let value as Int:
+            rawValue = value
+        case let value as NSNumber:
+            rawValue = value.intValue
+        default:
+            rawValue = nil
+        }
+
+        guard let rawValue else {
+            return false
+        }
+
+        return [5, 6, 7, 8].contains(rawValue)
+    }
 
     func loadTIFF(
         _ properties: [CFString: Any],

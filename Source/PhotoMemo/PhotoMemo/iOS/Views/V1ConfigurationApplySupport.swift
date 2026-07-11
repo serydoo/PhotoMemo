@@ -9,6 +9,8 @@ struct V1ConfigurationApplyBuildInput: Hashable {
     let shouldSaveSubjectLibrary: Bool
     let memoryPresets: [MemoryPreset]
     let selectedMemoryPresetID: MemoryPreset.ID?
+    let candidateConfiguration:
+        MemoryConfigurationRecord?
     let presetTitle: String
     let templateTextsByRegion: [CardRegion: String]
     let locationDisplayConfiguration:
@@ -23,6 +25,58 @@ struct V1ConfigurationApplyBuildInput: Hashable {
     let availableAlbums: [PhotoAlbumOption]
     let selectedExistingAlbumIdentifier: String
     let newAlbumName: String
+
+    init(
+        selectedSubject: MemorySubject?,
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?,
+        shouldSaveSubjectLibrary: Bool,
+        memoryPresets: [MemoryPreset],
+        selectedMemoryPresetID: MemoryPreset.ID?,
+        candidateConfiguration:
+            MemoryConfigurationRecord? = nil,
+        presetTitle: String,
+        templateTextsByRegion: [CardRegion: String],
+        locationDisplayConfiguration:
+            ExpressionModuleConfiguration?,
+        badge: Badge?,
+        usesCustomMemoryWriteText: Bool,
+        customMemoryWriteText: String,
+        birthdayDate: Date,
+        outputTarget: V1IOSOutputTarget,
+        mediaOutputMode: V1MediaOutputMode,
+        availableAlbums: [PhotoAlbumOption],
+        selectedExistingAlbumIdentifier: String,
+        newAlbumName: String
+    ) {
+        self.selectedSubject = selectedSubject
+        self.subjects = subjects
+        self.selectedSubjectID = selectedSubjectID
+        self.shouldSaveSubjectLibrary =
+            shouldSaveSubjectLibrary
+        self.memoryPresets = memoryPresets
+        self.selectedMemoryPresetID =
+            selectedMemoryPresetID
+        self.candidateConfiguration =
+            candidateConfiguration
+        self.presetTitle = presetTitle
+        self.templateTextsByRegion =
+            templateTextsByRegion
+        self.locationDisplayConfiguration =
+            locationDisplayConfiguration
+        self.badge = badge
+        self.usesCustomMemoryWriteText =
+            usesCustomMemoryWriteText
+        self.customMemoryWriteText =
+            customMemoryWriteText
+        self.birthdayDate = birthdayDate
+        self.outputTarget = outputTarget
+        self.mediaOutputMode = mediaOutputMode
+        self.availableAlbums = availableAlbums
+        self.selectedExistingAlbumIdentifier =
+            selectedExistingAlbumIdentifier
+        self.newAlbumName = newAlbumName
+    }
 }
 
 struct V1ConfigurationApplyResultPatch: Hashable {
@@ -53,6 +107,8 @@ enum V1ConfigurationApplyRequestBuilder {
                 from: input.selectedSubject,
                 birthdayDate: resolvedAnchorDate
             )
+        let candidate = input.candidateConfiguration
+        let album = candidate?.output.album
 
         return V1ConfigurationApplyRequest(
             subject: subjectForSaving,
@@ -71,8 +127,9 @@ enum V1ConfigurationApplyRequestBuilder {
             selectedMemoryPresetID:
                 input.selectedMemoryPresetID,
             template:
-                Template(
-                    preset: .immersWhite,
+                candidate?.editor.template
+                ?? Template(
+                    preset: .classicWhite,
                     name: input.presetTitle,
                     leftTopArea:
                         templateArea(
@@ -112,15 +169,25 @@ enum V1ConfigurationApplyRequestBuilder {
                         ),
                     badgeArea: .badge
                 ),
-            badge: input.badge,
+            badge:
+                candidate.flatMap {
+                    badge(from: $0.presentation.logo.badge)
+                }
+                ?? input.badge,
             locationDisplayConfiguration:
-                input.locationDisplayConfiguration,
+                candidate?.presentation
+                    .locationConfiguration
+                ?? input.locationDisplayConfiguration,
             shouldWritePhotoDescription:
-                true,
+                candidate?.output
+                    .photosDescriptionPolicy
+                    .isEnabled
+                ?? true,
             photoDescriptionOverride:
-                input.usesCustomMemoryWriteText
-                ? input.customMemoryWriteText
-                : "",
+                candidate?.output
+                    .photosDescriptionPolicy
+                    .overrideText
+                ?? "",
             timeAnchorTitle:
                 V1ResolvedMemoryWriteTextPresenter
                 .legacyBirthdayAnchorTitle(
@@ -130,16 +197,21 @@ enum V1ConfigurationApplyRequestBuilder {
             timeAnchorDate:
                 resolvedAnchorDate,
             outputTarget:
-                input.outputTarget,
+                album.map(outputTarget(for:))
+                ?? input.outputTarget,
             mediaOutputMode:
-                input.mediaOutputMode,
+                candidate?.output.mediaMode
+                ?? input.mediaOutputMode,
             availableAlbums:
                 input.availableAlbums,
             selectedExistingAlbumIdentifier:
-                input
-                .selectedExistingAlbumIdentifier,
+                album?.destination == .existingAlbum
+                ? album?.identifier ?? ""
+                : input.selectedExistingAlbumIdentifier,
             newAlbumName:
-                input.newAlbumName
+                album?.destination == .newAlbum
+                ? album?.title ?? ""
+                : input.newAlbumName
         )
     }
 
@@ -224,6 +296,42 @@ enum V1ConfigurationApplyRequestBuilder {
                 )
             ]
         )
+    }
+
+    private static func badge(
+        from descriptor:
+            MemoryConfigurationRecord.Presentation.Logo.BadgeDescriptor?
+    ) -> Badge? {
+        guard let descriptor else {
+            return nil
+        }
+
+        return Badge(
+            id: descriptor.id,
+            name: descriptor.name,
+            type: descriptor.type,
+            imageName: descriptor.imageName,
+            imagePath:
+                descriptor.assetReference?.relativePath,
+            systemSymbol: descriptor.systemSymbol,
+            isSystemDefault: descriptor.isSystemDefault
+        )
+    }
+
+    nonisolated private static func outputTarget(
+        for album:
+            MemoryConfigurationRecord.Output.AlbumDescriptor
+    ) -> V1IOSOutputTarget {
+        switch album.destination {
+        case .automatic:
+            return .automatic
+        case .applePhotos:
+            return .applePhotos
+        case .existingAlbum:
+            return .existingAlbum
+        case .newAlbum:
+            return .newAlbum
+        }
     }
 }
 

@@ -105,6 +105,16 @@ struct MediaOutputPolicyTests {
                 imageType: .png
             )
         )
+        #expect(
+            try policy.plan(
+                for: .rawStillImage,
+                sourceContentType:
+                    UTType(exportedAs: "com.apple.proraw"),
+                preference: .jpeg
+            ) == .stillImage(
+                imageType: .jpeg
+            )
+        )
     }
 
     @Test("Plans Live Photo output as a motion-preserving HEIC and MOV pair")
@@ -262,7 +272,7 @@ struct MediaOutputPolicyTests {
         let snapshot =
             BatchConfigurationSnapshot(
                 template:
-                    .template1.normalizedForEditing,
+                    .classicWhite.normalizedForEditing,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: false,

@@ -167,7 +167,7 @@ struct BatchQueueHistoryTests {
         frozenSnapshot.memorySubject = nil
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: true,
@@ -206,7 +206,7 @@ struct BatchQueueHistoryTests {
         frozenSnapshot.memorySubject = nil
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: true,
@@ -246,7 +246,7 @@ struct BatchQueueHistoryTests {
             )
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: legacyAnchor,
                 shouldWritePhotoDescription: true,
@@ -282,7 +282,7 @@ private extension BatchQueueHistoryTests {
             configuration:
                 configuration
                 ?? BatchConfigurationSnapshot(
-                    template: .template1,
+                    template: .classicWhite,
                     badge: nil,
                     anchor: nil,
                     shouldWritePhotoDescription: true,
@@ -323,7 +323,7 @@ private extension BatchQueueHistoryTests {
             )
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: legacyAnchor,
                 shouldWritePhotoDescription: true,
@@ -363,7 +363,7 @@ private extension BatchQueueHistoryTests {
             )
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: legacyAnchor,
                 shouldWritePhotoDescription: true,

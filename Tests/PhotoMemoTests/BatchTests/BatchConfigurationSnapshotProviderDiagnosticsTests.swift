@@ -5,6 +5,35 @@ import Testing
 @Suite("BatchConfigurationSnapshotProvider diagnostics")
 struct BatchConfigurationSnapshotProviderDiagnosticsTests {
 
+    @Test("legacy V1 snapshot does not fabricate aggregate configuration identity")
+    func legacyV1SnapshotKeepsConfigurationIdentityNil() throws {
+        let suiteName =
+            "PhotoMemo.BatchConfigurationSnapshotProviderDiagnosticsTests.legacyIdentity.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let snapshot = BatchConfigurationSnapshotProvider(
+            defaults: defaults
+        ).loadSnapshot()
+
+        #expect(snapshot.configurationID == nil)
+        #expect(snapshot.configurationRevision == nil)
+        #expect(
+            snapshot.canonicalProductionSnapshot?.configurationID
+            == nil
+        )
+        #expect(
+            snapshot.canonicalProductionSnapshot?
+                .configurationRevision
+            == nil
+        )
+    }
+
     @Test("Corrupted template payload is surfaced as a decoding failure while snapshot loading preserves the default template")
     func corruptedTemplatePayloadIsSurfacedAsDecodingFailure() throws {
 
@@ -60,7 +89,7 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
 
         #expect(
             snapshot.template
-            == Template.template1
+            == Template.classicWhite
             .normalizedForEditing
         )
     }

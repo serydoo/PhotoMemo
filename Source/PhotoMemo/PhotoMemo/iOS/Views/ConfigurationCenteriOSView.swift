@@ -241,7 +241,9 @@ struct ConfigurationCenteriOSView: View {
             ConfigurationCenterLocationDisplaySupport
             .summaryValue(
                 module: slotCLocationModule,
-                presentation: locationPresentation
+                presentation: locationPresentation,
+                selectedConfiguration:
+                    savedLocationDisplayConfiguration
             )
 
         return ConfigurationCenterSummarySection(
@@ -286,6 +288,23 @@ struct ConfigurationCenteriOSView: View {
                 )
             }
         )
+    }
+
+    private var savedLocationDisplayConfiguration:
+        ExpressionModuleConfiguration? {
+        let configurationCoordinator =
+            runtime
+            .environment
+            .coordinators
+            .configuration
+
+        switch configurationCoordinator
+            .loadV1ConfigurationBootstrapState() {
+        case .success(let state):
+            return state.locationDisplayConfiguration
+        case .failure:
+            return nil
+        }
     }
 
     private func topConfigurationPreview(

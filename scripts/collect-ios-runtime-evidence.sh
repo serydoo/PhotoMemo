@@ -79,7 +79,7 @@ awk '/PhotoMemo.*\.ips/ {print $1}' "$OUTPUT_DIR/crash-files.txt" \
         >"$OUTPUT_DIR/crashes/copy-$crash_file.log" 2>&1 || true
     done
 
-python3 - "$OUTPUT_DIR" "$APP_GROUP_ID" <<'PY'
+python3 - "$OUTPUT_DIR" "$APP_GROUP_ID" "$APP_BUNDLE_ID" <<'PY'
 import json
 import plistlib
 import sys
@@ -87,21 +87,46 @@ from pathlib import Path
 
 output_dir = Path(sys.argv[1])
 app_group_id = sys.argv[2]
-plist_path = output_dir / "appgroup" / f"{app_group_id}.plist"
+app_bundle_id = sys.argv[3]
+plist_sources = [
+    ("appgroup", output_dir / "appgroup" / f"{app_group_id}.plist"),
+    ("appdata", output_dir / "appdata" / f"{app_bundle_id}.plist"),
+]
 decoded_dir = output_dir / "decoded"
 
-if not plist_path.exists():
-    print(f"App group plist not found: {plist_path}")
+roots = []
+for source_name, plist_path in plist_sources:
+    if not plist_path.exists():
+        print(f"{source_name} plist not found: {plist_path}")
+        continue
+
+    try:
+        roots.append((source_name, plistlib.loads(plist_path.read_bytes())))
+    except Exception as error:
+        (decoded_dir / f"{source_name}.plist.decode-error.txt").write_text(
+            str(error),
+            encoding="utf-8",
+        )
+
+if not roots:
     raise SystemExit(0)
 
-root = plistlib.loads(plist_path.read_bytes())
+decoded_sources = {}
 
 for key, filename in [
     ("photomemo.shareDiagnostics.events", "shareDiagnostics.events.json"),
     ("photomemo.batchQueue.jobs", "batchQueue.jobs.json"),
     ("photomemo.externalIntake.requests", "externalIntake.requests.json"),
 ]:
-    value = root.get(key)
+    source_name = None
+    value = None
+    for candidate_source_name, root in roots:
+        candidate_value = root.get(key)
+        if isinstance(candidate_value, (bytes, bytearray)):
+            source_name = candidate_source_name
+            value = candidate_value
+            break
+
     if not isinstance(value, (bytes, bytearray)):
         continue
 
@@ -116,6 +141,13 @@ for key, filename in [
 
     (decoded_dir / filename).write_text(
         json.dumps(decoded, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    decoded_sources[filename] = source_name
+
+if decoded_sources:
+    (decoded_dir / "runtime-preferences-sources.json").write_text(
+        json.dumps(decoded_sources, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 

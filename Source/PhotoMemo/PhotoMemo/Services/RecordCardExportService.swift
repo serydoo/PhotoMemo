@@ -150,8 +150,7 @@ private extension RecordCardExportService {
                 ?? renderedCGImage.height
             )
         let preservedPhotoCGImage =
-            if card.template.preset.renderLayout == .immersWhite,
-               let sourceCGImage =
+            if let sourceCGImage =
                 sourcePhotoCGImage(for: photo) {
                 PhotoMemoRenderedImageArtifactGuard
                     .replacingPhotoArea(
@@ -529,17 +528,7 @@ private extension RecordCardExportService {
         template: Template
     ) -> CGSize {
 
-        if template.preset.renderLayout == .immersWhite {
-
-            return ImmersWhiteRenderer
-                .outputPixelSize(
-                    for: photo.metadata,
-                    fallbackSize:
-                        photo.image.photoMemoSize
-                )
-        }
-
-        return ClassicWhiteRenderer
+        ClassicWhiteRenderer
             .outputPixelSize(
                 for: photo.metadata,
                 fallbackSize:

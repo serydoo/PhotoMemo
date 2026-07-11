@@ -1781,7 +1781,7 @@ struct MemoryEngineTests {
     private func memorySummaryTemplate() -> Template {
 
         Template(
-            preset: .template1,
+            preset: .classicWhite,
             name: "Memory Summary",
             leftTopArea: .leftTop,
             leftBottomArea: .leftBottom,

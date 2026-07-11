@@ -5,6 +5,66 @@ import Testing
 @Suite("PhotoMemo shared container")
 struct PhotoMemoSharedContainerTests {
 
+    @Test("handoff readiness is ready only when App Group defaults and container URL resolve")
+    func handoffReadinessRequiresAppGroupDefaultsAndContainerURL() {
+
+        let appGroupURL =
+            URL(fileURLWithPath: "/tmp/PhotoMemoAppGroup")
+        let readiness =
+            PhotoMemoSharedContainer
+            .handoffReadiness(
+                userDefaultsProvider: { _ in
+                    UserDefaults.standard
+                },
+                containerURLProvider: { _ in
+                    appGroupURL
+                },
+                fallbackBaseDirectoryURLProvider: {
+                    URL(fileURLWithPath: "/tmp/Fallback")
+                }
+            )
+
+        #expect(readiness.isHandoffReady)
+        #expect(readiness.userDefaultsSuiteAvailable)
+        #expect(readiness.appGroupContainerAvailable)
+        #expect(!readiness.usesFallbackBaseDirectory)
+        #expect(readiness.baseDirectoryURL == appGroupURL)
+        #expect(
+            readiness.diagnosticMessage
+            .contains("handoffReady=true")
+        )
+    }
+
+    @Test("handoff readiness exposes fallback when App Group resolution fails")
+    func handoffReadinessExposesFallbackWhenAppGroupResolutionFails() {
+
+        let fallbackURL =
+            URL(fileURLWithPath: "/tmp/PhotoMemoFallback")
+        let readiness =
+            PhotoMemoSharedContainer
+            .handoffReadiness(
+                userDefaultsProvider: { _ in nil },
+                containerURLProvider: { _ in nil },
+                fallbackBaseDirectoryURLProvider: {
+                    fallbackURL
+                }
+            )
+
+        #expect(!readiness.isHandoffReady)
+        #expect(!readiness.userDefaultsSuiteAvailable)
+        #expect(!readiness.appGroupContainerAvailable)
+        #expect(readiness.usesFallbackBaseDirectory)
+        #expect(readiness.baseDirectoryURL == fallbackURL)
+        #expect(
+            readiness.diagnosticMessage
+            .contains("handoffReady=false")
+        )
+        #expect(
+            readiness.diagnosticMessage
+            .contains("usesFallbackBaseDirectory=true")
+        )
+    }
+
     @Test("ensureDirectory surfaces creation failures")
     func ensureDirectorySurfacesCreationFailures() throws {
         let rootURL =

@@ -1,11 +1,1107 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-10
+Last updated: 2026-07-11
 
-## 2026-07-10 V3 Validation Batch 6 In Progress
+## 2026-07-11 Canonical Classic White Naming Migration
 
-The sixth V3 validation slice closed two remaining low-risk automated
-regression gaps and captured the latest iPhone7 Share Extension evidence.
+This slice made `classicWhite` the sole active preset identity while preserving
+the current compact information-bar renderer output exactly.
+
+Closed / regression-guarded in this slice:
+
+- `TemplatePreset` now exposes only `.classicWhite`; legacy encoded values
+  `template1`, `template2`, `template3`, and `immersWhite` decode to the
+  canonical case, while new encoding emits only `classicWhite`.
+- The current latest renderer and card renderer now own the canonical
+  `ClassicWhiteRenderer` and `ClassicWhiteCardRenderer` symbols. The existing
+  landscape logo-size refinement remains unchanged.
+- Active defaults, configuration writers, renderer routing, export sizing, and
+  Live Photo footer geometry now use only the canonical renderer path.
+- Legacy preset decoding preserves the containing template ID, name, regions,
+  and items. Configuration loading is covered through the real shared-defaults
+  snapshot seam.
+- The superseded fixed-height Classic White renderer implementation and its
+  implementation-bound tests were removed. Historical PNG fixtures, their
+  README, and dated visual QA documentation remain unchanged as legacy
+  evidence.
+
+Verification passed:
+
+```bash
+xcodebuild test -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/PhotoMemoClassicWhiteRequiredTests -only-testing:PhotoMemoTests/TemplatePresetCodableMigrationTests -only-testing:PhotoMemoTests/TemplatePresetRenderLayoutTests -only-testing:PhotoMemoTests/RecordCardRendererRoutingTests -only-testing:PhotoMemoTests/ClassicWhiteRendererLayoutTests -only-testing:PhotoMemoTests/RendererConstantsTests -only-testing:PhotoMemoTests/LogoAssetOptimizationServiceTests -only-testing:PhotoMemoTests/LivePhotoRenderOutputGeometryTests -only-testing:PhotoMemoTests/ConfigurationMigrationTests CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO COMPILER_INDEX_STORE_ENABLE=NO -quiet
+
+xcodebuild test -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoTests -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/PhotoMemoClassicWhiteFixtureReadback -only-testing:PhotoMemoTests/FixtureExportReadbackTests CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO COMPILER_INDEX_STORE_ENABLE=NO -quiet
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoClassicWhiteMacBuild CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO COMPILER_INDEX_STORE_ENABLE=NO -quiet build
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoClassicWhiteiOSBuild CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO COMPILER_INDEX_STORE_ENABLE=NO -quiet build
+
+xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoShareExtension -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PhotoMemoClassicWhiteShareBuild CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO COMPILER_INDEX_STORE_ENABLE=NO -quiet build
+
+git diff --check
+```
+
+## 2026-07-11 V3 Evidence Parser / 21-Reject Gate Slice
+
+This slice tightened runtime evidence parsing and the 21-photo rejection
+scenario before the next signed device pass.
+
+Closed / regression-guarded in this slice:
+
+- Key task evidence events now use stage-specific ordered parsing instead of
+  the generic comma/key regex parser:
+  `batch.task.duration`, `batch.task.route`, `batch.task.admission`, and
+  `batch.task.stageDuration`.
+- Task evidence parsing now preserves filenames containing key-like text such
+  as `route=`, `memoryTier=`, and `stageName=` without corrupting the actual
+  route, admission, or stage fields.
+- `batch.task.stageDuration` parsing now follows the Swift production ordering
+  for sorted extra fields, including `peakResidentMemoryBytes` before
+  `threadName`.
+- `share-21-reject` no longer passes merely because no handoff request, batch
+  job, or crash appeared. It now requires the machine-readable
+  `extension.input.tooManyPhotos` event to pass; otherwise it returns
+  `needs-review`.
+
+Verification passed:
+
+```bash
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+git diff --check
+```
+
+Remaining validation:
+
+- Text diagnostics remain fundamentally less robust than structured payloads.
+  Values containing the immediately next field key are still ambiguous until a
+  future structured diagnostics format replaces key/value strings.
+- The 21-photo rejection UI copy still requires manual device confirmation even
+  when the machine-readable rejection event is present.
+
+## 2026-07-11 V3 Live Photo / 48MP Evidence Duration Gate Slice
+
+This slice aligned the specialized Share evidence scenarios with the stricter
+duration-evidence requirements introduced for `share-1` and `share-20`.
+
+Closed / regression-guarded in this slice:
+
+- `share-livephoto-1` now requires the completed one-task Share job to have
+  matching completed total-duration evidence before route evidence can pass the
+  scenario.
+- `share-livephoto-mixed` now requires the completed mixed Share job to have
+  matching completed total-duration evidence before mixed route evidence can
+  pass the scenario.
+- `share-48mp` now requires the completed Share job to have matching
+  completed total-duration evidence before critical single-lane admission can
+  pass the scenario.
+- Route and admission evaluation are scoped to completed jobs that also have
+  matching duration evidence, preventing unrelated events from being combined
+  into a false pass.
+- Live Photo route failures remain authoritative: a completed single Live
+  Photo Share job routed as `staticImage`, or a mixed Share job without both a
+  Live Photo route and a still route, fails before duration completeness is
+  considered. Duration evidence is required for pass, not allowed to hide a
+  known bad route.
+
+Verification passed:
+
+```bash
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+```
+
+Remaining validation:
+
+- The evidence gates are now stricter, but still require signed real-device
+  runs for Apple Photos provider behavior, Live Photo save-back, 48MP memory
+  behavior, RAW/ProRAW/DNG, multi-48MP pressure, and Instruments traces.
+
+## 2026-07-11 V3 Diagnostics Retention Matrix Slice
+
+This slice tightened runtime evidence retention before the next 20-photo /
+mixed Live Photo / performance device pass.
+
+Closed / regression-guarded in this slice:
+
+- Share diagnostics retention now preserves a full 20-photo mixed evidence
+  matrix: shared-container readiness plus 20 photos with provider observation,
+  source readiness, Live Photo probe/static fallback, identity recovery, route,
+  stage-duration, and total-duration events.
+- The diagnostics retention cap increased from 640 to 768 events. This remains
+  bounded, but avoids dropping the readiness event in a realistic 20-photo
+  evidence run.
+- The retention regression now includes stage-duration performance fields
+  (`isMainThread`, `threadName`, `peakResidentMemoryBytes`) so future
+  MainActor / memory evidence is not silently trimmed before summarization.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3DiagnosticsRetentionGreen \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+git diff --check
+```
+
+Remaining validation:
+
+- This protects local evidence retention, but signed real-device validation is
+  still required for App Group handoff, Live Photo provider behavior, mixed
+  Live Photo save-back, 48MP/RAW, multi-48MP memory pressure, and Instruments.
+- Live Photo readiness helper duplication remains a possible future
+  simplification, but is not prioritized ahead of the next device pass because
+  behavior is currently aligned by tests and the remaining risk is provider /
+  device behavior.
+
+## 2026-07-11 V3 Share Duration Evidence Gate Slice
+
+This slice tightened the reusable real-device evidence evaluator before the
+next signed Share Extension pass.
+
+Closed / regression-guarded in this slice:
+
+- `share-1` and `share-20` scenarios no longer pass on completed jobs alone.
+  They now require shared-container readiness and matching per-task
+  `batch.task.duration` evidence for the completed Share job.
+- Scenario evaluation now uses the full new event set instead of only the
+  Markdown tail, so 20-photo and future larger evidence runs are not evaluated
+  from a truncated event window.
+- `batch.task.stageDuration` summaries now preserve optional performance
+  fields (`isMainThread`, `threadName`, `peakResidentMemoryBytes`) when runtime
+  diagnostics include them.
+
+Verification passed:
+
+```bash
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+```
+
+Remaining validation:
+
+- This improves evidence quality, but still does not replace signed device
+  validation for Share Extension handoff, Live Photo, 48MP, RAW/ProRAW/DNG,
+  multi-48MP memory pressure, Instruments, real AV composition, or PhotoKit
+  save/readback behavior.
+
+## 2026-07-11 V3 Evidence Scenario / RAW Filename Fallback Slice
+
+This slice closed remaining code-testable validation gaps before the next
+signed real-device pass.
+
+Closed / regression-guarded in this slice:
+
+- Runtime evidence summaries now support `share-livephoto-1`,
+  `share-livephoto-mixed`, and `share-48mp` scenarios in addition to the
+  existing baseline / still-share / rejection scenarios.
+- `share-livephoto-1` requires the completed one-task Share job to include a
+  `livePhoto` route; a static fallback route fails the scenario instead of
+  passing as a generic `share-1`.
+- `share-livephoto-mixed` now scopes route evidence to the completed Share job,
+  preventing unrelated route events from creating a false pass.
+- `share-48mp` now requires critical single-lane admission evidence for a
+  48MP task, alongside a completed Share job and no new PhotoMemo crash.
+- Media routing now treats broad provider declarations such as `public.image`
+  with a RAW filename extension as RAW still-image input. This protects real
+  providers that preserve the filename but only advertise a broad image type.
+
+Verification passed:
+
+```bash
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3RawFallbackGreen \
+  -only-testing:PhotoMemoTests/MediaProcessingRouterTests \
+  -only-testing:PhotoMemoTests/MediaProcessingPlannerTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+```
+
+Remaining validation:
+
+- These scenarios improve automatic real-device evidence evaluation, but do not
+  replace the signed device runs themselves.
+- True RAW/ProRAW/DNG decode, generated-output readback, Apple Photos provider
+  behavior, multi-48MP memory pressure, and Instruments evidence remain device
+  validation items.
+
+## 2026-07-11 V3 Orientation / Location / Landscape Logo Closure Slice
+
+This slice closed three user-reported V3 follow-up items in severity order.
+
+Closed / regression-guarded in this slice:
+
+- Large-batch portrait stretch / landscape-output risk: metadata import now
+  normalizes ImageIO orientation-aware display dimensions before downstream
+  renderer/export orientation selection. Existing HEIC fixture coverage now
+  proves an orientation-6 source with raw landscape pixels imports as display
+  portrait and exports as upright portrait output.
+- Location display configuration loss: `saveV1Configuration` no longer treats a
+  missing `locationDisplayConfiguration` on a save request as a destructive
+  clear. A save that does not update location display preserves the previously
+  saved configuration in the default processing snapshot and bootstrap state.
+- Configuration Center location summary now passes the saved
+  `locationDisplayConfiguration` into the summary presenter, so a preselected
+  display mode remains visible even when the location module is not currently
+  inserted into Slot C.
+- Landscape Immers output logo is now scaled to match the divider height
+  (`logoSizeRatio == dividerHeightRatio`) while tightening logo-to-divider
+  spacing to preserve the existing visual center.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3LocationGreenSuite \
+  -only-testing:PhotoMemoTests/ConfigurationMigrationTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3LocationSummaryGreen4 \
+  -only-testing:PhotoMemoTests/ConfigurationCenterLocationDisplaySupportTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3LogoGreen \
+  -only-testing:PhotoMemoTests/ImmersWhiteRendererLayoutTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+git diff --check
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3ClosureIOSBuild3 \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3ClosureShareBuild3 \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Remaining validation:
+
+- Re-run signed real-device mixed Live Photo + still Share validation after the
+  next install/TestFlight build.
+- Re-run large-batch real-device validation with multiple portrait/landscape
+  HEIC inputs to confirm no remaining provider-specific orientation anomalies.
+- 48MP HEIC, RAW/ProRAW/DNG, multi-48MP, Instruments main-thread/memory
+  evidence, and real AV composition / PhotoKit save readback remain device
+  validation items.
+
+## 2026-07-11 V3 Live Photo Share Hardening / Recovery Confidence Slice
+
+This slice closed additional code-testable risks before the next signed
+real-device Live Photo Share pass.
+
+Closed / regression-guarded in this slice:
+
+- `PhotoProcessingInputPolicy` now owns the shared Live Photo type identifier
+  set (`com.apple.live-photo` and `com.apple.live-photo-bundle`). Share
+  provider selection and Live Photo identity recovery consume that model-layer
+  truth instead of making `Models` depend on the App diagnostics selector.
+- Added a model-layer dependency regression so
+  `PhotoProcessingInputPolicy.swift` cannot silently reintroduce coupling to
+  `PhotoMemoShareProviderTypeSelection`.
+- Share Extension Live Photo intake no longer preflights destructive provider
+  loads before the real import. The production path no longer calls
+  `loadFileRepresentation`, `loadItem`, `loadDataRepresentation`, or
+  `loadObject(PHLivePhoto)` only for diagnostics before attempting the real
+  Live Photo file import.
+- Added a Share Extension regression that prevents reintroducing
+  `await probeLivePhotoRepresentation(...)` into the production Live Photo
+  intake path.
+- Added a mixed-batch queue regression proving still images, source
+  `.livephoto` bundles, and PhotoKit-identity Live Photos route independently
+  in one Share-originated batch.
+- `LivePhotoAssetIdentityMatcher` now requires capture-date agreement and
+  filename-basename agreement before recovering a static fallback into a
+  PhotoKit Live Photo identity. Pixel size remains auxiliary evidence rather
+  than sufficient evidence.
+- Added a recovery-confidence regression so capture-date + pixel-size agreement
+  without filename agreement remains `.notFound`.
+
+Verification passed:
+
+```bash
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+git diff --check
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3FocusedAll \
+  -only-testing:PhotoMemoTests/ModelLayerDependencyDirectionTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/ShareDrainMigrationRegressionTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3IOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3ShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Remaining validation:
+
+- Real-device signed Share validation still decides whether Apple Photos
+  supplies a source `.livephoto` bundle, a recoverable static fallback with
+  filename/capture-date evidence, or an unrecoverable static fallback.
+- Mixed Live Photo + still Share batches now have code-level route coverage,
+  but still require signed device validation for real provider behavior and
+  PhotoKit save-back.
+- Share Extension and main-app `.livephoto` readiness rules remain duplicated
+  in implementation shape. They are behaviorally aligned by tests today, but a
+  future simplification should move pure bundle-readiness logic into one shared
+  target-safe helper.
+- 48MP HEIC, RAW/ProRAW/DNG, multi-48MP, Instruments main-thread/memory
+  evidence, and real AV composition / PhotoKit save readback remain device
+  validation items.
+
+## 2026-07-11 V3 Real Live Photo Processor Seam / Route TaskID Slice
+
+This slice closed the remaining code-only gap between queue-level Live Photo
+routing tests and the real `LivePhotoBatchTaskProcessor` source-bundle branch.
+
+Closed / regression-guarded in this slice:
+
+- Added a narrow `LivePhotoPairComposing` protocol seam and kept
+  `LivePhotoPairCompositionService` as the production implementation.
+- `LivePhotoBatchTaskProcessor` now accepts `any LivePhotoPairComposing`,
+  allowing tests to exercise the real processor orchestration without invoking
+  real AV pair composition.
+- A focused regression now proves the real source-bundle branch:
+  - uses the located still/movie resources from a `.livephoto` directory
+  - does not call the PhotoKit asset loader when `sourceIdentifier` is absent
+  - passes the inner still/movie URLs into the pair composer
+  - saves with the inner still/movie original filenames
+- `batch.task.route` diagnostics now include `taskID`, and runtime evidence
+  summaries expose that `taskID` in `newTaskRouteEvents` so route, admission,
+  stage-duration, and total-duration evidence can be correlated per task.
+
+Verification passed:
+
+```bash
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+git diff --check
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3RealLivePhotoProcessorFocused \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/ShareDrainMigrationRegressionTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3RealLivePhotoProcessorIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3RealLivePhotoProcessorShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Remaining validation:
+
+- The processor seam proves orchestration, not real AV composition or real
+  PhotoKit save behavior. Those still require signed device validation.
+- Share Extension / main-app locator parity is behaviorally aligned today, but
+  the extension still mirrors locator rules in its own readiness helper. A
+  future simplification could move pure bundle-readiness logic into a shared
+  target-safe helper.
+
+## 2026-07-11 V3 Route Evidence / Live Photo Bundle Type Slice
+
+This slice continued code-only V3 hardening before the next signed
+real-device/TestFlight pass.
+
+Closed / regression-guarded in this slice:
+
+- Runtime evidence key/value parsing now preserves normal comma-space values,
+  such as `fileName=Summer, Beach.HEIC`, instead of truncating them at the
+  comma.
+- `batch.task.route` diagnostics now have a regression-guarded builder and
+  distinguish the three important Live Photo routing cases:
+  PhotoKit asset identity, source `.livephoto` bundle, and static-image
+  fallback.
+- Runtime evidence summaries now expose `newTaskRouteEvents` and render a
+  Markdown `New Task Route Events` section with `route`,
+  `hasSourceIdentifier`, and `sourceURLIsLivePhotoBundle`.
+- `com.apple.live-photo-bundle` is now recognized by
+  `PhotoProcessingInputPolicy.isLivePhotoContentType`, aligning provider
+  selection, Share Extension intake policy, and main-app batch routing.
+- Signed Share scenario evaluation is stricter: `share-1` / `share-20` cannot
+  pass without a new shared-container readiness event, and
+  `handoffReady=false` is treated as a failure even if the batch job completed.
+
+Verification passed:
+
+```bash
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+git diff --check
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3RouteBundleTypeFocused \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/ShareDrainMigrationRegressionTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3RouteBundleTypeIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3RouteBundleTypeShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Remaining validation:
+
+- Real-device evidence still decides whether Apple Photos supplies
+  `com.apple.live-photo`, `com.apple.live-photo-bundle`, a static fallback, or
+  a recoverable PhotoKit identity for each Share scenario.
+- The text parser still cannot safely preserve malicious or unusual values
+  that contain key-looking substrings such as `", route="`. A future
+  structured-diagnostics payload would be stronger than extending text parsing
+  indefinitely.
+- A real `LivePhotoBatchTaskProcessor` orchestration seam remains a useful
+  future code-only slice if we want to assert pair-composer source URLs without
+  invoking real media composition.
+
+## 2026-07-11 V3 Live Photo Bundle Contract / Evidence Fallback Slice
+
+Live Photo real-device verification remains pending, but the code-only Share
+handoff path now has stronger bundle contracts before the next device run.
+
+Closed / regression-guarded in this slice:
+
+- Share drain no longer drops valid `.livephoto` bundle directories before
+  queue enqueue. `ShareCoordinator` now treats a resolvable Live Photo source
+  bundle as a valid request source, while normal still-image files continue to
+  use the existing ImageIO readability gate.
+- `LivePhotoSourceBundleLocator` now requires exactly one still image and
+  exactly one paired movie in a source bundle, and their basename must match.
+  Directories with unrelated image/movie files, multiple still candidates, or
+  multiple movie candidates are rejected instead of being auto-paired.
+- Prepared Live Photo bundle save requests now use the still resource's
+  original filename instead of the wrapper directory filename such as
+  `SharedLivePhoto.livephoto`.
+- The Share Extension Live Photo bundle readiness mirror now uses the same
+  unique-pair / matching-basename rule and reports candidate counts plus
+  basename agreement in diagnostics.
+- Runtime evidence collection now decodes persisted runtime JSON from App
+  Group preferences first and falls back to app data preferences when the App
+  Group plist is unavailable or missing the key. This preserves
+  `app.sharedContainerReadiness` evidence in the exact fallback-defaults case
+  it is meant to diagnose.
+
+Verification passed:
+
+```bash
+zsh -n scripts/collect-ios-runtime-evidence.sh
+
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+git diff --check
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3LivePhotoBundleFocused \
+  -only-testing:PhotoMemoTests/ShareDrainMigrationRegressionTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/ExternalPhotoIntakeStoreDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  -only-testing:PhotoMemoTests/MediaOutputPolicyTests \
+  -only-testing:PhotoMemoTests/MetadataPolicyResolverTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3LivePhotoBundleIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3LivePhotoBundleShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Remaining validation:
+
+- Signed TestFlight / real-device proof is still required for Share Extension
+  Live Photo single and mixed selections, because Apple Photos provider
+  behavior determines whether the extension receives a static fallback,
+  recoverable PhotoKit identity, or a resolvable source bundle.
+- The source-bundle locator still intentionally avoids fabricating Live Photos
+  from arbitrary still/video pairs; if future Apple payloads use different
+  naming, real-device evidence should drive a narrower pairing-identity rule
+  rather than reopening broad auto-pairing.
+- Runtime evidence message parsing still treats diagnostic fields as
+  comma-separated key/value text. File names containing `", "` remain a
+  parser-hardening follow-up, not a blocker for the current code path.
+
+## 2026-07-11 V3 Handoff Readiness / 48MP Admission / RAW Policy Slice
+
+Live Photo real-device verification remains paused until the next device
+session. The current V3 work continued on code-only validation and production
+diagnostics that can be proven locally.
+
+Closed / regression-guarded in this slice:
+
+- `PhotoMemoSharedContainer` now exposes an explicit App Group handoff
+  readiness snapshot instead of silently hiding whether App Group
+  `UserDefaults` and container URL resolution succeeded.
+- Existing fallbacks are preserved: `.standard` defaults remain available for
+  local/macOS/test execution, and Application Support remains the fallback base
+  directory when App Group container resolution fails.
+- `ExternalPhotoIntakeStore.persistManagedRequestDetailed` now records
+  `app.sharedContainerReadiness` diagnostics before persisted handoff requests
+  are saved, making signed-device App Group entitlement problems visible in
+  runtime evidence.
+- Runtime evidence summaries now expose `newSharedContainerReadinessEvents`
+  and render a Markdown `New Shared Container Readiness` section for signed
+  Share Extension handoff validation.
+- Runtime evidence summaries now expose Live Photo fallback/recovery sections:
+  `newLivePhotoStaticPayloadEvents` and
+  `newLivePhotoIdentityRecoveryEvents`.
+- Share diagnostics retention increased to 640 events so a 20-item Live Photo
+  fallback/recovery run can preserve early App Group readiness plus provider,
+  probe, fallback, recovery, route, stage-duration, and total-duration events.
+- Timezone-less EXIF/TIFF dates used for Live Photo static fallback recovery
+  now parse in the local capture timezone instead of UTC, preventing non-UTC
+  devices from missing PhotoKit matches by several hours.
+- Batch enqueue now records `batch.task.admission` for every task with
+  48MP/RAW memory-budget fields, including pixel count, estimated decoded
+  bytes, memory tier, single-lane concurrency limits, and
+  `schedulerMode=singleTaskLoop`.
+- Runtime evidence summaries now expose `newTaskAdmissionEvents` and render a
+  Markdown `New Task Admission Events` section for 48MP/RAW device runs.
+- RAW/ProRAW input policy now recognizes ProRAW through an exported UTType
+  identifier even when the SDK does not provide a built-in type.
+- RAW/ProRAW routes to generated still outputs now carry a clear policy
+  warning: MemoMark generates a normal still image output and does not preserve
+  RAW/ProRAW as output.
+- PNG RAW/ProRAW output policies keep both warnings: generated-still
+  non-preservation plus PNG metadata container limitations.
+- User-facing supported-format copy now says `RAW/ProRAW/DNG`.
+
+Verification passed:
+
+```bash
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+git diff --check
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoLivePhotoEvidenceAndDateTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/ShareDrainMigrationRegressionTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoV3RemainingFocusedTests \
+  -only-testing:PhotoMemoTests/PhotoMemoSharedContainerTests \
+  -only-testing:PhotoMemoTests/ExternalPhotoIntakeStoreDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/MetadataPolicyResolverTests \
+  -only-testing:PhotoMemoTests/StillImageMetadataWriterContractTests \
+  -only-testing:PhotoMemoTests/MediaOutputPolicyTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3RemainingIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoV3RemainingShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Remaining validation:
+
+- App Group readiness still needs signed TestFlight / real-device proof because
+  entitlement and provisioning behavior cannot be fully proven by unsigned
+  generic builds.
+- 48MP/RAW admission diagnostics are evidence infrastructure; the next
+  real-device 48MP / multi-48MP run should compare `newTaskAdmissionEvents`,
+  `newTaskStageDurations`, and crashes/memory behavior before changing queue
+  scheduling.
+- RAW/ProRAW output remains generated still-image output by policy. True RAW
+  preservation is explicitly not implemented in this slice.
+
+## 2026-07-11 V3 Batch Stage Duration Evidence Slice
+
+Live Photo real-device verification is paused until the next device session.
+The current V3 validation work continued on the concurrency / performance
+evidence track.
+
+Closed / regression-guarded in this slice:
+
+- Batch execution now records per-stage runtime diagnostics through
+  `batch.task.stageDuration`.
+- Static-image tasks record `import`, `build`, `export`, `save`, and
+  `notificationAttachment` stage durations.
+- Live Photo tasks record a coarse `livePhotoProcessing` stage duration while
+  preserving the existing Live Photo processor boundary.
+- Total task duration events remain available through `batch.task.duration`,
+  now with `runtimeStage=total` for forward-compatible parsing.
+- Share diagnostics retention increased from 80 to 240 events so a 20-photo
+  run with per-stage timing does not immediately evict early-stage evidence.
+- Runtime evidence summaries now expose `newTaskStageDurations` and render a
+  Markdown `New Task Stage Durations` section.
+
+Verification passed:
+
+```bash
+python3 -m py_compile scripts/summarize-ios-runtime-evidence.py
+
+python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoStageDurationTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoStageDurationIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoStageDurationShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+Remaining validation:
+
+- Run the next real-device Share 20-photo / 48MP scenarios and compare
+  `newTaskStageDurations` to decide whether `export`, `save`, or Live Photo
+  composition needs actor-boundary extraction.
+- This is measurement infrastructure, not proof that MainActor pressure is
+  solved.
+
+## 2026-07-11 Share Live Photo Static Fallback Identity Recovery
+
+The Share Extension / main app Live Photo consistency strategy is now safer and
+more explicit:
+
+- Share Extension still treats a flattened JPEG/HEIC as a static payload and
+  does not pretend it is motion-preserving Live Photo output.
+- When Apple Photos advertises `com.apple.live-photo` but only provides a
+  static file, the Share Extension now persists a
+  `LivePhotoStaticFallbackRecoveryHint` with the original file name, advertised
+  Live Photo type, static content type, capture date, and pixel size when
+  ImageIO can read them.
+- The main app `ShareCoordinator` now attempts PhotoKit identity recovery
+  before queue enqueue. If exactly one high-confidence Live Photo asset matches,
+  the payload is upgraded to `com.apple.live-photo` with the recovered
+  `PHAsset.localIdentifier` and then flows through the existing Live Photo
+  processor.
+- If recovery is unavailable, not found, or ambiguous, the payload remains the
+  real static JPEG/HEIC fallback. This preserves the no-fake-Live-Photo rule.
+- Mixed Share selections are handled item by item: each payload can independently
+  recover to Live Photo or remain static before queue dedupe and routing.
+- Runtime diagnostics now record `app.livePhotoIdentityRecovery` with matched /
+  notFound / ambiguous / unavailable outcomes.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoLivePhotoRecoveryTests2 \
+  -only-testing:PhotoMemoTests/ShareDrainMigrationRegressionTests \
+  -only-testing:PhotoMemoTests/ExternalPhotoIntakeStoreDiagnosticsTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoLivePhotoRecoveryExistingTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoLivePhotoRecoveryShareBuild2 \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoLivePhotoRecoveryIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+```
+
+## 2026-07-11 Share Extension Live Photo Static Fallback Boundary
+
+Real-device iPhone7 evidence confirmed that Apple Photos Share can advertise
+`com.apple.live-photo` while still failing every Live Photo representation load
+available to the Share Extension:
+
+- `loadFileRepresentation(com.apple.live-photo)` failed.
+- `loadItem(com.apple.live-photo)` failed.
+- `loadDataRepresentation(com.apple.live-photo)` failed.
+- `loadObject(PHLivePhoto.self)` could not load a `PHLivePhoto`.
+- The copied source remained a single `.jpg` / `.jpeg` file without a PhotoKit
+  asset identity and without a still+movie bundle.
+
+The product boundary is now explicit:
+
+- Share Extension must not pretend a flattened JPEG is a motion-preserving
+  Live Photo.
+- If a usable Live Photo package or real PhotoKit identity is provided, the
+  existing Live Photo processor path remains eligible.
+- If Apple Photos only provides a static image payload, Share Extension records
+  the Live Photo static fallback and persists the item as its real image content
+  type instead of keeping a misleading `com.apple.live-photo` payload.
+- The Share Extension confirmation copy now reports when Live Photos were
+  accepted as static photos, directing the product truth toward main-app picker
+  Live Photo preservation rather than fake Share Extension support.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoShareLivePhotoFallbackTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoShareLivePhotoFallbackShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoShareLivePhotoFallbackIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+git diff --check
+```
+
+iPhone7 status:
+
+- Installed the current Debug build to device
+  `863C2747-6742-5E93-B715-6F89DBF90B31`.
+- Clean post-drain baseline:
+  `/tmp/PhotoMemoRuntimeEvidence/share-livephoto-static-fallback-clean-baseline-20260711-063149`.
+- The baseline has no new Share requests, no new batch jobs, and no new
+  PhotoMemo crashes relative to the previous post-install evidence.
+
+## 2026-07-10 Share Extension Live Photo Intake Slice
+
+This slice advances the V3 goal that both daily Share entry and the main app
+picker can accept mixed selections and route each item independently.
+
+Closed / regression-guarded in this slice:
+
+- Share Extension provider filtering now keeps providers that advertise
+  `com.apple.live-photo` / `com.apple.live-photo-bundle`, even if the provider
+  is not only treated as a plain `public.image`.
+- Share Extension intake diagnostics and persistence now use the existing
+  Live Photo-first provider selector instead of letting the production path
+  diverge from the helper-level regression.
+- Share Extension now attempts a real Live Photo file representation first and
+  allows directory/package copies for that representation; if the system only
+  provides a flattened image, the existing static-image fallback remains.
+- Shared intake copying can explicitly skip image-readiness validation for
+  Live Photo package copies while preserving the original readable-image guard
+  for ordinary images.
+- Batch routing now treats a `com.apple.live-photo` payload with either a real
+  PhotoKit asset identity or a resolvable local Live Photo package directory as
+  eligible for Live Photo processing.
+- `LivePhotoBatchTaskProcessor` can process a source bundle directory that
+  contains a still image and paired movie, reusing the existing still/video
+  composition and Live Photo save path.
+- Share data fallback no longer writes a data hash into `sourceIdentifier` for
+  Live Photo-typed payloads, preventing a dedupe key from being mistaken for a
+  PhotoKit local identifier.
+
+Verification passed:
+
+```bash
+xcodebuild test \
+  -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoTests \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath /tmp/PhotoMemoShareLivePhotoFinalTests \
+  -only-testing:PhotoMemoTests/LivePhotoBatchQueueExecutionTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareIntakeDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoMemoShareDiagnosticsTests \
+  -only-testing:PhotoMemoTests/PhotoProcessingInputPolicyTests \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoShareExtension \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoShareLivePhotoFinalShareBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj \
+  -scheme PhotoMemoiOS \
+  -destination 'generic/platform=iOS' \
+  -configuration Debug \
+  -derivedDataPath /tmp/PhotoMemoShareLivePhotoFinalIOSBuild \
+  CODE_SIGNING_ALLOWED=NO \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -quiet build
+
+git diff --check
+```
+
+Important real-device boundary:
+
+- This closes the code path for Share providers that expose a usable Live Photo
+  package or real PhotoKit asset identity.
+- It does not prove that Apple Photos will always provide such a package to a
+  Share Extension. If real-device Share diagnostics still show only
+  `registeredTypes=public.jpeg`, MemoMark must truthfully fall back to static
+  output because the paired video resource was not delivered by the platform.
+- Next device validation should share: one Live Photo only, a mixed
+  Live Photo + JPEG/HEIC batch, and a normal still-only batch, then confirm
+  diagnostics show either `route=livePhoto` for eligible items or explicit
+  static fallback when Apple Photos provides only a flattened image.
+
+## 2026-07-10 V3 Validation Batch 6 Historical Device Evidence
+
+The sixth V3 validation slice closed two low-risk automated regression gaps
+and captured iPhone7 Share Extension evidence. Later 2026-07-11 V3 slices
+supersede its "in progress" state for code-testable work.
 
 Closed / regression-guarded in this batch:
 
@@ -34,9 +1130,9 @@ Closed / regression-guarded in this batch:
 - RAW / ProRAW high-resolution handling is recorded as a V3 follow-up
   engineering item, not a 1.6 blocker. Current real-device Share evidence shows
   RAW-like / high-resolution Apple Photos inputs can arrive as `public.jpeg`
-  and complete successfully; future work should add explicit RAW input
-  detection, JPEG/HEIC output policy, and metadata-retention validation without
-  promising RAW output.
+  and complete successfully. Current code now has explicit RAW/ProRAW/DNG input
+  policy, generated still-output policy, and metadata-warning coverage without
+  promising RAW output preservation.
 
 Verification passed:
 
@@ -15791,3 +16887,74 @@ Manual verification still not done in this follow-up:
 - iPhone-side editor typing/caret behavior after repeated smart-module insertion
 - preset switching while draft content is already dirty
 - subject switch / birthday change / preview refresh behavior on device
+## 2026-07-11 V3 Configuration Aggregate / Local Backup / Bottom Edge Closure
+
+This slice completed the code-testable configuration persistence and local
+backup work before signed-device verification.
+
+Closed / regression-guarded:
+
+- `ConfigurationLibraryRecord` is the sole runtime durable truth. Subject and
+  configuration UUIDs define identity; legacy keys and slots are one-way
+  compatibility projections.
+- Complete configuration apply persists the atomic aggregate before publishing
+  the matching production snapshot and reconciling Session state.
+- Local backups use subject UUID paths, atomic document replacement, SHA-256
+  verification, revision conflict protection, relative asset packaging and
+  source/destination symlink containment.
+- Import validates before mutation, preserves current live subject facts for a
+  matching subject UUID, restores colliding configuration IDs as copies, and
+  safely degrades missing anchors, albums and assets.
+- Home rows expose local Save and live Delete actions. Dirty current
+  configurations apply before backup; saving disables backup; live deletion
+  atomically updates the aggregate while retained backups stay independent.
+- Incomplete external import and self-contained asset export controls are
+  disabled and labelled as upcoming rather than presented as working actions.
+- Classic White output height is rounded to an integer pixel size. Renderer,
+  JPEG readback and Live Photo still tests cover even/odd portrait and landscape
+  dimensions and assert an opaque information-bar-colored final edge.
+- The 21-photo Share rejection now uses the warmer message: memories can be
+  processed in several small batches, with the action `返回分批分享`.
+
+Verification passed:
+
+- Focused configuration, backup, import, UI contract, Share copy, renderer,
+  JPEG readback, Live Photo still and fixture suites. The destination symlink
+  regression was rerun after resolving the nearest existing ancestor and passed.
+- `python3 -m unittest scripts.tests.test_summarize_ios_runtime_evidence`
+  (33 tests), Python compilation, shell syntax, and `git diff --check`.
+- Unsigned Debug builds for `PhotoMemo`, `PhotoMemoiOS`, and
+  `PhotoMemoShareExtension`.
+
+Deferred signed-device verification remains unchanged: Share 1/20/21 evidence,
+Live Photo save/playback and mixed routing, orientation/location persistence,
+real AV/PhotoKit readback, and Instruments main-thread/memory/timing evidence.
+48MP and RAW/ProRAW/DNG quality work is recorded as a later enhancement and is
+not a blocker for this configuration slice.
+
+Known non-blocking follow-up:
+
+- Add the actual Files importer and a self-contained asset export package.
+- Make the local library tolerate one corrupt backup while listing healthy ones.
+- Distinguish an unavailable Photos album list from a confirmed missing album.
+- Consider moving import decoding/checksum work off MainActor after measurement.
+
+## 2026-07-11 Clean-Install Region Persistence Blocker
+
+Signed-device validation found one unresolved release blocker after a full app
+deletion and clean `1.6 (7)` install. Four-region custom content updates the
+renderer while editing, but `保存为当前配置` returns the renderer to preset
+defaults while the editor retains its local drafts. After app restart, those
+custom editor drafts are also gone.
+
+The save-receipt projection callback and concurrent-edit guard are implemented
+and covered by focused tests, but the clean-device result proves the remaining
+failure is deeper than save-time UI refresh. The next engineering session must
+start with a real repository round-trip test covering four distinct region
+drafts from candidate construction through persistence, new-session bootstrap,
+draft projection and renderer preview synchronization. See `HANDOFF.md` for the
+exact reproduction, inspected data boundaries and resume file list.
+
+Release status: checkpoint only. Do not describe configuration persistence as
+closed until the round-trip regression passes and the same clean-device flow is
+confirmed manually.

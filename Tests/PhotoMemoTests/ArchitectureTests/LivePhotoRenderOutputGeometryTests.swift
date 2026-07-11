@@ -6,53 +6,8 @@ import Testing
 @Suite("Live Photo render output geometry")
 struct LivePhotoRenderOutputGeometryTests {
 
-    @Test("Classic White geometry follows the V1 fixed bottom-bar height")
-    func classicWhiteGeometryFollowsV1FixedBottomBarHeight() throws {
-        let sourceSize =
-            CGSize(width: 4032, height: 3024)
-        let renderedSize =
-            CGSize(
-                width: sourceSize.width,
-                height:
-                    sourceSize.height
-                    + ClassicWhiteRenderer
-                    .theme
-                    .bottomBar
-                    .height
-            )
-
-        let geometry =
-            try LivePhotoRenderOutputGeometry
-            .resolved(
-                renderedPixelSize: renderedSize,
-                sourcePhotoPixelSize: sourceSize
-            )
-
-        #expect(
-            geometry.canvasSize == renderedSize
-        )
-        #expect(
-            geometry.photoFrame
-            == CGRect(
-                x: 0,
-                y: 260,
-                width: 4032,
-                height: 3024
-            )
-        )
-        #expect(
-            geometry.footerFrame
-            == CGRect(
-                x: 0,
-                y: 0,
-                width: 4032,
-                height: 260
-            )
-        )
-    }
-
-    @Test("Immers geometry follows the V1 orientation-specific output size")
-    func immersGeometryFollowsV1OrientationSpecificOutputSize() throws {
+    @Test("Classic White geometry follows the current orientation-specific output size")
+    func classicWhiteGeometryFollowsCurrentOrientationSpecificOutputSize() throws {
         let landscapeMetadata =
             PhotoMetadata(
                 imageWidth: 4032,
@@ -65,14 +20,14 @@ struct LivePhotoRenderOutputGeometryTests {
             )
 
         let landscapeOutput =
-            ImmersWhiteRenderer
+            ClassicWhiteRenderer
             .outputPixelSize(
                 for: landscapeMetadata,
                 fallbackSize:
                     CGSize(width: 4032, height: 3024)
             )
         let portraitOutput =
-            ImmersWhiteRenderer
+            ClassicWhiteRenderer
             .outputPixelSize(
                 for: portraitMetadata,
                 fallbackSize:
@@ -96,23 +51,36 @@ struct LivePhotoRenderOutputGeometryTests {
                     CGSize(width: 3024, height: 4032)
             )
 
+        let landscapeFooterHeight =
+            landscapeOutput.height - 3024
+        let portraitFooterHeight =
+            portraitOutput.height - 4032
+
         #expect(
-            abs(
-                landscapeGeometry.footerFrame.height
-                - 3024
-                * ImmersWhiteRenderer
-                .layout(for: .landscape)
-                .borderToImageHeightRatio
-            ) < 0.001
+            landscapeGeometry.footerFrame.height
+            == landscapeFooterHeight
+        )
+        #expect(
+            portraitGeometry.footerFrame.height
+            == portraitFooterHeight
         )
         #expect(
             abs(
-                portraitGeometry.footerFrame.height
+                landscapeFooterHeight
+                - 3024
+                * ClassicWhiteRenderer
+                .layout(for: .landscape)
+                .borderToImageHeightRatio
+            ) <= 0.5
+        )
+        #expect(
+            abs(
+                portraitFooterHeight
                 - 4032
-                * ImmersWhiteRenderer
+                * ClassicWhiteRenderer
                 .layout(for: .portrait)
                 .borderToImageHeightRatio
-            ) < 0.001
+            ) <= 0.5
         )
         #expect(
             landscapeGeometry.footerFrame.height

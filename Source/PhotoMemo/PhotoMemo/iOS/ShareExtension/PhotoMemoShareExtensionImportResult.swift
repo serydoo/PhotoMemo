@@ -23,6 +23,9 @@ struct PhotoMemoShareExtensionImportResult {
     let unsupportedRejectionReports:
         [PhotoMemoMediaIntakeRejectionReport]
 
+    let livePhotoStaticFallbackCount:
+        Int
+
     init(
         requestID: UUID,
         itemProviderCount: Int,
@@ -34,7 +37,9 @@ struct PhotoMemoShareExtensionImportResult {
         failureContext:
             PhotoMemoShareIntakeFailureContext?,
         unsupportedRejectionReports:
-            [PhotoMemoMediaIntakeRejectionReport] = []
+            [PhotoMemoMediaIntakeRejectionReport] = [],
+        livePhotoStaticFallbackCount:
+            Int = 0
     ) {
         self.requestID =
             requestID
@@ -52,6 +57,8 @@ struct PhotoMemoShareExtensionImportResult {
             failureContext
         self.unsupportedRejectionReports =
             unsupportedRejectionReports
+        self.livePhotoStaticFallbackCount =
+            livePhotoStaticFallbackCount
     }
 
     var importedCount: Int {
@@ -68,6 +75,7 @@ struct PhotoMemoShareExtensionImportResult {
 
     var hasWarnings: Bool {
         summary.hasWarnings
+        || livePhotoStaticFallbackCount > 0
     }
 
     var firstUnsupportedRejectionReport:

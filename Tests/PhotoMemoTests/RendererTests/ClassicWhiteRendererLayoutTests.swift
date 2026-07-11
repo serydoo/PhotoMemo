@@ -1,14 +1,14 @@
 import Testing
 @testable import PhotoMemo
 
-@Suite("ImmersWhiteRenderer Layout")
-struct ImmersWhiteRendererLayoutTests {
+@Suite("ClassicWhiteRenderer Layout")
+struct ClassicWhiteRendererLayoutTests {
 
     @Test("Portrait layout keeps a tighter centered text cluster")
     func portraitLayoutKeepsATighterCenteredTextCluster() {
 
         let layout =
-            ImmersWhiteRenderer.layout(
+            ClassicWhiteRenderer.layout(
                 for: .portrait
             )
         let measuredSpec =
@@ -93,7 +93,7 @@ struct ImmersWhiteRendererLayoutTests {
     func landscapeLayoutKeepsATighterCenteredTextCluster() {
 
         let layout =
-            ImmersWhiteRenderer.layout(
+            ClassicWhiteRenderer.layout(
                 for: .landscape
             )
         let measuredSpec =
@@ -164,29 +164,33 @@ struct ImmersWhiteRendererLayoutTests {
             layout.customLogoScaleRatio
             == 1.00
         )
+        #expect(
+            layout.logoSizeRatio
+            == layout.dividerHeightRatio
+        )
     }
 
-    @Test("Immers text can slightly compress before truncating and divider stays visibly present")
-    func immersTextCanSlightlyCompressBeforeTruncatingAndDividerStaysVisiblyPresent() {
+    @Test("Classic White text can slightly compress before truncating and divider stays visibly present")
+    func classicWhiteTextCanSlightlyCompressBeforeTruncatingAndDividerStaysVisiblyPresent() {
 
         #expect(
-            ImmersWhiteRenderer.primaryMinimumScaleFactor
+            ClassicWhiteRenderer.primaryMinimumScaleFactor
             >= 0.82
         )
         #expect(
-            ImmersWhiteRenderer.secondaryMinimumScaleFactor
+            ClassicWhiteRenderer.secondaryMinimumScaleFactor
             >= 0.84
         )
         #expect(
-            ImmersWhiteRenderer.dividerWidth
+            ClassicWhiteRenderer.dividerWidth
             == 6
         )
         #expect(
-            ImmersWhiteRenderer.layout(for: .portrait).dividerWidthRatio
+            ClassicWhiteRenderer.layout(for: .portrait).dividerWidthRatio
             == 0.022
         )
         #expect(
-            ImmersWhiteRenderer.layout(for: .landscape).dividerWidthRatio
+            ClassicWhiteRenderer.layout(for: .landscape).dividerWidthRatio
             == 0.022
         )
     }

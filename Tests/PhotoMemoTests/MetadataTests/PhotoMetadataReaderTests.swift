@@ -59,6 +59,37 @@ struct PhotoMetadataReaderTests {
         #expect(metadata.altitude == -15.2)
     }
 
+    @Test("Applies EXIF orientation when deriving display dimensions")
+    func appliesEXIFOrientationWhenDerivingDisplayDimensions() {
+
+        let reader =
+            PhotoMetadataReader()
+
+        let rightRotatedMetadata =
+            reader.read(
+                from: [
+                    kCGImagePropertyPixelWidth: 4032,
+                    kCGImagePropertyPixelHeight: 3024,
+                    kCGImagePropertyOrientation: 6
+                ]
+            )
+        let leftRotatedMetadata =
+            reader.read(
+                from: [
+                    kCGImagePropertyPixelWidth: 4032,
+                    kCGImagePropertyPixelHeight: 3024,
+                    kCGImagePropertyOrientation: 8
+                ]
+            )
+
+        #expect(rightRotatedMetadata.imageWidth == 3024)
+        #expect(rightRotatedMetadata.imageHeight == 4032)
+        #expect(rightRotatedMetadata.orientation == .portrait)
+        #expect(leftRotatedMetadata.imageWidth == 3024)
+        #expect(leftRotatedMetadata.imageHeight == 4032)
+        #expect(leftRotatedMetadata.orientation == .portrait)
+    }
+
     @Test("Reads properties from an existing image source")
     func readsPropertiesFromAnExistingImageSource() throws {
 

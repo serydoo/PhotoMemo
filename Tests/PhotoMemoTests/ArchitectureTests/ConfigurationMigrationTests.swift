@@ -7,6 +7,76 @@ import Testing
 struct ConfigurationMigrationTests {
 
     @MainActor
+    @Test(
+        "Legacy template presets migrate through saved configuration loading",
+        arguments: [
+            "template1",
+            "template2",
+            "template3",
+            "immersWhite"
+        ]
+    )
+    func legacyTemplatePresetsMigrateThroughSavedConfigurationLoading(
+        rawValue: String
+    ) throws {
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.legacyPreset.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let expected =
+            Template.classicWhite
+            .renamed("Preserved Configuration")
+        let encoded = try JSONEncoder().encode(expected)
+        var object = try #require(
+            JSONSerialization.jsonObject(
+                with: encoded
+            ) as? [String: Any]
+        )
+        object["preset"] = rawValue
+        defaults.set(
+            try JSONSerialization.data(
+                withJSONObject: object
+            ),
+            forKey: "photomemo.selectedTemplate"
+        )
+
+        let result =
+            BatchConfigurationSnapshotProvider(
+                defaults: defaults
+            )
+            .loadTemplateResult()
+
+        switch result {
+        case .success(let template):
+            #expect(
+                template
+                == expected.normalizedForEditing
+            )
+        case .noValue:
+            Issue.record(
+                "Expected a migrated template, got no value"
+            )
+        case .decodingFailed(let failure):
+            Issue.record(
+                "Expected a migrated template, got \(failure)"
+            )
+        }
+    }
+
+    @MainActor
     @Test("SaveV1ConfigurationIntent persists template badge photo-description and editor-state through configuration seams")
     func saveV1ConfigurationIntentPersistsTemplateBadgePhotoDescriptionAndEditorState() async throws {
 
@@ -32,7 +102,7 @@ struct ConfigurationMigrationTests {
                 defaults: defaults
             )
         let template =
-            Template.immersWhite
+            Template.classicWhite
             .renamed("成长卡片")
         var subject =
             ConfigurationCenterState
@@ -208,7 +278,7 @@ struct ConfigurationMigrationTests {
         let request =
             V1ConfigurationSaveRequest(
                 template:
-                    Template.immersWhite
+                    Template.classicWhite
                     .renamed("默认分享配置"),
                 badge: Badge.none,
                 shouldWritePhotoDescription: false,
@@ -281,6 +351,107 @@ struct ConfigurationMigrationTests {
     }
 
     @MainActor
+    @Test("SaveV1ConfigurationIntent preserves saved location display when a save request has no location update")
+    func saveV1ConfigurationIntentPreservesSavedLocationDisplayWhenRequestHasNoLocationUpdate() async throws {
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.preserveLocationDisplay.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let existingConfiguration =
+            LocationDisplayInspectorPresenter
+            .configuration(
+                for: "cityDistrict"
+            )
+        SettingsService(defaults: defaults)
+            .saveLocationDisplayConfiguration(
+                existingConfiguration
+            )
+
+        let coordinator =
+            Self.makeConfigurationCoordinator(
+                defaults: defaults
+            )
+        let request =
+            V1ConfigurationSaveRequest(
+                template:
+                    Template.classicWhite
+                    .renamed("默认分享配置"),
+                badge: Badge.none,
+                locationDisplayConfiguration: nil,
+                shouldWritePhotoDescription: true,
+                photoDescriptionOverride: "",
+                timeAnchor:
+                    .init(
+                        title: "生日",
+                        date:
+                            Date(
+                                timeIntervalSince1970:
+                                    1_704_067_200
+                            )
+                    ),
+                albumSelection:
+                    .init(
+                        identifier:
+                            PhotoMemoAlbumSelection
+                            .automaticIdentifier,
+                        title:
+                            PhotoMemoAlbumSelection
+                            .defaultAlbumTitle
+                    )
+            )
+
+        _ =
+            try Self.requireSuccess(
+                await SaveV1ConfigurationIntent(
+                    request: request,
+                    coordinator: coordinator
+                )
+                .execute(),
+                failurePrefix:
+                    "Expected configuration save without a location update to succeed"
+            )
+
+        let snapshot =
+            try Self.requireSuccess(
+                coordinator
+                .loadDefaultBatchConfigurationSnapshot(),
+                failurePrefix:
+                    "Expected saved configuration snapshot to load"
+            )
+        let bootstrap =
+            try Self.requireSuccess(
+                await LoadV1ConfigurationBootstrapIntent(
+                    coordinator: coordinator
+                )
+                .execute(),
+                failurePrefix:
+                    "Expected bootstrap state to load"
+            )
+
+        #expect(
+            snapshot.locationDisplayConfiguration
+            == existingConfiguration
+        )
+        #expect(
+            bootstrap.locationDisplayConfiguration
+            == existingConfiguration
+        )
+    }
+
+    @MainActor
     @Test("ConfigurationCoordinator saveV1Configuration updates an existing birthday anchor in place and resets countdown semantics")
     func configurationCoordinatorSaveV1ConfigurationUpdatesExistingBirthdayAnchorInPlaceAndResetsCountdownSemantics() throws {
 
@@ -336,7 +507,7 @@ struct ConfigurationMigrationTests {
             Date(timeIntervalSince1970: 1_725_206_400)
         let request =
             V1ConfigurationSaveRequest(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride: "",
@@ -437,7 +608,7 @@ struct ConfigurationMigrationTests {
         let request =
             V1ConfigurationSaveRequest(
                 template:
-                    Template.immersWhite
+                    Template.classicWhite
                     .renamed("V1 默认配置"),
                 badge: .family,
                 shouldWritePhotoDescription: true,
@@ -647,7 +818,7 @@ struct ConfigurationMigrationTests {
             V1ConfigurationSaveRequest(
                 subject: subject,
                 template:
-                    Template.immersWhite
+                    Template.classicWhite
                     .renamed("对象头像配置"),
                 badge: subjectAvatarBadge,
                 shouldWritePhotoDescription: true,
@@ -994,7 +1165,7 @@ struct ConfigurationMigrationTests {
                 selectedSubjectID:
                     replacementSubject.id,
                 shouldSaveSubjectLibrary: false,
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride: "",
@@ -1107,7 +1278,7 @@ struct ConfigurationMigrationTests {
                 selectedSubjectID:
                     selectedSubject.id,
                 shouldSaveSubjectLibrary: true,
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride: "",
@@ -1178,6 +1349,921 @@ struct ConfigurationMigrationTests {
             == "途途"
         )
     }
+
+    @MainActor
+    @Test("aggregate save projects legacy settings only after durable receipt")
+    func aggregateSaveProjectsLegacySettingsAfterDurableReceipt() async throws {
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.aggregateProjection.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        var callbackReceipt:
+            ConfigurationLibrarySaveReceipt?
+        var appliedPairs: [(
+            snapshot: BatchConfigurationSnapshot,
+            receipt: ConfigurationLibrarySaveReceipt
+        )] = []
+        let coordinator = Self.makeConfigurationCoordinator(
+            defaults: defaults,
+            applyConfigurationLibrarySnapshot: {
+                snapshot,
+                receipt in
+                appliedPairs.append((snapshot, receipt))
+            },
+            onConfigurationLibrarySaved: {
+                callbackReceipt = $0
+            }
+        )
+        let aggregate = Self.makeConfigurationLibraryAggregate()
+
+        let receipt = try await coordinator
+            .saveConfigurationLibrary(aggregate)
+        let loaded = try await coordinator
+            .loadConfigurationLibrary()
+        let projectedLibrary = try JSONDecoder().decode(
+            V1SubjectLibraryRecord.self,
+            from: try #require(
+                defaults.data(
+                    forKey: "photomemo.v1.subjectLibrary"
+                )
+            )
+        )
+        let projectedTemplate = try JSONDecoder().decode(
+            Template.self,
+            from: try #require(
+                defaults.data(
+                    forKey: "photomemo.selectedTemplate"
+                )
+            )
+        )
+        let projectedBadge = try JSONDecoder().decode(
+            Badge.self,
+            from: try #require(
+                defaults.data(
+                    forKey: "photomemo.selectedBadge"
+                )
+            )
+        )
+        let projectedLocation = try JSONDecoder().decode(
+            ExpressionModuleConfiguration.self,
+            from: try #require(
+                defaults.data(
+                    forKey:
+                        "photomemo.locationDisplayConfiguration"
+                )
+            )
+        )
+
+        #expect(receipt.revision == 1)
+        #expect(callbackReceipt == receipt)
+        #expect(appliedPairs.count == 1)
+        #expect(
+            appliedPairs.first?.snapshot.template.name
+            == "Aggregate Preset"
+        )
+        #expect(appliedPairs.first?.receipt == receipt)
+        #expect(loaded.source == .primary)
+        #expect(loaded.aggregate.revision == receipt.revision)
+        #expect(
+            projectedLibrary.selectedSubjectID
+            == receipt.subjectID
+        )
+        #expect(
+            projectedLibrary.selectedMemoryPresetID
+            == receipt.configurationID
+        )
+        #expect(projectedTemplate.name == "Aggregate Preset")
+        #expect(projectedBadge.name == "Family")
+        #expect(projectedLocation.token == "{{location}}")
+        #expect(
+            defaults.string(
+                forKey: "photomemo.selectedAlbumIdentifier"
+            ) == "album-aggregate"
+        )
+        #expect(
+            defaults.string(
+                forKey: "photomemo.selectedAlbumTitle"
+            ) == "成长记录"
+        )
+        #expect(
+            defaults.bool(
+                forKey:
+                    "photomemo.shouldWritePhotoDescription"
+            )
+        )
+        #expect(
+            defaults.string(
+                forKey: "photomemo.photoDescriptionOverride"
+            ) == "Aggregate Description"
+        )
+        #expect(
+            defaults.string(
+                forKey: "photomemo.v1.mediaOutputMode"
+            ) == V1MediaOutputMode.originalFormat.rawValue
+        )
+    }
+
+    @MainActor
+    @Test("aggregate success projects the active configuration into the current legacy slot DTO")
+    func aggregateSuccessProjectsCurrentLegacySlotDTO() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateLegacySlotProjection"
+        )
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        let storage = FileConfigurationLibraryStorage(
+            baseDirectoryURL: rootURL,
+            legacyDefaults: nil
+        )
+        let settings = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository:
+                ConfigurationLibraryRepository(
+                    persistence: ConfigurationLibraryPersistence(
+                        storage: storage
+                    )
+                ),
+            configurationLibraryStorage: storage
+        )
+        settings.activeConfigurationSlotID = .slot2
+        settings.saveConfigurationSlots()
+
+        let receipt = try await settings.saveConfigurationLibrary(
+            Self.makeConfigurationLibraryAggregate(
+                title: "Aggregate Slot Projection"
+            )
+        )
+        let slots = try JSONDecoder().decode(
+            [WorkspaceConfigurationSlot].self,
+            from: try #require(
+                defaults.data(
+                    forKey: "photomemo.configurationSlots"
+                )
+            )
+        )
+        let projected = try #require(
+            slots.first { $0.id == .slot2 }
+        )
+
+        #expect(projected.snapshot?.template.name == "Aggregate Slot Projection")
+        #expect(projected.snapshot?.configurationID == receipt.configurationID)
+        #expect(projected.snapshot?.configurationRevision == receipt.revision)
+        #expect(projected.updatedAt != nil)
+        #expect(slots.first { $0.id == .slot1 }?.snapshot == nil)
+        #expect(slots.first { $0.id == .slot3 }?.snapshot == nil)
+    }
+
+    @MainActor
+    @Test("aggregate bootstrap ignores a tampered active legacy slot")
+    func aggregateBootstrapIgnoresTamperedLegacySlot() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateIgnoresTamperedSlot"
+        )
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        let storage = FileConfigurationLibraryStorage(
+            baseDirectoryURL: rootURL,
+            legacyDefaults: nil
+        )
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: storage
+            )
+        )
+        let settings = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository: repository,
+            configurationLibraryStorage: storage
+        )
+        _ = try await settings.saveConfigurationLibrary(
+            Self.makeConfigurationLibraryAggregate(
+                title: "Aggregate Truth"
+            )
+        )
+        var tamperedSnapshot = settings.buildBatchConfigurationSnapshot()
+        tamperedSnapshot.template =
+            tamperedSnapshot.template.renamed("Tampered Slot")
+        let tamperedSlots = WorkspaceConfigurationSlot.defaultSlots.map {
+            slot -> WorkspaceConfigurationSlot in
+            guard slot.id == .slot3 else {
+                return slot
+            }
+            var result = slot
+            result.snapshot = tamperedSnapshot
+            result.updatedAt = Date(timeIntervalSince1970: 999)
+            return result
+        }
+        defaults.set(
+            WorkspaceConfigurationSlotID.slot3.rawValue,
+            forKey: "photomemo.activeConfigurationSlotID"
+        )
+        defaults.set(
+            try JSONEncoder().encode(tamperedSlots),
+            forKey: "photomemo.configurationSlots"
+        )
+
+        let restarted = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository:
+                ConfigurationLibraryRepository(
+                    persistence: ConfigurationLibraryPersistence(
+                        storage: storage
+                    )
+                ),
+            configurationLibraryStorage: storage
+        )
+        let bootstrap = SettingsRepository(
+            settingsService: restarted
+        ).loadV1ConfigurationBootstrapState()
+
+        #expect(bootstrap.configurationLibrary != nil)
+        #expect(bootstrap.draftProjection?.title == "Aggregate Truth")
+        #expect(bootstrap.draftProjection?.title != "Tampered Slot")
+    }
+
+    @MainActor
+    @Test("changing the active legacy slot ID does not mutate aggregate truth")
+    func changingLegacySlotIDDoesNotMutateAggregate() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "legacySlotIDDoesNotMutateAggregate"
+        )
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        let storage = FileConfigurationLibraryStorage(
+            baseDirectoryURL: rootURL,
+            legacyDefaults: nil
+        )
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: storage
+            )
+        )
+        let settings = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository: repository,
+            configurationLibraryStorage: storage
+        )
+        _ = try await settings.saveConfigurationLibrary(
+            Self.makeConfigurationLibraryAggregate(
+                title: "Immutable Aggregate"
+            )
+        )
+        let primaryBefore = try #require(
+            try storage.loadPrimaryData()
+        )
+        let settingsRepository = SettingsRepository(
+            settingsService: settings
+        )
+
+        settingsRepository.updateActiveConfigurationSlotID(.slot3)
+
+        #expect(settingsRepository.activeConfigurationSlotID() == .slot3)
+        #expect(try storage.loadPrimaryData() == primaryBefore)
+        #expect(
+            try await repository.load().aggregate.subjects[0]
+                .configurations[0].title == "Immutable Aggregate"
+        )
+    }
+
+    @MainActor
+    @Test("aggregate validation failure does not refresh production or emit a success receipt")
+    func aggregateValidationFailureSkipsRefreshAndCallback() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateValidationFailure"
+        )
+        var refreshCount = 0
+        var callbackCount = 0
+        let coordinator = Self.makeConfigurationCoordinator(
+            defaults: defaults,
+            applyConfigurationLibrarySnapshot: { _, _ in
+                refreshCount += 1
+            },
+            onConfigurationLibrarySaved: { _ in
+                callbackCount += 1
+            }
+        )
+        var aggregate = Self.makeConfigurationLibraryAggregate()
+        aggregate.activeConfigurationID = UUID()
+
+        await #expect(
+            throws: ConfigurationLibraryPersistenceError.self
+        ) {
+            _ = try await coordinator
+                .saveConfigurationLibrary(aggregate)
+        }
+
+        #expect(refreshCount == 0)
+        #expect(callbackCount == 0)
+    }
+
+    @MainActor
+    @Test("aggregate encode failure does not refresh production or emit a success receipt")
+    func aggregateEncodeFailureSkipsRefreshAndCallback() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateEncodeFailure"
+        )
+        let storage = CoordinatorConfigurationLibraryStorage()
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: storage
+            ),
+            encoder: CoordinatorFailingConfigurationLibraryEncoder()
+        )
+        var refreshCount = 0
+        var callbackCount = 0
+        let coordinator = Self.makeConfigurationCoordinator(
+            defaults: defaults,
+            configurationLibraryRepository: repository,
+            applyConfigurationLibrarySnapshot: { _, _ in
+                refreshCount += 1
+            },
+            onConfigurationLibrarySaved: { _ in
+                callbackCount += 1
+            }
+        )
+
+        await #expect(
+            throws: ConfigurationLibraryPersistenceError.self
+        ) {
+            _ = try await coordinator.saveConfigurationLibrary(
+                Self.makeConfigurationLibraryAggregate()
+            )
+        }
+
+        #expect(refreshCount == 0)
+        #expect(callbackCount == 0)
+        #expect(storage.writeCount == 0)
+    }
+
+    @MainActor
+    @Test("aggregate write failure does not refresh production or emit a success receipt")
+    func aggregateWriteFailureSkipsRefreshAndCallback() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateWriteFailure"
+        )
+        let storage = CoordinatorConfigurationLibraryStorage()
+        storage.shouldFailWrites = true
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: storage
+            )
+        )
+        var refreshCount = 0
+        var callbackCount = 0
+        let coordinator = Self.makeConfigurationCoordinator(
+            defaults: defaults,
+            configurationLibraryRepository: repository,
+            applyConfigurationLibrarySnapshot: { _, _ in
+                refreshCount += 1
+            },
+            onConfigurationLibrarySaved: { _ in
+                callbackCount += 1
+            }
+        )
+
+        await #expect(
+            throws: ConfigurationLibraryPersistenceError.self
+        ) {
+            _ = try await coordinator.saveConfigurationLibrary(
+                Self.makeConfigurationLibraryAggregate()
+            )
+        }
+
+        #expect(refreshCount == 0)
+        #expect(callbackCount == 0)
+        #expect(storage.writeCount == 0)
+    }
+
+    @MainActor
+    @Test("aggregate projection failure reports primary success without refreshing production")
+    func aggregateProjectionFailureSkipsRefreshButEmitsReceipt() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateProjectionFailure"
+        )
+        let storage = CoordinatorConfigurationLibraryStorage()
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: storage
+            )
+        )
+        var refreshCount = 0
+        var callbackReceipt:
+            ConfigurationLibrarySaveReceipt?
+        let coordinator = Self.makeConfigurationCoordinator(
+            defaults: defaults,
+            configurationLibraryRepository: repository,
+            configurationLibraryProjection: { _ in
+                throw CoordinatorConfigurationLibraryFailure.projection
+            },
+            applyConfigurationLibrarySnapshot: { _, _ in
+                refreshCount += 1
+            },
+            onConfigurationLibrarySaved: {
+                callbackReceipt = $0
+            }
+        )
+
+        let receipt = try await coordinator.saveConfigurationLibrary(
+            Self.makeConfigurationLibraryAggregate()
+        )
+
+        #expect(receipt.revision == 1)
+        #expect(receipt.compatibilityProjectionFailure != nil)
+        #expect(callbackReceipt == receipt)
+        #expect(refreshCount == 0)
+        #expect(storage.writeCount == 1)
+    }
+
+    @MainActor
+    @Test("concurrent aggregate saves pair each production snapshot with its own receipt revision")
+    func concurrentAggregateSavesPreserveSnapshotReceiptPairing() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateConcurrentPairing"
+        )
+        var publishedPairs: [Int: PublishedConfigurationPair] = [:]
+        var callbackReceipts:
+            [ConfigurationLibrarySaveReceipt] = []
+        let coordinator = Self.makeConfigurationCoordinator(
+            defaults: defaults,
+            applyConfigurationLibrarySnapshot: {
+                snapshot,
+                receipt in
+                publishedPairs[receipt.revision] =
+                    PublishedConfigurationPair(
+                        title: snapshot.template.name,
+                        configurationID:
+                            snapshot.configurationID,
+                        configurationRevision:
+                            snapshot.configurationRevision
+                    )
+            },
+            onConfigurationLibrarySaved: {
+                callbackReceipts.append($0)
+            }
+        )
+
+        let completedSaves = try await withThrowingTaskGroup(
+            of: (revision: Int, title: String).self
+        ) { group in
+            for index in 0..<12 {
+                let title = "Concurrent Aggregate \(index)"
+                group.addTask { @MainActor in
+                    let receipt = try await coordinator
+                        .saveConfigurationLibrary(
+                            Self.makeConfigurationLibraryAggregate(
+                                title: title
+                            )
+                        )
+                    return (receipt.revision, title)
+                }
+            }
+
+            var saves: [(revision: Int, title: String)] = []
+            for try await save in group {
+                saves.append(save)
+            }
+            return saves
+        }
+        let expectedPairs = Dictionary(
+            uniqueKeysWithValues:
+                completedSaves.map {
+                    (
+                        $0.revision,
+                        PublishedConfigurationPair(
+                            title: $0.title,
+                            configurationID: UUID(
+                                uuidString:
+                                    "72727272-7272-7272-7272-727272727272"
+                            ),
+                            configurationRevision:
+                                $0.revision
+                        )
+                    )
+                }
+        )
+
+        #expect(
+            completedSaves.map(\.revision).sorted()
+            == Array(1...12)
+        )
+        #expect(publishedPairs == expectedPairs)
+        #expect(callbackReceipts.count == 12)
+        #expect(
+            Set(callbackReceipts.map(\.revision))
+            == Set(1...12)
+        )
+    }
+
+    @Test("legacy batch and canonical snapshots decode without configuration identity")
+    func legacySnapshotsDecodeWithoutConfigurationIdentity() throws {
+        let subject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        let canonical = ConfigurationSnapshotBuilder.build(
+            from: subject
+        )
+        let batch = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        .withCanonicalProductionSnapshot(canonical)
+        let encoded = try JSONEncoder().encode(batch)
+        var object = try #require(
+            JSONSerialization.jsonObject(with: encoded)
+                as? [String: Any]
+        )
+        object.removeValue(forKey: "configurationID")
+        object.removeValue(forKey: "configurationRevision")
+        if var frozen = object["frozenConfigurationSnapshot"]
+            as? [String: Any] {
+            frozen.removeValue(forKey: "configurationID")
+            frozen.removeValue(forKey: "configurationRevision")
+            object["frozenConfigurationSnapshot"] = frozen
+        }
+
+        let legacyData = try JSONSerialization.data(
+            withJSONObject: object
+        )
+        let decoded = try JSONDecoder().decode(
+            BatchConfigurationSnapshot.self,
+            from: legacyData
+        )
+
+        #expect(decoded.configurationID == nil)
+        #expect(decoded.configurationRevision == nil)
+        #expect(
+            decoded.canonicalProductionSnapshot?.configurationID
+            == nil
+        )
+        #expect(
+            decoded.canonicalProductionSnapshot?
+                .configurationRevision
+            == nil
+        )
+    }
+
+    @MainActor
+    @Test("SettingsService restart replays one aggregate over torn legacy projections")
+    func settingsRestartRepairsTornLegacyProjections() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateRestartReplay"
+        )
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        let storage = FileConfigurationLibraryStorage(
+            baseDirectoryURL: rootURL,
+            legacyDefaults: nil
+        )
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: storage
+            )
+        )
+        let settings = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository: repository,
+            configurationLibraryStorage: storage
+        )
+        let aggregate = Self.makeConfigurationLibraryAggregate(
+            title: "Restart Aggregate"
+        )
+        let receipt = try await settings
+            .saveConfigurationLibrary(aggregate)
+        let primaryBeforeRestart = try #require(
+            try storage.loadPrimaryData()
+        )
+
+        defaults.set(
+            try JSONEncoder().encode(
+                Template.classicWhite.renamed("Torn Template")
+            ),
+            forKey: "photomemo.selectedTemplate"
+        )
+        defaults.set(
+            try JSONEncoder().encode(Badge.travel),
+            forKey: "photomemo.selectedBadge"
+        )
+        defaults.set(
+            try JSONEncoder().encode(
+                ExpressionModuleConfiguration(
+                    token: "{{torn_location}}",
+                    options: [:]
+                )
+            ),
+            forKey:
+                "photomemo.locationDisplayConfiguration"
+        )
+        defaults.set(
+            false,
+            forKey: "photomemo.shouldWritePhotoDescription"
+        )
+        defaults.set(
+            "Torn Description",
+            forKey: "photomemo.photoDescriptionOverride"
+        )
+        defaults.set(
+            "torn-album",
+            forKey: "photomemo.selectedAlbumIdentifier"
+        )
+        defaults.set(
+            "Torn Album",
+            forKey: "photomemo.selectedAlbumTitle"
+        )
+        defaults.set(
+            V1MediaOutputMode.staticImage.rawValue,
+            forKey: "photomemo.v1.mediaOutputMode"
+        )
+        defaults.set(
+            Data("torn-subject-library".utf8),
+            forKey: "photomemo.v1.subjectLibrary"
+        )
+
+        let restarted = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository:
+                ConfigurationLibraryRepository(
+                    persistence:
+                        ConfigurationLibraryPersistence(
+                            storage: storage
+                        )
+                ),
+            configurationLibraryStorage: storage
+        )
+        let projectedLibrary = try JSONDecoder().decode(
+            V1SubjectLibraryRecord.self,
+            from: try #require(
+                defaults.data(
+                    forKey: "photomemo.v1.subjectLibrary"
+                )
+            )
+        )
+
+        #expect(receipt.revision == 1)
+        #expect(
+            restarted.selectedTemplate?.name
+            == "Restart Aggregate"
+        )
+        #expect(restarted.selectedBadge?.name == "Family")
+        #expect(restarted.shouldWritePhotoDescription)
+        #expect(
+            restarted.photoDescriptionOverride
+            == "Aggregate Description"
+        )
+        #expect(
+            restarted.selectedAlbumIdentifier
+            == "album-aggregate"
+        )
+        #expect(restarted.selectedAlbumTitle == "成长记录")
+        #expect(restarted.mediaOutputMode == .originalFormat)
+        #expect(
+            restarted.loadLocationDisplayConfiguration()?
+                .token == "{{location}}"
+        )
+        #expect(
+            projectedLibrary.selectedMemoryPresetID
+            == receipt.configurationID
+        )
+        #expect(
+            try storage.loadPrimaryData()
+            == primaryBeforeRestart
+        )
+    }
+
+    @MainActor
+    @Test("SettingsService restart replays last-known-good when primary is corrupt")
+    func settingsRestartReplaysLastKnownGoodFallback() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "aggregateRestartLastKnownGood"
+        )
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        let storage = FileConfigurationLibraryStorage(
+            baseDirectoryURL: rootURL,
+            legacyDefaults: nil
+        )
+        let settings = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository:
+                ConfigurationLibraryRepository(
+                    persistence:
+                        ConfigurationLibraryPersistence(
+                            storage: storage
+                        )
+                ),
+            configurationLibraryStorage: storage
+        )
+        _ = try await settings.saveConfigurationLibrary(
+            Self.makeConfigurationLibraryAggregate(
+                title: "Last Known Good"
+            )
+        )
+        _ = try await settings.saveConfigurationLibrary(
+            Self.makeConfigurationLibraryAggregate(
+                title: "Corrupted Primary"
+            )
+        )
+        let corruptData = Data("corrupt-primary".utf8)
+        let primaryURL = rootURL
+            .appendingPathComponent("ConfigurationLibrary")
+            .appendingPathComponent("primary.json")
+        try corruptData.write(to: primaryURL, options: .atomic)
+        defaults.set(
+            try JSONEncoder().encode(
+                Template.classicWhite.renamed("Torn Template")
+            ),
+            forKey: "photomemo.selectedTemplate"
+        )
+
+        let restarted = SettingsService(
+            defaults: defaults,
+            configurationLibraryRepository:
+                ConfigurationLibraryRepository(
+                    persistence:
+                        ConfigurationLibraryPersistence(
+                            storage: storage
+                        )
+                ),
+            configurationLibraryStorage: storage
+        )
+        let recovered = try await restarted
+            .loadConfigurationLibrary()
+
+        #expect(recovered.source == .lastKnownGood)
+        #expect(recovered.aggregate.revision == 1)
+        #expect(
+            restarted.selectedTemplate?.name
+            == "Last Known Good"
+        )
+        #expect(try storage.loadPrimaryData() == corruptData)
+    }
+
+    @MainActor
+    @Test("SettingsService defaults initializer ignores simulated App Group primary")
+    func settingsDefaultsInitializerDoesNotReadSimulatedAppGroupPrimary() async throws {
+        let simulatedAppGroupRoot = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        let isolatedRoot = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(
+                at: simulatedAppGroupRoot
+            )
+            try? FileManager.default.removeItem(at: isolatedRoot)
+        }
+        let simulatedAppGroupStorage =
+            FileConfigurationLibraryStorage(
+                baseDirectoryURL: simulatedAppGroupRoot,
+                legacyDefaults: nil
+            )
+        let simulatedAppGroupRepository =
+            ConfigurationLibraryRepository(
+                persistence: ConfigurationLibraryPersistence(
+                    storage: simulatedAppGroupStorage
+                )
+            )
+        _ = try await simulatedAppGroupRepository.save(
+            Self.makeConfigurationLibraryAggregate(
+                title: "Simulated App Group"
+            )
+        )
+        let primaryBefore = try #require(
+            try simulatedAppGroupStorage.loadPrimaryData()
+        )
+        let isolatedDefaults = try Self.makeDefaults(
+            suffix: "isolatedDefaultsIgnoresAppGroup"
+        )
+        isolatedDefaults.set(
+            try JSONEncoder().encode(
+                Template.classicWhite.renamed("Isolated Legacy")
+            ),
+            forKey: "photomemo.selectedTemplate"
+        )
+
+        let settings = SettingsService(
+            defaults: isolatedDefaults,
+            isolatedConfigurationLibraryBaseDirectoryURL:
+                isolatedRoot
+        )
+
+        #expect(
+            settings.selectedTemplate?.name
+            == "Isolated Legacy"
+        )
+        #expect(
+            try simulatedAppGroupStorage.loadPrimaryData()
+            == primaryBefore
+        )
+        #expect(
+            try FileConfigurationLibraryStorage(
+                baseDirectoryURL: isolatedRoot,
+                legacyDefaults: nil
+            ).loadPrimaryData() == nil
+        )
+    }
+
+    @MainActor
+    @Test("independent defaults initializers keep aggregate files and projections isolated")
+    func settingsDefaultsInitializersDoNotCrossContaminate() async throws {
+        let rootA = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        let rootB = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: rootA)
+            try? FileManager.default.removeItem(at: rootB)
+        }
+        let defaultsA = try Self.makeDefaults(
+            suffix: "isolatedDefaultsA"
+        )
+        let defaultsB = try Self.makeDefaults(
+            suffix: "isolatedDefaultsB"
+        )
+        let settingsA = SettingsService(
+            defaults: defaultsA,
+            isolatedConfigurationLibraryBaseDirectoryURL: rootA
+        )
+        let settingsB = SettingsService(
+            defaults: defaultsB,
+            isolatedConfigurationLibraryBaseDirectoryURL: rootB
+        )
+
+        let receiptA = try await settingsA
+            .saveConfigurationLibrary(
+                Self.makeConfigurationLibraryAggregate(
+                    title: "Isolated A"
+                )
+            )
+        let primaryA = try #require(
+            try FileConfigurationLibraryStorage(
+                baseDirectoryURL: rootA,
+                legacyDefaults: nil
+            ).loadPrimaryData()
+        )
+
+        do {
+            _ = try await settingsB.loadConfigurationLibrary()
+            Issue.record(
+                "Expected isolated B to have no aggregate"
+            )
+        } catch let error as
+            ConfigurationLibraryPersistenceError {
+            guard case .noStoredAggregate = error else {
+                Issue.record(
+                    "Expected noStoredAggregate, got \(error)"
+                )
+                return
+            }
+        }
+
+        let receiptB = try await settingsB
+            .saveConfigurationLibrary(
+                Self.makeConfigurationLibraryAggregate(
+                    title: "Isolated B"
+                )
+            )
+
+        #expect(receiptA.revision == 1)
+        #expect(receiptB.revision == 1)
+        #expect(
+            defaultsA.data(
+                forKey: "photomemo.selectedTemplate"
+            ) != defaultsB.data(
+                forKey: "photomemo.selectedTemplate"
+            )
+        )
+        #expect(
+            try FileConfigurationLibraryStorage(
+                baseDirectoryURL: rootA,
+                legacyDefaults: nil
+            ).loadPrimaryData() == primaryA
+        )
+    }
 }
 
 private extension ConfigurationMigrationTests {
@@ -1185,12 +2271,57 @@ private extension ConfigurationMigrationTests {
     @MainActor
     static func makeConfigurationCoordinator(
         defaults: UserDefaults,
+        configurationLibraryRepository:
+            ConfigurationLibraryRepository? = nil,
+        configurationLibraryStorage:
+            (any ConfigurationLibraryDataStorage)? = nil,
+        configurationLibraryProjection:
+            (@MainActor (ConfigurationLibraryRecord) throws -> Void)? = nil,
         applyLiveDefaultConfiguration:
-            @escaping (BatchConfigurationSnapshot) -> Void = { _ in }
+            @escaping (BatchConfigurationSnapshot) -> Void = { _ in },
+        applyConfigurationLibrarySnapshot:
+            (@MainActor (
+                BatchConfigurationSnapshot,
+                ConfigurationLibrarySaveReceipt
+            ) -> Void)? = nil,
+        onConfigurationLibrarySaved:
+            @escaping (ConfigurationLibrarySaveReceipt) -> Void = { _ in }
     ) -> ConfigurationCoordinator {
 
-        let settingsService =
-            SettingsService(defaults: defaults)
+        let settingsService: SettingsService
+        if let configurationLibraryRepository {
+            settingsService = SettingsService(
+                defaults: defaults,
+                configurationLibraryRepository:
+                    configurationLibraryRepository,
+                configurationLibraryStorage:
+                    configurationLibraryStorage,
+                configurationLibraryProjection:
+                    configurationLibraryProjection
+            )
+        } else {
+            let isolatedStorage =
+                FileConfigurationLibraryStorage(
+                    baseDirectoryURL:
+                        FileManager.default.temporaryDirectory
+                        .appendingPathComponent(
+                            UUID().uuidString
+                        ),
+                    legacyDefaults: nil
+                )
+            settingsService = SettingsService(
+                defaults: defaults,
+                configurationLibraryRepository:
+                    ConfigurationLibraryRepository(
+                        persistence:
+                            ConfigurationLibraryPersistence(
+                                storage: isolatedStorage
+                            )
+                    ),
+                configurationLibraryStorage:
+                    isolatedStorage
+            )
+        }
 
         return ConfigurationCoordinator(
             settingsRepository:
@@ -1208,8 +2339,128 @@ private extension ConfigurationMigrationTests {
                         )
                 ),
             applyLiveDefaultConfiguration:
-                applyLiveDefaultConfiguration
+                applyLiveDefaultConfiguration,
+            applyConfigurationLibrarySnapshot:
+                applyConfigurationLibrarySnapshot,
+            onConfigurationLibrarySaved:
+                onConfigurationLibrarySaved
         )
+    }
+
+    static func makeConfigurationLibraryAggregate(
+        title: String = "Aggregate Preset"
+    )
+    -> ConfigurationLibraryRecord {
+        let subject = MemorySubject(
+            id: UUID(
+                uuidString:
+                    "71717171-7171-7171-7171-717171717171"
+            )!,
+            identity: .init(
+                displayName: "王途途",
+                shortName: "途途"
+            ),
+            relationship: .init(
+                role: "宝宝",
+                label: "妈妈眼里的宝宝"
+            ),
+            referenceDate: Date(
+                timeIntervalSince1970: 1_716_825_600
+            ),
+            timeAnchors: [],
+            activeTimeAnchorID: nil,
+            expressionSubjectSource: .shortName,
+            behavior: MemoryBehavior(
+                primaryAnchor: "生日",
+                iconStrategy: .autoMatch,
+                badgeStrategy: .autoMatch,
+                memoryExpression: MemoryExpression(
+                    title: "成长",
+                    blocks: []
+                )
+            ),
+            decorations: []
+        )
+        let configuration = MemoryConfigurationRecord(
+            id: UUID(
+                uuidString:
+                    "72727272-7272-7272-7272-727272727272"
+            )!,
+            title: title,
+            revision: 1,
+            savedAt: Date(
+                timeIntervalSince1970: 1_725_206_400
+            ),
+            selectedTimeAnchorID: nil,
+            editor: .init(
+                template:
+                    Template.classicWhite
+                        .renamed(title),
+                regionTemplateIDs: [
+                    .slotA: "recorder.configuration1"
+                ],
+                memoryCopy: .init(
+                    usesCustomText: true,
+                    customText: "Aggregate Memory"
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: .init(
+                    token: "{{location}}",
+                    options: ["displayStyle": "city"]
+                ),
+                logo: .init(
+                    mode: .appleMini,
+                    badge: .init(
+                        id: Badge.family.id,
+                        name: Badge.family.name,
+                        type: Badge.family.type,
+                        systemSymbol:
+                            Badge.family.systemSymbol,
+                        isSystemDefault: true
+                    )
+                )
+            ),
+            output: .init(
+                mediaMode: .originalFormat,
+                livePhotoPolicy: .preserveMotion,
+                photosDescriptionPolicy: .init(
+                    isEnabled: true,
+                    overrideText:
+                        "Aggregate Description"
+                ),
+                album: .init(
+                    destination: .existingAlbum,
+                    identifier: "album-aggregate",
+                    title: "成长记录"
+                )
+            )
+        )
+        return ConfigurationLibraryRecord(
+            revision: 999,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [configuration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configuration.id
+        )
+    }
+
+    static func makeDefaults(
+        suffix: String
+    ) throws -> UserDefaults {
+        let suiteName =
+            "PhotoMemo.ConfigurationMigrationTests.\(suffix).\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
     }
 
     static func requireSuccess<Value>(
@@ -1229,6 +2480,58 @@ private extension ConfigurationMigrationTests {
     }
 
     struct Failure: Error {}
+}
+
+private final class CoordinatorConfigurationLibraryStorage:
+    ConfigurationLibraryDataStorage,
+    @unchecked Sendable {
+
+    var primaryData: Data?
+    var lastKnownGoodData: Data?
+    var shouldFailWrites = false
+    private(set) var writeCount = 0
+
+    func loadPrimaryData() throws -> Data? {
+        primaryData
+    }
+
+    func loadLastKnownGoodData() throws -> Data? {
+        lastKnownGoodData
+    }
+
+    func replacePrimaryData(
+        _ data: Data,
+        lastKnownGoodData: Data?
+    ) throws {
+        guard !shouldFailWrites else {
+            throw CoordinatorConfigurationLibraryFailure.write
+        }
+        self.lastKnownGoodData = lastKnownGoodData
+        primaryData = data
+        writeCount += 1
+    }
+}
+
+private struct CoordinatorFailingConfigurationLibraryEncoder:
+    ConfigurationLibraryRecordEncoding {
+
+    func encode(
+        _ aggregate: ConfigurationLibraryRecord
+    ) throws -> Data {
+        throw CoordinatorConfigurationLibraryFailure.encoding
+    }
+}
+
+private enum CoordinatorConfigurationLibraryFailure: Error {
+    case encoding
+    case write
+    case projection
+}
+
+private struct PublishedConfigurationPair: Equatable {
+    let title: String
+    let configurationID: UUID?
+    let configurationRevision: Int?
 }
 
 private extension Template {

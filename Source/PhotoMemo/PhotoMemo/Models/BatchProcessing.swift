@@ -209,6 +209,10 @@ struct BatchConfigurationSnapshot:
 
     let createdAt: Date
 
+    var configurationID: UUID?
+
+    var configurationRevision: Int?
+
     var template: Template
 
     var badge: Badge?
@@ -239,6 +243,8 @@ struct BatchConfigurationSnapshot:
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
+        configurationID: UUID? = nil,
+        configurationRevision: Int? = nil,
         template: Template,
         badge: Badge?,
         anchor: Anchor?,
@@ -252,6 +258,9 @@ struct BatchConfigurationSnapshot:
     ) {
         self.id = id
         self.createdAt = createdAt
+        self.configurationID = configurationID
+        self.configurationRevision =
+            configurationRevision
         self.template = template
         self.badge = badge
         self.anchor = anchor
@@ -367,6 +376,21 @@ extension BatchConfigurationSnapshot {
     ) -> BatchConfigurationSnapshot {
         var copy = self
         copy.frozenConfigurationSnapshot = snapshot
+        return copy
+    }
+
+    func withConfigurationIdentity(
+        id: UUID,
+        revision: Int
+    ) -> BatchConfigurationSnapshot {
+        var copy = self
+        copy.configurationID = id
+        copy.configurationRevision = revision
+        if var snapshot = copy.frozenConfigurationSnapshot {
+            snapshot.configurationID = id
+            snapshot.configurationRevision = revision
+            copy.frozenConfigurationSnapshot = snapshot
+        }
         return copy
     }
 

@@ -1,5 +1,6 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
+import UniformTypeIdentifiers
 
 struct ShareSubmissionReceipt:
     Hashable {
@@ -25,6 +26,9 @@ final class ShareCoordinator {
     private let queueRepository:
         QueueRepository
 
+    private let livePhotoAssetIdentityResolver:
+        any LivePhotoAssetIdentityResolving
+
     init(
         externalIntakeCenter:
             ExternalPhotoIntakeCenter,
@@ -33,7 +37,9 @@ final class ShareCoordinator {
         configurationRepository:
             ConfigurationRepository,
         queueRepository:
-            QueueRepository
+            QueueRepository,
+        livePhotoAssetIdentityResolver:
+            (any LivePhotoAssetIdentityResolving)? = nil
     ) {
         self.externalIntakeCenter =
             externalIntakeCenter
@@ -43,6 +49,9 @@ final class ShareCoordinator {
             configurationRepository
         self.queueRepository =
             queueRepository
+        self.livePhotoAssetIdentityResolver =
+            livePhotoAssetIdentityResolver
+            ?? PhotoKitLivePhotoAssetIdentityResolver()
     }
 
     func submit(
@@ -105,30 +114,48 @@ final class ShareCoordinator {
         ProcessedShareRequest
     > {
 
-        let validPayloads =
-            request.intakePayloads.filter {
+        let validPayloadContexts =
+            payloadContexts(
+                for: request
+            )
+            .filter {
                 isValidRequestSourceURL(
-                    $0.sourceURL
+                    $0.payload.sourceURL
+                )
+            }
+        let recoveredPayloadContexts =
+            validPayloadContexts.map {
+                recoveredPayloadContext(
+                    $0,
+                    requestID:
+                        request.id
                 )
             }
         let uniquePayloadsResult =
-            uniquePayloadsForCurrentDrain(
-                validPayloads,
+            uniquePayloadContextsForCurrentDrain(
+                recoveredPayloadContexts,
                 consumedPayloadKeys:
                     consumedPayloadKeys
             )
-        let uniquePayloads =
+        let uniquePayloadContexts =
             uniquePayloadsResult
-            .payloads
-        let duplicatePayloads =
-            validPayloads.filter {
-                !uniquePayloads.contains($0)
+            .contexts
+        let duplicatePayloadContexts =
+            recoveredPayloadContexts.filter {
+                context in
+                !uniquePayloadContexts.contains {
+                    $0.payload == context.payload
+                }
             }
+        let uniquePayloads =
+            uniquePayloadContexts.map(
+                \.payload
+            )
 
-        duplicatePayloads.forEach {
+        duplicatePayloadContexts.forEach {
             externalIntakeStore
                 .cleanupManagedSourceIfNeeded(
-                    at: $0.sourceURL
+                    at: $0.payload.sourceURL
                 )
         }
 
@@ -148,7 +175,7 @@ final class ShareCoordinator {
             }
 
             let droppedReason =
-                validPayloads.isEmpty
+                validPayloadContexts.isEmpty
                 ? "No valid source files remained."
                 : "Duplicate source files were already queued."
 
@@ -160,7 +187,7 @@ final class ShareCoordinator {
                         request.intakePayloads
                         .count,
                     validPayloadCount:
-                        validPayloads.count,
+                        validPayloadContexts.count,
                     uniquePayloadCount: 0,
                     consumedPayloadKeys:
                         uniquePayloadsResult
@@ -210,7 +237,7 @@ final class ShareCoordinator {
                     request.intakePayloads
                     .count,
                 validPayloadCount:
-                    validPayloads.count,
+                    validPayloadContexts.count,
                 uniquePayloadCount:
                     uniquePayloads.count,
                 consumedPayloadKeys:
@@ -227,13 +254,122 @@ final class ShareCoordinator {
 
 private extension ShareCoordinator {
 
+    struct PayloadContext {
+
+        var payload:
+            BatchTaskIntakePayload
+
+        let livePhotoRecoveryHint:
+            LivePhotoStaticFallbackRecoveryHint?
+    }
+
     struct UniquePayloadResult {
 
-        let payloads:
-            [BatchTaskIntakePayload]
+        let contexts:
+            [PayloadContext]
 
         let consumedPayloadKeys:
             Set<String>
+    }
+
+    func payloadContexts(
+        for request: ExternalPhotoIntakeRequest
+    ) -> [PayloadContext] {
+
+        if let items = request.items,
+           !items.isEmpty {
+            return items.map {
+                PayloadContext(
+                    payload: $0.payload,
+                    livePhotoRecoveryHint:
+                        $0.livePhotoRecoveryHint
+                )
+            }
+        }
+
+        return request.urls.map {
+            PayloadContext(
+                payload:
+                    BatchTaskIntakePayload(
+                        sourceURL: $0,
+                        fileName:
+                            $0.lastPathComponent
+                    ),
+                livePhotoRecoveryHint: nil
+            )
+        }
+    }
+
+    func recoveredPayloadContext(
+        _ context: PayloadContext,
+        requestID: UUID
+    ) -> PayloadContext {
+
+        guard let hint =
+            context.livePhotoRecoveryHint else {
+            return context
+        }
+
+        let resolution =
+            livePhotoAssetIdentityResolver
+            .resolveAssetLocalIdentifier(
+                for: hint
+            )
+
+        switch resolution {
+        case .matched(let assetLocalIdentifier):
+            PhotoMemoShareDiagnostics.record(
+                stage:
+                    .appLivePhotoIdentityRecovery,
+                message:
+                    "result=matched, fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), contentType=\(context.payload.contentTypeIdentifier ?? "nil"), assetIdentifierRecovered=true",
+                requestID: requestID
+            )
+
+            var recoveredPayload =
+                context.payload
+            recoveredPayload.sourceIdentifier =
+                assetLocalIdentifier
+            recoveredPayload.contentTypeIdentifier =
+                UTType("com.apple.live-photo")?
+                .identifier
+                ?? hint.advertisedLivePhotoTypeIdentifier
+            return PayloadContext(
+                payload: recoveredPayload,
+                livePhotoRecoveryHint:
+                    context.livePhotoRecoveryHint
+            )
+
+        case .notFound:
+            PhotoMemoShareDiagnostics.record(
+                stage:
+                    .appLivePhotoIdentityRecovery,
+                message:
+                    "result=notFound, fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
+                requestID: requestID
+            )
+            return context
+
+        case .ambiguous(let candidateCount):
+            PhotoMemoShareDiagnostics.record(
+                stage:
+                    .appLivePhotoIdentityRecovery,
+                message:
+                    "result=ambiguous, candidateCount=\(candidateCount), fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
+                requestID: requestID
+            )
+            return context
+
+        case .unavailable(let reason):
+            PhotoMemoShareDiagnostics.record(
+                stage:
+                    .appLivePhotoIdentityRecovery,
+                message:
+                    "result=unavailable, reason=\(reason), fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
+                requestID: requestID
+            )
+            return context
+        }
     }
 
     func resolvedRequestTitle(
@@ -255,6 +391,14 @@ private extension ShareCoordinator {
             return false
         }
 
+        if LivePhotoSourceBundleLocator
+            .canResolveBundle(
+                at:
+                    url.standardizedFileURL
+            ) {
+            return true
+        }
+
         return PhotoMemoImageFileReadiness
             .isExistingReadableImageFile(
                 at:
@@ -262,8 +406,8 @@ private extension ShareCoordinator {
             )
     }
 
-    func uniquePayloadsForCurrentDrain(
-        _ payloads: [BatchTaskIntakePayload],
+    func uniquePayloadContextsForCurrentDrain(
+        _ contexts: [PayloadContext],
         consumedPayloadKeys:
             Set<String>
     ) -> UniquePayloadResult {
@@ -271,11 +415,11 @@ private extension ShareCoordinator {
         var resolvedConsumedPayloadKeys =
             consumedPayloadKeys
 
-        let uniquePayloads =
-            payloads.filter { payload in
+        let uniqueContexts =
+            contexts.filter { context in
                 let key =
                     payloadDedupeKey(
-                        for: payload
+                        for: context.payload
                     )
 
                 guard !resolvedConsumedPayloadKeys.contains(key) else {
@@ -288,7 +432,7 @@ private extension ShareCoordinator {
             }
 
         return UniquePayloadResult(
-            payloads: uniquePayloads,
+            contexts: uniqueContexts,
             consumedPayloadKeys:
                 resolvedConsumedPayloadKeys
         )

@@ -1,6 +1,121 @@
 import Foundation
 import UniformTypeIdentifiers
 
+struct LivePhotoStaticFallbackRecoveryHint:
+    Hashable,
+    Codable {
+
+    let originalFileName: String?
+
+    let advertisedLivePhotoTypeIdentifier: String
+
+    let staticContentTypeIdentifier: String?
+
+    let captureDate: Date?
+
+    let pixelWidth: Int?
+
+    let pixelHeight: Int?
+
+    init(
+        originalFileName: String? = nil,
+        advertisedLivePhotoTypeIdentifier: String,
+        staticContentTypeIdentifier: String? = nil,
+        captureDate: Date? = nil,
+        pixelWidth: Int? = nil,
+        pixelHeight: Int? = nil
+    ) {
+        self.originalFileName =
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                originalFileName
+            )
+        self.advertisedLivePhotoTypeIdentifier =
+            advertisedLivePhotoTypeIdentifier
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        self.staticContentTypeIdentifier =
+            staticContentTypeIdentifier?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        self.captureDate = captureDate
+        self.pixelWidth =
+            pixelWidth.map {
+                max($0, 1)
+            }
+        self.pixelHeight =
+            pixelHeight.map {
+                max($0, 1)
+            }
+    }
+}
+
+enum LivePhotoStaticFallbackDateParser {
+
+    static func parse(
+        _ dateString: String,
+        timeZone: TimeZone = .current
+    ) -> Date? {
+
+        let timezoneLessFormats = [
+            "yyyy:MM:dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss"
+        ]
+        let timezoneAwareFormats = [
+            "yyyy-MM-dd'T'HH:mm:ssZ",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        ]
+
+        for format in timezoneLessFormats {
+            if let date =
+                formattedDate(
+                    dateString,
+                    format: format,
+                    timeZone: timeZone
+                ) {
+                return date
+            }
+        }
+
+        for format in timezoneAwareFormats {
+            if let date =
+                formattedDate(
+                    dateString,
+                    format: format,
+                    timeZone: nil
+                ) {
+                return date
+            }
+        }
+
+        return nil
+    }
+
+    private static func formattedDate(
+        _ dateString: String,
+        format: String,
+        timeZone: TimeZone?
+    ) -> Date? {
+
+        let formatter =
+            DateFormatter()
+        formatter.locale =
+            Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat =
+            format
+        if let timeZone {
+            formatter.timeZone =
+                timeZone
+        }
+
+        return formatter.date(
+            from: dateString
+        )
+    }
+}
+
 struct ExternalPhotoImportSummary:
     Hashable,
     Codable {
@@ -33,6 +148,9 @@ struct ExternalPhotoIntakeItem:
 
     let contentTypeIdentifier: String?
 
+    let livePhotoRecoveryHint:
+        LivePhotoStaticFallbackRecoveryHint?
+
     var id: String {
         managedURL.standardizedFileURL.path
     }
@@ -41,7 +159,9 @@ struct ExternalPhotoIntakeItem:
         managedURL: URL,
         originalFileName: String? = nil,
         sourceIdentifier: String? = nil,
-        contentTypeIdentifier: String? = nil
+        contentTypeIdentifier: String? = nil,
+        livePhotoRecoveryHint:
+            LivePhotoStaticFallbackRecoveryHint? = nil
     ) {
         let normalizedManagedURL =
             managedURL.standardizedFileURL
@@ -77,6 +197,8 @@ struct ExternalPhotoIntakeItem:
                 managedURL:
                     normalizedManagedURL
             )
+        self.livePhotoRecoveryHint =
+            livePhotoRecoveryHint
     }
 
     var payload: BatchTaskIntakePayload {

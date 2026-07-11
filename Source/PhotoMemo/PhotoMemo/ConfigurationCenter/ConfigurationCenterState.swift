@@ -8,6 +8,7 @@ struct ConfigurationCenterState:
     var selectedSubjectID: MemorySubject.ID?
     var memoryPresets: [MemoryPreset]
     var selectedMemoryPresetID: MemoryPreset.ID?
+    var configurationLibrary: ConfigurationLibraryRecord? = nil
     var cardSelection: CardSelection
     var selectedBlockID: MemoryBlock.ID?
     var tokenLibrary: TokenLibrary
@@ -26,12 +27,12 @@ struct ConfigurationCenterState:
 
     var selectedMemoryPreset: MemoryPreset? {
         guard let selectedMemoryPresetID else {
-            return memoryPresets.first
+            return nil
         }
 
         return memoryPresets.first {
             $0.id == selectedMemoryPresetID
-        } ?? memoryPresets.first
+        }
     }
 
     var selectedRegion: CardRegion {
@@ -109,6 +110,29 @@ struct MemoryPreset:
         for region: CardRegion
     ) -> String? {
         regionTemplateIDs[region]
+    }
+
+    func replacingID(
+        with id: UUID
+    ) -> MemoryPreset {
+        MemoryPreset(
+            id: id,
+            title: title,
+            summary: summary,
+            regionTemplateIDs: regionTemplateIDs,
+            savedAt: savedAt,
+            selectedSubjectID: selectedSubjectID,
+            selectedTimeAnchorID: selectedTimeAnchorID,
+            outputOption: outputOption,
+            storageOption: storageOption,
+            logoMode: logoMode,
+            usesCustomMemoryWriteText:
+                usesCustomMemoryWriteText,
+            customMemoryWriteText:
+                customMemoryWriteText,
+            savedOutputConfiguration:
+                savedOutputConfiguration
+        )
     }
 }
 

@@ -210,7 +210,7 @@ struct ProductionMemoryResolverTests {
                 configuration:
                     BatchConfigurationSnapshot(
                         template:
-                            .template1
+                            .classicWhite
                             .normalizedForEditing,
                         badge: nil,
                         anchor: Anchor(
@@ -339,7 +339,7 @@ struct ProductionMemoryResolverTests {
                 configuration:
                     BatchConfigurationSnapshot(
                         template:
-                            .template1
+                            .classicWhite
                             .normalizedForEditing,
                         badge: nil,
                         anchor: nil,
@@ -461,7 +461,7 @@ struct ProductionMemoryResolverTests {
         let configuration =
             BatchConfigurationSnapshot(
                 template:
-                    .template1
+                    .classicWhite
                     .normalizedForEditing,
                 badge: nil,
                 anchor: nil,
@@ -577,7 +577,7 @@ struct ProductionMemoryResolverTests {
         let configuration =
             BatchConfigurationSnapshot(
                 template:
-                    .template1
+                    .classicWhite
                     .normalizedForEditing,
                 badge: nil,
                 anchor: nil,
@@ -689,7 +689,7 @@ struct ProductionMemoryResolverTests {
         let configuration =
             BatchConfigurationSnapshot(
                 template:
-                    .template1
+                    .classicWhite
                     .normalizedForEditing,
                 badge: nil,
                 anchor: nil,
@@ -766,7 +766,7 @@ struct ProductionMemoryResolverTests {
                 configuration:
                     BatchConfigurationSnapshot(
                         template:
-                            .template1
+                            .classicWhite
                             .normalizedForEditing,
                         badge: nil,
                         anchor:
@@ -823,7 +823,7 @@ struct ProductionMemoryResolverTests {
                 configuration:
                     BatchConfigurationSnapshot(
                         template:
-                            .template1
+                            .classicWhite
                             .normalizedForEditing,
                         badge: nil,
                         anchor: nil,

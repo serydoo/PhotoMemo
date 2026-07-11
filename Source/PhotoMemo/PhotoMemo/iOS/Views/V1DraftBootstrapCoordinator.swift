@@ -22,7 +22,22 @@ struct V1DraftBootstrapCoordinator {
         engine: V1PreviewCompositionEngine
     ) {
         self.init {
-            BootstrapV1PreviewDraftsIntent(
+            if let configuration =
+                session.selectedMemoryConfiguration {
+                return .success(
+                    V1ConfigurationDraftProjection(
+                        configuration: configuration
+                    )
+                    .regionDrafts
+                    .mapValues {
+                        V1DraftBridge.previewDraft(
+                            from: $0
+                        )
+                    }
+                )
+            }
+
+            return BootstrapV1PreviewDraftsIntent(
                 templateIDsByRegion:
                     Dictionary(
                         uniqueKeysWithValues:

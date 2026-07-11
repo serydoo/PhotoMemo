@@ -1,7 +1,7 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 import CryptoKit
-import Photos
+import ImageIO
 import UniformTypeIdentifiers
 import UIKit
 
@@ -108,7 +108,7 @@ struct PhotoMemoShareExtensionError:
             return "没有识别到可处理照片"
 
         case .tooManySharedItems:
-            return "一次分享的照片太多"
+            return "这次的照片有点多"
 
         case .allImportsFailed:
             return "照片没有成功交给时光记"
@@ -126,7 +126,7 @@ struct PhotoMemoShareExtensionError:
             return "请尽量从系统相册直接分享原始照片；如果来自其他 App，请确认分享的是原图而不是预览图。"
 
         case .tooManySharedItems:
-            return "请回到 Apple Photos 分批分享，每次最多 20 张。这样可以避免 Share Extension 被系统提前终止。"
+            return "美好的记忆适合慢慢整理。每次最多分享 20 张，可以分几次完成，也能让处理过程更稳定。"
 
         case .allImportsFailed:
             return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开时光记检查默认风格。"
@@ -299,6 +299,7 @@ final class PhotoMemoShareExtensionIntakeService {
         var failedCount = 0
         var unsupportedRejectionReports:
             [PhotoMemoMediaIntakeRejectionReport] = []
+        var livePhotoStaticFallbackCount = 0
         var lastFailureContext:
             PhotoMemoShareIntakeFailureContext?
 
@@ -326,6 +327,9 @@ final class PhotoMemoShareExtensionIntakeService {
                 managedItems.append(
                     importRecord.item
                 )
+                if importRecord.livePhotoStaticFallback {
+                    livePhotoStaticFallbackCount += 1
+                }
                 PhotoMemoShareDiagnostics.record(
                     stage: .extensionItemImported,
                     message:
@@ -404,7 +408,9 @@ final class PhotoMemoShareExtensionIntakeService {
                     failureContext:
                         lastFailureContext,
                     unsupportedRejectionReports:
-                        unsupportedRejectionReports
+                        unsupportedRejectionReports,
+                    livePhotoStaticFallbackCount:
+                        livePhotoStaticFallbackCount
                 )
 
             logImportResult(
@@ -479,7 +485,9 @@ final class PhotoMemoShareExtensionIntakeService {
                         persistResult
                         .failureContext,
                     unsupportedRejectionReports:
-                        unsupportedRejectionReports
+                        unsupportedRejectionReports,
+                    livePhotoStaticFallbackCount:
+                        livePhotoStaticFallbackCount
                 )
 
             if let failureContext =
@@ -537,7 +545,9 @@ final class PhotoMemoShareExtensionIntakeService {
                 failureContext:
                     lastFailureContext,
                 unsupportedRejectionReports:
-                    unsupportedRejectionReports
+                    unsupportedRejectionReports,
+                livePhotoStaticFallbackCount:
+                    livePhotoStaticFallbackCount
             )
 
         logImportResult(
@@ -585,6 +595,20 @@ private extension PhotoMemoShareExtensionIntakeService {
 
         let dedupeKey: String
 
+        let livePhotoStaticFallback:
+            Bool
+
+        init(
+            item: ExternalPhotoIntakeItem,
+            dedupeKey: String,
+            livePhotoStaticFallback: Bool = false
+        ) {
+            self.item = item
+            self.dedupeKey = dedupeKey
+            self.livePhotoStaticFallback =
+                livePhotoStaticFallback
+        }
+
         var managedURL: URL {
             item.managedURL
         }
@@ -619,6 +643,10 @@ private extension PhotoMemoShareExtensionIntakeService {
             $0.hasItemConformingToTypeIdentifier(
                 UTType.image.identifier
             )
+            || PhotoMemoShareProviderTypeSelection
+                .supportsLivePhoto(
+                    $0.registeredTypeIdentifiers
+                )
         }
     }
 
@@ -630,6 +658,11 @@ private extension PhotoMemoShareExtensionIntakeService {
         for (index, provider) in providers.enumerated() {
             let identifiers =
                 provider.registeredTypeIdentifiers
+            let preferredImportType =
+                PhotoMemoShareProviderTypeSelection
+                .preferredImportTypeIdentifier(
+                    from: identifiers
+                )
             let preferredImageType =
                 preferredImageTypeIdentifier(
                     from: identifiers
@@ -654,7 +687,7 @@ private extension PhotoMemoShareExtensionIntakeService {
             PhotoMemoShareDiagnostics.record(
                 stage: .extensionProviderObserved,
                 message:
-                    "index=\(index), suggestedName=\(provider.suggestedName ?? "nil"), preferredImageType=\(preferredImageType ?? "nil"), supportsLivePhoto=\(supportsLivePhoto), supportsMovie=\(supportsMovie), registeredTypes=\(joinedIdentifiers)",
+                    "index=\(index), suggestedName=\(provider.suggestedName ?? "nil"), preferredImportType=\(preferredImportType ?? "nil"), preferredImageType=\(preferredImageType ?? "nil"), supportsLivePhoto=\(supportsLivePhoto), supportsMovie=\(supportsMovie), registeredTypes=\(joinedIdentifiers)",
                 requestID: requestID
             )
         }
@@ -673,6 +706,11 @@ private extension PhotoMemoShareExtensionIntakeService {
             provider
             .registeredTypeIdentifiers
         let preferredTypeIdentifier =
+            preferredImportTypeIdentifier(
+                from:
+                    registeredTypeIdentifiers
+            )
+        let preferredStaticImageTypeIdentifier =
             preferredImageTypeIdentifier(
                 from:
                     registeredTypeIdentifiers
@@ -699,38 +737,121 @@ private extension PhotoMemoShareExtensionIntakeService {
             .preferredLivePhotoTypeIdentifier(
                 from: registeredTypeIdentifiers
             ) {
-            await probeLivePhotoRepresentation(
-                from: provider,
-                typeIdentifier:
-                    livePhotoTypeIdentifier,
-                requestID: requestID,
-                index: index
-            )
+            let liveFileLoadResult =
+                await loadFileRepresentationResult(
+                    from: provider,
+                    requestID: requestID,
+                    index: index,
+                    diagnosticsSeed:
+                        PhotoMemoShareIntakeOperationSeed(
+                            itemProviderCount:
+                                itemProviderCount,
+                            supportedProviderCount:
+                                supportedProviderCount,
+                            providerIndex: index,
+                            requestedTypeIdentifier:
+                                livePhotoTypeIdentifier,
+                            preferredRegisteredTypeIdentifier:
+                                livePhotoTypeIdentifier
+                        ),
+                    requestedTypeIdentifier:
+                        livePhotoTypeIdentifier,
+                    allowsDirectoryPackage:
+                        true
+                )
+
+            if let importRecord =
+                liveFileLoadResult.importRecord {
+
+                let resolvedImportRecord =
+                    recordStaticLivePhotoPayloadIfNeeded(
+                    importRecord,
+                    requestedTypeIdentifier:
+                        livePhotoTypeIdentifier,
+                    requestID: requestID,
+                    index: index
+                )
+
+                if let unsupportedOutcome =
+                    unsupportedManagedImportOutcomeIfNeeded(
+                        resolvedImportRecord,
+                        diagnosticsSeed:
+                            diagnosticsSeed
+                    ) {
+                    return unsupportedOutcome
+                }
+
+                let sourceKey =
+                    resolvedImportRecord.dedupeKey
+
+                guard seenSourceKeys.insert(sourceKey)
+                    .inserted else {
+                    intakeStore
+                        .cleanupManagedSourceIfNeeded(
+                            at: resolvedImportRecord.managedURL
+                        )
+                    return .skippedDuplicate
+                }
+
+                return .imported(
+                    resolvedImportRecord
+                )
+            }
         }
 
+        let staticDiagnosticsSeed =
+            PhotoMemoShareIntakeOperationSeed(
+                itemProviderCount:
+                    itemProviderCount,
+                supportedProviderCount:
+                    supportedProviderCount,
+                providerIndex: index,
+                requestedTypeIdentifier:
+                    UTType.image.identifier,
+                preferredRegisteredTypeIdentifier:
+                    preferredStaticImageTypeIdentifier
+                    ?? UTType.image.identifier
+            )
+        let shouldMarkLivePhotoStaticFallback =
+            PhotoMemoShareProviderTypeSelection
+            .supportsLivePhoto(
+                registeredTypeIdentifiers
+            )
         let fileLoadResult =
             await loadFileRepresentationResult(
                 from: provider,
                 requestID: requestID,
                 index: index,
                 diagnosticsSeed:
-                    diagnosticsSeed
+                    staticDiagnosticsSeed
             )
 
         if let importRecord =
             fileLoadResult.importRecord {
 
+            let resolvedImportRecord =
+                shouldMarkLivePhotoStaticFallback
+                ? recordStaticLivePhotoPayloadIfNeeded(
+                    importRecord,
+                    requestedTypeIdentifier:
+                        preferredTypeIdentifier
+                        ?? "unknown",
+                    requestID: requestID,
+                    index: index
+                )
+                : importRecord
+
             if let unsupportedOutcome =
                 unsupportedManagedImportOutcomeIfNeeded(
-                    importRecord,
+                    resolvedImportRecord,
                     diagnosticsSeed:
-                        diagnosticsSeed
+                        staticDiagnosticsSeed
                 ) {
                 return unsupportedOutcome
             }
 
             let sourceKey =
-                importRecord.dedupeKey
+                resolvedImportRecord.dedupeKey
 
             guard
                 seenSourceKeys.insert(sourceKey)
@@ -738,13 +859,13 @@ private extension PhotoMemoShareExtensionIntakeService {
             else {
                 intakeStore
                     .cleanupManagedSourceIfNeeded(
-                        at: importRecord.managedURL
+                        at: resolvedImportRecord.managedURL
                     )
                 return .skippedDuplicate
             }
 
             return .imported(
-                importRecord
+                resolvedImportRecord
             )
         }
 
@@ -754,7 +875,7 @@ private extension PhotoMemoShareExtensionIntakeService {
                 requestID: requestID,
                 index: index,
                 diagnosticsSeed:
-                    diagnosticsSeed
+                    staticDiagnosticsSeed
             )
 
         if case .failed(let failureContext) =
@@ -767,17 +888,29 @@ private extension PhotoMemoShareExtensionIntakeService {
         if case .imported(let imported) =
             fallbackResult {
 
+            let resolvedImported =
+                shouldMarkLivePhotoStaticFallback
+                ? recordStaticLivePhotoPayloadIfNeeded(
+                    imported,
+                    requestedTypeIdentifier:
+                        preferredTypeIdentifier
+                        ?? "unknown",
+                    requestID: requestID,
+                    index: index
+                )
+                : imported
+
             if let unsupportedOutcome =
                 unsupportedManagedImportOutcomeIfNeeded(
-                    imported,
+                    resolvedImported,
                     diagnosticsSeed:
-                        diagnosticsSeed
+                        staticDiagnosticsSeed
                 ) {
                 return unsupportedOutcome
             }
 
             let sourceKey =
-                imported.dedupeKey
+                resolvedImported.dedupeKey
 
             guard
                 seenSourceKeys.insert(sourceKey)
@@ -785,14 +918,14 @@ private extension PhotoMemoShareExtensionIntakeService {
             else {
                 intakeStore
                     .cleanupManagedSourceIfNeeded(
-                        at: imported
+                        at: resolvedImported
                         .managedURL
                     )
                 return .skippedDuplicate
             }
 
             return .imported(
-                imported
+                resolvedImported
             )
         }
 
@@ -828,11 +961,14 @@ private extension PhotoMemoShareExtensionIntakeService {
         requestID: UUID,
         index: Int,
         diagnosticsSeed:
-            PhotoMemoShareIntakeOperationSeed
+            PhotoMemoShareIntakeOperationSeed,
+        requestedTypeIdentifier: String =
+            UTType.image.identifier,
+        allowsDirectoryPackage: Bool = false
     ) async -> FileRepresentationLoadResult {
 
         PhotoMemoShareIntakeLog.notice(
-            "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation start for \(UTType.image.identifier)"
+            "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation start for \(requestedTypeIdentifier)"
         )
 
         let suggestedName =
@@ -849,7 +985,7 @@ private extension PhotoMemoShareExtensionIntakeService {
 
             provider.loadFileRepresentation(
                 forTypeIdentifier:
-                    UTType.image.identifier
+                    requestedTypeIdentifier
             ) { [intakeStore] url, error in
 
                 if let error {
@@ -943,12 +1079,14 @@ private extension PhotoMemoShareExtensionIntakeService {
 
                 let copyResult =
                     intakeStore
-                    .createManagedCopyDetailed(
+                        .createManagedCopyDetailed(
                         from: url,
                         requestID: requestID,
                         index: index,
                         preferredOriginalFileName:
                             originalFileName,
+                        requiresReadableImage:
+                            !allowsDirectoryPackage,
                         diagnosticsSeed:
                             diagnosticsSeed
                     )
@@ -1032,219 +1170,6 @@ private extension PhotoMemoShareExtensionIntakeService {
                             failureContext: nil
                         )
                 )
-            }
-        }
-    }
-
-    func probeLivePhotoRepresentation(
-        from provider: NSItemProvider,
-        typeIdentifier: String,
-        requestID: UUID,
-        index: Int
-    ) async {
-
-        await probeLivePhotoFileRepresentation(
-            from: provider,
-            typeIdentifier: typeIdentifier,
-            requestID: requestID,
-            index: index
-        )
-        await probeLivePhotoItemRepresentation(
-            from: provider,
-            typeIdentifier: typeIdentifier,
-            requestID: requestID,
-            index: index
-        )
-        await probeLivePhotoDataRepresentation(
-            from: provider,
-            typeIdentifier: typeIdentifier,
-            requestID: requestID,
-            index: index
-        )
-        await probeLivePhotoObjectRepresentation(
-            from: provider,
-            typeIdentifier: typeIdentifier,
-            requestID: requestID,
-            index: index
-        )
-    }
-
-    func probeLivePhotoFileRepresentation(
-        from provider: NSItemProvider,
-        typeIdentifier: String,
-        requestID: UUID,
-        index: Int
-    ) async {
-
-        await withCheckedContinuation {
-            (continuation: CheckedContinuation<Void, Never>) in
-
-            provider.loadFileRepresentation(
-                forTypeIdentifier:
-                    typeIdentifier
-            ) { url, error in
-
-                let message =
-                    PhotoMemoShareLivePhotoRepresentationProbe
-                    .message(
-                        operation: "loadFileRepresentation",
-                        providerIndex: index,
-                        typeIdentifier:
-                            typeIdentifier,
-                        resultDescription: nil,
-                        url: url,
-                        error: error
-                    )
-
-                PhotoMemoShareDiagnostics.record(
-                    stage:
-                        .extensionLivePhotoRepresentationProbe,
-                    message: message,
-                    requestID: requestID
-                )
-
-                continuation.resume()
-            }
-        }
-    }
-
-    func probeLivePhotoItemRepresentation(
-        from provider: NSItemProvider,
-        typeIdentifier: String,
-        requestID: UUID,
-        index: Int
-    ) async {
-
-        await withCheckedContinuation {
-            (continuation: CheckedContinuation<Void, Never>) in
-
-            provider.loadItem(
-                forTypeIdentifier:
-                    typeIdentifier,
-                options: nil
-            ) { item, error in
-
-                let resultDescription =
-                    Self.livePhotoItemProbeResultDescription(
-                        item
-                    )
-                let message =
-                    PhotoMemoShareLivePhotoRepresentationProbe
-                    .message(
-                        operation: "loadItem",
-                        providerIndex: index,
-                        typeIdentifier:
-                            typeIdentifier,
-                        resultDescription:
-                            resultDescription,
-                        url: item as? URL,
-                        error: error
-                    )
-
-                PhotoMemoShareDiagnostics.record(
-                    stage:
-                        .extensionLivePhotoRepresentationProbe,
-                    message: message,
-                    requestID: requestID
-                )
-
-                continuation.resume()
-            }
-        }
-    }
-
-    func probeLivePhotoDataRepresentation(
-        from provider: NSItemProvider,
-        typeIdentifier: String,
-        requestID: UUID,
-        index: Int
-    ) async {
-
-        await withCheckedContinuation {
-            (continuation: CheckedContinuation<Void, Never>) in
-
-            provider.loadDataRepresentation(
-                forTypeIdentifier:
-                    typeIdentifier
-            ) { data, error in
-
-                let resultDescription =
-                    data.map {
-                        "dataBytes=\($0.count)"
-                    }
-                let message =
-                    PhotoMemoShareLivePhotoRepresentationProbe
-                    .message(
-                        operation: "loadDataRepresentation",
-                        providerIndex: index,
-                        typeIdentifier:
-                            typeIdentifier,
-                        resultDescription:
-                            resultDescription,
-                        url: nil,
-                        error: error
-                    )
-
-                PhotoMemoShareDiagnostics.record(
-                    stage:
-                        .extensionLivePhotoRepresentationProbe,
-                    message: message,
-                    requestID: requestID
-                )
-
-                continuation.resume()
-            }
-        }
-    }
-
-    func probeLivePhotoObjectRepresentation(
-        from provider: NSItemProvider,
-        typeIdentifier: String,
-        requestID: UUID,
-        index: Int
-    ) async {
-
-        let canLoadObject =
-            provider.canLoadObject(
-                ofClass:
-                    PHLivePhoto.self
-            )
-
-        await withCheckedContinuation {
-            (continuation: CheckedContinuation<Void, Never>) in
-
-            provider.loadObject(
-                ofClass:
-                    PHLivePhoto.self
-            ) { object, error in
-
-                let resultDescription =
-                    Self.livePhotoObjectProbeResultDescription(
-                        object,
-                        canLoadObject:
-                            canLoadObject
-                    )
-                let message =
-                    PhotoMemoShareLivePhotoRepresentationProbe
-                    .message(
-                        operation: "loadObject(PHLivePhoto)",
-                        providerIndex: index,
-                        typeIdentifier:
-                            typeIdentifier,
-                        resultDescription:
-                            resultDescription,
-                        url: nil,
-                        error: error
-                    )
-
-                PhotoMemoShareDiagnostics.record(
-                    stage:
-                        .extensionLivePhotoRepresentationProbe,
-                    message: message,
-                    requestID: requestID
-                )
-
-                continuation.resume()
             }
         }
     }
@@ -1505,10 +1430,13 @@ private extension PhotoMemoShareExtensionIntakeService {
                                                 ),
                                             sourceIdentifier:
                                                 Self
-                                                .dedupeKey(
+                                                .fallbackDataSourceIdentifier(
                                                     for: data,
                                                     suggestedName:
-                                                        suggestedName
+                                                        suggestedName,
+                                                    contentTypeIdentifier:
+                                                        diagnosticsSeed
+                                                        .preferredRegisteredTypeIdentifier
                                                 ),
                                             contentTypeIdentifier:
                                                 diagnosticsSeed
@@ -1579,7 +1507,9 @@ private extension PhotoMemoShareExtensionIntakeService {
     ) -> ManagedImportOutcome? {
 
         let verdict =
-            PhotoProcessingInputPolicy.standard
+            PhotoProcessingInputPolicy(
+                allowsLivePhoto: true
+            )
             .verdict(
                 fileURL:
                     importRecord.managedURL,
@@ -1628,6 +1558,319 @@ private extension PhotoMemoShareExtensionIntakeService {
         )
     }
 
+    func recordStaticLivePhotoPayloadIfNeeded(
+        _ importRecord: ManagedImportRecord,
+        requestedTypeIdentifier: String,
+        requestID: UUID,
+        index: Int
+    ) -> ManagedImportRecord {
+
+        let readiness =
+            livePhotoBundleReadiness(
+                at: importRecord.managedURL
+            )
+
+        guard !readiness.canResolveBundle else {
+            return importRecord
+        }
+
+        PhotoMemoShareDiagnostics.record(
+            stage:
+                .extensionLivePhotoRepresentationStaticPayload,
+            message:
+                "index=\(index), requestedType=\(requestedTypeIdentifier), fileName=\(importRecord.item.originalFileName), contentType=\(importRecord.item.contentTypeIdentifier ?? "nil"), \(readiness.diagnosticMessage), routeWillFallbackToStaticWithoutAssetIdentity=true",
+            requestID: requestID
+        )
+
+        let resolvedStaticContentTypeIdentifier =
+            staticContentTypeIdentifier(
+                for:
+                    importRecord.item.managedURL,
+                fallback:
+                    importRecord.item
+                    .contentTypeIdentifier
+            )
+        let metadataHints =
+            staticFallbackRecoveryMetadataHints(
+                for:
+                    importRecord.item.managedURL
+            )
+        let staticItem =
+            ExternalPhotoIntakeItem(
+                managedURL:
+                    importRecord.item.managedURL,
+                originalFileName:
+                    importRecord.item.originalFileName,
+                sourceIdentifier:
+                    importRecord.item.sourceIdentifier,
+                contentTypeIdentifier:
+                    resolvedStaticContentTypeIdentifier,
+                livePhotoRecoveryHint:
+                    LivePhotoStaticFallbackRecoveryHint(
+                        originalFileName:
+                            importRecord.item
+                            .originalFileName,
+                        advertisedLivePhotoTypeIdentifier:
+                            requestedTypeIdentifier,
+                        staticContentTypeIdentifier:
+                            resolvedStaticContentTypeIdentifier,
+                        captureDate:
+                            metadataHints.captureDate,
+                        pixelWidth:
+                            metadataHints.pixelWidth,
+                        pixelHeight:
+                            metadataHints.pixelHeight
+                    )
+            )
+
+        return ManagedImportRecord(
+            item: staticItem,
+            dedupeKey: importRecord.dedupeKey,
+            livePhotoStaticFallback: true
+        )
+    }
+
+    func staticContentTypeIdentifier(
+        for fileURL: URL,
+        fallback: String?
+    ) -> String? {
+
+        if let type =
+            UTType(
+                filenameExtension:
+                    fileURL
+                    .pathExtension
+            ),
+           type.conforms(
+            to: .image
+           ) {
+            return type.identifier
+        }
+
+        return fallback
+    }
+
+    func staticFallbackRecoveryMetadataHints(
+        for fileURL: URL
+    ) -> (
+        captureDate: Date?,
+        pixelWidth: Int?,
+        pixelHeight: Int?
+    ) {
+
+        guard let source =
+            CGImageSourceCreateWithURL(
+                fileURL as CFURL,
+                nil
+            ),
+            let properties =
+                CGImageSourceCopyPropertiesAtIndex(
+                    source,
+                    0,
+                    nil
+                ) as? [CFString: Any]
+        else {
+            return (
+                captureDate: nil,
+                pixelWidth: nil,
+                pixelHeight: nil
+            )
+        }
+
+        return (
+            captureDate:
+                captureDateHint(
+                    from: properties
+                ),
+            pixelWidth:
+                properties[
+                    kCGImagePropertyPixelWidth
+                ] as? Int,
+            pixelHeight:
+                properties[
+                    kCGImagePropertyPixelHeight
+                ] as? Int
+        )
+    }
+
+    func captureDateHint(
+        from properties: [CFString: Any]
+    ) -> Date? {
+
+        if let exif =
+            properties[
+                kCGImagePropertyExifDictionary
+            ] as? [CFString: Any],
+           let dateString =
+            exif[
+                kCGImagePropertyExifDateTimeOriginal
+            ] as? String,
+           let date =
+            parseStaticFallbackDateHint(
+                dateString
+            ) {
+            return date
+        }
+
+        if let tiff =
+            properties[
+                kCGImagePropertyTIFFDictionary
+            ] as? [CFString: Any],
+           let dateString =
+            tiff[
+                kCGImagePropertyTIFFDateTime
+            ] as? String {
+            return parseStaticFallbackDateHint(
+                dateString
+            )
+        }
+
+        return nil
+    }
+
+    func parseStaticFallbackDateHint(
+        _ dateString: String
+    ) -> Date? {
+
+        LivePhotoStaticFallbackDateParser
+            .parse(
+                dateString
+            )
+    }
+
+    func parseStaticFallbackDateHint(
+        _ dateString: String,
+        timeZone: TimeZone
+    ) -> Date? {
+
+        LivePhotoStaticFallbackDateParser
+            .parse(
+                dateString,
+                timeZone: timeZone
+            )
+    }
+
+    func livePhotoBundleReadiness(
+        at sourceURL: URL
+    ) -> (
+        canResolveBundle: Bool,
+        diagnosticMessage: String
+    ) {
+
+        let standardizedURL =
+            sourceURL.standardizedFileURL
+        var isDirectory:
+            ObjCBool = false
+
+        guard FileManager.default.fileExists(
+            atPath: standardizedURL.path,
+            isDirectory: &isDirectory
+        ) else {
+            return (
+                false,
+                "managedPayload=missing"
+            )
+        }
+
+        guard isDirectory.boolValue else {
+            return (
+                false,
+                "managedPayload=file, pathExtension=\(standardizedURL.pathExtension)"
+            )
+        }
+
+        guard let enumerator =
+            FileManager.default.enumerator(
+                at: standardizedURL,
+                includingPropertiesForKeys: [
+                    .isRegularFileKey
+                ],
+                options: [
+                    .skipsHiddenFiles,
+                    .skipsPackageDescendants
+                ]
+            ) else {
+            return (
+                false,
+                "managedPayload=directory, enumerable=false"
+            )
+        }
+
+        var stillImageURLs: [URL] = []
+        var pairedMovieURLs: [URL] = []
+
+        for case let fileURL as URL in enumerator {
+            guard (
+                try? fileURL.resourceValues(
+                    forKeys: [
+                        .isRegularFileKey
+                    ]
+                )
+                .isRegularFile
+            ) == true else {
+                continue
+            }
+
+            guard let type =
+                UTType(
+                    filenameExtension:
+                        fileURL.pathExtension
+                ) else {
+                continue
+            }
+
+            if type.conforms(
+                to: .image
+            ),
+               !type.conforms(
+                   to: .movie
+               ) {
+                stillImageURLs.append(
+                    fileURL
+                )
+            }
+
+            if type.conforms(
+                to: .movie
+            ) {
+                pairedMovieURLs.append(
+                    fileURL
+                )
+            }
+        }
+
+        let hasStillImage =
+            !stillImageURLs.isEmpty
+        let hasPairedMovie =
+            !pairedMovieURLs.isEmpty
+        let hasUniquePair =
+            stillImageURLs.count == 1
+            && pairedMovieURLs.count == 1
+        let basenameMatches =
+            hasUniquePair
+            && Self.livePhotoResourceBasename(
+                stillImageURLs[0]
+            )
+            == Self.livePhotoResourceBasename(
+                pairedMovieURLs[0]
+            )
+
+        return (
+            hasUniquePair && basenameMatches,
+            "managedPayload=directory, hasStillImage=\(hasStillImage), hasPairedMovie=\(hasPairedMovie), stillCandidateCount=\(stillImageURLs.count), movieCandidateCount=\(pairedMovieURLs.count), basenameMatches=\(basenameMatches)"
+        )
+    }
+
+    nonisolated static func livePhotoResourceBasename(
+        _ url: URL
+    ) -> String {
+
+        url
+            .deletingPathExtension()
+            .lastPathComponent
+            .lowercased()
+    }
+
     func preferredImageTypeIdentifier(
         from registeredTypeIdentifiers:
             [String]
@@ -1639,43 +1882,38 @@ private extension PhotoMemoShareExtensionIntakeService {
             )
     }
 
-    nonisolated static
-    func livePhotoItemProbeResultDescription(
-        _ item: NSSecureCoding?
-    ) -> String {
+    func preferredImportTypeIdentifier(
+        from registeredTypeIdentifiers:
+            [String]
+    ) -> String? {
 
-        guard let item else {
-            return "item=nil"
-        }
-
-        if let data = item as? Data {
-            return "itemClass=Data, itemBytes=\(data.count)"
-        }
-
-        if let url = item as? URL {
-            return "itemClass=URL, itemURLLastPathComponent=\(url.lastPathComponent)"
-        }
-
-        return "itemClass=\(String(describing: type(of: item)))"
+        PhotoMemoShareProviderTypeSelection
+            .preferredImportTypeIdentifier(
+                from: registeredTypeIdentifiers
+            )
     }
 
     nonisolated static
-    func livePhotoObjectProbeResultDescription(
-        _ object: (any NSItemProviderReading)?,
-        canLoadObject: Bool
-    ) -> String {
+    func fallbackDataSourceIdentifier(
+        for data: Data,
+        suggestedName: String?,
+        contentTypeIdentifier: String?
+    ) -> String? {
 
-        guard let livePhoto =
-            object as? PHLivePhoto else {
-            return "canLoadObject=\(canLoadObject), object=nil"
+        guard !PhotoProcessingInputPolicy
+            .isLivePhotoContentType(
+                contentTypeIdentifier
+                .flatMap(UTType.init)
+            )
+        else {
+            return nil
         }
 
-        return [
-            "canLoadObject=\(canLoadObject)",
-            "objectClass=PHLivePhoto",
-            "size=\(Int(livePhoto.size.width))x\(Int(livePhoto.size.height))"
-        ]
-        .joined(separator: ", ")
+        return dedupeKey(
+            for: data,
+            suggestedName:
+                suggestedName
+        )
     }
 
     nonisolated static
@@ -1785,6 +2023,7 @@ private extension PhotoMemoShareExtensionIntakeService {
             "importedCount: \(result.importedCount)",
             "skippedCount: \(result.skippedCount)",
             "failedCount: \(result.failedCount)",
+            "livePhotoStaticFallbackCount: \(result.livePhotoStaticFallbackCount)",
             "failureStage: \(result.failureStage?.title ?? "none")"
         ]
 

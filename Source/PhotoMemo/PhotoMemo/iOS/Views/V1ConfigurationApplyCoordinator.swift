@@ -83,6 +83,13 @@ struct V1ConfigurationApplyReceipt:
     let albumSelection: V1ResolvedAlbumSelection
 }
 
+struct V1ConfigurationAggregateApplyReceipt {
+
+    let candidate: V1ConfigurationAggregateCandidate
+    let saveReceipt: ConfigurationLibrarySaveReceipt
+    let albumSelection: V1ResolvedAlbumSelection
+}
+
 @MainActor
 struct V1ConfigurationApplyCoordinator {
 
@@ -96,6 +103,10 @@ struct V1ConfigurationApplyCoordinator {
             V1ConfigurationSaveReceipt
         >
 
+    private let saveConfigurationLibrary:
+        ((ConfigurationLibraryRecord) async throws ->
+            ConfigurationLibrarySaveReceipt)?
+
     init(
         resolveAlbumSelection: @escaping (
             V1OutputAlbumSelectionRequest
@@ -106,12 +117,17 @@ struct V1ConfigurationApplyCoordinator {
             V1ConfigurationSaveRequest
         ) async -> PhotoMemoResult<
             V1ConfigurationSaveReceipt
-        >
+        >,
+        saveConfigurationLibrary: ((
+            ConfigurationLibraryRecord
+        ) async throws -> ConfigurationLibrarySaveReceipt)? = nil
     ) {
         self.resolveAlbumSelection =
             resolveAlbumSelection
         self.saveConfiguration =
             saveConfiguration
+        self.saveConfigurationLibrary =
+            saveConfigurationLibrary
     }
 
     init(
@@ -149,8 +165,92 @@ struct V1ConfigurationApplyCoordinator {
                         configurationCoordinator
                 )
                 .execute()
+            },
+            saveConfigurationLibrary: { aggregate in
+                guard let configurationCoordinator else {
+                    throw PhotoMemoError(
+                        code: .configurationUnavailable,
+                        message:
+                            "Unable to save the current configuration library without an active configuration coordinator."
+                    )
+                }
+                return try await configurationCoordinator
+                    .saveConfigurationLibrary(aggregate)
             }
         )
+    }
+
+    func apply(
+        candidate: V1ConfigurationAggregateCandidate,
+        availableAlbums: [PhotoAlbumOption]
+    ) async -> PhotoMemoResult<
+        V1ConfigurationAggregateApplyReceipt
+    > {
+        let album = candidate.configuration.output.album
+        let albumRequest = V1OutputAlbumSelectionRequest(
+            outputTarget: Self.outputTarget(for: album.destination),
+            availableAlbums: availableAlbums,
+            selectedExistingAlbumIdentifier:
+                album.destination == .existingAlbum
+                ? album.identifier
+                : "",
+            newAlbumName: album.title
+        )
+
+        switch await resolveAlbumSelection(albumRequest) {
+        case .failure(let error):
+            return .failure(error)
+        case .success(let albumSelection):
+            do {
+                let resolvedCandidate = candidate
+                    .resolvingAlbumSelection(albumSelection)
+                guard let saveConfigurationLibrary else {
+                    return .failure(
+                        PhotoMemoError(
+                            code: .configurationUnavailable,
+                            message:
+                                "Unable to save the current configuration library without an active configuration coordinator."
+                        )
+                    )
+                }
+                let receipt = try await saveConfigurationLibrary(
+                    resolvedCandidate.aggregate
+                )
+                return .success(
+                    V1ConfigurationAggregateApplyReceipt(
+                        candidate: resolvedCandidate,
+                        saveReceipt: receipt,
+                        albumSelection: albumSelection
+                    )
+                )
+            } catch let error as PhotoMemoError {
+                return .failure(error)
+            } catch {
+                return .failure(
+                    PhotoMemoError.wrapped(
+                        error,
+                        code: .persistenceWriteFailed,
+                        message: "保存配置失败。"
+                    )
+                )
+            }
+        }
+    }
+
+    private static func outputTarget(
+        for destination:
+            MemoryConfigurationRecord.Output.AlbumDescriptor.Destination
+    ) -> V1IOSOutputTarget {
+        switch destination {
+        case .automatic:
+            return .automatic
+        case .applePhotos:
+            return .applePhotos
+        case .existingAlbum:
+            return .existingAlbum
+        case .newAlbum:
+            return .newAlbum
+        }
     }
 
     func apply(
@@ -239,5 +339,6 @@ struct V1ConfigurationApplyCoordinator {
             return .failure(error)
         }
     }
+
 }
 #endif

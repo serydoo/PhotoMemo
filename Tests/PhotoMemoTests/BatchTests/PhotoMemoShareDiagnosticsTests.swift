@@ -126,6 +126,16 @@ struct PhotoMemoShareDiagnosticsTests {
         )
         #expect(
             PhotoMemoShareDiagnosticStage(
+                rawValue: "app.sharedContainerReadiness"
+            ) == .appSharedContainerReadiness
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "batch.task.admission"
+            ) == .batchTaskAdmission
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
                 rawValue: "batch.task.route"
             ) == .batchTaskRoute
         )
@@ -136,6 +146,11 @@ struct PhotoMemoShareDiagnosticsTests {
         )
         #expect(
             PhotoMemoShareDiagnosticStage(
+                rawValue: "batch.task.stageDuration"
+            ) == .batchTaskStageDuration
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
                 rawValue: "extension.provider.observed"
             ) == .extensionProviderObserved
         )
@@ -143,6 +158,11 @@ struct PhotoMemoShareDiagnosticsTests {
             PhotoMemoShareDiagnosticStage(
                 rawValue: "extension.livePhotoRepresentation.probe"
             ) == .extensionLivePhotoRepresentationProbe
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
+                rawValue: "extension.livePhotoRepresentation.staticPayload"
+            ) == .extensionLivePhotoRepresentationStaticPayload
         )
         #expect(
             PhotoMemoShareDiagnosticStage(
@@ -168,6 +188,123 @@ struct PhotoMemoShareDiagnosticsTests {
             PhotoMemoShareDiagnosticStage(
                 rawValue: "livePhoto.assetResource.exportFailed"
             ) == .livePhotoAssetResourceExportFailed
+        )
+    }
+
+    @Test("Diagnostics retain a full 20-photo mixed evidence matrix")
+    func retainsFullTwentyPhotoMixedEvidenceMatrix() throws {
+
+        let suiteName =
+            "PhotoMemo.ShareDiagnostics.Retention.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let requestID =
+            UUID()
+        _ = PhotoMemoShareDiagnostics
+            .recordResult(
+                stage:
+                    .appSharedContainerReadiness,
+                message:
+                    "appGroup=group.com.serydoo.PhotoMemo, handoffReady=true, userDefaultsSuiteAvailable=true, appGroupContainerAvailable=true, usesFallbackUserDefaults=false, usesFallbackBaseDirectory=false, baseDirectory=/app-group",
+                requestID: requestID,
+                defaults: defaults
+            )
+
+        for photoIndex in 0..<20 {
+            for eventIndex in 0..<32 {
+                let stage:
+                    PhotoMemoShareDiagnosticStage
+                let message:
+                    String
+
+                switch eventIndex % 8 {
+                case 0:
+                    stage =
+                        .extensionProviderObserved
+                    message =
+                        "index=\(photoIndex), type=com.apple.live-photo"
+                case 1:
+                    stage =
+                        .extensionSourceReady
+                    message =
+                        "index=\(photoIndex), fileName=IMG_\(photoIndex).livephoto, type=com.apple.live-photo-bundle, managedPayload=directory"
+                case 2:
+                    stage =
+                        .extensionLivePhotoRepresentationProbe
+                    message =
+                        "index=\(photoIndex), operation=loadItem, type=com.apple.live-photo, result=failed"
+                case 3:
+                    stage =
+                        .extensionLivePhotoRepresentationStaticPayload
+                    message =
+                        "index=\(photoIndex), requestedType=com.apple.live-photo, fileName=IMG_\(photoIndex).HEIC, contentType=public.jpeg, canResolveBundle=false, routeWillFallbackToStaticWithoutAssetIdentity=true"
+                case 4:
+                    stage =
+                        .appLivePhotoIdentityRecovery
+                    message =
+                        "result=notFound, fileName=IMG_\(photoIndex).HEIC, fallback=static"
+                case 5:
+                    stage =
+                        .batchTaskRoute
+                    message =
+                        "taskID=task-\(photoIndex)-\(eventIndex), fileName=IMG_\(photoIndex).HEIC, contentType=public.jpeg, hasSourceIdentifier=false, sourceURLIsLivePhotoBundle=false, route=staticImage"
+                case 6:
+                    stage =
+                        .batchTaskStageDuration
+                    message =
+                        "taskID=task-\(photoIndex)-\(eventIndex), fileName=IMG_\(photoIndex).HEIC, contentType=public.jpeg, route=staticImage, stageName=export, outcome=completed, durationSeconds=0.001, attachmentCreated=true, isMainThread=false, threadName=batch-worker, peakResidentMemoryBytes=123456789"
+                default:
+                    stage =
+                        .batchTaskDuration
+                    message =
+                        "taskID=task-\(photoIndex)-\(eventIndex), fileName=IMG_\(photoIndex).HEIC, contentType=public.jpeg, route=staticImage, runtimeStage=total, phase=completed, durationSeconds=0.010"
+                }
+
+            _ = PhotoMemoShareDiagnostics
+                .recordResult(
+                    stage: stage,
+                    message: message,
+                    requestID: requestID,
+                    defaults: defaults
+                )
+            }
+        }
+
+        let events =
+            PhotoMemoShareDiagnostics
+            .loadEvents(
+                defaults: defaults
+            )
+
+        #expect(events.count == 641)
+        #expect(
+            events.first?.stage
+            == .appSharedContainerReadiness
+        )
+        #expect(
+            events.contains {
+                $0.stage == .batchTaskStageDuration
+                && $0.message.contains("peakResidentMemoryBytes=123456789")
+                && $0.message.contains("threadName=batch-worker")
+            }
+        )
+        #expect(
+            events.last?.message
+            .contains("taskID=task-19-31")
+            == true
         )
     }
 

@@ -34,12 +34,20 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "app.request.dropped")
     nonisolated static let appRequestValidated =
         Self(rawValue: "app.request.validated")
+    nonisolated static let appSharedContainerReadiness =
+        Self(rawValue: "app.sharedContainerReadiness")
     nonisolated static let appEnqueueTaskRoute =
         Self(rawValue: "app.enqueue.taskRoute")
+    nonisolated static let appLivePhotoIdentityRecovery =
+        Self(rawValue: "app.livePhotoIdentityRecovery")
+    nonisolated static let batchTaskAdmission =
+        Self(rawValue: "batch.task.admission")
     nonisolated static let batchTaskRoute =
         Self(rawValue: "batch.task.route")
     nonisolated static let batchTaskDuration =
         Self(rawValue: "batch.task.duration")
+    nonisolated static let batchTaskStageDuration =
+        Self(rawValue: "batch.task.stageDuration")
 
     nonisolated static let extensionError =
         Self(rawValue: "extension.error")
@@ -71,6 +79,8 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "extension.item.skipped")
     nonisolated static let extensionLivePhotoRepresentationProbe =
         Self(rawValue: "extension.livePhotoRepresentation.probe")
+    nonisolated static let extensionLivePhotoRepresentationStaticPayload =
+        Self(rawValue: "extension.livePhotoRepresentation.staticPayload")
     nonisolated static let extensionPersisted =
         Self(rawValue: "extension.persisted")
     nonisolated static let extensionProviderObserved =
@@ -142,7 +152,7 @@ enum PhotoMemoShareDiagnostics {
     nonisolated private static let storageKey =
         "photomemo.shareDiagnostics.events"
 
-    nonisolated private static let maxEventCount = 80
+    nonisolated private static let maxEventCount = 768
 
     nonisolated static func reset(
         reason: String
@@ -331,10 +341,8 @@ enum PhotoMemoShareDiagnostics {
 
 enum PhotoMemoShareProviderTypeSelection {
 
-    nonisolated static let livePhotoTypeIdentifiers: Set<String> = [
-        "com.apple.live-photo",
-        "com.apple.live-photo-bundle"
-    ]
+    nonisolated static let livePhotoTypeIdentifiers =
+        PhotoProcessingInputPolicy.livePhotoTypeIdentifiers
 
     nonisolated static func preferredImportTypeIdentifier(
         from registeredTypeIdentifiers: [String]

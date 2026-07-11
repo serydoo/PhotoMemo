@@ -14,7 +14,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let snapshot =
             BatchConfigurationSnapshot(
                 template: Template(
-                    preset: .template1,
+                    preset: .classicWhite,
                     name: "宝宝成长卡",
                     leftTopArea: .leftTop,
                     leftBottomArea: .leftBottom,
@@ -52,7 +52,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let snapshot =
             BatchConfigurationSnapshot(
                 template: Template(
-                    preset: .template1,
+                    preset: .classicWhite,
                     name: "   ",
                     leftTopArea: .leftTop,
                     leftBottomArea: .leftBottom,
@@ -92,7 +92,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
 
         let snapshot =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: Anchor(
                     type: .exam,
@@ -147,7 +147,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
             frozenAnchor
         let snapshot =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: legacyAnchor,
                 shouldWritePhotoDescription: true,
@@ -192,7 +192,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
         frozenSnapshot.primaryAnchor = nil
         let snapshot =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: legacyAnchor,
                 shouldWritePhotoDescription: true,
@@ -217,7 +217,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
 
         let snapshot =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: true,
@@ -239,7 +239,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
 
         let snapshot =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: true,

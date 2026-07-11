@@ -28,7 +28,7 @@ struct PhotoMemoBackgroundStatusServiceTests {
             UUID()
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: true,
@@ -151,7 +151,7 @@ struct PhotoMemoBackgroundStatusServiceTests {
 
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: true,

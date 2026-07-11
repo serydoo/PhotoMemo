@@ -31,7 +31,19 @@ nonisolated struct MediaProcessingInputDescriptor: Hashable {
     }
 
     var resolvedContentType: UTType? {
-        contentType
+        if let fileURL,
+           let extensionType =
+            UTType(
+                filenameExtension:
+                    fileURL.pathExtension
+                    .lowercased()
+            ),
+           PhotoProcessingInputPolicy
+            .isRawContentType(extensionType) {
+            return extensionType
+        }
+
+        return contentType
             ?? fileURL.flatMap {
                 UTType(
                     filenameExtension:

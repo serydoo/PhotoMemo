@@ -4,6 +4,9 @@ import Foundation
 enum V1BootstrapSessionRestorePlan {
 
     case none
+    case restoreConfigurationLibrary(
+        ConfigurationLibraryRecord
+    )
     case restoreLibrary(
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
@@ -193,6 +196,13 @@ struct V1BootstrapFlowCoordinator {
         resolvedSubjects: [MemorySubject]?,
         resolvedSubject: MemorySubject?
     ) -> V1BootstrapSessionRestorePlan {
+        if let configurationLibrary =
+            state.configurationLibrary {
+            return .restoreConfigurationLibrary(
+                configurationLibrary
+            )
+        }
+
         if let subjects = resolvedSubjects,
            !subjects.isEmpty {
             return .restoreLibrary(

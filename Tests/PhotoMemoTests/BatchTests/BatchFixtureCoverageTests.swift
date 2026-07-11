@@ -507,7 +507,7 @@ private extension BatchFixtureCoverageTests {
 
         BatchConfigurationSnapshot(
             template:
-                .template1
+                .classicWhite
                 .normalizedForEditing,
             badge: nil,
             anchor: nil,

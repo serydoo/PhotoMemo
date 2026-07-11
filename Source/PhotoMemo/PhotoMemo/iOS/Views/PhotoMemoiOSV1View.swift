@@ -29,6 +29,9 @@ struct PhotoMemoiOSV1View: View {
     private let diagnosticsRepository:
         DiagnosticsRepository?
 
+    private let localConfigurationLibraryCoordinator:
+        LocalConfigurationLibraryCoordinator
+
     private let externalIntakeCenter:
         ExternalPhotoIntakeCenter
 
@@ -97,6 +100,20 @@ struct PhotoMemoiOSV1View: View {
         V1MediaOutputMode = .originalFormat
 
     @State
+    private var shouldWritePhotosDescription = true
+
+    @State
+    private var photosDescriptionOverride = ""
+
+    @State
+    private var configurationAlbumTitle = ""
+
+    @State
+    private var livePhotoPolicy:
+        MemoryConfigurationRecord.Output.LivePhotoPolicy =
+        .preserveMotion
+
+    @State
     private var availableAlbums: [PhotoAlbumOption] = []
 
     @State
@@ -160,6 +177,22 @@ struct PhotoMemoiOSV1View: View {
 
     @State
     private var showsConfigurationRequiredAlert = false
+
+    @State
+    private var showsLocalConfigurationLibrary = false
+
+    @State
+    private var localConfigurationBackups:
+        [LocalConfigurationBackupRecord] = []
+
+    @State
+    private var localConfigurationLibraryStatus: String?
+
+    @State
+    private var isWorkingWithLocalConfigurationLibrary = false
+
+    @State
+    private var showsHomeConfigurationActionFeedback = false
 
     @FocusState
     private var memoryPresetTitleFieldFocused: Bool
@@ -253,6 +286,46 @@ struct PhotoMemoiOSV1View: View {
                         selectedMemoryPresetID:
                             session.state.selectedMemoryPresetID
                     )
+            },
+            reconcileCurrentMemoryPreset: { request in
+                session.reconcilePersistenceSnapshot(
+                    memoryPresets:
+                        request.memoryPresets,
+                    selectedMemoryPresetID:
+                        request.selectedMemoryPresetID
+                )
+            },
+            reconcileSavedConfiguration: {
+                request,
+                configurationID,
+                configurationRevision in
+                session.reconcilePersistenceSnapshot(
+                    memoryPresets:
+                        request.memoryPresets,
+                    selectedMemoryPresetID:
+                        request.selectedMemoryPresetID,
+                    configurationID:
+                        configurationID,
+                    configurationRevision:
+                        configurationRevision
+                )
+            },
+            reconcileConfigurationLibrary: {
+                candidate,
+                receipt in
+                session.reconcileConfigurationLibrarySave(
+                    candidate: candidate,
+                    receipt: receipt
+                )
+            },
+            applySavedConfigurationProjection: {
+                configuration in
+                applyConfigurationDraftProjection(
+                    V1ConfigurationDraftProjection(
+                        configuration: configuration
+                    )
+                )
+                refreshDynamicPreview()
             },
             applySelectedMemoryPreset: {
                 session.applySelectedMemoryPreset()
@@ -374,6 +447,17 @@ struct PhotoMemoiOSV1View: View {
                         selectedMemoryPresetID
                 )
             },
+            restoreConfigurationLibrary: { aggregate in
+                session.restoreConfigurationLibrary(
+                    aggregate
+                )
+            },
+            applyConfigurationDraftProjection: {
+                projection in
+                applyConfigurationDraftProjection(
+                    projection
+                )
+            },
             restoreSelectedSubject: { subject in
                 session.restoreSelectedSubject(
                     subject
@@ -423,6 +507,15 @@ struct PhotoMemoiOSV1View: View {
             ?? .shared
         self.diagnosticsRepository =
             diagnosticsRepository
+        self.localConfigurationLibraryCoordinator =
+            LocalConfigurationLibraryCoordinator(
+                appVersion:
+                    Bundle.main.object(
+                        forInfoDictionaryKey:
+                            "CFBundleShortVersionString"
+                    ) as? String
+                    ?? "1.0"
+            )
     }
 
     var body: some View {
@@ -454,8 +547,49 @@ struct PhotoMemoiOSV1View: View {
             }
         }
         .preferredColorScheme(.light)
+        .alert(
+            "配置操作",
+            isPresented: $showsHomeConfigurationActionFeedback
+        ) {
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text(localConfigurationLibraryStatus ?? "操作已完成。")
+        }
         .task {
             await loadAlbumOptions()
+        }
+        .sheet(
+            isPresented: $showsLocalConfigurationLibrary
+        ) {
+            V1LocalConfigurationLibrarySheet(
+                subjectName:
+                    session.state.selectedSubject?
+                    .identity.displayName
+                    ?? "当前记忆对象",
+                backups: localConfigurationBackups,
+                isWorking:
+                    isWorkingWithLocalConfigurationLibrary,
+                statusMessage:
+                    localConfigurationLibraryStatus,
+                onRefresh: {
+                    refreshLocalConfigurationLibrary()
+                },
+                onRestore: { backup in
+                    restoreLocalConfigurationBackup(
+                        backup,
+                        makeCurrent: false
+                    )
+                },
+                onRestoreAndMakeCurrent: { backup in
+                    restoreLocalConfigurationBackup(
+                        backup,
+                        makeCurrent: true
+                    )
+                },
+                onDelete: deleteLocalConfigurationBackup
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(
             isPresented: $entryFlowState.showsWelcomePage
@@ -786,7 +920,15 @@ struct PhotoMemoiOSV1View: View {
         .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
             isEditingMemoryPresetTitle = false
             memoryPresetTitleFieldFocused = false
-            if let selectedPreset =
+            if let selectedConfiguration =
+                session.selectedMemoryConfiguration {
+                applyConfigurationDraftProjection(
+                    V1ConfigurationDraftProjection(
+                        configuration:
+                            selectedConfiguration
+                    )
+                )
+            } else if let selectedPreset =
                 session.state.selectedMemoryPreset {
                 logoMode = selectedPreset.logoMode
                 applySavedOutputConfiguration(
@@ -938,6 +1080,8 @@ struct PhotoMemoiOSV1View: View {
             memoryPresetTitleFieldFocused: $memoryPresetTitleFieldFocused,
             isConfigurationReady:
                 hasSavedConfigurationForSelectedSubject,
+            isSavingConfiguration:
+                isSavingConfiguration,
             onOpenSubject: {
                 entryFlowState =
                     V1EntryFlowCoordinator
@@ -959,7 +1103,10 @@ struct PhotoMemoiOSV1View: View {
             },
             onSelectMemoryPreset: activateHomePreset,
             onRenameMemoryPreset: beginEditingMemoryPresetTitle,
+            onSaveMemoryPreset: backupHomePreset,
             onDeleteMemoryPreset: deleteHomePreset,
+            onOpenLocalConfigurationLibrary:
+                openLocalConfigurationLibrary,
             onDismissKeyboard: dismissKeyboard,
             profileTrackingBackground: offsetReader(for: .profile)
         )
@@ -1075,20 +1222,11 @@ struct PhotoMemoiOSV1View: View {
                 activeConfigurationStatus = .dirty
             },
             onDeleteConfiguration: {
-                guard
-                    V1PresetDeletionCoordinator
-                    .deleteSelectedPreset(
-                        in: session,
-                        configurationCoordinator:
-                            configurationCoordinator
-                    )
-                else {
+                guard let selectedPreset =
+                    session.state.selectedMemoryPreset else {
                     return
                 }
-                memoryPresetTitleDraft =
-                    session.currentMemoryPresetTitle
-                bootstrapDrafts()
-                activeConfigurationStatus = .dirty
+                deleteHomePreset(selectedPreset)
             }
         )
     }
@@ -1365,24 +1503,504 @@ struct PhotoMemoiOSV1View: View {
     private func deleteHomePreset(
         _ preset: MemoryPreset
     ) {
-        if session.state.selectedMemoryPreset?.id != preset.id {
-            session.selectMemoryPreset(preset)
+        Task {
+            await deleteHomePresetNow(preset)
         }
+    }
 
-        guard
-            V1PresetDeletionCoordinator
-            .deleteSelectedPreset(
-                in: session,
-                configurationCoordinator:
-                    configurationCoordinator
+    @MainActor
+    private func deleteHomePresetNow(
+        _ preset: MemoryPreset
+    ) async {
+        guard !isSavingConfiguration,
+              let configurationCoordinator,
+              let initialAggregate = session.state.configurationLibrary,
+              let subjectID = session.state.selectedSubject?.id,
+              let subjectRecord = initialAggregate.subjects.first(
+                  where: { $0.subject.id == subjectID }
+              ) else {
+            presentHomeConfigurationActionFeedback(
+                "当前配置库不可用，请稍后重试。"
             )
-        else {
             return
         }
-        memoryPresetTitleDraft =
-            session.currentMemoryPresetTitle
+        let deletionAction = V1LocalConfigurationLibraryPresenter
+            .deletionAction(
+                configurationID: preset.id,
+                currentConfigurationID:
+                    session.state.selectedMemoryPresetID,
+                isCurrentConfigurationDirty:
+                    activeConfigurationStatus == .dirty,
+                durableConfigurationIDs:
+                    subjectRecord.configurations.map(\.id),
+                visibleConfigurationIDs:
+                    homeAvailablePresets.map(\.id)
+            )
+        if deletionAction == .applyCurrentThenDelete {
+            guard await applyCurrentV1Configuration(),
+                  activeConfigurationStatus == .saved else {
+                presentHomeConfigurationActionFeedback(
+                    "当前新增配置保存失败，未删除原配置。"
+                )
+                return
+            }
+        } else if deletionAction == .unavailable {
+            presentHomeConfigurationActionFeedback(
+                "请至少保留一条已保存配置；可以先保存当前新增配置。"
+            )
+            return
+        }
+        guard let aggregate = session.state.configurationLibrary,
+              let candidate = V1LocalConfigurationLibraryPresenter
+                .deletingConfiguration(preset.id, from: aggregate) else {
+            presentHomeConfigurationActionFeedback(
+                "删除配置失败，原配置仍然保留。"
+            )
+            return
+        }
+
+        isSavingConfiguration = true
+        activeConfigurationStatus = .saving
+        defer { isSavingConfiguration = false }
+        do {
+            let receipt = try await configurationCoordinator
+                .saveConfigurationLibrary(candidate)
+            var durableCandidate = candidate
+            durableCandidate.revision = receipt.revision
+            session.restoreConfigurationLibrary(durableCandidate)
+            memoryPresetTitleDraft = session.currentMemoryPresetTitle
+            bootstrapDrafts()
+            activeConfigurationStatus = .saved
+            presentHomeConfigurationActionFeedback(
+                "已删除“\(preset.title)”。本地备份仍会保留。"
+            )
+        } catch {
+            activeConfigurationStatus = .dirty
+            presentHomeConfigurationActionFeedback(
+                "删除配置失败，原配置仍然保留。"
+            )
+        }
+    }
+
+    private func openLocalConfigurationLibrary() {
+        guard session.state.selectedSubject != nil else {
+            localConfigurationLibraryStatus =
+                "请先选择一个记忆对象。"
+            return
+        }
+        showsLocalConfigurationLibrary = true
+        refreshLocalConfigurationLibrary()
+    }
+
+    private func backupHomePreset(
+        _ preset: MemoryPreset
+    ) {
+        Task {
+            await backupConfigurationToLocalLibrary(
+                configurationID: preset.id
+            )
+        }
+    }
+
+    @MainActor
+    private func backupConfigurationToLocalLibrary(
+        configurationID: UUID
+    ) async {
+        guard !isWorkingWithLocalConfigurationLibrary,
+              !isSavingConfiguration,
+              let aggregate = session.state.configurationLibrary,
+              let subjectID = session.state.selectedSubject?.id,
+              let subjectRecord = aggregate.subjects.first(
+                  where: { $0.subject.id == subjectID }
+              ) else {
+            presentHomeConfigurationActionFeedback(
+                "当前配置还没有可备份的持久化记录。"
+            )
+            return
+        }
+
+        let action = V1LocalConfigurationLibraryPresenter.backupAction(
+            configurationID: configurationID,
+            currentConfigurationID:
+                session.state.selectedMemoryPresetID,
+            isCurrentConfigurationDirty:
+                activeConfigurationStatus == .dirty,
+            isSavingConfiguration:
+                isSavingConfiguration,
+            durableConfigurationIDs:
+                subjectRecord.configurations.map(\.id)
+        )
+        guard action != .unavailable else {
+            presentHomeConfigurationActionFeedback(
+                "找不到这条配置的持久化版本。"
+            )
+            return
+        }
+
+        if action == .applyCurrentThenBackup,
+           (!(await applyCurrentV1Configuration())
+            || activeConfigurationStatus != .saved) {
+            presentHomeConfigurationActionFeedback(
+                "当前修改保存失败，未创建本地备份。"
+            )
+            return
+        }
+
+        isWorkingWithLocalConfigurationLibrary = true
+        defer {
+            isWorkingWithLocalConfigurationLibrary = false
+        }
+
+        guard let durableAggregate = session.state.configurationLibrary,
+              let durableSubjectRecord = durableAggregate.subjects.first(
+                  where: { $0.subject.id == subjectID }
+              ),
+              let configuration = durableSubjectRecord.configurations.first(
+                  where: { $0.id == configurationID }
+              ) else {
+            presentHomeConfigurationActionFeedback(
+                "保存后未找到对应的持久化配置。"
+            )
+            return
+        }
+
+        do {
+            let receipt = try await localConfigurationLibraryCoordinator
+                .backup(
+                    subject: durableSubjectRecord.subject,
+                    configuration: configuration,
+                    sourceURLs: localConfigurationAssetURLs(
+                        subject: durableSubjectRecord.subject,
+                        configuration: configuration
+                    )
+                )
+            presentHomeConfigurationActionFeedback(
+                V1LocalConfigurationLibraryPresenter.backupFeedback(
+                    title: configuration.title,
+                    receipt: receipt
+                )
+            )
+            localConfigurationBackups =
+                try await localConfigurationLibraryCoordinator
+                .listBackups(subjectID: subjectID)
+        } catch {
+            presentHomeConfigurationActionFeedback(
+                localConfigurationLibraryErrorMessage(error)
+            )
+        }
+    }
+
+    private func presentHomeConfigurationActionFeedback(
+        _ message: String
+    ) {
+        localConfigurationLibraryStatus = message
+        showsHomeConfigurationActionFeedback = true
+    }
+
+    private func refreshLocalConfigurationLibrary() {
+        guard let subjectID = session.state.selectedSubject?.id else {
+            localConfigurationLibraryStatus =
+                "请先选择一个记忆对象。"
+            return
+        }
+        Task {
+            await loadLocalConfigurationBackups(
+                subjectID: subjectID
+            )
+        }
+    }
+
+    @MainActor
+    private func loadLocalConfigurationBackups(
+        subjectID: UUID
+    ) async {
+        guard !isWorkingWithLocalConfigurationLibrary else {
+            return
+        }
+        isWorkingWithLocalConfigurationLibrary = true
+        defer {
+            isWorkingWithLocalConfigurationLibrary = false
+        }
+        do {
+            localConfigurationBackups =
+                try await localConfigurationLibraryCoordinator
+                .listBackups(subjectID: subjectID)
+            if localConfigurationBackups.isEmpty {
+                localConfigurationLibraryStatus =
+                    "当前记忆对象还没有本地备份。"
+            }
+        } catch {
+            localConfigurationLibraryStatus =
+                localConfigurationLibraryErrorMessage(error)
+        }
+    }
+
+    private func restoreLocalConfigurationBackup(
+        _ backup: LocalConfigurationBackupRecord,
+        makeCurrent: Bool
+    ) {
+        importConfigurationBackup(
+            at: backup.fileURL,
+            assetRootURL:
+                backup.fileURL
+                .deletingLastPathComponent()
+                .deletingLastPathComponent(),
+            makeCurrent: makeCurrent
+        )
+    }
+
+    private func importConfigurationBackup(
+        at url: URL,
+        assetRootURL: URL,
+        makeCurrent: Bool
+    ) {
+        Task {
+            await importConfigurationBackupNow(
+                at: url,
+                assetRootURL: assetRootURL,
+                makeCurrent: makeCurrent
+            )
+        }
+    }
+
+    @MainActor
+    private func importConfigurationBackupNow(
+        at url: URL,
+        assetRootURL: URL,
+        makeCurrent: Bool
+    ) async {
+        guard !isWorkingWithLocalConfigurationLibrary,
+              let aggregate = session.state.configurationLibrary,
+              let configurationCoordinator else {
+            localConfigurationLibraryStatus =
+                "当前配置库不可用，无法恢复。"
+            return
+        }
+
+        isWorkingWithLocalConfigurationLibrary = true
+        defer {
+            isWorkingWithLocalConfigurationLibrary = false
+        }
+        let didAccessSecurityScopedResource =
+            url.startAccessingSecurityScopedResource()
+        defer {
+            if didAccessSecurityScopedResource {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let importCoordinator = ConfigurationImportCoordinator(
+                applyAggregate: { candidate in
+                    try await configurationCoordinator
+                        .saveConfigurationLibrary(candidate)
+                }
+            )
+            let resolution = try importCoordinator.resolveImport(
+                data: data,
+                assetRootURL: assetRootURL,
+                availableAlbumIdentifiers: Set(
+                    availableAlbums.compactMap(\.localIdentifier)
+                )
+            )
+
+            let warnings: [ConfigurationImportWarning]
+            if makeCurrent {
+                let receipt = try await importCoordinator
+                    .restoreAndMakeCurrent(
+                        resolution,
+                        into: aggregate
+                    )
+                var durableAggregate = receipt.aggregate
+                durableAggregate.revision =
+                    receipt.saveReceipt.revision
+                session.restoreConfigurationLibrary(
+                    durableAggregate
+                )
+                warnings = receipt.restoreReceipt.warnings
+                applyRestoredCurrentConfiguration()
+            } else {
+                let restoreReceipt = importCoordinator.restore(
+                    resolution,
+                    into: aggregate
+                )
+                let saveReceipt = try await configurationCoordinator
+                    .saveConfigurationLibrary(
+                        restoreReceipt.aggregate
+                    )
+                var durableAggregate = restoreReceipt.aggregate
+                durableAggregate.revision = saveReceipt.revision
+                session.restoreConfigurationLibrary(
+                    durableAggregate
+                )
+                warnings = restoreReceipt.warnings
+            }
+
+            localConfigurationLibraryStatus =
+                importSuccessMessage(
+                    makeCurrent: makeCurrent,
+                    warnings: warnings
+                )
+            if let subjectID = session.state.selectedSubject?.id {
+                localConfigurationBackups =
+                    try await localConfigurationLibraryCoordinator
+                    .listBackups(subjectID: subjectID)
+            }
+        } catch {
+            localConfigurationLibraryStatus =
+                configurationImportErrorMessage(error)
+        }
+    }
+
+    private func applyRestoredCurrentConfiguration() {
+        guard let configuration = session.selectedMemoryConfiguration else {
+            return
+        }
+        applyConfigurationDraftProjection(
+            V1ConfigurationDraftProjection(
+                configuration: configuration
+            )
+        )
+        memoryPresetTitleDraft = configuration.title
         bootstrapDrafts()
-        activeConfigurationStatus = .dirty
+        refreshDynamicPreview()
+        activeConfigurationStatus = .saved
+    }
+
+    private func deleteLocalConfigurationBackup(
+        _ backup: LocalConfigurationBackupRecord
+    ) {
+        Task {
+            guard !isWorkingWithLocalConfigurationLibrary else {
+                return
+            }
+            isWorkingWithLocalConfigurationLibrary = true
+            defer {
+                isWorkingWithLocalConfigurationLibrary = false
+            }
+            do {
+                _ = try await localConfigurationLibraryCoordinator
+                    .deleteBackup(
+                        subjectID: backup.subjectID,
+                        configurationID: backup.configurationID
+                    )
+                localConfigurationBackups.removeAll {
+                    $0.configurationID == backup.configurationID
+                }
+                localConfigurationLibraryStatus =
+                    "已删除“\(backup.title)”的本地备份，不影响当前配置。"
+            } catch {
+                localConfigurationLibraryStatus =
+                    localConfigurationLibraryErrorMessage(error)
+            }
+        }
+    }
+
+    private func localConfigurationAssetURLs(
+        subject: MemorySubject,
+        configuration: MemoryConfigurationRecord
+    ) -> [PortableAssetManifest.Role: URL] {
+        var urls: [PortableAssetManifest.Role: URL] = [:]
+        appendLocalAssetURL(
+            subject.identity.avatarImagePath,
+            role: .subjectAvatar,
+            to: &urls
+        )
+        appendLocalAssetURL(
+            subject.identity.avatarBadgeImagePath,
+            role: .subjectAvatarBadge,
+            to: &urls
+        )
+        appendLocalAssetURL(
+            subject.identity.avatarPreviewImagePath,
+            role: .subjectAvatarPreview,
+            to: &urls
+        )
+        let customLogoPath =
+            configuration.presentation.logo.badge?
+            .assetReference?.relativePath
+            ?? (configuration.id == session.state.selectedMemoryPresetID
+                ? customLogoBadge?.imagePath
+                : nil)
+        appendLocalAssetURL(
+            customLogoPath,
+            role: .customLogo,
+            to: &urls
+        )
+        return urls
+    }
+
+    private func appendLocalAssetURL(
+        _ path: String?,
+        role: PortableAssetManifest.Role,
+        to urls: inout [PortableAssetManifest.Role: URL]
+    ) {
+        guard let path,
+              path.hasPrefix("/") else {
+            return
+        }
+        let url = URL(fileURLWithPath: path)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return
+        }
+        urls[role] = url
+    }
+
+    private func importSuccessMessage(
+        makeCurrent: Bool,
+        warnings: [ConfigurationImportWarning]
+    ) -> String {
+        let prefix = makeCurrent
+            ? "已恢复并设为当前配置。"
+            : "已恢复配置副本。"
+        guard !warnings.isEmpty else {
+            return prefix
+        }
+        return "\(prefix) 部分缺失资源已使用安全回退。"
+    }
+
+    private func localConfigurationLibraryErrorMessage(
+        _ error: Error
+    ) -> String {
+        guard let error = error as? LocalConfigurationLibraryError else {
+            return "本地配置库操作失败：\(error.localizedDescription)"
+        }
+        switch error {
+        case .backupNotFound:
+            return "找不到这份本地备份，可能已被移动或删除。"
+        case .checksumMismatch:
+            return "备份校验失败，文件可能已损坏。"
+        case .invalidDocument:
+            return "配置包含无法备份的资源引用，请先重新保存当前配置。"
+        case .encodingFailed,
+             .readFailed,
+             .writeFailed,
+             .deleteFailed,
+             .pathIdentityMismatch:
+            return "本地配置库操作失败，请稍后重试。"
+        }
+    }
+
+    private func configurationImportErrorMessage(
+        _ error: Error
+    ) -> String {
+        guard let error = error as? ConfigurationImportError else {
+            return "导入或恢复失败：\(error.localizedDescription)"
+        }
+        switch error {
+        case .unsupportedOlderSchema:
+            return "这份备份版本过旧，当前版本无法读取。"
+        case .unsupportedFutureSchema:
+            return "这份备份来自更新版本，请升级时光记后再导入。"
+        case .corruptDocument,
+             .checksumMismatch:
+            return "备份文件已损坏或校验失败。"
+        case .invalidDocument:
+            return "备份内容不完整，无法安全恢复。"
+        case .aggregateApplyUnavailable:
+            return "当前配置库不可用，无法设为当前配置。"
+        }
     }
 
     private func applySubjectFlowPatch(
@@ -2062,11 +2680,73 @@ struct PhotoMemoiOSV1View: View {
                     )
             )
 
-        return await configurationApplyRuntimeCoordinator
-            .apply(
-                request,
-                outputTarget: outputTarget
+        let configurationLibraryForApply =
+            session.state.configurationLibrary.flatMap { aggregate in
+                guard let configurationID =
+                    session.state.selectedMemoryPresetID,
+                      let subjectID = session.state.selectedSubject?.id else {
+                    return aggregate
+                }
+                return V1LocalConfigurationLibraryPresenter
+                    .preparingCurrentConfiguration(
+                        configurationID,
+                        subjectID: subjectID,
+                        in: aggregate
+                    )
+            }
+        let aggregateDraft = configurationLibraryForApply.map {
+            _ in
+            V1ConfigurationAggregateDraft(
+                title: session.currentMemoryPresetTitle,
+                regionDrafts: Dictionary(
+                    uniqueKeysWithValues:
+                        CardRegion.memoryCardRegions.map {
+                            region in
+                            (region, draft(for: region))
+                        }
+                ),
+                regionTemplateIDs: Dictionary(
+                    uniqueKeysWithValues:
+                        CardRegion.memoryCardRegions.compactMap {
+                            region in
+                            session.activeTemplateID(for: region)
+                                .map { (region, $0) }
+                        }
+                ),
+                locationConfiguration:
+                    locationDisplayConfiguration,
+                logoMode: logoMode,
+                badge: selectedBadgeForSaving,
+                usesCustomMemoryWriteText:
+                    session.usesCustomMemoryWriteText,
+                customMemoryWriteText:
+                    session.customMemoryWriteText,
+                shouldWritePhotosDescription:
+                    shouldWritePhotosDescription,
+                photosDescriptionOverride:
+                    photosDescriptionOverride,
+                outputTarget: outputTarget,
+                selectedAlbumIdentifier:
+                    selectedExistingAlbumIdentifier,
+                albumTitle: outputTarget == .newAlbum
+                    ? newAlbumName
+                    : configurationAlbumTitle,
+                mediaOutputMode: mediaOutputMode,
+                livePhotoPolicy: livePhotoPolicy,
+                selectedTimeAnchorID:
+                    session.selectedTimeAnchorID,
+                savedAt: Date()
             )
+        }
+
+        return await configurationApplyRuntimeCoordinator.apply(
+            configurationLibrary:
+                configurationLibraryForApply,
+            aggregateDraft: aggregateDraft,
+            legacyRequest: request,
+            outputTarget: outputTarget,
+            availableAlbums: availableAlbums
+        )
     }
 
     private var hasSavedConfigurationForSelectedSubject: Bool {
@@ -2220,6 +2900,42 @@ struct PhotoMemoiOSV1View: View {
             update.activeConfigurationStatus {
             self.activeConfigurationStatus =
                 activeConfigurationStatus
+        }
+    }
+
+    private func applyConfigurationDraftProjection(
+        _ projection: V1ConfigurationDraftProjection
+    ) {
+        customLogoBadge = projection.badge
+        logoMode = projection.logoMode
+        locationDisplayConfiguration =
+            projection.locationConfiguration
+        session.restoreMemoryCopy(
+            usesCustomText:
+                projection.usesCustomMemoryWriteText,
+            customText:
+                projection.customMemoryWriteText
+        )
+        shouldWritePhotosDescription =
+            projection.shouldWritePhotosDescription
+        photosDescriptionOverride =
+            projection.photosDescriptionOverride
+        outputTarget = projection.outputTarget
+        mediaOutputMode = projection.mediaOutputMode
+        selectedExistingAlbumIdentifier =
+            projection.selectedAlbumIdentifier
+        configurationAlbumTitle = projection.albumTitle
+        if projection.outputTarget == .newAlbum {
+            newAlbumName = projection.albumTitle.isEmpty
+                ? PhotoMemoAlbumSelection.defaultAlbumTitle
+                : projection.albumTitle
+        }
+        livePhotoPolicy = projection.livePhotoPolicy
+        regionDrafts = projection.regionDrafts
+
+        if projection.logoMode == .customUpload,
+           projection.badge != nil {
+            logoStatusMessage = "已使用自选 Logo。"
         }
     }
 

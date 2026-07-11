@@ -93,8 +93,7 @@ struct RendererDependencyIsolationTests {
     func boundaryConcreteRenderersDoNotLearnExpressionStorage() throws {
         let rendererFiles = [
             "Source/PhotoMemo/PhotoMemo/Renderers/RecordCardRenderer.swift",
-            "Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteCardRenderer.swift",
-            "Source/PhotoMemo/PhotoMemo/Renderers/ImmersWhiteRenderer.swift"
+            "Source/PhotoMemo/PhotoMemo/Renderers/ClassicWhiteRenderer.swift"
         ]
 
         for file in rendererFiles {
@@ -150,7 +149,7 @@ struct RendererDependencyIsolationTests {
     func regressionCardTextBlockEngineOutputRemainsUnchanged() {
         let template =
             Template(
-                preset: .template2,
+                preset: .classicWhite,
                 name: "PI-2 Regression",
                 leftTopArea: TemplateArea(
                     name: "Left Top",
@@ -193,7 +192,7 @@ struct RendererDependencyIsolationTests {
     func pi13dRegressionCardTextBlockEngineModelOutputMatchesParityProvenProviderValue() throws {
         let template =
             Template(
-                preset: .template2,
+                preset: .classicWhite,
                 name: "PI-13D Regression",
                 leftTopArea: TemplateArea(
                     name: "Left Top",
@@ -249,7 +248,7 @@ struct RendererDependencyIsolationTests {
     func pi17RegressionCardTextBlockEngineMemoryOutputComesFromCarriedProviderValue() throws {
         let template =
             Template(
-                preset: .template2,
+                preset: .classicWhite,
                 name: "PI-17 Regression",
                 leftTopArea: TemplateArea(
                     name: "Left Top",
@@ -333,7 +332,7 @@ struct RendererDependencyIsolationTests {
     func locationFeatureProductionExpressionContextOverridesLegacyLocationDisplay() throws {
         let template =
             Template(
-                preset: .template2,
+                preset: .classicWhite,
                 name: "Location Feature",
                 leftTopArea: TemplateArea(
                     name: "Left Top",
@@ -402,7 +401,7 @@ private func expectCardTextLocationDisplayResolvesThroughProvider(
 ) throws {
     let template =
         Template(
-            preset: .template2,
+            preset: .classicWhite,
             name: "PI-20 Regression",
             leftTopArea: TemplateArea(
                 name: "Left Top",

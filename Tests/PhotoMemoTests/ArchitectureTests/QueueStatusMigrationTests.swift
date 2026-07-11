@@ -107,7 +107,7 @@ struct QueueStatusMigrationTests {
             UUID()
         let configuration =
             BatchConfigurationSnapshot(
-                template: .template1,
+                template: .classicWhite,
                 badge: nil,
                 anchor: nil,
                 shouldWritePhotoDescription: true,

@@ -33,6 +33,10 @@ struct V1BootstrapRuntimeCoordinator {
             [MemoryPreset],
             MemoryPreset.ID?
         ) -> Void
+    private let restoreConfigurationLibrary:
+        (ConfigurationLibraryRecord) -> Void
+    private let applyConfigurationDraftProjection:
+        (V1ConfigurationDraftProjection) -> Void
     private let restoreSelectedSubject:
         (MemorySubject) -> Void
     private let applyWelcomeState:
@@ -53,6 +57,12 @@ struct V1BootstrapRuntimeCoordinator {
             [MemoryPreset],
             MemoryPreset.ID?
         ) -> Void,
+        restoreConfigurationLibrary: @escaping (
+            ConfigurationLibraryRecord
+        ) -> Void = { _ in },
+        applyConfigurationDraftProjection: @escaping (
+            V1ConfigurationDraftProjection
+        ) -> Void = { _ in },
         restoreSelectedSubject: @escaping (
             MemorySubject
         ) -> Void,
@@ -66,6 +76,10 @@ struct V1BootstrapRuntimeCoordinator {
         self.updateProjection = updateProjection
         self.restoreSubjectLibrary =
             restoreSubjectLibrary
+        self.restoreConfigurationLibrary =
+            restoreConfigurationLibrary
+        self.applyConfigurationDraftProjection =
+            applyConfigurationDraftProjection
         self.restoreSelectedSubject =
             restoreSelectedSubject
         self.applyWelcomeState =
@@ -107,6 +121,25 @@ struct V1BootstrapRuntimeCoordinator {
         )
 
         switch patch.sessionRestorePlan {
+        case .restoreConfigurationLibrary(let aggregate):
+            restoreConfigurationLibrary(aggregate)
+            if let activeSubjectID = aggregate.activeSubjectID,
+               let activeConfigurationID =
+                aggregate.activeConfigurationID,
+               let activeConfiguration = aggregate.subjects
+                .first(where: {
+                    $0.subject.id == activeSubjectID
+                })?
+                .configurations
+                .first(where: {
+                    $0.id == activeConfigurationID
+                }) {
+                applyConfigurationDraftProjection(
+                    V1ConfigurationDraftProjection(
+                        configuration: activeConfiguration
+                    )
+                )
+            }
         case .restoreLibrary(
             let subjects,
             let selectedSubjectID,

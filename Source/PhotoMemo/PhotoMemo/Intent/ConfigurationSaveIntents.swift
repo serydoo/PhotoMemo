@@ -96,6 +96,12 @@ struct V1ConfigurationSaveReceipt:
 struct V1ConfigurationBootstrapState:
     Hashable {
 
+    let configurationLibrary:
+        ConfigurationLibraryRecord?
+
+    let draftProjection:
+        V1ConfigurationDraftProjection?
+
     let subjects: [MemorySubject]?
     let selectedSubjectID: MemorySubject.ID?
     let memoryPresets: [MemoryPreset]
@@ -125,6 +131,10 @@ struct V1ConfigurationBootstrapState:
         ExpressionModuleConfiguration?
 
     init(
+        configurationLibrary:
+            ConfigurationLibraryRecord? = nil,
+        draftProjection:
+            V1ConfigurationDraftProjection? = nil,
         subjects: [MemorySubject]? = nil,
         selectedSubjectID: MemorySubject.ID? = nil,
         memoryPresets: [MemoryPreset] = [],
@@ -142,6 +152,9 @@ struct V1ConfigurationBootstrapState:
         locationDisplayConfiguration:
             ExpressionModuleConfiguration? = nil
     ) {
+        self.configurationLibrary =
+            configurationLibrary
+        self.draftProjection = draftProjection
         self.subjects = subjects
         self.selectedSubjectID =
             selectedSubjectID

@@ -56,6 +56,55 @@ struct ConfigurationCenterLocationDisplaySupportTests {
         )
     }
 
+    @Test("configuration center summary passes saved location display configuration")
+    func configurationCenterSummaryPassesSavedLocationDisplayConfiguration() throws {
+        let repositoryRoot =
+            URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let sourceURL =
+            repositoryRoot
+            .appendingPathComponent(
+                "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift"
+            )
+        let source =
+            try String(
+                contentsOf: sourceURL,
+                encoding: .utf8
+            )
+
+        let marker =
+            "ConfigurationCenterLocationDisplaySupport\n            .summaryValue("
+        let markerRange =
+            try #require(
+                source.range(of: marker)
+            )
+        let remainingSource =
+            String(
+                source[markerRange.lowerBound...]
+            )
+        let callEnd =
+            try #require(
+                remainingSource.range(of: "\n            )")
+            )
+        let callSource =
+            String(
+                remainingSource[..<callEnd.upperBound]
+            )
+
+        #expect(
+            callSource.contains("selectedConfiguration:")
+        )
+        #expect(
+            callSource.contains("savedLocationDisplayConfiguration")
+        )
+        #expect(
+            !callSource.contains("session.state")
+        )
+    }
+
     @Test("selection change keeps the requested region and updates the location module configuration")
     func selectionChangeKeepsRequestedRegion() throws {
         let subject = ConfigurationCenterState.mock.selectedSubject

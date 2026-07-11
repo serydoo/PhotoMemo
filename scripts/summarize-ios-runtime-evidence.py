@@ -109,6 +109,16 @@ def compact_request(request: dict[str, Any]) -> dict[str, Any]:
     summary = request.get("importSummary")
     if not isinstance(summary, dict):
         summary = {}
+    source_identifier_count = sum(
+        1
+        for item in items
+        if isinstance(item, dict) and item.get("sourceIdentifier")
+    )
+    live_photo_recovery_hint_count = sum(
+        1
+        for item in items
+        if isinstance(item, dict) and item.get("livePhotoRecoveryHint")
+    )
 
     return {
         "requestID": request.get("id"),
@@ -119,6 +129,8 @@ def compact_request(request: dict[str, Any]) -> dict[str, Any]:
         "importedCount": summary.get("importedCount"),
         "skippedCount": summary.get("skippedCount"),
         "failedCount": summary.get("failedCount"),
+        "sourceIdentifierCount": source_identifier_count,
+        "livePhotoRecoveryHintCount": live_photo_recovery_hint_count,
         "contentTypes": sorted(
             {
                 str(item.get("contentTypeIdentifier"))
@@ -133,18 +145,259 @@ def parse_key_value_message(message: Any) -> dict[str, str]:
     if not isinstance(message, str):
         return {}
     pairs: dict[str, str] = {}
-    for part in message.split(", "):
+    for part in re.split(r", (?=[A-Za-z][A-Za-z0-9_]*=)", message):
         key, separator, value = part.partition("=")
         if separator:
             pairs[key] = value
     return pairs
 
 
+def parse_ordered_key_value_message(
+    message: Any,
+    keys: list[str],
+) -> dict[str, str]:
+    if not isinstance(message, str):
+        return {}
+
+    pairs: dict[str, str] = {}
+    search_start = 0
+
+    for index, key in enumerate(keys):
+        key_start = find_delimited_key_start(
+            message=message,
+            key=key,
+            start=search_start,
+        )
+        if key_start is None:
+            continue
+
+        value_start = key_start + len(key) + 1
+        next_key_start = None
+        for next_key in keys[index + 1:]:
+            candidate = find_delimited_key_start(
+                message=message,
+                key=next_key,
+                start=value_start,
+            )
+            if candidate is not None:
+                next_key_start = candidate
+                break
+
+        value_end = (
+            delimiter_start_for_key(message, next_key_start)
+            if next_key_start is not None
+            else len(message)
+        )
+        pairs[key] = message[value_start:value_end].strip()
+        search_start = value_end
+
+    return pairs
+
+
+def find_delimited_key_start(
+    message: str,
+    key: str,
+    start: int,
+) -> int | None:
+    prefix = f"{key}="
+    if start <= 0 and message.startswith(prefix):
+        return 0
+
+    pattern = f", {prefix}"
+    index = message.find(pattern, max(start, 0))
+    if index == -1:
+        return None
+    return index + 2
+
+
+def delimiter_start_for_key(
+    message: str,
+    key_start: int | None,
+) -> int:
+    if key_start is None:
+        return len(message)
+    delimiter_start = key_start - 2
+    if delimiter_start >= 0 and message[delimiter_start:key_start] == ", ":
+        return delimiter_start
+    return key_start
+
+
+def parse_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def compact_live_photo_static_payload_event(
+    event: dict[str, Any]
+) -> dict[str, Any] | None:
+    if event.get("stage") != "extension.livePhotoRepresentation.staticPayload":
+        return None
+
+    pairs = parse_key_value_message(event.get("message"))
+
+    return {
+        "timestamp": event.get("timestamp"),
+        "timestampISO": format_apple_time(event.get("timestamp")),
+        "requestID": event.get("requestID"),
+        "index": parse_int(pairs.get("index")),
+        "requestedType": pairs.get("requestedType"),
+        "fileName": pairs.get("fileName"),
+        "contentType": pairs.get("contentType"),
+        "managedPayload": pairs.get("managedPayload"),
+        "pathExtension": pairs.get("pathExtension"),
+        "enumerable": pairs.get("enumerable"),
+        "hasStillImage": pairs.get("hasStillImage"),
+        "hasPairedMovie": pairs.get("hasPairedMovie"),
+        "routeWillFallbackToStaticWithoutAssetIdentity": pairs.get(
+            "routeWillFallbackToStaticWithoutAssetIdentity"
+        ),
+    }
+
+
+def compact_live_photo_identity_recovery_event(
+    event: dict[str, Any]
+) -> dict[str, Any] | None:
+    if event.get("stage") != "app.livePhotoIdentityRecovery":
+        return None
+
+    pairs = parse_key_value_message(event.get("message"))
+
+    return {
+        "timestamp": event.get("timestamp"),
+        "timestampISO": format_apple_time(event.get("timestamp")),
+        "requestID": event.get("requestID"),
+        "result": pairs.get("result"),
+        "fileName": pairs.get("fileName"),
+        "contentType": pairs.get("contentType"),
+        "candidateCount": parse_int(pairs.get("candidateCount")),
+        "reason": pairs.get("reason"),
+        "assetIdentifierRecovered": pairs.get("assetIdentifierRecovered"),
+        "fallback": pairs.get("fallback"),
+    }
+
+
+def compact_task_admission_event(event: dict[str, Any]) -> dict[str, Any] | None:
+    if event.get("stage") != "batch.task.admission":
+        return None
+
+    pairs = parse_ordered_key_value_message(
+        event.get("message"),
+        [
+            "taskID",
+            "fileName",
+            "contentType",
+            "isRAW",
+            "pixelWidth",
+            "pixelHeight",
+            "pixelCount",
+            "estimatedDecodedByteCount",
+            "memoryTier",
+            "requiresExtendedPreviewPreparation",
+            "maxConcurrentDecodes",
+            "maxConcurrentRenders",
+            "maxConcurrentExports",
+            "schedulerMode",
+            "admission",
+        ],
+    )
+
+    return {
+        "timestamp": event.get("timestamp"),
+        "timestampISO": format_apple_time(event.get("timestamp")),
+        "jobID": event.get("jobID"),
+        "taskID": pairs.get("taskID"),
+        "fileName": pairs.get("fileName"),
+        "contentType": pairs.get("contentType"),
+        "isRAW": pairs.get("isRAW"),
+        "pixelWidth": parse_int(pairs.get("pixelWidth")),
+        "pixelHeight": parse_int(pairs.get("pixelHeight")),
+        "pixelCount": parse_int(pairs.get("pixelCount")),
+        "estimatedDecodedByteCount": parse_int(
+            pairs.get("estimatedDecodedByteCount")
+        ),
+        "memoryTier": pairs.get("memoryTier"),
+        "requiresExtendedPreviewPreparation": pairs.get(
+            "requiresExtendedPreviewPreparation"
+        ),
+        "maxConcurrentDecodes": parse_int(pairs.get("maxConcurrentDecodes")),
+        "maxConcurrentRenders": parse_int(pairs.get("maxConcurrentRenders")),
+        "maxConcurrentExports": parse_int(pairs.get("maxConcurrentExports")),
+        "schedulerMode": pairs.get("schedulerMode"),
+        "admission": pairs.get("admission"),
+    }
+
+
+def compact_task_route_event(event: dict[str, Any]) -> dict[str, Any] | None:
+    if event.get("stage") != "batch.task.route":
+        return None
+
+    pairs = parse_ordered_key_value_message(
+        event.get("message"),
+        [
+            "taskID",
+            "fileName",
+            "contentType",
+            "hasSourceIdentifier",
+            "sourceURLIsLivePhotoBundle",
+            "route",
+        ],
+    )
+
+    return {
+        "timestamp": event.get("timestamp"),
+        "timestampISO": format_apple_time(event.get("timestamp")),
+        "jobID": event.get("jobID"),
+        "taskID": pairs.get("taskID"),
+        "fileName": pairs.get("fileName"),
+        "contentType": pairs.get("contentType"),
+        "hasSourceIdentifier": pairs.get("hasSourceIdentifier"),
+        "sourceURLIsLivePhotoBundle": pairs.get("sourceURLIsLivePhotoBundle"),
+        "route": pairs.get("route"),
+    }
+
+
+def compact_shared_container_readiness_event(
+    event: dict[str, Any]
+) -> dict[str, Any] | None:
+    if event.get("stage") != "app.sharedContainerReadiness":
+        return None
+
+    pairs = parse_key_value_message(event.get("message"))
+
+    return {
+        "timestamp": event.get("timestamp"),
+        "timestampISO": format_apple_time(event.get("timestamp")),
+        "requestID": event.get("requestID"),
+        "appGroup": pairs.get("appGroup"),
+        "handoffReady": pairs.get("handoffReady"),
+        "userDefaultsSuiteAvailable": pairs.get("userDefaultsSuiteAvailable"),
+        "appGroupContainerAvailable": pairs.get("appGroupContainerAvailable"),
+        "usesFallbackUserDefaults": pairs.get("usesFallbackUserDefaults"),
+        "usesFallbackBaseDirectory": pairs.get("usesFallbackBaseDirectory"),
+        "baseDirectory": pairs.get("baseDirectory"),
+    }
+
+
 def compact_task_duration_event(event: dict[str, Any]) -> dict[str, Any] | None:
     if event.get("stage") != "batch.task.duration":
         return None
 
-    pairs = parse_key_value_message(event.get("message"))
+    pairs = parse_ordered_key_value_message(
+        event.get("message"),
+        [
+            "taskID",
+            "fileName",
+            "contentType",
+            "route",
+            "runtimeStage",
+            "phase",
+            "durationSeconds",
+        ],
+    )
     duration: float | None = None
     try:
         duration = float(pairs["durationSeconds"])
@@ -159,7 +412,52 @@ def compact_task_duration_event(event: dict[str, Any]) -> dict[str, Any] | None:
         "fileName": pairs.get("fileName"),
         "contentType": pairs.get("contentType"),
         "route": pairs.get("route"),
+        "runtimeStage": pairs.get("runtimeStage"),
         "phase": pairs.get("phase"),
+        "durationSeconds": duration,
+    }
+
+
+def compact_task_stage_duration_event(event: dict[str, Any]) -> dict[str, Any] | None:
+    if event.get("stage") != "batch.task.stageDuration":
+        return None
+
+    pairs = parse_ordered_key_value_message(
+        event.get("message"),
+        [
+            "taskID",
+            "fileName",
+            "contentType",
+            "route",
+            "stageName",
+            "outcome",
+            "durationSeconds",
+            "attachmentCreated",
+            "isMainThread",
+            "peakResidentMemoryBytes",
+            "threadName",
+        ],
+    )
+    duration: float | None = None
+    try:
+        duration = float(pairs["durationSeconds"])
+    except (KeyError, TypeError, ValueError):
+        duration = None
+
+    return {
+        "timestamp": event.get("timestamp"),
+        "timestampISO": format_apple_time(event.get("timestamp")),
+        "jobID": event.get("jobID"),
+        "taskID": pairs.get("taskID"),
+        "fileName": pairs.get("fileName"),
+        "contentType": pairs.get("contentType"),
+        "route": pairs.get("route"),
+        "stageName": pairs.get("stageName"),
+        "outcome": pairs.get("outcome"),
+        "attachmentCreated": pairs.get("attachmentCreated"),
+        "isMainThread": pairs.get("isMainThread"),
+        "threadName": pairs.get("threadName"),
+        "peakResidentMemoryBytes": parse_int(pairs.get("peakResidentMemoryBytes")),
         "durationSeconds": duration,
     }
 
@@ -228,11 +526,47 @@ def build_summary(
         for event in new_events
         if (duration := compact_task_duration_event(event)) is not None
     ]
+    compact_new_task_admission_events = [
+        admission
+        for event in new_events
+        if (admission := compact_task_admission_event(event)) is not None
+    ]
+    compact_new_task_route_events = [
+        route
+        for event in new_events
+        if (route := compact_task_route_event(event)) is not None
+    ]
+    compact_new_shared_container_readiness_events = [
+        readiness
+        for event in new_events
+        if (
+            readiness := compact_shared_container_readiness_event(event)
+        ) is not None
+    ]
+    compact_new_live_photo_static_payload_events = [
+        static_payload
+        for event in new_events
+        if (
+            static_payload := compact_live_photo_static_payload_event(event)
+        ) is not None
+    ]
+    compact_new_live_photo_identity_recovery_events = [
+        recovery
+        for event in new_events
+        if (
+            recovery := compact_live_photo_identity_recovery_event(event)
+        ) is not None
+    ]
+    compact_new_task_stage_durations = [
+        duration
+        for event in new_events
+        if (duration := compact_task_stage_duration_event(event)) is not None
+    ]
 
     evaluation = evaluate_scenario(
         scenario=scenario,
         new_jobs=compact_new_jobs,
-        new_events=compact_new_events,
+        new_events=new_events,
         new_requests=new_requests,
         new_crashes=new_crashes,
     )
@@ -255,6 +589,18 @@ def build_summary(
         "newJobs": compact_new_jobs,
         "newShareEventsTail": compact_new_events,
         "newTaskDurations": compact_new_task_durations,
+        "newTaskAdmissionEvents": compact_new_task_admission_events,
+        "newTaskRouteEvents": compact_new_task_route_events,
+        "newSharedContainerReadinessEvents": (
+            compact_new_shared_container_readiness_events
+        ),
+        "newLivePhotoStaticPayloadEvents": (
+            compact_new_live_photo_static_payload_events
+        ),
+        "newLivePhotoIdentityRecoveryEvents": (
+            compact_new_live_photo_identity_recovery_events
+        ),
+        "newTaskStageDurations": compact_new_task_stage_durations,
         "newRequests": [
             compact_request(request)
             for request in new_requests
@@ -294,6 +640,32 @@ def evaluate_scenario(
                     "was found relative to the baseline."
                 ),
             }
+        readiness_events = [
+            readiness
+            for event in new_events
+            if (
+                readiness := compact_shared_container_readiness_event(event)
+            ) is not None
+        ]
+        if any(
+            readiness.get("handoffReady") == "false"
+            for readiness in readiness_events
+        ):
+            return {
+                "status": "fail",
+                "reason": (
+                    "A signed Share run recorded shared-container "
+                    "readiness with handoffReady=false."
+                ),
+            }
+        if not readiness_events:
+            return {
+                "status": "needs-review",
+                "reason": (
+                    "No new shared-container readiness event was found; "
+                    "signed App Group handoff evidence needs review."
+                ),
+            }
         completed = [
             job
             for job in matching
@@ -301,12 +673,30 @@ def evaluate_scenario(
             and job.get("phaseCounts", {}).get("completed") == expected_count
             and job.get("savedTaskCount") == expected_count
         ]
-        if completed and not new_crashes:
+        completed_with_durations = [
+            job
+            for job in completed
+            if completed_task_duration_count_for_job(
+                new_events=new_events,
+                job=job,
+            ) >= expected_count
+        ]
+        if completed and not completed_with_durations:
+            return {
+                "status": "needs-review",
+                "reason": (
+                    f"Found completed shareExtension job with {expected_count} "
+                    "saved task(s), but per-task duration evidence is missing "
+                    "or incomplete."
+                ),
+            }
+        if completed_with_durations and not new_crashes:
             return {
                 "status": "pass",
                 "reason": (
                     f"Found completed shareExtension job with {expected_count} "
-                    "saved task(s), and no new PhotoMemo crash."
+                    "saved task(s), matching task duration evidence, and no "
+                    "new PhotoMemo crash."
                 ),
             }
         return {
@@ -346,11 +736,244 @@ def evaluate_scenario(
                 ),
             }
         return {
-            "status": "pass",
+            "status": "needs-review",
             "reason": (
                 "No new handoff request, batch job, or PhotoMemo crash was "
-                "found relative to the baseline. Confirm the UI showed the "
-                "split-batch rejection copy."
+                "found relative to the baseline, but no "
+                "extension.input.tooManyPhotos diagnostic event was found. "
+                "Confirm the UI showed the split-batch rejection copy."
+            ),
+        }
+
+    if scenario == "share-livephoto-1":
+        readiness_result = evaluate_shared_container_readiness(new_events)
+        if readiness_result is not None:
+            return readiness_result
+        if new_crashes:
+            return {
+                "status": "fail",
+                "reason": "A new PhotoMemo crash appeared during the single Live Photo Share run.",
+            }
+
+        completed_jobs = [
+            job
+            for job in completed_share_extension_jobs(new_jobs)
+            if job.get("taskCount") == 1
+        ]
+        if not completed_jobs:
+            return {
+                "status": "fail",
+                "reason": "No completed one-task shareExtension job was found for the single Live Photo Share run.",
+            }
+
+        route_events = task_route_events_for_jobs(
+            new_events,
+            completed_jobs,
+        )
+        if not route_events:
+            return {
+                "status": "needs-review",
+                "reason": (
+                    "No task route evidence was found for the completed "
+                    "single Live Photo Share job."
+                ),
+            }
+        if any(route.get("route") == "staticImage" for route in route_events):
+            return {
+                "status": "fail",
+                "reason": (
+                    "Single Live Photo Share completed, but route evidence "
+                    "shows static fallback instead of livePhoto."
+                ),
+            }
+        live_route_job_ids = {
+            route.get("jobID")
+            for route in route_events
+            if route.get("route") == "livePhoto"
+        }
+        if not live_route_job_ids:
+            return {
+                "status": "fail",
+                "reason": "Single Live Photo Share route evidence did not include livePhoto.",
+            }
+
+        completed_live_route_jobs_with_durations = [
+            job
+            for job in completed_jobs
+            if job.get("jobID") in live_route_job_ids
+            if completed_task_duration_count_for_job(
+                new_events=new_events,
+                job=job,
+            ) >= (job.get("taskCount") or 0)
+        ]
+        if not completed_live_route_jobs_with_durations:
+            return {
+                "status": "needs-review",
+                "reason": (
+                    "The completed single Live Photo Share job is missing "
+                    "matching task duration evidence."
+                ),
+            }
+        return {
+            "status": "pass",
+            "reason": (
+                "Completed Share run includes a single Live Photo route, "
+                "matching task duration evidence, and no new PhotoMemo "
+                "crash."
+            ),
+        }
+
+    if scenario == "share-livephoto-mixed":
+        readiness_result = evaluate_shared_container_readiness(new_events)
+        if readiness_result is not None:
+            return readiness_result
+        if new_crashes:
+            return {
+                "status": "fail",
+                "reason": "A new PhotoMemo crash appeared during the mixed Live Photo Share run.",
+            }
+
+        completed_jobs = completed_share_extension_jobs(new_jobs)
+        if not completed_jobs:
+            return {
+                "status": "fail",
+                "reason": "No completed shareExtension job was found for the mixed Live Photo Share run.",
+            }
+
+        route_events = task_route_events_for_jobs(
+            new_events,
+            completed_jobs,
+        )
+        if not route_events:
+            return {
+                "status": "needs-review",
+                "reason": (
+                    "No task route evidence was found for the completed Share "
+                    "job; mixed Live Photo Share routing needs review."
+                ),
+            }
+        route_events_by_job_id: dict[Any, list[dict[str, Any]]] = {}
+        for route in route_events:
+            route_events_by_job_id.setdefault(route.get("jobID"), []).append(route)
+        mixed_route_job_ids = {
+            job_id
+            for job_id, job_routes in route_events_by_job_id.items()
+            if "livePhoto" in {route.get("route") for route in job_routes}
+            and any(route.get("route") != "livePhoto" for route in job_routes)
+        }
+        if not mixed_route_job_ids:
+            return {
+                "status": "fail",
+                "reason": (
+                    "Mixed Live Photo Share route evidence for the completed Share "
+                    "job did not include both a livePhoto route and a still-image route."
+                ),
+            }
+
+        completed_mixed_route_jobs_with_durations = [
+            job
+            for job in completed_jobs
+            if job.get("jobID") in mixed_route_job_ids
+            if completed_task_duration_count_for_job(
+                new_events=new_events,
+                job=job,
+            ) >= (job.get("taskCount") or 0)
+        ]
+        if not completed_mixed_route_jobs_with_durations:
+            return {
+                "status": "needs-review",
+                "reason": (
+                    "The completed mixed Live Photo Share job is missing "
+                    "matching task duration evidence."
+                ),
+            }
+        return {
+            "status": "pass",
+            "reason": (
+                "Completed Share run includes both Live Photo and still "
+                "routes, matching task duration evidence, and no new "
+                "PhotoMemo crash."
+            ),
+        }
+
+    if scenario == "share-48mp":
+        readiness_result = evaluate_shared_container_readiness(new_events)
+        if readiness_result is not None:
+            return readiness_result
+        if new_crashes:
+            return {
+                "status": "fail",
+                "reason": "A new PhotoMemo crash appeared during the 48MP Share run.",
+            }
+
+        completed_jobs = completed_share_extension_jobs(new_jobs)
+        if not completed_jobs:
+            return {
+                "status": "fail",
+                "reason": "No completed shareExtension job was found for the 48MP Share run.",
+            }
+        completed_jobs_with_durations = [
+            job
+            for job in completed_jobs
+            if completed_task_duration_count_for_job(
+                new_events=new_events,
+                job=job,
+            ) >= (job.get("taskCount") or 0)
+        ]
+        if not completed_jobs_with_durations:
+            return {
+                "status": "needs-review",
+                "reason": (
+                    "The completed 48MP Share job is missing matching task "
+                    "duration evidence."
+                ),
+            }
+
+        completed_job_ids_with_durations = {
+            job.get("jobID")
+            for job in completed_jobs_with_durations
+        }
+        admissions = [
+            admission
+            for event in new_events
+            if (admission := compact_task_admission_event(event)) is not None
+            and admission.get("jobID") in completed_job_ids_with_durations
+        ]
+        critical_admissions = [
+            admission
+            for admission in admissions
+            if (admission.get("pixelCount") or 0) >= 48_000_000
+        ]
+        if not critical_admissions:
+            return {
+                "status": "needs-review",
+                "reason": "No 48MP task admission evidence was found for this Share run.",
+            }
+
+        single_lane_admissions = [
+            admission
+            for admission in critical_admissions
+            if admission.get("memoryTier") == "critical"
+            and admission.get("schedulerMode") == "singleTaskLoop"
+            and admission.get("maxConcurrentDecodes") == 1
+            and admission.get("maxConcurrentRenders") == 1
+            and admission.get("maxConcurrentExports") == 1
+        ]
+        if single_lane_admissions:
+            return {
+                "status": "pass",
+                "reason": (
+                    "48MP admission evidence used critical single-lane "
+                    "scheduling, the Share job completed with matching task "
+                    "duration evidence, and no new PhotoMemo crash was found."
+                ),
+            }
+
+        return {
+            "status": "fail",
+            "reason": (
+                "48MP admission evidence was present but did not use critical "
+                "single-lane scheduling."
             ),
         }
 
@@ -358,6 +981,79 @@ def evaluate_scenario(
         "status": "informational",
         "reason": "Unknown scenario; summary generated without pass/fail rules.",
     }
+
+
+def completed_share_extension_jobs(
+    new_jobs: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    return [
+        job
+        for job in new_jobs
+        if job.get("launchSource") == "shareExtension"
+        and job.get("state") == "completed"
+        and job.get("taskCount") == job.get("savedTaskCount")
+        and job.get("phaseCounts", {}).get("completed") == job.get("taskCount")
+    ]
+
+
+def task_route_events_for_jobs(
+    new_events: list[dict[str, Any]],
+    jobs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    job_ids = {job.get("jobID") for job in jobs}
+    return [
+        route
+        for event in new_events
+        if (route := compact_task_route_event(event)) is not None
+        and route.get("jobID") in job_ids
+    ]
+
+
+def completed_task_duration_count_for_job(
+    new_events: list[dict[str, Any]],
+    job: dict[str, Any],
+) -> int:
+    task_ids = {
+        duration.get("taskID")
+        for event in new_events
+        if (duration := compact_task_duration_event(event)) is not None
+        and duration.get("jobID") == job.get("jobID")
+        and duration.get("runtimeStage") == "total"
+        and duration.get("phase") == "completed"
+        and duration.get("durationSeconds") is not None
+        and duration.get("taskID")
+    }
+    return len(task_ids)
+
+
+def evaluate_shared_container_readiness(
+    new_events: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    readiness_events = [
+        readiness
+        for event in new_events
+        if (readiness := compact_shared_container_readiness_event(event)) is not None
+    ]
+    if any(
+        readiness.get("handoffReady") == "false"
+        for readiness in readiness_events
+    ):
+        return {
+            "status": "fail",
+            "reason": (
+                "A signed Share run recorded shared-container readiness with "
+                "handoffReady=false."
+            ),
+        }
+    if not readiness_events:
+        return {
+            "status": "needs-review",
+            "reason": (
+                "No new shared-container readiness event was found; signed "
+                "App Group handoff evidence needs review."
+            ),
+        }
+    return None
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -412,6 +1108,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 f"imported={request.get('importedCount')} "
                 f"skipped={request.get('skippedCount')} "
                 f"failed={request.get('failedCount')} "
+                f"sourceIDs={request.get('sourceIdentifierCount')} "
+                f"recoveryHints={request.get('livePhotoRecoveryHintCount')} "
                 f"types={request.get('contentTypes')}"
             )
     else:
@@ -426,7 +1124,121 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 f"job={duration.get('jobID')} "
                 f"task={duration.get('taskID')} "
                 f"route={duration.get('route')} "
+                f"stage={duration.get('runtimeStage')} "
                 f"phase={duration.get('phase')} "
+                f"duration={duration.get('durationSeconds')}s"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "## New Task Route Events", ""])
+    if summary["newTaskRouteEvents"]:
+        for route in summary["newTaskRouteEvents"]:
+            lines.append(
+                "- "
+                f"{route.get('timestampISO') or route.get('timestamp')}: "
+                f"job={route.get('jobID')} "
+                f"task={route.get('taskID')} "
+                f"file={route.get('fileName')} "
+                f"type={route.get('contentType')} "
+                f"sourceID={route.get('hasSourceIdentifier')} "
+                f"sourceBundle={route.get('sourceURLIsLivePhotoBundle')} "
+                f"route={route.get('route')}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "## New Task Admission Events", ""])
+    if summary["newTaskAdmissionEvents"]:
+        for admission in summary["newTaskAdmissionEvents"]:
+            lines.append(
+                "- "
+                f"{admission.get('timestampISO') or admission.get('timestamp')}: "
+                f"job={admission.get('jobID')} "
+                f"task={admission.get('taskID')} "
+                f"file={admission.get('fileName')} "
+                f"type={admission.get('contentType')} "
+                f"raw={admission.get('isRAW')} "
+                f"pixels={admission.get('pixelWidth')}x{admission.get('pixelHeight')} "
+                f"tier={admission.get('memoryTier')} "
+                f"decodedBytes={admission.get('estimatedDecodedByteCount')} "
+                f"scheduler={admission.get('schedulerMode')} "
+                f"admission={admission.get('admission')}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "## New Shared Container Readiness", ""])
+    if summary["newSharedContainerReadinessEvents"]:
+        for readiness in summary["newSharedContainerReadinessEvents"]:
+            lines.append(
+                "- "
+                f"{readiness.get('timestampISO') or readiness.get('timestamp')}: "
+                f"request={readiness.get('requestID')} "
+                f"handoffReady={readiness.get('handoffReady')} "
+                f"defaults={readiness.get('userDefaultsSuiteAvailable')} "
+                f"container={readiness.get('appGroupContainerAvailable')} "
+                f"fallbackDefaults={readiness.get('usesFallbackUserDefaults')} "
+                f"fallbackDirectory={readiness.get('usesFallbackBaseDirectory')} "
+                f"baseDirectory={readiness.get('baseDirectory')}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "## New Live Photo Static Payloads", ""])
+    if summary["newLivePhotoStaticPayloadEvents"]:
+        for payload in summary["newLivePhotoStaticPayloadEvents"]:
+            lines.append(
+                "- "
+                f"{payload.get('timestampISO') or payload.get('timestamp')}: "
+                f"request={payload.get('requestID')} "
+                f"index={payload.get('index')} "
+                f"file={payload.get('fileName')} "
+                f"type={payload.get('contentType')} "
+                f"requested={payload.get('requestedType')} "
+                f"payload={payload.get('managedPayload')} "
+                f"ext={payload.get('pathExtension')} "
+                f"enumerable={payload.get('enumerable')} "
+                f"still={payload.get('hasStillImage')} "
+                f"movie={payload.get('hasPairedMovie')} "
+                f"fallbackStatic={payload.get('routeWillFallbackToStaticWithoutAssetIdentity')}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "## New Live Photo Identity Recovery", ""])
+    if summary["newLivePhotoIdentityRecoveryEvents"]:
+        for recovery in summary["newLivePhotoIdentityRecoveryEvents"]:
+            lines.append(
+                "- "
+                f"{recovery.get('timestampISO') or recovery.get('timestamp')}: "
+                f"request={recovery.get('requestID')} "
+                f"result={recovery.get('result')} "
+                f"file={recovery.get('fileName')} "
+                f"type={recovery.get('contentType')} "
+                f"candidates={recovery.get('candidateCount')} "
+                f"assetRecovered={recovery.get('assetIdentifierRecovered')} "
+                f"fallback={recovery.get('fallback')} "
+                f"reason={recovery.get('reason')}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "## New Task Stage Durations", ""])
+    if summary["newTaskStageDurations"]:
+        for duration in summary["newTaskStageDurations"]:
+            lines.append(
+                "- "
+                f"{duration.get('timestampISO') or duration.get('timestamp')}: "
+                f"job={duration.get('jobID')} "
+                f"task={duration.get('taskID')} "
+                f"route={duration.get('route')} "
+                f"stage={duration.get('stageName')} "
+                f"outcome={duration.get('outcome')} "
+                f"attachmentCreated={duration.get('attachmentCreated')} "
+                f"mainThread={duration.get('isMainThread')} "
+                f"thread={duration.get('threadName')} "
+                f"peakRSS={duration.get('peakResidentMemoryBytes')} "
                 f"duration={duration.get('durationSeconds')}s"
             )
     else:
@@ -461,7 +1273,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--baseline", type=Path)
     parser.add_argument(
         "--scenario",
-        choices=["baseline", "share-1", "share-20", "share-21-reject", "manual"],
+        choices=[
+            "baseline",
+            "share-1",
+            "share-20",
+            "share-21-reject",
+            "share-livephoto-1",
+            "share-livephoto-mixed",
+            "share-48mp",
+            "manual",
+        ],
         default="manual",
     )
     parser.add_argument(

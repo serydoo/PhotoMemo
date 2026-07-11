@@ -7,6 +7,252 @@ import Testing
 @Suite("Configuration session configuration lifecycle")
 struct ConfigurationSessionConfigurationLifecycleTests {
 
+    @Test("restoring aggregate selects its active record and ignores legacy selection")
+    func restoringAggregateSelectsActiveRecord() throws {
+        var state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let first = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "91919191-9191-9191-9191-919191919191")!,
+            title: "First",
+            templateValue: "First",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "First Memory",
+            descriptionEnabled: false,
+            descriptionOverride: "First Description",
+            albumIdentifier: "first-album",
+            albumTitle: "First Album",
+            mediaMode: .staticImage
+        )
+        let active = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "92929292-9292-9292-9292-929292929292")!,
+            title: "Active",
+            templateValue: "Aggregate Wins",
+            locationStyle: "provinceCity",
+            logoMode: .customUpload,
+            badge: .travel,
+            memoryText: "Aggregate Memory",
+            descriptionEnabled: true,
+            descriptionOverride: "Aggregate Description",
+            albumIdentifier: "aggregate-album",
+            albumTitle: "Aggregate Album",
+            mediaMode: .originalFormat
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 12,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [first, active],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: active.id
+        )
+        state.selectedMemoryPresetID = state.memoryPresets.first?.id
+        let session = ConfigurationSession(state: state)
+
+        session.restoreConfigurationLibrary(aggregate)
+
+        #expect(session.state.configurationLibrary == aggregate)
+        #expect(session.state.selectedSubjectID == subject.id)
+        #expect(session.state.selectedMemoryPresetID == active.id)
+        #expect(session.selectedMemoryConfiguration == active)
+        #expect(session.appliedMemoryPresetID == active.id)
+        #expect(session.usesCustomMemoryWriteText)
+        #expect(session.customMemoryWriteText == "Aggregate Memory")
+    }
+
+    @Test("selecting complete configurations restores independent drafts without changing production")
+    func selectingCompleteConfigurationsRestoresIndependentDraftsWithoutChangingProduction() throws {
+        var state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let firstConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            title: "海边",
+            templateValue: "海边记录",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "第一次看海",
+            descriptionEnabled: false,
+            descriptionOverride: "海边照片说明",
+            albumIdentifier: "album-sea",
+            albumTitle: "海边",
+            mediaMode: .staticImage
+        )
+        let secondConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            title: "生日",
+            templateValue: "生日记录",
+            locationStyle: "provinceCity",
+            logoMode: .customUpload,
+            badge: .travel,
+            memoryText: "两岁生日",
+            descriptionEnabled: true,
+            descriptionOverride: "生日照片说明",
+            albumIdentifier: "album-birthday",
+            albumTitle: "生日",
+            mediaMode: .originalFormat
+        )
+        state.configurationLibrary = ConfigurationLibraryRecord(
+            revision: 8,
+            subjects: [
+                SubjectConfigurationRecord(
+                    subject: subject,
+                    configurations: [firstConfiguration, secondConfiguration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: firstConfiguration.id
+        )
+        state.memoryPresets = [
+            MemoryPreset(
+                id: firstConfiguration.id,
+                title: firstConfiguration.title,
+                summary: "legacy projection",
+                regionTemplateIDs: firstConfiguration.editor.regionTemplateIDs,
+                selectedSubjectID: subject.id
+            ),
+            MemoryPreset(
+                id: secondConfiguration.id,
+                title: secondConfiguration.title,
+                summary: "legacy projection",
+                regionTemplateIDs: secondConfiguration.editor.regionTemplateIDs,
+                selectedSubjectID: subject.id
+            )
+        ]
+        state.selectedMemoryPresetID = firstConfiguration.id
+        let session = ConfigurationSession(state: state)
+        session.appliedMemoryPresetID = firstConfiguration.id
+
+        session.selectMemoryPreset(state.memoryPresets[1])
+
+        let selected = try #require(session.selectedMemoryConfiguration)
+        #expect(selected == secondConfiguration)
+        #expect(selected.editor.template.leftTopArea.items.count == 2)
+        #expect(selected.editor.template.leftTopArea.items[1].value == "生日记录补充")
+        #expect(selected.presentation.locationConfiguration?.options["displayStyle"] == "provinceCity")
+        #expect(selected.presentation.logo.mode == .customUpload)
+        #expect(selected.presentation.logo.badge?.id == Badge.travel.id)
+        #expect(selected.editor.memoryCopy.customText == "两岁生日")
+        #expect(selected.output.photosDescriptionPolicy.isEnabled)
+        #expect(selected.output.photosDescriptionPolicy.overrideText == "生日照片说明")
+        #expect(selected.output.album.identifier == "album-birthday")
+        #expect(selected.output.album.title == "生日")
+        #expect(selected.presentation.route == .classicWhite)
+        #expect(selected.output.mediaMode == .originalFormat)
+        #expect(session.appliedMemoryPresetID == firstConfiguration.id)
+        #expect(session.selectedMemoryPresetIsApplied == false)
+
+        session.selectMemoryPreset(state.memoryPresets[0])
+
+        #expect(session.selectedMemoryConfiguration == firstConfiguration)
+        #expect(session.appliedMemoryPresetID == firstConfiguration.id)
+    }
+
+    @Test("restart bootstrap preserves each configuration's complete region drafts")
+    func restartBootstrapPreservesCompleteRegionDrafts() throws {
+        let subject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        let firstConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "31313131-3131-3131-3131-313131313131")!,
+            title: "海边重启",
+            templateValue: "海边保存内容",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "第一次看海",
+            descriptionEnabled: false,
+            descriptionOverride: "",
+            albumIdentifier: "album-restart-sea",
+            albumTitle: "海边重启",
+            mediaMode: .staticImage
+        )
+        let secondConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "32323232-3232-3232-3232-323232323232")!,
+            title: "生日重启",
+            templateValue: "生日保存内容",
+            locationStyle: "provinceCity",
+            logoMode: .customUpload,
+            badge: .travel,
+            memoryText: "两岁生日",
+            descriptionEnabled: true,
+            descriptionOverride: "生日照片说明",
+            albumIdentifier: "album-restart-birthday",
+            albumTitle: "生日重启",
+            mediaMode: .originalFormat
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 12,
+            subjects: [
+                SubjectConfigurationRecord(
+                    subject: subject,
+                    configurations: [firstConfiguration, secondConfiguration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: secondConfiguration.id
+        )
+        let session = ConfigurationSession()
+
+        session.restoreConfigurationLibrary(aggregate)
+
+        let context = V1PreviewCompositionContext(
+            subject: subject,
+            birthdayDate: subject.referenceDate,
+            locationDisplayConfiguration: nil
+        )
+        let engine = V1PreviewCompositionEngine()
+
+        func draftsAfterStartupBootstrap() throws -> [CardRegion: V1EditorDraft] {
+            let configuration = try #require(
+                session.selectedMemoryConfiguration
+            )
+            var drafts = V1ConfigurationDraftProjection(
+                configuration: configuration
+            ).regionDrafts
+            drafts = V1DraftBootstrapCoordinator(
+                session: session,
+                context: context,
+                engine: engine
+            ).bootstrapDrafts { region in
+                V1DraftBridge.editorDraft(
+                    from: engine.defaultDraft(
+                        for: region,
+                        templateID: session.activeTemplateID(for: region),
+                        context: context
+                    )
+                )
+            }
+            return drafts
+        }
+
+        var restoredDrafts = try draftsAfterStartupBootstrap()
+        #expect(
+            restoredDrafts[.slotA]?.items.map(\.value)
+            == ["生日保存内容", "生日保存内容补充", ""]
+        )
+
+        let firstPreset = try #require(
+            session.state.memoryPresets.first {
+                $0.id == firstConfiguration.id
+            }
+        )
+        session.selectMemoryPreset(firstPreset)
+        restoredDrafts = try draftsAfterStartupBootstrap()
+
+        #expect(
+            restoredDrafts[.slotA]?.items.map(\.value)
+            == ["海边保存内容", "海边保存内容补充", ""]
+        )
+    }
+
     @Test("saving the current configuration captures subject, anchor, output, logo, and custom memory-write state")
     func savingCurrentConfigurationCapturesContext() {
         let session = ConfigurationSession()
@@ -129,7 +375,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.selectedStorageOption == .targetAlbum)
         #expect(session.usesCustomMemoryWriteText == true)
         #expect(session.customMemoryWriteText == "纪念相册说明")
-        #expect(session.selectedMemoryPresetIsApplied)
+        #expect(session.selectedMemoryPresetIsApplied == false)
     }
 
     @Test("restoring a saved configuration does not mark it pending")
@@ -235,6 +481,279 @@ struct ConfigurationSessionConfigurationLifecycleTests {
                 .map(\.id)
             == [createdPreset.id]
         )
+        #expect(session.selectedMemoryPresetIsApplied)
+    }
+
+    @Test("nil selected configuration does not fall back to another subject configuration")
+    func nilSelectedConfigurationDoesNotFallBackToAnotherSubjectConfiguration() {
+        var state = Self.makeStateWithSecondSubject()
+        let firstSubject = state.subjects[0]
+        let secondSubject = state.subjects[1]
+        let firstPreset = MemoryPreset(
+            title: "宝宝配置",
+            summary: "对象一配置",
+            regionTemplateIDs: [
+                .slotA: "subject-one-recorder",
+                .slotD: "subject-one-memory"
+            ],
+            selectedSubjectID: firstSubject.id
+        )
+
+        state.memoryPresets = [firstPreset]
+        state.selectedSubjectID = secondSubject.id
+        state.selectedMemoryPresetID = nil
+
+        let session = ConfigurationSession(state: state)
+
+        #expect(session.state.selectedMemoryPreset == nil)
+    }
+
+    @Test("new subject persistence snapshot does not inherit another subject configuration")
+    func newSubjectPersistenceSnapshotDoesNotInheritAnotherSubjectConfiguration() {
+        var state = Self.makeStateWithSecondSubject()
+        let firstSubject = state.subjects[0]
+        let secondSubject = state.subjects[1]
+        let firstPreset = MemoryPreset(
+            title: "宝宝配置",
+            summary: "对象一配置",
+            regionTemplateIDs: [
+                .slotA: "subject-one-recorder",
+                .slotD: "subject-one-memory"
+            ],
+            selectedSubjectID: firstSubject.id
+        )
+
+        state.memoryPresets = [firstPreset]
+        state.selectedSubjectID = secondSubject.id
+        state.selectedMemoryPresetID = nil
+
+        let session = ConfigurationSession(state: state)
+        let snapshot =
+            session.persistenceSnapshotForCurrentConfiguration(
+                savedAt: Date(timeIntervalSince1970: 123)
+            )
+        let createdPreset = try! #require(
+            snapshot.memoryPresets.first {
+                $0.id == snapshot.selectedMemoryPresetID
+            }
+        )
+
+        #expect(createdPreset.summary == "当前区域组合")
+        #expect(createdPreset.regionTemplateIDs.isEmpty)
+        #expect(createdPreset.selectedSubjectID == secondSubject.id)
+    }
+
+    @Test("reconciling a saved candidate preserves newer unrelated preset mutations")
+    func reconcilingSavedCandidatePreservesNewerUnrelatedPresetMutations() {
+        var state = ConfigurationCenterState.mock
+        let selectedSubject = state.subjects[0]
+        let selectedPreset = MemoryPreset(
+            title: "待保存配置",
+            summary: "保存候选",
+            regionTemplateIDs: [.slotA: "saved-recorder"],
+            selectedSubjectID: selectedSubject.id
+        )
+        let unrelatedPreset = MemoryPreset(
+            title: "其他配置",
+            summary: "保存开始时的状态",
+            regionTemplateIDs: [.slotD: "unrelated-memory"],
+            selectedSubjectID: selectedSubject.id
+        )
+
+        state.memoryPresets = [selectedPreset, unrelatedPreset]
+        state.selectedMemoryPresetID = selectedPreset.id
+
+        let session = ConfigurationSession(state: state)
+        let candidate =
+            session.persistenceSnapshotForCurrentConfiguration(
+                savedAt: Date(timeIntervalSince1970: 123)
+            )
+        let insertedPreset = MemoryPreset(
+            title: "等待期间新增",
+            summary: "较新的新增配置",
+            regionTemplateIDs: [.slotB: "newer-timeline"],
+            selectedSubjectID: selectedSubject.id
+        )
+
+        session.state.memoryPresets[1].summary =
+            "等待期间更新后的状态"
+        session.state.memoryPresets.append(insertedPreset)
+
+        session.reconcilePersistenceSnapshot(
+            memoryPresets: candidate.memoryPresets,
+            selectedMemoryPresetID:
+                candidate.selectedMemoryPresetID
+        )
+
+        #expect(
+            session.state.memoryPresets.first {
+                $0.id == unrelatedPreset.id
+            }?.summary
+            == "等待期间更新后的状态"
+        )
+        #expect(
+            session.state.memoryPresets.contains {
+                $0.id == insertedPreset.id
+            }
+        )
+        #expect(
+            session.state.selectedMemoryPresetID
+            == candidate.selectedMemoryPresetID
+        )
+        #expect(session.selectedMemoryPresetIsApplied)
+    }
+
+    @Test("reconciling a saved candidate preserves a newer edit to the same preset")
+    func reconcilingSavedCandidatePreservesNewerEditToSamePreset() {
+        let session = ConfigurationSession()
+        let candidate =
+            session.persistenceSnapshotForCurrentConfiguration(
+                savedAt: Date(timeIntervalSince1970: 123)
+            )
+
+        session.updateSelectedMemoryPresetTitle(
+            "等待期间更新的配置"
+        )
+
+        #expect(session.selectedMemoryPresetIsApplied == false)
+
+        session.reconcilePersistenceSnapshot(
+            memoryPresets: candidate.memoryPresets,
+            selectedMemoryPresetID:
+                candidate.selectedMemoryPresetID
+        )
+
+        #expect(
+            session.state.selectedMemoryPreset?.title
+            == "等待期间更新的配置"
+        )
+        #expect(
+            session.state.selectedMemoryPresetID
+            == candidate.selectedMemoryPresetID
+        )
+        #expect(session.selectedMemoryPresetIsApplied == false)
+    }
+
+    @Test("aggregate receipt identity replaces the candidate identity and becomes selected and applied")
+    func aggregateReceiptIdentityReconcilesSelectedConfiguration() throws {
+        let state = ConfigurationCenterState.mock
+        let candidate = try #require(state.selectedMemoryPreset)
+        let durableID = UUID(
+            uuidString: "93939393-9393-9393-9393-939393939393"
+        )!
+        let session = ConfigurationSession(state: state)
+        let persistenceCandidate =
+            session.persistenceSnapshotForCurrentConfiguration(
+                savedAt: Date(timeIntervalSince1970: 123)
+            )
+
+        let outcome = session.reconcilePersistenceSnapshot(
+            memoryPresets:
+                persistenceCandidate.memoryPresets,
+            selectedMemoryPresetID:
+                persistenceCandidate.selectedMemoryPresetID,
+            configurationID: durableID,
+            configurationRevision: 7
+        )
+
+        #expect(outcome == .applied)
+        #expect(session.state.selectedMemoryPresetID == durableID)
+        #expect(session.appliedMemoryPresetID == durableID)
+        #expect(session.state.selectedMemoryPreset?.id == durableID)
+        #expect(session.state.selectedMemoryPreset?.title == candidate.title)
+        #expect(
+            session.state.memoryPresets.contains {
+                $0.id == persistenceCandidate.selectedMemoryPresetID
+            } == false
+        )
+    }
+
+    @Test("aggregate save receipt reconciles the complete candidate into session state")
+    func aggregateSaveReceiptReconcilesCompleteCandidate() throws {
+        var state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let configuration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "95959595-9595-9595-9595-959595959595")!,
+            title: "Before",
+            templateValue: "Before",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "Before Memory",
+            descriptionEnabled: false,
+            descriptionOverride: "Before Description",
+            albumIdentifier: "before-album",
+            albumTitle: "Before Album",
+            mediaMode: .staticImage
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 8,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [configuration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configuration.id
+        )
+        state.configurationLibrary = aggregate
+        state.memoryPresets = [
+            MemoryPreset(
+                id: configuration.id,
+                title: configuration.title,
+                summary: "",
+                regionTemplateIDs:
+                    configuration.editor.regionTemplateIDs,
+                selectedSubjectID: subject.id
+            )
+        ]
+        state.selectedMemoryPresetID = configuration.id
+        let session = ConfigurationSession(state: state)
+        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: V1ConfigurationAggregateDraft(
+                title: "After",
+                regionDrafts: [
+                    .slotA: V1EditorDraft(items: [.text("After")])
+                ],
+                regionTemplateIDs: [.slotA: "after.recorder"],
+                locationConfiguration: nil,
+                logoMode: .appleMini,
+                badge: .family,
+                usesCustomMemoryWriteText: true,
+                customMemoryWriteText: "After Memory",
+                shouldWritePhotosDescription: true,
+                photosDescriptionOverride: "After Description",
+                outputTarget: .existingAlbum,
+                selectedAlbumIdentifier: "after-album",
+                albumTitle: "After Album",
+                mediaOutputMode: .originalFormat,
+                livePhotoPolicy: .preserveMotion,
+                selectedTimeAnchorID:
+                    subject.primaryTimeAnchor?.id,
+                savedAt: Date(timeIntervalSince1970: 900)
+            )
+        )
+        let receipt = ConfigurationLibrarySaveReceipt(
+            revision: 9,
+            subjectID: subject.id,
+            configurationID: configuration.id,
+            compatibilityProjectionFailure: nil
+        )
+
+        let outcome = session.reconcileConfigurationLibrarySave(
+            candidate: candidate,
+            receipt: receipt
+        )
+
+        #expect(outcome == .applied)
+        #expect(session.state.configurationLibrary?.revision == 9)
+        #expect(session.selectedMemoryConfiguration?.title == "After")
+        #expect(session.selectedMemoryConfiguration?.revision == 4)
+        #expect(session.customMemoryWriteText == "After Memory")
+        #expect(session.appliedMemoryPresetID == configuration.id)
         #expect(session.selectedMemoryPresetIsApplied)
     }
 
@@ -675,6 +1194,84 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         state.subjects.append(subject)
         return state
+    }
+
+    private static func makeCompleteConfiguration(
+        id: UUID,
+        title: String,
+        templateValue: String,
+        locationStyle: String,
+        logoMode: V1LogoMode,
+        badge: Badge,
+        memoryText: String,
+        descriptionEnabled: Bool,
+        descriptionOverride: String,
+        albumIdentifier: String,
+        albumTitle: String,
+        mediaMode: V1MediaOutputMode
+    ) -> MemoryConfigurationRecord {
+        var template = Template.classicWhite
+        template.name = title
+        template.leftTopArea.items = [
+            TemplateItem(
+                type: .text,
+                name: "主记录",
+                value: templateValue,
+                isEnabled: true
+            ),
+            TemplateItem(
+                type: .variable,
+                name: "补充记录",
+                value: "\(templateValue)补充",
+                isEnabled: true
+            )
+        ]
+        return MemoryConfigurationRecord(
+            id: id,
+            title: title,
+            revision: 3,
+            savedAt: Date(timeIntervalSince1970: 300),
+            selectedTimeAnchorID: nil,
+            editor: .init(
+                template: template,
+                regionTemplateIDs: [.slotA: "\(title).recorder"],
+                memoryCopy: .init(
+                    usesCustomText: true,
+                    customText: memoryText
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: .init(
+                    token: "{{location}}",
+                    options: ["displayStyle": locationStyle]
+                ),
+                logo: .init(
+                    mode: logoMode,
+                    badge: .init(
+                        id: badge.id,
+                        name: badge.name,
+                        type: badge.type,
+                        imageName: badge.imageName,
+                        systemSymbol: badge.systemSymbol,
+                        isSystemDefault: badge.isSystemDefault
+                    )
+                )
+            ),
+            output: .init(
+                mediaMode: mediaMode,
+                livePhotoPolicy: .preserveMotion,
+                photosDescriptionPolicy: .init(
+                    isEnabled: descriptionEnabled,
+                    overrideText: descriptionOverride
+                ),
+                album: .init(
+                    destination: .existingAlbum,
+                    identifier: albumIdentifier,
+                    title: albumTitle
+                )
+            )
+        )
     }
 }
 #endif

@@ -692,10 +692,7 @@ extension MainView {
             } else {
 
                 Image(
-                    systemName:
-                        currentPreset == .immersWhite
-                        ? "applelogo"
-                        : "sparkles"
+                    systemName: "applelogo"
                 )
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.secondary)

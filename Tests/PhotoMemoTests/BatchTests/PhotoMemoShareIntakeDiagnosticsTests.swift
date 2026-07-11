@@ -6,6 +6,40 @@ import UniformTypeIdentifiers
 @Suite("PhotoMemoShareIntakeDiagnostics")
 struct PhotoMemoShareIntakeDiagnosticsTests {
 
+    @Test("Static Live Photo fallback EXIF dates without timezone use local capture timezone")
+    func staticLivePhotoFallbackEXIFDatesWithoutTimezoneUseLocalCaptureTimezone() throws {
+
+        let shanghai =
+            try #require(
+                TimeZone(identifier: "Asia/Shanghai")
+            )
+        let parsedDate =
+            try #require(
+                LivePhotoStaticFallbackDateParser.parse(
+                    "2026:07:11 09:18:12",
+                    timeZone: shanghai
+                )
+            )
+        let expectedDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from:
+                        DateComponents(
+                            timeZone: shanghai,
+                            year: 2026,
+                            month: 7,
+                            day: 11,
+                            hour: 9,
+                            minute: 18,
+                            second: 12
+                        )
+                )
+            )
+
+        #expect(parsedDate == expectedDate)
+    }
+
     @Test("Builds codable media intake rejection reports from policy verdicts")
     func buildsCodableMediaIntakeRejectionReportsFromPolicyVerdicts() throws {
 
@@ -148,6 +182,175 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
             viewControllerSource
             .contains(
                 "stage: .extensionInputTooManyPhotos"
+            )
+        )
+        #expect(
+            intakeSource.contains(
+                "美好的记忆适合慢慢整理。每次最多分享 20 张，可以分几次完成，也能让处理过程更稳定。"
+            )
+        )
+        #expect(
+            viewControllerSource.contains(
+                "这次的照片有点多"
+            )
+        )
+        #expect(
+            viewControllerSource.contains(
+                "返回分批分享"
+            )
+        )
+    }
+
+    @Test("Share Extension intake uses the Live Photo-first provider selector")
+    func shareExtensionIntakeUsesLivePhotoFirstProviderSelector() throws {
+        let intakeSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+            )
+
+        #expect(
+            intakeSource
+            .contains(
+                "let preferredImportType =\n                PhotoMemoShareProviderTypeSelection\n                .preferredImportTypeIdentifier("
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "let preferredTypeIdentifier =\n            preferredImportTypeIdentifier("
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "preferredImportTypeIdentifier(\n        from registeredTypeIdentifiers:"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "allowsLivePhoto: true"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "requestedTypeIdentifier:\n                        livePhotoTypeIdentifier"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "allowsDirectoryPackage:\n                        true"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "recordStaticLivePhotoPayloadIfNeeded("
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "stage:\n                .extensionLivePhotoRepresentationStaticPayload"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "routeWillFallbackToStaticWithoutAssetIdentity=true"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "let preferredStaticImageTypeIdentifier ="
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "preferredRegisteredTypeIdentifier:\n                    preferredStaticImageTypeIdentifier"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "func staticContentTypeIdentifier("
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "livePhotoStaticFallbackCount"
+            )
+        )
+    }
+
+    @Test("Share Extension Live Photo intake does not preflight destructive provider loads")
+    func shareExtensionLivePhotoIntakeDoesNotPreflightDestructiveProviderLoads() throws {
+        let intakeSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+            )
+
+        #expect(
+            !intakeSource
+            .contains(
+                "await probeLivePhotoRepresentation("
+            )
+        )
+    }
+
+    @Test("Share Extension copy tells users when Live Photos fall back to static photos")
+    func shareExtensionCopyTellsUsersWhenLivePhotosFallBackToStaticPhotos() throws {
+        let viewControllerSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+            )
+
+        #expect(
+            viewControllerSource
+            .contains(
+                "livePhotoStaticFallback=\\(result.livePhotoStaticFallbackCount)"
+            )
+        )
+        #expect(
+            viewControllerSource
+            .contains(
+                "张 Live Photo 已按静态照片接收"
+            )
+        )
+    }
+
+    @Test("Share Extension data fallback does not invent a Live Photo asset identity")
+    func shareExtensionDataFallbackDoesNotInventLivePhotoAssetIdentity() throws {
+        let intakeSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+            )
+
+        #expect(
+            intakeSource
+            .contains(
+                ".fallbackDataSourceIdentifier("
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "func fallbackDataSourceIdentifier("
+            )
+        )
+        #expect(
+            !intakeSource
+            .contains(
+                "sourceIdentifier:\n                                                Self\n                                                .dedupeKey("
             )
         )
     }

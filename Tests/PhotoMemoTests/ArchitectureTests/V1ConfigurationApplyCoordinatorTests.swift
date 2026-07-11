@@ -42,7 +42,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                     .mock
                     .selectedSubjectID,
                 template:
-                    Template.immersWhite,
+                    Template.classicWhite,
                 badge: .family,
                 shouldWritePhotoDescription:
                     true,
@@ -165,7 +165,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                     subjects: [],
                     selectedSubjectID: nil,
                     template:
-                        Template.immersWhite,
+                        Template.classicWhite,
                     badge: nil,
                     shouldWritePhotoDescription:
                         false,
@@ -254,7 +254,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                         .mock
                         .selectedSubjectID,
                     template:
-                        Template.immersWhite,
+                        Template.classicWhite,
                     badge: .family,
                     shouldWritePhotoDescription:
                         true,
@@ -316,7 +316,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                 shouldSaveSubjectLibrary:
                     false,
                 template:
-                    Template.immersWhite,
+                    Template.classicWhite,
                 badge: .family,
                 shouldWritePhotoDescription:
                     true,
@@ -457,7 +457,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                     .mock
                     .selectedSubjectID,
                 template:
-                    Template.immersWhite,
+                    Template.classicWhite,
                 badge: .family,
                 shouldWritePhotoDescription:
                     true,

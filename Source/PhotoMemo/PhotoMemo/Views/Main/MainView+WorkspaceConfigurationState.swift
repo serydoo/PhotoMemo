@@ -111,7 +111,7 @@ extension MainView {
         BatchConfigurationSnapshot(
             template:
                 templatePresetEngine.build(
-                    preset: .template1
+                    preset: .classicWhite
                 )
                 .normalizedForEditing,
             badge: nil,

@@ -805,14 +805,14 @@ private extension PhotoMemoShareExtensionViewController {
             > PhotoMemoShareExtensionIntakeService
             .maxSupportedPhotoCount {
             statusTitleLabel.text =
-                "一次分享的照片太多"
+                "这次的照片有点多"
             statusMessageLabel.text =
-                "Share Extension 当前一次最多安全接收 \(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount) 张照片。"
+                "美好的记忆适合慢慢整理。每次最多分享 \(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount) 张，可以分几次完成。"
             footerLabel.text =
-                "请回到 Apple Photos 分批分享，避免系统在后台提前终止扩展。"
+                "少量分批处理，也能让每一张照片更稳定地回到 Apple Photos。"
             applyPrimaryButton(
                 title:
-                    "分批分享"
+                    "返回分批分享"
             )
         } else if sharedPhotoCount > 0 {
             statusTitleLabel.text =
@@ -1131,7 +1131,7 @@ private extension PhotoMemoShareExtensionViewController {
             PhotoMemoShareDiagnostics.record(
                 stage: .extensionPersisted,
                 message:
-                    "imported=\(result.importedCount), requested=\(result.requestedCount), skipped=\(result.skippedCount), failed=\(result.failedCount)"
+                    "imported=\(result.importedCount), requested=\(result.requestedCount), skipped=\(result.skippedCount), failed=\(result.failedCount), livePhotoStaticFallback=\(result.livePhotoStaticFallbackCount)"
             )
 
             statusTitleLabel.text =
@@ -1275,6 +1275,12 @@ private extension PhotoMemoShareExtensionViewController {
             if result.failedCount > 0 {
                 summaryParts.append(
                     "未接收 \(result.failedCount) 张"
+                )
+            }
+
+            if result.livePhotoStaticFallbackCount > 0 {
+                summaryParts.append(
+                    "\(result.livePhotoStaticFallbackCount) 张 Live Photo 已按静态照片接收"
                 )
             }
 

@@ -139,6 +139,48 @@ final class SettingsRepository {
         let bootstrapReadState =
             settingsService
             .loadV1BootstrapReadState()
+        if let aggregate =
+            bootstrapReadState.configurationLibrary,
+           let active = Self.activeSelection(
+               in: aggregate
+           ) {
+            let projection =
+                V1ConfigurationDraftProjection(
+                    configuration:
+                        active.configuration
+                )
+            return V1ConfigurationBootstrapState(
+                configurationLibrary: aggregate,
+                draftProjection: projection,
+                subjects:
+                    aggregate.subjects.map(\.subject),
+                selectedSubjectID:
+                    active.subject.id,
+                memoryPresets:
+                    Self.memoryPresets(from: aggregate),
+                selectedMemoryPresetID:
+                    active.configuration.id,
+                selectedSubject:
+                    active.subject,
+                customLogoBadge:
+                    projection.logoMode == .customUpload
+                    ? projection.badge
+                    : nil,
+                logoMode: projection.logoMode,
+                outputTarget:
+                    projection.outputTarget,
+                mediaOutputMode:
+                    projection.mediaOutputMode,
+                selectedExistingAlbumIdentifier:
+                    projection.selectedAlbumIdentifier,
+                suggestedNewAlbumName:
+                    projection.albumTitle.isEmpty
+                    ? nil
+                    : projection.albumTitle,
+                locationDisplayConfiguration:
+                    projection.locationConfiguration
+            )
+        }
         let subjectLibrary: V1SubjectLibraryRecord?
         let subjectLibraryReadFailure:
             PhotoMemoSharedDefaultsReadFailure?
@@ -257,6 +299,79 @@ final class SettingsRepository {
                 settingsService
                 .loadLocationDisplayConfiguration()
         )
+    }
+
+    private static func activeSelection(
+        in aggregate: ConfigurationLibraryRecord
+    ) -> (
+        subject: MemorySubject,
+        configuration: MemoryConfigurationRecord
+    )? {
+        guard
+            let subjectID = aggregate.activeSubjectID,
+            let configurationID =
+                aggregate.activeConfigurationID,
+            let subjectRecord =
+                aggregate.subjects.first(where: {
+                    $0.subject.id == subjectID
+                }),
+            let configuration =
+                subjectRecord.configurations.first(where: {
+                    $0.id == configurationID
+                })
+        else {
+            return nil
+        }
+        return (subjectRecord.subject, configuration)
+    }
+
+    private static func memoryPresets(
+        from aggregate: ConfigurationLibraryRecord
+    ) -> [MemoryPreset] {
+        aggregate.subjects.flatMap { subjectRecord in
+            subjectRecord.configurations.map { configuration in
+                MemoryPreset(
+                    id: configuration.id,
+                    title: configuration.title,
+                    summary: "",
+                    regionTemplateIDs:
+                        configuration.editor.regionTemplateIDs,
+                    savedAt: configuration.savedAt,
+                    selectedSubjectID:
+                        subjectRecord.subject.id,
+                    selectedTimeAnchorID:
+                        configuration.selectedTimeAnchorID,
+                    logoMode:
+                        configuration.presentation.logo.mode,
+                    usesCustomMemoryWriteText:
+                        configuration.editor.memoryCopy.usesCustomText,
+                    customMemoryWriteText:
+                        configuration.editor.memoryCopy.customText
+                )
+            }
+        }
+    }
+
+    func saveConfigurationLibrary(
+        _ aggregate: ConfigurationLibraryRecord,
+        afterSuccessfulProjection:
+            @MainActor (
+                BatchConfigurationSnapshot,
+                ConfigurationLibrarySaveReceipt
+            ) -> Void = { _, _ in }
+    ) async throws -> ConfigurationLibrarySaveReceipt {
+        try await settingsService
+            .saveConfigurationLibrary(
+                aggregate,
+                afterSuccessfulProjection:
+                    afterSuccessfulProjection
+            )
+    }
+
+    func loadConfigurationLibrary()
+    async throws -> ConfigurationLibraryLoadReceipt {
+        try await settingsService
+            .loadConfigurationLibrary()
     }
 }
 #endif

@@ -59,6 +59,37 @@ struct MediaProcessingPlannerTests {
         #expect(!plan.preservesLivePhotoMotion)
     }
 
+    @Test("Plans broad image declarations with RAW filename as rendered HEIC output")
+    func plansBroadImageDeclarationsWithRAWFilenameAsRenderedHEICOutput() throws {
+        let plan =
+            try MediaProcessingPlanner.standard.plan(
+                for: MediaProcessingInputDescriptor(
+                    contentType: .image,
+                    fileURL:
+                        URL(
+                            fileURLWithPath:
+                                "/tmp/IMG_9001.DNG"
+                        ),
+                    pixelWidth: 8064,
+                    pixelHeight: 6048
+                ),
+                outputPreference: .automatic
+            )
+
+        #expect(plan.route == .rawStillImage)
+        #expect(
+            plan.sourceContentType?
+                .conforms(to: .rawImage)
+            == true
+        )
+        #expect(
+            plan.outputPlan == .stillImage(
+                imageType: .heic
+            )
+        )
+        #expect(!plan.preservesLivePhotoMotion)
+    }
+
     @Test("Plans Live Photo output as a motion-preserving paired output")
     func plansLivePhotoOutputAsMotionPreservingPair() throws {
         let planner =

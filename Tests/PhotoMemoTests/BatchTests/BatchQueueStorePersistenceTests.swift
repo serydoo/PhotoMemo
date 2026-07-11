@@ -5,6 +5,90 @@ import Testing
 @Suite("Batch queue store persistence")
 struct BatchQueueStorePersistenceTests {
 
+    @Test("encoded batch job keeps frozen configuration after aggregate update and deletion")
+    func encodedBatchJobKeepsFrozenConfigurationIdentityAndContent() throws {
+        let subject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        let originalConfigurationID = UUID(
+            uuidString: "95959595-9595-9595-9595-959595959595"
+        )!
+        var canonical = ConfigurationSnapshotBuilder.build(
+            from: subject
+        )
+        canonical.expression = MemoryExpression(
+            title: "Frozen Memory",
+            blocks: [.text("Original content")]
+        )
+        let originalSnapshot = BatchConfigurationSnapshot(
+            template: .classicWhite.renamed("Frozen Preset"),
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "Frozen description",
+            selectedAlbumIdentifier: "frozen-album"
+        )
+        .withCanonicalProductionSnapshot(canonical)
+        .withConfigurationIdentity(
+            id: originalConfigurationID,
+            revision: 4
+        )
+        let encodedJob = try JSONEncoder().encode(
+            BatchJob(
+                title: "Frozen job",
+                configuration: originalSnapshot,
+                tasks: []
+            )
+        )
+
+        var currentSnapshot: BatchConfigurationSnapshot? =
+            BatchConfigurationSnapshot(
+                template: .classicWhite.renamed("Updated Preset"),
+                badge: .family,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "Updated description",
+                selectedAlbumIdentifier: "updated-album"
+            )
+            .withConfigurationIdentity(
+                id: UUID(),
+                revision: 5
+            )
+        currentSnapshot = nil
+
+        let decodedJob = try JSONDecoder().decode(
+            BatchJob.self,
+            from: encodedJob
+        )
+
+        #expect(currentSnapshot == nil)
+        #expect(
+            decodedJob.configuration.configurationID
+            == originalConfigurationID
+        )
+        #expect(decodedJob.configuration.configurationRevision == 4)
+        #expect(decodedJob.configuration.template.name == "Frozen Preset")
+        #expect(
+            decodedJob.configuration.photoDescriptionOverride
+            == "Frozen description"
+        )
+        #expect(
+            decodedJob.configuration.canonicalProductionSnapshot?
+                .configurationID
+            == originalConfigurationID
+        )
+        #expect(
+            decodedJob.configuration.canonicalProductionSnapshot?
+                .configurationRevision
+            == 4
+        )
+        #expect(
+            decodedJob.configuration.canonicalProductionSnapshot?
+                .expression.title
+            == "Frozen Memory"
+        )
+    }
+
     private struct EncodingFailure:
         Error {}
 
@@ -402,5 +486,13 @@ struct BatchQueueStorePersistenceTests {
                 .contains("SaveFailure") == true
             )
         }
+    }
+}
+
+private extension Template {
+    func renamed(_ name: String) -> Template {
+        var copy = self
+        copy.name = name
+        return copy
     }
 }

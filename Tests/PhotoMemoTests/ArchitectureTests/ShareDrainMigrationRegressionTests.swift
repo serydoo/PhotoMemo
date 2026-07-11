@@ -385,6 +385,595 @@ struct ShareDrainMigrationRegressionTests {
             )
         }
     }
+
+    @MainActor
+    @Test("ProcessShareIntent keeps valid Live Photo bundle directories")
+    func processShareIntentKeepsValidLivePhotoBundleDirectories() async throws {
+
+        let context = try Self.makeContext(
+            named:
+                "PhotoMemo.ShareDrainMigrationRegressionTests.LivePhotoBundle.\(UUID().uuidString)"
+        )
+        defer { Self.cleanup(context) }
+
+        let livePhotoType =
+            try #require(
+                UTType("com.apple.live-photo")
+            )
+        let bundleURL =
+            context.rootDirectoryURL
+            .appendingPathComponent(
+                "SharedLivePhoto.livephoto",
+                isDirectory: true
+            )
+        try FileManager.default.createDirectory(
+            at: bundleURL,
+            withIntermediateDirectories: true
+        )
+        try Data("still".utf8).write(
+            to:
+                bundleURL
+                .appendingPathComponent("IMG_6093.HEIC")
+        )
+        try Data("movie".utf8).write(
+            to:
+                bundleURL
+                .appendingPathComponent("IMG_6093.MOV")
+        )
+        let request =
+            ExternalPhotoIntakeRequest(
+                launchSource: .shareExtension,
+                urls: [bundleURL],
+                items: [
+                    ExternalPhotoIntakeItem(
+                        managedURL: bundleURL,
+                        originalFileName:
+                            "SharedLivePhoto.livephoto",
+                        contentTypeIdentifier:
+                            livePhotoType.identifier
+                    )
+                ],
+                configurationSnapshot:
+                    context.environment
+                    .repositories
+                    .configuration
+                    .loadDefaultBatchConfigurationSnapshot()
+            )
+
+        let result =
+            await ProcessShareIntent(
+                request: request,
+                consumedPayloadKeys: [],
+                coordinator:
+                    context.environment
+                    .coordinators
+                    .share
+            )
+            .execute()
+
+        let receipt =
+            try #require(result.value)
+        let task =
+            try #require(
+                receipt.job?.tasks.first
+            )
+
+        #expect(receipt.validPayloadCount == 1)
+        #expect(receipt.uniquePayloadCount == 1)
+        #expect(receipt.droppedReason == nil)
+        #expect(task.sourceURL == bundleURL)
+        #expect(task.fileName == "SharedLivePhoto.livephoto")
+        #expect(
+            task.contentTypeIdentifier
+            == livePhotoType.identifier
+        )
+    }
+
+    @MainActor
+    @Test("ProcessShareIntent recovers a unique Live Photo asset identity from a Share static fallback")
+    func processShareIntentRecoversUniqueLivePhotoAssetIdentityFromStaticFallback() async throws {
+
+        let context = try Self.makeContext(
+            named:
+                "PhotoMemo.ShareDrainMigrationRegressionTests.LivePhotoRecovery.\(UUID().uuidString)"
+        )
+        defer { Self.cleanup(context) }
+
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let captureDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 11,
+                        hour: 9,
+                        minute: 18,
+                        second: 12
+                    )
+                )
+            )
+        let request =
+            ExternalPhotoIntakeRequest(
+                launchSource: .shareExtension,
+                urls: [sourceURL],
+                items: [
+                    ExternalPhotoIntakeItem(
+                        managedURL: sourceURL,
+                        originalFileName:
+                            "IMG_0935.jpg",
+                        contentTypeIdentifier:
+                            UTType.jpeg.identifier,
+                        livePhotoRecoveryHint:
+                            LivePhotoStaticFallbackRecoveryHint(
+                                originalFileName:
+                                    "IMG_0935.jpg",
+                                advertisedLivePhotoTypeIdentifier:
+                                    "com.apple.live-photo",
+                                staticContentTypeIdentifier:
+                                    UTType.jpeg.identifier,
+                                captureDate:
+                                    captureDate,
+                                pixelWidth: 4032,
+                                pixelHeight: 3024
+                            )
+                    )
+                ],
+                configurationSnapshot:
+                    context.environment
+                    .repositories
+                    .configuration
+                    .loadDefaultBatchConfigurationSnapshot()
+            )
+        let coordinator =
+            ShareCoordinator(
+                externalIntakeCenter:
+                    context.environment
+                    .externalIntakeCenter,
+                externalIntakeStore:
+                    context.environment
+                    .services
+                    .externalIntakeStore,
+                configurationRepository:
+                    context.environment
+                    .repositories
+                    .configuration,
+                queueRepository:
+                    context.environment
+                    .repositories
+                    .queue,
+                livePhotoAssetIdentityResolver:
+                    FakeLivePhotoAssetIdentityResolver(
+                        resolution:
+                            .matched(
+                                "live-photo-local-identifier"
+                            )
+                    )
+            )
+
+        let result =
+            await ProcessShareIntent(
+                request: request,
+                consumedPayloadKeys: [],
+                coordinator: coordinator
+            )
+            .execute()
+
+        let receipt =
+            try #require(result.value)
+        let task =
+            try #require(
+                receipt.job?.tasks.first
+            )
+
+        #expect(
+            task.sourceIdentifier
+            == "live-photo-local-identifier"
+        )
+        #expect(
+            task.contentTypeIdentifier
+            == "com.apple.live-photo"
+        )
+        #expect(task.fileName == "IMG_0935.jpg")
+    }
+
+    @MainActor
+    @Test("ProcessShareIntent keeps static fallback when Live Photo recovery is ambiguous")
+    func processShareIntentKeepsStaticFallbackWhenLivePhotoRecoveryIsAmbiguous() async throws {
+
+        let context = try Self.makeContext(
+            named:
+                "PhotoMemo.ShareDrainMigrationRegressionTests.LivePhotoAmbiguous.\(UUID().uuidString)"
+        )
+        defer { Self.cleanup(context) }
+
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let request =
+            ExternalPhotoIntakeRequest(
+                launchSource: .shareExtension,
+                urls: [sourceURL],
+                items: [
+                    ExternalPhotoIntakeItem(
+                        managedURL: sourceURL,
+                        originalFileName:
+                            "IMG_0935.jpg",
+                        contentTypeIdentifier:
+                            UTType.jpeg.identifier,
+                        livePhotoRecoveryHint:
+                            LivePhotoStaticFallbackRecoveryHint(
+                                originalFileName:
+                                    "IMG_0935.jpg",
+                                advertisedLivePhotoTypeIdentifier:
+                                    "com.apple.live-photo",
+                                staticContentTypeIdentifier:
+                                    UTType.jpeg.identifier,
+                                captureDate: nil,
+                                pixelWidth: 4032,
+                                pixelHeight: 3024
+                            )
+                    )
+                ],
+                configurationSnapshot:
+                    context.environment
+                    .repositories
+                    .configuration
+                    .loadDefaultBatchConfigurationSnapshot()
+            )
+        let coordinator =
+            ShareCoordinator(
+                externalIntakeCenter:
+                    context.environment
+                    .externalIntakeCenter,
+                externalIntakeStore:
+                    context.environment
+                    .services
+                    .externalIntakeStore,
+                configurationRepository:
+                    context.environment
+                    .repositories
+                    .configuration,
+                queueRepository:
+                    context.environment
+                    .repositories
+                    .queue,
+                livePhotoAssetIdentityResolver:
+                    FakeLivePhotoAssetIdentityResolver(
+                        resolution:
+                            .ambiguous(
+                                candidateCount: 2
+                            )
+                    )
+            )
+
+        let result =
+            await ProcessShareIntent(
+                request: request,
+                consumedPayloadKeys: [],
+                coordinator: coordinator
+            )
+            .execute()
+
+        let receipt =
+            try #require(result.value)
+        let task =
+            try #require(
+                receipt.job?.tasks.first
+            )
+
+        #expect(task.sourceIdentifier == nil)
+        #expect(
+            task.contentTypeIdentifier
+            == UTType.jpeg.identifier
+        )
+    }
+
+    @Test("Live Photo identity matcher only returns a unique high-confidence Live Photo candidate")
+    func livePhotoIdentityMatcherRequiresUniqueHighConfidenceLivePhotoCandidate() throws {
+
+        let captureDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 11,
+                        hour: 9,
+                        minute: 18,
+                        second: 12
+                    )
+                )
+            )
+        let hint =
+            LivePhotoStaticFallbackRecoveryHint(
+                originalFileName:
+                    "IMG_0935.jpg",
+                advertisedLivePhotoTypeIdentifier:
+                    "com.apple.live-photo",
+                staticContentTypeIdentifier:
+                    UTType.jpeg.identifier,
+                captureDate:
+                    captureDate,
+                pixelWidth: 4032,
+                pixelHeight: 3024
+            )
+        let exactCandidate =
+            LivePhotoAssetIdentityCandidate(
+                localIdentifier:
+                    "asset-1",
+                originalFileNames: [
+                    "IMG_0935.HEIC",
+                    "IMG_0935.MOV"
+                ],
+                creationDate:
+                    captureDate,
+                pixelWidth: 4032,
+                pixelHeight: 3024,
+                isLivePhoto: true
+            )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher.resolve(
+                hint: hint,
+                candidates: [
+                    exactCandidate,
+                    LivePhotoAssetIdentityCandidate(
+                        localIdentifier:
+                            "still-1",
+                        originalFileNames: [
+                            "IMG_0935.HEIC"
+                        ],
+                        creationDate:
+                            captureDate,
+                        pixelWidth: 4032,
+                        pixelHeight: 3024,
+                        isLivePhoto: false
+                    )
+                ]
+            )
+            == .matched("asset-1")
+        )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher.resolve(
+                hint: hint,
+                candidates: [
+                    exactCandidate,
+                    LivePhotoAssetIdentityCandidate(
+                        localIdentifier:
+                            "asset-2",
+                        originalFileNames: [
+                            "IMG_0935.HEIC"
+                        ],
+                        creationDate:
+                            captureDate,
+                        pixelWidth: 4032,
+                        pixelHeight: 3024,
+                        isLivePhoto: true
+                    )
+                ]
+            )
+            == .ambiguous(candidateCount: 2)
+        )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher.resolve(
+                hint: hint,
+                candidates: [
+                    LivePhotoAssetIdentityCandidate(
+                        localIdentifier:
+                            "asset-3",
+                        originalFileNames: [
+                            "IMG_1200.HEIC"
+                        ],
+                        creationDate:
+                            captureDate
+                            .addingTimeInterval(600),
+                        pixelWidth: 1920,
+                        pixelHeight: 1080,
+                        isLivePhoto: true
+                    )
+                ]
+            )
+            == .notFound
+        )
+    }
+
+    @Test("Live Photo identity matcher rejects filename and pixel matches without capture-date agreement")
+    func livePhotoIdentityMatcherRejectsWeakFilenameAndPixelMatchesWithoutCaptureDateAgreement() throws {
+
+        let captureDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 11,
+                        hour: 9,
+                        minute: 18,
+                        second: 12
+                    )
+                )
+            )
+        let hint =
+            LivePhotoStaticFallbackRecoveryHint(
+                originalFileName:
+                    "IMG_0935.jpg",
+                advertisedLivePhotoTypeIdentifier:
+                    "com.apple.live-photo",
+                staticContentTypeIdentifier:
+                    UTType.jpeg.identifier,
+                captureDate:
+                    captureDate,
+                pixelWidth: 4032,
+                pixelHeight: 3024
+            )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher
+                .resolve(
+                    hint: hint,
+                    candidates: [
+                        LivePhotoAssetIdentityCandidate(
+                            localIdentifier:
+                                "asset-wrong-date",
+                            originalFileNames: [
+                                "IMG_0935.HEIC",
+                                "IMG_0935.MOV"
+                            ],
+                            creationDate:
+                                captureDate
+                                .addingTimeInterval(3600),
+                            pixelWidth: 4032,
+                            pixelHeight: 3024,
+                            isLivePhoto: true
+                        )
+                    ]
+                )
+            == .notFound
+        )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher
+                .resolve(
+                    hint: hint,
+                    candidates: [
+                        LivePhotoAssetIdentityCandidate(
+                            localIdentifier:
+                                "asset-missing-date",
+                            originalFileNames: [
+                                "IMG_0935.HEIC",
+                                "IMG_0935.MOV"
+                            ],
+                            creationDate: nil,
+                            pixelWidth: 4032,
+                            pixelHeight: 3024,
+                            isLivePhoto: true
+                        )
+                    ]
+                )
+            == .notFound
+        )
+    }
+
+    @Test("Live Photo identity matcher rejects capture-date and pixel matches without filename agreement")
+    func livePhotoIdentityMatcherRejectsCaptureDateAndPixelMatchesWithoutFilenameAgreement() throws {
+
+        let captureDate =
+            try #require(
+                Calendar(identifier: .gregorian)
+                .date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 11,
+                        hour: 9,
+                        minute: 18,
+                        second: 12
+                    )
+                )
+            )
+        let hint =
+            LivePhotoStaticFallbackRecoveryHint(
+                originalFileName:
+                    "IMG_0935.jpg",
+                advertisedLivePhotoTypeIdentifier:
+                    "com.apple.live-photo",
+                staticContentTypeIdentifier:
+                    UTType.jpeg.identifier,
+                captureDate:
+                    captureDate,
+                pixelWidth: 4032,
+                pixelHeight: 3024
+            )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher
+                .resolve(
+                    hint: hint,
+                    candidates: [
+                        LivePhotoAssetIdentityCandidate(
+                            localIdentifier:
+                                "asset-wrong-name",
+                            originalFileNames: [
+                                "IMG_1200.HEIC",
+                                "IMG_1200.MOV"
+                            ],
+                            creationDate:
+                                captureDate,
+                            pixelWidth: 4032,
+                            pixelHeight: 3024,
+                            isLivePhoto: true
+                        )
+                    ]
+                )
+            == .notFound
+        )
+    }
+
+    @Test("Live Photo identity matcher accepts local-time EXIF fallback hints")
+    func livePhotoIdentityMatcherAcceptsLocalTimeEXIFFallbackHints() throws {
+
+        let shanghai =
+            try #require(
+                TimeZone(identifier: "Asia/Shanghai")
+            )
+        let captureDate =
+            try #require(
+                LivePhotoStaticFallbackDateParser
+                .parse(
+                    "2026:07:11 09:18:12",
+                    timeZone: shanghai
+                )
+            )
+        let hint =
+            LivePhotoStaticFallbackRecoveryHint(
+                originalFileName:
+                    "IMG_9558.jpg",
+                advertisedLivePhotoTypeIdentifier:
+                    "com.apple.live-photo",
+                staticContentTypeIdentifier:
+                    UTType.jpeg.identifier,
+                captureDate:
+                    captureDate,
+                pixelWidth: 4032,
+                pixelHeight: 3024
+            )
+        let candidate =
+            LivePhotoAssetIdentityCandidate(
+                localIdentifier:
+                    "asset-local-shanghai",
+                originalFileNames: [
+                    "IMG_9558.HEIC",
+                    "IMG_9558.MOV"
+                ],
+                creationDate:
+                    captureDate
+                    .addingTimeInterval(120),
+                pixelWidth: 4032,
+                pixelHeight: 3024,
+                isLivePhoto: true
+            )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher
+                .resolve(
+                    hint: hint,
+                    candidates: [
+                        candidate
+                    ]
+                )
+            == .matched("asset-local-shanghai")
+        )
+    }
 }
 
 private extension ShareDrainMigrationRegressionTests {
@@ -464,6 +1053,20 @@ private extension ShareDrainMigrationRegressionTests {
         context.defaults.removePersistentDomain(
             forName: context.suiteName
         )
+    }
+}
+
+private struct FakeLivePhotoAssetIdentityResolver:
+    LivePhotoAssetIdentityResolving {
+
+    let resolution:
+        LivePhotoAssetIdentityResolution
+
+    func resolveAssetLocalIdentifier(
+        for hint: LivePhotoStaticFallbackRecoveryHint
+    ) -> LivePhotoAssetIdentityResolution {
+
+        resolution
     }
 }
 #endif

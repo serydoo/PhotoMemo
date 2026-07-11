@@ -31,6 +31,9 @@ final class BatchQueueExecution {
     private let externalIntakeStore:
         ExternalPhotoIntakeStore
 
+    private let diagnosticsDefaults:
+        UserDefaults
+
     init(
         coordinator:
             BatchProcessingCoordinator? = nil,
@@ -43,7 +46,11 @@ final class BatchQueueExecution {
         exportCoordinator:
             ExportCoordinator? = nil,
         livePhotoProcessor:
-            (any LivePhotoBatchTaskProcessing)? = nil
+            (any LivePhotoBatchTaskProcessing)? = nil,
+        diagnosticsDefaults:
+            UserDefaults =
+                PhotoMemoSharedContainer
+                .sharedUserDefaults
     ) {
         self.coordinator =
             coordinator
@@ -85,6 +92,8 @@ final class BatchQueueExecution {
         self.externalIntakeStore =
             externalIntakeStore
             ?? .shared
+        self.diagnosticsDefaults =
+            diagnosticsDefaults
     }
 
     func enqueue(
@@ -119,7 +128,8 @@ final class BatchQueueExecution {
             .min()
             ?? Date()
 
-        return BatchJob(
+        let job =
+            BatchJob(
             title:
                 resolvedJobTitle(
                     customTitle: title,
@@ -136,6 +146,12 @@ final class BatchQueueExecution {
             intakeSummary:
                 intakeSummary
         )
+
+        recordAdmissionDiagnostics(
+            for: job
+        )
+
+        return job
     }
 
     func retryFailedTasks(
@@ -311,10 +327,20 @@ final class BatchQueueExecution {
                 usesLivePhotoProcessing
                 ? "livePhoto"
                 : "staticImage"
+            let sourceURLIsLivePhotoBundle =
+                LivePhotoSourceBundleLocator
+                .canResolveBundle(
+                    at: task.sourceURL
+                )
             PhotoMemoShareDiagnostics.record(
                 stage: .batchTaskRoute,
                 message:
-                    "fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), hasSourceIdentifier=\(task.sourceIdentifier?.isEmpty == false), route=\(route)",
+                    Self.routeDiagnosticMessage(
+                        for: task,
+                        sourceURLIsLivePhotoBundle:
+                            sourceURLIsLivePhotoBundle,
+                        route: route
+                    ),
                 jobID:
                     store.currentJob(
                         at: reference
@@ -322,13 +348,23 @@ final class BatchQueueExecution {
             )
 
             if usesLivePhotoProcessing {
-                try await processLivePhotoTask(
+                try await measureStageDuration(
+                    "livePhotoProcessing",
+                    route: route,
                     task: task,
-                    at: reference,
-                    in: store,
-                    totalProgressUnits:
-                        totalProgressUnits
-                )
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        )
+                ) {
+                    try await processLivePhotoTask(
+                        task: task,
+                        at: reference,
+                        in: store,
+                        totalProgressUnits:
+                            totalProgressUnits
+                    )
+                }
                 recordTaskDuration(
                     startedAt: startedAt,
                     route: route,
@@ -342,20 +378,30 @@ final class BatchQueueExecution {
             }
 
             let importedPhoto =
-                try await requireValue(
-                    ImportBatchPhotoIntent(
-                        task: task,
-                        contentTypeIdentifierOverride:
-                            staticImportContentTypeIdentifier(
-                                for: task,
-                                usesLivePhotoProcessing:
-                                    usesLivePhotoProcessing
-                            ),
-                        repository:
-                            photoRepository
+                try await measureStageDuration(
+                    "import",
+                    route: route,
+                    task: task,
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        )
+                ) {
+                    try await requireValue(
+                        ImportBatchPhotoIntent(
+                            task: task,
+                            contentTypeIdentifierOverride:
+                                staticImportContentTypeIdentifier(
+                                    for: task,
+                                    usesLivePhotoProcessing:
+                                        usesLivePhotoProcessing
+                                ),
+                            repository:
+                                photoRepository
+                        )
+                        .execute()
                     )
-                    .execute()
-                )
+                }
 
             guard !shouldAbortFurtherProcessing(
                 at: reference,
@@ -391,16 +437,26 @@ final class BatchQueueExecution {
             }
 
             let card =
-                try requireValue(
-                    await BuildPreviewIntent(
-                        photo: importedPhoto,
-                        configuration:
-                            configuration,
-                        coordinator:
-                            previewCoordinator
+                try await measureStageDuration(
+                    "build",
+                    route: route,
+                    task: task,
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        )
+                ) {
+                    try requireValue(
+                        await BuildPreviewIntent(
+                            photo: importedPhoto,
+                            configuration:
+                                configuration,
+                            coordinator:
+                                previewCoordinator
+                        )
+                        .execute()
                     )
-                    .execute()
-                )
+                }
 
             store.updateTask(
                 at: reference,
@@ -432,15 +488,25 @@ final class BatchQueueExecution {
             }
 
             let exportedFileURL =
-                try requireValue(
-                    await ExportRecordCardIntent(
-                        photo: importedPhoto,
-                        card: card,
-                        coordinator:
-                            exportCoordinator
+                try await measureStageDuration(
+                    "export",
+                    route: route,
+                    task: task,
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        )
+                ) {
+                    try requireValue(
+                        await ExportRecordCardIntent(
+                            photo: importedPhoto,
+                            card: card,
+                            coordinator:
+                                exportCoordinator
+                        )
+                        .execute()
                     )
-                    .execute()
-                )
+                }
 
             temporaryFileURL =
                 exportedFileURL
@@ -482,26 +548,45 @@ final class BatchQueueExecution {
             }
 
             let saveResult =
-                try await requireValue(
-                    SaveRenderedPhotoIntent(
-                        fileURL:
-                            exportedFileURL,
-                        metadata:
-                            importedPhoto.metadata,
-                        preferredAlbumIdentifier:
-                            configuration
-                            .selectedAlbumIdentifier,
-                        coordinator:
-                            exportCoordinator
+                try await measureStageDuration(
+                    "save",
+                    route: route,
+                    task: task,
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        )
+                ) {
+                    try await requireValue(
+                        SaveRenderedPhotoIntent(
+                            fileURL:
+                                exportedFileURL,
+                            metadata:
+                                importedPhoto.metadata,
+                            preferredAlbumIdentifier:
+                                configuration
+                                .selectedAlbumIdentifier,
+                            coordinator:
+                                exportCoordinator
+                        )
+                        .execute()
                     )
-                    .execute()
-                )
+                }
 
             let notificationAttachmentURL =
-                makeNotificationAttachmentIfNeeded(
-                    from: exportedFileURL,
-                    taskID: task.id
-                )
+                measureNotificationAttachmentStage(
+                    route: route,
+                    task: task,
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        )
+                ) {
+                    makeNotificationAttachmentIfNeeded(
+                        from: exportedFileURL,
+                        taskID: task.id
+                    )
+                }
 
             coordinator.cleanupTemporaryFile(
                 at: exportedFileURL
@@ -724,6 +809,23 @@ final class BatchQueueExecution {
 
 extension BatchQueueExecution {
 
+    static func routeDiagnosticMessage(
+        for task: BatchTask,
+        sourceURLIsLivePhotoBundle: Bool,
+        route: String
+    ) -> String {
+
+        [
+            "taskID=\(task.id.uuidString)",
+            "fileName=\(task.fileName)",
+            "contentType=\(task.contentTypeIdentifier ?? "nil")",
+            "hasSourceIdentifier=\(task.sourceIdentifier?.isEmpty == false)",
+            "sourceURLIsLivePhotoBundle=\(sourceURLIsLivePhotoBundle)",
+            "route=\(route)"
+        ]
+        .joined(separator: ", ")
+    }
+
     func mediaMemoryBudget(
         for task: BatchTask
     ) -> MediaMemoryBudget {
@@ -736,6 +838,34 @@ extension BatchQueueExecution {
                         task.contentTypeIdentifier
                 )
         )
+    }
+
+    static func admissionDiagnosticMessage(
+        for task: BatchTask,
+        budget: MediaMemoryBudget
+    ) -> String {
+
+        let pixelSize =
+            budget.cost.pixelSize
+
+        return [
+            "taskID=\(task.id.uuidString)",
+            "fileName=\(task.fileName)",
+            "contentType=\(task.contentTypeIdentifier ?? "nil")",
+            "isRAW=\(budget.cost.isRAW)",
+            "pixelWidth=\(pixelSize?.width ?? 0)",
+            "pixelHeight=\(pixelSize?.height ?? 0)",
+            "pixelCount=\(budget.cost.pixelCount)",
+            "estimatedDecodedByteCount=\(budget.cost.estimatedDecodedByteCount)",
+            "memoryTier=\(budget.tier.rawValue)",
+            "requiresExtendedPreviewPreparation=\(budget.requiresExtendedPreviewPreparation)",
+            "maxConcurrentDecodes=\(budget.maxConcurrentDecodes)",
+            "maxConcurrentRenders=\(budget.maxConcurrentRenders)",
+            "maxConcurrentExports=\(budget.maxConcurrentExports)",
+            "schedulerMode=singleTaskLoop",
+            "admission=queued"
+        ]
+        .joined(separator: ", ")
     }
 }
 
@@ -799,12 +929,29 @@ private extension BatchQueueExecution {
     func shouldUseLivePhotoProcessing(
         for task: BatchTask
     ) -> Bool {
-        PhotoProcessingInputPolicy
+        if PhotoProcessingInputPolicy
             .canUseLivePhotoProcessing(
                 contentTypeIdentifier:
                     task.contentTypeIdentifier,
                 sourceIdentifier:
                     task.sourceIdentifier
+            ) {
+            return true
+        }
+
+        guard PhotoProcessingInputPolicy
+            .isLivePhotoContentType(
+                task
+                    .contentTypeIdentifier
+                    .flatMap(UTType.init)
+            )
+        else {
+            return false
+        }
+
+        return LivePhotoSourceBundleLocator
+            .canResolveBundle(
+                at: task.sourceURL
             )
     }
 
@@ -977,7 +1124,131 @@ private extension BatchQueueExecution {
         PhotoMemoShareDiagnostics.record(
             stage: .batchTaskDuration,
             message:
-                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), phase=\(phase.rawValue), durationSeconds=\(String(format: "%.3f", durationSeconds))",
+                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), runtimeStage=total, phase=\(phase.rawValue), durationSeconds=\(String(format: "%.3f", durationSeconds))",
+            jobID: jobID
+        )
+    }
+
+    func recordAdmissionDiagnostics(
+        for job: BatchJob
+    ) {
+
+        for task in job.tasks {
+            _ = PhotoMemoShareDiagnostics
+                .recordResult(
+                    stage: .batchTaskAdmission,
+                    message:
+                        Self.admissionDiagnosticMessage(
+                            for: task,
+                            budget:
+                                mediaMemoryBudget(
+                                    for: task
+                                )
+                        ),
+                    jobID: job.id,
+                    defaults:
+                        diagnosticsDefaults
+                )
+        }
+    }
+
+    func measureStageDuration<Value>(
+        _ stageName: String,
+        route: String,
+        task: BatchTask,
+        jobID: UUID?,
+        operation: () async throws -> Value
+    ) async throws -> Value {
+
+        let startedAt = Date()
+
+        do {
+            let value =
+                try await operation()
+            recordStageDuration(
+                stageName: stageName,
+                startedAt: startedAt,
+                route: route,
+                outcome: "completed",
+                task: task,
+                jobID: jobID
+            )
+            return value
+        } catch {
+            recordStageDuration(
+                stageName: stageName,
+                startedAt: startedAt,
+                route: route,
+                outcome: "failed",
+                task: task,
+                jobID: jobID
+            )
+            throw error
+        }
+    }
+
+    func measureNotificationAttachmentStage(
+        route: String,
+        task: BatchTask,
+        jobID: UUID?,
+        operation: () -> URL?
+    ) -> URL? {
+
+        let startedAt = Date()
+        let attachmentURL =
+            operation()
+        recordStageDuration(
+            stageName: "notificationAttachment",
+            startedAt: startedAt,
+            route: route,
+            outcome: "completed",
+            task: task,
+            jobID: jobID,
+            extraFields: [
+                "attachmentCreated":
+                    attachmentURL == nil
+                    ? "false"
+                    : "true"
+            ]
+        )
+        return attachmentURL
+    }
+
+    func recordStageDuration(
+        stageName: String,
+        startedAt: Date,
+        route: String,
+        outcome: String,
+        task: BatchTask,
+        jobID: UUID?,
+        extraFields:
+            [String: String] = [:]
+    ) {
+
+        let durationSeconds =
+            max(
+                Date()
+                    .timeIntervalSince(startedAt),
+                0
+            )
+        let extraMessage =
+            extraFields
+            .sorted {
+                $0.key < $1.key
+            }
+            .map {
+                "\($0.key)=\($0.value)"
+            }
+            .joined(separator: ", ")
+        let suffix =
+            extraMessage.isEmpty
+            ? ""
+            : ", \(extraMessage)"
+
+        PhotoMemoShareDiagnostics.record(
+            stage: .batchTaskStageDuration,
+            message:
+                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), stageName=\(stageName), outcome=\(outcome), durationSeconds=\(String(format: "%.3f", durationSeconds))\(suffix)",
             jobID: jobID
         )
     }

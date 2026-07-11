@@ -8,6 +8,84 @@ import UniformTypeIdentifiers
 @Suite("Live Photo still-image composition service")
 struct LivePhotoStillImageCompositionServiceTests {
 
+    @Test("Composed still preserves the footer through its final four rows")
+    func composedStillPreservesFooterThroughFinalRows() throws {
+        let temporaryFolder =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "LivePhotoStillImageCompositionServiceTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        try FileManager.default.createDirectory(
+            at: temporaryFolder,
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(
+                at: temporaryFolder
+            )
+        }
+
+        let sourceStillURL =
+            temporaryFolder.appendingPathComponent(
+                "source.jpg"
+            )
+        try writeSourceImage(
+            at: sourceStillURL,
+            size: CGSize(width: 40, height: 30),
+            color: RGBAColor(
+                red: 0,
+                green: 0,
+                blue: 0,
+                alpha: 255
+            )
+        )
+        let footerImage =
+            try makeSolidColorImage(
+                color: RGBAColor(
+                    red: 244,
+                    green: 244,
+                    blue: 242,
+                    alpha: 255
+                ),
+                size: CGSize(width: 40, height: 10)
+            )
+        let descriptor =
+            try FixedFooterOverlayDescriptor(
+                canvasSize: CGSize(width: 40, height: 40),
+                photoFrame: CGRect(x: 0, y: 10, width: 40, height: 30),
+                footerFrame: CGRect(x: 0, y: 0, width: 40, height: 10),
+                footerImage: footerImage
+            )
+        let outputURL =
+            temporaryFolder.appendingPathComponent(
+                "output.png"
+            )
+
+        _ = try LivePhotoStillImageCompositionService()
+            .composeStillImage(
+                sourceStillURL: sourceStillURL,
+                overlay: descriptor,
+                outputURL: outputURL,
+                outputType: .png
+            )
+
+        let image = try ImageEdgeAssertionSupport.image(
+            at: outputURL
+        )
+        let rows = try ImageEdgeAssertionSupport.bottomRows(
+            in: image,
+            count: 4
+        )
+        let footerReachesEdge = rows.allSatisfy { row in
+            row.minimumRGB >= 240
+                && row.maximumRGB <= 248
+                && row.isFullyOpaque
+        }
+
+        #expect(footerReachesEdge)
+    }
+
     @Test("Composes a still image with matching footer geometry and revised metadata")
     func composesStillImageWithMatchingFooterGeometryAndRevisedMetadata() throws {
         let temporaryFolder =

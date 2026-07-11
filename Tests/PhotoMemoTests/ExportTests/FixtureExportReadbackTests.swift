@@ -53,6 +53,30 @@ struct FixtureExportReadbackTests {
         let exportedProperties =
             try SyntheticFixtureLibrary
             .properties(at: exportURL)
+        let exportedImage =
+            try ImageEdgeAssertionSupport.image(
+                at: exportURL
+            )
+        let expectedOutputSize =
+            ClassicWhiteRenderer.outputPixelSize(
+                for: importedPhoto.metadata,
+                fallbackSize:
+                    importedPhoto.image.photoMemoSize
+            )
+        let bottomRows =
+            try ImageEdgeAssertionSupport.bottomRows(
+                in: exportedImage,
+                count: 1
+            )
+        let hasExpectedBottomEdge =
+            bottomRows.allSatisfy { row in
+                row.isApproximatelySolid(
+                    red: 244,
+                    green: 244,
+                    blue: 242,
+                    rgbTolerance: 4
+                )
+            }
 
         let pixelWidth =
             intValue(
@@ -118,6 +142,23 @@ struct FixtureExportReadbackTests {
         #expect(
             readback.imageHeight == pixelHeight
         )
+        #expect(
+            expectedOutputSize.width.rounded()
+            == expectedOutputSize.width
+        )
+        #expect(
+            expectedOutputSize.height.rounded()
+            == expectedOutputSize.height
+        )
+        #expect(
+            exportedImage.width
+            == Int(expectedOutputSize.width)
+        )
+        #expect(
+            exportedImage.height
+            == Int(expectedOutputSize.height)
+        )
+        #expect(hasExpectedBottomEdge)
         #expect(orientation == 1)
         #expect(
             intValue(
@@ -358,6 +399,22 @@ struct FixtureExportReadbackTests {
         let exportedProperties =
             try SyntheticFixtureLibrary
             .properties(at: exportURL)
+        let exportedPixelWidth =
+            try #require(
+                intValue(
+                    exportedProperties[
+                        kCGImagePropertyPixelWidth
+                    ]
+                )
+            )
+        let exportedPixelHeight =
+            try #require(
+                intValue(
+                    exportedProperties[
+                        kCGImagePropertyPixelHeight
+                    ]
+                )
+            )
 
         #expect(
             intValue(
@@ -368,10 +425,44 @@ struct FixtureExportReadbackTests {
         )
         #expect(
             intValue(
+                sourceProperties[
+                    kCGImagePropertyPixelWidth
+                ]
+            ) == 1600
+        )
+        #expect(
+            intValue(
+                sourceProperties[
+                    kCGImagePropertyPixelHeight
+                ]
+            ) == 1200
+        )
+        #expect(
+            importedPhoto.metadata.imageWidth == 1200
+        )
+        #expect(
+            importedPhoto.metadata.imageHeight == 1600
+        )
+        #expect(
+            importedPhoto.metadata.orientation == .portrait
+        )
+        #expect(
+            importedPhoto.image.photoMemoSize.width
+            == 1200
+        )
+        #expect(
+            importedPhoto.image.photoMemoSize.height
+            == 1600
+        )
+        #expect(
+            intValue(
                 exportedProperties[
                     kCGImagePropertyOrientation
                 ]
             ) == 1
+        )
+        #expect(
+            exportedPixelHeight > exportedPixelWidth
         )
         #expect(
             importedPhoto.metadata.captureDate
@@ -397,19 +488,11 @@ struct FixtureExportReadbackTests {
         )
         #expect(
             readback.imageWidth
-            == intValue(
-                exportedProperties[
-                    kCGImagePropertyPixelWidth
-                ]
-            )
+            == exportedPixelWidth
         )
         #expect(
             readback.imageHeight
-            == intValue(
-                exportedProperties[
-                    kCGImagePropertyPixelHeight
-                ]
-            )
+            == exportedPixelHeight
         )
     }
 
@@ -491,7 +574,7 @@ private extension FixtureExportReadbackTests {
 
         BatchConfigurationSnapshot(
             template:
-                .template1
+                .classicWhite
                 .normalizedForEditing,
             badge: nil,
             anchor: nil,

@@ -46,13 +46,13 @@ extension MainView {
 
         normalizedPrimaryTemplate(
             settings.selectedTemplate
-            ?? .template1
+            ?? .classicWhite
         )
     }
 
     var currentPreset: TemplatePreset {
 
-        .template1
+        .classicWhite
     }
 
     var currentPresetDefaultOutput: String {
@@ -150,11 +150,7 @@ extension MainView {
 
         guard let badge = settings.selectedBadge,
               badge.type != .none else {
-            if currentPreset == .immersWhite {
-                return "自动 Apple 标识"
-            }
-
-            return "保持留白"
+            return "自动 Apple 标识"
         }
 
         return badge.name
@@ -164,11 +160,7 @@ extension MainView {
 
         guard let badge = settings.selectedBadge,
               badge.type != .none else {
-            if currentPreset == .immersWhite {
-                return "未自定义时，Classic White 会自动使用经典 Apple 小标识，并贴近右侧信息区显示。"
-            }
-
-            return "当前风格会保留标识区域留白，适合更极简的版式。"
+            return "未自定义时，Classic White 会自动使用经典 Apple 小标识，并贴近右侧信息区显示。"
         }
 
         if badge.isSystemDefault {
@@ -279,7 +271,7 @@ extension MainView {
     ) -> Template {
 
         var normalized = template
-        normalized.preset = .template1
+        normalized.preset = .classicWhite
         return normalized.normalizedForEditing
     }
 

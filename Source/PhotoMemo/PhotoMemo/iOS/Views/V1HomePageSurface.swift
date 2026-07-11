@@ -1,3 +1,52 @@
+import Foundation
+
+struct V1HomeConfigurationSwipePresentation: Equatable {
+
+    let rowOffset: CGFloat
+    let actionLayerOffset: CGFloat
+    let actionOpacity: Double
+    let allowsActionHitTesting: Bool
+}
+
+enum V1HomeConfigurationSwipePresenter {
+
+    static let actionWidth: CGFloat = 148
+    static let revealThreshold: CGFloat = actionWidth / 2
+
+    static func presentation(
+        isActionsRevealed: Bool,
+        dragTranslation: CGFloat
+    ) -> V1HomeConfigurationSwipePresentation {
+        let settledOffset =
+            isActionsRevealed ? -actionWidth : 0
+        let rowOffset = min(
+            0,
+            max(-actionWidth, settledOffset + dragTranslation)
+        )
+        let revealProgress = min(
+            1,
+            max(0, Double(-rowOffset / revealThreshold))
+        )
+
+        return V1HomeConfigurationSwipePresentation(
+            rowOffset: rowOffset,
+            actionLayerOffset: 0,
+            actionOpacity: revealProgress,
+            allowsActionHitTesting: rowOffset <= -revealThreshold
+        )
+    }
+
+    static func shouldRevealActions(
+        isActionsRevealed: Bool,
+        predictedEndTranslation: CGFloat
+    ) -> Bool {
+        let settledOffset =
+            isActionsRevealed ? -actionWidth : 0
+        return settledOffset + predictedEndTranslation
+            < -revealThreshold
+    }
+}
+
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
 
@@ -14,17 +63,20 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     let memoryPresetTitleDraft: Binding<String>
     let memoryPresetTitleFieldFocused: FocusState<Bool>.Binding
     let isConfigurationReady: Bool
+    let isSavingConfiguration: Bool
     let onOpenSubject: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onOpenPhotoPicker: () -> Void
     let onOpenSettings: () -> Void
     let onSelectMemoryPreset: (MemoryPreset) -> Void
     let onRenameMemoryPreset: () -> Void
+    let onSaveMemoryPreset: (MemoryPreset) -> Void
     let onDeleteMemoryPreset: (MemoryPreset) -> Void
+    let onOpenLocalConfigurationLibrary: () -> Void
     let onDismissKeyboard: () -> Void
     let profileTrackingBackground: ProfileTrackingBackground
     @State
-    private var revealedDeletePresetID: MemoryPreset.ID?
+    private var revealedActionPresetID: MemoryPreset.ID?
 
     var body: some View {
         ScrollView {
@@ -160,33 +212,38 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                                 .avatarImagePath,
                             isSelected:
                                 preset.id == selectedMemoryPresetID,
-                            isDeleteRevealed:
-                                revealedDeletePresetID == preset.id,
+                            isActionsRevealed:
+                                revealedActionPresetID == preset.id,
                             onSelect: {
-                                revealedDeletePresetID = nil
+                                revealedActionPresetID = nil
                                 onSelectMemoryPreset(preset)
                             },
                             onRename: {
-                                revealedDeletePresetID = nil
+                                revealedActionPresetID = nil
                                 if preset.id != selectedMemoryPresetID {
                                     onSelectMemoryPreset(preset)
                                 }
                                 onRenameMemoryPreset()
                             },
-                            onRevealDelete: {
+                            onRevealActions: {
                                 withAnimation(.snappy(duration: 0.2)) {
-                                    revealedDeletePresetID = preset.id
+                                    revealedActionPresetID = preset.id
                                 }
                             },
-                            onHideDelete: {
+                            onHideActions: {
                                 withAnimation(.snappy(duration: 0.2)) {
-                                    if revealedDeletePresetID == preset.id {
-                                        revealedDeletePresetID = nil
+                                    if revealedActionPresetID == preset.id {
+                                        revealedActionPresetID = nil
                                     }
                                 }
                             },
+                            onSave: {
+                                revealedActionPresetID = nil
+                                onSaveMemoryPreset(preset)
+                            },
+                            isSaveDisabled: isSavingConfiguration,
                             onDelete: {
-                                revealedDeletePresetID = nil
+                                revealedActionPresetID = nil
                                 onDeleteMemoryPreset(preset)
                             }
                         )
@@ -235,6 +292,23 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                     .padding(.horizontal, 4)
                     .padding(.top, 2)
                 }
+
+                Button(action: onOpenLocalConfigurationLibrary) {
+                    Image(systemName: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.blue)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: 12,
+                                style: .continuous
+                            )
+                            .fill(Color.blue.opacity(0.07))
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("打开当前记忆对象的本地配置库")
             }
         }
     }
@@ -304,11 +378,13 @@ private struct V1HomeMemoryPresetRow: View {
     let anchorType: AnchorType
     let subjectAvatarImagePath: String?
     let isSelected: Bool
-    let isDeleteRevealed: Bool
+    let isActionsRevealed: Bool
     let onSelect: () -> Void
     let onRename: () -> Void
-    let onRevealDelete: () -> Void
-    let onHideDelete: () -> Void
+    let onRevealActions: () -> Void
+    let onHideActions: () -> Void
+    let onSave: () -> Void
+    let isSaveDisabled: Bool
     let onDelete: () -> Void
 
     @GestureState
@@ -316,17 +392,35 @@ private struct V1HomeMemoryPresetRow: View {
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            Button(role: .destructive, action: onDelete) {
-                Text("删除")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 74)
-                    .frame(maxHeight: .infinity)
-                    .background(Color.red)
+            HStack(spacing: 0) {
+                Button(action: onSave) {
+                    Text("保存")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 74)
+                        .frame(maxHeight: .infinity)
+                        .background(Color.blue)
+                }
+                .buttonStyle(.plain)
+                .disabled(isSaveDisabled)
+                .accessibilityLabel("保存配置到本地库")
+
+                Button(role: .destructive, action: onDelete) {
+                    Text("删除")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 74)
+                        .frame(maxHeight: .infinity)
+                        .background(Color.red)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("删除配置")
             }
-            .offset(x: rowHorizontalOffset == 0 ? 86 : 0)
-            .opacity(deleteButtonOpacity)
-            .allowsHitTesting(rowHorizontalOffset < -40)
+            .offset(x: swipePresentation.actionLayerOffset)
+            .opacity(swipePresentation.actionOpacity)
+            .allowsHitTesting(
+                swipePresentation.allowsActionHitTesting
+            )
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: 16,
@@ -339,7 +433,7 @@ private struct V1HomeMemoryPresetRow: View {
                 .onTapGesture {
                     onSelect()
                 }
-            .offset(x: rowHorizontalOffset)
+            .offset(x: swipePresentation.rowOffset)
             .gesture(
                 DragGesture(minimumDistance: 12)
                     .updating($horizontalDragOffset) {
@@ -355,17 +449,7 @@ private struct V1HomeMemoryPresetRow: View {
                             return
                         }
 
-                        if isDeleteRevealed {
-                            state = min(
-                                82,
-                                max(0, value.translation.width)
-                            )
-                        } else {
-                            state = max(
-                                -82,
-                                min(0, value.translation.width)
-                            )
-                        }
+                        state = value.translation.width
                     }
                     .onEnded { value in
                         guard
@@ -375,42 +459,33 @@ private struct V1HomeMemoryPresetRow: View {
                             return
                         }
 
-                        let baseOffset: CGFloat =
-                            isDeleteRevealed ? -82 : 0
-                        let projectedOffset =
-                            baseOffset
-                            + value.predictedEndTranslation.width
-
-                        if projectedOffset < -42 {
-                            onRevealDelete()
+                        if V1HomeConfigurationSwipePresenter
+                            .shouldRevealActions(
+                                isActionsRevealed:
+                                    isActionsRevealed,
+                                predictedEndTranslation:
+                                    value
+                                    .predictedEndTranslation
+                                    .width
+                            ) {
+                            onRevealActions()
                         } else {
-                            onHideDelete()
+                            onHideActions()
                         }
                     }
             )
         }
         .animation(
             .snappy(duration: 0.2),
-            value: isDeleteRevealed
+            value: isActionsRevealed
         )
     }
 
-    private var rowHorizontalOffset: CGFloat {
-        let baseOffset: CGFloat =
-            isDeleteRevealed ? -82 : 0
-        let proposedOffset =
-            baseOffset + horizontalDragOffset
-
-        return min(0, max(-82, proposedOffset))
-    }
-
-    private var deleteButtonOpacity: Double {
-        min(
-            1,
-            max(
-                0,
-                Double(abs(rowHorizontalOffset) / 42)
-            )
+    private var swipePresentation:
+        V1HomeConfigurationSwipePresentation {
+        V1HomeConfigurationSwipePresenter.presentation(
+            isActionsRevealed: isActionsRevealed,
+            dragTranslation: horizontalDragOffset
         )
     }
 

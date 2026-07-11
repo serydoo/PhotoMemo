@@ -13,13 +13,29 @@ final class ConfigurationCoordinator {
     private let applyLiveDefaultConfiguration:
         (BatchConfigurationSnapshot) -> Void
 
+    private let onConfigurationLibrarySaved:
+        (ConfigurationLibrarySaveReceipt) -> Void
+
+    private let applyConfigurationLibrarySnapshot:
+        (
+            BatchConfigurationSnapshot,
+            ConfigurationLibrarySaveReceipt
+        ) -> Void
+
     init(
         settingsRepository:
             SettingsRepository,
         configurationRepository:
             ConfigurationRepository,
         applyLiveDefaultConfiguration:
-            @escaping (BatchConfigurationSnapshot) -> Void = { _ in }
+            @escaping (BatchConfigurationSnapshot) -> Void = { _ in },
+        applyConfigurationLibrarySnapshot:
+            ((
+                BatchConfigurationSnapshot,
+                ConfigurationLibrarySaveReceipt
+            ) -> Void)? = nil,
+        onConfigurationLibrarySaved:
+            @escaping (ConfigurationLibrarySaveReceipt) -> Void = { _ in }
     ) {
         self.settingsRepository =
             settingsRepository
@@ -27,6 +43,13 @@ final class ConfigurationCoordinator {
             configurationRepository
         self.applyLiveDefaultConfiguration =
             applyLiveDefaultConfiguration
+        self.applyConfigurationLibrarySnapshot =
+            applyConfigurationLibrarySnapshot
+            ?? { snapshot, _ in
+                applyLiveDefaultConfiguration(snapshot)
+            }
+        self.onConfigurationLibrarySaved =
+            onConfigurationLibrarySaved
     }
 
     func loadDefaultBatchConfigurationSnapshot()
@@ -130,10 +153,13 @@ final class ConfigurationCoordinator {
             .saveSelectedBadge(
                 request.badge
             )
-        settingsRepository
-            .saveLocationDisplayConfiguration(
-                request.locationDisplayConfiguration
-            )
+        if let locationDisplayConfiguration =
+            request.locationDisplayConfiguration {
+            settingsRepository
+                .saveLocationDisplayConfiguration(
+                    locationDisplayConfiguration
+                )
+        }
         settingsRepository
             .saveMediaOutputMode(
                 request.mediaOutputMode
@@ -205,6 +231,32 @@ final class ConfigurationCoordinator {
             settingsRepository
             .loadV1ConfigurationBootstrapState()
         )
+    }
+
+    func saveConfigurationLibrary(
+        _ aggregate: ConfigurationLibraryRecord
+    ) async throws -> ConfigurationLibrarySaveReceipt {
+        let receipt = try await settingsRepository
+            .saveConfigurationLibrary(
+                aggregate,
+                afterSuccessfulProjection: {
+                    [applyConfigurationLibrarySnapshot]
+                    snapshot,
+                    provisionalReceipt in
+                    applyConfigurationLibrarySnapshot(
+                        snapshot,
+                        provisionalReceipt
+                    )
+                }
+            )
+        onConfigurationLibrarySaved(receipt)
+        return receipt
+    }
+
+    func loadConfigurationLibrary()
+    async throws -> ConfigurationLibraryLoadReceipt {
+        try await settingsRepository
+            .loadConfigurationLibrary()
     }
 }
 
