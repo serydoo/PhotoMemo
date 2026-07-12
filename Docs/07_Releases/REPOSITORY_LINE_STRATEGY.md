@@ -1,10 +1,12 @@
 # MemoMark Repository Line Strategy
 
-Last updated: 2026-07-02
+Last updated: 2026-07-11
 
 This document defines how MemoMark should preserve older product phases without turning the repository into a stack of duplicated version folders.
 
-Read `PROJECT_CONSTITUTION.md` and `Docs/MASTER_PLAN.md` first. This strategy must not override the V2 reset rules.
+Read `PROJECT_CONSTITUTION.md`, `Docs/MASTER_PLAN.md`, and
+`Docs/PRODUCT_VERSION_HISTORY.md` first. This strategy must not override the
+current V3 repository rules.
 
 ## Purpose
 
@@ -13,8 +15,9 @@ MemoMark has already moved through several meaningful phases:
 - macOS local export foundation
 - iOS foundation
 - MVP share-flow convergence
-- V1 iPhone configuration and memory flow
-- V2.1 Memory Engine Product Realization
+- V1-compatible iPhone configuration and memory implementation
+- V2 Product Definition and Realization
+- V3 Production Quality and Delivery
 
 Those phases are important project memory, but they should not each become a duplicated source tree inside the repository root.
 
@@ -26,26 +29,28 @@ Use these lines going forward:
 
 `main` is the long-term project line.
 
-It should represent:
+It represents:
 
 - the current repository identity
-- the V2 reset direction
-- IA-003 Memory Engine Integration
+- the active V3 product and engineering line
+- the V2 architecture and completed IA-003 integration baseline
 - the latest source-of-truth documentation
 
 Do not turn `main` into a dumping ground for every historical packaging checkpoint.
 
-### `release/v1`
+### Historical V1 Branches
 
-Use one durable V1 product branch for the current iPhone-oriented line.
+The former V1 checkpoint branches have been merged into `main` and are not
+active product lines.
 
-It should represent:
+Historical branch and tag names may still identify:
 
-- the V1 app shell
-- current iPhone buildability
-- share / configuration / memory-flow convergence that still belongs to the V1 product line
+- the legacy-compatible iOS implementation baseline
+- earlier iPhone build checkpoints
+- V1 and V2 milestone evidence
 
-The existing `v1-checkpoint-20260702` branch is a checkpoint, not the long-term naming target.
+Do not recreate `release/v1` or another permanent product-stage branch unless a
+future release-maintenance requirement explicitly needs it.
 
 ### Tags And Releases
 
@@ -66,8 +71,9 @@ Recommended milestone grouping:
 1. macOS foundation
 2. iOS foundation
 3. MVP share-flow stabilization
-4. V1 checkpoints and release candidates
+4. V1-compatible implementation checkpoints and release candidates
 5. V2 architecture and IA-series checkpoints
+6. V3 production-quality and release-readiness checkpoints
 
 If a historical phase needs a downloadable build, attach the artifact to a release. Do not keep multiple app copies in the main source tree.
 
@@ -90,20 +96,21 @@ Avoid:
 
 ## Suggested Next GitHub Shape
 
-Recommended steady-state structure:
+Current steady-state structure:
 
-1. `main` for V2 / IA-003 / repository source of truth
-2. `release/v1` for the active V1 product line
-3. milestone tags for historical stages
-4. GitHub Releases for packaged builds and phase notes
+1. `main` for the active V3 product and repository source of truth
+2. milestone tags for historical stages
+3. GitHub Releases for packaged builds and phase notes
+4. temporary scoped branches only when active work requires isolation
 
 ## Current Repository Constraint
 
-Because the V2 constitution explicitly says old documents should not be migrated immediately, repository cleanup in the current phase should focus on:
+Because historical documents remain evidence, repository cleanup should focus on:
 
 - clarifying entry points
 - reducing ambiguity
 - defining active lines
 - recording historical checkpoints cleanly
 
-It should not yet focus on large physical document migration.
+It should not perform large physical document migration without a separately
+reviewed documentation plan.

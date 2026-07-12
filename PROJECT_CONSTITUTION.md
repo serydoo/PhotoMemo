@@ -1,10 +1,30 @@
-# MemoMark V2 Project Constitution
+# MemoMark Project Constitution
 
-Last updated: 2026-06-24
+Last updated: 2026-07-11
 
-This is the highest-level repository instruction for MemoMark V2.
+This is the highest-level repository instruction for MemoMark.
 
 Every AI agent and future coding session must read this before making any modification.
+
+## V3 Amendment
+
+MemoMark V1 and V2 are complete. The current product stage is:
+
+```text
+V3 Production Quality And Delivery
+```
+
+The canonical product-stage history is `Docs/PRODUCT_VERSION_HISTORY.md`.
+
+V3 preserves the local-first Memory Presentation Engine, Configuration Center,
+Memory Engine, IA-002, and IA-003 boundaries established during V2. The active
+work now emphasizes production correctness, durable configuration, full Apple
+Photos lifecycle evidence, regression control, performance, and release
+readiness.
+
+Historical V2 sections below remain binding architectural foundations unless a
+later V3 decision explicitly amends them. References to V2 as the current phase
+are historical and must not override this amendment or `Docs/CURRENT_STATUS.md`.
 
 ## Current Status
 
@@ -21,7 +41,7 @@ The repository already contains:
 
 These documents are the new project entry.
 
-Current repository phase:
+Historical V2 repository phase:
 
 ```text
 Product Realization Preparation
@@ -33,7 +53,7 @@ PM-003 Phase 1 is frozen.
 
 IA-002 Configuration Center Architecture is frozen.
 
-The current product-realization slice is:
+The V2 product-realization slice was:
 
 ```text
 IA-003 Memory Engine Integration
@@ -49,7 +69,7 @@ PDR-004 Configuration Center Architecture
 
 PDR-004 freezes the Configuration Center as object-centered architecture.
 
-The next implementation work must connect real data through the approved IA-003 sequence only. It must not reopen IA-002 architecture.
+V3 work must preserve the approved IA-003 result and must not reopen IA-002 architecture without an explicit new product decision.
 
 ## Mission
 

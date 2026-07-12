@@ -190,15 +190,24 @@ One photo may belong to multiple life timelines. The long-term goal is to let ev
 
 ## Current Status
 
-MemoMark is in V2.1 Memory Engine Product Realization.
+MemoMark is in `V3 Production Quality And Delivery`.
 
-The approved implementation track is:
+V1 MVP and V2 Product Definition And Realization are complete. V3 turns the
+established Memory Presentation Engine into a production-ready,
+evidence-backed delivery system.
+
+Current priorities include:
 
 ```text
-IA-003 Memory Engine Integration
+Durable Configuration
+-> Apple Photos Lifecycle Validation
+-> Regression And Performance Evidence
+-> TestFlight / App Store Readiness
 ```
 
-IA-002 Configuration Center Architecture is frozen. Unscoped feature development, renderer polishing, and UI architecture redesign remain paused.
+IA-002 Configuration Center Architecture and the completed IA-003 Memory Engine
+integration remain architectural foundations. V3 does not reopen them by
+default.
 
 Recent IA-003-compatible foundation work has established the first Memory Expression Engine path:
 
@@ -209,16 +218,18 @@ MemorySubject
 -> MemoryModule
 ```
 
-The next implementation work should continue from this controlled path. It must not jump ahead into renderer, metadata, export, share-extension, photo-library, or Layout Engine work before the approved IA-003 slice reaches that boundary.
+See `Docs/PRODUCT_VERSION_HISTORY.md` for the canonical distinction between
+product stages, App release versions, audit-report versions, and legacy `V1*`
+implementation identifiers.
 
 ## Repository Map
 
 Current source and project structure:
 
 - `Source/PhotoMemo/` - current Xcode project and app source
-- `Research/` - active V2 research and specification work
+- `Research/` - research and specification history
 - `Docs/` - product, architecture, behavior, QA, release, and historical documents
-- `App/` - reserved future V2 app-facing structure
+- `App/` - reserved app-facing structure
 - `DesignSystem/` - reserved durable design-system assets
 - `LayoutEngine/` - reserved future Layout Engine boundary
 - `Renderer/` - reserved future renderer boundary
@@ -235,8 +246,7 @@ MemoMark should preserve historical product phases through branches, tags, and r
 
 Current intended line split:
 
-- `main` - long-term V2 / IA-003 / repository source-of-truth line
-- `release/v1` - durable V1 iPhone product line
+- `main` - active V3 repository and product source-of-truth line
 - milestone tags and releases - macOS foundation, iOS foundation, MVP, and V1 checkpoints
 
 Repository cleanup should not create root-level copies such as `MacVersion/`, `MVP/`, or `V1/`.
@@ -249,12 +259,12 @@ For project context, read:
 
 1. `PROJECT_CONSTITUTION.md`
 2. `Docs/MASTER_PLAN.md`
-3. `PROJECT_PHILOSOPHY.md`
-4. `PROJECT_DIRECTION.md`
-5. `Docs/DOCUMENT_INDEX.md`
-6. `Docs/PROJECT_STRUCTURE.md`
-7. `Docs/CURRENT_STATUS.md`
-8. `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md`
+3. `Docs/PRODUCT_VERSION_HISTORY.md`
+4. `Docs/CURRENT_STATUS.md`
+5. `PROJECT_PHILOSOPHY.md`
+6. `PROJECT_DIRECTION.md`
+7. `Docs/DOCUMENT_INDEX.md`
+8. `Docs/PROJECT_STRUCTURE.md`
 
 Old documents remain reference material for now. Do not migrate them until the research specifications stabilize.
 

@@ -1,6 +1,6 @@
-# MemoMark V2 Master Plan
+# MemoMark Master Plan
 
-Last updated: 2026-06-24
+Last updated: 2026-07-11
 
 Read `PROJECT_CONSTITUTION.md` before this file. The constitution is the highest-level repository instruction. This file remains the operational master plan.
 
@@ -14,23 +14,26 @@ MemoMark does not only present photographs. It presents memories.
 
 ## Current Phase
 
-MemoMark V2.1 Memory Engine.
+MemoMark is in `V3 Production Quality And Delivery`.
 
-Product Definition is complete enough to enter Product Realization.
+V1 MVP and V2 Product Definition And Realization are complete. The canonical
+stage boundaries are recorded in `Docs/PRODUCT_VERSION_HISTORY.md`.
 
-Unscoped feature expansion, renderer polishing, and UI architecture redesign remain paused.
+V3 carries the V2 architecture into production-quality validation and delivery.
+It prioritizes durable configuration, real Apple Photos lifecycle correctness,
+regression prevention, performance and memory evidence, and release readiness.
 
 PM-003 Content Layout System Phase 1 is frozen.
 
 IA-002 Configuration Center Architecture is frozen.
 
-The current implementation slice is:
+The completed V2 implementation track was:
 
 ```text
 IA-003 Memory Engine Integration
 ```
 
-The latest frozen repository amendment is:
+The latest frozen V2 repository amendment is:
 
 ```text
 PDR-004 Configuration Center Architecture
@@ -38,21 +41,17 @@ PDR-004 Configuration Center Architecture
 
 ## Current Priority
 
-Build the V2.1 documentation and architecture foundation:
+Close V3 production-quality gaps without reopening frozen V2 architecture:
 
-1. Audit the existing repository.
-2. Preserve project memory around the reset.
-3. Establish research folders and document flow.
-4. Define the future architecture boundary:
-   - Metadata Engine
-   - Memory Engine
-   - Presentation Engine
-   - Layout Engine
-   - Stateless Renderer
-   - Export
-5. Keep Layout Specification waiting for reverse-engineering results.
-6. Synchronize frozen interaction architecture and behavior principles into repository documentation.
-7. Connect the first real MemoMark pipeline through the approved IA-003 sequence without reopening IA-002.
+1. Keep `ConfigurationLibraryRecord` and its V3 successors as durable truth.
+2. Close configuration save, restore, backup, and clean-install regressions.
+3. Validate the real Apple Photos -> Share -> MemoMark -> Processing ->
+   Notification -> Apple Photos lifecycle on signed devices.
+4. Collect evidence for Live Photo, orientation, location, RAW/ProRAW/DNG,
+   high-resolution media, performance, memory, and concurrency behavior.
+5. Establish repeatable change-level and release-level production quality gates.
+6. Preserve the frozen Configuration Center, Memory Engine, Presentation,
+   Layout Engine, Renderer, and Export ownership boundaries.
 
 ## Long-Term Development Rule
 
@@ -108,7 +107,7 @@ The product should not change how users manage photos.
 
 It should change how users understand them.
 
-## Version Roadmap
+## Completed V2 Roadmap
 
 ### V2.0: Repository Reset
 
@@ -266,7 +265,7 @@ MemoryBlock {
 
 ### IA-003: Memory Engine Integration
 
-Status: current implementation track.
+Status: completed V2 integration track; preserved as a V3 architecture baseline.
 
 Goal:
 

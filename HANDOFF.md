@@ -3,6 +3,13 @@
 ## Current Truth
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
+- MemoMark is in `V3 Production Quality And Delivery`. V1 MVP and V2 Product
+  Definition And Realization are complete. Product-stage boundaries are
+  canonical in `Docs/PRODUCT_VERSION_HISTORY.md`.
+- App release versions (`1.5`, `1.6`), Production Audit report versions, and
+  legacy `V1*` source identifiers are separate version systems. Existing
+  `V1*` source names remain compatibility-oriented implementation identifiers
+  and do not mean the product is currently in V1.
 - V3 evidence parser / 21-reject gate slice is implemented and locally
   verified. Runtime summaries now use stage-specific ordered parsing for
   `batch.task.duration`, `batch.task.route`, `batch.task.admission`, and
@@ -142,8 +149,9 @@
   source paths, and GitHub repository URL remain intentionally preserved until
   a dedicated engineering rename slice is approved.
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
-- `main` is now the active V1 source line after merging the former latest
-  `v1-checkpoint-20260702` checkpoint into it.
+- `main` is the active V3 repository and product source line. It contains the
+  historical V1-compatible iOS implementation after the former
+  `v1-checkpoint-20260702` checkpoint was merged into it.
 - `main` now also contains the Live Photo main app picker release candidate via
   merge commit `c6b97d99`.
 - Main App Picker Live Photo is release-candidate scope; Share Extension Live
@@ -171,8 +179,8 @@
   - only `/Users/rui/Desktop/PhotoMemo` remains as an active worktree
   - old WIP was preserved under `/Users/rui/Desktop/PhotoMemoWorktreeBackups/`
     and in the Git stash list before cleanup
-- Future V1 builds and IPA packages should come from `main`, not from a
-  temporary checkout or a separate V1 branch.
+- Future builds and IPA packages should come from `main`, not from a temporary
+  checkout or a separate historical V1 branch.
 - The current V1 checkpoint is accepted as a functional baseline and now lives
   inside `main`.
 - The V1 long-term maintenance baseline is accepted after the High Finding Closure Sprint.
@@ -13083,7 +13091,9 @@ again on the device.
 
 ## 2026-07-11 Unresolved Configuration Region Persistence Blocker
 
-Status: unresolved and reproducible on the clean-installed physical device.
+Status: historical blocker, superseded by the later multi-module persistence,
+`CardTextBlockEngine`, and final iPhone7 verification recorded below. Keep this
+section as root-cause history; do not treat it as an open V3 blocker.
 
 Exact reproduction:
 
@@ -13295,3 +13305,12 @@ device build still reproduces the blocker.
 - Still requires physical-device confirmation that saving keeps the customized
   preview visible and that the Home swipe-save action creates a local backup
   without the previous alert.
+# 2026-07-12 首次使用指南与时间锚点表达说明
+
+- 新增面向第一次打开用户的 App 内五阶段引导文案，首轮不修改已审核 SwiftUI 源码。
+- 新增首次使用指南 Markdown 母版，并基于 `PhotoMemoiOS` 最新 Debug 构建取得真实首页截图。
+- 新增时间锚点表达说明，覆盖生日、结婚、关系、考试、自定义 5 类锚点及当前 25 种表达语气，明确主体、锚点名称、计算结果与变量公式的替换关系。
+- iOS Simulator 构建成功，真实首页截图位于 `Docs/UserGuide/Assets/FirstRun/01-home.jpg`。
+- Word/PDF 初稿已生成，但 LibreOffice 渲染环境无法显示中文字体，因此没有通过文档视觉发布门槛；当前文件仅供内容审阅，不应作为最终公开版转发。
+- 后续需补齐欢迎、对象、配置中心、分享、任务、回存与帮助入口截图，并在可正确渲染中文的环境中完成 Word/PDF 最终排版验证。
+- 当前 Word/PDF 文件按内容审阅草案纳入仓库，不代表公开发布版已经通过视觉验收。

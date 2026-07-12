@@ -2,31 +2,38 @@
 
 This file defines the long-term working rules for AI agents and future coding sessions in the MemoMark repository.
 
-## Highest Priority: MemoMark V2 Reset
+## Highest Priority: MemoMark V3
 
 Before any modification, read:
 
 1. `PROJECT_CONSTITUTION.md`
 2. `Docs/MASTER_PLAN.md`
-3. `PROJECT_RESET.md`
-4. `RepositoryAudit.md`
-5. `Research/README.md`
+3. `Docs/PRODUCT_VERSION_HISTORY.md`
+4. `Docs/CURRENT_STATUS.md`
+5. `PROJECT_RESET.md`
+6. `RepositoryAudit.md`
+7. `Research/README.md`
 
-MemoMark has completed IA-002 Configuration Center Architecture and is entering controlled Product Realization.
+MemoMark V1 MVP and V2 Product Definition And Realization are complete.
 
-Unscoped feature development, renderer polishing, and UI architecture redesign remain paused.
+The current product stage is `V3 Production Quality And Delivery`.
 
-The approved implementation track is IA-003 Memory Engine Integration.
+V3 preserves the V2 local-first Memory Presentation Engine, Configuration
+Center, Memory Engine, IA-002, and IA-003 foundations. Current work prioritizes
+production correctness, durable configuration, full Apple Photos lifecycle
+evidence, regression control, performance, and release readiness.
 
-IA-003 must proceed in this order:
+The completed V2 IA-003 sequence remains an architectural reference:
 
 `IA-003A MemorySubject Adapter -> IA-003B Configuration Snapshot -> IA-003C Memory Block Resolver -> IA-003D CaptureTimeResolver -> IA-003E Interactive Memory Card connects real data -> IA-003F Renderer`
 
-Do not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work until the approved IA-003 slice reaches that boundary.
+Do not reopen frozen V2 architecture or change Renderer, Metadata, Export,
+Share Extension, Photo Library, or Layout Engine behavior without a scoped V3
+requirement and verification plan.
 
 Do not immediately migrate old documents. Build the new research documentation first; migrate old documents only after research specifications stabilize.
 
-The V2 target is a local-first Memory Presentation Engine:
+The established architecture is a local-first Memory Presentation Engine:
 
 `Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export`
 
@@ -61,15 +68,16 @@ At the start of any new session:
 
 1. Read `PROJECT_CONSTITUTION.md`
 2. Read `Docs/MASTER_PLAN.md`
-3. Read `PROJECT_RESET.md`
-4. Read `RepositoryAudit.md`
-5. Read `Research/README.md`
-6. Read `README.md`
-7. Read `AI_CONTEXT.md`
-8. Read `HANDOFF.md`
-9. Read `AGENTS.md`
-10. Read `Docs/CURRENT_STATUS.md`
-11. Check `git status`
+3. Read `Docs/PRODUCT_VERSION_HISTORY.md`
+4. Read `Docs/CURRENT_STATUS.md`
+5. Read `PROJECT_RESET.md`
+6. Read `RepositoryAudit.md`
+7. Read `Research/README.md`
+8. Read `README.md`
+9. Read `AI_CONTEXT.md`
+10. Read `HANDOFF.md`
+11. Read `AGENTS.md`
+12. Check `git status`
 
 If the task touches the main editor flow, inspect:
 

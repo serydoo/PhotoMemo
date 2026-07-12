@@ -1,22 +1,25 @@
 # MemoMark AI Context
 
-## V2 Reset
+## Current Stage: V3
 
-MemoMark has completed the IA-002 Configuration Center architecture phase and is entering controlled Product Realization.
+MemoMark V1 MVP and V2 Product Definition And Realization are complete.
 
-Unscoped feature development, renderer polishing, and UI architecture expansion remain paused.
+The current stage is `V3 Production Quality And Delivery`.
 
-PM-003 Phase 1 is frozen.
+Read `Docs/PRODUCT_VERSION_HISTORY.md` for the canonical stage boundaries.
 
-IA-002 is frozen.
+V3 preserves PM-003, IA-002, IA-003, the Configuration Center, and the Memory
+Presentation Engine boundaries established during V2. It focuses on durable
+configuration, real Apple Photos lifecycle evidence, regression control,
+performance, and release readiness.
 
-The current implementation track is:
+The completed V2 integration track was:
 
 ```text
 IA-003 Memory Engine Integration
 ```
 
-The new target is a local-first Memory Presentation Engine:
+The established architecture is a local-first Memory Presentation Engine:
 
 ```text
 Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export
@@ -26,13 +29,16 @@ Read these first:
 
 1. `PROJECT_CONSTITUTION.md`
 2. `Docs/MASTER_PLAN.md`
-3. `PROJECT_RESET.md`
-4. `RepositoryAudit.md`
-5. `Research/README.md`
+3. `Docs/PRODUCT_VERSION_HISTORY.md`
+4. `Docs/CURRENT_STATUS.md`
+5. `PROJECT_RESET.md`
+6. `RepositoryAudit.md`
+7. `Research/README.md`
 
 Renderer must not own layout decisions. New layout work must move through research, specification, Layout Engine, renderer, validation, and release.
 
-Old documentation should not be migrated immediately. Build the new research documentation first, then migrate old docs after research specifications stabilize.
+Historical V1 and V2 documents remain evidence and architecture records. Do
+not rewrite their original context merely to make their titles say V3.
 
 ## IA-001 Frozen State
 
@@ -85,9 +91,9 @@ Frozen principles:
 - Memory Tokens use capture time, not export time
 - IA-002 is frozen; future UI work is polish, not architecture redesign
 
-## IA-003 Current Track
+## IA-003 Completed V2 Track
 
-IA-003 is Memory Engine Integration.
+IA-003 established Memory Engine Integration during V2.
 
 Goal:
 
@@ -275,17 +281,19 @@ Default interaction posture:
 
 ## Near-Term Priorities
 
-1. complete IA-003A MemorySubject Adapter
+1. close durable configuration and clean-install persistence regressions
 2. preserve Memory Engine and Time Anchor architecture boundaries
-3. keep the Configuration Center separate from the daily Apple Photos lifecycle
-4. ensure Memory Card, Configuration Snapshot, render, export, and metadata retention stay aligned
+3. validate the complete signed-device Apple Photos lifecycle
+4. keep Memory Card, configuration aggregate, render, export, and metadata retention aligned
+5. collect performance, memory, concurrency, and media-format evidence
+6. apply repeatable product-consistency and release quality gates
 
-Current implementation priority inside V2.1:
+Current implementation priority inside V3:
 
 1. keep IA-002 architecture frozen
-2. connect real data only through the approved IA-003 sequence
-3. use `MemorySubject -> Configuration Snapshot -> Memory Engine` as the next integration path
-4. avoid Renderer, Metadata, Export, and Share Extension changes until their IA-003 slice is reached
+2. treat completed IA-003 integration as an architectural foundation
+3. require scoped evidence before changing production pipeline boundaries
+4. prioritize real-device correctness and durable state over feature expansion
 
 ## Product Guardrails
 

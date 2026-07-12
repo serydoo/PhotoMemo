@@ -2,6 +2,28 @@
 
 Last updated: 2026-07-11
 
+## 2026-07-11 Product Stage History Consolidation
+
+MemoMark is now documented consistently as being in `V3 Production Quality
+And Delivery`.
+
+The canonical boundaries are recorded in
+`Docs/PRODUCT_VERSION_HISTORY.md`:
+
+- V1: MVP foundation and testing, 2026-06-16 through 2026-06-22
+- V2: Product Definition and Realization, 2026-06-23 through 2026-07-10
+- V3: Production Quality and Delivery, starting after the Production Audit
+  v2.0 baseline on 2026-07-10
+
+The canonical V3 starting checkpoint is `9eede616` (`Prepare V3 validation
+checkpoint for 1.6`). App release versions such as `1.5` and `1.6`, audit
+report versions, and source identifiers prefixed with `V1` are explicitly not
+product-stage declarations.
+
+This consolidation changes documentation governance only. No source symbols,
+persistence keys, Xcode targets, runtime behavior, renderer behavior, metadata,
+export, Share Extension, or Photo Library behavior changed.
+
 ## 2026-07-11 V1 Legacy Configuration First-Save Reconciliation
 
 This slice closed the legacy-state gap where customized preview and production
@@ -12756,9 +12778,9 @@ Manual verification still needed:
 - 4+ batches as aggregate summary
 - failure path with retry from the iOS status sheet
 
-## Current Stage
+## Historical Stage Declaration: V2.1
 
-PhotoMemo is now in V2.1 Memory Engine Product Realization.
+At the time of this entry, PhotoMemo entered V2.1 Memory Engine Product Realization.
 
 Unscoped feature development, renderer polishing, and UI architecture redesign remain paused.
 
@@ -12766,13 +12788,13 @@ PM-003 Phase 1 is frozen.
 
 IA-002 Configuration Center Architecture is frozen.
 
-The current implementation track is:
+The implementation track declared at that time was:
 
 ```text
 IA-003 Memory Engine Integration
 ```
 
-The current target is a local-first Memory Presentation Engine:
+The V2 target was a local-first Memory Presentation Engine:
 
 `Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engine -> Renderer -> Export`
 

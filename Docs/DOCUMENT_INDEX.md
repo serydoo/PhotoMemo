@@ -1,6 +1,12 @@
 # MemoMark Document Index
 
-Last updated: 2026-07-04
+Last updated: 2026-07-11
+
+## Product Stage Source Of Truth
+
+- `Docs/PRODUCT_VERSION_HISTORY.md` - canonical V1, V2, and V3 product-stage
+  boundaries and the distinction between product, App release, audit-report,
+  and implementation versions
 
 This index explains which project documents should be treated as current working references, which documents are topic-specific, and which documents are mostly historical notes.
 
@@ -66,7 +72,7 @@ Use these when deciding what to build next:
 - `Docs/REPOSITORY_SIMPLIFICATION_REPORT.md` - simplification decisions and next cleanup targets
 - `Docs/NEVER_BREAK.md` - permanent review gate
 - `PROJECT_PHILOSOPHY.md` - Memory Presentation Engine philosophy
-- `PROJECT_DIRECTION.md` - current V2 direction
+- `PROJECT_DIRECTION.md` - historical V2 direction and product rationale
 
 ## Architecture And Workflow
 
