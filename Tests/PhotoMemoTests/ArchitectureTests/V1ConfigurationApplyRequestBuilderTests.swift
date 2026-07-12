@@ -6,6 +6,141 @@ import Testing
 @Suite("V1 configuration apply request builder")
 struct V1ConfigurationApplyRequestBuilderTests {
 
+    @Test("multi-item module drafts survive normalization and reload")
+    func multiItemModuleDraftsSurviveNormalizationAndReload() throws {
+        let state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let configurationID = UUID()
+        let existing = MemoryConfigurationRecord(
+            id: configurationID,
+            title: "模块配置",
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(usesCustomText: false, customText: "")
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(mode: .appleMini, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(isEnabled: false, overrideText: ""),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 1,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [existing],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configurationID
+        )
+        let locationConfiguration = LocationDisplayInspectorPresenter
+            .configuration(for: "cityDistrict")
+        let draft = V1ConfigurationAggregateDraft(
+            title: "模块配置",
+            regionDrafts: [
+                .slotA: V1EditorDraft(items: [
+                    .text("他爹手持"),
+                    .token(
+                        IOSInsertableModule.cameraModel.title,
+                        value: "iPhone 17 Pro Max",
+                        templateValue: IOSInsertableModule.cameraModel.rendererToken,
+                        systemImage: IOSInsertableModule.cameraModel.systemImage
+                    )
+                ]),
+                .slotB: V1EditorDraft(items: [
+                    .text("记录于"),
+                    .token(
+                        IOSInsertableModule.captureDate.title,
+                        value: "2026.05.24",
+                        templateValue: IOSInsertableModule.captureDate.rendererToken,
+                        systemImage: IOSInsertableModule.captureDate.systemImage
+                    )
+                ]),
+                .slotC: V1EditorDraft(items: [
+                    .token(
+                        IOSInsertableModule.location.title,
+                        value: "商丘 · 永城",
+                        templateValue: IOSInsertableModule.location.rendererToken,
+                        systemImage: IOSInsertableModule.location.systemImage
+                    )
+                ]),
+                .slotD: V1EditorDraft(items: [
+                    .token(
+                        IOSInsertableModule.smartTime.title,
+                        value: "今天途途1岁1个月15天",
+                        templateValue: IOSInsertableModule.smartTime.rendererToken,
+                        systemImage: IOSInsertableModule.smartTime.systemImage
+                    ),
+                    .text("啦！")
+                ])
+            ],
+            regionTemplateIDs: [:],
+            locationConfiguration: locationConfiguration,
+            logoMode: .appleMini,
+            badge: .appleClassic,
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 200)
+        )
+
+        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: draft
+        )
+        var reloadedConfiguration = candidate.configuration
+        reloadedConfiguration.editor.template =
+            candidate.configuration.editor.template.normalizedForEditing
+        #expect(
+            reloadedConfiguration.editor.template.leftTopArea.items.map(\.value)
+            == ["他爹手持", IOSInsertableModule.cameraModel.rendererToken]
+        )
+        #expect(
+            reloadedConfiguration.editor.template.leftBottomArea.items.map(\.value)
+            == ["记录于", IOSInsertableModule.captureDate.rendererToken]
+        )
+        #expect(
+            reloadedConfiguration.editor.template.rightTopArea.items.map(\.value)
+            == [IOSInsertableModule.location.rendererToken]
+        )
+        #expect(
+            reloadedConfiguration.editor.template.rightBottomArea.items.map(\.value)
+            == [IOSInsertableModule.smartTime.rendererToken, "啦！"]
+        )
+        let projection = V1ConfigurationDraftProjection(
+            configuration: reloadedConfiguration
+        )
+
+        #expect(projection.regionDrafts[.slotA]?.items.count == 3)
+        #expect(projection.regionDrafts[.slotB]?.items.count == 3)
+        #expect(projection.regionDrafts[.slotC]?.items.first?.title == IOSInsertableModule.location.title)
+        #expect(projection.regionDrafts[.slotC]?.items.first?.systemImage == IOSInsertableModule.location.systemImage)
+        #expect(projection.regionDrafts[.slotD]?.items.prefix(2).map(\.templateValue) == [
+            IOSInsertableModule.smartTime.rendererToken,
+            "啦！"
+        ])
+    }
+
     @Test("aggregate candidate replaces active record from the complete current draft")
     func aggregateCandidateReplacesActiveRecordFromCompleteDraft() throws {
         let state = ConfigurationCenterState.mock

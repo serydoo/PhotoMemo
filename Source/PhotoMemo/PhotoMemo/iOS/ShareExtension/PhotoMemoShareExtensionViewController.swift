@@ -358,6 +358,8 @@ private extension PhotoMemoShareExtensionViewController {
             .secondaryLabel
         brandLabel.text =
             "时光记"
+        brandLabel.adjustsFontForContentSizeCategory = true
+        brandLabel.accessibilityTraits = .header
 
         titleLabel.font =
             .preferredFont(
@@ -374,6 +376,7 @@ private extension PhotoMemoShareExtensionViewController {
         subtitleLabel.textColor =
             .secondaryLabel
         subtitleLabel.numberOfLines = 0
+        subtitleLabel.adjustsFontForContentSizeCategory = true
     }
 
     func configureStatusLabels() {
@@ -388,6 +391,8 @@ private extension PhotoMemoShareExtensionViewController {
                 forTextStyle: .headline
             )
         statusTitleLabel.numberOfLines = 0
+        statusTitleLabel.adjustsFontForContentSizeCategory = true
+        statusTitleLabel.accessibilityTraits = .header
 
         statusMessageLabel.font =
             .preferredFont(
@@ -396,6 +401,7 @@ private extension PhotoMemoShareExtensionViewController {
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.numberOfLines = 0
+        statusMessageLabel.adjustsFontForContentSizeCategory = true
     }
 
     func configurePreviewViews() {
@@ -433,6 +439,7 @@ private extension PhotoMemoShareExtensionViewController {
         previewCaptionLabel.textColor =
             .secondaryLabel
         previewCaptionLabel.numberOfLines = 0
+        previewCaptionLabel.adjustsFontForContentSizeCategory = true
         previewCaptionLabel.text =
             "灰色等待，蓝色处理中，绿色完成，红色需要处理。"
     }
@@ -446,6 +453,7 @@ private extension PhotoMemoShareExtensionViewController {
         footerLabel.textColor =
             .secondaryLabel
         footerLabel.numberOfLines = 0
+        footerLabel.adjustsFontForContentSizeCategory = true
     }
 
     func configurePrimaryButton() {
@@ -458,6 +466,8 @@ private extension PhotoMemoShareExtensionViewController {
             .label
         primaryButton.configuration?.baseForegroundColor =
             .systemBackground
+        primaryButton.titleLabel?.adjustsFontForContentSizeCategory = true
+        primaryButton.accessibilityTraits.insert(.button)
         primaryButton.addTarget(
             self,
             action: #selector(handlePrimaryButtonTap),
@@ -786,7 +796,7 @@ private extension PhotoMemoShareExtensionViewController {
             ? (
                 sharedPhotoCount > 0
             ? "时光记会按当前配置继续处理，并把结果写回系统相册。"
-            : "当前内容看起来不像可直接处理的静态照片。"
+            : "当前内容里没有可直接处理的照片。"
             )
             : "首次处理前，需要先在时光记里保存一个配置。"
 
@@ -868,6 +878,10 @@ private extension PhotoMemoShareExtensionViewController {
             false
         primaryButton.configuration?.title =
             "正在接收"
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: "正在安全接收照片并交给时光记"
+        )
     }
 
     @MainActor
@@ -976,6 +990,10 @@ private extension PhotoMemoShareExtensionViewController {
             title:
                 "重新尝试"
         )
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: "\(title)。\(message)"
+        )
     }
 
     func applyPrimaryButton(
@@ -986,6 +1004,7 @@ private extension PhotoMemoShareExtensionViewController {
             true
         primaryButton.configuration?.title =
             title
+        primaryButton.accessibilityLabel = title
     }
 
     @objc

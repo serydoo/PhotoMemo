@@ -50,12 +50,6 @@ struct V1TaskPageSurface: View {
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
         )
-        .simultaneousGesture(
-            TapGesture()
-                .onEnded {
-                    onDismissKeyboard()
-                }
-        )
         .navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
         .sheet(
@@ -134,7 +128,7 @@ struct V1TaskPageSurface: View {
                 )
                 .fill(Color.accentColor.opacity(0.10))
 
-                Image(systemName: "camera.viewfinder")
+                Image(systemName: MemoMarkSymbol.processing.name)
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
             }
@@ -152,7 +146,7 @@ struct V1TaskPageSurface: View {
 
             Button(action: onStartProcessing) {
                 HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: MemoMarkSymbol.processing.name)
                         .font(.caption.weight(.semibold))
 
                     Text("开始处理")
@@ -311,15 +305,21 @@ struct V1TaskPageSurface: View {
                 }
             }
 
-            ProgressView(
-                value:
-                    presentation
-                    .currentTask
-                    .progressFraction
-                    ?? 0
-            )
-            .progressViewStyle(.linear)
-            .tint(presentation.currentTask.tint.color)
+            if let progressFraction =
+                presentation.currentTask.progressFraction {
+                ProgressView(value: progressFraction)
+                    .progressViewStyle(.linear)
+                    .tint(presentation.currentTask.tint.color)
+                    .accessibilityLabel("当前任务进度")
+                    .accessibilityValue(
+                        progressPercentText(progressFraction)
+                    )
+            } else {
+                ProgressView()
+                    .progressViewStyle(.linear)
+                    .tint(presentation.currentTask.tint.color)
+                    .accessibilityLabel("当前任务正在处理")
+            }
         }
     }
 
@@ -435,34 +435,23 @@ struct V1TaskPageSurface: View {
 
     private var recentTasksSheet: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 12) {
-                    VStack(spacing: 0) {
-                        ForEach(
-                            presentation.historyRows
-                        ) { row in
-                            recentTaskRow(row)
-
-                            if row.id != presentation.historyRows.last?.id {
-                                Divider()
-                                    .padding(.leading, 86)
-                            }
-                        }
-                    }
-                    .v1CardChrome()
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 32)
+            List(presentation.historyRows) { row in
+                recentTaskRow(row)
+                    .listRowSeparator(.visible)
             }
-            .background(
-                ConfigurationUI.appBackground
-                    .ignoresSafeArea()
-            )
+            .listStyle(.plain)
             .navigationTitle("近期完成任务")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完成") {
+                        isRecentTasksSheetPresented = false
+                    }
+                }
+            }
         }
         .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     private var emptyRecentState: some View {
@@ -522,7 +511,7 @@ struct V1TaskPageSurface: View {
                 onOpenPhotoLibrary(link)
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "photo.stack")
+                    Image(systemName: MemoMarkSymbol.applePhotos.name)
                         .font(.caption.weight(.semibold))
                         .frame(width: 16)
 

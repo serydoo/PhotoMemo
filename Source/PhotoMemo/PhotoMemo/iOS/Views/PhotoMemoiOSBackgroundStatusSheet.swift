@@ -318,7 +318,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
     ) -> String {
 
         if snapshot.feedbackState == .unsupported {
-            return "这批照片当前不在支持范围内，建议改用支持的静态照片格式再试。"
+            return "这批照片当前不在支持范围内，建议改用支持的照片格式再试。"
         }
 
         if snapshot.canRetryFailures {

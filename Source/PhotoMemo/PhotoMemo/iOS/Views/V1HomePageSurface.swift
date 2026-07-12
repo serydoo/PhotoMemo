@@ -1,52 +1,5 @@
 import Foundation
 
-struct V1HomeConfigurationSwipePresentation: Equatable {
-
-    let rowOffset: CGFloat
-    let actionLayerOffset: CGFloat
-    let actionOpacity: Double
-    let allowsActionHitTesting: Bool
-}
-
-enum V1HomeConfigurationSwipePresenter {
-
-    static let actionWidth: CGFloat = 148
-    static let revealThreshold: CGFloat = actionWidth / 2
-
-    static func presentation(
-        isActionsRevealed: Bool,
-        dragTranslation: CGFloat
-    ) -> V1HomeConfigurationSwipePresentation {
-        let settledOffset =
-            isActionsRevealed ? -actionWidth : 0
-        let rowOffset = min(
-            0,
-            max(-actionWidth, settledOffset + dragTranslation)
-        )
-        let revealProgress = min(
-            1,
-            max(0, Double(-rowOffset / revealThreshold))
-        )
-
-        return V1HomeConfigurationSwipePresentation(
-            rowOffset: rowOffset,
-            actionLayerOffset: 0,
-            actionOpacity: revealProgress,
-            allowsActionHitTesting: rowOffset <= -revealThreshold
-        )
-    }
-
-    static func shouldRevealActions(
-        isActionsRevealed: Bool,
-        predictedEndTranslation: CGFloat
-    ) -> Bool {
-        let settledOffset =
-            isActionsRevealed ? -actionWidth : 0
-        return settledOffset + predictedEndTranslation
-            < -revealThreshold
-    }
-}
-
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
 
@@ -75,8 +28,6 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     let onOpenLocalConfigurationLibrary: () -> Void
     let onDismissKeyboard: () -> Void
     let profileTrackingBackground: ProfileTrackingBackground
-    @State
-    private var revealedActionPresetID: MemoryPreset.ID?
 
     var body: some View {
         ScrollView {
@@ -132,12 +83,12 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
                 HStack(spacing: 8) {
                     V1HomeHeaderPill(
-                        systemImage: "lock.shield",
+                        systemImage: MemoMarkSymbol.privacy.name,
                         title: "本地优先"
                     )
 
                     V1HomeHeaderPill(
-                        systemImage: "photo.on.rectangle",
+                        systemImage: MemoMarkSymbol.applePhotos.name,
                         title: "Apple Photos"
                     )
                 }
@@ -146,7 +97,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             Spacer(minLength: 0)
 
             Button(action: onOpenSettings) {
-                Image(systemName: "gearshape")
+                Image(systemName: MemoMarkSymbol.settings.name)
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(Color.blue)
                     .frame(width: 38, height: 38)
@@ -197,57 +148,39 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 if memoryPresets.isEmpty {
                     V1HomeEmptyPresetRow()
                 } else {
-                    ForEach(memoryPresets) { preset in
+                    List(memoryPresets) { preset in
                         V1HomeMemoryPresetRow(
                             preset: preset,
                             borderStyleName: borderStyleName,
-                            anchorType:
-                                anchorType(for: preset),
+                            anchorType: anchorType(for: preset),
                             subjectAvatarImagePath:
-                                subject?
-                                .identity
-                                .avatarPreviewImagePath
-                                ?? subject?
-                                .identity
-                                .avatarImagePath,
-                            isSelected:
-                                preset.id == selectedMemoryPresetID,
-                            isActionsRevealed:
-                                revealedActionPresetID == preset.id,
+                                subject?.identity.avatarPreviewImagePath
+                                ?? subject?.identity.avatarImagePath,
+                            isSelected: preset.id == selectedMemoryPresetID,
                             onSelect: {
-                                revealedActionPresetID = nil
                                 onSelectMemoryPreset(preset)
                             },
                             onRename: {
-                                revealedActionPresetID = nil
                                 if preset.id != selectedMemoryPresetID {
                                     onSelectMemoryPreset(preset)
                                 }
                                 onRenameMemoryPreset()
                             },
-                            onRevealActions: {
-                                withAnimation(.snappy(duration: 0.2)) {
-                                    revealedActionPresetID = preset.id
-                                }
-                            },
-                            onHideActions: {
-                                withAnimation(.snappy(duration: 0.2)) {
-                                    if revealedActionPresetID == preset.id {
-                                        revealedActionPresetID = nil
-                                    }
-                                }
-                            },
                             onSave: {
-                                revealedActionPresetID = nil
                                 onSaveMemoryPreset(preset)
                             },
                             isSaveDisabled: isSavingConfiguration,
                             onDelete: {
-                                revealedActionPresetID = nil
                                 onDeleteMemoryPreset(preset)
                             }
                         )
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
                     }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .frame(height: CGFloat(memoryPresets.count) * 92)
                 }
 
                 if isEditingMemoryPresetTitle {
@@ -378,115 +311,49 @@ private struct V1HomeMemoryPresetRow: View {
     let anchorType: AnchorType
     let subjectAvatarImagePath: String?
     let isSelected: Bool
-    let isActionsRevealed: Bool
     let onSelect: () -> Void
     let onRename: () -> Void
-    let onRevealActions: () -> Void
-    let onHideActions: () -> Void
     let onSave: () -> Void
     let isSaveDisabled: Bool
     let onDelete: () -> Void
 
-    @GestureState
-    private var horizontalDragOffset: CGFloat = 0
+    @State private var showsDeleteConfirmation = false
 
     var body: some View {
-        ZStack(alignment: .trailing) {
-            HStack(spacing: 0) {
-                Button(action: onSave) {
-                    Text("保存")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 74)
-                        .frame(maxHeight: .infinity)
-                        .background(Color.blue)
+        rowContent
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onSelect)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button {
+                    showsDeleteConfirmation = true
+                } label: {
+                    Label("删除", systemImage: "trash")
                 }
-                .buttonStyle(.plain)
+                .tint(.red)
+                .accessibilityLabel("删除配置")
+
+                Button(action: onSave) {
+                    Label(
+                        "保存",
+                        systemImage: MemoMarkSymbol.localStorage.name
+                    )
+                }
+                .tint(.blue)
                 .disabled(isSaveDisabled)
                 .accessibilityLabel("保存配置到本地库")
-
-                Button(role: .destructive, action: onDelete) {
-                    Text("删除")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 74)
-                        .frame(maxHeight: .infinity)
-                        .background(Color.red)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("删除配置")
             }
-            .offset(x: swipePresentation.actionLayerOffset)
-            .opacity(swipePresentation.actionOpacity)
-            .allowsHitTesting(
-                swipePresentation.allowsActionHitTesting
-            )
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: 16,
-                    style: .continuous
-                )
-            )
-
-            rowContent
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onSelect()
+            .confirmationDialog(
+                "删除这个配置？",
+                isPresented: $showsDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("删除配置", role: .destructive) {
+                    onDelete()
                 }
-            .offset(x: swipePresentation.rowOffset)
-            .gesture(
-                DragGesture(minimumDistance: 12)
-                    .updating($horizontalDragOffset) {
-                        value,
-                        state,
-                        _ in
-
-                        guard
-                            abs(value.translation.width)
-                            > abs(value.translation.height)
-                        else {
-                            state = 0
-                            return
-                        }
-
-                        state = value.translation.width
-                    }
-                    .onEnded { value in
-                        guard
-                            abs(value.translation.width)
-                            > abs(value.translation.height)
-                        else {
-                            return
-                        }
-
-                        if V1HomeConfigurationSwipePresenter
-                            .shouldRevealActions(
-                                isActionsRevealed:
-                                    isActionsRevealed,
-                                predictedEndTranslation:
-                                    value
-                                    .predictedEndTranslation
-                                    .width
-                            ) {
-                            onRevealActions()
-                        } else {
-                            onHideActions()
-                        }
-                    }
-            )
-        }
-        .animation(
-            .snappy(duration: 0.2),
-            value: isActionsRevealed
-        )
-    }
-
-    private var swipePresentation:
-        V1HomeConfigurationSwipePresentation {
-        V1HomeConfigurationSwipePresenter.presentation(
-            isActionsRevealed: isActionsRevealed,
-            dragTranslation: horizontalDragOffset
-        )
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("删除当前配置不会删除已经保留在本地配置库中的备份。")
+            }
     }
 
     private var rowContent: some View {
@@ -652,7 +519,7 @@ private struct V1HomeMemoryPresetRow: View {
                         .scaledToFill()
                         .clipShape(Circle())
                 } else {
-                    Image(systemName: "person.fill")
+                    Image(systemName: MemoMarkSymbol.memorySubject.name)
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(Color.pink)
                 }
@@ -758,7 +625,7 @@ private struct V1HomeConfigurationGlyph: View {
             )
             .fill(Color.accentColor.opacity(0.10))
 
-            Image(systemName: "rectangle.stack")
+            Image(systemName: MemoMarkSymbol.configuration.name)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
         }

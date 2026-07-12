@@ -188,6 +188,68 @@ enum V1ConfigurationAggregateCandidateError: Error {
 
 enum V1ConfigurationAggregateCandidateBuilder {
 
+    static func seedConfiguration(
+        id: UUID,
+        draft: V1ConfigurationAggregateDraft
+    ) -> MemoryConfigurationRecord {
+        MemoryConfigurationRecord(
+            id: id,
+            title: draft.title,
+            revision: 0,
+            savedAt: draft.savedAt,
+            selectedTimeAnchorID: draft.selectedTimeAnchorID,
+            editor: .init(
+                template: template(
+                    basedOn: Template(
+                        preset: .classicWhite,
+                        name: draft.title,
+                        leftTopArea: TemplateArea(
+                            name: "Recorder",
+                            items: []
+                        ),
+                        leftBottomArea: TemplateArea(
+                            name: "Timeline",
+                            items: []
+                        ),
+                        rightTopArea: TemplateArea(
+                            name: "Capture Summary",
+                            items: []
+                        ),
+                        rightBottomArea: TemplateArea(
+                            name: "Memory",
+                            items: []
+                        ),
+                        badgeArea: .badge
+                    ),
+                    title: draft.title,
+                    regionDrafts: draft.regionDrafts
+                ),
+                regionTemplateIDs: draft.regionTemplateIDs,
+                memoryCopy: .init(
+                    usesCustomText: draft.usesCustomMemoryWriteText,
+                    customText: draft.customMemoryWriteText
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: draft.locationConfiguration,
+                logo: .init(
+                    mode: draft.logoMode,
+                    badge: badgeDescriptor(from: draft.badge)
+                )
+            ),
+            output: .init(
+                mediaMode: draft.mediaOutputMode,
+                livePhotoPolicy: draft.livePhotoPolicy,
+                photosDescriptionPolicy: .init(
+                    isEnabled: draft.shouldWritePhotosDescription,
+                    overrideText: draft.photosDescriptionOverride
+                ),
+                album: albumDescriptor(from: draft)
+            )
+        )
+    }
+
     static func build(
         from aggregate: ConfigurationLibraryRecord,
         draft: V1ConfigurationAggregateDraft
@@ -419,16 +481,27 @@ private extension V1ConfigurationDraftProjection {
                 systemImage: "textformat"
             )
         case .variable:
+            let module = module(for: item)
             return V1ContentItem(
                 id: item.id,
                 kind: .token,
-                title: item.name,
+                title: module?.title ?? item.name,
                 value: item.value,
                 savedValue: item.value,
-                systemImage: "curlybraces"
+                systemImage: module?.systemImage ?? "curlybraces"
             )
         case .badge:
             return nil
+        }
+    }
+
+    static func module(
+        for item: TemplateItem
+    ) -> IOSInsertableModule? {
+        IOSInsertableModule.allCases.first { module in
+            item.value == module.rendererToken
+            || item.value == module.token
+            || item.name == module.title
         }
     }
 }

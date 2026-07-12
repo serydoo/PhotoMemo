@@ -164,6 +164,37 @@ struct V1LocalConfigurationLibraryPresenterTests {
         #expect(prepared.subjects[0].configurations[1].revision == 0)
     }
 
+    @Test("legacy current configuration bootstraps a durable aggregate before first apply")
+    func legacyCurrentConfigurationBootstrapsAggregate() throws {
+        let subject = Self.makeSubject(
+            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
+            name: "途途"
+        )
+        let configurationID = UUID(
+            uuidString: "33333333-3333-3333-3333-333333333333"
+        )!
+        let seed = Self.makeConfiguration(
+            id: configurationID,
+            title: "成长记录 1"
+        )
+
+        let prepared = try #require(
+            V1LocalConfigurationLibraryPresenter
+                .preparingCurrentConfiguration(
+                    configurationID,
+                    subject: subject,
+                    seedConfiguration: seed,
+                    in: nil
+                )
+        )
+
+        #expect(prepared.activeSubjectID == subject.id)
+        #expect(prepared.activeConfigurationID == configurationID)
+        #expect(prepared.subjects.count == 1)
+        #expect(prepared.subjects[0].subject == subject)
+        #expect(prepared.subjects[0].configurations == [seed])
+    }
+
     @Test("backup is unavailable while configuration apply is running")
     func savingConfigurationCannotBeBackedUp() {
         let currentID = UUID(

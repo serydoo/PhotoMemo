@@ -153,33 +153,69 @@ final class CardTextBlockEngine {
         items: [TemplateItem],
         lookup: any ExpressionLookup
     ) -> [CardTextBlock] {
-
-        resolvedItems(
+        let enabledItems = resolvedItems(
             for: area,
             items: items
         )
-            .filter(\.isEnabled)
-            .compactMap { item in
+        .filter(\.isEnabled)
 
-                let renderedValue =
-                    variableEngine.render(
+        if area == .badge {
+            return enabledItems.compactMap { item in
+                block(
+                    from: item,
+                    area: area,
+                    lookup: lookup
+                )
+            }
+        }
+
+        let renderedValue = InlineContentTextComposer.compose(
+            enabledItems.map { item in
+                InlineContentTextComposer.Piece(
+                    kind: item.type == .variable ? .token : .text,
+                    value: variableEngine.render(
                         item.value,
                         lookup: lookup
                     )
-                    .trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                    )
-
-                guard !renderedValue.isEmpty else {
-                    return nil
-                }
-
-                return CardTextBlock(
-                    title: item.name,
-                    value: renderedValue,
-                    area: area
-                    )
+                )
             }
+        )
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !renderedValue.isEmpty,
+              let firstItem = enabledItems.first else {
+            return []
+        }
+
+        return [
+            CardTextBlock(
+                title: firstItem.name,
+                value: renderedValue,
+                area: area
+            )
+        ]
+    }
+
+    private func block(
+        from item: TemplateItem,
+        area: CardTextArea,
+        lookup: any ExpressionLookup
+    ) -> CardTextBlock? {
+        let renderedValue = variableEngine.render(
+            item.value,
+            lookup: lookup
+        )
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !renderedValue.isEmpty else {
+            return nil
+        }
+
+        return CardTextBlock(
+            title: item.name,
+            value: renderedValue,
+            area: area
+        )
     }
 
     private func resolvedItems(
@@ -187,16 +223,6 @@ final class CardTextBlockEngine {
         items: [TemplateItem]
     ) -> [TemplateItem] {
 
-        switch area {
-
-        case .badge:
-            return items
-
-        case .leftTop,
-             .leftBottom,
-             .rightTop,
-             .rightBottom:
-            return items.first.map { [$0] } ?? []
-        }
+        items
     }
 }

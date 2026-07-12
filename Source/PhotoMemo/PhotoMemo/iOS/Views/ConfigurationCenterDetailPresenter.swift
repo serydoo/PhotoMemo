@@ -43,7 +43,7 @@ struct ConfigurationCenterDetailPresenter {
             return ConfigurationCenterDetailPanelPresentation(
                 content: .subject,
                 title: "记忆对象",
-                systemImage: "person.fill",
+                systemImage: MemoMarkSymbol.memorySubject.name,
                 subtitle: "对象资料与锚点维护"
             )
 
@@ -59,7 +59,7 @@ struct ConfigurationCenterDetailPresenter {
             return ConfigurationCenterDetailPanelPresentation(
                 content: .memoryModule,
                 title: "智能模块",
-                systemImage: "text.badge.checkmark",
+                systemImage: MemoMarkSymbol.module.name,
                 subtitle: "先生成 1 个智能结果，再决定承载与写入方式"
             )
 
@@ -67,7 +67,7 @@ struct ConfigurationCenterDetailPresenter {
             return ConfigurationCenterDetailPanelPresentation(
                 content: .output,
                 title: "输出",
-                systemImage: "square.and.arrow.down",
+                systemImage: MemoMarkSymbol.output.name,
                 subtitle: "新图结果、元数据保留与相册说明写入"
             )
 
@@ -75,7 +75,7 @@ struct ConfigurationCenterDetailPresenter {
             return ConfigurationCenterDetailPanelPresentation(
                 content: .configurationGuide,
                 title: "配置说明",
-                systemImage: "questionmark.circle",
+                systemImage: MemoMarkSymbol.help.name,
                 subtitle: nil
             )
         }
@@ -89,49 +89,49 @@ struct ConfigurationCenterDetailPresenter {
             return ConfigurationCenterRegionEditorPresentation(
                 content: .subject,
                 title: "记忆对象资料",
-                systemImage: "person.fill"
+                systemImage: MemoMarkSymbol.memorySubject.name
             )
 
         case .icon:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .iconLibrary,
                 title: "图标配置",
-                systemImage: "person.crop.circle"
+                systemImage: MemoMarkSymbol.memorySubject.name
             )
 
         case .badge:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .badgeLibrary,
                 title: "徽标配置",
-                systemImage: "camera.fill"
+                systemImage: MemoMarkSymbol.configuration.name
             )
 
         case .slotA:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
                 title: "区域 A 配置",
-                systemImage: "camera.fill"
+                systemImage: MemoMarkSymbol.configuration.name
             )
 
         case .slotB:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
                 title: "区域 B 配置",
-                systemImage: "calendar"
+                systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
         case .slotC:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
                 title: "区域 C 配置",
-                systemImage: "scope"
+                systemImage: MemoMarkSymbol.photoMetadata.name
             )
 
         case .slotD:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
                 title: "区域 D 配置",
-                systemImage: "text.quote"
+                systemImage: MemoMarkSymbol.memoryContent.name
             )
         }
     }

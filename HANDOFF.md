@@ -13137,3 +13137,161 @@ Required next test before another fix:
 Do not reinstall another device build until that repository-level round-trip
 test fails before the fix and passes after it. The currently installed clean
 device build still reproduces the blocker.
+## 2026-07-11 iOS Native UI Optimization Handoff
+
+- Design: `Docs/superpowers/specs/2026-07-11-ios-native-swiftui-ui-optimization-design.md`
+- Plan: `Docs/superpowers/plans/2026-07-11-ios-native-swiftui-ui-optimization-plan.md`
+- Screenshot destination: `/Users/rui/Desktop/MemoMark-UI-Optimization-QA-2026-07-11/`
+- Home “My Configurations” remains intentionally untouched.
+- Configuration Center preview and real-time configuration delivery remain on
+  the existing `ConfigurationSession` and preview-helper paths.
+- Time Anchor editing now previews live and rolls back on cancel; deletion is
+  confirmed and cannot execute via full swipe.
+- CoreSimulator reached Booted state but did not complete install/launch/io
+  commands, so no screenshot was produced in this session.
+- Next validation should install the iOS build, capture Time Anchor, module
+  search, local backup, Task, and Share states, then perform signed-device Share
+  lifecycle verification.
+- Continuation note: the two PNG files currently in the screenshot folder were
+  visually inspected and show SpringBoard, not MemoMark UI. Do not use them as
+  feature acceptance evidence.
+- The Time Anchor focused test passed after the native List conversion.
+- A subsequent iOS build created the app bundle directory but did not exit from
+  finalization; rerun it after restarting Xcode/CoreSimulator before relying on
+  that build.
+- `02-memomark-foreground.png` is a valid MemoMark app screenshot. It confirms
+  the app reached the foreground and the frozen Home configuration UI still
+  renders.
+- Automated navigation to other tabs was blocked by a ScreenCaptureKit control
+  stream failure, not by an application crash.
+- The final Share Extension build produced its `.appex` product and exited with
+  no remaining `xcodebuild` process.
+- Correction: serial foreground verification subsequently proved all relevant
+  targets complete successfully. Exit markers were `XCODEBUILD_EXIT:0`,
+  `XCTEST_EXIT:0`, `SHARE_BUILD_EXIT:0`, and `MAC_BUILD_EXIT:0`.
+- The previous “build stuck during finalization” note describes the discarded
+  concurrent/background verification method, not the final repository state.
+- Settings content is now user-facing rather than development-plan-facing.
+  Hard-coded cloud build forecasts and the stale Live Photo future plan were
+  removed; installed version/build values are read from `Bundle.main`.
+- Settings capability/privacy copy now documents the 20-photo limit,
+  Live Photo and RAW/DNG compatibility boundary, local-only processing,
+  original preservation, local data ownership, and uninstall risk.
+- Post-settings verification passed with `SETTINGS_IOS_BUILD_EXIT:0` and
+  `SETTINGS_MAC_BUILD_EXIT:0`.
+- Cross-surface copy now uses user-facing `预设` instead of internal `模板` in
+  Task presentation, and Share/background unsupported-input copy no longer
+  incorrectly narrows all supported input to static photos.
+- Copy regression verification passed with `COPY_TEST_EXIT:0`,
+  `COPY_IOS_EXIT:0`, and `COPY_SHARE_EXIT:0`.
+- Avatar and Logo user copy now says `选择` instead of `上传`, matching the
+  local Photos picker and local-first product contract. Real configuration-file
+  `导入/恢复` terminology and internal `customUpload` compatibility names were
+  intentionally preserved.
+- Verification passed with `LOCAL_COPY_IOS_EXIT:0` and
+  `LOCAL_COPY_MAC_EXIT:0`.
+- The current Debug build is installed on physical device `iPhone7` (iPhone 17
+  Pro Max, iOS 27.0). Device build and install passed with
+  `DEVICE_BUILD_EXIT:0` and `DEVICE_INSTALL_EXIT:0`.
+- Launch remains pending because SpringBoard rejected the request while the
+  phone was locked. Unlock the phone, keep the display awake, then rerun the
+  `devicectl device process launch` step.
+- Home configuration rows have now been migrated from the custom drag presenter
+  to native non-full-swipe actions after direct iPhone7 feedback. The signed
+  build and install passed, and all embedded signatures verify locally.
+- Current launch blocker is device-side developer trust for `serydoo@163.com`.
+  On iPhone7 use Settings -> General -> VPN & Device Management -> Developer App
+  -> Trust, then retry launch.
+- Home and Time Anchor swipe interactions are now unified. Both support partial
+  reveal plus full-swipe-to-confirm-delete; Time Anchor also exposes Configure
+  in blue and does not respond to row taps.
+- Time Anchor configuration now uses a native Form sheet with only Date, Type,
+  and Anchor Name. Expression style remains in Configuration Center.
+- The unified version passed tests/build/install with
+  `UNIFIED_SWIPE_TEST_EXIT:0`, `UNIFIED_DEVICE_BUILD_EXIT:0`, and
+  `UNIFIED_DEVICE_INSTALL_EXIT:0`; device trust must be confirmed again after
+  reinstall before launch.
+- Settings no longer shows the three directionless overview icons. Its top card
+  now presents the approved “为什么是时光记” product story; “使用与帮助” and
+  everything below it retain their existing structure and callbacks.
+- Delete confirmation state is now local to each Home configuration and Time
+  Anchor row. Partial-swipe Delete and full swipe share the same row-attached
+  confirmation path, matching the spatial behavior observed in iOS Messages.
+- Focused verification passed with `DIALOG_ANCHOR_TEST_EXIT:0` and
+  `DIALOG_ANCHOR_MAC_EXIT:0`; the signed device build/install passed with
+  `DIALOG_DEVICE_BUILD_EXIT:0` and `DIALOG_DEVICE_INSTALL_EXIT:0`.
+- The installed build could not launch because iOS requires developer
+  `serydoo@163.com` to be trusted again under Settings -> General -> VPN &
+  Device Management. No source, build, signing, or installation error remains.
+- Configuration Center “更多模块” now opens a native searchable List sheet
+  with medium/large detents. The six frequent module chips remain unchanged,
+  and sheet selection reuses the existing selected-region insertion callback.
+- The module-library contract test passed after a verified red/green cycle;
+  macOS and iOS Simulator builds also exited successfully.
+- Superseding note: the Configuration Center searchable module Sheet was
+  reverted after real-device regressions in module configuration recognition,
+  icons, and output. The original chips plus “更多模块” Menu implementation is
+  restored with no remaining source diff in that component.
+- Focused module policy/location/expression tests and the iOS Simulator build
+  passed after restoration (`MODULE_LIBRARY_RESTORE_TEST_EXIT:0`,
+  `MODULE_LIBRARY_RESTORE_IOS_BUILD_EXIT:0`).
+- A non-Configuration-Center native interaction pass replaced the custom
+  output-target grid with a segmented Picker and the recent-task history
+  ScrollView with a native List sheet.
+- Home configuration and local-backup swipe delete buttons now use red tint
+  without a destructive role before confirmation. This avoids SwiftUI's
+  optimistic List-row deletion while preserving the explicit destructive
+  confirmation action.
+- Focused native-interaction/Home swipe tests passed with
+  `NATIVE_NONCONFIG_TEST_EXIT:0`; the iOS Simulator build passed with
+  `NATIVE_NONCONFIG_IOS_BUILD_EXIT:0`.
+- `MemoMarkSymbol` now centralizes feature-level SF Symbols for the
+  non-Configuration-Center surfaces. Home, Output, Task, Settings, and local
+  backup UI use the catalog while standard Apple action icons remain direct.
+- Configuration Center icon migration is deferred to its dedicated polish
+  pass. Symbol catalog tests and the iOS Simulator build passed with
+  `SYMBOL_CATALOG_GREEN_EXIT:0` and `SYMBOL_CATALOG_IOS_BUILD_EXIT:0`.
+- Superseding note: Configuration Center title and region semantics now use
+  `MemoMarkSymbol`; Apple-standard add/edit/reset/disclosure action icons and
+  all functional callbacks remain unchanged.
+- Configuration Center symbol contracts and the iOS Simulator build passed
+  with `CONFIG_SYMBOL_GREEN_EXIT:0` and `CONFIG_SYMBOL_IOS_BUILD_EXIT:0`.
+- The signed symbol-language build was installed and launched successfully on
+  iPhone7 (`CONFIG_SYMBOL_DEVICE_BUILD_EXIT:0`,
+  `CONFIG_SYMBOL_DEVICE_INSTALL_EXIT:0`).
+- Fixed the multi-module persistence/export regression: template normalization
+  no longer truncates regions to one item, and persisted variable items recover
+  known module symbols during projection. This restores parent Location-module
+  recognition and preserves Device Model, Capture Date, Location, Smart Time,
+  and trailing text in the export template.
+- Regression, migration, and preview tests passed with
+  `MODULE_PERSISTENCE_GREEN_EXIT:0`; the signed device build/install passed,
+  but the device was locked during launch, so manual visual/export verification
+  is still required before GitHub sync.
+- Follow-up device testing isolated the remaining left-side export loss to
+  `CardTextBlockEngine`, which still selected only the first item per region.
+  It now composes every enabled custom-text/module item into one ordered block
+  for all four regions. Focused tests and signed build/install passed.
+- Final iPhone7 verification confirmed Location recognition and complete
+  four-region custom-text/module output. The corrected build launched with
+  `FINAL_DEVICE_LAUNCH_EXIT:0`; GitHub synchronization is approved.
+# 2026-07-11 V1 legacy configuration first-save reconciliation fixed
+
+- Fixed the iOS V1 case where a legacy installation had visible
+  `MemoryPreset` records but no durable `ConfigurationLibraryRecord` yet.
+- Root cause: `保存为当前配置` only built the aggregate draft when an aggregate
+  already existed. Legacy state therefore fell back to the compatibility save
+  path, which produced correct processing output but reapplied the older preset
+  projection and left Home unable to find a durable record for local backup.
+- The first save now seeds the aggregate with the selected subject, the current
+  preset ID, and the complete live editor draft, then continues through the
+  canonical aggregate save/reconciliation path.
+- Existing aggregate subjects and configurations are preserved when the active
+  legacy subject or configuration needs to be inserted.
+- Scope stayed in V1 configuration persistence/state wiring. Renderer,
+  metadata, export, Share Extension, and Photo Library behavior did not change.
+- Automated verification covers legacy aggregate bootstrapping, local-library
+  presenter behavior, configuration apply runtime coordination, and builds.
+- Still requires physical-device confirmation that saving keeps the customized
+  preview visible and that the Home swipe-save action creates a local backup
+  without the previous alert.

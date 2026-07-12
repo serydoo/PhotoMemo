@@ -13,24 +13,17 @@ struct V1SettingsPageSurface: View {
         ScrollView {
             VStack(spacing: 18) {
                 overviewSection
-                releaseSection
-                supportSection
-                developmentPlanSection
-                feedbackSection
                 guideSection
+                supportSection
                 principleSection
+                feedbackSection
+                releaseSection
             }
             .padding(.horizontal, 18)
             .padding(.top, 16)
             .padding(.bottom, 34)
         }
         .scrollDismissesKeyboard(.interactively)
-        .simultaneousGesture(
-            TapGesture()
-                .onEnded {
-                    onDismissKeyboard()
-                }
-        )
         .background(
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
@@ -40,38 +33,54 @@ struct V1SettingsPageSurface: View {
     }
 
     private var overviewSection: some View {
-        V1CardSurface(title: "关于时光记") {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top, spacing: 14) {
-                    settingsOverviewArtwork
+        V1CardSurface(title: "为什么是时光记") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("保存记忆，不只是添加信息")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("这里汇总当前 TestFlight 版本、支持范围、反馈入口和下一阶段计划。任务状态与最近记录已经单独收拢到底部“任务”入口。")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                Text("大多数照片水印 App 的目标是给照片增加时间、地点和相机参数；时光记更关心这些信息在一段人生记忆里代表什么。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                        HStack(spacing: 8) {
-                            settingsTag(
-                                title: "本地优先",
-                                systemImage: "lock.shield"
-                            )
+                Text("例如，一张孩子的照片不仅有拍摄时间和地点，还可以呈现当时的年龄、距离生日多久，以及所处的成长阶段。不同预设可以采用不同表达，让照片更像一张记忆记录卡，而不是一张带水印的图片。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                            settingsTag(
-                                title: "不改原图",
-                                systemImage: "photo"
-                            )
-                        }
-                    }
+                Text("所有计算都在设备本地完成：不上传照片、不依赖云端 AI、不主动降低画质，并尽可能保留原始照片信息。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("时光记希望成为一款帮助人们长期整理、保存和回忆生活的影像记录工具，而不只是一个水印工具。")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    settingsTag(
+                        title: "本地优先",
+                        systemImage: MemoMarkSymbol.privacy.name
+                    )
+
+                    settingsTag(
+                        title: "保存记忆",
+                        systemImage: MemoMarkSymbol.memoryContent.name
+                    )
+
+                    settingsTag(
+                        title: "不改原图",
+                        systemImage: MemoMarkSymbol.applePhotos.name
+                    )
                 }
-
-                settingsOverviewStrip
             }
         }
     }
 
     private var guideSection: some View {
-        V1CardSurface(title: "使用说明") {
+        V1CardSurface(title: "使用与帮助") {
             VStack(spacing: 12) {
                 Button(action: onShowWelcome) {
                     settingsActionRow(
@@ -97,7 +106,7 @@ struct V1SettingsPageSurface: View {
                     settingsActionRow(
                         title: "查看使用流程",
                         detail: "按 Apple Photos -> Share -> 时光记的真实路径回看处理方式。",
-                        systemImage: "list.bullet.rectangle.portrait",
+                        systemImage: MemoMarkSymbol.help.name,
                         accent: .teal,
                         thumbnail: {
                             settingsThumbnailStack(
@@ -117,24 +126,14 @@ struct V1SettingsPageSurface: View {
     }
 
     private var releaseSection: some View {
-        V1CardSurface(title: "版本与上架") {
+        V1CardSurface(title: "版本信息") {
             VStack(spacing: 0) {
                 settingsInfoRow(
                     title: "当前版本",
-                    headline: "时光记 1.6",
-                    detail:
-                        "用户可见版本更新为 1.6；TestFlight 构建号由 Xcode Cloud 与 App Store Connect 生成。",
+                    headline: "时光记 \(appVersion)",
+                    detail: "构建版本 \(appBuild)。版本信息由当前安装包自动读取。",
                     systemImage: "number.circle.fill",
-                    tint: .blue
-                )
-
-                settingsInfoRow(
-                    title: "云端构建",
-                    headline: "当前 13，下一次预计 14",
-                    detail:
-                        "前面的 Xcode Cloud 申请与取消已经消耗部分构建号，后续以上传成功后的 TestFlight 显示为准。",
-                    systemImage: "icloud.and.arrow.up.fill",
-                    tint: .teal,
+                    tint: .blue,
                     showsDivider: false
                 )
             }
@@ -143,32 +142,29 @@ struct V1SettingsPageSurface: View {
     }
 
     private var supportSection: some View {
-        V1CardSurface(title: "支持范围") {
+        V1CardSurface(title: "能力与边界") {
             VStack(spacing: 0) {
                 settingsInfoRow(
-                    title: "输入",
-                    headline: "Apple Photos 分享的静态照片",
-                    detail:
-                        "支持单张和少量多张分享；有无位置信息都可以进入本地处理。",
-                    systemImage: "photo.on.rectangle.angled",
+                    title: "照片输入",
+                    headline: "静态照片、Live Photo 与 RAW / DNG",
+                    detail: "可从主程序或 Apple Photos 分享进入；Live Photo 与 RAW / DNG 路径仍会持续进行真机兼容性验证。",
+                    systemImage: MemoMarkSymbol.applePhotos.name,
                     tint: .blue
                 )
 
                 settingsInfoRow(
-                    title: "输出",
-                    headline: "保存回相册的新图片",
-                    detail:
-                        "时光记生成一张新的记忆卡片图片，不修改系统相册里的原始照片。",
-                    systemImage: "square.and.arrow.down.on.square.fill",
+                    title: "每次处理",
+                    headline: "最多 20 张照片",
+                    detail: "较大的分享请分批进行，减少系统扩展内存压力并提高回存稳定性。",
+                    systemImage: "photo.stack.fill",
                     tint: .teal
                 )
 
                 settingsInfoRow(
-                    title: "当前边界",
-                    headline: "主程序选图已进入 Live Photo 验证，Share 仍以静态照片为主",
-                    detail:
-                        "当前适合验证静态照片与主程序选图的 Live Photo 路径；Share Extension 仍应按静态照片处理，不宣称完整 Live Photo 支持。",
-                    systemImage: "livephoto",
+                    title: "处理结果",
+                    headline: "生成新文件并保存回 Apple Photos",
+                    detail: "时光记不会覆盖原图。Live Photo 是否保留动态效果由当前输出配置与实际输入决定。",
+                    systemImage: MemoMarkSymbol.output.name,
                     tint: .indigo,
                     showsDivider: false
                 )
@@ -225,57 +221,27 @@ struct V1SettingsPageSurface: View {
         }
     }
 
-    private var developmentPlanSection: some View {
-        V1CardSurface(title: "后续计划") {
-            VStack(spacing: 0) {
-                settingsInfoRow(
-                    title: "1.6",
-                    headline: "Live Photo 支持",
-                    detail:
-                        "下一版优先评估 Live Photo 输入、静态封面提取和输出规则，保持本地处理与不改原图。",
-                    systemImage: "play.rectangle.fill",
-                    tint: .blue
-                )
-
-                settingsInfoRow(
-                    title: "可靠性",
-                    headline: "关闭 TestFlight 反馈",
-                    detail:
-                        "优先处理分享入口、权限说明、失败重试、保存回相册和引导文案。",
-                    systemImage: "checkmark.seal.fill",
-                    tint: .teal
-                )
-
-                settingsInfoRow(
-                    title: "呈现质量",
-                    headline: "渲染与元数据继续加固",
-                    detail:
-                        "继续验证预览与导出一致性、位置回退、清晰度和特殊比例照片表现。",
-                    systemImage: "camera.fill",
-                    tint: .indigo,
-                    showsDivider: false
-                )
-            }
-            .background(settingsInsetBackground)
-        }
-    }
-
     private var principleSection: some View {
-        V1CardSurface(title: "当前原则") {
+        V1CardSurface(title: "隐私与数据") {
             VStack(alignment: .leading, spacing: 10) {
                 settingsPrinciple(
-                    title: "时光记会生成新图，不修改系统相册里的原始照片。",
+                    title: "照片处理在设备本地完成，不会上传照片。",
                     tint: .blue
                 )
 
                 settingsPrinciple(
-                    title: "记忆对象、时间锚点与输出规则配置好之后，后续处理会直接复用。",
+                    title: "时光记生成新文件，不修改 Apple Photos 中的原始照片。",
                     tint: .teal
                 )
 
                 settingsPrinciple(
-                    title: "日常路径仍然保持在 Apple Photos -> Share -> 时光记 -> Processing -> Apple Photos。",
+                    title: "记忆对象、时间锚点、配置与任务记录保存在本机应用容器中。",
                     tint: .indigo
+                )
+
+                settingsPrinciple(
+                    title: "删除应用可能同时移除尚未单独备份的本地配置与记录。",
+                    tint: .orange
                 )
             }
         }
@@ -294,82 +260,6 @@ struct V1SettingsPageSurface: View {
             )
             .stroke(ConfigurationUI.faintHairline)
         )
-    }
-
-    private var settingsOverviewArtwork: some View {
-        ZStack {
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color.blue.opacity(0.18),
-                        Color.white,
-                        Color.teal.opacity(0.08)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-
-            VStack(spacing: 8) {
-                HStack(spacing: 7) {
-                    settingsMiniTile(
-                        systemImage: "gearshape.2.fill",
-                        tint: .blue,
-                        rotation: -8
-                    )
-
-                    settingsMiniTile(
-                        systemImage: "book.pages.fill",
-                        tint: .teal,
-                        rotation: 6
-                    )
-                }
-
-                settingsMiniTile(
-                    systemImage: "square.stack.3d.up.fill",
-                    tint: .indigo,
-                    rotation: -4
-                )
-            }
-            .padding(10)
-        }
-        .frame(width: 92, height: 112)
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 22,
-                style: .continuous
-            )
-            .stroke(Color.blue.opacity(0.12))
-        )
-    }
-
-    private var settingsOverviewStrip: some View {
-        HStack(spacing: 10) {
-            settingsOverviewStat(
-                title: "版本",
-                detail: "1.6",
-                systemImage: "number.circle",
-                tint: .blue
-            )
-
-            settingsOverviewStat(
-                title: "输出",
-                detail: "新图片",
-                systemImage: "photo",
-                tint: .teal
-            )
-
-            settingsOverviewStat(
-                title: "反馈",
-                detail: "TestFlight",
-                systemImage: "paperplane",
-                tint: .indigo
-            )
-        }
     }
 
     private func settingsActionRow<Thumbnail: View>(
@@ -597,13 +487,25 @@ struct V1SettingsPageSurface: View {
         guard let url =
             URL(
                 string:
-                    "mailto:serydoo@gmail.com?subject=MemoMark%201.6%20TestFlight%20Feedback"
+                    "mailto:serydoo@gmail.com?subject=MemoMark%20\(appVersion)%20Feedback"
             )
         else {
             return
         }
 
         openURL(url)
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String ?? "—"
+    }
+
+    private var appBuild: String {
+        Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleVersion"
+        ) as? String ?? "—"
     }
 
     private func openGitHubIssues() {
@@ -617,70 +519,6 @@ struct V1SettingsPageSurface: View {
         }
 
         openURL(url)
-    }
-
-    private func settingsMiniTile(
-        systemImage: String,
-        tint: Color,
-        rotation: Double
-    ) -> some View {
-        RoundedRectangle(
-            cornerRadius: 14,
-            style: .continuous
-        )
-        .fill(Color.white.opacity(0.88))
-        .frame(width: 28, height: 32)
-        .overlay(
-            Image(systemName: systemImage)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(tint)
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .stroke(tint.opacity(0.10))
-        )
-        .rotationEffect(.degrees(rotation))
-        .shadow(
-            color: tint.opacity(0.10),
-            radius: 8,
-            y: 4
-        )
-    }
-
-    private func settingsOverviewStat(
-        title: String,
-        detail: String,
-        systemImage: String,
-        tint: Color
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(tint)
-
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            Text(detail)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .fill(tint.opacity(0.08))
-        )
     }
 
     private func settingsThumbnailStack(

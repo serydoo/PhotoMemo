@@ -2,6 +2,29 @@
 
 Last updated: 2026-07-11
 
+## 2026-07-11 V1 Legacy Configuration First-Save Reconciliation
+
+This slice closed the legacy-state gap where customized preview and production
+output were correct, but saving reset the preview and Home could not back up the
+current configuration.
+
+- Legacy `MemoryPreset` state without an existing aggregate now creates the
+  selected subject/configuration record during the first canonical save.
+- The seed uses the current editor, presentation, output, logo, anchor, and
+  album draft instead of a default projection.
+- Save reconciliation, preview projection, processing snapshot, and Home local
+  backup now share the same configuration ID and durable aggregate record.
+- Existing aggregate records are preserved when inserting a missing legacy
+  subject or configuration.
+- No renderer, metadata, export, Share Extension, or Photo Library behavior was
+  modified.
+
+Remaining validation:
+
+- Confirm the original sequence on a physical device: customize, save as the
+  current configuration, verify the preview remains customized, then use the
+  Home row save action and verify a local backup is created without an alert.
+
 ## 2026-07-11 Canonical Classic White Naming Migration
 
 This slice made `classicWhite` the sole active preset identity while preserving
@@ -2599,6 +2622,247 @@ What changed:
 
 Verification passed:
 
+- `git diff --check`
+
+## 2026-07-11 Settings Project Story And Row-Anchored Confirmation
+
+- Removed the three decorative overview icons from the top of Settings and
+  replaced them with the approved “为什么是时光记” project explanation.
+- The new copy explains memory-first presentation, child-growth examples,
+  Local First processing, original-photo preservation, and the long-term
+  product goal. “使用与帮助” and all following sections remain unchanged.
+- Home configuration and Time Anchor delete confirmations are now owned by the
+  swiped row, allowing iOS to anchor the confirmation near the interaction
+  source instead of at the bottom page controls.
+- Focused iOS and macOS tests passed with `DIALOG_ANCHOR_TEST_EXIT:0` and
+  `DIALOG_ANCHOR_MAC_EXIT:0`.
+- Signed physical-device build and install passed with
+  `DIALOG_DEVICE_BUILD_EXIT:0` and `DIALOG_DEVICE_INSTALL_EXIT:0`.
+- Launch is waiting on device-side trust for developer `serydoo@163.com`; this
+  is a SpringBoard security state rather than a build or installation failure.
+- `git diff --check` passed.
+
+## 2026-07-12 Native Configuration Module Library
+
+- Configuration Center keeps the existing six compact frequently used module
+  buttons and their current insertion behavior.
+- “更多模块” now opens a native searchable `NavigationStack + List` sheet
+  instead of a long `Menu`; the sheet supports medium and large detents.
+- Selecting a module still calls the existing insertion callback, so explicit
+  selected-region routing and real-time preview refresh remain unchanged.
+- Test-first verification passed with `MODULE_SHEET_GREEN_EXIT:0`.
+- macOS and iOS Simulator builds passed with
+  `MODULE_SHEET_IOS_BUILD_EXIT:0` for their respective schemes.
+
+Rollback note:
+
+- The native searchable module Sheet was subsequently reverted after
+  real-device feedback reported broken integration between inserted modules,
+  module configuration detection, module icons, and final output content.
+- Configuration Center is restored exactly to the earlier frequent-module
+  chips plus “更多模块” `Menu` presentation. The experimental Sheet contract
+  test was removed.
+- The restored source has no diff from its pre-experiment repository version.
+- Module policy, location configuration adapter, and expression configuration
+  tests passed with `MODULE_LIBRARY_RESTORE_TEST_EXIT:0`.
+- The iOS Simulator build passed with
+  `MODULE_LIBRARY_RESTORE_IOS_BUILD_EXIT:0`.
+
+## 2026-07-12 Native Non-Configuration Interaction Pass
+
+- Configuration Center was intentionally excluded from this pass.
+- Output destination selection now uses the native segmented `Picker` while
+  preserving the existing `V1IOSOutputTarget` binding and target-specific
+  album controls.
+- The full recent-task history sheet now uses native `NavigationStack + List`,
+  system row behavior, a Done toolbar action, and medium/large detents.
+- Local backup deletion keeps confirmation but no longer declares a
+  destructive swipe role before confirmation, preventing optimistic row
+  removal while retaining the red system action appearance.
+- The same pre-confirmation destructive-role correction was applied to Home
+  configuration deletion after a real-device report of premature deletion and
+  a crash during repeated full swipe.
+- Focused contract tests passed with `NATIVE_NONCONFIG_TEST_EXIT:0`.
+- The iOS Simulator build passed with `NATIVE_NONCONFIG_IOS_BUILD_EXIT:0`.
+- Existing callbacks, persistence, task processing, Share, Photo Library, and
+  renderer/export paths were not changed.
+
+## 2026-07-12 MemoMark Semantic SF Symbols
+
+- Added `MemoMarkSymbol` as the shared semantic SF Symbols catalog for product
+  concepts such as Memory Subject, Time Anchor, Memory Content, Photo
+  Metadata, Configuration, Output, Apple Photos, local storage, processing,
+  privacy, help, and settings.
+- Home, Output, Task, Settings, and the local configuration library now refer
+  to semantic symbols instead of duplicating feature-level symbol strings.
+- Standard system actions such as add, delete, refresh, disclosure, and cancel
+  retain Apple's conventional symbols.
+- Configuration Center was intentionally left unchanged for its later focused
+  polish pass, but can adopt the same catalog without changing data flow.
+- Catalog contract tests passed with `SYMBOL_CATALOG_GREEN_EXIT:0`.
+- The iOS Simulator build passed with `SYMBOL_CATALOG_IOS_BUILD_EXIT:0`.
+
+## 2026-07-12 Configuration Center Symbol Language Rollout
+
+- Configuration Center detail titles, summary rows, workflow facts, and the
+  four-region selector now use the shared `MemoMarkSymbol` semantic catalog.
+- Memory Subject, Time Anchor, Photo Metadata, Memory Content, Configuration,
+  Module, Output, and Help use the same symbols as the rest of the app.
+- Add, edit, reset, disclosure, and other action buttons retain Apple's
+  standard action symbols and all existing callbacks.
+- No buttons, bindings, module insertion behavior, preview refresh, save path,
+  renderer, or export behavior changed.
+- Focused contract tests passed with `CONFIG_SYMBOL_GREEN_EXIT:0`.
+- The iOS Simulator build passed with `CONFIG_SYMBOL_IOS_BUILD_EXIT:0`.
+- The signed physical-device build and install passed with
+  `CONFIG_SYMBOL_DEVICE_BUILD_EXIT:0` and
+  `CONFIG_SYMBOL_DEVICE_INSTALL_EXIT:0`; the app launched successfully on
+  iPhone7.
+
+## 2026-07-12 Multi-Module Persistence And Export Regression Fix
+
+- Real-device screenshots showed draft preview rendering all inserted modules
+  while the parent location inspector failed to recognize Location and final
+  output dropped every item after the first item in each region.
+- Root cause 1: `Template.normalizedForEditing` truncated every region to its
+  first item, so persisted/export templates lost following text and module
+  tokens.
+- Root cause 2: persisted variable `TemplateItem` values were projected back
+  with a generic `curlybraces` symbol, breaking module identity checks such as
+  Location's title-plus-symbol match.
+- Normalization now preserves the complete ordered item list. Projection now
+  recovers known module title and SF Symbol semantics from renderer/legacy
+  tokens while retaining a generic fallback for unknown variables.
+- A red/green regression covers text plus Device Model, text plus Capture Date,
+  Location, and Smart Time plus trailing text across aggregate build,
+  normalization, reload, parent recognition metadata, and export template
+  ordering.
+- Focused apply, migration, and preview tests passed with
+  `MODULE_PERSISTENCE_GREEN_EXIT:0`.
+- Signed device build and install passed with
+  `MODULE_PERSISTENCE_DEVICE_BUILD_EXIT:0` and
+  `MODULE_PERSISTENCE_DEVICE_INSTALL_EXIT:0`; launch was blocked only because
+  the device was locked, so final visual/export confirmation remains manual.
+
+Follow-up Renderer closure:
+
+- Device verification confirmed parent Location recognition was restored, but
+  left-top Device Model and left-bottom Capture Date still disappeared from
+  final output.
+- The remaining cause was `CardTextBlockEngine.resolvedItems`, which reduced
+  every content region to its first `TemplateItem`; right-side modules only
+  appeared correct because their module happened to be first.
+- `CardTextBlockEngine` now resolves every enabled item and composes custom
+  text plus module values into one ordered text block per region. All four
+  regions use the same rule; badge handling remains unchanged.
+- A red/green Renderer contract covers three-item compositions in left-top,
+  left-bottom, right-top, and right-bottom regions.
+- Focused Renderer and configuration tests passed serially with
+  `RENDERER_COMPOSE_FOCUSED_EXIT:0`.
+- The signed device build and install passed with
+  `RENDERER_COMPOSE_DEVICE_BUILD_EXIT:0` and
+  `RENDERER_COMPOSE_DEVICE_INSTALL_EXIT:0`.
+- Final iPhone7 verification confirmed the parent Location inspector recognizes
+  the inserted module and final output preserves custom text plus all inserted
+  modules across the four regions. The app launched successfully with
+  `FINAL_DEVICE_LAUNCH_EXIT:0`.
+
+## 2026-07-12 Local-First Selection Vocabulary Alignment
+
+Avatar and Logo UI copy now accurately describes local Photos selection rather
+than using cloud-like upload language.
+
+- `上传对象头像` -> `选择对象头像`
+- `点击上传自选 Logo` -> `点击选择自选 Logo`
+- avatar empty-state and crop guidance use `选择`
+- the Logo action button uses `选择`
+- true configuration document import/restore language remains unchanged
+- internal compatibility symbols such as `customUpload` remain unchanged
+
+Verification passed:
+
+- iOS Simulator app build: `LOCAL_COPY_IOS_EXIT:0`
+- macOS Debug app build: `LOCAL_COPY_MAC_EXIT:0`
+- `git diff --check`
+
+## 2026-07-12 iPhone7 Device Install Baseline
+
+- physical device `iPhone7` was detected as an available paired iPhone 17 Pro
+  Max running iOS 27.0
+- automatic signing resolved development team `UK7ZR8G564`, Apple Development
+  identity, and the app provisioning profile
+- the full device build, including Share Extension and Widget Extension,
+  completed with `DEVICE_BUILD_EXIT:0`
+- `PhotoMemoiOS.app` installed successfully with `DEVICE_INSTALL_EXIT:0`
+- bundle identifier: `com.serydoo.PhotoMemo.iOS`
+- automatic launch was denied only because the device was locked; unlock and
+  launch verification remain pending
+
+## 2026-07-12 Home Configuration Native Swipe Migration
+
+- Home “My Configurations” was explicitly reopened after device feedback showed
+  the previously frozen custom swipe did not match the requested iOS behavior.
+- removed `V1HomeConfigurationSwipePresenter`, manual `DragGesture`, offsets,
+  opacity thresholds, and revealed-row state
+- configuration rows now live in a non-scrolling native `List`
+- trailing actions use native `swipeActions(allowsFullSwipe: false)`
+- action order is blue Save followed by destructive Delete, with Delete nearest
+  the trailing screen edge
+- selection, rename, save-to-local-library, delete, and feedback callbacks are
+  unchanged
+
+Verification:
+
+- `V1HomeConfigurationActionContractTests`: `HOME_SWIPE_TEST_EXIT:0`
+- signed iPhone7 build: `HOME_DEVICE_BUILD_EXIT:0`
+- iPhone7 install: `HOME_DEVICE_INSTALL_EXIT:0`
+- local signature verification passed for the app, Share Extension, and Widget
+- launch is currently blocked by device-side developer trust, not code signing
+  integrity; trust `serydoo@163.com` under VPN & Device Management before retry
+
+## 2026-07-12 Unified Home And Time Anchor Swipe Interaction
+
+- Time Anchor rows no longer show a fixed Configure button and no longer open
+  from a row tap, reducing accidental entry.
+- trailing swipe actions now show blue Configure and destructive Delete.
+- Home configuration and Time Anchor rows both allow a full trailing swipe;
+  full swipe invokes the same staged Delete action and always presents a system
+  confirmation before data changes.
+- the Time Anchor instruction was condensed to explain swipe actions, live
+  preview, cancel rollback, and the one-anchor minimum at a glance.
+- the Time Anchor sheet now uses native `NavigationStack + Form`, medium/large
+  detents, Cancel/Done toolbar actions, and system DatePicker/Picker/TextField.
+- the object editor contains only Date, Type, and Anchor Name. Expression style
+  remains owned by Configuration Center.
+- Anchor Name is a dedicated section explaining that preset names can be kept
+  or replaced with a custom value; edits preview live and Done retains them.
+
+Verification:
+
+- unified Home/Time Anchor tests: `UNIFIED_SWIPE_TEST_EXIT:0`
+- signed iPhone7 build: `UNIFIED_DEVICE_BUILD_EXIT:0`
+- iPhone7 install: `UNIFIED_DEVICE_INSTALL_EXIT:0`
+- automatic launch is again awaiting device-side trust after reinstall
+
+## 2026-07-12 Cross-Surface User Copy Alignment
+
+User-facing terminology and capability copy were aligned after the Settings
+refresh without changing any processing decisions.
+
+- Task presentation now says `Preset` (`预设`) instead of exposing the internal
+  `Template` term.
+- Share empty-input copy now refers to processable photos rather than only
+  static photos.
+- Background unsupported-input guidance now recommends supported photo formats
+  rather than incorrectly narrowing the guidance to static formats.
+- Presenter tests were updated first and confirmed the old `模板` wording
+  failed before production copy was changed.
+
+Verification passed:
+
+- `V1SettingsPagePresenterTests`: `COPY_TEST_EXIT:0`
+- iOS Simulator app build: `COPY_IOS_EXIT:0`
+- Share Extension build: `COPY_SHARE_EXIT:0`
 - `git diff --check`
 - project file lint
 - `PhotoMemoiOS` Debug generic iOS Simulator build
@@ -16958,3 +17222,119 @@ exact reproduction, inspected data boundaries and resume file list.
 Release status: checkpoint only. Do not describe configuration persistence as
 closed until the round-trip regression passes and the same clean-device flow is
 confirmed manually.
+## 2026-07-11 iOS Native UI Optimization Slice
+
+This slice began the approved system-native UI optimization while preserving
+the frozen Home configuration list, Configuration Center preview composition,
+configuration delivery, Share intake, queue, and Apple Photos behavior.
+
+Implemented:
+
+- Time Anchor editing now maintains real-time `ConfigurationSession` preview
+  updates while supporting cancel rollback for existing and newly created
+  anchors.
+- Time Anchor deletion uses a destructive confirmation and disables full-swipe
+  execution.
+- The module library gained native search and an empty search state.
+- Local configuration backup deletion now requires confirmation and is exposed
+  through native swipe/context actions without changing live-configuration
+  deletion semantics.
+- The Task screen no longer installs an unnecessary page-wide keyboard-dismiss
+  gesture.
+- Share Extension presentation gained Dynamic Type and accessibility state
+  announcements without changing its UIKit lifecycle or intake/handoff path.
+
+Verification:
+
+- `TimeAnchorEditingTransactionTests` passed.
+- iOS app and Share Extension simulator builds completed without reported
+  compile errors in the combined build command.
+- iOS 27 Simulator booted, but CoreSimulator install/launch/screenshot commands
+  became unresponsive and produced no screenshots. Manual simulator/device UI
+  verification remains required.
+
+Remaining UI work from the approved design:
+
+- broader Configuration Center peripheral focus/toolbar accessibility polish
+- Settings, Output, and background-status selective native-control polish
+- simulator screenshots and signed-device Share verification
+
+Continuation completed additional low-risk polish:
+
+- Time Anchor rows now live in a native `List`, allowing system swipe actions
+  to own resistance, settling, and accessibility while preserving the current
+  card content.
+- Configuration Center summary pickers now expose explicit accessibility
+  labels without changing their bindings or preview path.
+- Settings removed an unnecessary page-wide tap recognizer.
+- Output album and Memory-write fields now expose the native Done submit key.
+- Task progress distinguishes determinate from indeterminate work and exposes
+  an accessibility progress value.
+
+Fresh verification:
+
+- `TimeAnchorEditingTransactionTests` passed after the continuation changes.
+- `git diff --check` passed.
+- CoreSimulator produced `00-simulator-state.png` and `01-app-launch.png`, but
+  visual inspection confirmed both are SpringBoard screenshots rather than app
+  UI. They are environment evidence only and do not satisfy UI screenshot QA.
+- The iOS build produced an app bundle directory but `xcodebuild` remained
+  stuck during finalization and was terminated; a clean exit-code build remains
+  required before release claims.
+
+Final simulator continuation:
+
+- Simulator launch logs confirmed `com.serydoo.PhotoMemo.iOS` reached
+  `running-active-Visible`.
+- A fresh explicit launch returned process ID `89326` and produced a valid app
+  foreground screenshot at
+  `/Users/rui/Desktop/MemoMark-UI-Optimization-QA-2026-07-11/02-memomark-foreground.png`.
+- Visual inspection confirmed the current Home screen renders normally and the
+  intentionally frozen “My Configurations” surface remains present.
+- Computer Use could not navigate additional tabs because ScreenCaptureKit
+  failed to start its control stream. Configuration Center, Time Anchor,
+  Output, Task, and Share screenshots therefore remain for manual capture.
+- A fresh Share Extension simulator build produced
+  `PhotoMemoShareExtension.appex`; no `xcodebuild` process remained afterward.
+
+Final build diagnosis corrected the earlier incomplete conclusion:
+
+- The apparent build-finalization hang was caused by mixing detached shell
+  builds, concurrent `xcodebuild` processes, and incomplete session polling.
+  It was not a source-code or Xcode build failure.
+- Serial foreground verification with explicit exit markers passed:
+  - iOS main app: `XCODEBUILD_EXIT:0`
+  - targeted UI regression tests: `XCTEST_EXIT:0`
+  - Share Extension: `SHARE_BUILD_EXIT:0`
+  - macOS Debug app: `MAC_BUILD_EXIT:0`
+- Targeted tests covered Time Anchor transaction state, local configuration
+  library presentation behavior, and Configuration Center location selection.
+- Remaining warnings are pre-existing SDK/deployment warnings and the existing
+  `CLGeocoder` deprecation; they were not introduced by this UI slice.
+
+## 2026-07-11 Settings Content And Information Architecture Refresh
+
+The Settings page was reorganized from a TestFlight/development announcement
+surface into a user-facing settings and help center while preserving the
+existing card visual language and navigation callbacks.
+
+Changes:
+
+- section order is now About -> Usage and Help -> Capabilities and Boundaries
+  -> Privacy and Data -> Feedback -> Version
+- removed the hard-coded expected Xcode Cloud build number
+- removed the stale future-development plan that described Live Photo as a
+  future evaluation
+- version and build are read from the installed app bundle
+- capability copy now covers still photos, Live Photo, RAW/DNG, the 20-photo
+  Share limit, new-file output, and continuing real-device compatibility checks
+- privacy copy now states local processing, no photo upload, original-photo
+  preservation, local configuration/task storage, and uninstall data risk
+- feedback email subjects use the installed app version instead of a hard-coded
+  release number
+
+Verification passed:
+
+- iOS Simulator app build: `SETTINGS_IOS_BUILD_EXIT:0`
+- macOS Debug app build: `SETTINGS_MAC_BUILD_EXIT:0`
+- `git diff --check`

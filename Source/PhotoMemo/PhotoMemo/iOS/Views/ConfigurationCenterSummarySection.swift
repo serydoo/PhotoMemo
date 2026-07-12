@@ -72,7 +72,7 @@ struct ConfigurationCenterSummarySection: View {
                 .fill(Color.accentColor.opacity(0.10))
                 .frame(width: 34, height: 34)
                 .overlay {
-                    Image(systemName: "slider.horizontal.3")
+                    Image(systemName: MemoMarkSymbol.configuration.name)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
                 }
@@ -97,7 +97,7 @@ struct ConfigurationCenterSummarySection: View {
         VStack(spacing: 0) {
             summaryRow(
                 title: "记忆对象",
-                systemImage: "person.crop.circle",
+                systemImage: MemoMarkSymbol.memorySubject.name,
                 detail: subjectIdentityDetail
             ) {
                 HStack(spacing: 12) {
@@ -135,7 +135,7 @@ struct ConfigurationCenterSummarySection: View {
 
             summaryRow(
                 title: "当前生效锚点",
-                systemImage: "calendar.badge.clock",
+                systemImage: MemoMarkSymbol.timeAnchor.name,
                 detail: timeAnchorDetail
             ) {
                 Text(
@@ -162,6 +162,7 @@ struct ConfigurationCenterSummarySection: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .controlSize(.small)
+                    .accessibilityLabel("选择当前时间锚点")
                 }
             }
 
@@ -189,13 +190,14 @@ struct ConfigurationCenterSummarySection: View {
                 .labelsHidden()
                 .controlSize(.small)
                 .disabled(isLocationSelectable == false)
+                .accessibilityLabel("选择位置显示方式")
             }
 
             summaryDivider
 
             summaryRow(
                 title: "记忆显示",
-                systemImage: "text.quote",
+                systemImage: MemoMarkSymbol.memoryContent.name,
                 detail: memoryDisplayDetail
             ) {
                 Text(memoryDisplayValue)
@@ -222,6 +224,7 @@ struct ConfigurationCenterSummarySection: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .controlSize(.small)
+                    .accessibilityLabel("选择记忆显示方式")
                 }
             }
 
@@ -229,7 +232,7 @@ struct ConfigurationCenterSummarySection: View {
 
             summaryRow(
                 title: "边框样式",
-                systemImage: "rectangle.on.rectangle.angled",
+                systemImage: MemoMarkSymbol.configuration.name,
                 detail: "当前先锁定 1 种样式，后续再扩展。"
             ) {
                 Text(currentBorderStyleName)
@@ -243,7 +246,7 @@ struct ConfigurationCenterSummarySection: View {
 
             summaryRow(
                 title: "四个区域",
-                systemImage: "square.grid.2x2",
+                systemImage: MemoMarkSymbol.module.name,
                 detail: "点击对应区域，直接跳到当前生效配置的编辑位置。"
             ) {
                 HStack(spacing: 8) {

@@ -72,7 +72,7 @@ struct PhotoMemoiOSV1View: View {
 
     @State
     private var logoStatusMessage =
-        "建议上传 2048 × 2048 的透明 PNG。"
+        "建议选择 2048 × 2048 的透明 PNG。"
 
     @State
     private var birthdayDate =
@@ -2242,11 +2242,11 @@ struct PhotoMemoiOSV1View: View {
             return "使用系统默认标识"
         case .customUpload:
             return customLogoBadge == nil
-                ? "点击上传自选 Logo"
+                ? "点击选择自选 Logo"
                 : "已准备自选 Logo"
         case .subjectAvatar:
             return resolvedSubjectAvatarLogoImagePath == nil
-                ? "当前记忆对象尚未上传头像"
+                ? "当前记忆对象尚未选择头像"
                 : "已使用对象头像"
         }
     }
@@ -2259,7 +2259,7 @@ struct PhotoMemoiOSV1View: View {
             return logoStatusMessage
         case .subjectAvatar:
             return resolvedSubjectAvatarLogoImagePath == nil
-                ? "当前记忆对象还没有可用头像，先去对象配置里上传头像即可。"
+                ? "当前记忆对象还没有可用头像，先去对象配置里选择头像即可。"
                 : "当前使用对象头像作为标识。"
         }
     }
@@ -2680,23 +2680,7 @@ struct PhotoMemoiOSV1View: View {
                     )
             )
 
-        let configurationLibraryForApply =
-            session.state.configurationLibrary.flatMap { aggregate in
-                guard let configurationID =
-                    session.state.selectedMemoryPresetID,
-                      let subjectID = session.state.selectedSubject?.id else {
-                    return aggregate
-                }
-                return V1LocalConfigurationLibraryPresenter
-                    .preparingCurrentConfiguration(
-                        configurationID,
-                        subjectID: subjectID,
-                        in: aggregate
-                    )
-            }
-        let aggregateDraft = configurationLibraryForApply.map {
-            _ in
-            V1ConfigurationAggregateDraft(
+        let aggregateDraft = V1ConfigurationAggregateDraft(
                 title: session.currentMemoryPresetTitle,
                 regionDrafts: Dictionary(
                     uniqueKeysWithValues:
@@ -2737,6 +2721,25 @@ struct PhotoMemoiOSV1View: View {
                     session.selectedTimeAnchorID,
                 savedAt: Date()
             )
+        let configurationLibraryForApply: ConfigurationLibraryRecord?
+        if let configurationID = session.state.selectedMemoryPresetID,
+           let subject = session.state.selectedSubject {
+            configurationLibraryForApply =
+                V1LocalConfigurationLibraryPresenter
+                .preparingCurrentConfiguration(
+                    configurationID,
+                    subject: subject,
+                    seedConfiguration:
+                        V1ConfigurationAggregateCandidateBuilder
+                        .seedConfiguration(
+                            id: configurationID,
+                            draft: aggregateDraft
+                        ),
+                    in: session.state.configurationLibrary
+                )
+        } else {
+            configurationLibraryForApply =
+                session.state.configurationLibrary
         }
 
         return await configurationApplyRuntimeCoordinator.apply(

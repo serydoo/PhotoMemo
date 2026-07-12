@@ -132,6 +132,50 @@ enum V1LocalConfigurationLibraryPresenter {
         return candidate
     }
 
+    static func preparingCurrentConfiguration(
+        _ configurationID: UUID,
+        subject: MemorySubject,
+        seedConfiguration: MemoryConfigurationRecord,
+        in aggregate: ConfigurationLibraryRecord?
+    ) -> ConfigurationLibraryRecord? {
+        if let aggregate,
+           let prepared = preparingCurrentConfiguration(
+               configurationID,
+               subjectID: subject.id,
+               in: aggregate
+           ) {
+            return prepared
+        }
+
+        guard seedConfiguration.id == configurationID else {
+            return nil
+        }
+        var candidate = aggregate ?? ConfigurationLibraryRecord(
+            revision: 0,
+            subjects: [],
+            activeSubjectID: nil,
+            activeConfigurationID: nil
+        )
+        if let subjectIndex = candidate.subjects.firstIndex(
+            where: { $0.subject.id == subject.id }
+        ) {
+            candidate.subjects[subjectIndex].subject = subject
+            candidate.subjects[subjectIndex]
+                .configurations.append(seedConfiguration)
+        } else {
+            candidate.subjects.append(
+                .init(
+                    subject: subject,
+                    configurations: [seedConfiguration],
+                    assetManifest: .init(entries: [])
+                )
+            )
+        }
+        candidate.activeSubjectID = subject.id
+        candidate.activeConfigurationID = configurationID
+        return candidate
+    }
+
     static func backupFeedback(
         title: String,
         receipt: LocalConfigurationBackupReceipt

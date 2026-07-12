@@ -90,8 +90,7 @@ extension Template {
     private func normalizedItems(
         from items: [TemplateItem]
     ) -> [TemplateItem] {
-
-        items.first.map { [$0] } ?? []
+        items
     }
 
     private var migratedForCurrentDefaults: Template {

@@ -141,7 +141,7 @@ struct V1AccessoryEntrySection: View {
                     VStack(spacing: 4) {
                         Image(systemName: "photo.badge.plus")
                             .font(.title3.weight(.semibold))
-                        Text("上传")
+                        Text("选择")
                             .font(.caption2.weight(.semibold))
                     }
                     .foregroundStyle(.secondary)

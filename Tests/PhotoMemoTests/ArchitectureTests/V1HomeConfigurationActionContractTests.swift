@@ -5,107 +5,24 @@ import Testing
 @Suite("V1 home configuration action contract")
 struct V1HomeConfigurationActionContractTests {
 
-    @Test("swipe presentation changes continuously with row reveal")
-    func swipePresentationIsContinuous() {
-        let hidden = V1HomeConfigurationSwipePresenter.presentation(
-            isActionsRevealed: false,
-            dragTranslation: 0
-        )
-        let quarter = V1HomeConfigurationSwipePresenter.presentation(
-            isActionsRevealed: false,
-            dragTranslation: -37
-        )
-        let half = V1HomeConfigurationSwipePresenter.presentation(
-            isActionsRevealed: false,
-            dragTranslation: -74
-        )
-        let revealed = V1HomeConfigurationSwipePresenter.presentation(
-            isActionsRevealed: false,
-            dragTranslation: -148
-        )
-
-        #expect(hidden.rowOffset == 0)
-        #expect(hidden.actionLayerOffset == 0)
-        #expect(hidden.actionOpacity == 0)
-        #expect(quarter.rowOffset == -37)
-        #expect(quarter.actionLayerOffset == 0)
-        #expect(quarter.actionOpacity == 0.5)
-        #expect(half.rowOffset == -74)
-        #expect(half.actionOpacity == 1)
-        #expect(half.allowsActionHitTesting)
-        #expect(revealed.rowOffset == -148)
-        #expect(revealed.actionOpacity == 1)
-    }
-
-    @Test("swipe row offset clamps predictably from either settled state")
-    func swipeRowOffsetClampsPredictably() {
-        let closedOvershoot =
-            V1HomeConfigurationSwipePresenter.presentation(
-                isActionsRevealed: false,
-                dragTranslation: -220
-            )
-        let closedWrongDirection =
-            V1HomeConfigurationSwipePresenter.presentation(
-                isActionsRevealed: false,
-                dragTranslation: 60
-            )
-        let revealedOvershoot =
-            V1HomeConfigurationSwipePresenter.presentation(
-                isActionsRevealed: true,
-                dragTranslation: 220
-            )
-        let revealedWrongDirection =
-            V1HomeConfigurationSwipePresenter.presentation(
-                isActionsRevealed: true,
-                dragTranslation: -60
-            )
-
-        #expect(closedOvershoot.rowOffset == -148)
-        #expect(closedWrongDirection.rowOffset == 0)
-        #expect(revealedOvershoot.rowOffset == 0)
-        #expect(revealedWrongDirection.rowOffset == -148)
-    }
-
-    @Test("swipe snaps using the projected half-width threshold")
-    func swipeSnapUsesProjectedThreshold() {
-        #expect(
-            !V1HomeConfigurationSwipePresenter.shouldRevealActions(
-                isActionsRevealed: false,
-                predictedEndTranslation: -73
-            )
-        )
-        #expect(
-            V1HomeConfigurationSwipePresenter.shouldRevealActions(
-                isActionsRevealed: false,
-                predictedEndTranslation: -75
-            )
-        )
-        #expect(
-            V1HomeConfigurationSwipePresenter.shouldRevealActions(
-                isActionsRevealed: true,
-                predictedEndTranslation: 73
-            )
-        )
-        #expect(
-            !V1HomeConfigurationSwipePresenter.shouldRevealActions(
-                isActionsRevealed: true,
-                predictedEndTranslation: 75
-            )
-        )
-    }
-
-    @Test("configuration rows expose blue save and red delete actions")
+    @Test("configuration rows use native full-swipe delete confirmation")
     func rowSwipeActionsExposeSaveAndDelete() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
         )
 
-        #expect(source.contains("Text(\"保存\")"))
-        #expect(source.contains("background(Color.blue)"))
-        #expect(source.contains("Text(\"删除\")"))
-        #expect(source.contains("background(Color.red)"))
+        #expect(source.contains(".swipeActions("))
+        #expect(source.contains("allowsFullSwipe: true"))
+        #expect(source.contains("Label(\"保存\", systemImage: \"tray.and.arrow.down\")"))
+        #expect(source.contains(".tint(.blue)"))
+        #expect(source.contains("Label(\"删除\", systemImage: \"trash\")"))
+        #expect(source.contains(".tint(.red)"))
+        #expect(!source.contains("Button(role: .destructive)"))
+        #expect(!source.contains("DragGesture(minimumDistance: 12)"))
+        #expect(!source.contains("V1HomeConfigurationSwipePresenter"))
         #expect(source.contains("accessibilityLabel(\"保存配置到本地库\")"))
         #expect(source.contains("accessibilityLabel(\"删除配置\")"))
+        #expect(source.contains("删除这个配置？"))
     }
 
     @Test("configuration card footer opens the current subject local library")

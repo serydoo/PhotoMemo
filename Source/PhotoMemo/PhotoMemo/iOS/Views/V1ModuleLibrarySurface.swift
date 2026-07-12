@@ -10,11 +10,22 @@ struct V1ModuleLibrarySurface: View {
     let onSelectModule: (IOSInsertableModule) -> Void
     let onClose: () -> Void
 
+    @State private var searchText = ""
+
+    private var filteredModules: [IOSInsertableModule] {
+        guard !searchText.isEmpty else { return modules }
+        return modules.filter { module in
+            module.title.localizedStandardContains(searchText)
+            || categoryTitle(module).localizedStandardContains(searchText)
+            || valueText(module).localizedStandardContains(searchText)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    ForEach(modules) { module in
+                    ForEach(filteredModules) { module in
                         Button {
                             onSelectModule(module)
                         } label: {
@@ -48,6 +59,12 @@ struct V1ModuleLibrarySurface: View {
                     }
                 } header: {
                     Text("常用与模块")
+                }
+            }
+            .searchable(text: $searchText, prompt: "搜索模块")
+            .overlay {
+                if filteredModules.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
                 }
             }
             .navigationTitle(region.semanticTitle)

@@ -86,7 +86,7 @@ struct V1SettingsPagePresenterTests {
         )
         #expect(
             presentation.currentTask.subtitleText
-            == "基础白 模板"
+            == "基础白 预设"
         )
         #expect(
             presentation.currentTask.statusText
@@ -312,7 +312,7 @@ struct V1SettingsPagePresenterTests {
         )
         #expect(
             presentation.historyRows[0].detailText
-            == "基础白 模板 · 8 张照片"
+            == "基础白 预设 · 8 张照片"
         )
         #expect(
             presentation.historyRows[0].statusText

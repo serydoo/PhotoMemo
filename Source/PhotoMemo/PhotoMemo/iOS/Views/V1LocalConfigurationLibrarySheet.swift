@@ -16,6 +16,8 @@ struct V1LocalConfigurationLibrarySheet: View {
     @Environment(\.dismiss)
     private var dismiss
 
+    @State private var pendingDeleteBackup: LocalConfigurationBackupRecord?
+
     var body: some View {
         NavigationStack {
             List {
@@ -34,7 +36,7 @@ struct V1LocalConfigurationLibrarySheet: View {
                     if backups.isEmpty {
                         ContentUnavailableView(
                             "还没有本地备份",
-                            systemImage: "externaldrive",
+                            systemImage: MemoMarkSymbol.localStorage.name,
                             description: Text(
                                 "在首页向左滑动配置并点按“保存”，备份会保留在当前记忆对象的本地库中。"
                             )
@@ -78,6 +80,25 @@ struct V1LocalConfigurationLibrarySheet: View {
                     .accessibilityLabel("刷新本地配置库")
                 }
             }
+            .confirmationDialog(
+                "删除这个本地备份？",
+                isPresented: Binding(
+                    get: { pendingDeleteBackup != nil },
+                    set: { if !$0 { pendingDeleteBackup = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("删除本地备份", role: .destructive) {
+                    guard let backup = pendingDeleteBackup else { return }
+                    pendingDeleteBackup = nil
+                    onDelete(backup)
+                }
+                Button("取消", role: .cancel) {
+                    pendingDeleteBackup = nil
+                }
+            } message: {
+                Text("这只会删除本地备份，不会删除当前正在使用的配置。")
+            }
         }
     }
 
@@ -114,7 +135,7 @@ struct V1LocalConfigurationLibrarySheet: View {
                 .accessibilityLabel("含资源的完整导出即将开放")
 
                 Button(role: .destructive) {
-                    onDelete(backup)
+                    pendingDeleteBackup = backup
                 } label: {
                     Image(systemName: "trash")
                 }
@@ -124,6 +145,21 @@ struct V1LocalConfigurationLibrarySheet: View {
             .disabled(isWorking)
         }
         .padding(.vertical, 4)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                pendingDeleteBackup = backup
+            } label: {
+                Label("删除", systemImage: "trash")
+            }
+            .tint(.red)
+        }
+        .contextMenu {
+            Button("恢复") { onRestore(backup) }
+            Button("恢复并设当前") { onRestoreAndMakeCurrent(backup) }
+            Button("删除本地备份", role: .destructive) {
+                pendingDeleteBackup = backup
+            }
+        }
     }
 }
 #endif

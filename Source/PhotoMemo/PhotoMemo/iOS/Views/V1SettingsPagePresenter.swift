@@ -161,7 +161,7 @@ private extension V1SettingsPagePresenter {
                 headline:
                     snapshot.configurationName,
                 subtitleText:
-                    "\(displayTemplateName(snapshot.templateName)) 模板",
+                    "\(displayTemplateName(snapshot.templateName)) 预设",
                 statusText:
                     snapshotStatusText(
                         snapshot
@@ -507,7 +507,7 @@ private extension V1SettingsPagePresenter {
             title:
                 summary.configurationName,
             detailText:
-                "\(displayTemplateName(summary.templateName)) 模板 · \(summary.totalCount) 张照片",
+                "\(displayTemplateName(summary.templateName)) 预设 · \(summary.totalCount) 张照片",
             statusText:
                 summaryStatusText(
                     summary

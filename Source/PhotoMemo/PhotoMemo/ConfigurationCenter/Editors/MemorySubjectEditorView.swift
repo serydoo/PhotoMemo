@@ -46,7 +46,7 @@ struct MemorySubjectEditorView: View {
     private var avatarPreviewImagePath: String?
 
     @State
-    private var avatarStatusMessage = "可上传对象头像，用于头像、标识与预览。"
+    private var avatarStatusMessage = "可选择对象头像，用于头像、标识与预览。"
 
     @State
     private var definition = ""
@@ -65,7 +65,8 @@ struct MemorySubjectEditorView: View {
     private var editingTimeAnchorID: UUID?
 
     @State
-    private var revealedDeleteTimeAnchorID: UUID?
+    private var timeAnchorEditingTransaction:
+        TimeAnchorEditingTransaction?
 
     @State
     private var isOptimizingAvatar = false
@@ -166,6 +167,9 @@ struct MemorySubjectEditorView: View {
             syncDraftToSession()
         }
         .onChange(of: selectedTimeAnchorID) { _, _ in
+            syncDraftToSession()
+        }
+        .onChange(of: timeAnchors) { _, _ in
             syncDraftToSession()
         }
 #if canImport(PhotosUI)
@@ -594,7 +598,7 @@ struct MemorySubjectEditorView: View {
                     Text(
                         isOptimizingAvatar
                         ? "正在处理头像"
-                        : "上传对象头像"
+                        : "选择对象头像"
                     )
                     .font(.subheadline.weight(.semibold))
                 }
@@ -605,7 +609,7 @@ struct MemorySubjectEditorView: View {
             .controlSize(.regular)
             .disabled(isOptimizingAvatar)
 
-            Text("上传后可像联系人头像一样拖动、放大和调整位置，再生成对象头像资源。")
+            Text("选择后可像联系人头像一样拖动、放大和调整位置，再生成对象头像资源。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -674,7 +678,7 @@ struct MemorySubjectEditorView: View {
 
     private var timeWindowEditor: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("时间锚点用于定义照片与记忆对象之间的时间关系。预设时间、锚点类型和自定义名称会共同决定年龄、纪念日、倒计时等智能结果的计算方式。")
+            Text("左滑锚点可配置或删除。修改会实时刷新预览；取消会恢复原值，且至少保留 1 个锚点。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -695,8 +699,7 @@ struct MemorySubjectEditorView: View {
                     },
                     set: { isPresented in
                         if !isPresented {
-                            editingTimeAnchorID = nil
-                            focusedField = nil
+                            cancelEditingTimeAnchor()
                         }
                     }
                 )
@@ -712,13 +715,13 @@ struct MemorySubjectEditorView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text("默认 3 个，可新增到最多 5 个。左滑删除，至少保留 1 个。")
+                Text("最多 5 个，至少保留 1 个。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(spacing: 0) {
+            List {
                 ForEach(
                     Array(timeAnchors.enumerated()),
                     id: \.element.id
@@ -730,38 +733,31 @@ struct MemorySubjectEditorView: View {
                             anchor.id == editingTimeAnchorID,
                         canDelete:
                             timeAnchors.count > 1,
-                        isDeleteRevealed:
-                            revealedDeleteTimeAnchorID
-                            == anchor.id,
                         onConfigure: {
                             openTimeAnchorSheet(anchor.id)
-                        },
-                        onRevealDelete: {
-                            revealedDeleteTimeAnchorID =
-                                anchor.id
-                        },
-                        onHideDelete: {
-                            if revealedDeleteTimeAnchorID
-                                == anchor.id {
-                                revealedDeleteTimeAnchorID = nil
-                            }
                         },
                         onDelete: {
                             deleteTimeAnchor(anchor.id)
                         }
                     )
-
-                    if anchor.id != timeAnchors.last?.id {
-                        fieldDivider
-                    }
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.visible)
                 }
 
                 if timeAnchors.count < 5 {
-                    fieldDivider
                     addTimeAnchorRow
+                        .listRowInsets(EdgeInsets())
                 }
             }
+            .listStyle(.plain)
+            .scrollDisabled(true)
+            .frame(
+                height:
+                    CGFloat(timeAnchors.count) * 59
+                    + (timeAnchors.count < 5 ? 70 : 0)
+            )
             .background(Color.white.opacity(0.94))
+            .scrollContentBackground(.hidden)
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: 18,
@@ -829,20 +825,70 @@ struct MemorySubjectEditorView: View {
     @ViewBuilder
     private var timeAnchorConfigurationSheet: some View {
         if let anchorBinding {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(anchorBinding.wrappedValue.title)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+            NavigationStack {
+                Form {
+                    Section("时间与类别") {
+                        DatePicker(
+                            "日期",
+                            selection: anchorBinding.date,
+                            displayedComponents: .date
+                        )
 
-                timeAnchorConfigurationPanel(
-                    anchorBinding
-                )
+                        Picker(
+                            "类型",
+                            selection: Binding(
+                                get: {
+                                    anchorBinding.wrappedValue.resolvedAnchorType
+                                },
+                                set: { newType in
+                                    anchorBinding.wrappedValue.anchorType = newType
+                                    anchorBinding.wrappedValue.expressionStyle =
+                                        .defaultStyle(for: newType)
+                                }
+                            )
+                        ) {
+                            ForEach(AnchorType.allCases, id: \.self) { type in
+                                Text(type.displayName).tag(type)
+                            }
+                        }
+
+                    }
+
+                    Section {
+                        TextField(
+                            "自定义名称",
+                            text: anchorBinding.title
+                        )
+                        .focused($focusedField, equals: .timeTitle)
+                        .submitLabel(.done)
+                    } header: {
+                        Text("锚点名称")
+                    } footer: {
+                        Text("可保留预设名称，也可输入自定义名称；输入会实时显示在预览中，点“完成”后保留。")
+                    }
+
+                    Section {
+                        Text("日期、类型和名称的修改会立即显示在配置中心预览中。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle(anchorBinding.wrappedValue.title)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("取消") {
+                            cancelEditingTimeAnchor()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("完成") {
+                            saveEditingTimeAnchor()
+                        }
+                        .fontWeight(.semibold)
+                    }
+                }
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 18)
-            .padding(.bottom, 24)
-            .presentationDetents([.fraction(0.42)])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackgroundInteraction(.enabled)
         } else {
@@ -850,139 +896,19 @@ struct MemorySubjectEditorView: View {
         }
     }
 
-    private func timeAnchorConfigurationPanel(
-        _ anchorBinding: Binding<MemorySubject.TimeAnchor>
-    ) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Label(
-                    "锚点时间",
-                    systemImage: "calendar"
-                )
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-                Spacer(minLength: 0)
-
-                DatePicker(
-                    "锚点时间",
-                    selection: anchorBinding.date,
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-                .controlSize(.small)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-
-            fieldDivider
-
-            HStack(spacing: 10) {
-                Label(
-                    "锚点类型",
-                    systemImage: "tag"
-                )
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-                Spacer(minLength: 0)
-
-                Picker(
-                    "锚点类型",
-                    selection: Binding(
-                        get: {
-                            anchorBinding
-                                .wrappedValue
-                                .resolvedAnchorType
-                        },
-                        set: { newType in
-                            anchorBinding
-                                .wrappedValue
-                                .anchorType = newType
-                            anchorBinding
-                                .wrappedValue
-                                .expressionStyle =
-                                .defaultStyle(
-                                    for: newType
-                                )
-                        }
-                    )
-                ) {
-                    ForEach(AnchorType.allCases, id: \.self) { type in
-                        Text(type.displayName)
-                            .tag(type)
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-
-            fieldDivider
-
-            VStack(alignment: .leading, spacing: 6) {
-                Label(
-                    "锚点名称",
-                    systemImage: "textformat"
-                )
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-                TextField(
-                    "例如：生日 / 百天 / 重要日子",
-                    text: anchorBinding.title
-                )
-                .textFieldStyle(.plain)
-                .font(.subheadline)
-                .focused($focusedField, equals: .timeTitle)
-                .configurationFieldChrome(
-                    isActive: focusedField == .timeTitle
-                )
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-
-            fieldDivider
-
-            Button {
-                saveEditingTimeAnchor()
-            } label: {
-                Label(
-                    "保存当前锚点",
-                    systemImage: "checkmark"
-                )
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 5)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
-            .padding(12)
-        }
-        .background(Color.white.opacity(0.94))
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
-    }
-
     private func openTimeAnchorSheet(
         _ anchorID: UUID
     ) {
-        revealedDeleteTimeAnchorID = nil
-        editingTimeAnchorID =
-            editingTimeAnchorID == anchorID
-            ? nil
-            : anchorID
+        guard let anchor = timeAnchors.first(where: { $0.id == anchorID }) else {
+            return
+        }
+        timeAnchorEditingTransaction =
+            TimeAnchorEditingTransaction(
+                anchorID: anchorID,
+                originalAnchor: anchor,
+                originalSelectedAnchorID: selectedTimeAnchorID
+            )
+        editingTimeAnchorID = anchorID
     }
 
     private func addTimeAnchor() {
@@ -999,9 +925,15 @@ struct MemorySubjectEditorView: View {
                 expressionStyle:
                     .defaultStyle(for: .custom)
             )
-        timeAnchors.append(anchor.normalizedForEditing)
+        let normalizedAnchor = anchor.normalizedForEditing
+        timeAnchorEditingTransaction =
+            TimeAnchorEditingTransaction(
+                anchorID: normalizedAnchor.id,
+                originalAnchor: nil,
+                originalSelectedAnchorID: selectedTimeAnchorID
+            )
+        timeAnchors.append(normalizedAnchor)
         editingTimeAnchorID = anchor.id
-        revealedDeleteTimeAnchorID = nil
         syncDraftToSession()
     }
 
@@ -1024,15 +956,48 @@ struct MemorySubjectEditorView: View {
             editingTimeAnchorID = nil
         }
 
-        revealedDeleteTimeAnchorID = nil
         syncDraftToSession()
     }
 
     private func saveEditingTimeAnchor() {
-        revealedDeleteTimeAnchorID = nil
         syncDraftToSession()
+        timeAnchorEditingTransaction = nil
         editingTimeAnchorID = nil
         focusedField = nil
+    }
+
+    private func cancelEditingTimeAnchor() {
+        guard let transaction = timeAnchorEditingTransaction else {
+            editingTimeAnchorID = nil
+            focusedField = nil
+            return
+        }
+
+        if let originalAnchor = transaction.originalAnchor,
+           let index = timeAnchors.firstIndex(where: {
+               $0.id == transaction.anchorID
+           }) {
+            timeAnchors[index] = originalAnchor
+        } else {
+            timeAnchors.removeAll { $0.id == transaction.anchorID }
+        }
+
+        if let originalSelectedAnchorID =
+            transaction.originalSelectedAnchorID,
+           timeAnchors.contains(where: {
+               $0.id == originalSelectedAnchorID
+           }) {
+            selectedTimeAnchorID = originalSelectedAnchorID
+        } else if !timeAnchors.contains(where: {
+            $0.id == selectedTimeAnchorID
+        }) {
+            selectedTimeAnchorID = timeAnchors.first?.id
+        }
+
+        timeAnchorEditingTransaction = nil
+        editingTimeAnchorID = nil
+        focusedField = nil
+        syncDraftToSession()
     }
 
     private func anchorTypeEditor(
@@ -1429,7 +1394,7 @@ struct MemorySubjectEditorView: View {
             return "已准备头像衍生资源，可用于头像、标识与预览。"
         }
 
-        return "可上传对象头像，用于头像、标识与预览。"
+        return "可选择对象头像，用于头像、标识与预览。"
     }
 
 #if canImport(PhotosUI)
@@ -1524,94 +1489,42 @@ private struct SubjectTimeAnchorRow: View {
     let anchor: MemorySubject.TimeAnchor
     let isEditing: Bool
     let canDelete: Bool
-    let isDeleteRevealed: Bool
     let onConfigure: () -> Void
-    let onRevealDelete: () -> Void
-    let onHideDelete: () -> Void
     let onDelete: () -> Void
 
-    @GestureState
-    private var horizontalDragOffset: CGFloat = 0
+    @State private var showsDeleteConfirmation = false
 
     var body: some View {
-        ZStack(alignment: .trailing) {
-            if canDelete {
-                Button(role: .destructive, action: onDelete) {
-                    Text("删除")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 70)
-                        .frame(maxHeight: .infinity)
-                        .background(Color.red)
+        rowContent
+            .swipeActions(
+                edge: .trailing,
+                allowsFullSwipe: true
+            ) {
+                if canDelete {
+                    Button(role: .destructive) {
+                        showsDeleteConfirmation = true
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
                 }
-                .offset(x: rowHorizontalOffset == 0 ? 78 : 0)
-                .opacity(deleteButtonOpacity)
-                .allowsHitTesting(rowHorizontalOffset < -38)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: 14,
-                        style: .continuous
-                    )
-                )
+
+                Button(action: onConfigure) {
+                    Label("配置", systemImage: "slider.horizontal.3")
+                }
+                .tint(.blue)
             }
-
-            rowContent
-                .offset(x: rowHorizontalOffset)
-                .gesture(
-                    DragGesture(minimumDistance: 12)
-                        .updating($horizontalDragOffset) {
-                            value,
-                            state,
-                            _ in
-
-                            guard canDelete,
-                                  abs(value.translation.width)
-                                  > abs(value.translation.height)
-                            else {
-                                state = 0
-                                return
-                            }
-
-                            if isDeleteRevealed {
-                                state = min(
-                                    76,
-                                    max(0, value.translation.width)
-                                )
-                            } else {
-                                state = max(
-                                    -76,
-                                    min(0, value.translation.width)
-                                )
-                            }
-                        }
-                        .onEnded { value in
-                            guard canDelete,
-                                  abs(value.translation.width)
-                                  > abs(value.translation.height)
-                            else {
-                                return
-                            }
-
-                            if isDeleteRevealed {
-                                if value.translation.width > 32 {
-                                    onHideDelete()
-                                } else {
-                                    onRevealDelete()
-                                }
-                            } else {
-                                if value.translation.width < -36 {
-                                    onRevealDelete()
-                                } else {
-                                    onHideDelete()
-                                }
-                            }
-                        }
-                )
-                .animation(
-                    .snappy(duration: 0.18),
-                    value: rowHorizontalOffset
-                )
-        }
+            .confirmationDialog(
+                "删除这个时间锚点？",
+                isPresented: $showsDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("删除时间锚点", role: .destructive) {
+                    onDelete()
+                }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("删除后会立即切换到仍然保留的时间锚点，并同步刷新配置中心预览。")
+            }
     }
 
     private var rowContent: some View {
@@ -1661,30 +1574,10 @@ private struct SubjectTimeAnchorRow: View {
                         .fill(Color.primary.opacity(0.045))
                 )
 
-            Button(action: onConfigure) {
-                Text("配置")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(Color.accentColor.opacity(0.10))
-                    )
-            }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
         .background(Color.white.opacity(0.94))
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if isDeleteRevealed {
-                onHideDelete()
-            } else {
-                onConfigure()
-            }
-        }
     }
 
     private var anchorDateText: String {
@@ -1694,30 +1587,6 @@ private struct SubjectTimeAnchorRow: View {
         )
     }
 
-    private var rowHorizontalOffset: CGFloat {
-        guard canDelete else {
-            return 0
-        }
-
-        let base: CGFloat =
-            isDeleteRevealed ? -76 : 0
-
-        return min(
-            0,
-            max(-76, base + horizontalDragOffset)
-        )
-    }
-
-    private var deleteButtonOpacity: Double {
-        guard canDelete else {
-            return 0
-        }
-
-        return min(
-            1,
-            Double(abs(rowHorizontalOffset) / 56)
-        )
-    }
 }
 
 private struct PlatformAvatarImage: View {

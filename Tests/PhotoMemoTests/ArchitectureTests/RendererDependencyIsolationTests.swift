@@ -188,6 +188,76 @@ struct RendererDependencyIsolationTests {
         #expect(blocks.first?.value == "iPhone 17 Pro ·")
     }
 
+    @Test("CardTextBlockEngine composes every custom field and module in each region")
+    func cardTextBlockEngineComposesEveryItemInEachRegion() throws {
+        func area(
+            _ name: String,
+            prefix: String,
+            token: String,
+            suffix: String
+        ) -> TemplateArea {
+            TemplateArea(
+                name: name,
+                items: [
+                    TemplateItem(type: .text, name: "前缀", value: prefix),
+                    TemplateItem(type: .variable, name: "模块", value: token),
+                    TemplateItem(type: .text, name: "后缀", value: suffix)
+                ]
+            )
+        }
+        let template = Template(
+            preset: .classicWhite,
+            name: "完整区域组合",
+            leftTopArea: area(
+                "Recorder",
+                prefix: "他爹手持",
+                token: "{{model}}",
+                suffix: "记录"
+            ),
+            leftBottomArea: area(
+                "Timeline",
+                prefix: "记录于",
+                token: "{{year}}",
+                suffix: "年"
+            ),
+            rightTopArea: area(
+                "Location",
+                prefix: "位于",
+                token: "{{location}}",
+                suffix: "拍摄"
+            ),
+            rightBottomArea: area(
+                "Memory",
+                prefix: "今天",
+                token: "{{story}}",
+                suffix: "啦！"
+            ),
+            badgeArea: .empty
+        )
+        let card = RecordCard(
+            template: template,
+            metadata: PhotoMetadata(),
+            context: MetadataContext(values: [
+                "model": "iPhone 17 Pro Max",
+                "year": "2026",
+                "location": "商丘 · 永城",
+                "story": "途途1岁1个月15天"
+            ])
+        )
+
+        let values = Dictionary(
+            uniqueKeysWithValues:
+                CardTextBlockEngine()
+                .build(from: card)
+                .map { ($0.area, $0.value) }
+        )
+
+        #expect(values[.leftTop] == "他爹手持iPhone 17 Pro Max记录")
+        #expect(values[.leftBottom] == "记录于2026年")
+        #expect(values[.rightTop] == "位于商丘 · 永城拍摄")
+        #expect(values[.rightBottom] == "今天途途1岁1个月15天啦！")
+    }
+
     @Test("PI-13D Regression CardTextBlockEngine model output matches parity-proven provider value")
     func pi13dRegressionCardTextBlockEngineModelOutputMatchesParityProvenProviderValue() throws {
         let template =

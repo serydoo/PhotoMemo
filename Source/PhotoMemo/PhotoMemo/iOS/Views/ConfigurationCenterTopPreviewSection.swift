@@ -429,15 +429,15 @@ struct ConfigurationCenterTopPreviewSection<
         HStack(spacing: 8) {
             topWorkflowChip(
                 title: "记忆对象",
-                systemImage: "person.crop.circle"
+                systemImage: MemoMarkSymbol.memorySubject.name
             )
             topWorkflowChip(
                 title: "时间锚点",
-                systemImage: "calendar.badge.clock"
+                systemImage: MemoMarkSymbol.timeAnchor.name
             )
             topWorkflowChip(
                 title: "输出行为",
-                systemImage: "square.and.arrow.down"
+                systemImage: MemoMarkSymbol.output.name
             )
         }
     }
@@ -446,15 +446,15 @@ struct ConfigurationCenterTopPreviewSection<
         HStack(spacing: 8) {
             topWorkflowChip(
                 title: "对象",
-                systemImage: "person.crop.circle"
+                systemImage: MemoMarkSymbol.memorySubject.name
             )
             topWorkflowChip(
                 title: "锚点",
-                systemImage: "calendar.badge.clock"
+                systemImage: MemoMarkSymbol.timeAnchor.name
             )
             topWorkflowChip(
                 title: "输出",
-                systemImage: "square.and.arrow.down"
+                systemImage: MemoMarkSymbol.output.name
             )
         }
     }
@@ -473,7 +473,7 @@ struct ConfigurationCenterTopPreviewSection<
             profileInlineFact(
                 title: "对象",
                 value: currentSubjectTitle,
-                systemImage: "person.crop.circle"
+                systemImage: MemoMarkSymbol.memorySubject.name
             )
 
             Rectangle()
@@ -483,7 +483,7 @@ struct ConfigurationCenterTopPreviewSection<
             profileInlineFact(
                 title: "锚点",
                 value: currentAnchorTitle,
-                systemImage: "calendar.badge.clock"
+                systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
             Rectangle()
@@ -493,7 +493,7 @@ struct ConfigurationCenterTopPreviewSection<
             profileInlineFact(
                 title: "边框",
                 value: currentBorderStyleName,
-                systemImage: "rectangle.on.rectangle.angled"
+                systemImage: MemoMarkSymbol.configuration.name
             )
         }
     }
@@ -503,19 +503,19 @@ struct ConfigurationCenterTopPreviewSection<
             profileInlineFact(
                 title: "对象",
                 value: currentSubjectTitle,
-                systemImage: "person.crop.circle"
+                systemImage: MemoMarkSymbol.memorySubject.name
             )
 
             profileInlineFact(
                 title: "锚点",
                 value: currentAnchorTitle,
-                systemImage: "calendar.badge.clock"
+                systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
             profileInlineFact(
                 title: "边框",
                 value: currentBorderStyleName,
-                systemImage: "rectangle.on.rectangle.angled"
+                systemImage: MemoMarkSymbol.configuration.name
             )
         }
     }
@@ -611,25 +611,25 @@ struct ConfigurationCenterTopPreviewSection<
             regionStripButton(
                 .slotA,
                 title: "记录",
-                systemImage: "camera.fill"
+                systemImage: MemoMarkSymbol.configuration.name
             )
 
             regionStripButton(
                 .slotB,
                 title: "时间线",
-                systemImage: "calendar"
+                systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
             regionStripButton(
                 .slotC,
                 title: "拍摄参数",
-                systemImage: "scope"
+                systemImage: MemoMarkSymbol.photoMetadata.name
             )
 
             regionStripButton(
                 .slotD,
                 title: "记忆",
-                systemImage: "text.quote"
+                systemImage: MemoMarkSymbol.memoryContent.name
             )
         }
     }
@@ -639,25 +639,25 @@ struct ConfigurationCenterTopPreviewSection<
             regionStripButton(
                 .slotA,
                 title: "记录",
-                systemImage: "camera.fill"
+                systemImage: MemoMarkSymbol.configuration.name
             )
 
             regionStripButton(
                 .slotB,
                 title: "时间",
-                systemImage: "calendar"
+                systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
             regionStripButton(
                 .slotC,
                 title: "参数",
-                systemImage: "scope"
+                systemImage: MemoMarkSymbol.photoMetadata.name
             )
 
             regionStripButton(
                 .slotD,
                 title: "记忆",
-                systemImage: "text.quote"
+                systemImage: MemoMarkSymbol.memoryContent.name
             )
         }
     }

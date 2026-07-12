@@ -153,9 +153,19 @@ private struct V1OutputSection: View {
         VStack(alignment: .leading, spacing: 8) {
             V1OutputCompactCard(title: "输出目标") {
                 VStack(alignment: .leading, spacing: 10) {
-                    V1OutputTargetGrid(
-                        outputTarget: $outputTarget
-                    )
+                    Picker(
+                        "输出目标",
+                        selection: presentedOutputTargetBinding
+                    ) {
+                        ForEach(selectableOutputTargets) { target in
+                            Label(
+                                target.title,
+                                systemImage: target.symbolName
+                            )
+                            .tag(target)
+                        }
+                    }
+                    .pickerStyle(.segmented)
 
                     targetSpecificControls
                 }
@@ -165,6 +175,17 @@ private struct V1OutputSection: View {
 
     private var presentedOutputTarget: V1IOSOutputTarget {
         outputTarget == .automatic ? .applePhotos : outputTarget
+    }
+
+    private var selectableOutputTargets: [V1IOSOutputTarget] {
+        [.applePhotos, .existingAlbum, .newAlbum]
+    }
+
+    private var presentedOutputTargetBinding: Binding<V1IOSOutputTarget> {
+        Binding(
+            get: { presentedOutputTarget },
+            set: { outputTarget = $0 }
+        )
     }
 
     @ViewBuilder
@@ -223,6 +244,7 @@ private struct V1OutputSection: View {
                     .textFieldStyle(.plain)
                     .font(.subheadline)
                     .lineLimit(1)
+                    .submitLabel(.done)
                     .configurationFieldChrome(isActive: true)
 
                 Text("保存配置时创建相册；后续自动存入这个已有相册。")
@@ -270,7 +292,7 @@ private struct V1MemoryWriteSection: View {
             V1OutputCompactCard(title: "保存选项") {
                 VStack(alignment: .leading, spacing: 0) {
                     V1OutputRetentionRow(
-                        systemImage: "doc.text.magnifyingglass",
+                        systemImage: MemoMarkSymbol.photoMetadata.name,
                         tint: .blue,
                         title: "保留 EXIF 信息",
                         subtitle: "保留拍摄参数与元数据"
@@ -289,7 +311,7 @@ private struct V1MemoryWriteSection: View {
 
                     Toggle(isOn: writesMemoryInfoBinding) {
                         V1OutputRetentionLabel(
-                            systemImage: "text.badge.checkmark",
+                            systemImage: MemoMarkSymbol.memoryContent.name,
                             tint: .green,
                             title: presentation.toggleTitle,
                             subtitle: presentation.toggleDescription
@@ -311,6 +333,7 @@ private struct V1MemoryWriteSection: View {
                         .textFieldStyle(.plain)
                         .font(.subheadline)
                         .lineLimit(1...3)
+                        .submitLabel(.done)
                         .configurationFieldChrome(isActive: true)
                         .padding(.bottom, 8)
                     }
@@ -349,75 +372,6 @@ private struct V1MemoryWriteSection: View {
                 usesCustomMemoryWriteText = !newValue
             }
         )
-    }
-}
-
-private struct V1OutputTargetGrid: View {
-
-    @Binding
-    var outputTarget: V1IOSOutputTarget
-
-    private let targets: [V1IOSOutputTarget] = [
-        .applePhotos,
-        .existingAlbum,
-        .newAlbum
-    ]
-
-    var body: some View {
-        HStack(spacing: 7) {
-            ForEach(targets) { target in
-                Button {
-                    outputTarget = target
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: target.symbolName)
-                            .font(.caption.weight(.semibold))
-                            .frame(width: 14)
-
-                        Text(target.title)
-                            .font(.caption2.weight(.semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.82)
-                    }
-                    .foregroundStyle(
-                        isSelected(target)
-                        ? Color.white
-                        : Color.primary
-                    )
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 38)
-                    .background(
-                        RoundedRectangle(
-                            cornerRadius: 12,
-                            style: .continuous
-                        )
-                        .fill(
-                            isSelected(target)
-                            ? Color.blue
-                            : ConfigurationUI.controlBackground
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: 12,
-                            style: .continuous
-                        )
-                        .stroke(
-                            isSelected(target)
-                            ? Color.blue
-                            : ConfigurationUI.faintHairline
-                        )
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("输出目标：\(target.title)")
-            }
-        }
-    }
-
-    private func isSelected(_ target: V1IOSOutputTarget) -> Bool {
-        outputTarget == target
-            || (outputTarget == .automatic && target == .applePhotos)
     }
 }
 
@@ -567,11 +521,11 @@ private extension V1IOSOutputTarget {
         case .automatic:
             return "wand.and.stars"
         case .applePhotos:
-            return "photo.on.rectangle"
+                return MemoMarkSymbol.applePhotos.name
         case .existingAlbum:
-            return "folder"
+            return MemoMarkSymbol.localStorage.name
         case .newAlbum:
-            return "folder.badge.plus"
+            return MemoMarkSymbol.output.name
         }
     }
 
