@@ -166,6 +166,29 @@ enum PhotoFileNameResolver {
         }
     }
 
+    nonisolated static func rootOutputBaseName(
+        _ proposedBaseName: String
+    ) -> String {
+
+        parsedOutputCopyBaseName(
+            proposedBaseName
+        ).root
+    }
+
+    nonisolated static func isPhotoKitInternalResourceFileName(
+        _ candidate: String?
+    ) -> Bool {
+        guard let fileName = sanitizedOriginalFileName(
+            candidate
+        ) else {
+            return false
+        }
+        return URL(fileURLWithPath: fileName)
+            .deletingPathExtension()
+            .lastPathComponent
+            .lowercased() == "fullsizerender"
+    }
+
     private nonisolated static func isSystemPhotoLibraryPlaceholder(
         _ baseName: String
     ) -> Bool {
@@ -287,5 +310,124 @@ enum PhotoFileNameResolver {
             root.isEmpty ? "MemoMark" : root,
             max(index, 1)
         )
+    }
+}
+
+@MainActor
+final class LivePhotoOutputFilenameSequenceStore {
+
+    private let storageURL: URL
+    private let fileManager: FileManager
+
+    init(
+        storageURL: URL =
+            PhotoMemoSharedContainer.baseDirectoryURL
+            .appendingPathComponent(
+                "LivePhotoOutputFilenameSequence.v1.json"
+            ),
+        fileManager: FileManager = .default
+    ) {
+        self.storageURL = storageURL
+        self.fileManager = fileManager
+    }
+
+    func nextOutputBaseName(
+        preferredOriginalFileName: String?,
+        assetOriginalFileName: String? = nil,
+        captureDate: Date? = nil,
+        timeZone: TimeZone? = nil
+    ) throws -> String {
+        let resolvedBaseName =
+            PhotoFileNameResolver.outputBaseName(
+                preferredOriginalFileName:
+                    preferredOriginalFileName,
+                assetOriginalFileName:
+                    PhotoFileNameResolver
+                    .isPhotoKitInternalResourceFileName(
+                        assetOriginalFileName
+                    )
+                    ? nil
+                    : assetOriginalFileName,
+                captureDate: captureDate,
+                timeZone: timeZone
+            )
+        let rootBaseName =
+            PhotoFileNameResolver.rootOutputBaseName(
+                resolvedBaseName
+            )
+        let sequenceKey =
+            rootBaseName.lowercased()
+        var sequences = try loadSequences()
+        let previousIndex = max(
+            sequences[sequenceKey] ?? 0,
+            0
+        )
+        let nextIndex = previousIndex < Int.max
+            ? previousIndex + 1
+            : Int.max
+        sequences[sequenceKey] = nextIndex
+        try persist(sequences)
+
+        return PhotoFileNameResolver.outputCopyBaseName(
+            from: rootBaseName,
+            index: nextIndex
+        )
+    }
+
+    private func loadSequences() throws -> [String: Int] {
+        guard fileManager.fileExists(
+            atPath: storageURL.path
+        ) else {
+            return [:]
+        }
+        do {
+            let data = try Data(contentsOf: storageURL)
+            return try JSONDecoder().decode(
+                [String: Int].self,
+                from: data
+            )
+        } catch let error as DecodingError {
+            throw LivePhotoOutputFilenameSequenceError
+                .invalidData(String(describing: error))
+        } catch {
+            throw LivePhotoOutputFilenameSequenceError
+                .readFailed(String(describing: error))
+        }
+    }
+
+    private func persist(
+        _ sequences: [String: Int]
+    ) throws {
+        do {
+            try fileManager.createDirectory(
+                at: storageURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            let data = try JSONEncoder().encode(sequences)
+            try data.write(to: storageURL, options: .atomic)
+        } catch {
+            throw LivePhotoOutputFilenameSequenceError
+                .writeFailed(String(describing: error))
+        }
+    }
+}
+
+enum LivePhotoOutputFilenameSequenceError:
+    LocalizedError,
+    Equatable {
+
+    case readFailed(String)
+    case invalidData(String)
+    case writeFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .readFailed:
+            return "Unable to read the Live Photo filename sequence."
+        case .invalidData:
+            return "The Live Photo filename sequence is invalid."
+        case .writeFailed:
+            return "Unable to save the Live Photo filename sequence."
+        }
     }
 }

@@ -62,7 +62,7 @@ struct AnchorListView: View {
                                         .font(.headline)
 
                                     Text(
-                                        "\(anchor.type.displayName) · \(anchorModeText(for: anchor)) · \(anchor.date.formatted(date: .abbreviated, time: .shortened))"
+                                        "\(anchor.type.displayName) · \(anchorModeText(for: anchor)) · \(chineseDate(anchor.date))"
                                     )
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -162,6 +162,16 @@ struct AnchorListView: View {
             )
 #endif
         }
+    }
+
+    private func chineseDate(_ date: Date) -> String {
+        date.formatted(
+            .dateTime
+                .year(.defaultDigits)
+                .month(.defaultDigits)
+                .day(.defaultDigits)
+                .locale(Locale(identifier: "zh_CN"))
+        )
     }
 
     private func upsert(

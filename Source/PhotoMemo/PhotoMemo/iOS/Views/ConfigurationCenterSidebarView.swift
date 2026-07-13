@@ -95,10 +95,11 @@ struct ConfigurationCenterSidebarView: View {
 
                 sidebarFooter
             }
-            .padding(.horizontal, 14)
             .padding(.top, 18)
             .padding(.bottom, 22)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 14
+            )
         }
         .scrollDismissesKeyboard(.interactively)
         .background(ConfigurationUI.appBackground)

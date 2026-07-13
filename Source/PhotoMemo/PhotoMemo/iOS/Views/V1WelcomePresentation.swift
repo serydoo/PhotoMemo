@@ -160,9 +160,11 @@ struct V1WelcomePageSurface: View {
                         .controlSize(.large)
                     }
                 }
-                .padding(.horizontal, 22)
                 .padding(.top, 22)
                 .padding(.bottom, 34)
+                .v1AdaptiveScrollContent(
+                    horizontalPadding: 22
+                )
             }
             .background(
                 ConfigurationUI.appBackground
@@ -170,6 +172,123 @@ struct V1WelcomePageSurface: View {
             )
             .navigationTitle("欢迎")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+struct V1FirstRunConfigurationSheet: View {
+
+    @State private var subjectName = ""
+    @State private var birthday = Date()
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    let onSave: (String, Date) async -> Bool
+    let onDefer: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(.blue)
+
+                        Text("开始回顾")
+                            .font(.title2.weight(.semibold))
+
+                        Text("先建立第一套记忆配置。以后从 Apple Photos 分享照片时，时光记会直接使用它。")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 6)
+                }
+
+                Section("记忆主角") {
+                    TextField(
+                        "例如：小满、我自己、我们",
+                        text: $subjectName
+                    )
+                    .textInputAutocapitalization(.never)
+
+                    Text("这个名称会同时作为第一个记忆对象的显示名称和昵称。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("生日") {
+                    DatePicker(
+                        "选择日期",
+                        selection: $birthday,
+                        in: ...Date(),
+                        displayedComponents: .date
+                    )
+
+                    LabeledContent("时间锚点", value: "生日")
+                    LabeledContent("表达语气", value: "自然")
+                }
+
+                Section("系统已为你准备") {
+                    Label("生日成长预设", systemImage: "rectangle.and.text.magnifyingglass")
+                    Label("自动保存到 Apple Photos", systemImage: "photo.on.rectangle")
+                    Label("保留原图，生成一张新图片", systemImage: "photo.stack")
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    Button {
+                        save()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if isSaving {
+                                ProgressView()
+                            }
+                            Text(isSaving ? "正在保存" : "保存配置")
+                                .fontWeight(.semibold)
+                            Spacer()
+                        }
+                    }
+                    .disabled(
+                        subjectName.trimmingCharacters(
+                            in: .whitespacesAndNewlines
+                        ).isEmpty || isSaving
+                    )
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle("首次配置")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("稍后设置", action: onDefer)
+                        .disabled(isSaving)
+                }
+            }
+            .interactiveDismissDisabled(isSaving)
+        }
+    }
+
+    private func save() {
+        isSaving = true
+        errorMessage = nil
+        Task {
+            let succeeded = await onSave(subjectName, birthday)
+            await MainActor.run {
+                isSaving = false
+                if !succeeded {
+                    errorMessage = "配置没有保存成功，请稍后重试。"
+                }
+            }
         }
     }
 }
@@ -214,9 +333,11 @@ struct V1WorkflowGuideSurface: View {
                         }
                     }
                 }
-                .padding(.horizontal, 18)
                 .padding(.top, 16)
                 .padding(.bottom, 34)
+                .v1AdaptiveScrollContent(
+                    horizontalPadding: 18
+                )
             }
             .background(
                 ConfigurationUI.appBackground

@@ -246,9 +246,8 @@ struct PhotoMemoiOSBackgroundProcessingFocusCard:
                 PhotoMemoiOSBackgroundInfoRow(
                     title: "最近更新",
                     value:
-                        updatedAt.formatted(
-                            date: .abbreviated,
-                            time: .shortened
+                        V1UserFacingDateFormatter.dateTime(
+                            updatedAt
                         )
                 )
 
@@ -294,7 +293,7 @@ struct PhotoMemoiOSBackgroundLatestFailureCard:
                     )
 
                 Text(
-                    "最近更新：\(updatedAt.formatted(date: .abbreviated, time: .shortened))"
+                    "最近更新：\(V1UserFacingDateFormatter.dateTime(updatedAt))"
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)

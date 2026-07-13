@@ -68,6 +68,9 @@ struct BatchConfigurationSnapshotProvider {
 
         static let personalProfile =
             "photomemo.personalProfile"
+
+        static let productionConfigurationReference =
+            "photomemo.productionConfigurationReference"
     }
 
     init(
@@ -79,7 +82,7 @@ struct BatchConfigurationSnapshotProvider {
 
     func loadSnapshot() -> BatchConfigurationSnapshot {
 
-        makeSnapshot(
+        let snapshot = makeSnapshot(
             template: loadTemplate(),
             badge: loadBadge(),
             anchors: loadAnchors(),
@@ -120,6 +123,30 @@ struct BatchConfigurationSnapshotProvider {
                         Keys.mediaOutputMode
                 )
         )
+
+        guard let reference =
+            loadProductionConfigurationReference()
+        else {
+            return snapshot
+        }
+        return snapshot
+            .withProductionConfigurationReference(
+                reference
+            )
+    }
+
+    func loadProductionConfigurationReference()
+    -> ProductionConfigurationReference? {
+        guard let data = defaults.data(
+            forKey:
+                Keys.productionConfigurationReference
+        ) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(
+            ProductionConfigurationReference.self,
+            from: data
+        )
     }
 
     func loadV1ConfigurationReadiness()
@@ -144,12 +171,18 @@ struct BatchConfigurationSnapshotProvider {
             resolvedSelectedPreset(
                 from: record
             )
+        let reference =
+            loadProductionConfigurationReference()
 
         return V1SavedConfigurationReadiness(
             isReady: selectedPreset != nil,
             presetTitle:
                 selectedPreset?
-                .trimmedTitle
+                .trimmedTitle,
+            configurationID:
+                reference?.configurationID,
+            configurationRevision:
+                reference?.revision
         )
     }
 

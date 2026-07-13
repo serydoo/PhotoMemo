@@ -42,6 +42,34 @@ struct PhotoFileNameResolverTests {
                 "MemoMark Import (1).JPG"
             ) == nil
         )
+
+        #expect(
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                "FullSizeRender.jpeg"
+            ) == "FullSizeRender.jpeg"
+        )
+
+        #expect(
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                "FullSizeRender.mov"
+            ) == "FullSizeRender.mov"
+        )
+
+        #expect(
+            PhotoFileNameResolver
+            .isPhotoKitInternalResourceFileName(
+                "FullSizeRender.jpeg"
+            )
+        )
+
+        #expect(
+            !PhotoFileNameResolver
+            .isPhotoKitInternalResourceFileName(
+                "IMG_1164.JPG"
+            )
+        )
     }
 
     @Test("Preserves real camera file names")
@@ -159,5 +187,82 @@ struct PhotoFileNameResolverTests {
                 exists: existingNames.contains
             ) == "IMG_1234(2)"
         )
+    }
+
+    @MainActor
+    @Test("Allocates durable Live Photo copy names from the source base")
+    func allocatesDurableLivePhotoCopyNamesFromSourceBase() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.PhotoFileNameResolverTests.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        let storageURL = rootURL.appendingPathComponent(
+            "LivePhotoOutputFilenameSequence.json"
+        )
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let firstStore =
+            LivePhotoOutputFilenameSequenceStore(
+                storageURL: storageURL
+            )
+
+        #expect(
+            try firstStore.nextOutputBaseName(
+                preferredOriginalFileName: "IMG_1164.jpg",
+                assetOriginalFileName: "FullSizeRender.jpeg"
+            ) == "IMG_1164(1)"
+        )
+        #expect(
+            try firstStore.nextOutputBaseName(
+                preferredOriginalFileName: "IMG_1164.jpg",
+                assetOriginalFileName: "FullSizeRender.jpeg"
+            ) == "IMG_1164(2)"
+        )
+
+        let restartedStore =
+            LivePhotoOutputFilenameSequenceStore(
+                storageURL: storageURL
+            )
+
+        #expect(
+            try restartedStore.nextOutputBaseName(
+                preferredOriginalFileName: "IMG_1164.jpg",
+                assetOriginalFileName: "FullSizeRender.jpeg"
+            ) == "IMG_1164(3)"
+        )
+    }
+
+    @MainActor
+    @Test("Rejects a corrupt Live Photo filename sequence without reusing names")
+    func rejectsCorruptLivePhotoFilenameSequence() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.PhotoFileNameResolverCorruptTests.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        let storageURL = rootURL.appendingPathComponent(
+            "LivePhotoOutputFilenameSequence.json"
+        )
+        try FileManager.default.createDirectory(
+            at: rootURL,
+            withIntermediateDirectories: true
+        )
+        try Data("not-json".utf8).write(to: storageURL)
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let store = LivePhotoOutputFilenameSequenceStore(
+            storageURL: storageURL
+        )
+
+        #expect(throws: LivePhotoOutputFilenameSequenceError.self) {
+            _ = try store.nextOutputBaseName(
+                preferredOriginalFileName: "IMG_1164.jpg"
+            )
+        }
     }
 }

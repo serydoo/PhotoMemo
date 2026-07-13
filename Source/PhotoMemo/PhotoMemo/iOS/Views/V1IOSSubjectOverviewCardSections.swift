@@ -235,11 +235,8 @@ struct V1IOSSubjectAnchorSection: View {
 
                 Text(
                     trimmedNote.isEmpty
-                    ? anchor.date.formatted(
-                        date: .abbreviated,
-                        time: .omitted
-                    )
-                    : "\(anchor.date.formatted(date: .abbreviated, time: .omitted)) · \(trimmedNote)"
+                    ? chineseDate(anchor.date)
+                    : "\(chineseDate(anchor.date)) · \(trimmedNote)"
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -261,6 +258,10 @@ struct V1IOSSubjectAnchorSection: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
+    }
+
+    private func chineseDate(_ date: Date) -> String {
+        V1UserFacingDateFormatter.date(date)
     }
 
     private func iconName(

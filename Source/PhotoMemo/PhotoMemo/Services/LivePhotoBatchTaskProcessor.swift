@@ -247,6 +247,10 @@ final class LivePhotoBatchTaskProcessor:
         FileManager
     private let temporaryRootURL:
         URL
+    private let diagnosticsDefaults:
+        UserDefaults
+    private let outputFilenameSequenceStore:
+        LivePhotoOutputFilenameSequenceStore
 
     init(
         runtimeGate:
@@ -272,6 +276,11 @@ final class LivePhotoBatchTaskProcessor:
             RecordCardExportService? = nil,
         photoLibraryExportService:
             PhotoLibraryExportService? = nil,
+        diagnosticsDefaults:
+            UserDefaults = PhotoMemoSharedContainer
+            .sharedUserDefaults,
+        outputFilenameSequenceStore:
+            LivePhotoOutputFilenameSequenceStore? = nil,
         fileManager: FileManager = .default,
         temporaryRootURL:
             URL =
@@ -320,6 +329,11 @@ final class LivePhotoBatchTaskProcessor:
             fileManager
         self.temporaryRootURL =
             temporaryRootURL
+        self.diagnosticsDefaults =
+            diagnosticsDefaults
+        self.outputFilenameSequenceStore =
+            outputFilenameSequenceStore
+            ?? LivePhotoOutputFilenameSequenceStore()
     }
 
     func process(
@@ -367,25 +381,71 @@ final class LivePhotoBatchTaskProcessor:
 
 extension LivePhotoBatchTaskProcessor {
 
-    static func stillPhotoOriginalFilename(
+    static func sourceOriginalFilename(
         task: BatchTask,
         preparedBundle: LivePhotoPreparedAssetBundle
     ) -> String? {
-        let stillResourceName =
+        let taskFileName =
+            PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                task.fileName
+            )
+        let taskExtension = taskFileName.map {
+            URL(fileURLWithPath: $0)
+                .pathExtension
+                .lowercased()
+        }
+
+        if taskExtension != "livephoto",
+            let taskFileName {
+            return taskFileName
+        }
+
+        let preparedFileName =
             preparedBundle
             .stillPhotoResource
             .originalFilename
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
+        guard !PhotoFileNameResolver
+            .isPhotoKitInternalResourceFileName(
+                preparedFileName
+            ) else {
+            return nil
+        }
+        return PhotoFileNameResolver
+            .sanitizedOriginalFileName(
+                preparedFileName
             )
-
-        return !stillResourceName.isEmpty
-            ? stillResourceName
-            : task.fileName
     }
 }
 
 private extension LivePhotoBatchTaskProcessor {
+
+    func validateRenderHealth(
+        card: RecordCard,
+        configuration: BatchConfigurationSnapshot,
+        task: BatchTask
+    ) throws {
+        do {
+            _ = try ProductionRenderHealthCheck.validate(
+                card: card,
+                configuration: configuration
+            )
+            _ = PhotoMemoShareDiagnostics.recordResult(
+                stage: .renderHealthCheckPassed,
+                message:
+                    "taskID=\(task.id.uuidString) source=livePhoto configurationID=\(configuration.configurationID?.uuidString ?? "nil") revision=\(configuration.configurationRevision.map(String.init) ?? "nil")",
+                defaults: diagnosticsDefaults
+            )
+        } catch {
+            _ = PhotoMemoShareDiagnostics.recordResult(
+                stage: .renderHealthCheckFailed,
+                message:
+                    "taskID=\(task.id.uuidString) source=livePhoto configurationID=\(configuration.configurationID?.uuidString ?? "nil") revision=\(configuration.configurationRevision.map(String.init) ?? "nil") reason=\(String(describing: error))",
+                defaults: diagnosticsDefaults
+            )
+            throw error
+        }
+    }
 
     func processStaticStillImage(
         task: BatchTask,
@@ -401,6 +461,11 @@ private extension LivePhotoBatchTaskProcessor {
                 from: importedPhoto,
                 configuration: configuration
             )
+        try validateRenderHealth(
+            card: card,
+            configuration: configuration,
+            task: task
+        )
         let renderedFileURL =
             try exportService.exportToTemporaryFile(
                 photo: importedPhoto,
@@ -498,6 +563,11 @@ private extension LivePhotoBatchTaskProcessor {
                     configuration:
                         configuration
                 )
+            try validateRenderHealth(
+                card: card,
+                configuration: configuration,
+                task: task
+            )
             let renderedFileURL =
                 try exportService.exportToTemporaryFile(
                     photo: importedPhoto,
@@ -561,6 +631,59 @@ private extension LivePhotoBatchTaskProcessor {
                     outputDescription:
                         outputDescription
                 )
+            let sourceOriginalFilename =
+                Self.sourceOriginalFilename(
+                    task: task,
+                    preparedBundle: preparedBundle
+                )
+            let outputBaseName: String
+            do {
+                outputBaseName = try outputFilenameSequenceStore
+                    .nextOutputBaseName(
+                        preferredOriginalFileName:
+                            sourceOriginalFilename,
+                        assetOriginalFileName:
+                            preparedBundle
+                            .stillPhotoResource
+                            .originalFilename,
+                        captureDate:
+                            importedPhoto
+                            .metadata
+                            .captureDate,
+                        timeZone:
+                            importedPhoto
+                            .metadata
+                            .captureTimeZone
+                    )
+            } catch {
+                _ = PhotoMemoShareDiagnostics.recordResult(
+                    stage: .livePhotoOutputFilenameFailed,
+                    message:
+                        "taskID=\(task.id.uuidString) reason=\(String(describing: error))",
+                    defaults: diagnosticsDefaults
+                )
+                throw error
+            }
+            let stillPhotoOriginalFilename =
+                Self.outputOriginalFilename(
+                    baseName: outputBaseName,
+                    fileURL: composedPair.stillPhotoURL,
+                    fallbackExtension: "heic"
+                )
+            let pairedVideoOriginalFilename =
+                Self.outputOriginalFilename(
+                    baseName: outputBaseName,
+                    fileURL: composedPair.pairedVideoURL,
+                    fallbackExtension: "mov"
+                )
+            let diagnosticSourceFileName =
+                sourceOriginalFilename ?? "nil"
+            _ = PhotoMemoShareDiagnostics.recordResult(
+                stage: .livePhotoOutputFilenameResolved,
+                message:
+                    "taskID=\(task.id.uuidString) source=\(diagnosticSourceFileName) still=\(stillPhotoOriginalFilename) pairedVideo=\(pairedVideoOriginalFilename)",
+                defaults: diagnosticsDefaults
+            )
             let saveResult =
                 try await assetWriter.saveAsset(
                     LivePhotoSaveRequest(
@@ -577,17 +700,11 @@ private extension LivePhotoBatchTaskProcessor {
                         preferredAlbumIdentifier:
                             preferredAlbumIdentifier(
                                 from: configuration
-                            ),
+                        ),
                         stillPhotoOriginalFilename:
-                            Self.stillPhotoOriginalFilename(
-                                task: task,
-                                preparedBundle:
-                                    preparedBundle
-                            ),
+                            stillPhotoOriginalFilename,
                         pairedVideoOriginalFilename:
-                            preparedBundle
-                            .pairedVideoResource
-                            .originalFilename
+                            pairedVideoOriginalFilename
                     )
                 )
 
@@ -629,6 +746,23 @@ private extension LivePhotoBatchTaskProcessor {
                             .contentTypeIdentifier
                     )
             )
+    }
+
+    static func outputOriginalFilename(
+        baseName: String,
+        fileURL: URL,
+        fallbackExtension: String
+    ) -> String {
+        let pathExtension = fileURL.pathExtension
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            .lowercased()
+        return baseName + "." + (
+            pathExtension.isEmpty
+            ? fallbackExtension
+            : pathExtension
+        )
     }
 
     func descriptor(

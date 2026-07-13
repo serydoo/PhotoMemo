@@ -40,6 +40,20 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "app.enqueue.taskRoute")
     nonisolated static let appLivePhotoIdentityRecovery =
         Self(rawValue: "app.livePhotoIdentityRecovery")
+    nonisolated static let configurationReferenceAccepted =
+        Self(rawValue: "configuration.reference.accepted")
+    nonisolated static let configurationCompatibilityRecovery =
+        Self(rawValue: "configuration.compatibility.recovery")
+    nonisolated static let configurationContractViolation =
+        Self(rawValue: "configuration.contract.violation")
+    nonisolated static let renderHealthCheckPassed =
+        Self(rawValue: "render.healthCheck.passed")
+    nonisolated static let renderHealthCheckFailed =
+        Self(rawValue: "render.healthCheck.failed")
+    nonisolated static let livePhotoOutputFilenameResolved =
+        Self(rawValue: "livePhoto.outputFilename.resolved")
+    nonisolated static let livePhotoOutputFilenameFailed =
+        Self(rawValue: "livePhoto.outputFilename.failed")
     nonisolated static let batchTaskAdmission =
         Self(rawValue: "batch.task.admission")
     nonisolated static let batchTaskRoute =

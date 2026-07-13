@@ -19,6 +19,7 @@ enum LivePhotoAssetWritingError:
     case unauthorized
     case stillPhotoFileMissing
     case pairedVideoFileMissing
+    case outputFilenameBaseMismatch
     case pairingIdentityVerificationFailed(
         LivePhotoPairingIdentityVerificationError
     )
@@ -36,6 +37,8 @@ enum LivePhotoAssetWritingError:
             return "The rendered still photo file is missing."
         case .pairedVideoFileMissing:
             return "The rendered paired video file is missing."
+        case .outputFilenameBaseMismatch:
+            return "The rendered Live Photo still image and paired video must use the same output filename."
         case .pairingIdentityVerificationFailed:
             return "The rendered Live Photo still image and paired video cannot be paired safely."
         case .albumNotFound:

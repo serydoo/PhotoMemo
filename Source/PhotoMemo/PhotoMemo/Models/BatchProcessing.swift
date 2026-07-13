@@ -213,6 +213,8 @@ struct BatchConfigurationSnapshot:
 
     var configurationRevision: Int?
 
+    var productionContractVersion: Int?
+
     var template: Template
 
     var badge: Badge?
@@ -223,6 +225,14 @@ struct BatchConfigurationSnapshot:
 
     var locationDisplayConfiguration:
         ExpressionModuleConfiguration?
+
+    var usesCustomMemoryWriteText: Bool
+
+    var customMemoryWriteText: String
+
+    var presentationRouteRawValue: String?
+
+    var logoModeRawValue: String?
 
 #if !PHOTOMEMO_SHARE_EXTENSION
     private(set) var frozenMemorySubject:
@@ -240,27 +250,37 @@ struct BatchConfigurationSnapshot:
 
     var mediaOutputModeRawValue: String?
 
+    var livePhotoPolicyRawValue: String?
+
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
         configurationID: UUID? = nil,
         configurationRevision: Int? = nil,
+        productionContractVersion: Int? = nil,
         template: Template,
         badge: Badge?,
         anchor: Anchor?,
         memorySubjectText: String? = nil,
         locationDisplayConfiguration:
             ExpressionModuleConfiguration? = nil,
+        usesCustomMemoryWriteText: Bool = false,
+        customMemoryWriteText: String = "",
+        presentationRouteRawValue: String? = nil,
+        logoModeRawValue: String? = nil,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
         selectedAlbumIdentifier: String,
-        mediaOutputModeRawValue: String? = nil
+        mediaOutputModeRawValue: String? = nil,
+        livePhotoPolicyRawValue: String? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
         self.configurationID = configurationID
         self.configurationRevision =
             configurationRevision
+        self.productionContractVersion =
+            productionContractVersion
         self.template = template
         self.badge = badge
         self.anchor = anchor
@@ -268,6 +288,14 @@ struct BatchConfigurationSnapshot:
             memorySubjectText
         self.locationDisplayConfiguration =
             locationDisplayConfiguration
+        self.usesCustomMemoryWriteText =
+            usesCustomMemoryWriteText
+        self.customMemoryWriteText =
+            customMemoryWriteText
+        self.presentationRouteRawValue =
+            presentationRouteRawValue
+        self.logoModeRawValue =
+            logoModeRawValue
         self.shouldWritePhotoDescription =
             shouldWritePhotoDescription
         self.photoDescriptionOverride =
@@ -276,6 +304,238 @@ struct BatchConfigurationSnapshot:
             selectedAlbumIdentifier
         self.mediaOutputModeRawValue =
             mediaOutputModeRawValue
+        self.livePhotoPolicyRawValue =
+            livePhotoPolicyRawValue
+    }
+}
+
+extension BatchConfigurationSnapshot {
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case createdAt
+        case configurationID
+        case configurationRevision
+        case productionContractVersion
+        case template
+        case badge
+        case anchor
+        case memorySubjectText
+        case locationDisplayConfiguration
+        case usesCustomMemoryWriteText
+        case customMemoryWriteText
+        case presentationRouteRawValue
+        case logoModeRawValue
+#if !PHOTOMEMO_SHARE_EXTENSION
+        case frozenMemorySubject
+        case frozenConfigurationSnapshot
+#endif
+        case shouldWritePhotoDescription
+        case photoDescriptionOverride
+        case selectedAlbumIdentifier
+        case mediaOutputModeRawValue
+        case livePhotoPolicyRawValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(
+            keyedBy: CodingKeys.self
+        )
+        id = try container.decode(UUID.self, forKey: .id)
+        createdAt = try container.decode(
+            Date.self,
+            forKey: .createdAt
+        )
+        configurationID = try container.decodeIfPresent(
+            UUID.self,
+            forKey: .configurationID
+        )
+        configurationRevision = try container.decodeIfPresent(
+            Int.self,
+            forKey: .configurationRevision
+        )
+        productionContractVersion = try container.decodeIfPresent(
+            Int.self,
+            forKey: .productionContractVersion
+        )
+        template = try container.decode(
+            Template.self,
+            forKey: .template
+        )
+        badge = try container.decodeIfPresent(
+            Badge.self,
+            forKey: .badge
+        )
+        anchor = try container.decodeIfPresent(
+            Anchor.self,
+            forKey: .anchor
+        )
+        memorySubjectText = try container.decodeIfPresent(
+            String.self,
+            forKey: .memorySubjectText
+        )
+        locationDisplayConfiguration = try container.decodeIfPresent(
+            ExpressionModuleConfiguration.self,
+            forKey: .locationDisplayConfiguration
+        )
+        usesCustomMemoryWriteText = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .usesCustomMemoryWriteText
+        ) ?? false
+        customMemoryWriteText = try container.decodeIfPresent(
+            String.self,
+            forKey: .customMemoryWriteText
+        ) ?? ""
+        presentationRouteRawValue = try container.decodeIfPresent(
+            String.self,
+            forKey: .presentationRouteRawValue
+        )
+        logoModeRawValue = try container.decodeIfPresent(
+            String.self,
+            forKey: .logoModeRawValue
+        )
+#if !PHOTOMEMO_SHARE_EXTENSION
+        frozenMemorySubject = try container.decodeIfPresent(
+            MemorySubject.self,
+            forKey: .frozenMemorySubject
+        )
+        frozenConfigurationSnapshot = try container.decodeIfPresent(
+            ConfigurationSnapshot.self,
+            forKey: .frozenConfigurationSnapshot
+        )
+#endif
+        shouldWritePhotoDescription = try container.decode(
+            Bool.self,
+            forKey: .shouldWritePhotoDescription
+        )
+        photoDescriptionOverride = try container.decode(
+            String.self,
+            forKey: .photoDescriptionOverride
+        )
+        selectedAlbumIdentifier = try container.decode(
+            String.self,
+            forKey: .selectedAlbumIdentifier
+        )
+        mediaOutputModeRawValue = try container.decodeIfPresent(
+            String.self,
+            forKey: .mediaOutputModeRawValue
+        )
+        livePhotoPolicyRawValue = try container.decodeIfPresent(
+            String.self,
+            forKey: .livePhotoPolicyRawValue
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(
+            keyedBy: CodingKeys.self
+        )
+        try container.encode(id, forKey: .id)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(
+            configurationID,
+            forKey: .configurationID
+        )
+        try container.encodeIfPresent(
+            configurationRevision,
+            forKey: .configurationRevision
+        )
+        try container.encodeIfPresent(
+            productionContractVersion,
+            forKey: .productionContractVersion
+        )
+        try container.encode(template, forKey: .template)
+        try container.encodeIfPresent(badge, forKey: .badge)
+        try container.encodeIfPresent(anchor, forKey: .anchor)
+        try container.encodeIfPresent(
+            memorySubjectText,
+            forKey: .memorySubjectText
+        )
+        try container.encodeIfPresent(
+            locationDisplayConfiguration,
+            forKey: .locationDisplayConfiguration
+        )
+        try container.encode(
+            usesCustomMemoryWriteText,
+            forKey: .usesCustomMemoryWriteText
+        )
+        try container.encode(
+            customMemoryWriteText,
+            forKey: .customMemoryWriteText
+        )
+        try container.encodeIfPresent(
+            presentationRouteRawValue,
+            forKey: .presentationRouteRawValue
+        )
+        try container.encodeIfPresent(
+            logoModeRawValue,
+            forKey: .logoModeRawValue
+        )
+#if !PHOTOMEMO_SHARE_EXTENSION
+        try container.encodeIfPresent(
+            frozenMemorySubject,
+            forKey: .frozenMemorySubject
+        )
+        try container.encodeIfPresent(
+            frozenConfigurationSnapshot,
+            forKey: .frozenConfigurationSnapshot
+        )
+#endif
+        try container.encode(
+            shouldWritePhotoDescription,
+            forKey: .shouldWritePhotoDescription
+        )
+        try container.encode(
+            photoDescriptionOverride,
+            forKey: .photoDescriptionOverride
+        )
+        try container.encode(
+            selectedAlbumIdentifier,
+            forKey: .selectedAlbumIdentifier
+        )
+        try container.encodeIfPresent(
+            mediaOutputModeRawValue,
+            forKey: .mediaOutputModeRawValue
+        )
+        try container.encodeIfPresent(
+            livePhotoPolicyRawValue,
+            forKey: .livePhotoPolicyRawValue
+        )
+    }
+}
+
+extension BatchConfigurationSnapshot {
+
+    var productionConfigurationReference:
+        ProductionConfigurationReference? {
+        guard let configurationID,
+            let configurationRevision,
+            let productionContractVersion
+        else {
+            return nil
+        }
+        return ProductionConfigurationReference(
+            configurationID: configurationID,
+            revision: configurationRevision,
+            contractVersion: productionContractVersion
+        )
+    }
+
+    func withProductionConfigurationReference(
+        _ reference: ProductionConfigurationReference
+    ) -> BatchConfigurationSnapshot {
+        var copy = self
+        copy.configurationID = reference.configurationID
+        copy.configurationRevision = reference.revision
+        copy.productionContractVersion = reference.contractVersion
+#if !PHOTOMEMO_SHARE_EXTENSION
+        if var snapshot = copy.frozenConfigurationSnapshot {
+            snapshot.configurationID = reference.configurationID
+            snapshot.configurationRevision = reference.revision
+            copy.frozenConfigurationSnapshot = snapshot
+        }
+#endif
+        return copy
     }
 }
 
@@ -283,6 +543,19 @@ struct BatchConfigurationSnapshot:
 extension BatchConfigurationSnapshot {
 
     var v1MediaOutputMode: V1MediaOutputMode {
+        if let livePhotoPolicyRawValue,
+            let policy =
+                MemoryConfigurationRecord.Output.LivePhotoPolicy(
+                    rawValue: livePhotoPolicyRawValue
+                ) {
+            switch policy {
+            case .preserveMotion:
+                return .originalFormat
+            case .staticImageOnly:
+                return .staticImage
+            }
+        }
+
         guard
             let mediaOutputModeRawValue,
             let mode =

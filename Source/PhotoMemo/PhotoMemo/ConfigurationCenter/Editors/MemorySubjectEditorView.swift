@@ -223,42 +223,7 @@ struct MemorySubjectEditorView: View {
 
     private var identityOverviewEditor: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(
-                        displayName
-                            .trimmingCharacters(
-                                in: .whitespacesAndNewlines
-                            )
-                            .isEmpty
-                        ? "记忆对象"
-                        : displayName
-                    )
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                    expressionSubjectMenuRow
-
-                    Text(
-                        relationshipLabel
-                            .trimmingCharacters(
-                                in: .whitespacesAndNewlines
-                            )
-                            .isEmpty
-                        ? "补充关系备注"
-                        : relationshipLabel
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Spacer(minLength: 0)
-
-                compactAvatarPicker
-            }
+            adaptiveIdentityOverviewHeader
 
             if let identityOverviewAccessory {
                 identityOverviewAccessory
@@ -266,6 +231,53 @@ struct MemorySubjectEditorView: View {
 
             compactIdentityFieldsPanel
         }
+    }
+
+    private var adaptiveIdentityOverviewHeader: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 14) {
+                identityOverviewText
+                compactAvatarPicker
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                compactAvatarPicker
+                identityOverviewText
+            }
+        }
+    }
+
+    private var identityOverviewText: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(
+                displayName
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                    .isEmpty
+                ? "记忆对象"
+                : displayName
+            )
+            .font(.title2.weight(.semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+
+            expressionSubjectMenuRow
+
+            Text(
+                relationshipLabel
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                    .isEmpty
+                ? "补充关系备注"
+                : relationshipLabel
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var expressionSubjectMenuRow: some View {
@@ -306,6 +318,7 @@ struct MemorySubjectEditorView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .truncationMode(.tail)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(
@@ -317,7 +330,7 @@ struct MemorySubjectEditorView: View {
                         .stroke(ConfigurationUI.faintHairline)
                 )
         }
-        .fixedSize(horizontal: true, vertical: false)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var compactIdentityFieldsPanel: some View {
@@ -502,17 +515,7 @@ struct MemorySubjectEditorView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                HStack(spacing: 8) {
-                    identitySummaryChip(
-                        title: shortName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "未设昵称" : shortName,
-                        systemImage: "person.text.rectangle"
-                    )
-
-                    identitySummaryChip(
-                        title: relationshipLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "未设关系" : relationshipLabel,
-                        systemImage: "person.2.fill"
-                    )
-                }
+                identitySummaryChips
             }
 
             Spacer(minLength: 0)
@@ -531,6 +534,44 @@ struct MemorySubjectEditorView: View {
                 style: .continuous
             )
             .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
+    private var identitySummaryChips: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                shortNameSummaryChip
+                relationshipSummaryChip
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                shortNameSummaryChip
+                relationshipSummaryChip
+            }
+        }
+    }
+
+    private var shortNameSummaryChip: some View {
+        identitySummaryChip(
+            title:
+                shortName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty
+                ? "未设昵称"
+                : shortName,
+            systemImage: "person.text.rectangle"
+        )
+    }
+
+    private var relationshipSummaryChip: some View {
+        identitySummaryChip(
+            title:
+                relationshipLabel
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty
+                ? "未设关系"
+                : relationshipLabel,
+            systemImage: "person.2.fill"
         )
     }
 
@@ -828,10 +869,8 @@ struct MemorySubjectEditorView: View {
             NavigationStack {
                 Form {
                     Section("时间与类别") {
-                        DatePicker(
-                            "日期",
-                            selection: anchorBinding.date,
-                            displayedComponents: .date
+                        CompactAnchorDatePicker(
+                            selection: anchorBinding.date
                         )
 
                         Picker(
@@ -1483,6 +1522,130 @@ private enum SubjectFocusedField: Hashable {
     case timeNote
 }
 
+private struct CompactAnchorDatePicker: View {
+
+    @Binding var selection: Date
+
+    private let calendar = Calendar(identifier: .gregorian)
+    private let years = Array(1900...2100)
+
+    private var selectedYear: Int {
+        calendar.component(.year, from: selection)
+    }
+
+    private var selectedMonth: Int {
+        calendar.component(.month, from: selection)
+    }
+
+    private var selectedDay: Int {
+        calendar.component(.day, from: selection)
+    }
+
+    private var availableDays: ClosedRange<Int> {
+        let components = DateComponents(
+            year: selectedYear,
+            month: selectedMonth
+        )
+        guard
+            let monthDate = calendar.date(from: components),
+            let range = calendar.range(of: .day, in: .month, for: monthDate)
+        else {
+            return 1...31
+        }
+        return range.lowerBound...range.upperBound
+    }
+
+    var body: some View {
+#if os(iOS)
+        HStack(spacing: 2) {
+            compactWheel(
+                values: years,
+                selection: selectedYear,
+                suffix: "年"
+            ) { update(year: $0) }
+            .frame(maxWidth: .infinity)
+
+            compactWheel(
+                values: Array(1...12),
+                selection: selectedMonth,
+                suffix: "月"
+            ) { update(month: $0) }
+            .frame(width: 84)
+
+            compactWheel(
+                values: Array(availableDays),
+                selection: min(selectedDay, availableDays.upperBound),
+                suffix: "日"
+            ) { update(day: $0) }
+            .frame(width: 84)
+        }
+        .frame(height: 52)
+        .clipped()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("锚点日期")
+#else
+        DatePicker(
+            "日期",
+            selection: $selection,
+            displayedComponents: .date
+        )
+#endif
+    }
+
+#if os(iOS)
+    private func compactWheel(
+        values: [Int],
+        selection: Int,
+        suffix: String,
+        onChange: @escaping (Int) -> Void
+    ) -> some View {
+        Picker(
+            suffix,
+            selection: Binding(
+                get: { selection },
+                set: onChange
+            )
+        ) {
+            ForEach(values, id: \.self) { value in
+                Text("\(value)\(suffix)")
+                    .tag(value)
+            }
+        }
+        .pickerStyle(.wheel)
+        .labelsHidden()
+    }
+#endif
+
+    private func update(
+        year: Int? = nil,
+        month: Int? = nil,
+        day: Int? = nil
+    ) {
+        var components = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second],
+            from: selection
+        )
+        components.year = year ?? selectedYear
+        components.month = month ?? selectedMonth
+
+        let requestedDay = day ?? selectedDay
+        components.day = 1
+        guard let targetMonth = calendar.date(from: components) else {
+            return
+        }
+        let dayRange = calendar.range(
+            of: .day,
+            in: .month,
+            for: targetMonth
+        ) ?? 1..<32
+        components.day = min(requestedDay, dayRange.count)
+
+        if let date = calendar.date(from: components) {
+            selection = date
+        }
+    }
+}
+
 private struct SubjectTimeAnchorRow: View {
 
     let index: Int
@@ -1582,8 +1745,11 @@ private struct SubjectTimeAnchorRow: View {
 
     private var anchorDateText: String {
         anchor.date.formatted(
-            date: .abbreviated,
-            time: .omitted
+            .dateTime
+                .year(.defaultDigits)
+                .month(.defaultDigits)
+                .day(.defaultDigits)
+                .locale(Locale(identifier: "zh_CN"))
         )
     }
 

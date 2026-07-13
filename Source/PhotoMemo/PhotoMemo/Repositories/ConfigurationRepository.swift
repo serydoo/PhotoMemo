@@ -35,6 +35,15 @@ final class ConfigurationRepository {
             .loadSnapshot()
     }
 
+    func resolveDurableProductionConfiguration(
+        _ reference: ProductionConfigurationReference
+    ) throws -> BatchConfigurationSnapshot {
+        try settingsService
+            .resolveDurableProductionConfiguration(
+                reference
+            )
+    }
+
     func resolvedAlbumTitle(
         for identifier: String
     ) -> String? {

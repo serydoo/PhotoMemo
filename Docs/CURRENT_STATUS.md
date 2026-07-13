@@ -1,6 +1,491 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-11
+Last updated: 2026-07-13
+
+## 2026-07-13 V3 UI, Live Photo Naming, And Configuration Contract Closure
+
+This closure supersedes the earlier same-day notes that still describe the
+Live Photo `FullSizeRender` name as open or the macOS test host as blocked.
+
+Closed facts:
+
+- iPhone vertical pages now bind content to the real viewport and use adaptive
+  fallbacks for horizontal groups that can exceed compact widths;
+- adjusted Live Photo resources no longer publish `FullSizeRender` as output
+  identity when source identity exists;
+- Live Photo still and paired-video resources share one source-derived durable
+  sequence: `source(1)`, `source(2)`, `source(3)`;
+- the writer rejects mismatched pair bases before PhotoKit save;
+- production requests carry exact configuration UUID and configuration
+  revision, resolve the matching durable record, freeze one complete canonical
+  snapshot, and pass semantic Render Health Check before export;
+- save-current, rename, output edits, restart recovery, import, Share drain,
+  concurrent aggregate persistence, and first-run initialization retain their
+  intended configuration ownership;
+- the shared date editor now compiles on the macOS test host while preserving
+  the iOS compact wheel UI.
+
+Verification passed:
+
+- combined UI/configuration/filename contract group: `30/30`;
+- focused Live Photo naming and media group: `31/31`;
+- expanded configuration lifecycle group: `110/110`;
+- `ConfigurationMigrationTests`: `30/30` after separating aggregate revision
+  from individual configuration revision;
+- unstable raw JSON byte comparisons in import tests now use sorted-key stable
+  encoding and no longer produce parallel-test false failures.
+
+Final unsigned macOS, iOS app, and Share Extension builds pass. Remaining work
+for this delivery is operational rather than architectural: repository
+commit/push and clean installation of the same signed build on the two
+iPhone 15 Pro devices and one iPhone 17 Pro Max.
+
+## 2026-07-13 iPhone Responsive Layout Contract
+
+The reported iPhone 15 Pro card-corner failure was traced to vertical
+`ScrollView` content expanding beyond the compact viewport, not to a locked
+corner-radius value. A wider intrinsic child could move complete card bounds
+off-screen while the same UI appeared normal on an iPhone 17 Pro Max.
+
+Implemented facts:
+
+- `V1AdaptivePageLayout` now provides one viewport-bound page contract with a
+  shared `720 pt` maximum readable width;
+- Home, Configuration Center, Output, Task, Settings, object configuration,
+  welcome/workflow, background status, and related sheets now use the shared
+  page contract or native `List`/`Form` width ownership;
+- the Home subject card and header labels provide compact fallbacks;
+- Task content is vertically scrollable on short iPhones and larger content
+  sizes;
+- local configuration backup actions reflow instead of leaving the card;
+- user-controlled object identity text no longer forces intrinsic page width;
+- Share Extension UIKit constraints already bind content to safe-area and
+  scroll-frame layout guides and require no device-specific patch;
+- no Renderer, Export, Share transport, Configuration identity, or media
+  processing behavior changed.
+
+Verification:
+
+- `PhotoMemoiOS` generic iOS Simulator Debug build passed;
+- `PhotoMemoShareExtension` generic iOS Simulator Debug build passed;
+- `git diff --check` passed;
+- 375, 393, and 440 pt Home containment screenshots preserve complete outer
+  card bounds;
+- signed `1.7 (7)` was built with team `UK7ZR8G564`, installed, and launched
+  successfully on the designated iPhone 15 Pro and iPhone 17 Pro Max;
+- final manual acceptance remains open for every primary tab and secondary
+  object/configuration sheet on both physical devices.
+
+The macOS-only `.pickerStyle(.wheel)` availability error remains recorded and
+was not expanded into this iPhone work because both iOS targets build and the
+user explicitly deferred macOS UI work.
+
+## 2026-07-13 Production Configuration Identity And Render Health Contract
+
+The dual-device smart-module failure is now converted from a Share-only
+restoration patch into an all-source production Contract:
+
+```text
+source
+-> configurationID + configuration revision
+-> exact durable lookup
+-> complete canonical Snapshot freeze
+-> structural validation
+-> queue admission
+-> real RecordCard build
+-> area-specific semantic Render Health Check
+-> Renderer -> Export
+```
+
+Implemented facts:
+
+- configuration UUID is durable identity; save-current, rename, and output
+  edits keep that UUID while advancing the individual configuration revision;
+- aggregate repository revision and configuration revision are separate and
+  both are exposed by the durable save receipt;
+- Share Extension publishes `configurationID`, configuration revision, and
+  production Contract version `1` into its transport snapshot;
+- the main app resolves Contract v1 requests by exact durable ID/revision and
+  rejects missing, unknown, or mismatched revisions instead of guessing the
+  active configuration;
+- unversioned historical requests keep one explicit compatibility-recovery
+  path and emit a diagnostic event;
+- every launch source (`shareExtension`, `fileOpen`, `quickAction`,
+  `automation`, `inAppPreview`) uses the same queue admission validator;
+- the production snapshot carries Template, Memory Subject, selected Time
+  Anchor, custom Memory text, presentation route, Logo mode, Location mode,
+  Photos description, album, media mode, and Live Photo policy from one
+  durable record;
+- enabled `{{memory_summary}}` must resolve non-empty and appear in every
+  configured Card area before static or Live Photo export can continue;
+- Health Check diagnostics include task/source and configuration ID/revision
+  without recording photo content or the user's rendered sentence;
+- old persisted `BatchConfigurationSnapshot` values remain decodable when the
+  new production-only fields are absent.
+- `AppEnvironment.live` now stores the durable Configuration Library under
+  the stable App Group base directory instead of the test-only random
+  `tmp/<UUID>` directory. A restart regression proves an exact saved
+  configuration ID/revision survives environment destruction and recreation.
+
+Verification passed:
+
+- 43 focused tests across production configuration, durable repository,
+  Share drain, and Live Photo queue routing;
+- an additional restart regression covering stable durable identity recovery;
+- `PhotoMemoiOS` generic iOS Debug build with stable Xcode;
+- `PhotoMemoShareExtension` generic iOS Debug build with stable Xcode;
+- `git diff --check`.
+
+Final closure verification additionally passed both generic iOS builds after
+the dual-device run. A macOS-hosted focused-test rerun was blocked before test
+execution by the already-known `MemorySubjectEditorView` `.pickerStyle(.wheel)`
+availability error. Per the established platform boundary, that macOS-only UI
+issue was recorded and not modified; it does not affect either iOS target or
+the signed-device results.
+
+Signed-device gate completed:
+
+- the same final signed build was installed and launched on the designated
+  iPhone 15 Pro and iPhone 17 Pro Max;
+- exact durable configuration identity survived forced app restart on both
+  devices, with revision `1` and subject `途途` retained;
+- JPEG and single Live Photo Share runs accepted the exact configuration
+  ID/revision, passed Render Health Check, completed, and saved without a new
+  crash;
+- the final same-input 20-photo Share run completed `20/20` tasks and saved
+  `20/20` outputs on each device;
+- each 20-photo job routed `7` Live Photos and `13` static images, including
+  `5` high-memory `8064x4536` JPEG proxies supplied by Apple Photos for the
+  selected RAW-library assets;
+- all `40/40` final-batch tasks passed the semantic Render Health Check with
+  the exact device configuration ID/revision and no Contract violation;
+- user inspection confirmed smart text, layout/orientation, Live Photo
+  playback, and saved output were correct on both devices;
+- iPhone 15 Pro completed the final job in `50.204s` at `23.9` saved
+  tasks/minute; iPhone 17 Pro Max completed it in `32.880s` at `36.5` saved
+  tasks/minute;
+- final evidence:
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone5-production-contract-share20-20260713-113938`
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-production-contract-share20-20260713-114037`
+
+The production configuration identity and semantic Renderer-output Contract
+are therefore closed for the tested JPEG, Live Photo, and 20-photo mixed Share
+scenarios on both signed devices. True RAW/DNG provider intake remains
+unproven because Apple Photos supplied JPEG proxies. The known Live Photo
+`FullSizeRender` filename Contract remains a separate recorded defect.
+
+## 2026-07-13 Share Production Memory Snapshot Restoration
+
+Signed-device validation on an iPhone 15 Pro and an iPhone 17 Pro Max running
+the same `1.7 (7)` build found that `{{memory_summary}}` rendered correctly in
+Configuration Preview but was empty in real Apple Photos Share output. Both
+jobs completed import, build, export, and Photo Library save without a crash,
+so the existing runtime evidence evaluator reported transport success while
+missing the semantic output failure.
+
+Root cause evidence:
+
+- Share Extension persisted a transport `BatchConfigurationSnapshot` that
+  retained the template and `memorySubjectText` but had no `anchor`,
+  configuration identity, frozen `MemorySubject`, or canonical frozen
+  `ConfigurationSnapshot`.
+- The main app enqueued that stripped transport snapshot unchanged, so the
+  production Memory Engine could not consume the same frozen Memory Contract
+  used by Configuration Preview.
+- Device evidence is preserved under:
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone5-jpeg-reconfigured-20260713-074716`
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-memory-empty-20260713-075348`
+
+Fix implemented:
+
+- `ShareCoordinator` now detects a Share transport snapshot without a
+  canonical production snapshot and restores the current durable canonical
+  Memory snapshot before queue insertion.
+- Share-time template, output, album, and location settings remain owned by the
+  incoming transport snapshot; only the missing canonical Memory Contract and
+  configuration identity are restored.
+- Added a Share-drain regression covering the exact stripped transport shape
+  observed on both devices.
+
+Verification passed:
+
+- `PhotoMemoiOS` generic iOS Debug build
+- `PhotoMemoShareExtension` generic iOS Debug build
+- `git diff --check`
+
+Remaining validation:
+
+- Install the fixed build on a signed device and repeat the same
+  `IMG_1171.jpg` Apple Photos Share flow. `{{memory_summary}}` must render a
+  non-empty result in the generated asset.
+- The runtime evidence evaluator still needs a future semantic output gate; a
+  completed and saved file is not sufficient evidence when an enabled smart
+  module resolves to empty text.
+- macOS-hosted tests remain blocked by the separate uncommitted
+  `MemorySubjectEditorView` wheel-picker availability regression.
+
+Dual-device signed validation completed after the fix:
+
+- Deleted the previous app and installed the same signed Debug build on an
+  iPhone 15 Pro (`IPhone5`) and an iPhone 17 Pro Max (`iPhone7`).
+- Both devices completed clean first-run configuration with the same subject,
+  birthday anchor, preset, and enabled `{{memory_summary}}` module.
+- Both devices processed the same `IMG_1171.jpg` through Apple Photos Share.
+- User inspection confirmed the smart-module result rendered correctly on
+  both generated assets.
+- Runtime evidence confirmed one completed and saved Share task per device,
+  matching duration evidence, no new crashes, and a restored frozen
+  configuration snapshot containing subject `途途` and primary anchor `生日`.
+- Passing evidence:
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone5-smart-module-fixed-pass-20260713-082345`
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-smart-module-fixed-pass-20260713-082345`
+
+Follow-up reliability improvement:
+
+- The restored queue configuration now contains the canonical frozen snapshot,
+  but the top-level transport `configurationID` and `configurationRevision`
+  remain nil because the current default snapshot exposes identity inside the
+  frozen snapshot rather than at the transport root. This does not affect the
+  verified smart result, but a future configuration-reference contract should
+  carry and validate the exact ID/revision across Share persistence and drain.
+
+## 2026-07-13 Dual-Device Single Live Photo Validation
+
+The fixed smart-module build completed a separate single-Live-Photo Share run
+on each clean-installed device using the same `IMG_1164` asset.
+
+Passed on both devices:
+
+- Apple Photos advertised Live Photo support while providing a static JPEG
+  representation to the Share Extension.
+- Main-app identity recovery matched the corresponding PhotoKit Live Photo.
+- Queue routing upgraded the task to `com.apple.live-photo` with a recovered
+  source identifier and used the real `livePhoto` processor rather than the
+  static-image route.
+- The task completed and saved one new Live Photo asset.
+- User inspection confirmed playback, geometry/footer output, and smart-module
+  content were correct.
+- No new PhotoMemo crash was observed.
+
+Evidence:
+
+- iPhone 15 Pro:
+  `/tmp/PhotoMemoRuntimeEvidence/iphone5-livephoto-fixed-20260713-082659`
+  - Live Photo processing duration: `3.404s`
+  - Total task duration: `3.406s`
+- iPhone 17 Pro Max:
+  `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-livephoto-fixed-20260713-082736`
+  - Live Photo processing duration: `11.154s`
+  - Total task duration: `11.161s`
+
+The functional result is closed for this single-asset scenario. The large
+duration difference should be measured with repeated identical runs before it
+is classified as a device-performance regression; first-use PhotoKit resource
+loading and current system state remain plausible causes.
+
+## 2026-07-13 Live Photo Output Filename Contract Bug
+
+Device inspection found that generated Live Photo resources do not follow the
+intended output filename policy. Repeated outputs currently expose the base
+name `FullSizeRender` for both the still and paired-video resources instead of
+deriving the output base from the source asset and applying parenthesized
+incrementing suffixes for subsequent outputs.
+
+Observed evidence:
+
+- The Share task identity remained `IMG_1164.jpg`.
+- PhotoKit exposed adjusted full-size resources named
+  `FullSizeRender.jpeg` and `FullSizeRender.mov` alongside original
+  `IMG_1164.JPG` / `IMG_1164.MOV` resources.
+- `LivePhotoBatchTaskProcessor` currently prefers
+  `preparedBundle.stillPhotoResource.originalFilename` and directly forwards
+  `preparedBundle.pairedVideoResource.originalFilename` into
+  `LivePhotoSaveRequest`.
+- `PhotoKitLivePhotoAssetWriter` writes those names unchanged through
+  `PHAssetResourceCreationOptions.originalFilename`.
+
+Root cause classification:
+
+```text
+PhotoKit internal resource filename
+-> LivePhotoSaveRequest preferred original filename
+-> PHAssetResourceCreationOptions.originalFilename
+```
+
+The canonical MemoMark source-name and collision-increment policy is absent
+from this Live Photo save path. This is independent of the now-closed smart
+module output bug.
+
+Expected contract:
+
+- derive a canonical output base name from the user-visible source asset
+  identity rather than PhotoKit adjustment-resource names such as
+  `FullSizeRender`;
+- keep still and paired-video resources on the same canonical base;
+- apply the existing parenthesized incrementing policy for repeated outputs;
+- regression-test adjusted Live Photos whose preferred full-size resources are
+  both named `FullSizeRender`.
+
+Status: confirmed and recorded; not fixed in the current media-validation run.
+
+Cross-device repetition evidence now confirms this is deterministic rather
+than incidental:
+
+- iPhone 17 Pro Max completed three additional `IMG_1164` Live Photo outputs;
+  all three processed and saved successfully, but all exposed the same
+  `FullSizeRender` output base without parenthesized incrementing.
+- The three completed job durations were approximately `3.028s`, `2.768s`,
+  and `2.996s`; the latest task-level duration was `2.853s`.
+- The same filename behavior was already observed on the iPhone 15 Pro.
+- Evidence:
+  `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-livephoto-filename-repeat-20260713-083532`
+
+Bug status: reproducible across two devices and repeated outputs. Functional
+Live Photo processing remains healthy; filename identity/collision handling is
+the failing contract.
+
+## 2026-07-13 iPhone 15 Pro RAW-Library Share Delivered JPEG Proxy
+
+A single asset selected by the user as the RAW/ProRAW test case completed with
+correct visual output, filename behavior, and smart-module content on the
+iPhone 15 Pro. Runtime evidence shows that Apple Photos did not provide a RAW
+or DNG representation to the Share Extension:
+
+- imported filename: `IMG_1091.jpg`
+- content type: `public.jpeg`
+- dimensions: `8064x4536` (`36,578,304` pixels)
+- estimated decoded bytes: `146,313,216`
+- memory tier: `high`
+- scheduler lanes: decode `1`, render `1`, export `1`
+- route: `staticImage`
+- task duration: `1.549s`
+- completed and saved: yes
+- new crashes: none
+
+Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone5-single-raw-20260713-083902`
+
+This closes a high-resolution JPEG-proxy Share case, not true RAW/ProRAW/DNG
+provider validation. A future true-RAW test must first confirm the Share
+provider exposes a RAW/DNG filename or content type rather than a JPEG proxy.
+
+The same asset was then validated on iPhone 17 Pro Max with matching provider
+behavior:
+
+- imported filename: `IMG_1091.jpg`
+- content type: `public.jpeg`
+- dimensions: `8064x4536`
+- estimated decoded bytes: `146,313,216`
+- memory tier: `high`
+- scheduler lanes: decode `1`, render `1`, export `1`
+- route: `staticImage`
+- task duration: `1.136s`
+- completed and saved: yes
+- new crashes: none
+
+Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone17promax-single-raw-library-20260713-084138`
+
+Dual-device conclusion: Apple Photos consistently supplied a high-resolution
+JPEG proxy for this RAW-library asset. MemoMark processed that proxy correctly
+and conservatively on both devices. True RAW/ProRAW/DNG provider behavior
+remains unproven.
+
+## 2026-07-13 iPhone 15 Pro Three-Type Mixed Share Validation
+
+A single Share request containing the high-resolution RAW-library JPEG proxy,
+one Live Photo, and one ordinary JPEG completed successfully as one three-task
+job on the iPhone 15 Pro.
+
+- `IMG_1091.jpg`: `public.jpeg`, high-memory `staticImage`, `1.391s`
+- `IMG_1164.jpg`: recovered `com.apple.live-photo`, `livePhoto`, `2.681s`
+- `IMG_1171.jpg`: `public.jpeg`, normal-memory `staticImage`, `0.529s`
+- job duration: `4.949s`
+- completed tasks: `3/3`
+- saved tasks: `3/3`
+- new crashes: none
+
+User inspection confirmed all visual output, smart-module content, and Live
+Photo playback were correct. The only observed defect was the already-recorded
+Live Photo `FullSizeRender` filename contract bug.
+
+Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone5-mixed-jpeg-livephoto-rawproxy-20260713-084512`
+
+The same three-type mixed request then passed on iPhone 17 Pro Max:
+
+- `IMG_1091.jpg`: high-memory `staticImage`, `1.213s`
+- `IMG_1164.jpg`: recovered `livePhoto`, `2.482s`
+- `IMG_1171.jpg`: normal-memory `staticImage`, `0.603s`
+- job duration: `4.469s`
+- completed tasks: `3/3`
+- saved tasks: `3/3`
+- new crashes: none
+
+User inspection matched the iPhone 15 Pro result: visual output, smart-module
+content, static-image filenames, and Live Photo playback were correct. The only
+shared defect remained the known Live Photo `FullSizeRender` filename bug.
+
+Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone17promax-mixed-jpeg-livephoto-rawproxy-20260713-084921`
+
+Dual-device conclusion: mixed high-resolution JPEG proxy + Live Photo + normal
+JPEG routing and task isolation are locally validated on both devices.
+
+## 2026-07-13 iPhone 15 Pro Heavy Mixed 20-Photo Share
+
+The iPhone 15 Pro completed a maximum-size 20-photo Share request containing a
+heavier mix of Live Photos and high-resolution RAW-library JPEG proxies.
+
+Observed composition:
+
+- `5` tasks routed as `com.apple.live-photo`
+- `15` tasks routed as `public.jpeg`
+- at least `5` JPEG tasks entered the `high` memory tier at `8064x4536`
+- remaining still tasks covered mixed normal-resolution portrait and landscape
+  dimensions
+
+Result:
+
+- completed tasks: `20/20`
+- saved tasks: `20/20`
+- job duration: `35.584s`
+- throughput: `33.72` saved tasks/minute
+- new crashes: none
+- user inspection: output, orientation, playback, and smart-module content
+  were correct
+- only defect: known Live Photo `FullSizeRender` filename bug
+
+Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone5-share20-heavy-mixed-20260713-085526`
+
+The iPhone 17 Pro Max also passed a heavy maximum-size 20-photo Share:
+
+- `8` tasks routed as `com.apple.live-photo`
+- `12` tasks routed as `public.jpeg`
+- `4` JPEG tasks entered the `high` memory tier at `8064x4536`
+- completed tasks: `20/20`
+- saved tasks: `20/20`
+- job duration: `32.618s`
+- throughput: `36.79` saved tasks/minute
+- new crashes: none
+- user inspection matched the iPhone 15 Pro result; only the known Live Photo
+  `FullSizeRender` filename bug remained
+
+Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone17promax-share20-heavy-mixed-20260713-085852`
+
+Dual-device 20-photo conclusion:
+
+- both devices accepted, routed, completed, and saved the maximum supported
+  Share batch without task loss or crash;
+- the iPhone 15 Pro completed `5` Live Photos + `15` JPEG tasks in `35.584s`;
+- the iPhone 17 Pro Max completed `8` Live Photos + `12` JPEG tasks in
+  `32.618s`;
+- mixed orientation, high-memory JPEG proxies, Live Photo recovery, and smart
+  output remained stable;
+- Live Photo filename identity remains the only confirmed defect in this
+  validation set.
 
 ## 2026-07-11 Product Stage History Consolidation
 

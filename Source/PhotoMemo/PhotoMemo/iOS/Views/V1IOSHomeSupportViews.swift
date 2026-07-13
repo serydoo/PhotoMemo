@@ -124,13 +124,7 @@ private extension V1IOSHomeRecentProcessingPresenter {
         _ date: Date
     ) -> String {
 
-        date.formatted(
-            .dateTime
-                .month()
-                .day()
-                .hour()
-                .minute()
-        )
+        V1UserFacingDateFormatter.dateTime(date)
     }
 }
 

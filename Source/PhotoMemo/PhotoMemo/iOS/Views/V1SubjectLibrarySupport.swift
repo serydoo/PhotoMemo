@@ -3,6 +3,77 @@ import Foundation
 
 enum V1SubjectLibraryFactory {
 
+    static func makeFirstRunSubject(
+        name: String,
+        birthday: Date
+    ) -> MemorySubject {
+        let trimmedName = name.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        let resolvedName = trimmedName.isEmpty
+            ? "记忆主角"
+            : trimmedName
+        let birthdayAnchor = MemorySubject.TimeAnchor(
+            title: "生日",
+            date: birthday,
+            note: "用来回顾照片拍摄时的年龄。",
+            anchorType: .birthday,
+            expressionStyle: .birthdayNatural
+        )
+        let hundredDaysAnchor = MemorySubject.TimeAnchor(
+            title: "百天",
+            date: Calendar.current.date(
+                byAdding: .day,
+                value: 99,
+                to: birthday
+            ) ?? birthday,
+            note: "对象出生后的第 100 天。",
+            anchorType: .birthday,
+            expressionStyle: .birthdayNatural
+        )
+        let customAnchor = MemorySubject.TimeAnchor(
+            title: "重要日子",
+            date: Calendar.current.date(
+                byAdding: .month,
+                value: 6,
+                to: birthday
+            ) ?? birthday,
+            note: "自定义纪念日或重要时间点。",
+            anchorType: .custom,
+            expressionStyle: .customNatural
+        )
+
+        return MemorySubject(
+            identity: .init(
+                displayName: resolvedName,
+                shortName: resolvedName
+            ),
+            relationship: .init(
+                role: "",
+                label: ""
+            ),
+            definition: "围绕这个主角回顾照片中的时间。",
+            referenceDate: birthday,
+            timeAnchors: [
+                birthdayAnchor,
+                hundredDaysAnchor,
+                customAnchor
+            ],
+            activeTimeAnchorID: birthdayAnchor.id,
+            expressionSubjectSource: .shortName,
+            behavior: .init(
+                primaryAnchor: birthdayAnchor.title,
+                iconStrategy: .autoMatch,
+                badgeStrategy: .fixed,
+                memoryExpression: .init(
+                    title: "生日回顾",
+                    blocks: []
+                )
+            ),
+            decorations: []
+        )
+    }
+
     static func makeDefaultSubject(
         referenceDate: Date
     ) -> MemorySubject {

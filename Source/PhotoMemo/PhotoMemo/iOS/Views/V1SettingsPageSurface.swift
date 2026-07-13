@@ -19,9 +19,11 @@ struct V1SettingsPageSurface: View {
                 feedbackSection
                 releaseSection
             }
-            .padding(.horizontal, 18)
             .padding(.top, 16)
             .padding(.bottom, 34)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 18
+            )
         }
         .scrollDismissesKeyboard(.interactively)
         .background(
@@ -59,21 +61,18 @@ struct V1SettingsPageSurface: View {
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 8) {
-                    settingsTag(
-                        title: "本地优先",
-                        systemImage: MemoMarkSymbol.privacy.name
-                    )
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        privacyTag
+                        memoryTag
+                        originalPhotoTag
+                    }
 
-                    settingsTag(
-                        title: "保存记忆",
-                        systemImage: MemoMarkSymbol.memoryContent.name
-                    )
-
-                    settingsTag(
-                        title: "不改原图",
-                        systemImage: MemoMarkSymbol.applePhotos.name
-                    )
+                    VStack(alignment: .leading, spacing: 8) {
+                        privacyTag
+                        memoryTag
+                        originalPhotoTag
+                    }
                 }
             }
         }
@@ -327,6 +326,27 @@ struct V1SettingsPageSurface: View {
                 Capsule(style: .continuous)
                     .fill(Color.blue.opacity(0.08))
             )
+    }
+
+    private var privacyTag: some View {
+        settingsTag(
+            title: "本地优先",
+            systemImage: MemoMarkSymbol.privacy.name
+        )
+    }
+
+    private var memoryTag: some View {
+        settingsTag(
+            title: "保存记忆",
+            systemImage: MemoMarkSymbol.memoryContent.name
+        )
+    }
+
+    private var originalPhotoTag: some View {
+        settingsTag(
+            title: "不改原图",
+            systemImage: MemoMarkSymbol.applePhotos.name
+        )
     }
 
     private func settingsPrinciple(

@@ -265,6 +265,62 @@ struct LivePhotoAssetWriterContractTests {
         )
     }
 
+    @Test("Rejects still and paired-video filenames with different bases")
+    func rejectsMismatchedOutputFilenameBases() async throws {
+        let savePerformer =
+            StubLivePhotoAssetSavePerformer()
+        let writer = PhotoKitLivePhotoAssetWriter(
+            savePerformer: savePerformer,
+            pairingIdentityVerifier:
+                StubLivePhotoPairingIdentityVerifier(
+                    outcome: .success
+                ),
+            runtimeGate:
+                .internalTesting(
+                    allowedRoutes: [.livePhoto],
+                    permitsPhotoLibraryWrites: true
+                )
+        )
+        let temporaryFolder =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "LivePhotoAssetWriterContractTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        try FileManager.default.createDirectory(
+            at: temporaryFolder,
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(at: temporaryFolder)
+        }
+
+        let stillPhotoURL =
+            temporaryFolder.appendingPathComponent("LIVE.HEIC")
+        let pairedVideoURL =
+            temporaryFolder.appendingPathComponent("LIVE.MOV")
+        try Data("still".utf8).write(to: stillPhotoURL)
+        try Data("video".utf8).write(to: pairedVideoURL)
+
+        do {
+            _ = try await writer.saveAsset(
+                LivePhotoSaveRequest(
+                    stillPhotoFileURL: stillPhotoURL,
+                    pairedVideoFileURL: pairedVideoURL,
+                    captureDate: nil,
+                    preferredAlbumIdentifier: nil,
+                    stillPhotoOriginalFilename: "IMG_1164(1).heic",
+                    pairedVideoOriginalFilename: "FullSizeRender.mov"
+                )
+            )
+            Issue.record("Expected mismatched filename bases to fail")
+        } catch let error as LivePhotoAssetWritingError {
+            #expect(error == .outputFilenameBaseMismatch)
+        }
+
+        #expect(savePerformer.savedOperations.isEmpty)
+    }
+
     @Test("Rejects a save request before PhotoKit when pairing identifiers fail verification")
     func rejectsSaveRequestWhenPairingIdentityVerificationFails() async throws {
         let savePerformer =

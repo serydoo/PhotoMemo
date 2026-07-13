@@ -370,7 +370,7 @@ struct V1ConfigurationApplyRuntimeCoordinator {
                         configurationSaveReceipt?
                             .configurationID,
                         configurationSaveReceipt?
-                            .revision
+                            .configurationRevision
                     )
                     ?? reconcileCurrentMemoryPreset?(
                         persistenceRequest

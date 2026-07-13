@@ -71,6 +71,9 @@ struct ArchitectureMigrationFoundationTests {
         let environment =
             AppEnvironment.live(
                 defaults: defaults,
+                configurationLibraryBaseDirectoryURL:
+                    intakeDirectoryURL
+                    .deletingLastPathComponent(),
                 intakeDirectoryURL:
                     intakeDirectoryURL
             )

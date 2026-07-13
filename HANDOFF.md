@@ -1,5 +1,208 @@
 # MemoMark Handoff
 
+## 2026-07-13 V3 reliability closure ready for clean device distribution
+
+- UI viewport containment, Live Photo output naming, and production
+  configuration identity/Render Health contracts are implemented together.
+- `FullSizeRender` is now treated as PhotoKit resource identity, not final
+  output identity. Repeated Live Photos use one durable source-derived sequence
+  for both still and movie resources.
+- Configuration aggregate revision and individual configuration revision are
+  distinct throughout receipts, persisted references, Share transport, queue
+  admission, and reconciliation.
+- The iOS wheel date picker is platform-isolated so the macOS test host can run
+  contract tests without changing iPhone UI.
+- Test closure:
+  - UI/configuration/filename contracts: `30/30`
+  - Live Photo naming/media contracts: `31/31`
+  - expanded configuration lifecycle: `110/110`
+- Two flaky configuration import assertions were corrected to compare stable
+  sorted-key encodings rather than nondeterministic dictionary byte order.
+- Final unsigned macOS, iOS app, and Share Extension builds pass.
+- Required next operations: commit/push to GitHub, uninstall existing
+  `com.serydoo.PhotoMemo.iOS` from `Hong`, `IPhone5`, and `iPhone7`, then
+  install and launch the same signed build on all three.
+
+## 2026-07-13 iPhone responsive layout hardening
+
+- Root cause: compact iPhone pages could be widened by intrinsic child content;
+  the missing card corners were off-screen card bounds, not failed radius
+  rendering.
+- Added `V1AdaptivePageLayout` and applied the viewport/readable-width contract
+  across primary tabs, Configuration Center, object flows, welcome/workflow,
+  background status, and related sheets. Native `List`/`Form` surfaces retain
+  their own width ownership.
+- Home subject/header groups, local configuration backup actions, and object
+  identity content now provide compact behavior. Task content is scrollable on
+  short screens.
+- `IPhoneResponsiveLayoutContractTests.swift` records source-level invariants
+  and prohibits physical-screen/device-model branching.
+- Generic iOS app and Share Extension Simulator builds pass; `git diff --check`
+  passes.
+- Evidence:
+  - `/tmp/PhotoMemoResponsiveLayoutQA/iphone-se3-375-home.png`
+  - `/tmp/PhotoMemoResponsiveLayoutQA/iphone15pro-393-home-final4.png`
+  - `/tmp/PhotoMemoResponsiveLayoutQA/iphone17promax-440-home-final.png`
+- Signed `1.7 (7)` was installed and launched on physical `IPhone5` and
+  `iPhone7` without deleting their existing configuration data.
+- Next required action: on both devices inspect Home, Configuration Center,
+  Output, Task, Settings, memory-object overview/anchors, and local
+  configuration backup actions. Confirm complete left/right card corners,
+  reachable controls, correct wrapping, and no horizontal page drift.
+- Deferred only: the known macOS wheel-picker build error and iPad-specific
+  interaction redesign. Neither affects the current iPhone targets.
+
+## 2026-07-13 Production configuration and render-health hardening
+
+- The production path now uses
+  `configurationID + configuration revision -> exact durable lookup ->
+  canonical Snapshot -> admission -> RecordCard -> Render Health Check` for
+  all five `BatchJobLaunchSource` values.
+- Contract v1 requests reject revision mismatches rather than combining a
+  transport Template with the ambient active configuration. Historical
+  unversioned requests retain a diagnosed compatibility path.
+- Save receipts now distinguish aggregate repository revision from individual
+  configuration revision; save-current and rename preserve configuration UUID.
+- The frozen production projection includes Memory, selected anchor, Template,
+  custom Memory copy, renderer route, Logo, Location, description, album,
+  media mode, and Live Photo policy from one durable configuration.
+- `{{memory_summary}}` is validated after real `RecordCardBuildService` work
+  and must appear in every configured Card area before static or Live Photo
+  export. Custom Memory copy now replaces the canonical `memory` expression
+  token as well as the legacy card variable.
+- Share, admission, and Health Check diagnostics are environment-scoped and
+  record configuration ID/revision without private rendered content.
+- Backward-compatible decoding preserves old queued/share snapshots that do
+  not contain the new production-only fields.
+- A device baseline exposed `AppEnvironment.live` using the test-isolated
+  random Configuration Library directory. Production now uses the stable App
+  Group base directory, while tests explicitly keep temporary roots. A
+  restart regression proves the exact configuration identity survives.
+- Verification: 43 focused tests passed; `PhotoMemoiOS` and
+  `PhotoMemoShareExtension` generic iOS Debug builds both returned exit `0`;
+  `git diff --check` passed.
+- After final device closure, both generic iOS builds passed again. The final
+  macOS-hosted focused-test rerun was blocked before test execution by the
+  separately known `MemorySubjectEditorView` wheel-picker availability error;
+  do not treat that macOS-only UI issue as an iOS production regression.
+- The signed-device gate is complete on the designated iPhone 15 Pro and
+  iPhone 17 Pro Max using the same final build. Forced restart retained each
+  device's durable configuration identity and revision `1`.
+- JPEG and single Live Photo runs passed exact-reference admission, semantic
+  Render Health Check, processing, and Photo Library save on both devices.
+- The final same-input 20-photo run passed on both devices with `20/20`
+  completed and saved outputs, `7` Live Photos, `13` static images, and
+  `20/20` Health Check passes per device. User inspection confirmed smart
+  text, geometry/orientation, playback, and output were correct.
+- Final production-Contract evidence:
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone5-production-contract-share20-20260713-113938`
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-production-contract-share20-20260713-114037`
+- The stronger production configuration/Renderer Contract is closed for the
+  tested dual-device scenarios. Apple Photos still supplied JPEG proxies for
+  RAW-library selections, so true RAW/DNG intake is not claimed.
+- The historical `FullSizeRender` issue described below is closed by the later
+  RE-003 filename Contract and the current closure section at the top of this
+  handoff.
+
+## 2026-07-13 Share smart-module production fix
+
+- Two signed devices on `1.7 (7)` reproduced Configuration Preview showing a
+  valid smart result while Apple Photos Share output left
+  `{{memory_summary}}` empty.
+- Device queue evidence proved Share Extension transport stripped the
+  canonical frozen Memory snapshot and the main app enqueued it unchanged.
+- `ShareCoordinator` now restores the durable canonical Memory snapshot before
+  queue insertion while preserving Share-time template/output settings.
+- A focused Share-drain regression covers the stripped transport shape.
+- Generic iOS app and Share Extension Debug builds pass.
+- Required next step: install the fixed build and repeat the same JPEG Share
+  flow on one signed device; do not close this bug until generated output
+  contains a non-empty smart-module result.
+
+Closure evidence:
+
+- The previous app was deleted and the same signed fixed build was installed
+  on `IPhone5` and `iPhone7`.
+- Both devices completed clean first-run setup with matching configuration and
+  processed the same `IMG_1171.jpg` through Apple Photos Share.
+- User inspection confirmed non-empty smart-module output on both devices.
+- Both runtime summaries passed with one completed/saved task and no new crash:
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone5-smart-module-fixed-pass-20260713-082345`
+  - `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-smart-module-fixed-pass-20260713-082345`
+- The immediate production blocker is closed. The next hardening step is an
+  explicit Share configuration ID/revision contract plus a semantic output
+  health gate.
+
+Single Live Photo follow-up also passed independently on both devices using
+`IMG_1164`:
+
+- iPhone 15 Pro evidence:
+  `/tmp/PhotoMemoRuntimeEvidence/iphone5-livephoto-fixed-20260713-082659`
+- iPhone 17 Pro Max evidence:
+  `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-livephoto-fixed-20260713-082736`
+- Both recovered PhotoKit identity from the Share static representation,
+  routed as `livePhoto`, saved successfully, retained smart-module output, and
+  produced no new crash.
+- Observed task durations were `3.406s` and `11.161s`; repeat identical runs
+  before treating the difference as a stable performance finding.
+
+Confirmed follow-up bug: generated Live Photo resource filenames currently use
+PhotoKit adjustment-resource names such as `FullSizeRender.jpeg` and
+`FullSizeRender.mov`. `LivePhotoBatchTaskProcessor` forwards prepared resource
+`originalFilename` values into `LivePhotoSaveRequest`, and
+`PhotoKitLivePhotoAssetWriter` writes them unchanged. This bypasses the intended
+MemoMark rule of deriving the output name from the source base and adding
+parenthesized incremental suffixes for repeated outputs. Record this as a
+separate filename-contract fix with an adjusted-Live-Photo regression; it was
+not modified during the current validation pass.
+
+The filename bug is now deterministic across devices. iPhone 17 Pro Max
+completed three additional `IMG_1164` Live Photo outputs, all functionally
+correct and saved, but all retained the same `FullSizeRender` base with no
+parenthesized increment. Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone17promax-livephoto-filename-repeat-20260713-083532`.
+
+iPhone 15 Pro RAW-library follow-up produced a correct output and filename, but
+Apple Photos delivered `IMG_1091.jpg` as `public.jpeg` at `8064x4536`, not a
+RAW/DNG representation. It entered the `high` memory tier with single decode,
+render, and export lanes, completed in `1.549s`, saved successfully, and caused
+no new crash. Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone5-single-raw-20260713-083902`. Record this
+as high-resolution JPEG-proxy evidence, not true RAW provider closure.
+
+The same RAW-library asset on iPhone 17 Pro Max also arrived as
+`IMG_1091.jpg` / `public.jpeg` at `8064x4536`, entered the `high` memory tier,
+completed in `1.136s`, saved successfully, and caused no new crash. Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone17promax-single-raw-library-20260713-084138`.
+Both devices therefore prove the JPEG-proxy path, not true RAW/DNG intake.
+
+iPhone 15 Pro mixed Share also passed with one high-resolution JPEG proxy, one
+Live Photo, and one ordinary JPEG in a single three-task job. All three routed
+independently, completed, saved, retained smart output, and produced no new
+crash. The only user-visible issue remained the known Live Photo
+`FullSizeRender` filename bug. Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone5-mixed-jpeg-livephoto-rawproxy-20260713-084512`.
+
+The identical three-type mixed Share also passed on iPhone 17 Pro Max with
+`3/3` completed and saved tasks, a `4.469s` job duration, no new crash, and the
+same user-visible result. The only defect remained the known Live Photo
+`FullSizeRender` filename issue. Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone17promax-mixed-jpeg-livephoto-rawproxy-20260713-084921`.
+
+iPhone 15 Pro maximum-size heavy mixed Share passed with `20/20` completed and
+saved tasks: `5` Live Photos and `15` JPEG inputs, including at least `5`
+`8064x4536` high-memory JPEG proxies. The job completed in `35.584s` with no
+new crash. User inspection found no defect beyond the known Live Photo
+`FullSizeRender` filename issue. Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone5-share20-heavy-mixed-20260713-085526`.
+
+iPhone 17 Pro Max maximum-size heavy mixed Share also passed with `20/20`
+completed and saved tasks: `8` Live Photos and `12` JPEG inputs, including `4`
+high-memory `8064x4536` proxies. The job completed in `32.618s` with no new
+crash. User feedback again identified only the known Live Photo filename issue.
+Evidence:
+`/tmp/PhotoMemoRuntimeEvidence/iphone17promax-share20-heavy-mixed-20260713-085852`.
+
 ## Current Truth
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
@@ -13313,4 +13516,67 @@ device build still reproduces the blocker.
 - iOS Simulator 构建成功，真实首页截图位于 `Docs/UserGuide/Assets/FirstRun/01-home.jpg`。
 - Word/PDF 初稿已生成，但 LibreOffice 渲染环境无法显示中文字体，因此没有通过文档视觉发布门槛；当前文件仅供内容审阅，不应作为最终公开版转发。
 - 后续需补齐欢迎、对象、配置中心、分享、任务、回存与帮助入口截图，并在可正确渲染中文的环境中完成 Word/PDF 最终排版验证。
+- 首次欢迎 Sheet 已替换为原生 `Form` 风格的“首次配置”初始化弹窗。用户只需填写记忆主角名称并选择生日，系统预设生日锚点、自然语气、生日回顾配置和自动 Apple Photos 输出。
+- 用户名称同时写入 `MemorySubject.identity.displayName` 与 `shortName`；首次工厂只创建 1 个生日锚点，并将其设为主体当前锚点和配置的 `selectedTimeAnchorID`。
+- 点击“保存配置”复用正式配置聚合保存管线，成功后才关闭弹窗；失败时恢复此前 Session 与输出状态，避免留下半套内存配置。
+- 新增 `V1FirstRunConfigurationFactoryTests`，验证名称归一化、单一生日锚点、自然表达语气及主体/锚点关系。聚焦测试与 `PhotoMemoiOS` Simulator 构建通过。
+- CoreSimulator 本次自动截图仍只得到黑色内容区，应用进程与 UIKit Scene 正常且没有崩溃日志；需要真机或恢复 Simulator 图形流后补做初始化弹窗视觉与完整保存交互验证。
+- 最新首次初始化配置版本已使用历史 iPhone7 路径完成真机签名构建、覆盖安装和自动启动：设备 `iPhone7`，devicectl ID `863C2747-6742-5E93-B715-6F89DBF90B31`，bundle ID `com.serydoo.PhotoMemo.iOS`。真机现在可直接检查弹窗与首次保存流程。
+
+## 2026-07-12 首次初始化、锚点与中文日期阶段性暂停
+
+已完成：
+
+- 首次进入改为独立的原生 `Form` 初始化配置弹窗，不直接进入完整配置中心。
+- 用户首次只需填写记忆主角名称并选择生日；名称同步写入主体显示名称和昵称。
+- 第一套配置预设生日锚点、自然表达、生日回顾配置、Apple Photos 自动输出和保留原图策略。
+- 首次对象继续保留原有 3 个时间锚点：用户定义并选中的“生日”、由生日推算的“百天”、系统预设“重要日子”。后两条在用户以后进入记忆对象时间锚点界面时可直接看到和编辑。
+- 首次保存复用正式配置聚合管线；失败会恢复 Session 和输出状态，不关闭初始化弹窗。
+- 时间锚点配置页的日期选择器已改为页面内嵌 Apple 原生 `.wheel` 年月日滚轮，不再使用 compact 日期弹窗。
+- 记忆对象首页“可用时间锚点”、锚点列表、首页“我的配置”、最近处理、本地配置库、任务和后台状态的用户可见日期已集中改为中文格式：纯日期 `yyyy年M月d日`，需要时刻时 `yyyy年M月d日 HH:mm`。
+- `PhotoMemoiOS` iOS Simulator 构建在日期统一修改后通过，`git diff --check` 通过。
+- 首次初始化单生日锚点版本曾在 iPhone7 完成签名构建、安装和启动；随后三锚点修正版也完成真机签名构建和覆盖安装。
+
+未完成 / 下次继续：
+
+- 三锚点修正版覆盖安装后未删除 App 重走全新首次初始化，因此还未在 iPhone7 真机确认“生日、百天、重要日子”三条均正确落盘和显示。
+- 年月日滚轮和全局中文日期修改尚未重新签名推送到 iPhone7，真机视觉、滚动手感、取消回滚与保存持久化仍待验证。
+- 聚焦测试在三锚点更新后遇到 Xcode/SwiftCompile 多文件“exit code 0 but produced no further output”工具链异常；之前的单锚点工厂测试通过，但最新三锚点断言尚未得到一次干净通过结果。iOS App 构建本身通过。
+- `V1SettingsPagePresenter.stepTimeText` 仍只显示本地短时刻；这是流水线单步时刻，不是完整日期。下次需决定是否也强制改为完整中文年月日时分。
+- `ConfigurationCenterSessionBindingPresenter` 的配置状态时间仍为 `yyyy.MM.dd HH:mm`，属于用户可见配置中心状态，下一次应改为统一中文格式。
+- `V1PreviewCompositionEngine` 的 `yyyy.MM.dd` 和 `HH:mm:ss` 属于照片卡片/输出内容，不应在没有输出规格要求时随 UI 日期本地化一起修改。
+- 模拟器自动截图仍存在黑色内容区问题；初始化弹窗和滚轮需以真机人工截图作为最终视觉证据。
+- 首次使用 Word/PDF 指南仍是内容初稿；LibreOffice 中文字体渲染未通过，不能作为最终公开版转发。
+
+建议下次顺序：
+
+1. 完成剩余两个用户可见日期入口的中文化并重新跑 iOS 构建。
+2. 清理或重启 Xcode 编译服务后，重新运行 `V1FirstRunConfigurationFactoryTests`。
+3. 重新签名安装到 iPhone7；删除 App 后全新启动。
+4. 真机完成“初始化弹窗 -> 保存配置 -> 首页 -> 记忆对象 -> 三个锚点 -> 滚轮编辑 -> 处理照片”完整回归。
 - 当前 Word/PDF 文件按内容审阅草案纳入仓库，不代表公开发布版已经通过视觉验收。
+
+## 2026-07-12 首次初始化与中文日期继续验证
+
+- 补齐了暂停记录中的两个用户可见日期入口：配置中心配置状态改为 `yyyy年M月d日 HH:mm`，设置页流水线步骤时间也使用完整中文年月日时分。
+- 所有主要 iOS 用户界面日期现集中使用 `V1UserFacingDateFormatter`：纯日期 `yyyy年M月d日`，日期时间 `yyyy年M月d日 HH:mm`。照片卡片输出中的 `yyyy.MM.dd` / `HH:mm:ss` 未修改。
+- `V1FirstRunConfigurationFactoryTests` 使用全新 DerivedData、`-jobs 1` 和关闭并行测试后通过：2 tests / 0 failures。之前的多文件无输出异常属于 Xcode 并发编译服务问题，不是测试断言失败。
+- 最新 `PhotoMemoiOS` 已完成 iPhone7 签名真机构建、覆盖安装和启动，包含：首次初始化弹窗、生日/百天/重要日子三锚点、年月日滚轮及中文 UI 日期。
+- 覆盖安装保留了设备现有 App 容器，因此本次没有自动删除 App，也没有重走全新首次初始化。删除 App 会清空本地配置，需用户明确确认或手动删除后再安装。
+- 当前仍需 iPhone7 人工确认：锚点滚轮视觉与手感、取消回滚、保存持久化、三个锚点可见、首页“我的配置”日期、本地配置库/任务/后台状态日期，以及首次保存后“处理照片”可用。
+
+## 2026-07-12 两台 iPhone 15 Pro 全新安装
+
+- 使用正式版 Xcode 26.6（`/Applications/Xcode.app`）分别为两台 iPhone 15 Pro 完成签名构建；测试版 Xcode 27 因未登录开发者账号，不能注册新设备。
+- `Hong` 已卸载旧 App 并重新安装最新 `PhotoMemoiOS`；启动命令仅因设备锁定而被阻止，解锁后可直接重新启动验证。
+- `IPhone5` 已完成卸载、重新安装并成功启动 `com.serydoo.PhotoMemo.iOS`。
+- 两台设备安装的版本均包含首次初始化弹窗、三条预设时间锚点、年月日滚轮与统一中文 UI 日期。
+
+## 2026-07-12 紧凑锚点日期与三机统一签名安装
+
+- 时间锚点配置中的大尺寸年月日滚轮已替换为单行紧凑滚轮：年、月、日分别上下滑动，控件整体保持一行高度，并自动处理闰年和每月天数。
+- 首页“我的配置”上次修改时间改为 `M月d日 HH:mm`，不再显示年份，以适配 iPhone 小屏；其他需要完整日期证据的页面仍保持中文年月日。
+- 当前 iOS 主流程的另一个主动日期选择入口是首次初始化生日；该入口只使用一次，暂时保留系统日期选择器。其余 `DatePicker` 属于旧版或跨平台编辑入口。
+- 使用正式版 Xcode 26.6 和同一开发团队签名完成最新真机 Debug 构建，并安装到 `iPhone7`、`Hong`、`IPhone5`。
+- 三台设备的安装均成功；自动启动均仅因设备锁定被系统拒绝，没有报告开发者证书不受信任。
+- `IPhone5` 卸载阶段出现一次 Developer Disk Image 元数据读取异常，随后最新版覆盖安装成功；另外两台完成卸载后全新安装。

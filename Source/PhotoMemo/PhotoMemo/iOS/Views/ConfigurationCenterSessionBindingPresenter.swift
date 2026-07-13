@@ -16,7 +16,7 @@ enum ConfigurationCenterSessionBindingPresenter {
             formatter.locale =
                 Locale(identifier: "zh_CN")
             formatter.dateFormat =
-                "yyyy.MM.dd HH:mm"
+                "yyyy年M月d日 HH:mm"
             return formatter
         }()
 

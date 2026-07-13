@@ -15,6 +15,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             revision: 12,
             subjectID: try #require(aggregate.activeSubjectID),
             configurationID: try #require(aggregate.activeConfigurationID),
+            configurationRevision: 4,
             compatibilityProjectionFailure: nil
         )
         let legacyRequest = Self.makeRequest(
@@ -146,6 +147,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
                             revision: 12,
                             subjectID: subjectID,
                             configurationID: configurationID,
+                            configurationRevision: 4,
                             compatibilityProjectionFailure: nil
                         ),
                         albumSelection: .init(
@@ -570,13 +572,14 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
                     revision: 11,
                     subjectID: request.subject!.id,
                     configurationID: durableID,
+                    configurationRevision: 5,
                     compatibilityProjectionFailure: nil
                 )
         )
 
         #expect(wasSuccessful)
         #expect(reconciledIdentity?.0 == durableID)
-        #expect(reconciledIdentity?.1 == 11)
+        #expect(reconciledIdentity?.1 == 5)
     }
 
     @Test("reconcile success preserves a concurrent same-preset edit as dirty")

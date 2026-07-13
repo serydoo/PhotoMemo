@@ -114,7 +114,10 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                     )
                 }
             }
-            .padding(20)
+            .padding(.vertical, 20)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 20
+            )
         }
     }
 

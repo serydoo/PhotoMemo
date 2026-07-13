@@ -594,14 +594,9 @@ struct PhotoMemoiOSV1View: View {
         .sheet(
             isPresented: $entryFlowState.showsWelcomePage
         ) {
-            V1WelcomePageSurface(
-                presentation: .default,
-                onStart: {
-                    completeWelcomeFlow()
-                },
-                onShowWorkflow: {
-                    showWorkflowGuideFromWelcome()
-                }
+            V1FirstRunConfigurationSheet(
+                onSave: initializeFirstConfiguration,
+                onDefer: completeWelcomeFlow
             )
             .interactiveDismissDisabled(!hasSeenWelcome)
         }
@@ -696,9 +691,11 @@ struct PhotoMemoiOSV1View: View {
             NavigationStack {
                 ScrollView {
                     editorCluster
-                        .padding(.horizontal, 16)
                         .padding(.top, 16)
                         .padding(.bottom, 28)
+                        .v1AdaptiveScrollContent(
+                            horizontalPadding: 16
+                        )
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .simultaneousGesture(
@@ -2323,12 +2320,7 @@ struct PhotoMemoiOSV1View: View {
             .date
             ?? birthdayDate
 
-        return anchorDate.formatted(
-            .dateTime
-                .year()
-                .month()
-                .day()
-        )
+        return V1UserFacingDateFormatter.date(anchorDate)
     }
 
     private var resolvedMemoryWriteText: String {
@@ -3286,6 +3278,76 @@ struct PhotoMemoiOSV1View: View {
                     hasSeenWelcome
             )
         applyEntryWelcomeUpdate(update)
+    }
+
+    @MainActor
+    private func initializeFirstConfiguration(
+        subjectName: String,
+        birthday: Date
+    ) async -> Bool {
+        let previousState = session.state
+        let previousBirthdayDate = birthdayDate
+        let previousOutputTarget = outputTarget
+        let previousMediaOutputMode = mediaOutputMode
+        let previousLogoMode = logoMode
+        let previousPresetTitleDraft = memoryPresetTitleDraft
+        let subject = V1SubjectLibraryFactory
+            .makeFirstRunSubject(
+                name: subjectName,
+                birthday: birthday
+            )
+        let anchorID = subject.activeTimeAnchorID
+        let existingPreset = session.state.selectedMemoryPreset
+            ?? session.state.memoryPresets.first
+        let preset = MemoryPreset(
+            title: "生日回顾",
+            summary: "以生日为时间起点，自然回顾照片拍摄时的年龄。",
+            regionTemplateIDs:
+                existingPreset?.regionTemplateIDs ?? [:],
+            selectedSubjectID: subject.id,
+            selectedTimeAnchorID: anchorID,
+            outputOption: .processedImage,
+            storageOption: .appFolder,
+            logoMode: .appleMini,
+            savedOutputConfiguration:
+                V1SavedOutputConfiguration(
+                    outputTarget: .automatic,
+                    mediaOutputMode: .originalFormat,
+                    selectedExistingAlbumIdentifier: "",
+                    newAlbumName:
+                        PhotoMemoAlbumSelection
+                        .defaultAlbumTitle
+                )
+        )
+
+        session.restoreSubjectLibrary(
+            [subject],
+            selectedSubjectID: subject.id,
+            memoryPresets: [preset],
+            selectedMemoryPresetID: preset.id
+        )
+        birthdayDate = birthday
+        outputTarget = .automatic
+        mediaOutputMode = .originalFormat
+        logoMode = .appleMini
+        memoryPresetTitleDraft = preset.title
+        bootstrapDrafts()
+        refreshDynamicPreview()
+
+        guard await applyCurrentV1Configuration() else {
+            session.state = previousState
+            birthdayDate = previousBirthdayDate
+            outputTarget = previousOutputTarget
+            mediaOutputMode = previousMediaOutputMode
+            logoMode = previousLogoMode
+            memoryPresetTitleDraft = previousPresetTitleDraft
+            bootstrapDrafts()
+            refreshDynamicPreview()
+            return false
+        }
+
+        completeWelcomeFlow()
+        return true
     }
 
     private func showWorkflowGuideFromWelcome() {

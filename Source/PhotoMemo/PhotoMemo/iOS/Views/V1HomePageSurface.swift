@@ -36,9 +36,11 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
                 topSummaryCluster
             }
-            .padding(.horizontal, 18)
             .padding(.top, 16)
             .padding(.bottom, 104)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 18
+            )
         }
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(
@@ -81,17 +83,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 8) {
-                    V1HomeHeaderPill(
-                        systemImage: MemoMarkSymbol.privacy.name,
-                        title: "本地优先"
-                    )
-
-                    V1HomeHeaderPill(
-                        systemImage: MemoMarkSymbol.applePhotos.name,
-                        title: "Apple Photos"
-                    )
-                }
+                adaptiveHeaderPills
             }
 
             Spacer(minLength: 0)
@@ -111,6 +103,34 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
         }
         .padding(.horizontal, 2)
         .padding(.vertical, 4)
+    }
+
+    private var adaptiveHeaderPills: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                privacyHeaderPill
+                applePhotosHeaderPill
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                privacyHeaderPill
+                applePhotosHeaderPill
+            }
+        }
+    }
+
+    private var privacyHeaderPill: some View {
+        V1HomeHeaderPill(
+            systemImage: MemoMarkSymbol.privacy.name,
+            title: "本地优先"
+        )
+    }
+
+    private var applePhotosHeaderPill: some View {
+        V1HomeHeaderPill(
+            systemImage: MemoMarkSymbol.applePhotos.name,
+            title: "Apple Photos"
+        )
     }
 
     private var profileSection: some View {
@@ -452,13 +472,7 @@ private struct V1HomeMemoryPresetRow: View {
     }
 
     private static func savedStatusValue(_ date: Date) -> String {
-        date.formatted(
-            .dateTime
-                .month()
-                .day()
-                .hour()
-                .minute()
-        )
+        V1UserFacingDateFormatter.compactDateTime(date)
     }
 
     private var presetIdentityMark: some View {
@@ -694,6 +708,7 @@ private struct V1HomeHeaderPill: View {
             Capsule(style: .continuous)
                 .fill(Color.blue.opacity(0.08))
         )
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
 #endif

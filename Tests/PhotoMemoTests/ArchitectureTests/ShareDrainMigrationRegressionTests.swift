@@ -387,6 +387,101 @@ struct ShareDrainMigrationRegressionTests {
     }
 
     @MainActor
+    @Test("ProcessShareIntent restores canonical memory snapshot stripped by Share Extension transport")
+    func processShareIntentRestoresCanonicalMemorySnapshotStrippedByShareExtensionTransport() async throws {
+        let context = try Self.makeContext(
+            named:
+                "PhotoMemo.ShareDrainMigrationRegressionTests.MemorySnapshotRestore.\(UUID().uuidString)"
+        )
+        defer { Self.cleanup(context) }
+
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let canonicalConfiguration =
+            context.environment
+            .repositories
+            .configuration
+            .loadDefaultBatchConfigurationSnapshot()
+        let transportConfiguration =
+            BatchConfigurationSnapshot(
+                template:
+                    canonicalConfiguration.template,
+                badge:
+                    canonicalConfiguration.badge,
+                anchor: nil,
+                memorySubjectText: "途途",
+                locationDisplayConfiguration:
+                    canonicalConfiguration
+                    .locationDisplayConfiguration,
+                shouldWritePhotoDescription:
+                    canonicalConfiguration
+                    .shouldWritePhotoDescription,
+                photoDescriptionOverride:
+                    canonicalConfiguration
+                    .photoDescriptionOverride,
+                selectedAlbumIdentifier:
+                    canonicalConfiguration
+                    .selectedAlbumIdentifier,
+                mediaOutputModeRawValue:
+                    canonicalConfiguration
+                    .mediaOutputModeRawValue
+            )
+        let request =
+            ExternalPhotoIntakeRequest(
+                launchSource: .shareExtension,
+                urls: [sourceURL],
+                configurationSnapshot:
+                    transportConfiguration
+            )
+
+        let result =
+            await ProcessShareIntent(
+                request: request,
+                consumedPayloadKeys: [],
+                coordinator:
+                    context.environment
+                    .coordinators.share
+            )
+            .execute()
+        let job =
+            try #require(
+                result.value?.job
+            )
+
+        #expect(
+            transportConfiguration
+            .canonicalProductionSnapshot == nil
+        )
+        #expect(
+            job.configuration
+            .canonicalProductionSnapshot != nil
+        )
+        #expect(
+            job.configuration.template
+            == transportConfiguration.template
+        )
+        #expect(
+            job.configuration
+            .canonicalProductionSnapshot?
+            .memorySubject?
+            .resolvedExpressionSubjectText
+            == canonicalConfiguration
+            .canonicalProductionSnapshot?
+            .memorySubject?
+            .resolvedExpressionSubjectText
+        )
+        #expect(
+            PhotoMemoShareDiagnostics.loadEvents(
+                defaults: context.defaults
+            ).contains(where: {
+                $0.stage == .configurationCompatibilityRecovery
+            })
+        )
+    }
+
+    @MainActor
     @Test("ProcessShareIntent keeps valid Live Photo bundle directories")
     func processShareIntentKeepsValidLivePhotoBundleDirectories() async throws {
 
@@ -1028,6 +1123,8 @@ private extension ShareDrainMigrationRegressionTests {
         let environment =
             AppEnvironment.live(
                 defaults: defaults,
+                configurationLibraryBaseDirectoryURL:
+                    rootDirectoryURL,
                 intakeDirectoryURL:
                     intakeDirectoryURL
             )

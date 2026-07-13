@@ -53,6 +53,34 @@ final class PhotoKitLivePhotoAssetWriter:
                 .pairedVideoFileMissing
         }
 
+        let stillPhotoOriginalFilename =
+            resolvedOriginalFilename(
+                preferred:
+                    request.stillPhotoOriginalFilename,
+                fallbackURL:
+                    request.stillPhotoFileURL,
+                defaultName:
+                    "MemoMark.heic"
+            )
+        let pairedVideoOriginalFilename =
+            resolvedOriginalFilename(
+                preferred:
+                    request.pairedVideoOriginalFilename,
+                fallbackURL:
+                    request.pairedVideoFileURL,
+                defaultName:
+                    "MemoMark.mov"
+            )
+
+        guard outputBaseName(
+            stillPhotoOriginalFilename
+        ) == outputBaseName(
+            pairedVideoOriginalFilename
+        ) else {
+            throw LivePhotoAssetWritingError
+                .outputFilenameBaseMismatch
+        }
+
         do {
             _ = try await pairingIdentityVerifier
                 .verifyPair(
@@ -88,16 +116,7 @@ final class PhotoKitLivePhotoAssetWriter:
                                     request
                                     .stillPhotoFileURL,
                                 originalFilename:
-                                    resolvedOriginalFilename(
-                                        preferred:
-                                            request
-                                            .stillPhotoOriginalFilename,
-                                        fallbackURL:
-                                            request
-                                            .stillPhotoFileURL,
-                                        defaultName:
-                                            "MemoMark.heic"
-                                    )
+                                    stillPhotoOriginalFilename
                             ),
                             LivePhotoAssetResourceWriteRequest(
                                 kind: .pairedVideo,
@@ -105,16 +124,7 @@ final class PhotoKitLivePhotoAssetWriter:
                                     request
                                     .pairedVideoFileURL,
                                 originalFilename:
-                                    resolvedOriginalFilename(
-                                        preferred:
-                                            request
-                                            .pairedVideoOriginalFilename,
-                                        fallbackURL:
-                                            request
-                                            .pairedVideoFileURL,
-                                        defaultName:
-                                            "MemoMark.mov"
-                                    )
+                                    pairedVideoOriginalFilename
                             )
                         ]
                     )
@@ -149,6 +159,15 @@ private extension PhotoKitLivePhotoAssetWriter {
         }
 
         return defaultName
+    }
+
+    func outputBaseName(
+        _ fileName: String
+    ) -> String {
+        URL(fileURLWithPath: fileName)
+            .deletingPathExtension()
+            .lastPathComponent
+            .lowercased()
     }
 }
 

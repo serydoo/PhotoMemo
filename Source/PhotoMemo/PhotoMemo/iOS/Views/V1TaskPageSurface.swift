@@ -35,17 +35,26 @@ struct V1TaskPageSurface: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            pageHeader
-            overviewStrip
-            currentTaskCard
-            recentTasksSection
-            Spacer(minLength: 0)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                pageHeader
+                overviewStrip
+                currentTaskCard
+                recentTasksSection
+            }
+            .padding(.top, 10)
+            .padding(.bottom, 24)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 16
+            )
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 10)
-        .padding(.bottom, 10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .scrollDismissesKeyboard(.interactively)
+        .simultaneousGesture(
+            TapGesture()
+                .onEnded {
+                    onDismissKeyboard()
+                }
+        )
         .background(
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
@@ -592,9 +601,8 @@ struct V1TaskPageSurface: View {
 
                 HStack(spacing: 12) {
                     Label(
-                        row.timestamp.formatted(
-                            date: .numeric,
-                            time: .shortened
+                        V1UserFacingDateFormatter.dateTime(
+                            row.timestamp
                         ),
                         systemImage: "clock"
                     )

@@ -146,7 +146,10 @@ private extension RecordCardBuildService {
         card.memoryResult =
             memoryPayload.result
         card.memoryModule =
-            memoryPayload.module
+            resolvedMemoryModule(
+                from: memoryPayload.module,
+                configuration: configuration
+            )
         card.productionExpressionContext =
             productionExpressionContext(
                 memoryContext:
@@ -156,7 +159,8 @@ private extension RecordCardBuildService {
                     selectedPhoto.metadata,
                 locationDisplayConfiguration:
                     configuration
-                    .locationDisplayConfiguration
+                    .locationDisplayConfiguration,
+                configuration: configuration
             )
 #endif
 
@@ -293,7 +297,8 @@ private extension RecordCardBuildService {
         memoryContext: ExpressionContext?,
         metadata: PhotoMetadata,
         locationDisplayConfiguration:
-            ExpressionModuleConfiguration?
+            ExpressionModuleConfiguration?,
+        configuration: BatchConfigurationSnapshot
     ) -> ExpressionContext? {
         var values =
             memoryContext
@@ -313,6 +318,24 @@ private extension RecordCardBuildService {
                     locationDisplayConfiguration
             ) {
             values.append(locationValue)
+        }
+
+        let customMemoryText =
+            configuration.customMemoryWriteText
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        if configuration.usesCustomMemoryWriteText,
+            !customMemoryText.isEmpty {
+            values.removeAll {
+                $0.token == MemoryProvider.memoryToken
+            }
+            values.append(
+                ExpressionValue(
+                    token: MemoryProvider.memoryToken,
+                    resolvedText: customMemoryText
+                )
+            )
         }
 
         guard !values.isEmpty else {
@@ -372,6 +395,42 @@ private extension RecordCardBuildService {
 
         ""
     }
+
+#if !PHOTOMEMO_SHARE_EXTENSION
+    func resolvedMemoryModule(
+        from module: MemoryModule?,
+        configuration: BatchConfigurationSnapshot
+    ) -> MemoryModule? {
+        let customText = configuration.customMemoryWriteText
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        guard configuration.usesCustomMemoryWriteText,
+            !customText.isEmpty
+        else {
+            return module
+        }
+
+        if var module {
+            module.renderedText = customText
+            return module
+        }
+
+        return MemoryModule(
+            title: "Memory",
+            blocks: [.text(customText)],
+            renderedText: customText,
+            sourceAnchor:
+                configuration
+                .canonicalProductionSnapshot?
+                .primaryAnchor,
+            preferredRegion:
+                configuration
+                .canonicalProductionSnapshot?
+                .smartModuleCarrierRegion
+        )
+    }
+#endif
 
     func resolvedPhotoDescription(
         from card: RecordCard,

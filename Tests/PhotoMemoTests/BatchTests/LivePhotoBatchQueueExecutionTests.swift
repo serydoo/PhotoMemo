@@ -482,13 +482,13 @@ struct LivePhotoBatchQueueExecutionTests {
         )
     }
 
-    @Test("Prepared bundle save requests use the still resource original filename")
-    func preparedBundleSaveRequestsUseStillResourceOriginalFilename() {
+    @Test("Adjusted Live Photo resources keep the source task filename")
+    func adjustedLivePhotoResourcesKeepSourceTaskFilename() {
         let task =
             BatchTask(
                 sourceURL:
-                    URL(fileURLWithPath: "/tmp/SharedLivePhoto.livephoto"),
-                fileName: "SharedLivePhoto.livephoto",
+                    URL(fileURLWithPath: "/tmp/IMG_1164.jpg"),
+                fileName: "IMG_1164.jpg",
                 contentTypeIdentifier:
                     UTType("com.apple.live-photo")?
                     .identifier
@@ -502,16 +502,16 @@ struct LivePhotoBatchQueueExecutionTests {
                         id: "shared-still",
                         kind: .fullSizePhoto,
                         originalFilename:
-                            "IMG_6093.HEIC",
+                            "FullSizeRender.jpeg",
                         uniformTypeIdentifier:
-                            UTType.heic.identifier
+                            UTType.jpeg.identifier
                     ),
                 pairedVideoResource:
                     LivePhotoAssetResourceDescriptor(
                         id: "shared-movie",
                         kind: .fullSizePairedVideo,
                         originalFilename:
-                            "IMG_6093.MOV",
+                            "FullSizeRender.mov",
                         uniformTypeIdentifier:
                             UTType.quickTimeMovie.identifier
                     ),
@@ -523,12 +523,12 @@ struct LivePhotoBatchQueueExecutionTests {
 
         #expect(
             LivePhotoBatchTaskProcessor
-                .stillPhotoOriginalFilename(
+                .sourceOriginalFilename(
                     task: task,
                     preparedBundle:
                         preparedBundle
                 )
-            == "IMG_6093.HEIC"
+            == "IMG_1164.jpg"
         )
     }
 
@@ -1045,11 +1045,28 @@ struct LivePhotoBatchQueueExecutionTests {
             RecordingLivePhotoPairComposer()
         let writer =
             RecordingLivePhotoAssetWriter()
+        let suiteName =
+            "PhotoMemo.RealLivePhotoSourceBundle.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
         let processor =
             LivePhotoBatchTaskProcessor(
                 assetLoader: loader,
                 pairComposer: composer,
                 assetWriter: writer,
+                diagnosticsDefaults: defaults,
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            rootURL.appendingPathComponent(
+                                "LivePhotoOutputFilenameSequence.json"
+                            )
+                    ),
                 temporaryRootURL:
                     temporaryRootURL
             )
@@ -1089,11 +1106,11 @@ struct LivePhotoBatchQueueExecutionTests {
             )
         #expect(
             saveRequest.stillPhotoOriginalFilename
-            == "IMG_6093.HEIC"
+            == "IMG_6093(1).heic"
         )
         #expect(
             saveRequest.pairedVideoOriginalFilename
-            == "IMG_6093.MOV"
+            == "IMG_6093(1).mov"
         )
     }
 }

@@ -86,14 +86,17 @@ final class BatchQueueExecution {
                 photoLibraryRepository:
                     resolvedPhotoLibraryRepository
             )
-        self.livePhotoProcessor =
-            livePhotoProcessor
-            ?? LivePhotoBatchTaskProcessor()
         self.externalIntakeStore =
             externalIntakeStore
             ?? .shared
         self.diagnosticsDefaults =
             diagnosticsDefaults
+        self.livePhotoProcessor =
+            livePhotoProcessor
+            ?? LivePhotoBatchTaskProcessor(
+                diagnosticsDefaults:
+                    diagnosticsDefaults
+            )
     }
 
     func enqueue(
@@ -107,6 +110,21 @@ final class BatchQueueExecution {
 
         guard !payloads.isEmpty else {
             return nil
+        }
+
+        if configuration.productionContractVersion != nil {
+            do {
+                try ProductionConfigurationSnapshotContract
+                    .validate(configuration)
+            } catch {
+                _ = PhotoMemoShareDiagnostics.recordResult(
+                    stage: .configurationContractViolation,
+                    message:
+                        "source=\(launchSource.rawValue) configurationID=\(configuration.configurationID?.uuidString ?? "nil") revision=\(configuration.configurationRevision.map(String.init) ?? "nil") admission=rejected reason=\(String(describing: error))",
+                    defaults: diagnosticsDefaults
+                )
+                return nil
+            }
         }
 
         let tasks = payloads.map {
@@ -457,6 +475,35 @@ final class BatchQueueExecution {
                         .execute()
                     )
                 }
+
+            do {
+                _ = try ProductionRenderHealthCheck.validate(
+                    card: card,
+                    configuration: configuration
+                )
+                _ = PhotoMemoShareDiagnostics.recordResult(
+                    stage: .renderHealthCheckPassed,
+                    message:
+                        "taskID=\(task.id.uuidString) source=\(store.currentJob(at: reference)?.launchSource.rawValue ?? "unknown") configurationID=\(configuration.configurationID?.uuidString ?? "nil") revision=\(configuration.configurationRevision.map(String.init) ?? "nil")",
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        ),
+                    defaults: diagnosticsDefaults
+                )
+            } catch {
+                _ = PhotoMemoShareDiagnostics.recordResult(
+                    stage: .renderHealthCheckFailed,
+                    message:
+                        "taskID=\(task.id.uuidString) configurationID=\(configuration.configurationID?.uuidString ?? "nil") revision=\(configuration.configurationRevision.map(String.init) ?? "nil") reason=\(String(describing: error))",
+                    jobID:
+                        store.currentJobID(
+                            at: reference
+                        ),
+                    defaults: diagnosticsDefaults
+                )
+                throw error
+            }
 
             store.updateTask(
                 at: reference,

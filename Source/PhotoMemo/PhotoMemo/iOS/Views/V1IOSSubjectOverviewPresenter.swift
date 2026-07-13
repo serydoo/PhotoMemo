@@ -54,12 +54,9 @@ enum V1IOSSubjectOverviewPresenter {
                     ?? currentTimeAnchorTitle
                 ),
             anchorDateLabel:
-                anchor?.date.formatted(
-                    .dateTime
-                        .year()
-                        .month()
-                        .day()
-                )
+                anchor.map {
+                    V1UserFacingDateFormatter.date($0.date)
+                }
                 ?? "未设置",
             anchorDescription:
                 normalizedAnchorDescription(

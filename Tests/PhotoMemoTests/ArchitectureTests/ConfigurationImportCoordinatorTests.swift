@@ -19,7 +19,7 @@ struct ConfigurationImportCoordinatorTests {
             id: Self.importedConfigurationID,
             title: "Imported"
         )
-        let liveDataBeforeImport = try JSONEncoder().encode(live)
+        let liveDataBeforeImport = try Self.stableEncode(live)
         let document = Self.signedDocument(
             subject: importedSubject,
             configuration: importedConfiguration
@@ -33,7 +33,7 @@ struct ConfigurationImportCoordinatorTests {
             availableAlbumIdentifiers: []
         )
 
-        #expect(try JSONEncoder().encode(live) == liveDataBeforeImport)
+        #expect(try Self.stableEncode(live) == liveDataBeforeImport)
         let receipt = coordinator.restore(
             resolution,
             into: live
@@ -392,7 +392,7 @@ struct ConfigurationImportCoordinatorTests {
     @Test("future and corrupt schemas reject without applying")
     func futureAndCorruptDocumentsReject() throws {
         let live = Self.makeAggregate()
-        let liveDataBeforeImport = try JSONEncoder().encode(live)
+        let liveDataBeforeImport = try Self.stableEncode(live)
         var applyCount = 0
         let coordinator = ConfigurationImportCoordinator(
             applyAggregate: { _ in
@@ -441,7 +441,7 @@ struct ConfigurationImportCoordinatorTests {
             return true
         }
         #expect(applyCount == 0)
-        #expect(try JSONEncoder().encode(live) == liveDataBeforeImport)
+        #expect(try Self.stableEncode(live) == liveDataBeforeImport)
     }
 
     @MainActor
@@ -675,6 +675,14 @@ private extension ConfigurationImportCoordinatorTests {
         return try encoder.encode(document)
     }
 
+    static func stableEncode<Value: Encodable>(
+        _ value: Value
+    ) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(value)
+    }
+
     static func makeSaveReceipt(
         subjectID: UUID = liveSubjectID,
         configurationID: UUID = liveConfigurationID
@@ -683,6 +691,7 @@ private extension ConfigurationImportCoordinatorTests {
             revision: 8,
             subjectID: subjectID,
             configurationID: configurationID,
+            configurationRevision: 4,
             compatibilityProjectionFailure: nil
         )
     }

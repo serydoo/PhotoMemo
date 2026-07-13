@@ -29,6 +29,9 @@ final class ShareCoordinator {
     private let livePhotoAssetIdentityResolver:
         any LivePhotoAssetIdentityResolving
 
+    private let diagnosticsDefaults:
+        UserDefaults
+
     init(
         externalIntakeCenter:
             ExternalPhotoIntakeCenter,
@@ -38,6 +41,9 @@ final class ShareCoordinator {
             ConfigurationRepository,
         queueRepository:
             QueueRepository,
+        diagnosticsDefaults:
+            UserDefaults = PhotoMemoSharedContainer
+            .sharedUserDefaults,
         livePhotoAssetIdentityResolver:
             (any LivePhotoAssetIdentityResolving)? = nil
     ) {
@@ -49,6 +55,8 @@ final class ShareCoordinator {
             configurationRepository
         self.queueRepository =
             queueRepository
+        self.diagnosticsDefaults =
+            diagnosticsDefaults
         self.livePhotoAssetIdentityResolver =
             livePhotoAssetIdentityResolver
             ?? PhotoKitLivePhotoAssetIdentityResolver()
@@ -201,11 +209,32 @@ final class ShareCoordinator {
             )
         }
 
+        let resolvedJobConfiguration: BatchConfigurationSnapshot
+        do {
+            resolvedJobConfiguration = try resolvedConfiguration(
+                for: request
+            )
+        } catch {
+            _ = PhotoMemoShareDiagnostics.recordResult(
+                stage: .configurationContractViolation,
+                message:
+                    "request=\(request.id.uuidString) reason=\(String(describing: error))",
+                requestID: request.id,
+                defaults: diagnosticsDefaults
+            )
+            return .failure(
+                PhotoMemoError(
+                    code: .configurationUnavailable,
+                    message:
+                        "The requested saved configuration revision is unavailable or invalid."
+                )
+            )
+        }
+
         let job =
             queueRepository.enqueue(
                 payloads: uniquePayloads,
-                configuration:
-                    request.configurationSnapshot,
+                configuration: resolvedJobConfiguration,
                 launchSource:
                     request.launchSource,
                 intakeSummary:
@@ -249,6 +278,85 @@ final class ShareCoordinator {
                 droppedReason: nil
             )
         )
+    }
+
+    private func resolvedConfiguration(
+        for request: ExternalPhotoIntakeRequest
+    ) throws -> BatchConfigurationSnapshot {
+        let transportConfiguration =
+            request.configurationSnapshot
+
+        if let reference = transportConfiguration
+            .productionConfigurationReference {
+            let resolved = try configurationRepository
+                .resolveDurableProductionConfiguration(
+                    reference
+                )
+            _ = PhotoMemoShareDiagnostics.recordResult(
+                stage: .configurationReferenceAccepted,
+                message:
+                    "configurationID=\(reference.configurationID.uuidString) revision=\(reference.revision) source=\(request.launchSource.rawValue)",
+                requestID: request.id,
+                defaults: diagnosticsDefaults
+            )
+            return resolved
+        }
+
+        if transportConfiguration.productionContractVersion != nil {
+            throw ProductionConfigurationContractError
+                .missingReference
+        }
+
+        _ = PhotoMemoShareDiagnostics.recordResult(
+            stage: .configurationCompatibilityRecovery,
+            message:
+                "historicalRequest=true source=\(request.launchSource.rawValue)",
+            requestID: request.id,
+            defaults: diagnosticsDefaults
+        )
+
+        guard
+            transportConfiguration
+            .canonicalProductionSnapshot == nil
+        else {
+            return transportConfiguration
+        }
+
+        let currentConfiguration =
+            configurationRepository
+            .loadDefaultBatchConfigurationSnapshot()
+
+        guard let canonicalSnapshot =
+            currentConfiguration
+            .canonicalProductionSnapshot
+        else {
+            return transportConfiguration
+        }
+
+        var restoredConfiguration =
+            transportConfiguration
+            .withCanonicalProductionSnapshot(
+                canonicalSnapshot
+            )
+
+        if
+            let configurationID =
+                currentConfiguration
+                .configurationID,
+            let configurationRevision =
+                currentConfiguration
+                .configurationRevision
+        {
+            restoredConfiguration =
+                restoredConfiguration
+                .withConfigurationIdentity(
+                    id: configurationID,
+                    revision:
+                        configurationRevision
+                )
+        }
+
+        return restoredConfiguration
     }
 }
 
@@ -318,12 +426,13 @@ private extension ShareCoordinator {
 
         switch resolution {
         case .matched(let assetLocalIdentifier):
-            PhotoMemoShareDiagnostics.record(
+            _ = PhotoMemoShareDiagnostics.recordResult(
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
                     "result=matched, fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), contentType=\(context.payload.contentTypeIdentifier ?? "nil"), assetIdentifierRecovered=true",
-                requestID: requestID
+                requestID: requestID,
+                defaults: diagnosticsDefaults
             )
 
             var recoveredPayload =
@@ -341,32 +450,35 @@ private extension ShareCoordinator {
             )
 
         case .notFound:
-            PhotoMemoShareDiagnostics.record(
+            _ = PhotoMemoShareDiagnostics.recordResult(
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
                     "result=notFound, fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
-                requestID: requestID
+                requestID: requestID,
+                defaults: diagnosticsDefaults
             )
             return context
 
         case .ambiguous(let candidateCount):
-            PhotoMemoShareDiagnostics.record(
+            _ = PhotoMemoShareDiagnostics.recordResult(
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
                     "result=ambiguous, candidateCount=\(candidateCount), fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
-                requestID: requestID
+                requestID: requestID,
+                defaults: diagnosticsDefaults
             )
             return context
 
         case .unavailable(let reason):
-            PhotoMemoShareDiagnostics.record(
+            _ = PhotoMemoShareDiagnostics.recordResult(
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
                     "result=unavailable, reason=\(reason), fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
-                requestID: requestID
+                requestID: requestID,
+                defaults: diagnosticsDefaults
             )
             return context
         }

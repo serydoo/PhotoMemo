@@ -740,6 +740,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             revision: 9,
             subjectID: subject.id,
             configurationID: configuration.id,
+            configurationRevision: 4,
             compatibilityProjectionFailure: nil
         )
 

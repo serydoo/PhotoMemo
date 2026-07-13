@@ -26,9 +26,11 @@ struct V1IOSSubjectConfigurationFlow: View {
                         session: flowState.draftSession
                     )
                 }
-                .padding(.horizontal, 18)
                 .padding(.top, 16)
                 .padding(.bottom, 34)
+                .v1AdaptiveScrollContent(
+                    horizontalPadding: 18
+                )
             }
             .scrollDismissesKeyboard(.interactively)
             .simultaneousGesture(

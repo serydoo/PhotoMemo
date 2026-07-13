@@ -26,7 +26,9 @@ struct ConfigurationLibraryRepositoryTests {
         )
 
         #expect(firstReceipt.revision == 1)
+        #expect(firstReceipt.configurationRevision == 1)
         #expect(secondReceipt.revision == 2)
+        #expect(secondReceipt.configurationRevision == 1)
         #expect(secondData != firstData)
         #expect(lastKnownGoodData == firstData)
         #expect(

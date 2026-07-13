@@ -250,6 +250,9 @@ final class SettingsService: ObservableObject {
         static let selectedMemorySubject =
             "photomemo.selectedMemorySubject"
 
+        static let productionConfigurationReference =
+            "photomemo.productionConfigurationReference"
+
         static let selectedMemorySubjectText =
             "photomemo.selectedMemorySubjectText"
 
@@ -354,7 +357,7 @@ final class SettingsService: ObservableObject {
     ) {
         self.init(
             defaults: defaults,
-            isolatedConfigurationLibraryBaseDirectoryURL:
+            configurationLibraryBaseDirectoryURL:
                 FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
         )
@@ -362,7 +365,7 @@ final class SettingsService: ObservableObject {
 
     init(
         defaults: UserDefaults,
-        isolatedConfigurationLibraryBaseDirectoryURL: URL
+        configurationLibraryBaseDirectoryURL: URL
     ) {
         self.defaults = defaults
         self.snapshotProvider =
@@ -372,8 +375,8 @@ final class SettingsService: ObservableObject {
         let configurationLibraryStorage =
             FileConfigurationLibraryStorage(
                 baseDirectoryURL:
-                    isolatedConfigurationLibraryBaseDirectoryURL,
-                legacyDefaults: nil
+                    configurationLibraryBaseDirectoryURL,
+                legacyDefaults: defaults
             )
         self.configurationLibraryStorage =
             configurationLibraryStorage
@@ -777,6 +780,7 @@ final class SettingsService: ObservableObject {
                 guard let self else {
                     return
                 }
+                recoveredConfigurationLibrary = saved
                 if let configurationLibraryProjection {
                     try configurationLibraryProjection(saved)
                 } else {
@@ -790,7 +794,7 @@ final class SettingsService: ObservableObject {
                             id: provisionalReceipt
                                 .configurationID,
                             revision: provisionalReceipt
-                                .revision
+                                .configurationRevision
                         ),
                     provisionalReceipt
                 )
@@ -801,6 +805,22 @@ final class SettingsService: ObservableObject {
     func loadConfigurationLibrary()
     async throws -> ConfigurationLibraryLoadReceipt {
         try await configurationLibraryRepository.load()
+    }
+
+    func resolveDurableProductionConfiguration(
+        _ reference: ProductionConfigurationReference
+    ) throws -> BatchConfigurationSnapshot {
+        guard let recoveredConfigurationLibrary else {
+            throw ProductionConfigurationContractError
+                .configurationNotFound(
+                    reference.configurationID
+                )
+        }
+        return try ProductionConfigurationSnapshotFactory
+            .resolve(
+                reference: reference,
+                from: recoveredConfigurationLibrary
+            )
     }
 
     func saveConfigurationSlots() {
@@ -1136,7 +1156,7 @@ extension SettingsService {
             selectedAnchorID?.uuidString
             ?? selectedAnchorIDString
 
-        return snapshotProvider.makeSnapshot(
+        let compatibilitySnapshot = snapshotProvider.makeSnapshot(
             template: selectedTemplate,
             badge: selectedBadge,
             anchors: anchors,
@@ -1159,6 +1179,33 @@ extension SettingsService {
             mediaOutputModeRawValue:
                 mediaOutputMode.rawValue
         )
+
+        guard let aggregate = recoveredConfigurationLibrary,
+            let configurationID = aggregate.activeConfigurationID,
+            let configuration = aggregate.subjects.lazy
+                .flatMap(\.configurations)
+                .first(where: { $0.id == configurationID })
+        else {
+            return compatibilitySnapshot
+        }
+
+        let reference = ProductionConfigurationReference(
+            configurationID: configurationID,
+            revision: configuration.revision
+        )
+
+        if let exact = try? ProductionConfigurationSnapshotFactory
+            .resolve(
+                reference: reference,
+                from: aggregate
+            ) {
+            return exact
+        }
+
+        return compatibilitySnapshot
+            .withProductionConfigurationReference(
+                reference
+            )
     }
 
     func loadLocationDisplayConfiguration()
@@ -1236,6 +1283,18 @@ extension SettingsService {
         defaults.set(
             try JSONEncoder().encode(subjectLibrary),
             forKey: Keys.subjectLibrary
+        )
+        defaults.set(
+            try JSONEncoder().encode(
+                ProductionConfigurationReference(
+                    configurationID:
+                        activeConfigurationID,
+                    revision:
+                        activeConfiguration.revision
+                )
+            ),
+            forKey:
+                Keys.productionConfigurationReference
         )
         defaults.set(
             try JSONEncoder().encode(
@@ -1334,7 +1393,7 @@ extension SettingsService {
         let projectedSnapshot = buildBatchConfigurationSnapshot()
             .withConfigurationIdentity(
                 id: activeConfigurationID,
-                revision: aggregate.revision
+                revision: activeConfiguration.revision
             )
         configurationSlots = configurationSlots.map { slot in
             guard slot.id == activeConfigurationSlotID else {

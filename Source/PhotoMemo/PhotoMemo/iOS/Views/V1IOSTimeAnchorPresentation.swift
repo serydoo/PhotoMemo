@@ -1,15 +1,46 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
-enum V1IOSTimeAnchorPresentation {
+enum V1UserFacingDateFormatter {
 
-    private static let anchorDateFormatter: DateFormatter = {
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = Locale(identifier: "zh_CN")
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "yyyy.MM.dd"
+        formatter.dateFormat = "yyyy年M月d日"
         return formatter
     }()
+
+    private static let dateTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy年M月d日 HH:mm"
+        return formatter
+    }()
+
+    private static let compactDateTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "M月d日 HH:mm"
+        return formatter
+    }()
+
+    static func date(_ date: Date) -> String {
+        dateFormatter.string(from: date)
+    }
+
+    static func dateTime(_ date: Date) -> String {
+        dateTimeFormatter.string(from: date)
+    }
+
+    static func compactDateTime(_ date: Date) -> String {
+        compactDateTimeFormatter.string(from: date)
+    }
+}
+
+enum V1IOSTimeAnchorPresentation {
 
     static func title(
         subject: MemorySubject?,
@@ -42,7 +73,7 @@ enum V1IOSTimeAnchorPresentation {
             return "未设置"
         }
 
-        return anchorDateFormatter.string(from: date)
+        return V1UserFacingDateFormatter.date(date)
     }
 
     private static func normalizedOptionalText(

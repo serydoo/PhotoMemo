@@ -84,9 +84,11 @@ struct V1IOSSubjectOverviewSheet: View {
                         subject: subject
                     )
                 }
-                .padding(.horizontal, 18)
                 .padding(.top, 16)
                 .padding(.bottom, 34)
+                .v1AdaptiveScrollContent(
+                    horizontalPadding: 18
+                )
             }
             .background(
                 ConfigurationUI.appBackground
@@ -223,9 +225,11 @@ struct V1IOSSubjectOverviewSheet: View {
                     )
                 }
             }
-            .padding(.horizontal, 18)
             .padding(.top, 16)
             .padding(.bottom, 34)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 18
+            )
         }
         .scrollDismissesKeyboard(.interactively)
         .background(

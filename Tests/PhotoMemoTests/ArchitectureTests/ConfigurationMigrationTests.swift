@@ -1515,7 +1515,10 @@ struct ConfigurationMigrationTests {
 
         #expect(projected.snapshot?.template.name == "Aggregate Slot Projection")
         #expect(projected.snapshot?.configurationID == receipt.configurationID)
-        #expect(projected.snapshot?.configurationRevision == receipt.revision)
+        #expect(
+            projected.snapshot?.configurationRevision
+            == receipt.configurationRevision
+        )
         #expect(projected.updatedAt != nil)
         #expect(slots.first { $0.id == .slot1 }?.snapshot == nil)
         #expect(slots.first { $0.id == .slot3 }?.snapshot == nil)
@@ -1817,7 +1820,11 @@ struct ConfigurationMigrationTests {
         )
 
         let completedSaves = try await withThrowingTaskGroup(
-            of: (revision: Int, title: String).self
+            of: (
+                revision: Int,
+                configurationRevision: Int,
+                title: String
+            ).self
         ) { group in
             for index in 0..<12 {
                 let title = "Concurrent Aggregate \(index)"
@@ -1828,11 +1835,19 @@ struct ConfigurationMigrationTests {
                                 title: title
                             )
                         )
-                    return (receipt.revision, title)
+                    return (
+                        receipt.revision,
+                        receipt.configurationRevision,
+                        title
+                    )
                 }
             }
 
-            var saves: [(revision: Int, title: String)] = []
+            var saves: [(
+                revision: Int,
+                configurationRevision: Int,
+                title: String
+            )] = []
             for try await save in group {
                 saves.append(save)
             }
@@ -1850,7 +1865,7 @@ struct ConfigurationMigrationTests {
                                     "72727272-7272-7272-7272-727272727272"
                             ),
                             configurationRevision:
-                                $0.revision
+                                $0.configurationRevision
                         )
                     )
                 }
@@ -1865,6 +1880,10 @@ struct ConfigurationMigrationTests {
         #expect(
             Set(callbackReceipts.map(\.revision))
             == Set(1...12)
+        )
+        #expect(
+            Set(callbackReceipts.map(\.configurationRevision))
+            == [1]
         )
     }
 
@@ -2167,7 +2186,7 @@ struct ConfigurationMigrationTests {
 
         let settings = SettingsService(
             defaults: isolatedDefaults,
-            isolatedConfigurationLibraryBaseDirectoryURL:
+            configurationLibraryBaseDirectoryURL:
                 isolatedRoot
         )
 
@@ -2206,11 +2225,11 @@ struct ConfigurationMigrationTests {
         )
         let settingsA = SettingsService(
             defaults: defaultsA,
-            isolatedConfigurationLibraryBaseDirectoryURL: rootA
+            configurationLibraryBaseDirectoryURL: rootA
         )
         let settingsB = SettingsService(
             defaults: defaultsB,
-            isolatedConfigurationLibraryBaseDirectoryURL: rootB
+            configurationLibraryBaseDirectoryURL: rootB
         )
 
         let receiptA = try await settingsA

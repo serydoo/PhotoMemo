@@ -127,6 +127,9 @@ final class AppEnvironment {
         defaults: UserDefaults =
             PhotoMemoSharedContainer
             .sharedUserDefaults,
+        configurationLibraryBaseDirectoryURL: URL =
+            PhotoMemoSharedContainer
+            .baseDirectoryURL,
         intakeDirectoryURL: URL =
             PhotoMemoSharedContainer
             .externalIntakeDirectoryURL,
@@ -138,7 +141,9 @@ final class AppEnvironment {
 
         let settingsService =
             SettingsService(
-                defaults: defaults
+                defaults: defaults,
+                configurationLibraryBaseDirectoryURL:
+                    configurationLibraryBaseDirectoryURL
             )
         let photoImportService =
             PhotoImportService()
@@ -295,7 +300,9 @@ final class AppEnvironment {
                             .configuration,
                         queueRepository:
                             repositories
-                            .queue
+                            .queue,
+                        diagnosticsDefaults:
+                            defaults
                     ),
                 queue:
                     QueueCoordinator(

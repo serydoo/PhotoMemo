@@ -217,8 +217,10 @@ struct ConfigurationCenteriOSView: View {
                 configurationSummarySection
                 detailContent
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 16)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 16
+            )
         }
         .scrollDismissesKeyboard(.interactively)
         .background(ConfigurationUI.panelBackground)

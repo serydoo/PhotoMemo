@@ -51,6 +51,7 @@ nonisolated struct ConfigurationLibrarySaveReceipt:
     let revision: Int
     let subjectID: UUID
     let configurationID: UUID
+    let configurationRevision: Int
     let compatibilityProjectionFailure:
         ConfigurationLibraryProjectionFailure?
 }
@@ -197,6 +198,8 @@ final class ConfigurationLibraryRepository {
         let subjectID = try requiredActiveSubjectID(candidate)
         let configurationID =
             try requiredActiveConfigurationID(candidate)
+        let configurationRevision =
+            try requiredActiveConfigurationRevision(candidate)
 
         while true {
             let persistenceSnapshot = try await loadSnapshot()
@@ -238,6 +241,8 @@ final class ConfigurationLibraryRepository {
                     revision: candidate.revision,
                     subjectID: subjectID,
                     configurationID: configurationID,
+                    configurationRevision:
+                        configurationRevision,
                     compatibilityProjectionFailure: nil
                 )
             let projectionFailure:
@@ -264,6 +269,8 @@ final class ConfigurationLibraryRepository {
                 subjectID: provisionalReceipt.subjectID,
                 configurationID:
                     provisionalReceipt.configurationID,
+                configurationRevision:
+                    provisionalReceipt.configurationRevision,
                 compatibilityProjectionFailure: projectionFailure
             )
         }
@@ -315,6 +322,20 @@ private extension ConfigurationLibraryRepository {
                 .missingActiveSelection
         }
         return configurationID
+    }
+
+    func requiredActiveConfigurationRevision(
+        _ aggregate: ConfigurationLibraryRecord
+    ) throws -> Int {
+        guard let configurationID = aggregate.activeConfigurationID,
+            let configuration = aggregate.subjects.lazy
+                .flatMap(\.configurations)
+                .first(where: { $0.id == configurationID })
+        else {
+            throw ConfigurationLibraryPersistenceError
+                .missingActiveSelection
+        }
+        return configuration.revision
     }
 
     func encode(

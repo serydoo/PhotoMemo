@@ -665,10 +665,8 @@ private extension V1SettingsPagePresenter {
         case .active,
              .completed,
              .needsAttention:
-            return updatedAt.formatted(
-                date: .omitted,
-                time: .shortened
-            )
+            return V1UserFacingDateFormatter
+                .dateTime(updatedAt)
         }
     }
 

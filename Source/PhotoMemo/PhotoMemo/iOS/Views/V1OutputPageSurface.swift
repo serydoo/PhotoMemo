@@ -53,9 +53,11 @@ struct V1OutputPageSurface: View {
                     resolvedMemoryWriteText: resolvedMemoryWriteText
                 )
             }
-            .padding(.horizontal, 16)
             .padding(.top, 10)
             .padding(.bottom, 76)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 16
+            )
         }
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(

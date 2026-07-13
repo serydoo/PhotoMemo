@@ -919,9 +919,6 @@ final class ConfigurationSession:
             break
         }
         library.activeConfigurationID = configurationID
-        if let configurationRevision {
-            library.revision = configurationRevision
-        }
         state.configurationLibrary = library
     }
 

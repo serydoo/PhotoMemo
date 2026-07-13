@@ -235,6 +235,56 @@ struct LivePhotoAssetLoaderContractTests {
         )
     }
 
+    @Test("Preserves a FullSizeRender JPEG extension while exporting PhotoKit resources")
+    func preservesFullSizeRenderJPEGExtensionDuringResourceExport() async throws {
+        let provider = StubLivePhotoAssetResourceProvider(
+            resources: [
+                .init(
+                    id: "still",
+                    kind: .fullSizePhoto,
+                    originalFilename: "FullSizeRender.jpeg",
+                    uniformTypeIdentifier: "public.jpeg"
+                ),
+                .init(
+                    id: "video",
+                    kind: .fullSizePairedVideo,
+                    originalFilename: "FullSizeRender.mov",
+                    uniformTypeIdentifier: "com.apple.quicktime-movie"
+                )
+            ]
+        )
+        let exporter = StubLivePhotoAssetResourceExporter()
+        let loader = PhotoKitLivePhotoAssetLoader(
+            resourceProvider: provider,
+            resourceExporter: exporter
+        )
+        let bundle = try await loader.bundle(
+            for: "asset-full-size-render-jpeg"
+        )
+        let temporaryFolder = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "LivePhotoAssetLoaderFullSizeRenderTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        defer {
+            try? FileManager.default.removeItem(at: temporaryFolder)
+        }
+
+        let exportedBundle = try await loader.exportResources(
+            for: bundle,
+            to: temporaryFolder
+        )
+
+        #expect(
+            exportedBundle.stillPhotoFileURL.lastPathComponent
+            == "FullSizeRender.jpeg"
+        )
+        #expect(
+            exportedBundle.pairedVideoFileURL.lastPathComponent
+            == "FullSizeRender.mov"
+        )
+    }
+
     #if canImport(Photos)
     @Test("PhotoKit resource exports allow network access for iCloud-backed Live Photo resources")
     func photoKitResourceExportsAllowNetworkAccess() {

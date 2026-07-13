@@ -52,35 +52,7 @@ private struct V1IOSSubjectPrimaryCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
-                V1SubjectAvatarView(
-                    imagePath:
-                        subject?
-                        .identity.avatarImagePath
-                        ?? subject?
-                        .identity.avatarPreviewImagePath,
-                    size: 60
-                )
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(summary.title)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    subjectMetaRow
-
-                    memoryRecordStrip
-                }
-                .layoutPriority(1)
-
-                Spacer(minLength: 8)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 12)
-            }
+            responsiveCardContent
             .padding(16)
             .background(
                 RoundedRectangle(
@@ -98,6 +70,75 @@ private struct V1IOSSubjectPrimaryCard: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var responsiveCardContent: some View {
+        ViewThatFits(in: .horizontal) {
+            regularCardContent
+            compactCardContent
+        }
+    }
+
+    private var regularCardContent: some View {
+        HStack(spacing: 14) {
+            subjectAvatar(size: 60)
+
+            VStack(alignment: .leading, spacing: 8) {
+                subjectTitle
+                subjectMetaRow
+                memoryRecordStrip
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 8)
+            disclosureIndicator
+        }
+    }
+
+    private var compactCardContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                subjectAvatar(size: 52)
+
+                VStack(alignment: .leading, spacing: 7) {
+                    subjectTitle
+                    subjectMetaRow
+                }
+                .layoutPriority(1)
+
+                Spacer(minLength: 4)
+                disclosureIndicator
+            }
+
+            memoryRecordStrip
+        }
+    }
+
+    private var subjectTitle: some View {
+        Text(summary.title)
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+    }
+
+    private func subjectAvatar(
+        size: CGFloat
+    ) -> some View {
+        V1SubjectAvatarView(
+            imagePath:
+                subject?
+                .identity.avatarImagePath
+                ?? subject?
+                .identity.avatarPreviewImagePath,
+            size: size
+        )
+    }
+
+    private var disclosureIndicator: some View {
+        Image(systemName: "chevron.right")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.tertiary)
+            .frame(width: 12)
     }
 
     private var anchorCountText: String {
