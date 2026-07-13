@@ -19,9 +19,13 @@
 - Two flaky configuration import assertions were corrected to compare stable
   sorted-key encodings rather than nondeterministic dictionary byte order.
 - Final unsigned macOS, iOS app, and Share Extension builds pass.
-- Required next operations: commit/push to GitHub, uninstall existing
-  `com.serydoo.PhotoMemo.iOS` from `Hong`, `IPhone5`, and `iPhone7`, then
-  install and launch the same signed build on all three.
+- Commit `eeffb072` is pushed to GitHub.
+- `IPhone5` and `iPhone7` completed uninstall, clean install, launch, installed
+  version verification, and process verification with the same signed build.
+- `Hong` was off-site; no uninstall or install was attempted. Repeat the clean
+  deployment when that device returns.
+- Durable evidence:
+  `Docs/07_Releases/2026-07-13-V3-Device-Installation-Evidence.md`.
 
 ## 2026-07-13 iPhone responsive layout hardening
 
