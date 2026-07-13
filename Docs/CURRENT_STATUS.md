@@ -36,10 +36,11 @@ Verification passed:
   encoding and no longer produce parallel-test false failures.
 
 Final unsigned macOS, iOS app, and Share Extension builds pass. Commit
-`eeffb072` is pushed to GitHub. The same signed `1.7 (7)` build was cleanly
-installed and launched on `IPhone5` (iPhone 15 Pro) and `iPhone7`
-(iPhone 17 Pro Max). The second iPhone 15 Pro, `Hong`, was off-site and its
-clean installation is explicitly deferred until the device returns.
+`eeffb072` is pushed to GitHub. Signed `1.7 (7)` builds from the same verified
+source were cleanly installed and launched on `IPhone5` (iPhone 15 Pro),
+`iPhone7` (iPhone 17 Pro Max), and `Hong` (iPhone 15 Pro). `Hong` received a
+fresh signed rebuild from current `main` after returning online; its old app
+was removed before installation.
 
 Durable installation evidence is recorded in
 `Docs/07_Releases/2026-07-13-V3-Device-Installation-Evidence.md`.

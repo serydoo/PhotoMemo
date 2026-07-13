@@ -10,8 +10,10 @@ Product stage: V3 Production Quality And Delivery
 - App version: `1.7 (7)`
 - Signing team: `UK7ZR8G564`
 - Signing identity: `Apple Development: serydoo@163.com (GE3672Z8WA)`
-- Main executable SHA-256:
+- IPhone5/iPhone7 main executable SHA-256:
   `6d1ea6913aed62d9401599593c54ee12cceaaddc68153a0f5a322cba49b3ff34`
+- Hong fresh rebuild main executable SHA-256:
+  `846fcbed865810ea8718219c068df494170e5190bded46e2e17646a7ccf37a74`
 - Embedded extensions:
   - `com.serydoo.PhotoMemo.iOS.ShareExtension`
   - `com.serydoo.PhotoMemo.iOS.WidgetExtension`
@@ -54,12 +56,15 @@ until 2027-07-13.
 
 ### Hong — iPhone 15 Pro
 
-- The device was off-site and unavailable to CoreDevice.
-- No uninstall, data deletion, installation, or launch was attempted.
-- The user explicitly deferred this device until it returns.
-- When available, reuse the same clean deployment sequence below and create a
-  new signed build from the then-current verified commit rather than relying on
-  the temporary build directory.
+- The device returned online as a paired physical iPhone with Developer Mode
+  enabled.
+- A fresh signed app was built from current `main` rather than reusing the
+  previous temporary artifact.
+- Existing `com.serydoo.PhotoMemo.iOS` installation was removed successfully.
+- Signed `1.7 (7)` app installed successfully.
+- App launch succeeded through `devicectl` after the device was unlocked.
+- Final process inspection confirmed both `PhotoMemoiOS` and the Widget
+  extension running.
 
 ## Reproduction
 
