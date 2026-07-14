@@ -207,7 +207,7 @@ private extension TemplateEditorView {
                     "Yongcheng",
 
                 "memory_summary":
-                    "今天途途1岁2个月18天",
+                    "今天小宝1岁2个月18天",
 
                 "story":
                     "First Family Trip"

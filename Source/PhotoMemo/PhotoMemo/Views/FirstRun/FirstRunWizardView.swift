@@ -212,7 +212,7 @@ private extension FirstRunWizardView {
             )
             .textFieldStyle(.roundedBorder)
 
-            Text("例如：小满、可乐、糖糖")
+            Text("例如：小宝、宝贝儿、安安")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

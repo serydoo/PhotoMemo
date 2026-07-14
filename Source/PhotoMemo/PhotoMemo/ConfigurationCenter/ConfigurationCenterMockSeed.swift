@@ -42,8 +42,8 @@ enum ConfigurationCenterMockSeed {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "途途",
-                        shortName: "途途"
+                        displayName: "小宝",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -56,8 +56,8 @@ enum ConfigurationCenterMockSeed {
                         from:
                             DateComponents(
                                 year: 2025,
-                                month: 5,
-                                day: 26
+                                month: 12,
+                                day: 20
                             )
                     ) ?? Date(),
                 timeAnchors: [
@@ -68,11 +68,11 @@ enum ConfigurationCenterMockSeed {
                                 from:
                                     DateComponents(
                                         year: 2025,
-                                        month: 5,
-                                        day: 26
+                                        month: 12,
+                                        day: 20
                                     )
                             ) ?? Date(),
-                        note: "途途出生日期"
+                        note: "小宝出生日期"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "重要日子",
@@ -85,7 +85,7 @@ enum ConfigurationCenterMockSeed {
                                         day: 2
                             )
                     ) ?? Date(),
-                        note: "途途的重要纪念日"
+                        note: "小宝的重要纪念日"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "入园",
@@ -98,7 +98,7 @@ enum ConfigurationCenterMockSeed {
                                         day: 1
                                     )
                             ) ?? Date(),
-                        note: "途途入园日期"
+                        note: "小宝入园日期"
                     )
                 ],
                 behavior:

@@ -1,5 +1,16 @@
 # MemoMark Handoff
 
+## 2026-07-14 Privacy-safe default memory subject
+
+- Replaced the family-specific user-visible `途途` nickname with the neutral
+  `小宝` default across Configuration Center seeds, preview fallbacks, and
+  editor examples.
+- First-run nickname examples now use `小宝、宝贝儿、安安`.
+- The hard-coded first-run and mock-seed birthday now defaults to
+  `2025-12-20`, a recent year-end date.
+- Test-only scenario names, author headers, camera parameters, and device
+  models remain unchanged.
+
 ## 2026-07-13 V3 reliability closure ready for clean device distribution
 
 - UI viewport containment, Live Photo output naming, and production

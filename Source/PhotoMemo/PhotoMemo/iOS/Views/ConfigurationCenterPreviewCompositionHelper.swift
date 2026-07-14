@@ -22,7 +22,7 @@ struct ConfigurationCenterPreviewCompositionContext: Hashable {
         }
 
         return subject?.identity.displayName
-        ?? "途途"
+        ?? "小宝"
     }
 }
 
@@ -257,7 +257,7 @@ struct ConfigurationCenterPreviewCompositionHelper {
         case .subjectNickname:
             return context.subject?.identity.shortName
             ?? context.subject?.identity.displayName
-            ?? "途途"
+            ?? "小宝"
         case .smartTime:
             return smartTimeResult
         case .captureDate:

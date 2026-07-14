@@ -13,7 +13,7 @@ enum ConfigurationCenterMemoryTemplateCatalog {
         "默认表达记忆对象在照片拍摄时的生日年龄智能结果，预览跟随当前冻结公式。"
 
     static let birthdayAgeSubjectDefault =
-        "途途"
+        "小宝"
 
     static let birthdayAgeActionDefault =
         "今天"

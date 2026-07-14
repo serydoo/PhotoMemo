@@ -208,7 +208,7 @@ struct V1FirstRunConfigurationSheet: View {
 
                 Section("记忆主角") {
                     TextField(
-                        "例如：小满、我自己、我们",
+                        "例如：小宝、宝贝儿、安安",
                         text: $subjectName
                     )
                     .textInputAutocapitalization(.never)

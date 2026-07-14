@@ -82,8 +82,8 @@ struct PhotoMemoiOSV1View: View {
         Calendar.current.date(
             from: DateComponents(
                 year: 2025,
-                month: 5,
-                day: 26
+                month: 12,
+                day: 20
             )
         ) ?? Date()
 

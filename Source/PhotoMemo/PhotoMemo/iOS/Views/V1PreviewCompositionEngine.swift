@@ -33,7 +33,7 @@ struct V1PreviewCompositionContext: Hashable {
         }
 
         return subject?.identity.displayName
-        ?? "途途"
+        ?? "小宝"
     }
 
     var smartTimeCalendar: Calendar {

@@ -250,7 +250,7 @@ struct MainTemplateRenameSheetView: View {
                     .foregroundStyle(.secondary)
 
                 TextField(
-                    "例如：途途成长版",
+                    "例如：小宝成长版",
                     text: $templateNameDraft
                 )
                 .textFieldStyle(.roundedBorder)

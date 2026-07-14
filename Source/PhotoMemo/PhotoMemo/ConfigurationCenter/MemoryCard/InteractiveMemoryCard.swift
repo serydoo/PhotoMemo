@@ -523,7 +523,7 @@ enum CenterInsertableModule:
     var previewValue: String {
         switch self {
         case .subjectNickname:
-            return "途途"
+            return "小宝"
         case .smartTime:
             return ConfigurationCenterMemoryTemplateCatalog
                 .birthdayAgePreviewText(
