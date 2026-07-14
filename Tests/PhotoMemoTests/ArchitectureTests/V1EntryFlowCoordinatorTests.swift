@@ -117,5 +117,48 @@ struct V1EntryFlowCoordinatorTests {
         #expect(nextState.selectedTab == .home)
         #expect(nextState.showsSettingsPage == true)
     }
+
+    @Test("regular settings selects the settings destination")
+    func regularSettingsSelectsDestination() {
+        let nextState =
+            V1EntryFlowCoordinator
+            .openSettings(
+                presentation: .regular,
+                from: V1EntryFlowState()
+            )
+
+        #expect(nextState.selectedTab == .settings)
+        #expect(nextState.showsSettingsPage == false)
+    }
+
+    @Test("compact settings opens the settings sheet")
+    func compactSettingsOpensSheet() {
+        let nextState =
+            V1EntryFlowCoordinator
+            .openSettings(
+                presentation: .compact,
+                from: V1EntryFlowState()
+            )
+
+        #expect(nextState.selectedTab == .home)
+        #expect(nextState.showsSettingsPage == true)
+    }
+
+    @Test("contracting from regular settings preserves access through the compact sheet")
+    func contractingSettingsPreservesAccess() {
+        let state =
+            V1EntryFlowState(
+                selectedTab: .settings
+            )
+
+        let nextState =
+            V1EntryFlowCoordinator
+            .prepareForCompactPresentation(
+                from: state
+            )
+
+        #expect(nextState.selectedTab == .home)
+        #expect(nextState.showsSettingsPage == true)
+    }
 }
 #endif

@@ -7,6 +7,9 @@ struct PhotoMemoiOSV1View: View {
     @Environment(\.scenePhase)
     private var scenePhase
 
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+
     @ObservedObject
     private var backgroundStatusService:
         PhotoMemoBackgroundStatusService
@@ -519,33 +522,7 @@ struct PhotoMemoiOSV1View: View {
     }
 
     var body: some View {
-        NavigationStack {
-            TabView(selection: $entryFlowState.selectedTab) {
-                homePage
-                    .tabItem {
-                        Label("首页", systemImage: "house.fill")
-                    }
-                    .tag(V1EntryTab.home)
-
-                editorPage
-                    .tabItem {
-                        Label("配置中心", systemImage: "slider.horizontal.3")
-                    }
-                    .tag(V1EntryTab.editor)
-
-                outputPage
-                    .tabItem {
-                        Label("输出", systemImage: "square.and.arrow.down")
-                    }
-                    .tag(V1EntryTab.output)
-
-                tasksPage
-                    .tabItem {
-                        Label("任务", systemImage: "checklist")
-                    }
-                    .tag(V1EntryTab.tasks)
-            }
-        }
+        rootNavigation
         .preferredColorScheme(.light)
         .alert(
             "配置操作",
@@ -613,29 +590,7 @@ struct PhotoMemoiOSV1View: View {
             isPresented: $entryFlowState.showsSettingsPage
         ) {
             NavigationStack {
-                V1SettingsPageSurface(
-                    onShowWelcome: {
-                        entryFlowState =
-                            V1EntryFlowCoordinator
-                            .closeSettingsPage(
-                                from: entryFlowState
-                            )
-                        entryFlowState =
-                            V1EntryFlowCoordinator
-                            .showWelcomePage(
-                                from: entryFlowState
-                            )
-                    },
-                    onShowWorkflow: {
-                        entryFlowState =
-                            V1EntryFlowCoordinator
-                            .closeSettingsPage(
-                                from: entryFlowState
-                            )
-                        entryFlowState.showsWorkflowGuide = true
-                    },
-                    onDismissKeyboard: dismissKeyboard
-                )
+                settingsPage
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("完成") {
@@ -914,6 +869,17 @@ struct PhotoMemoiOSV1View: View {
                 await loadAlbumOptions()
             }
         }
+        .onChange(of: horizontalSizeClass) { _, newSizeClass in
+            guard newSizeClass == .compact else {
+                return
+            }
+
+            entryFlowState =
+                V1EntryFlowCoordinator
+                .prepareForCompactPresentation(
+                    from: entryFlowState
+                )
+        }
         .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
             isEditingMemoryPresetTitle = false
             memoryPresetTitleFieldFocused = false
@@ -1059,6 +1025,130 @@ struct PhotoMemoiOSV1View: View {
         }
     }
 
+    @ViewBuilder
+    private var rootNavigation: some View {
+        if usesSidebarNavigation {
+            regularNavigation
+        } else {
+            compactNavigation
+        }
+    }
+
+    private var compactNavigation: some View {
+        NavigationStack {
+            TabView(selection: $entryFlowState.selectedTab) {
+                homePage
+                    .tabItem {
+                        Label("首页", systemImage: "house.fill")
+                    }
+                    .tag(V1EntryTab.home)
+
+                editorPage
+                    .tabItem {
+                        Label("配置中心", systemImage: "slider.horizontal.3")
+                    }
+                    .tag(V1EntryTab.editor)
+
+                outputPage
+                    .tabItem {
+                        Label("输出", systemImage: "square.and.arrow.down")
+                    }
+                    .tag(V1EntryTab.output)
+
+                tasksPage
+                    .tabItem {
+                        Label("任务", systemImage: "checklist")
+                    }
+                    .tag(V1EntryTab.tasks)
+            }
+        }
+    }
+
+    private var regularNavigation: some View {
+        HStack(spacing: 0) {
+            V1EntrySidebar(
+                selection: $entryFlowState.selectedTab
+            )
+            .frame(width: 220)
+
+            Rectangle()
+                .fill(ConfigurationUI.faintHairline)
+                .frame(width: 0.5)
+
+            NavigationStack {
+                regularDestination
+            }
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity
+            )
+        }
+        .background(
+            ConfigurationUI.appBackground
+                .ignoresSafeArea()
+        )
+    }
+
+    @ViewBuilder
+    private var regularDestination: some View {
+        switch entryFlowState.selectedTab {
+        case .home:
+            homePage
+        case .editor:
+            editorPage
+        case .output:
+            outputPage
+        case .tasks:
+            tasksPage
+        case .settings:
+            settingsPage
+        }
+    }
+
+    private var settingsPage: some View {
+        V1SettingsPageSurface(
+            onShowWelcome: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .closeSettingsPage(
+                        from: entryFlowState
+                    )
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .showWelcomePage(
+                        from: entryFlowState
+                    )
+            },
+            onShowWorkflow: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .closeSettingsPage(
+                        from: entryFlowState
+                    )
+                entryFlowState.showsWorkflowGuide = true
+            },
+            onDismissKeyboard: dismissKeyboard
+        )
+    }
+
+    private var entryPresentation:
+        V1EntryPresentation {
+        usesSidebarNavigation
+        ? .regular
+        : .compact
+    }
+
+    private var usesSidebarNavigation: Bool {
+        V1AdaptivePageLayout
+            .usesSidebarNavigation(
+                isPad:
+                    UIDevice.current
+                    .userInterfaceIdiom == .pad,
+                hasRegularHorizontalSizeClass:
+                    horizontalSizeClass == .regular
+            )
+    }
+
     private var homePage: some View {
         V1HomePageSurface(
             subjectSummary: homeSubjectSummaryProjection,
@@ -1093,7 +1183,9 @@ struct PhotoMemoiOSV1View: View {
             onOpenSettings: {
                 entryFlowState =
                     V1EntryFlowCoordinator
-                    .openSettingsPage(
+                    .openSettings(
+                        presentation:
+                            entryPresentation,
                         from:
                             entryFlowState
                     )

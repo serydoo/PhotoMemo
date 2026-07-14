@@ -4,6 +4,7 @@ xcuserdata/
 __pycache__/
 *.pyc
 .autosync/
+.superpowers/
 Source/PhotoMemo/build/
 .codex/skills/README.md
 .codex/skills/architecture-decision-records/

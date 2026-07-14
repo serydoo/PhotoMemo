@@ -1,11 +1,38 @@
-#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
-import SwiftUI
+import CoreGraphics
+
+enum V1EditorComposition {
+    case stacked
+    case sideBySide
+}
 
 enum V1AdaptivePageLayout {
 
     static let maximumReadableContentWidth:
         CGFloat = 720
+
+    static let sideBySideEditorMinimumWidth:
+        CGFloat = 760
+
+    static func editorComposition(
+        for availableWidth: CGFloat
+    ) -> V1EditorComposition {
+        availableWidth
+            >= sideBySideEditorMinimumWidth
+        ? .sideBySide
+        : .stacked
+    }
+
+    static func usesSidebarNavigation(
+        isPad: Bool,
+        hasRegularHorizontalSizeClass: Bool
+    ) -> Bool {
+        isPad
+            && hasRegularHorizontalSizeClass
+    }
 }
+
+#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+import SwiftUI
 
 extension View {
 

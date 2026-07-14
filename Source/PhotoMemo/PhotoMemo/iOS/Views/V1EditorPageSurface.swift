@@ -37,39 +37,21 @@ struct V1EditorPageSurface<
     }
 
     var body: some View {
-        GeometryReader { _ in
-            VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 12) {
-                    V1PageHeader(
-                        pageTitle,
-                        subtitle: pageSubtitle
-                    )
+        GeometryReader { proxy in
+            Group {
+                switch V1AdaptivePageLayout
+                    .editorComposition(
+                        for: proxy.size.width
+                    ) {
+                case .stacked:
+                    stackedContent
 
-                    previewContent
-                }
-                    .padding(.top, 10)
-                    .padding(.bottom, 10)
-                    .v1AdaptivePageContent(
-                        horizontalPadding: 16
-                    )
-                    .background(
-                        ConfigurationUI.appBackground
-                    )
-                    .zIndex(1)
-
-                ScrollView {
-                    VStack(spacing: 14) {
-                        editorContent
-
-                        accessoryContent
-                    }
-                    .padding(.top, 8)
-                    .padding(.bottom, 26)
-                    .v1AdaptiveScrollContent(
-                        horizontalPadding: 16
+                case .sideBySide:
+                    sideBySideContent(
+                        availableWidth:
+                            proxy.size.width
                     )
                 }
-                .scrollDismissesKeyboard(.interactively)
             }
             .frame(
                 maxWidth: .infinity,
@@ -82,6 +64,82 @@ struct V1EditorPageSurface<
             )
             .coordinateSpace(name: "v1-scroll")
         }
+    }
+
+    private var stackedContent: some View {
+        VStack(spacing: 0) {
+            previewPane
+                .zIndex(1)
+
+            editorScrollView
+        }
+    }
+
+    private func sideBySideContent(
+        availableWidth: CGFloat
+    ) -> some View {
+        let previewWidth =
+            min(
+                max(
+                    availableWidth * 0.46,
+                    350
+                ),
+                520
+            )
+
+        return HStack(spacing: 0) {
+            previewPane
+                .frame(width: previewWidth)
+                .frame(
+                    maxHeight: .infinity,
+                    alignment: .top
+                )
+
+            Rectangle()
+                .fill(ConfigurationUI.faintHairline)
+                .frame(width: 0.5)
+
+            editorScrollView
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity
+                )
+        }
+    }
+
+    private var previewPane: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            V1PageHeader(
+                pageTitle,
+                subtitle: pageSubtitle
+            )
+
+            previewContent
+        }
+        .padding(.top, 10)
+        .padding(.bottom, 10)
+        .v1AdaptivePageContent(
+            horizontalPadding: 16
+        )
+        .background(
+            ConfigurationUI.appBackground
+        )
+    }
+
+    private var editorScrollView: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                editorContent
+
+                accessoryContent
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 26)
+            .v1AdaptiveScrollContent(
+                horizontalPadding: 16
+            )
+        }
+        .scrollDismissesKeyboard(.interactively)
     }
 }
 #endif

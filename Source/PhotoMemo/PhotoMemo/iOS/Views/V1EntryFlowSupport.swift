@@ -1,11 +1,24 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
-enum V1EntryTab: Hashable {
+enum V1EntryPresentation {
+    case compact
+    case regular
+}
+
+enum V1EntryTab:
+    Hashable,
+    CaseIterable,
+    Identifiable {
     case home
     case editor
     case output
     case tasks
+    case settings
+
+    var id: Self {
+        self
+    }
 }
 
 struct V1EntryFlowState {
@@ -152,11 +165,40 @@ enum V1EntryFlowCoordinator {
         return nextState
     }
 
+    static func openSettings(
+        presentation: V1EntryPresentation,
+        from state: V1EntryFlowState
+    ) -> V1EntryFlowState {
+        switch presentation {
+        case .compact:
+            return openSettingsPage(from: state)
+
+        case .regular:
+            var nextState = state
+            nextState.selectedTab = .settings
+            nextState.showsSettingsPage = false
+            return nextState
+        }
+    }
+
     static func closeSettingsPage(
         from state: V1EntryFlowState
     ) -> V1EntryFlowState {
         var nextState = state
         nextState.showsSettingsPage = false
+        return nextState
+    }
+
+    static func prepareForCompactPresentation(
+        from state: V1EntryFlowState
+    ) -> V1EntryFlowState {
+        guard state.selectedTab == .settings else {
+            return state
+        }
+
+        var nextState = state
+        nextState.selectedTab = .home
+        nextState.showsSettingsPage = true
         return nextState
     }
 
