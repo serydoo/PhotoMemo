@@ -160,5 +160,56 @@ struct V1EntryFlowCoordinatorTests {
         #expect(nextState.selectedTab == .home)
         #expect(nextState.showsSettingsPage == true)
     }
+
+    @Test("entry navigation opens compact settings without clearing unrelated sheets")
+    func entryNavigationOpensCompactSettingsWithoutClearingUnrelatedSheets() {
+        var state =
+            EntryNavigationState(
+                flowState:
+                    V1EntryFlowState(
+                        selectedTab: .output,
+                        showsWelcomePage: false,
+                        showsWorkflowGuide: true,
+                        showsProcessingPhotoPicker: true,
+                        showsSubjectOverview: true,
+                        subjectConfigurationFlowState: nil,
+                        showsSettingsPage: false
+                    )
+            )
+
+        state.openSettings(presentation: .compact)
+
+        #expect(state.flowState.selectedTab == .output)
+        #expect(state.flowState.showsSettingsPage == true)
+        #expect(state.flowState.showsWorkflowGuide == true)
+        #expect(state.flowState.showsProcessingPhotoPicker == true)
+        #expect(state.flowState.showsSubjectOverview == true)
+    }
+
+    @Test("entry navigation opens regular settings without clearing unrelated sheets")
+    func entryNavigationOpensRegularSettingsWithoutClearingUnrelatedSheets() {
+        var state =
+            EntryNavigationState(
+                flowState:
+                    V1EntryFlowState(
+                        selectedTab: .output,
+                        showsWelcomePage: true,
+                        showsWorkflowGuide: true,
+                        showsProcessingPhotoPicker: true,
+                        showsSubjectOverview: true,
+                        subjectConfigurationFlowState: nil,
+                        showsSettingsPage: true
+                    )
+            )
+
+        state.openSettings(presentation: .regular)
+
+        #expect(state.flowState.selectedTab == .settings)
+        #expect(state.flowState.showsSettingsPage == false)
+        #expect(state.flowState.showsWelcomePage == true)
+        #expect(state.flowState.showsWorkflowGuide == true)
+        #expect(state.flowState.showsProcessingPhotoPicker == true)
+        #expect(state.flowState.showsSubjectOverview == true)
+    }
 }
 #endif

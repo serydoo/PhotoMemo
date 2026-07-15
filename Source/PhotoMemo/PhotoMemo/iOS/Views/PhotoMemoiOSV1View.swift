@@ -51,12 +51,8 @@ struct PhotoMemoiOSV1View: View {
     private var activeTextItemIDs: [CardRegion: UUID] = [:]
 
     @State
-    private var expandedEditorSections:
-        Set<PhotoMemoiOSV1EntrySection> = []
-
-    @State
-    private var entryFlowState =
-        V1EntryFlowState()
+    private var entryNavigationState =
+        EntryNavigationState()
 
     @State
     private var selectedProcessingItems: [PhotosPickerItem] = []
@@ -134,12 +130,6 @@ struct PhotoMemoiOSV1View: View {
 
     @State
     private var isSavingConfiguration = false
-
-    @State
-    private var profileOffsetY: CGFloat = 0
-
-    @State
-    private var previewOffsetY: CGFloat = 0
 
     @State
     private var didBootstrap = false
@@ -521,6 +511,22 @@ struct PhotoMemoiOSV1View: View {
             )
     }
 
+    private var entryFlowState: V1EntryFlowState {
+        get { entryNavigationState.flowState }
+        nonmutating set { entryNavigationState.flowState = newValue }
+    }
+
+    private func entryBinding<Value>(
+        _ keyPath: WritableKeyPath<V1EntryFlowState, Value>
+    ) -> Binding<Value> {
+        Binding(
+            get: { entryNavigationState.flowState[keyPath: keyPath] },
+            set: {
+                entryNavigationState.flowState[keyPath: keyPath] = $0
+            }
+        )
+    }
+
     var body: some View {
         rootNavigation
         .preferredColorScheme(.light)
@@ -569,7 +575,7 @@ struct PhotoMemoiOSV1View: View {
             .presentationDragIndicator(.visible)
         }
         .sheet(
-            isPresented: $entryFlowState.showsWelcomePage
+            isPresented: entryBinding(\.showsWelcomePage)
         ) {
             V1FirstRunConfigurationSheet(
                 onSave: initializeFirstConfiguration,
@@ -578,7 +584,7 @@ struct PhotoMemoiOSV1View: View {
             .interactiveDismissDisabled(!hasSeenWelcome)
         }
         .sheet(
-            isPresented: $entryFlowState.showsWorkflowGuide
+            isPresented: entryBinding(\.showsWorkflowGuide)
         ) {
             V1WorkflowGuideSurface(
                 steps: V1WelcomePresentation.default.workflowSteps
@@ -587,7 +593,7 @@ struct PhotoMemoiOSV1View: View {
             .presentationDragIndicator(.visible)
         }
         .sheet(
-            isPresented: $entryFlowState.showsSettingsPage
+            isPresented: entryBinding(\.showsSettingsPage)
         ) {
             NavigationStack {
                 settingsPage
@@ -698,7 +704,7 @@ struct PhotoMemoiOSV1View: View {
             )
         }
         .sheet(
-            isPresented: $entryFlowState.showsSubjectOverview
+            isPresented: entryBinding(\.showsSubjectOverview)
         ) {
             V1IOSSubjectOverviewSheet(
                 presentation:
@@ -797,7 +803,7 @@ struct PhotoMemoiOSV1View: View {
             .presentationDragIndicator(.visible)
         }
         .sheet(
-            item: $entryFlowState.subjectConfigurationFlowState
+            item: entryBinding(\.subjectConfigurationFlowState)
         ) { flowState in
             V1IOSSubjectConfigurationFlow(
                 flowState: flowState,
@@ -833,20 +839,17 @@ struct PhotoMemoiOSV1View: View {
         }
         .sheet(
             isPresented:
-                $entryFlowState
-                .showsProcessingPhotoPicker
+                entryBinding(\.showsProcessingPhotoPicker)
         ) {
             V1UIKitPhotoPicker(
                 selectionLimit: 24,
                 onCancel: {
-                    entryFlowState
-                        .showsProcessingPhotoPicker =
-                        false
+                    entryNavigationState.flowState
+                        .showsProcessingPhotoPicker = false
                 },
                 onSelect: { results in
-                    entryFlowState
-                        .showsProcessingPhotoPicker =
-                        false
+                    entryNavigationState.flowState
+                        .showsProcessingPhotoPicker = false
 
                     Task {
                         await importPickedPHPickerResults(
@@ -1043,7 +1046,7 @@ struct PhotoMemoiOSV1View: View {
 
     private var compactNavigation: some View {
         NavigationStack {
-            TabView(selection: $entryFlowState.selectedTab) {
+            TabView(selection: entryBinding(\.selectedTab)) {
                 homePage
                     .tabItem {
                         Label("首页", systemImage: "house.fill")
@@ -1074,7 +1077,7 @@ struct PhotoMemoiOSV1View: View {
     private var regularNavigation: some View {
         HStack(spacing: 0) {
             V1EntrySidebar(
-                selection: $entryFlowState.selectedTab
+                selection: entryBinding(\.selectedTab)
             )
             .frame(width: 220)
 
@@ -1188,14 +1191,9 @@ struct PhotoMemoiOSV1View: View {
             onOpenPhotoPicker:
                 beginPhotoProcessingFlow,
             onOpenSettings: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openSettings(
-                        presentation:
-                            entryPresentation,
-                        from:
-                            entryFlowState
-                    )
+                entryNavigationState.openSettings(
+                    presentation: entryPresentation
+                )
             },
             onSelectMemoryPreset: activateHomePreset,
             onRenameMemoryPreset: beginEditingMemoryPresetTitle,
@@ -3221,8 +3219,9 @@ struct PhotoMemoiOSV1View: View {
         session.select(
             CardRegionBehavior(region: region)
         )
-        expandedEditorSections.insert(
-            .region(region)
+        entryNavigationState.setEditorSection(
+            .region(region),
+            isExpanded: true
         )
         activeModuleRegion = region
         dismissKeyboard()
@@ -3314,17 +3313,11 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var editorRevealProgress: CGFloat {
-        let threshold: CGFloat = 30
-        let distance: CGFloat = 120
-        let traveled = max(-(profileOffsetY) - threshold, 0)
-        return min(traveled / distance, 1)
+        entryNavigationState.editorRevealProgress
     }
 
     private var previewPinProgress: CGFloat {
-        let threshold: CGFloat = 6
-        let distance: CGFloat = 56
-        let traveled = max(-(previewOffsetY) - threshold, 0)
-        return min(traveled / distance, 1)
+        entryNavigationState.previewPinProgress
     }
 
     private func offsetReader(
@@ -3342,12 +3335,10 @@ struct PhotoMemoiOSV1View: View {
                 )
         }
         .onPreferenceChange(V1ScrollOffsetPreferenceKey.self) { values in
-            if let profile = values[.profile] {
-                profileOffsetY = profile
-            }
-            if let preview = values[.preview] {
-                previewOffsetY = preview
-            }
+            entryNavigationState.updateScrollOffsets(
+                profile: values[.profile],
+                preview: values[.preview]
+            )
         }
     }
 
@@ -3661,14 +3652,14 @@ struct PhotoMemoiOSV1View: View {
     ) -> Binding<Bool> {
         Binding(
             get: {
-                expandedEditorSections.contains(section)
+                entryNavigationState.expandedEditorSections
+                    .contains(section)
             },
             set: { isExpanded in
-                if isExpanded {
-                    expandedEditorSections.insert(section)
-                } else {
-                    expandedEditorSections.remove(section)
-                }
+                entryNavigationState.setEditorSection(
+                    section,
+                    isExpanded: isExpanded
+                )
             }
         )
     }
@@ -4679,12 +4670,6 @@ private struct V1ConfigurationNavigationRowButtonStyle:
                 value: configuration.isPressed
             )
     }
-}
-
-private enum PhotoMemoiOSV1EntrySection: Hashable {
-    case region(CardRegion)
-    case logo
-    case anchor
 }
 
 private enum V1ScrollOffsetKind:

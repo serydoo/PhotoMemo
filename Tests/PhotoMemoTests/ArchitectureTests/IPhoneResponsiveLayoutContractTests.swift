@@ -127,6 +127,27 @@ struct IPhoneResponsiveLayoutContractTests {
             #expect(!source.contains("utsname"))
         }
     }
+
+    @Test("root navigation state owns entry disclosure and scroll position")
+    func rootNavigationStateOwnsEntryDisclosureAndScrollPosition() throws {
+        let navigationSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/EntryNavigationState.swift"
+        )
+        let rootSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        #expect(navigationSource.contains("var flowState: V1EntryFlowState"))
+        #expect(navigationSource.contains("expandedEditorSections"))
+        #expect(navigationSource.contains("profileOffsetY"))
+        #expect(navigationSource.contains("previewOffsetY"))
+        #expect(rootSource.contains("private var entryNavigationState"))
+        #expect(rootSource.contains("private var entryFlowState: V1EntryFlowState {"))
+        #expect(!rootSource.contains("private var entryFlowState ="))
+        #expect(!rootSource.contains("@State\n    private var expandedEditorSections"))
+        #expect(!rootSource.contains("@State\n    private var profileOffsetY"))
+        #expect(!rootSource.contains("@State\n    private var previewOffsetY"))
+    }
 }
 
 private extension IPhoneResponsiveLayoutContractTests {
