@@ -177,9 +177,8 @@ final class BatchQueueExecution {
         guard let initialTask = store.currentTask(at: reference) else { return }
         let memoryBudget = mediaMemoryBudget(for: initialTask)
         let totalProgressUnits = memoryBudget.requiresExtendedPreviewPreparation ? 6 : 5
-        let route = BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(for: initialTask)
-            ? "livePhoto"
-            : "staticImage"
+        let usesLivePhotoProcessing = BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(for: initialTask)
+        let route = usesLivePhotoProcessing ? "livePhoto" : "staticImage"
         guard let configuration = store.currentJob(at: reference)?.configuration else {
             return
         }
@@ -189,6 +188,7 @@ final class BatchQueueExecution {
                 taskSnapshot: initialTask,
                 configuration: configuration,
                 memoryBudget: memoryBudget,
+                usesLivePhotoProcessing: usesLivePhotoProcessing,
                 route: route,
                 totalProgressUnits: totalProgressUnits,
                 startedAt: Date()

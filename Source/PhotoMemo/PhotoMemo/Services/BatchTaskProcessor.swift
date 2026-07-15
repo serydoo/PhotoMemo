@@ -7,6 +7,7 @@ struct BatchTaskExecutionContext {
     let taskSnapshot: BatchTask
     let configuration: BatchConfigurationSnapshot
     let memoryBudget: MediaMemoryBudget
+    let usesLivePhotoProcessing: Bool
     let route: String
     let totalProgressUnits: Int
     let startedAt: Date
@@ -55,6 +56,7 @@ final class BatchTaskProcessor {
         let memoryBudget = context.memoryBudget
         let requiresExtendedPreviewPreparation = memoryBudget.requiresExtendedPreviewPreparation
         let totalProgressUnits = context.totalProgressUnits
+        let usesLivePhotoProcessing = context.usesLivePhotoProcessing
         let startedAt = context.startedAt
         let route = context.route
 
@@ -74,7 +76,6 @@ final class BatchTaskProcessor {
             guard let task = store.currentTask(at: reference) else {
                 throw BatchTaskProcessorError.taskUnavailable
             }
-            let usesLivePhotoProcessing = BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(for: task)
             diagnosticsRecorder.recordRoute(
                 for: task,
                 sourceURLIsLivePhotoBundle: LivePhotoSourceBundleLocator.canResolveBundle(at: task.sourceURL),
