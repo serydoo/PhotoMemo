@@ -52,7 +52,10 @@ final class BatchQueueStore: ObservableObject {
         exportCoordinator:
             ExportCoordinator? = nil,
         livePhotoProcessor:
-            (any LivePhotoBatchTaskProcessing)? = nil
+            (any LivePhotoBatchTaskProcessing)? = nil,
+        renderHealthValidator: @escaping
+            @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
+                ProductionRenderHealthCheck.validate
     ) {
         let resolvedDefaults =
             defaults
@@ -83,7 +86,9 @@ final class BatchQueueStore: ObservableObject {
                 livePhotoProcessor:
                     livePhotoProcessor,
                 diagnosticsDefaults:
-                    resolvedDefaults
+                    resolvedDefaults,
+                renderHealthValidator:
+                    renderHealthValidator
             )
         self.persistence =
             BatchQueuePersistence(

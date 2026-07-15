@@ -27,8 +27,7 @@ struct BatchQueueExecutionContractTests {
             memoryBudget: budget,
             route: "staticImage",
             totalProgressUnits: 5,
-            startedAt: startedAt,
-            renderHealthValidator: ProductionRenderHealthCheck.validate
+            startedAt: startedAt
         )
 
         #expect(context.taskReference.jobIndex == 2)
@@ -241,6 +240,31 @@ struct BatchQueueExecutionContractTests {
         #expect(task.notificationAttachmentURL == nil)
         #expect(task.savedAlbumName == nil)
         #expect(task.savedAssetIdentifier == nil)
+    }
+
+    @MainActor
+    @Test("Render health rejection fails before export and save")
+    func renderHealthRejectionFailsBeforeExportAndSave() async throws {
+        let context = try makeStoreContext(
+            livePhotoProcessor: FailingLivePhotoProcessor(),
+            renderHealthValidator: { _, _ in
+                throw RenderHealthRejection.expected
+            }
+        )
+        defer { cleanup(context) }
+        let sourceURL = try SyntheticFixtureLibrary.fixtureURL(.portraitJPEG)
+        _ = context.store.enqueue(
+            payloads: [BatchTaskIntakePayload(sourceURL: sourceURL)],
+            configuration: makeConfiguration(),
+            launchSource: .shareExtension
+        )
+
+        let task = try await terminalTask(in: context.store)
+        #expect(task.phase == .failed)
+        #expect(task.renderedFileURL == nil)
+        #expect(task.savedAlbumName == nil)
+        #expect(task.savedAssetIdentifier == nil)
+        #expect(task.failure?.phase == .metadataReady)
     }
 
     @MainActor
@@ -484,7 +508,10 @@ private extension BatchQueueExecutionContractTests {
 
     @MainActor
     func makeStoreContext(
-        livePhotoProcessor: any LivePhotoBatchTaskProcessing
+        livePhotoProcessor: any LivePhotoBatchTaskProcessing,
+        renderHealthValidator: @escaping
+            @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
+                ProductionRenderHealthCheck.validate
     ) throws -> StoreContext {
         let suiteName =
             "PhotoMemo.BatchQueueExecutionContractTests.\(UUID().uuidString)"
@@ -499,7 +526,8 @@ private extension BatchQueueExecutionContractTests {
                 defaults: defaults,
                 intakeDirectoryURL: intakeDirectoryURL
             ),
-            livePhotoProcessor: livePhotoProcessor
+            livePhotoProcessor: livePhotoProcessor,
+            renderHealthValidator: renderHealthValidator
         )
         return StoreContext(
             store: store,
@@ -590,5 +618,9 @@ private final class FailingLivePhotoProcessor:
 
 private enum ContractTestTimeout: Error {
     case terminalTask
+}
+
+private enum RenderHealthRejection: Error {
+    case expected
 }
 #endif
