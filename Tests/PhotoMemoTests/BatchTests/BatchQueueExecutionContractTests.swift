@@ -156,7 +156,6 @@ struct BatchQueueExecutionContractTests {
         let suiteName =
             "PhotoMemo.BatchQueueExecutionContractTests.Final.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
-        let sentAt = Date(timeIntervalSince1970: 1_725_000_000)
         let job = BatchJob(
             title: "Completed",
             state: .completed,
@@ -195,7 +194,7 @@ struct BatchQueueExecutionContractTests {
         await store.deliverFinalNotificationIfNeeded(for: job.id)
         await store.deliverFinalNotificationIfNeeded(for: job.id)
 
-        #expect(firstDeliverySentAt != sentAt)
+        #expect(store.jobs.first?.finalNotificationSentAt != nil)
         #expect(
             store.jobs.first?.finalNotificationSentAt
             == firstDeliverySentAt
