@@ -77,4 +77,4 @@
 - [x] Run focused tests, serial `PhotoMemoTests build-for-testing`, and generic iOS App build.
 - [x] Run `git diff --check` and review for dead helpers.
 - [x] Update `Docs/CURRENT_STATUS.md` with verified facts and unverified device behavior.
-- [ ] Push the branch and integrate only after spec and quality review pass.
+- [x] Push the branch and integrate only after spec and quality review pass.
