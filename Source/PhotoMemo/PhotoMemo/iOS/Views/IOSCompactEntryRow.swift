@@ -34,6 +34,9 @@ struct IOSCompactEntryListGroup<Content: View>: View {
 
 struct IOSCompactEntryDisclosureRow<Content: View>: View {
 
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
     let title: String
     let subtitle: String
     let value: String
@@ -67,7 +70,15 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
+                withAnimation(
+                    reduceMotion
+                    ? nil
+                    : .interactiveSpring(
+                        response: 0.32,
+                        dampingFraction: 1,
+                        blendDuration: 0.08
+                    )
+                ) {
                     isExpanded.toggle()
                 }
             } label: {
@@ -105,14 +116,28 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(
+                            isExpanded
+                            ? Color.accentColor
+                            : Color.secondary.opacity(0.55)
+                        )
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
                 .contentShape(Rectangle())
                 .padding(.horizontal, 14)
                 .padding(.vertical, 13)
+                .background(
+                    isExpanded
+                    ? ConfigurationUI.selectedBackground
+                    : Color.clear
+                )
             }
             .buttonStyle(.plain)
+            .accessibilityValue(
+                isExpanded
+                ? "已展开"
+                : "已折叠"
+            )
 
             if isExpanded {
                 Rectangle()
@@ -142,7 +167,11 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
                 cornerRadius: 10,
                 style: .continuous
             )
-            .fill(ConfigurationUI.controlBackground)
+            .fill(
+                isExpanded
+                ? Color.accentColor.opacity(0.12)
+                : ConfigurationUI.controlBackground
+            )
 
             Image(systemName: systemImage)
                 .font(.subheadline.weight(.semibold))

@@ -76,5 +76,41 @@ struct V1AdaptivePageLayoutTests {
             == false
         )
     }
+
+    @Test("regular width iPhone keeps scroll content clear of the tab bar")
+    func regularWidthIPhoneUsesExpandedBottomPadding() {
+        #expect(
+            V1AdaptivePageLayout
+                .scrollBottomPadding(
+                    isPad: false,
+                    hasRegularHorizontalSizeClass: true
+                )
+            == 96
+        )
+    }
+
+    @Test("regular iPad sidebar avoids unnecessary bottom whitespace")
+    func regularIPadUsesStandardBottomPadding() {
+        #expect(
+            V1AdaptivePageLayout
+                .scrollBottomPadding(
+                    isPad: true,
+                    hasRegularHorizontalSizeClass: true
+                )
+            == 26
+        )
+    }
+
+    @Test("compact iPad keeps scroll content clear of the tab bar")
+    func compactIPadUsesExpandedBottomPadding() {
+        #expect(
+            V1AdaptivePageLayout
+                .scrollBottomPadding(
+                    isPad: true,
+                    hasRegularHorizontalSizeClass: false
+                )
+            == 96
+        )
+    }
 }
 #endif

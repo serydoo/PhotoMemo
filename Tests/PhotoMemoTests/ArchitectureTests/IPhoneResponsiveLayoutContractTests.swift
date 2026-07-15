@@ -85,6 +85,18 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("compactBackupActions"))
     }
 
+    @Test("configuration controls reflow for accessibility text sizes")
+    func configurationControlsReflowForAccessibilityText() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        #expect(source.contains("@Environment(\\.dynamicTypeSize)"))
+        #expect(source.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(source.contains("configurationActionColumns"))
+        #expect(source.contains("adaptiveSectionHeader"))
+    }
+
     @Test("subject identity overview does not force intrinsic horizontal width")
     func subjectIdentityOverviewAvoidsForcedIntrinsicWidth() throws {
         let source = try sourceText(

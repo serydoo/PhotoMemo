@@ -21,6 +21,7 @@ struct V1OutputPageSurface: View {
     let albumStatusMessage: String
     let onReloadAlbums: () -> Void
     let isSavingConfiguration: Bool
+    let configurationStatus: V1ConfigurationStatus
     let onSaveConfiguration: () -> Void
 
     @Binding
@@ -87,6 +88,7 @@ struct V1OutputPageSurface: View {
     private var outputConfigurationFooter: some View {
         V1OutputSaveConfigurationButton(
             isSaving: isSavingConfiguration,
+            configurationStatus: configurationStatus,
             action: onSaveConfiguration
         )
         .frame(maxWidth: .infinity)
@@ -103,34 +105,66 @@ struct V1OutputPageSurface: View {
 private struct V1OutputSaveConfigurationButton: View {
 
     let isSaving: Bool
+    let configurationStatus: V1ConfigurationStatus
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(
-                    systemName:
-                        isSaving
-                        ? "hourglass"
-                        : "square.and.arrow.down.fill"
+                    systemName: systemImage
                 )
                 .font(.caption.weight(.semibold))
                 .frame(width: 16)
 
-                Text(
-                    isSaving
-                    ? "正在保存"
-                    : "保存到当前配置"
-                )
+                Text(title)
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
+                .minimumScaleFactor(0.82)
             }
             .v1CompactBottomPrimaryAction()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            V1CompactPrimaryActionButtonStyle()
+        )
         .disabled(isSaving)
-        .opacity(isSaving ? 0.72 : 1)
-        .accessibilityLabel("保存到当前配置")
+        .accessibilityLabel(title)
+    }
+
+    private var title: String {
+        if isSaving {
+            return "正在保存"
+        }
+
+        switch configurationStatus {
+        case .saved:
+            return "已保存"
+        case .failure:
+            return "重新保存"
+        case .idle,
+             .dirty,
+             .saving,
+             .subjectSynced:
+            return "保存到当前配置"
+        }
+    }
+
+    private var systemImage: String {
+        if isSaving {
+            return "hourglass"
+        }
+
+        switch configurationStatus {
+        case .saved:
+            return "checkmark.circle.fill"
+        case .failure:
+            return "arrow.clockwise.circle.fill"
+        case .idle,
+             .dirty,
+             .saving,
+             .subjectSynced:
+            return "square.and.arrow.down.fill"
+        }
     }
 }
 

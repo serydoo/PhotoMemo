@@ -666,25 +666,32 @@ struct PhotoMemoiOSV1View: View {
                 .navigationTitle("区域内容设置")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .confirmationAction) {
                         Button("完成") {
                             dismissKeyboard()
                             showsRegionContentSheet = false
                         }
-                        .font(.caption.weight(.semibold))
                     }
 
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
 
-                        Button("收起") {
+                        Button {
                             dismissKeyboard()
+                        } label: {
+                            Image(
+                                systemName:
+                                    "keyboard.chevron.compact.down"
+                            )
                         }
-                        .font(.caption.weight(.semibold))
+                        .accessibilityLabel("收起键盘")
                     }
                 }
             }
-            .presentationDetents([.fraction(0.58)])
+            .presentationDetents([
+                .fraction(0.58),
+                .large
+            ])
             .presentationDragIndicator(.visible)
             .presentationBackgroundInteraction(
                 .enabled(upThrough: .fraction(0.58))
@@ -1284,16 +1291,15 @@ struct PhotoMemoiOSV1View: View {
                 selectedMemoryDisplayStyleBinding,
             borderStyleName:
                 currentBorderStyleName,
+            configurationStatus:
+                activeConfigurationStatus,
             isSavingConfiguration:
                 isSavingConfiguration,
             onOpenRegionContent: {
                 showsRegionContentSheet = true
             },
-            onSaveCurrentConfiguration: {
-                Task {
-                    await applyCurrentV1Configuration()
-                }
-            },
+            onSaveCurrentConfiguration:
+                saveCurrentConfigurationWithFeedback,
             onCreateConfiguration: {
                 session.createMemoryPresetFromCurrent(
                     logoMode: logoMode,
@@ -1435,11 +1441,9 @@ struct PhotoMemoiOSV1View: View {
                 }
             },
             isSavingConfiguration: isSavingConfiguration,
-            onSaveConfiguration: {
-                Task {
-                    await applyCurrentV1Configuration()
-                }
-            },
+            configurationStatus: activeConfigurationStatus,
+            onSaveConfiguration:
+                saveCurrentConfigurationWithFeedback,
             usesCustomMemoryWriteText: $session.usesCustomMemoryWriteText,
             customMemoryWriteText: $session.customMemoryWriteText,
             resolvedMemoryWriteText: resolvedMemoryWriteText,
@@ -1574,6 +1578,21 @@ struct PhotoMemoiOSV1View: View {
         activeConfigurationStatus = .dirty
         isEditingMemoryPresetTitle = false
         memoryPresetTitleFieldFocused = false
+    }
+
+    private func saveCurrentConfigurationWithFeedback() {
+        Task { @MainActor in
+            let didSave =
+                await applyCurrentV1Configuration()
+
+            guard didSave,
+                  activeConfigurationStatus == .saved else {
+                return
+            }
+
+            UINotificationFeedbackGenerator()
+                .notificationOccurred(.success)
+        }
     }
 
     private func activateHomePreset(
@@ -3657,6 +3676,15 @@ struct PhotoMemoiOSV1View: View {
 
 private struct V1ConfigurationOptionList: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    @State
+    private var showsResetConfigurationConfirmation = false
+
+    @State
+    private var showsDeleteConfigurationConfirmation = false
+
     let subject: MemorySubject?
     let subjectAvatarPreviewImagePath: String?
     @Binding var logoMode: V1LogoMode
@@ -3682,6 +3710,7 @@ private struct V1ConfigurationOptionList: View {
     let selectedMemoryDisplayStyle:
         Binding<MemoryAnchorExpressionStyle>
     let borderStyleName: String
+    let configurationStatus: V1ConfigurationStatus
     let isSavingConfiguration: Bool
     let onOpenRegionContent: () -> Void
     let onSaveCurrentConfiguration: () -> Void
@@ -3725,13 +3754,42 @@ private struct V1ConfigurationOptionList: View {
                 configurationActionGrid
 
                 Label(
-                    "保存后，配置会应用于后续所有处理任务。",
-                    systemImage: "info.circle"
+                    configurationStatusMessage,
+                    systemImage:
+                        configurationStatusSystemImage
                 )
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(configurationStatusColor)
                 .padding(.top, 2)
             }
+        }
+        .confirmationDialog(
+            "恢复默认配置？",
+            isPresented:
+                $showsResetConfigurationConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("恢复默认", role: .destructive) {
+                onResetConfiguration()
+            }
+
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("当前未保存的配置修改会被默认内容替换。")
+        }
+        .confirmationDialog(
+            "删除当前配置？",
+            isPresented:
+                $showsDeleteConfigurationConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("删除配置", role: .destructive) {
+                onDeleteConfiguration()
+            }
+
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("删除当前配置不会删除已经保留在本地配置库中的备份。")
         }
     }
 
@@ -3767,37 +3825,48 @@ private struct V1ConfigurationOptionList: View {
                         Button {
                             logoMode = mode
                         } label: {
-                            Label(
+                            menuOptionLabel(
                                 mode.title,
-                                systemImage:
-                                    mode == logoMode
-                                    ? "checkmark"
-                                    : "circle"
+                                isSelected: mode == logoMode
                             )
                         }
                     }
                 } label: {
                     optionSelectionPill(title: logoValue)
                 }
+                .accessibilityLabel("Logo 标识")
+                .accessibilityValue(logoValue)
 
                 if logoMode == .customUpload {
                     PhotosPicker(
                         selection: $selectedLogoItem,
                         matching: .images
                     ) {
-                        Image(
-                            systemName:
-                                isOptimizingLogo
-                                ? "hourglass"
-                                : "photo.badge.plus"
-                        )
-                        .font(.caption.weight(.semibold))
+                        Group {
+                            if isOptimizingLogo {
+                                ProgressView()
+                                    .controlSize(.mini)
+                            } else {
+                                Image(
+                                    systemName:
+                                        "photo.badge.plus"
+                                )
+                                .font(
+                                    .caption.weight(.semibold)
+                                )
+                            }
+                        }
                         .frame(width: 24, height: 24)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(Color.accentColor)
                     .disabled(isOptimizingLogo)
-                    .accessibilityLabel("选择 Logo")
+                    .accessibilityLabel(
+                        isOptimizingLogo
+                        ? "正在优化 Logo"
+                        : "选择 Logo"
+                    )
                 }
             }
         }
@@ -3819,7 +3888,9 @@ private struct V1ConfigurationOptionList: View {
         ) {
             if availableTimeAnchors.isEmpty {
                 optionSelectionPill(title: "暂无")
-                    .opacity(0.72)
+                    .opacity(0.56)
+                    .accessibilityLabel("时间锚点")
+                    .accessibilityValue("暂无")
             } else {
                 Menu {
                     ForEach(availableTimeAnchors) { anchor in
@@ -3827,20 +3898,20 @@ private struct V1ConfigurationOptionList: View {
                             selectedTimeAnchorID.wrappedValue =
                                 anchor.id
                         } label: {
-                            Label(
+                            menuOptionLabel(
                                 anchor.title,
-                                systemImage:
+                                isSelected:
                                     anchor.id
                                     == selectedTimeAnchorID
                                     .wrappedValue
-                                    ? "checkmark"
-                                    : "circle"
                             )
                         }
                     }
                 } label: {
                     optionSelectionPill(title: timeAnchorTitle)
                 }
+                .accessibilityLabel("时间锚点")
+                .accessibilityValue(timeAnchorTitle)
             }
         }
     }
@@ -3864,20 +3935,22 @@ private struct V1ConfigurationOptionList: View {
                         selectedLocationOptionID.wrappedValue =
                             option.id
                     } label: {
-                        Label(
+                        menuOptionLabel(
                             option.title,
-                            systemImage:
+                            isSelected:
                                 option.id
                                 == selectedLocationOptionID
                                 .wrappedValue
-                                ? "checkmark"
-                                : "circle"
                         )
                     }
                 }
             } label: {
                 optionSelectionPill(title: selectedLocationValue)
             }
+            .accessibilityLabel(locationPresentation.title)
+            .accessibilityValue(selectedLocationValue)
+            .disabled(!isLocationSelectable)
+            .opacity(isLocationSelectable ? 1 : 0.56)
         }
     }
 
@@ -3893,7 +3966,9 @@ private struct V1ConfigurationOptionList: View {
         ) {
             if availableMemoryDisplayStyles.isEmpty {
                 optionSelectionPill(title: "暂无")
-                    .opacity(0.72)
+                    .opacity(0.56)
+                    .accessibilityLabel("记忆显示")
+                    .accessibilityValue("暂无")
             } else {
                 Menu {
                     ForEach(
@@ -3904,20 +3979,20 @@ private struct V1ConfigurationOptionList: View {
                             selectedMemoryDisplayStyle.wrappedValue =
                                 style
                         } label: {
-                            Label(
+                            menuOptionLabel(
                                 style.displayTitle,
-                                systemImage:
+                                isSelected:
                                     style
                                     == selectedMemoryDisplayStyle
                                     .wrappedValue
-                                    ? "checkmark"
-                                    : "circle"
                             )
                         }
                     }
                 } label: {
                     optionSelectionPill(title: memoryDisplayValue)
                 }
+                .accessibilityLabel("记忆显示")
+                .accessibilityValue(memoryDisplayValue)
             }
         }
     }
@@ -3947,32 +4022,42 @@ private struct V1ConfigurationOptionList: View {
                 detail: "",
                 showsTrailingChevron: false
             ) {
-                rowValueText("进入设置", isAction: true)
+                HStack(spacing: 5) {
+                    Text("进入设置")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
+                }
+                .lineLimit(1)
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .trailing
+                )
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            V1ConfigurationNavigationRowButtonStyle()
+        )
+        .accessibilityLabel("区域内容设置")
+        .accessibilityHint("编辑卡片四个区域的模块与文字")
     }
 
     private var configurationActionGrid: some View {
         LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: 10),
-                GridItem(.flexible(), spacing: 10)
-            ],
+            columns: configurationActionColumns,
             spacing: 10
         ) {
             actionButton(
-                title: isSavingConfiguration
-                    ? "正在保存"
-                    : "保存当前配置",
-                systemImage: isSavingConfiguration
-                    ? "hourglass"
-                    : "tray.and.arrow.down",
+                title: saveActionTitle,
+                systemImage: saveActionSystemImage,
                 tint: .blue,
                 isProminent: true,
                 action: onSaveCurrentConfiguration
             )
-            .disabled(isSavingConfiguration)
 
             actionButton(
                 title: "另存为新配置",
@@ -3985,15 +4070,117 @@ private struct V1ConfigurationOptionList: View {
                 title: "恢复默认",
                 systemImage: "arrow.counterclockwise.circle.fill",
                 tint: .orange,
-                action: onResetConfiguration
+                role: .destructive,
+                action: {
+                    showsResetConfigurationConfirmation = true
+                }
             )
 
             actionButton(
                 title: "删除当前配置",
                 systemImage: "trash.fill",
                 tint: .red,
-                action: onDeleteConfiguration
+                role: .destructive,
+                action: {
+                    showsDeleteConfigurationConfirmation = true
+                }
             )
+        }
+        .disabled(isSavingConfiguration)
+    }
+
+    private var configurationActionColumns: [GridItem] {
+        if dynamicTypeSize.isAccessibilitySize {
+            return [GridItem(.flexible())]
+        }
+
+        return [
+            GridItem(.flexible(), spacing: 10),
+            GridItem(.flexible(), spacing: 10)
+        ]
+    }
+
+    private var saveActionTitle: String {
+        if isSavingConfiguration {
+            return "正在保存"
+        }
+
+        switch configurationStatus {
+        case .saved:
+            return "已保存"
+        case .failure:
+            return "重新保存"
+        case .idle,
+             .dirty,
+             .saving,
+             .subjectSynced:
+            return "保存当前配置"
+        }
+    }
+
+    private var saveActionSystemImage: String {
+        if isSavingConfiguration {
+            return "hourglass"
+        }
+
+        switch configurationStatus {
+        case .saved:
+            return "checkmark.circle.fill"
+        case .failure:
+            return "arrow.clockwise.circle.fill"
+        case .idle,
+             .dirty,
+             .saving,
+             .subjectSynced:
+            return "tray.and.arrow.down"
+        }
+    }
+
+    private var configurationStatusMessage: String {
+        switch configurationStatus {
+        case .idle:
+            return "保存后，配置会应用于后续所有处理任务。"
+        case .dirty:
+            return "有未保存修改。"
+        case .saving:
+            return "正在保存当前配置。"
+        case .saved:
+            return "已保存，将应用于后续处理任务。"
+        case .subjectSynced:
+            return "记忆对象已同步，保存后应用于后续任务。"
+        case .failure(let message):
+            return message
+        }
+    }
+
+    private var configurationStatusSystemImage: String {
+        switch configurationStatus {
+        case .idle:
+            return "info.circle"
+        case .dirty:
+            return "pencil.circle.fill"
+        case .saving:
+            return "hourglass"
+        case .saved:
+            return "checkmark.circle.fill"
+        case .subjectSynced:
+            return "person.crop.circle.badge.checkmark"
+        case .failure:
+            return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var configurationStatusColor: Color {
+        switch configurationStatus {
+        case .saved,
+             .subjectSynced:
+            return Color.accentColor
+        case .dirty,
+             .failure:
+            return Color.orange
+        case .idle,
+             .saving:
+            return Color.secondary
         }
     }
 
@@ -4002,34 +4189,45 @@ private struct V1ConfigurationOptionList: View {
         systemImage: String,
         tint: Color,
         isProminent: Bool = false,
+        role: ButtonRole? = nil,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        Button(role: role, action: action) {
             Label(title, systemImage: systemImage)
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
+                .foregroundStyle(
+                    isProminent
+                    ? Color.white
+                    : tint
+                )
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 12,
+                        style: .continuous
+                    )
+                    .fill(
+                        isProminent
+                        ? tint
+                        : ConfigurationUI.controlBackground
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: 12,
+                        style: .continuous
+                    )
+                    .stroke(
+                        isProminent
+                        ? tint
+                        : ConfigurationUI.faintHairline
+                    )
+                )
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(isProminent ? Color.white : tint)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(
-                    isProminent
-                    ? tint
-                    : ConfigurationUI.controlBackground
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(
-                    isProminent
-                    ? tint
-                    : ConfigurationUI.faintHairline
-                )
-        )
+        .buttonStyle(V1ConfigurationActionButtonStyle())
     }
 
     private func groupedSection<Content: View>(
@@ -4039,21 +4237,11 @@ private struct V1ConfigurationOptionList: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(index)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(title)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-            }
+            adaptiveSectionHeader(
+                index: index,
+                title: title,
+                subtitle: subtitle
+            )
 
             VStack(spacing: 0) {
                 content()
@@ -4075,6 +4263,57 @@ private struct V1ConfigurationOptionList: View {
         }
         .padding(14)
         .v1CardChrome()
+    }
+
+    @ViewBuilder
+    private func adaptiveSectionHeader(
+        index: String,
+        title: String,
+        subtitle: String
+    ) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(
+                    alignment: .firstTextBaseline,
+                    spacing: 8
+                ) {
+                    Text(index)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(
+                        horizontal: false,
+                        vertical: true
+                    )
+            }
+        } else {
+            HStack(
+                alignment: .firstTextBaseline,
+                spacing: 8
+            ) {
+                Text(index)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text(title)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+        }
     }
 
     private var subjectDisplayName: String {
@@ -4293,21 +4532,47 @@ private struct V1ConfigurationOptionList: View {
         HStack(spacing: 6) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.primary.opacity(0.76))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
+                .allowsTightening(true)
+                .truncationMode(.tail)
 
             Image(systemName: "chevron.down")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(Color.accentColor)
         }
         .padding(.horizontal, 9)
-        .padding(.vertical, 5)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .trailing)
         .background(
-            Capsule(style: .continuous)
-                .fill(ConfigurationUI.controlBackground.opacity(0.86))
+            RoundedRectangle(
+                cornerRadius:
+                    ConfigurationUI.smallCornerRadius,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.controlBackground)
         )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius:
+                    ConfigurationUI.smallCornerRadius,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
+    @ViewBuilder
+    private func menuOptionLabel(
+        _ title: String,
+        isSelected: Bool
+    ) -> some View {
+        if isSelected {
+            Label(title, systemImage: "checkmark")
+        } else {
+            Text(title)
+        }
     }
 
     private func rowIcon(
@@ -4342,6 +4607,76 @@ private struct V1ConfigurationOptionList: View {
                 V1CompactInformationRowMetrics.horizontalPadding
                 + V1CompactInformationRowMetrics.iconSize
                 + V1CompactInformationRowMetrics.contentSpacing
+            )
+    }
+}
+
+private struct V1ConfigurationActionButtonStyle:
+    ButtonStyle {
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    @Environment(\.isEnabled)
+    private var isEnabled
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .opacity(
+                isEnabled
+                ? (configuration.isPressed ? 0.72 : 1)
+                : 0.56
+            )
+            .scaleEffect(
+                configuration.isPressed && !reduceMotion
+                ? 0.97
+                : 1
+            )
+            .animation(
+                reduceMotion
+                ? nil
+                : .easeOut(duration: 0.12),
+                value: configuration.isPressed
+            )
+    }
+}
+
+private struct V1ConfigurationNavigationRowButtonStyle:
+    ButtonStyle {
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .background(
+                ConfigurationUI.selectedBackground
+                    .opacity(
+                        configuration.isPressed
+                        ? 1
+                        : 0
+                    )
+            )
+            .opacity(
+                configuration.isPressed
+                ? 0.76
+                : 1
+            )
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+            )
+            .animation(
+                reduceMotion
+                ? nil
+                : .easeOut(duration: 0.1),
+                value: configuration.isPressed
             )
     }
 }

@@ -1,6 +1,162 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-13
+Last updated: 2026-07-15
+
+## 2026-07-15 Apple-Native Configuration UI Polish
+
+The iPhone Configuration Center completed a scoped Apple-native polish pass
+without reopening IA-002 or changing configuration, renderer, export,
+metadata, or persistence ownership.
+
+Implemented facts:
+
+- module chips now distinguish literal text from inserted modules, expose
+  native press feedback, and provide explicit remove accessibility labels;
+- module insertion and removal use selection haptics only for completed causal
+  actions, with Reduce Motion respected by visual transitions;
+- the module library, composition result, literal fields, and expanded object
+  rows use clearer native hierarchy and semantic system fills;
+- Configuration Center save actions now reflect saving, saved, dirty, and
+  failure states, and successful manual saves provide a success haptic;
+- narrow selection labels remain single-line after reverting a direct Picker
+  regression that allowed system menu chrome to stack text;
+- accessibility text sizes reflow section headings and configuration actions,
+  while compact navigation keeps enough bottom scroll space to clear the tab
+  bar on iPhone and compact-width iPad;
+- unavailable location and empty-option controls are visibly non-interactive,
+  and custom Logo optimization uses a native progress control;
+- reset and delete actions require destructive confirmation before their
+  existing callbacks run;
+- Home and Output bottom actions share press feedback, and Output reflects the
+  real configuration save status.
+
+Verification completed in this slice:
+
+- focused adaptive-layout, iPhone responsive-contract, and native-interaction
+  tests pass;
+- generic iOS Simulator and generic signed iOS device Debug builds pass;
+- code-sign verification passes for the generic device app;
+- the consolidated signed build was installed and launched on `IPhone5`;
+- the installed executable SHA-256 is
+  `100c31d5b6db475a551074abd4fee382e8427241df5c95f0da8000bc18ec62c0`.
+
+Final manual follow-up:
+
+- recheck Configuration Center at standard and accessibility text sizes,
+  including bottom scrolling, selection labels, reset/delete confirmation,
+  and Output save-state feedback.
+
+## 2026-07-14 iPad Adaptive Interface Foundation
+
+MemoMark now treats iPad adaptation as the active iOS interface line while
+preserving the existing iPhone product behavior and all production contracts.
+
+Implemented facts:
+
+- iPhone and compact-width iPad windows retain the existing four-tab shell;
+- regular-width iPad windows use a fixed, non-overlaying leading navigation
+  column for Home, Configuration Center, Output, Tasks, and Settings;
+- Settings is a peer destination on iPad and remains a Home-presented sheet on
+  iPhone;
+- a regular size class alone cannot enable the sidebar on an iPhone;
+- Configuration Center selects stacked or side-by-side preview/editor
+  composition from its actual available detail width, with a tested `760 pt`
+  boundary;
+- narrowing an iPad window while Settings is active returns to Home and
+  preserves Settings access through the compact sheet instead of leaving an
+  unmatched tab selection;
+- navigation and layout changes reuse the existing `ConfigurationSession`,
+  editor drafts, output bindings, diagnostics, coordinators, and page
+  surfaces; Renderer, Export, Metadata, Share Extension, Photo Library, and
+  Layout Engine behavior did not change.
+
+Verification completed in this slice:
+
+- focused entry-flow tests pass, including compact/regular Settings routing;
+- focused adaptive-layout tests pass for `640`, `759`, `760`, and `900 pt`
+  detail widths and iPhone/iPad navigation gating;
+- the `PhotoMemoiOS` generic iOS Simulator Debug build passes;
+- the Release build settings confirm `TARGETED_DEVICE_FAMILY = 1,2`, iOS
+  device/Simulator support, and the existing iPad four-orientation plist
+  declaration;
+- the app installed and launched on iPad mini and iPad Pro 13-inch simulators;
+- portrait screenshots confirm the fixed sidebar consumes its own column and
+  does not cover the selected page.
+
+Manual simulator follow-up still required before release closure: exercise all
+five destinations in portrait and landscape, validate compact Split View and
+Stage Manager transitions with unsaved Configuration Center edits, and inspect
+accessibility text sizes. Simulator evidence is not an accurate performance
+proxy for processing/CPU, graphics/Metal, memory, networking throughput/latency,
+Metal GPU behavior, frame timing, memory pressure/Jetsam, or thermal behavior.
+
+## 2026-07-14 V3 Production Readiness Engineering Loop Established
+
+MemoMark formalized Production Readiness as an Engineering Loop inside `V3
+Production Quality And Delivery`, not as a new product stage.
+
+The canonical loop is:
+
+```text
+Boundary Audit
+-> Reliability Audit
+-> Apple Native Audit
+-> Production Certification
+-> Freeze
+```
+
+The fixed V3 audit order is Share Workflow, Batch Queue System, Media Pipeline,
+Export System, and Diagnostics. Every Reliability Audit now checks Loss,
+Duplicate, Recovery, and Silent Wrong Output. Findings use Level A Production
+Blocker, Level B Reliability Improvement, and Level C Architecture Improvement.
+
+Certification uses separate Code, Automated Test, Signed Device, and Runtime
+Evidence columns. `PASS` requires every audit dimension, no open Level A, and
+no unexplained Silent Wrong Output. `CONDITIONAL PASS` may retain bounded Level
+B findings; any Level A or unexplained Silent Wrong Output produces `FAIL`.
+
+The canonical method is recorded in
+`Docs/06_Development/Reliability_Engineering_Discipline.md`. No empty
+certification files were created. The governing principle is:
+
+> Production readiness is demonstrated by evidence, not confidence.
+
+## 2026-07-14 Evolution Documentation Phase I Frozen
+
+MemoMark completed Evolution Documentation Phase I and established a permanent
+knowledge baseline spanning product origin, architecture evolution, current
+implementation reality, outstanding architectural vision, and documentation
+governance.
+
+The completed Phase I assets are:
+
+- `Docs/Evolution/README.md` — series governance, evidence rules, maintenance
+  policy, reading order, and change log;
+- Volume I — product origin and the transition from PhotoMemo to MemoMark;
+- Volume II — architecture evolution and explicitly replaced directions;
+- Volume III — evidence-backed V3 implementation scorecard;
+- Volume IV — bounded outstanding vision and explicitly rejected directions.
+
+Phase I is now frozen. Volumes I and II accept factual corrections only;
+Volume III scores require changed code, accepted decisions, executable
+contracts, or production evidence; Volume IV is review-gated and must not
+become a feature backlog. Volumes V through VII remain planned and no
+placeholder files were created.
+
+This milestone establishes the project knowledge sequence:
+
+```text
+Repository Constitution and Current Status
+-> Evolution Review
+-> ADR / RFC / PDR and frozen contracts
+-> Owning code and tests
+-> Runtime and release evidence
+```
+
+Future Evolution work resumes only after production audits or equivalent
+engineering evidence justify a new durable conclusion. Until then, code and
+production verification should advance without making Evolution chase new
+ideas.
 
 ## 2026-07-13 V3 UI, Live Photo Naming, And Configuration Contract Closure
 
@@ -17850,3 +18006,18 @@ Verification passed:
 - iOS Simulator app build: `SETTINGS_IOS_BUILD_EXIT:0`
 - macOS Debug app build: `SETTINGS_MAC_BUILD_EXIT:0`
 - `git diff --check`
+
+## 2026-07-15 Configuration Disclosure Continuity
+
+- Configuration Center disclosure rows now use a critically damped,
+  interruptible SwiftUI spring (`response: 0.32`, `dampingFraction: 1`) instead
+  of the previous fixed `easeInOut` transition.
+- Reduce Motion continues to disable the expansion animation. Layout, bindings,
+  accessibility values, editor state, Renderer, Export, Metadata, persistence,
+  and IA-002 architecture did not change.
+- The new native-interaction contract completed a verified red/green cycle with
+  stable Xcode 26.6. The focused suite and the required unsigned Debug build
+  both exited successfully.
+- A signed generic iOS Debug build completed, then installed and launched on
+  physical device `IPhone5` without clearing its app data. Manual interaction
+  feel remains pending user confirmation.

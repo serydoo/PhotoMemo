@@ -129,6 +129,38 @@ enum V1CompactBottomActionMetrics {
     static let cornerRadius: CGFloat = 12
 }
 
+struct V1CompactPrimaryActionButtonStyle:
+    ButtonStyle {
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    @Environment(\.isEnabled)
+    private var isEnabled
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .opacity(
+                isEnabled
+                ? (configuration.isPressed ? 0.78 : 1)
+                : 0.56
+            )
+            .scaleEffect(
+                configuration.isPressed && !reduceMotion
+                ? 0.97
+                : 1
+            )
+            .animation(
+                reduceMotion
+                ? nil
+                : .easeOut(duration: 0.12),
+                value: configuration.isPressed
+            )
+    }
+}
+
 extension View {
 
     func v1CompactBottomPrimaryAction() -> some View {
@@ -540,8 +572,13 @@ struct V1RegionEditorCard: View {
 
                     Spacer()
 
-                    Button("添加模块") {
+                    Button {
                         onShowModules()
+                    } label: {
+                        Label(
+                            "添加模块",
+                            systemImage: "plus"
+                        )
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -566,27 +603,52 @@ struct V1RegionEditorCard: View {
                             case .token,
                                  .separator,
                                  .lineBreak:
-                                HStack(spacing: 4) {
+                                HStack(spacing: 6) {
                                     Image(systemName: item.systemImage)
+                                        .symbolRenderingMode(.hierarchical)
+                                        .foregroundStyle(Color.accentColor)
+
                                     Text(item.title)
+                                        .foregroundStyle(.primary)
+
                                     Button {
+                                        UISelectionFeedbackGenerator()
+                                            .selectionChanged()
                                         onRemoveItem(item)
                                     } label: {
                                         Image(systemName: "xmark.circle.fill")
                                     }
-                                    .buttonStyle(.plain)
-                                    .foregroundStyle(.secondary)
+                                    .buttonStyle(
+                                        V1ModuleChipRemoveButtonStyle()
+                                    )
+                                    .accessibilityLabel(
+                                        "移除\(item.title)"
+                                    )
                                 }
                                 .font(.caption.weight(.semibold))
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 5)
+                                .padding(.leading, 9)
+                                .padding(.trailing, 4)
+                                .padding(.vertical, 4)
                                 .background(
-                                    Capsule()
-                                        .fill(Color.accentColor.opacity(0.09))
+                                    RoundedRectangle(
+                                        cornerRadius: 9,
+                                        style: .continuous
+                                    )
+                                    .fill(
+                                        Color(
+                                            uiColor:
+                                                .tertiarySystemFill
+                                        )
+                                    )
                                 )
                                 .overlay(
-                                    Capsule()
-                                        .stroke(Color.accentColor.opacity(0.16))
+                                    RoundedRectangle(
+                                        cornerRadius: 9,
+                                        style: .continuous
+                                    )
+                                    .stroke(
+                                        Color.primary.opacity(0.08)
+                                    )
                                 )
                             }
                         }
@@ -619,16 +681,25 @@ struct V1RegionEditorCard: View {
                 )
 
                 if !resolvedText.isEmpty {
+                    Divider()
+
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("组合结果")
+                        Label(
+                            "组合结果",
+                            systemImage: "text.quote"
+                        )
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
 
                         Text(resolvedText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(3)
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
+                            )
                     }
                 }
             }
@@ -687,6 +758,7 @@ struct V1RegionEditorCard: View {
         .font(.subheadline)
         .frame(minWidth: textFieldWidth(for: item.value))
         .lineLimit(1)
+        .modifier(V1LiteralComposerFieldStyle())
         .onTapGesture {
             onFocusTextItem(item)
         }
@@ -709,6 +781,7 @@ struct V1RegionEditorCard: View {
         .font(.subheadline)
         .frame(minWidth: minWidth)
         .lineLimit(1)
+        .modifier(V1LiteralComposerFieldStyle())
     }
 
     private func textFieldWidth(
@@ -727,6 +800,66 @@ struct V1RegionEditorCard: View {
             max(CGFloat(trimmed.count) * 18, 42),
             180
         )
+    }
+}
+
+private struct V1ModuleChipRemoveButtonStyle:
+    ButtonStyle {
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    func makeBody(
+        configuration: Configuration
+    ) -> some View {
+        configuration.label
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(
+                configuration.isPressed
+                ? Color.primary
+                : Color.secondary
+            )
+            .frame(width: 24, height: 24)
+            .contentShape(Circle())
+            .scaleEffect(
+                configuration.isPressed && !reduceMotion
+                ? 0.88
+                : 1
+            )
+            .animation(
+                reduceMotion
+                ? nil
+                : .easeOut(duration: 0.1),
+                value: configuration.isPressed
+            )
+    }
+}
+
+private struct V1LiteralComposerFieldStyle:
+    ViewModifier {
+
+    func body(
+        content: Content
+    ) -> some View {
+        content
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 8,
+                    style: .continuous
+                )
+                .fill(
+                    Color(uiColor: .systemBackground)
+                )
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 8,
+                    style: .continuous
+                )
+                .stroke(ConfigurationUI.faintHairline)
+            )
     }
 }
 

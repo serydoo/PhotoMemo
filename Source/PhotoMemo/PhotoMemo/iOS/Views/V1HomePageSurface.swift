@@ -279,10 +279,13 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                     )
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.82)
                 }
                 .v1CompactBottomPrimaryAction()
             }
-            .buttonStyle(.plain)
+            .buttonStyle(
+                V1CompactPrimaryActionButtonStyle()
+            )
             .accessibilityLabel("处理照片")
         }
         .frame(maxWidth: .infinity)

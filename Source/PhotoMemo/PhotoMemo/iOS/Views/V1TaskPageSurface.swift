@@ -5,6 +5,9 @@ import UIKit
 
 struct V1TaskPageSurface: View {
 
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+
     let header: PhotoMemoiOSQueueDiagnosticsHeaderProjection
     let snapshot: PhotoMemoBackgroundJobSnapshot?
     let taskOverview: PhotoMemoBackgroundTaskOverview
@@ -43,7 +46,17 @@ struct V1TaskPageSurface: View {
                 recentTasksSection
             }
             .padding(.top, 10)
-            .padding(.bottom, 24)
+            .padding(
+                .bottom,
+                V1AdaptivePageLayout
+                    .scrollBottomPadding(
+                        isPad:
+                            UIDevice.current
+                            .userInterfaceIdiom == .pad,
+                        hasRegularHorizontalSizeClass:
+                            horizontalSizeClass == .regular
+                    )
+            )
             .v1AdaptiveScrollContent(
                 horizontalPadding: 16
             )

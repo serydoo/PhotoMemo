@@ -1,11 +1,15 @@
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
+import UIKit
 
 struct V1EditorPageSurface<
     PreviewContent: View,
     EditorContent: View,
     AccessoryContent: View
 >: View {
+
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
 
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
@@ -134,7 +138,17 @@ struct V1EditorPageSurface<
                 accessoryContent
             }
             .padding(.top, 8)
-            .padding(.bottom, 26)
+            .padding(
+                .bottom,
+                V1AdaptivePageLayout
+                    .scrollBottomPadding(
+                        isPad:
+                            UIDevice.current
+                            .userInterfaceIdiom == .pad,
+                        hasRegularHorizontalSizeClass:
+                            horizontalSizeClass == .regular
+                    )
+            )
             .v1AdaptiveScrollContent(
                 horizontalPadding: 16
             )

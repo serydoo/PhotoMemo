@@ -1,5 +1,6 @@
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
+import UIKit
 
 struct V1ModuleLibrarySurface: View {
 
@@ -27,12 +28,15 @@ struct V1ModuleLibrarySurface: View {
                 Section {
                     ForEach(filteredModules) { module in
                         Button {
+                            UISelectionFeedbackGenerator()
+                                .selectionChanged()
                             onSelectModule(module)
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: module.systemImage)
                                     .font(.body.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(Color.accentColor)
                                     .frame(width: 24)
 
                                 VStack(alignment: .leading, spacing: 3) {
@@ -54,7 +58,16 @@ struct V1ModuleLibrarySurface: View {
                                 }
 
                                 Spacer(minLength: 0)
+
+                                Image(
+                                    systemName: "plus.circle.fill"
+                                )
+                                .font(.body.weight(.semibold))
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(Color.accentColor)
+                                .accessibilityHidden(true)
                             }
+                            .contentShape(Rectangle())
                         }
                     }
                 } header: {
@@ -70,7 +83,7 @@ struct V1ModuleLibrarySurface: View {
             .navigationTitle(region.semanticTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("完成") {
                         onClose()
                     }

@@ -1,8 +1,8 @@
 # MemoMark Reliability Engineering Discipline
 
-Status: Active V3 engineering discipline
+Status: Active V3 Engineering Loop discipline
 
-Date: 2026-07-13
+Date: 2026-07-14
 
 ## Purpose
 
@@ -19,6 +19,193 @@ repository can point to:
 This document is intentionally the first and only Reliability record container.
 Create a separate record only when a real defect has enough evidence to justify
 one. Do not pre-create empty category files.
+
+## V3 Production Readiness Engineering Loop
+
+Production Readiness is an Engineering Loop inside `V3 Production Quality And
+Delivery`. It is not a new product stage and does not replace the V1/V2/V3
+product-version history.
+
+The governing principle is:
+
+> Production readiness is demonstrated by evidence, not confidence.
+
+In Chinese:
+
+> 生产级不是靠信心证明，而是靠证据证明。
+
+The reusable system loop is:
+
+```text
+System
+-> Boundary Audit
+-> Reliability Audit
+-> Apple Native Audit
+-> Production Certification
+-> Freeze
+```
+
+This loop may be reused by future product stages. Its purpose is to raise an
+accepted system to production quality, not to expand its feature surface.
+
+### Audit Order
+
+The current V3 production-readiness order is:
+
+1. Share Workflow;
+2. Batch Queue System;
+3. Media Pipeline;
+4. Export System;
+5. Diagnostics.
+
+The order follows production dependency and risk. Share admits work; Queue
+persists and coordinates it; Media Pipeline interprets source capability;
+Export creates and saves the new artifact; Diagnostics proves what happened.
+
+Renderer is not a separate audit target in this sequence. It remains a frozen
+consumer boundary unless evidence identifies a renderer-owned defect.
+
+## Fixed Audit Questions
+
+### Boundary Audit
+
+Ask whether the system owns only its accepted responsibility.
+
+Examples:
+
+- Share must not become a second Configuration Center, queue, or renderer.
+- Queue and Worker must not own UI or Memory semantics.
+- Renderer must not own media geometry, domain resolution, or persistence.
+- Export must not reconstruct configuration or silently repair upstream truth.
+
+Every finding must identify the owning boundary and the direction of the
+violation. Code elegance alone is not a production boundary finding.
+
+### Reliability Audit
+
+Every system must answer four fixed failure questions:
+
+| Failure class | Required question |
+|---|---|
+| **Loss** | Can accepted user work, media identity, configuration, metadata, or output disappear? |
+| **Duplicate** | Can one accepted input produce unintended duplicate jobs, processing, saves, or history? |
+| **Recovery** | Can interruption, restart, corruption, or handoff failure leave work unrecoverable or ownership ambiguous? |
+| **Silent Wrong Output** | Can the system report success while producing semantically, visually, or structurally incorrect output? |
+
+Silent Wrong Output is a production failure even when the file renders, saves,
+and the queue reaches a terminal success state. RE-001 is the canonical
+example: Share completed while enabled Memory content was empty.
+
+Each reliability conclusion must define how the system rejects, recovers, or
+diagnoses the failure. “The happy path passed” is not sufficient.
+
+### Apple Native Audit
+
+Ask whether implementation and evidence respect the actual Apple lifecycle and
+platform contracts relevant to the system, including:
+
+- Share Extension lifecycle and resource limits;
+- App Group entitlement and persistence boundaries;
+- background execution and process termination;
+- PhotoKit asset identity, authorization, save, and readback;
+- Live Photo pairing, playback, and resource semantics;
+- notification, Live Activity, and foreground handoff behavior where used.
+
+Host tests and simulator builds cannot close behavior owned by signed-device
+Apple frameworks.
+
+### Production Certification
+
+Ask whether the conclusion has real evidence rather than architectural
+confidence.
+
+Each capability should use an evidence matrix:
+
+| Capability | Code | Automated Test | Signed Device | Runtime Evidence | Status |
+|---|---|---|---|---|---|
+| Example capability | present / absent | pass / missing | pass / missing / not applicable | complete / partial / missing | `PASS`, `PARTIAL`, `REVIEW`, or `FAIL` |
+
+An evidence column must not be inferred from another column. Code does not
+prove device behavior. A device screenshot does not prove persistence or
+recovery. Runtime events do not prove the final user-visible output unless the
+acceptance gate observes that output.
+
+Certification verdicts are:
+
+#### `PASS`
+
+- Boundary Audit passes;
+- Reliability Audit passes all four fixed failure classes;
+- Apple Native Audit passes for every claimed platform capability;
+- no Level A finding remains open;
+- no unexplained Silent Wrong Output remains;
+- required evidence matrix cells are complete.
+
+#### `CONDITIONAL PASS`
+
+- no Level A finding remains open;
+- the supported production claim is safe and explicit;
+- only bounded Level B findings or evidence limitations remain;
+- every limitation has an owner, evidence requirement, and release-facing
+  consequence;
+- no unexplained Silent Wrong Output remains.
+
+#### `FAIL`
+
+- any Level A finding remains open;
+- an unexplained Silent Wrong Output exists;
+- a required Apple lifecycle claim lacks decisive evidence;
+- the system can silently lose, duplicate, misconfigure, or strand accepted
+  work.
+
+### Freeze
+
+Certification does not make a system untouchable. It freezes the certified
+boundary and evidence baseline.
+
+After freeze:
+
+- changes require a scoped production or architecture reason;
+- affected certification evidence must be identified before implementation;
+- capability expansion must not silently widen the certified claim;
+- regression or device gates invalidated by the change must be rerun;
+- a new failure may reopen only its owning boundary unless evidence proves a
+  broader contract is wrong.
+
+## Finding Priority
+
+All production-readiness findings use three levels:
+
+### Level A — Production Blocker
+
+Must be fixed or explicitly removed from the supported production claim before
+certification.
+
+Examples include:
+
+- possible data or accepted-task loss;
+- unintended duplicate processing or save-back;
+- unrecoverable or unobservable ownership failure;
+- Silent Wrong Output;
+- privacy, original-photo mutation, or Local First violation;
+- false success reported across a required Apple lifecycle.
+
+### Level B — Reliability Improvement
+
+Should be fixed or bounded with explicit evidence and release consequences.
+
+Examples include incomplete recovery coverage, weak diagnostics, lifecycle
+hardening, bounded performance risk, or missing non-critical evidence where the
+supported claim remains safe and accurate.
+
+### Level C — Architecture Improvement
+
+May be deferred when it does not threaten correctness, recovery, Apple
+lifecycle behavior, or supported production claims.
+
+Examples include cleaner decomposition, naming, reduced complexity, and more
+elegant internal structure. Level C work must not displace Level A or Level B
+closure merely because it improves code aesthetics.
 
 ## Governing Principle
 

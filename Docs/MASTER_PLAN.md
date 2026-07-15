@@ -1,6 +1,6 @@
 # MemoMark Master Plan
 
-Last updated: 2026-07-11
+Last updated: 2026-07-14
 
 Read `PROJECT_CONSTITUTION.md` before this file. The constitution is the highest-level repository instruction. This file remains the operational master plan.
 
@@ -52,6 +52,36 @@ Close V3 production-quality gaps without reopening frozen V2 architecture:
 5. Establish repeatable change-level and release-level production quality gates.
 6. Preserve the frozen Configuration Center, Memory Engine, Presentation,
    Layout Engine, Renderer, and Export ownership boundaries.
+
+## V3 Production Readiness Engineering Loop
+
+Production Readiness is an Engineering Loop inside V3, not a separate product
+stage. Each system proceeds through:
+
+```text
+Boundary Audit
+-> Reliability Audit
+-> Apple Native Audit
+-> Production Certification
+-> Freeze
+```
+
+The canonical method, fixed reliability questions, finding levels, evidence
+matrix, and certification verdicts are defined in
+`Docs/06_Development/Reliability_Engineering_Discipline.md`.
+
+The current audit order is:
+
+```text
+Share Workflow
+-> Batch Queue System
+-> Media Pipeline
+-> Export System
+-> Diagnostics
+```
+
+Production readiness is demonstrated by evidence, not confidence. This loop
+must improve reliability and proof before expanding feature surface.
 
 ## Long-Term Development Rule
 

@@ -29,6 +29,19 @@ enum V1AdaptivePageLayout {
         isPad
             && hasRegularHorizontalSizeClass
     }
+
+    static func scrollBottomPadding(
+        isPad: Bool,
+        hasRegularHorizontalSizeClass: Bool
+    ) -> CGFloat {
+        usesSidebarNavigation(
+            isPad: isPad,
+            hasRegularHorizontalSizeClass:
+                hasRegularHorizontalSizeClass
+        )
+        ? 26
+        : 96
+    }
 }
 
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
