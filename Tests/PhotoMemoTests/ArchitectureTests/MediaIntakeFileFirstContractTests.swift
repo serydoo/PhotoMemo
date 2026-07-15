@@ -76,7 +76,7 @@ struct MediaIntakeFileFirstContractTests {
         let source =
             try sourceText(
                 relativePath:
-                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
             )
 
         try expectOrdered(

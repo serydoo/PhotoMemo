@@ -449,14 +449,14 @@ struct PhotoMemoShareIntakePersistResult {
 
 enum PhotoMemoShareIntakeLog {
 
-    private static let logger =
+    nonisolated private static let logger =
         Logger(
             subsystem:
                 "com.serydoo.PhotoMemo",
             category: "ShareIntake"
         )
 
-    static func notice(
+    nonisolated static func notice(
         _ message: String
     ) {
         logger.notice(
@@ -464,7 +464,7 @@ enum PhotoMemoShareIntakeLog {
         )
     }
 
-    static func error(
+    nonisolated static func error(
         _ message: String
     ) {
         logger.error(
