@@ -26,8 +26,7 @@ struct BatchQueueExecutionContractTests {
             taskSnapshot: task,
             configuration: makeConfiguration(),
             memoryBudget: budget,
-            usesLivePhotoProcessing: false,
-            route: "staticImage",
+            route: .staticImage,
             totalProgressUnits: 5,
             startedAt: startedAt
         )
@@ -35,8 +34,8 @@ struct BatchQueueExecutionContractTests {
         #expect(context.taskReference.jobID == jobID)
         #expect(context.taskReference.taskID == task.id)
         #expect(context.taskSnapshot.id == task.id)
-        #expect(context.route == "staticImage")
-        #expect(!context.usesLivePhotoProcessing)
+        #expect(context.route == .staticImage)
+        #expect(!context.route.usesLivePhotoProcessing)
         #expect(context.totalProgressUnits == 5)
         #expect(context.startedAt == startedAt)
     }

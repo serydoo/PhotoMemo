@@ -1,14 +1,22 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
+enum BatchTaskProcessingRoute: String {
+    case livePhoto
+    case staticImage
+
+    var usesLivePhotoProcessing: Bool {
+        self == .livePhoto
+    }
+}
+
 @MainActor
 struct BatchTaskExecutionContext {
     let taskReference: BatchQueueExecution.TaskReference
     let taskSnapshot: BatchTask
     let configuration: BatchConfigurationSnapshot
     let memoryBudget: MediaMemoryBudget
-    let usesLivePhotoProcessing: Bool
-    let route: String
+    let route: BatchTaskProcessingRoute
     let totalProgressUnits: Int
     let startedAt: Date
 }
@@ -56,9 +64,9 @@ final class BatchTaskProcessor {
         let memoryBudget = context.memoryBudget
         let requiresExtendedPreviewPreparation = memoryBudget.requiresExtendedPreviewPreparation
         let totalProgressUnits = context.totalProgressUnits
-        let usesLivePhotoProcessing = context.usesLivePhotoProcessing
+        let usesLivePhotoProcessing = context.route.usesLivePhotoProcessing
         let startedAt = context.startedAt
-        let route = context.route
+        let route = context.route.rawValue
 
         store.setActiveProcessingReference(reference)
         store.updateTask(at: reference) { task in
