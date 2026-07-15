@@ -68,7 +68,17 @@ func retryResetsRenderedAndSavedState() throws {
 }
 ```
 
-Implement equivalent outcome tests for health-check failure stopping before save, managed-source preservation after retryable failure, and final-notification at-most-once delivery. Use state assertions on `BatchJob`/`BatchTask`; do not assert private helper calls.
+Implement equivalent outcome tests for processor failure leaving no rendered or
+saved output, managed-source preservation after retryable failure, and
+final-notification at-most-once delivery. Use state assertions on
+`BatchJob`/`BatchTask`; do not assert private helper calls.
+
+The Task 1 processor-failure contract does not claim to exercise
+`ProductionRenderHealthCheck.validate`. The current concrete final Preview and
+Export coordinators do not provide a safe injection seam for forcing that
+rejection before save. Add the true Production Render Health Check rejection
+contract in Task 4 after `BatchTaskProcessor` establishes the required seam;
+that test must prove rejection leaves no rendered or saved output.
 
 - [ ] **Step 2: Run only the new contract test file and confirm the baseline**
 
