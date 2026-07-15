@@ -2,6 +2,39 @@
 
 Last updated: 2026-07-15
 
+## 2026-07-15 Batch Processing Responsibility Split
+
+V3 Batch Processing completed a behavior-preserving responsibility split from
+the former monolithic `BatchQueueExecution` implementation.
+
+Implemented boundaries:
+
+- `BatchQueueCoordinator` owns admission, retry, cancellation, queue-loop
+  scheduling, pending-task selection, derived job state, and task dispatch;
+- `BatchTaskProcessor` owns one static-image or Live Photo task state machine;
+- `BatchTaskDiagnosticsRecorder` owns route, stage, duration, admission, and
+  Render Health evidence;
+- `BatchTaskResourceLifecycle` owns temporary exports, managed intake source
+  cleanup/retry retention, and notification attachments;
+- `BatchQueueExecution` remains a compatibility facade for dependency assembly
+  and existing callers;
+- `BatchQueueStore` remains the only durable task-state owner.
+
+The split also replaced array-index task references with stable job/task UUIDs,
+froze configuration and processing-route decisions in an immutable execution
+context, and added a default-preserving Render Health validator seam.
+
+Verification completed:
+
+- focused execution, Live Photo, recovery, persistence, and history suites:
+  `41/41` passed;
+- PhotoMemoTests serial `build-for-testing` with Xcode 26.6 passed;
+- generic iOS Simulator Debug builds passed for `PhotoMemoiOS` and
+  `PhotoMemoShareExtension`;
+- `git diff --check` passed;
+- no signed-device or manual Apple Photos runtime validation was performed in
+  this structural refactor slice.
+
 ## 2026-07-15 Apple-Native Configuration UI Polish
 
 The iPhone Configuration Center completed a scoped Apple-native polish pass
