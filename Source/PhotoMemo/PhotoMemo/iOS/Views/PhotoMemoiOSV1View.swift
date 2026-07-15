@@ -239,6 +239,16 @@ struct PhotoMemoiOSV1View: View {
         ConfigurationLibraryActions()
     }
 
+    private var configurationBackupRestoreCoordinator:
+        ConfigurationBackupRestoreCoordinator {
+        ConfigurationBackupRestoreCoordinator(
+            localConfigurationLibraryCoordinator:
+                localConfigurationLibraryCoordinator,
+            configurationCoordinator:
+                configurationCoordinator
+        )
+    }
+
     private var configurationApplyCoordinator:
         V1ConfigurationApplyCoordinator {
         V1ConfigurationApplyCoordinator(
@@ -1834,29 +1844,28 @@ struct PhotoMemoiOSV1View: View {
             return
         }
 
-        do {
-            let receipt = try await localConfigurationLibraryCoordinator
-                .backup(
+        let result = await configurationBackupRestoreCoordinator
+            .backup(
+                ConfigurationBackupRequest(
                     subject: durableSubjectRecord.subject,
                     configuration: configuration,
-                    sourceURLs: localConfigurationAssetURLs(
-                        subject: durableSubjectRecord.subject,
-                        configuration: configuration
-                    )
-                )
-            presentHomeConfigurationActionFeedback(
-                V1LocalConfigurationLibraryPresenter.backupFeedback(
-                    title: configuration.title,
-                    receipt: receipt
+                    sourceURLs:
+                        ConfigurationBackupRestoreCoordinator
+                        .assetURLs(
+                            subject: durableSubjectRecord.subject,
+                            configuration: configuration,
+                            selectedConfigurationID:
+                                session.state.selectedMemoryPresetID,
+                            selectedCustomLogoPath:
+                                customLogoBadge?.imagePath
+                        ),
+                    previousBackups:
+                        localConfigurationBackups
                 )
             )
-            localConfigurationBackups =
-                try await localConfigurationLibraryCoordinator
-                .listBackups(subjectID: subjectID)
-        } catch {
-            presentHomeConfigurationActionFeedback(
-                localConfigurationLibraryErrorMessage(error)
-            )
+        localConfigurationBackups = result.backups
+        if case .replace(let message) = result.status {
+            presentHomeConfigurationActionFeedback(message)
         }
     }
 
@@ -1891,17 +1900,17 @@ struct PhotoMemoiOSV1View: View {
         defer {
             isWorkingWithLocalConfigurationLibrary = false
         }
-        do {
-            localConfigurationBackups =
-                try await localConfigurationLibraryCoordinator
-                .listBackups(subjectID: subjectID)
-            if localConfigurationBackups.isEmpty {
-                localConfigurationLibraryStatus =
-                    "当前记忆对象还没有本地备份。"
-            }
-        } catch {
-            localConfigurationLibraryStatus =
-                localConfigurationLibraryErrorMessage(error)
+        let result = await configurationBackupRestoreCoordinator
+            .listBackups(
+                ConfigurationBackupListRequest(
+                    subjectID: subjectID,
+                    previousBackups:
+                        localConfigurationBackups
+                )
+            )
+        localConfigurationBackups = result.backups
+        if case .replace(let message) = result.status {
+            localConfigurationLibraryStatus = message
         }
     }
 
@@ -1940,8 +1949,7 @@ struct PhotoMemoiOSV1View: View {
         makeCurrent: Bool
     ) async {
         guard !isWorkingWithLocalConfigurationLibrary,
-              let aggregate = session.state.configurationLibrary,
-              let configurationCoordinator else {
+              let aggregate = session.state.configurationLibrary else {
             localConfigurationLibraryStatus =
                 "当前配置库不可用，无法恢复。"
             return
@@ -1951,75 +1959,34 @@ struct PhotoMemoiOSV1View: View {
         defer {
             isWorkingWithLocalConfigurationLibrary = false
         }
-        let didAccessSecurityScopedResource =
-            url.startAccessingSecurityScopedResource()
-        defer {
-            if didAccessSecurityScopedResource {
-                url.stopAccessingSecurityScopedResource()
+
+        let result = await configurationBackupRestoreCoordinator
+            .restore(
+                ConfigurationRestoreRequest(
+                    fileURL: url,
+                    assetRootURL: assetRootURL,
+                    makeCurrent: makeCurrent,
+                    aggregate: aggregate,
+                    availableAlbumIdentifiers: Set(
+                        availableAlbums.compactMap(\.localIdentifier)
+                    ),
+                    currentSubjectID:
+                        session.state.selectedSubject?.id,
+                    previousBackups:
+                        localConfigurationBackups
+                )
+            )
+        if let durableAggregate = result.aggregate {
+            session.restoreConfigurationLibrary(
+                durableAggregate
+            )
+            if result.shouldApplyCurrentConfiguration {
+                applyRestoredCurrentConfiguration()
             }
         }
-
-        do {
-            let data = try Data(contentsOf: url)
-            let importCoordinator = ConfigurationImportCoordinator(
-                applyAggregate: { candidate in
-                    try await configurationCoordinator
-                        .saveConfigurationLibrary(candidate)
-                }
-            )
-            let resolution = try importCoordinator.resolveImport(
-                data: data,
-                assetRootURL: assetRootURL,
-                availableAlbumIdentifiers: Set(
-                    availableAlbums.compactMap(\.localIdentifier)
-                )
-            )
-
-            let warnings: [ConfigurationImportWarning]
-            if makeCurrent {
-                let receipt = try await importCoordinator
-                    .restoreAndMakeCurrent(
-                        resolution,
-                        into: aggregate
-                    )
-                var durableAggregate = receipt.aggregate
-                durableAggregate.revision =
-                    receipt.saveReceipt.revision
-                session.restoreConfigurationLibrary(
-                    durableAggregate
-                )
-                warnings = receipt.restoreReceipt.warnings
-                applyRestoredCurrentConfiguration()
-            } else {
-                let restoreReceipt = importCoordinator.restore(
-                    resolution,
-                    into: aggregate
-                )
-                let saveReceipt = try await configurationCoordinator
-                    .saveConfigurationLibrary(
-                        restoreReceipt.aggregate
-                    )
-                var durableAggregate = restoreReceipt.aggregate
-                durableAggregate.revision = saveReceipt.revision
-                session.restoreConfigurationLibrary(
-                    durableAggregate
-                )
-                warnings = restoreReceipt.warnings
-            }
-
-            localConfigurationLibraryStatus =
-                importSuccessMessage(
-                    makeCurrent: makeCurrent,
-                    warnings: warnings
-                )
-            if let subjectID = session.state.selectedSubject?.id {
-                localConfigurationBackups =
-                    try await localConfigurationLibraryCoordinator
-                    .listBackups(subjectID: subjectID)
-            }
-        } catch {
-            localConfigurationLibraryStatus =
-                configurationImportErrorMessage(error)
+        localConfigurationBackups = result.backups
+        if case .replace(let message) = result.status {
+            localConfigurationLibraryStatus = message
         }
     }
 
@@ -2049,127 +2016,18 @@ struct PhotoMemoiOSV1View: View {
             defer {
                 isWorkingWithLocalConfigurationLibrary = false
             }
-            do {
-                _ = try await localConfigurationLibraryCoordinator
-                    .deleteBackup(
-                        subjectID: backup.subjectID,
-                        configurationID: backup.configurationID
+            let result = await configurationBackupRestoreCoordinator
+                .deleteBackup(
+                    ConfigurationBackupDeletionRequest(
+                        backup: backup,
+                        previousBackups:
+                            localConfigurationBackups
                     )
-                localConfigurationBackups.removeAll {
-                    $0.configurationID == backup.configurationID
-                }
-                localConfigurationLibraryStatus =
-                    "已删除“\(backup.title)”的本地备份，不影响当前配置。"
-            } catch {
-                localConfigurationLibraryStatus =
-                    localConfigurationLibraryErrorMessage(error)
+                )
+            localConfigurationBackups = result.backups
+            if case .replace(let message) = result.status {
+                localConfigurationLibraryStatus = message
             }
-        }
-    }
-
-    private func localConfigurationAssetURLs(
-        subject: MemorySubject,
-        configuration: MemoryConfigurationRecord
-    ) -> [PortableAssetManifest.Role: URL] {
-        var urls: [PortableAssetManifest.Role: URL] = [:]
-        appendLocalAssetURL(
-            subject.identity.avatarImagePath,
-            role: .subjectAvatar,
-            to: &urls
-        )
-        appendLocalAssetURL(
-            subject.identity.avatarBadgeImagePath,
-            role: .subjectAvatarBadge,
-            to: &urls
-        )
-        appendLocalAssetURL(
-            subject.identity.avatarPreviewImagePath,
-            role: .subjectAvatarPreview,
-            to: &urls
-        )
-        let customLogoPath =
-            configuration.presentation.logo.badge?
-            .assetReference?.relativePath
-            ?? (configuration.id == session.state.selectedMemoryPresetID
-                ? customLogoBadge?.imagePath
-                : nil)
-        appendLocalAssetURL(
-            customLogoPath,
-            role: .customLogo,
-            to: &urls
-        )
-        return urls
-    }
-
-    private func appendLocalAssetURL(
-        _ path: String?,
-        role: PortableAssetManifest.Role,
-        to urls: inout [PortableAssetManifest.Role: URL]
-    ) {
-        guard let path,
-              path.hasPrefix("/") else {
-            return
-        }
-        let url = URL(fileURLWithPath: path)
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            return
-        }
-        urls[role] = url
-    }
-
-    private func importSuccessMessage(
-        makeCurrent: Bool,
-        warnings: [ConfigurationImportWarning]
-    ) -> String {
-        let prefix = makeCurrent
-            ? "已恢复并设为当前配置。"
-            : "已恢复配置副本。"
-        guard !warnings.isEmpty else {
-            return prefix
-        }
-        return "\(prefix) 部分缺失资源已使用安全回退。"
-    }
-
-    private func localConfigurationLibraryErrorMessage(
-        _ error: Error
-    ) -> String {
-        guard let error = error as? LocalConfigurationLibraryError else {
-            return "本地配置库操作失败：\(error.localizedDescription)"
-        }
-        switch error {
-        case .backupNotFound:
-            return "找不到这份本地备份，可能已被移动或删除。"
-        case .checksumMismatch:
-            return "备份校验失败，文件可能已损坏。"
-        case .invalidDocument:
-            return "配置包含无法备份的资源引用，请先重新保存当前配置。"
-        case .encodingFailed,
-             .readFailed,
-             .writeFailed,
-             .deleteFailed,
-             .pathIdentityMismatch:
-            return "本地配置库操作失败，请稍后重试。"
-        }
-    }
-
-    private func configurationImportErrorMessage(
-        _ error: Error
-    ) -> String {
-        guard let error = error as? ConfigurationImportError else {
-            return "导入或恢复失败：\(error.localizedDescription)"
-        }
-        switch error {
-        case .unsupportedOlderSchema:
-            return "这份备份版本过旧，当前版本无法读取。"
-        case .unsupportedFutureSchema:
-            return "这份备份来自更新版本，请升级时光记后再导入。"
-        case .corruptDocument,
-             .checksumMismatch:
-            return "备份文件已损坏或校验失败。"
-        case .invalidDocument:
-            return "备份内容不完整，无法安全恢复。"
-        case .aggregateApplyUnavailable:
-            return "当前配置库不可用，无法设为当前配置。"
         }
     }
 
