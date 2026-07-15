@@ -33,6 +33,13 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("ShareExtensionProgressObserver"))
         #expect(!controller.contains("func requestMainAppRefreshThroughResponderChain"))
         #expect(!controller.contains("func observeProcessingProgress"))
+        #expect(!controller.contains("func makePreviewCard"))
+        #expect(!controller.contains("func updatePreviewRows"))
+        #expect(!controller.contains("func handlePreviewCardTap"))
+        #expect(!controller.contains("previewStatusBadgeViews"))
+        #expect(preview.contains("func configurePlaceholders"))
+        #expect(preview.contains("func updateRows"))
+        #expect(preview.contains("func applyImages"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

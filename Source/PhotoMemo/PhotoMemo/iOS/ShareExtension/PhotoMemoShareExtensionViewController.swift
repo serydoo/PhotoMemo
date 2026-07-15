@@ -120,32 +120,6 @@ final class PhotoMemoShareExtensionViewController:
     private var firstPreviewTask:
         Task<Void, Never>?
 
-    private var previewCardViews:
-        [UIView] = []
-
-    private var previewImageViews:
-        [UIImageView] = []
-
-    private var previewStatusBadgeViews:
-        [UIImageView] = []
-
-    private var previewStatusTitleLabels:
-        [UILabel] = []
-
-    private var previewStatusDetailLabels:
-        [UILabel] = []
-
-    private var previewCardSizeConstraints:
-        [UIView: (
-            width: NSLayoutConstraint,
-            height: NSLayoutConstraint
-        )] = [:]
-
-    private var previewListHeightConstraint:
-        NSLayoutConstraint?
-
-    private var selectedPreviewIndex = 0
-
     private var pendingHandoffPhotoCount = 0
 
     private var viewState: ShareExtensionViewState = .confirming
@@ -515,8 +489,12 @@ private extension PhotoMemoShareExtensionViewController {
             previewScrollView.heightAnchor.constraint(
                 equalToConstant: 62
             )
-        previewListHeightConstraint =
-            previewHeight
+        previewController.attach(
+            scrollView: previewScrollView,
+            cardStack: previewCardStack,
+            captionLabel: previewCaptionLabel,
+            listHeightConstraint: previewHeight
+        )
 
         NSLayoutConstraint.activate([
             previewScrollView.topAnchor.constraint(
@@ -754,7 +732,7 @@ private extension PhotoMemoShareExtensionViewController {
 
         previewSectionView?.isHidden = true
         firstPreviewTask?.cancel()
-        resetPreviewCards()
+        previewController.resetCards()
     }
 
     @MainActor
@@ -1193,15 +1171,15 @@ private extension PhotoMemoShareExtensionViewController {
             .secondaryLabel
         statusMessageLabel.text =
             "已接收 \(fallbackPhotoCount) 张照片，正在等待时光记开始逐张处理。"
-        previewCaptionLabel.text =
-            processingLegendText()
-        updatePreviewRows(
+        previewController.setCaption(
+            ShareExtensionPreviewController.processingLegendText
+        )
+        previewController.updateRows(
             phases:
                 Array(
                     repeating: .queued,
                     count:
-                        previewStatusBadgeViews
-                        .count
+                        previewController.cardCount
                 )
         )
     }
@@ -1227,13 +1205,13 @@ private extension PhotoMemoShareExtensionViewController {
             "原始照片已经安全暂存；点下面按钮打开时光记继续。"
         previewCaptionLabel.text =
             "队列已建立，等待时光记主程序接手。"
-        updatePreviewRows(
+        previewController.updateRows(
             phases:
                 Array(
                     repeating: .queued,
                     count:
                         max(
-                            previewStatusBadgeViews.count,
+                            previewController.cardCount,
                             fallbackPhotoCount
                         )
                 )
@@ -1251,9 +1229,10 @@ private extension PhotoMemoShareExtensionViewController {
 
         statusMessageLabel.textColor =
             .secondaryLabel
-        previewCaptionLabel.text =
-            processingLegendText()
-        updatePreviewRows(
+        previewController.setCaption(
+            ShareExtensionPreviewController.processingLegendText
+        )
+        previewController.updateRows(
             tasks:
                 snapshot.tasks
         )
@@ -1321,11 +1300,6 @@ private extension PhotoMemoShareExtensionViewController {
         return task.phase.displayTitle
     }
 
-    func processingLegendText() -> String {
-
-        "灰色等待，蓝色处理中，绿色完成，红色需要处理。"
-    }
-
     func loadFirstPreviewIfNeeded() {
 
         firstPreviewTask?.cancel()
@@ -1342,13 +1316,11 @@ private extension PhotoMemoShareExtensionViewController {
                 sharedPhotoCount > 0
                 ? "这次会按相同风格处理 \(sharedPhotoCount) 张照片。"
                 : "未识别到可处理照片。"
-            resetPreviewCards()
+            previewController.resetCards()
             return
         }
 
-        configurePreviewPlaceholders(
-            count: providers.count
-        )
+        previewController.configurePlaceholders(count: providers.count)
 
         firstPreviewTask = Task { @MainActor in
             let images = await previewController.loadImages(
@@ -1359,9 +1331,7 @@ private extension PhotoMemoShareExtensionViewController {
                 return
             }
 
-            applyPreviewImages(
-                images
-            )
+            previewController.applyImages(images)
 
             guard shouldShowProcessingLegend else {
                 if sharedPhotoCount > 1 {
@@ -1374,8 +1344,9 @@ private extension PhotoMemoShareExtensionViewController {
                 return
             }
 
-            previewCaptionLabel.text =
-                processingLegendText()
+            previewController.setCaption(
+                ShareExtensionPreviewController.processingLegendText
+            )
         }
     }
 
@@ -1392,638 +1363,6 @@ private extension PhotoMemoShareExtensionViewController {
              .handoffFailed:
             return false
         }
-    }
-
-    @MainActor
-    func resetPreviewCards() {
-
-        previewCardViews.removeAll()
-        previewImageViews.removeAll()
-        previewStatusBadgeViews.removeAll()
-        previewStatusTitleLabels.removeAll()
-        previewStatusDetailLabels.removeAll()
-        previewCardSizeConstraints.removeAll()
-        selectedPreviewIndex = 0
-
-        previewCardStack
-            .arrangedSubviews
-            .forEach { view in
-                previewCardStack
-                    .removeArrangedSubview(view)
-                view.removeFromSuperview()
-            }
-    }
-
-    @MainActor
-    func configurePreviewPlaceholders(
-        count: Int
-    ) {
-
-        resetPreviewCards()
-
-        for index in 0..<count {
-            let card =
-                makePreviewCard(
-                    index: index
-                )
-            previewCardViews
-                .append(card.container)
-            previewImageViews
-                .append(card.imageView)
-            previewStatusBadgeViews
-                .append(card.statusBadgeView)
-            previewStatusTitleLabels
-                .append(card.titleLabel)
-            previewStatusDetailLabels
-                .append(card.detailLabel)
-        }
-
-        rebuildPreviewLayout(
-            using: Array(
-                repeating: nil,
-                count: count
-            )
-        )
-        selectedPreviewIndex = 0
-        updateSelectedPreviewCard(
-            animated: false
-        )
-    }
-
-    @MainActor
-    func makePreviewCard(
-        index: Int
-    ) -> (
-        container: UIView,
-        imageView: UIImageView,
-        statusBadgeView: UIImageView,
-        titleLabel: UILabel,
-        detailLabel: UILabel
-    ) {
-
-        let container =
-            UIView()
-        container.translatesAutoresizingMaskIntoConstraints =
-            false
-        container.backgroundColor =
-            .tertiarySystemBackground
-        container.layer.cornerRadius = 14
-        container.layer.cornerCurve = .continuous
-        container.layer.borderWidth = 0
-        container.clipsToBounds = false
-
-        let imageView =
-            UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints =
-            false
-        imageView.contentMode =
-            .scaleAspectFill
-        imageView.clipsToBounds = true
-        imageView.layer.cornerRadius = 10
-        imageView.layer.cornerCurve = .continuous
-        imageView.backgroundColor =
-            .secondarySystemBackground
-
-        container.addSubview(imageView)
-
-        let titleLabel =
-            UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints =
-            false
-        titleLabel.font =
-            .preferredFont(
-                forTextStyle: .subheadline
-            )
-        titleLabel.textColor =
-            .label
-        titleLabel.numberOfLines = 1
-        titleLabel.text =
-            "第 \(index + 1) 张照片"
-
-        let detailLabel =
-            UILabel()
-        detailLabel.translatesAutoresizingMaskIntoConstraints =
-            false
-        detailLabel.font =
-            .preferredFont(
-                forTextStyle: .caption1
-            )
-        detailLabel.textColor =
-            .secondaryLabel
-        detailLabel.numberOfLines = 1
-        detailLabel.text =
-            "等待时光记接手"
-
-        let textStack =
-            UIStackView(
-                arrangedSubviews: [
-                    titleLabel,
-                    detailLabel
-                ]
-            )
-        textStack.translatesAutoresizingMaskIntoConstraints =
-            false
-        textStack.axis = .vertical
-        textStack.alignment = .fill
-        textStack.spacing = 2
-        container.addSubview(
-            textStack
-        )
-
-        let statusBadgeView =
-            UIImageView()
-        statusBadgeView.translatesAutoresizingMaskIntoConstraints =
-            false
-        statusBadgeView.contentMode =
-            .center
-        statusBadgeView.backgroundColor =
-            .clear
-        statusBadgeView.layer.cornerRadius = 0
-        statusBadgeView.layer.cornerCurve =
-            .continuous
-        statusBadgeView.layer.shadowOpacity = 0
-        statusBadgeView.preferredSymbolConfiguration =
-            UIImage.SymbolConfiguration(
-                pointSize: 17,
-                weight: .semibold
-            )
-        container.addSubview(
-            statusBadgeView
-        )
-        applyPreviewStatusBadge(
-            statusBadgeView,
-            phase: .queued
-        )
-
-        let tap =
-            UITapGestureRecognizer(
-                target: self,
-                action: #selector(
-                    handlePreviewCardTap(_:)
-                )
-            )
-        container.addGestureRecognizer(tap)
-        container.isUserInteractionEnabled = true
-        container.tag = index
-
-        let widthConstraint =
-            container.widthAnchor.constraint(
-                equalTo:
-                    previewCardStack
-                    .widthAnchor
-            )
-        let heightConstraint =
-            container.heightAnchor.constraint(
-                equalToConstant: 54
-            )
-        previewCardSizeConstraints[container] =
-            (
-                widthConstraint,
-                heightConstraint
-            )
-
-        NSLayoutConstraint.activate([
-            widthConstraint,
-            heightConstraint,
-            imageView.leadingAnchor.constraint(
-                equalTo:
-                    container.leadingAnchor,
-                constant: 8
-            ),
-            imageView.centerYAnchor.constraint(
-                equalTo:
-                    container.centerYAnchor
-            ),
-            imageView.widthAnchor.constraint(
-                equalToConstant: 40
-            ),
-            imageView.heightAnchor.constraint(
-                equalToConstant: 40
-            ),
-            textStack.leadingAnchor.constraint(
-                equalTo:
-                    imageView.trailingAnchor,
-                constant: 10
-            ),
-            textStack.centerYAnchor.constraint(
-                equalTo:
-                    container.centerYAnchor
-            ),
-            textStack.trailingAnchor.constraint(
-                lessThanOrEqualTo:
-                    statusBadgeView.leadingAnchor,
-                constant: -10
-            ),
-            statusBadgeView.widthAnchor.constraint(
-                equalToConstant: 24
-            ),
-            statusBadgeView.heightAnchor.constraint(
-                equalToConstant: 24
-            ),
-            statusBadgeView.centerYAnchor.constraint(
-                equalTo:
-                    container.centerYAnchor
-            ),
-            statusBadgeView.trailingAnchor.constraint(
-                equalTo:
-                    container.trailingAnchor,
-                constant: -10
-            )
-        ])
-
-        return (
-            container,
-            imageView,
-            statusBadgeView,
-            titleLabel,
-            detailLabel
-        )
-    }
-
-    @MainActor
-    func updatePreviewRows(
-        tasks: [SharedBatchTaskSnapshot]
-    ) {
-
-        for (index, badge) in
-            previewStatusBadgeViews
-            .enumerated() {
-            let task =
-                tasks.indices.contains(index)
-                ? tasks[index]
-                : nil
-            let phase =
-                task?.phase ?? .queued
-
-            if previewStatusTitleLabels
-                .indices
-                .contains(index) {
-                previewStatusTitleLabels[index]
-                    .text =
-                    "第 \(index + 1) 张照片"
-            }
-            if previewStatusDetailLabels
-                .indices
-                .contains(index) {
-                previewStatusDetailLabels[index]
-                    .text =
-                    previewStatusDetailText(
-                        task: task,
-                        phase: phase
-                    )
-            }
-            applyPreviewStatusBadge(
-                badge,
-                phase: phase
-            )
-        }
-    }
-
-    @MainActor
-    func updatePreviewRows(
-        phases: [BatchTaskPhase]
-    ) {
-
-        for (index, badge) in
-            previewStatusBadgeViews
-            .enumerated() {
-            let phase =
-                phases.indices.contains(index)
-                ? phases[index]
-                : .queued
-
-            if previewStatusTitleLabels
-                .indices
-                .contains(index) {
-                previewStatusTitleLabels[index]
-                    .text =
-                    "第 \(index + 1) 张照片"
-            }
-            if previewStatusDetailLabels
-                .indices
-                .contains(index) {
-                previewStatusDetailLabels[index]
-                    .text =
-                    previewStatusDetailText(
-                        task: nil,
-                        phase: phase
-                    )
-            }
-            applyPreviewStatusBadge(
-                badge,
-                phase: phase
-            )
-        }
-    }
-
-    func previewStatusDetailText(
-        task: SharedBatchTaskSnapshot?,
-        phase: BatchTaskPhase
-    ) -> String {
-
-        if let failureMessage =
-            task?.failureMessage,
-           !failureMessage
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-            .isEmpty {
-            return failureMessage
-        }
-
-        if let statusMessage =
-            task?.statusMessage,
-           !statusMessage
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-            .isEmpty {
-            return statusMessage
-        }
-
-        switch phase {
-
-        case .queued:
-            return "等待时光记接手"
-
-        case .completed:
-            return "已保存到系统图库"
-
-        case .failed:
-            return "需要回到时光记查看"
-
-        case .cancelled:
-            return "已取消"
-
-        case .importing,
-             .metadataReady,
-             .previewReady,
-             .waitingForExport,
-             .exporting,
-             .savingToPhotoLibrary:
-            return phase.displayTitle
-        }
-    }
-
-    @MainActor
-    func applyPreviewStatusBadge(
-        _ badge: UIImageView,
-        phase: BatchTaskPhase
-    ) {
-
-        badge.isHidden = false
-        badge.tintColor =
-            previewStatusTintColor(
-                for: phase
-            )
-        badge.image =
-            UIImage(
-                systemName:
-                    previewStatusSystemImageName(
-                        for: phase
-                    )
-            )
-        badge.accessibilityLabel =
-            previewStatusAccessibilityLabel(
-                for: phase
-            )
-    }
-
-    func previewStatusSystemImageName(
-        for phase: BatchTaskPhase
-    ) -> String {
-
-        switch phase {
-
-        case .queued:
-            return "clock.fill"
-
-        case .importing,
-             .metadataReady,
-             .previewReady,
-             .waitingForExport,
-             .exporting,
-             .savingToPhotoLibrary:
-            return "arrow.triangle.2.circlepath"
-
-        case .completed:
-            return "checkmark.circle.fill"
-
-        case .failed:
-            return "exclamationmark.circle.fill"
-
-        case .cancelled:
-            return "minus.circle.fill"
-        }
-    }
-
-    func previewStatusTintColor(
-        for phase: BatchTaskPhase
-    ) -> UIColor {
-
-        switch phase {
-
-        case .queued,
-             .cancelled:
-            return .systemGray
-
-        case .importing,
-             .metadataReady,
-             .previewReady,
-             .waitingForExport,
-             .exporting,
-             .savingToPhotoLibrary:
-            return .systemBlue
-
-        case .completed:
-            return .systemGreen
-
-        case .failed:
-            return .systemRed
-        }
-    }
-
-    func previewStatusAccessibilityLabel(
-        for phase: BatchTaskPhase
-    ) -> String {
-
-        switch phase {
-
-        case .queued:
-            return "等待处理"
-
-        case .completed:
-            return "处理完成"
-
-        case .failed:
-            return "处理失败"
-
-        case .cancelled:
-            return "已取消"
-
-        case .importing,
-             .metadataReady,
-             .previewReady,
-             .waitingForExport,
-             .exporting,
-             .savingToPhotoLibrary:
-            return "正在处理"
-        }
-    }
-
-    @objc
-    func handlePreviewCardTap(
-        _ recognizer: UITapGestureRecognizer
-    ) {
-
-        guard let card =
-            recognizer.view else {
-            return
-        }
-
-        selectedPreviewIndex =
-            max(
-                min(
-                    card.tag,
-                    previewCardViews.count - 1
-                ),
-                0
-            )
-        updateSelectedPreviewCard(
-            animated: true
-        )
-
-        let targetRect =
-            card.convert(
-                card.bounds,
-                to: previewScrollView
-            )
-            .insetBy(
-                dx: -18,
-                dy: 0
-            )
-
-        previewScrollView.scrollRectToVisible(
-            targetRect,
-            animated: true
-        )
-    }
-
-    @MainActor
-    func updateSelectedPreviewCard(
-        animated: Bool
-    ) {
-
-        let updates = {
-            for (index, card) in
-                self.previewCardViews.enumerated() {
-                card.transform = .identity
-                card.layer.zPosition =
-                    CGFloat(index)
-                card.alpha = 1
-            }
-        }
-
-        guard animated else {
-            updates()
-            return
-        }
-
-        UIView.animate(
-            withDuration: 0.22,
-            delay: 0,
-            options: [
-                .curveEaseOut,
-                .beginFromCurrentState
-            ],
-            animations: updates
-        )
-    }
-
-    @MainActor
-    func applyPreviewImages(
-        _ images: [UIImage?]
-    ) {
-
-        for (index, image) in
-            images.enumerated() {
-            guard previewImageViews
-                .indices
-                .contains(index) else {
-                continue
-            }
-
-            previewImageViews[index].image =
-                image
-        }
-
-        rebuildPreviewLayout(
-            using: images
-        )
-    }
-
-    @MainActor
-    func rebuildPreviewLayout(
-        using images: [UIImage?]
-    ) {
-
-        previewCardStack
-            .arrangedSubviews
-            .forEach { view in
-                previewCardStack
-                    .removeArrangedSubview(view)
-                view.removeFromSuperview()
-            }
-
-        previewCardViews
-            .forEach { card in
-                card.removeFromSuperview()
-                card.transform = .identity
-            }
-
-        let count =
-            previewCardViews.count
-
-        previewCardStack.axis = .vertical
-        previewCardStack.alignment = .fill
-        previewCardStack.spacing = 8
-        previewListHeightConstraint?
-            .constant =
-            previewListHeight(
-                rowCount: count
-            )
-
-        guard count > 0 else {
-            return
-        }
-
-        for card in previewCardViews {
-            previewCardStack
-                .addArrangedSubview(card)
-        }
-    }
-
-    func previewListHeight(
-        rowCount: Int
-    ) -> CGFloat {
-
-        guard rowCount > 0 else {
-            return 0
-        }
-
-        let rowHeight: CGFloat = 54
-        let spacing: CGFloat = 8
-        let visibleRows =
-            min(
-                rowCount,
-                4
-            )
-
-        return CGFloat(visibleRows)
-            * rowHeight
-            + CGFloat(max(visibleRows - 1, 0))
-            * spacing
-            + 4
     }
 
 }
