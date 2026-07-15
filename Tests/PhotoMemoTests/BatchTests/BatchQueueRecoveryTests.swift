@@ -36,8 +36,8 @@ struct BatchQueueRecoveryTests {
                 ]
             )
 
-        #expect(reference?.jobIndex == 0)
-        #expect(reference?.taskIndex == 0)
+        #expect(reference?.jobID == newerJob.id)
+        #expect(reference?.taskID == newerJob.tasks[0].id)
     }
 
     @Test("Resume marks missing managed intake sources as non retryable failures")

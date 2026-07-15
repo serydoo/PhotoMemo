@@ -14,24 +14,25 @@ struct BatchQueueExecutionContractTests {
             sourceURL: URL(fileURLWithPath: "/tmp/context.jpg"),
             fileName: "context.jpg"
         )
+        let jobID = UUID()
         let reference = BatchQueueExecution.TaskReference(
-            jobIndex: 2,
-            taskIndex: 4
+            jobID: jobID,
+            taskID: task.id
         )
         let budget = BatchTaskMemoryPolicy.mediaMemoryBudget(for: task)
         let startedAt = Date(timeIntervalSince1970: 123)
         let context = BatchTaskExecutionContext(
             taskReference: reference,
             taskSnapshot: task,
-            configuration: nil,
+            configuration: makeConfiguration(),
             memoryBudget: budget,
             route: "staticImage",
             totalProgressUnits: 5,
             startedAt: startedAt
         )
 
-        #expect(context.taskReference.jobIndex == 2)
-        #expect(context.taskReference.taskIndex == 4)
+        #expect(context.taskReference.jobID == jobID)
+        #expect(context.taskReference.taskID == task.id)
         #expect(context.taskSnapshot.id == task.id)
         #expect(context.route == "staticImage")
         #expect(context.totalProgressUnits == 5)
@@ -200,6 +201,45 @@ struct BatchQueueExecutionContractTests {
         #expect(jobs[0].tasks[0].failure == nil)
         #expect(jobs[0].tasks[0].retryCount == 1)
         #expect(jobs[0].finalNotificationSentAt == nil)
+    }
+
+    @MainActor
+    @Test("Stable task references survive insertion of a newer job")
+    func stableTaskReferenceSurvivesNewJobInsertion() throws {
+        let suiteName = "PhotoMemo.BatchQueueExecutionContractTests.Reference.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        let intakeDirectoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(suiteName, isDirectory: true)
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            externalIntakeStore: ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: intakeDirectoryURL
+            )
+        )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: intakeDirectoryURL)
+        }
+
+        let firstJob = try #require(
+            store.enqueue(
+                urls: [URL(fileURLWithPath: "/tmp/reference-first.jpg")]
+            )
+        )
+        let reference = try #require(store.nextPendingTaskReference())
+        let firstTaskID = try #require(firstJob.tasks.first?.id)
+        _ = store.enqueue(urls: [URL(fileURLWithPath: "/tmp/reference-newer.jpg")])
+
+        store.updateTask(at: reference) { task in
+            task.progress.statusMessage = "stable-reference"
+        }
+
+        let matchedTask = store.jobs
+            .first(where: { $0.id == firstJob.id })?.tasks
+            .first(where: { $0.id == firstTaskID })
+        #expect(matchedTask?.progress.statusMessage == "stable-reference")
     }
 
     @MainActor

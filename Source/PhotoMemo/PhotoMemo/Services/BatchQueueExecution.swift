@@ -4,8 +4,8 @@ import Foundation
 @MainActor
 final class BatchQueueExecution {
     struct TaskReference {
-        let jobIndex: Int
-        let taskIndex: Int
+        let jobID: UUID
+        let taskID: UUID
     }
 
     private let photoRepository: PhotoRepository
@@ -177,13 +177,19 @@ final class BatchQueueExecution {
         guard let initialTask = store.currentTask(at: reference) else { return }
         let memoryBudget = mediaMemoryBudget(for: initialTask)
         let totalProgressUnits = memoryBudget.requiresExtendedPreviewPreparation ? 6 : 5
+        let route = BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(for: initialTask)
+            ? "livePhoto"
+            : "staticImage"
+        guard let configuration = store.currentJob(at: reference)?.configuration else {
+            return
+        }
         await taskProcessor.process(
             context: BatchTaskExecutionContext(
                 taskReference: reference,
                 taskSnapshot: initialTask,
-                configuration: store.currentJob(at: reference)?.configuration,
+                configuration: configuration,
                 memoryBudget: memoryBudget,
-                route: "unknown",
+                route: route,
                 totalProgressUnits: totalProgressUnits,
                 startedAt: Date()
             ),
@@ -195,7 +201,10 @@ final class BatchQueueExecution {
         for jobIndex in jobs.indices {
             for taskIndex in jobs[jobIndex].tasks.indices
             where jobs[jobIndex].tasks[taskIndex].phase == .queued {
-                return TaskReference(jobIndex: jobIndex, taskIndex: taskIndex)
+                return TaskReference(
+                    jobID: jobs[jobIndex].id,
+                    taskID: jobs[jobIndex].tasks[taskIndex].id
+                )
             }
         }
         return nil

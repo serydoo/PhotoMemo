@@ -5,7 +5,7 @@ import Foundation
 struct BatchTaskExecutionContext {
     let taskReference: BatchQueueExecution.TaskReference
     let taskSnapshot: BatchTask
-    let configuration: BatchConfigurationSnapshot?
+    let configuration: BatchConfigurationSnapshot
     let memoryBudget: MediaMemoryBudget
     let route: String
     let totalProgressUnits: Int
@@ -54,9 +54,9 @@ final class BatchTaskProcessor {
         let initialTask = context.taskSnapshot
         let memoryBudget = context.memoryBudget
         let requiresExtendedPreviewPreparation = memoryBudget.requiresExtendedPreviewPreparation
-        let totalProgressUnits = requiresExtendedPreviewPreparation ? 6 : 5
+        let totalProgressUnits = context.totalProgressUnits
         let startedAt = context.startedAt
-        var route = "unknown"
+        let route = context.route
 
         store.setActiveProcessingReference(reference)
         store.updateTask(at: reference) { task in
@@ -71,9 +71,10 @@ final class BatchTaskProcessor {
 
         var temporaryFileURL: URL?
         do {
-            guard let task = store.currentTask(at: reference) else { return }
+            guard let task = store.currentTask(at: reference) else {
+                throw BatchTaskProcessorError.taskUnavailable
+            }
             let usesLivePhotoProcessing = BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(for: task)
-            route = usesLivePhotoProcessing ? "livePhoto" : "staticImage"
             diagnosticsRecorder.recordRoute(
                 for: task,
                 sourceURLIsLivePhotoBundle: LivePhotoSourceBundleLocator.canResolveBundle(at: task.sourceURL),
@@ -92,16 +93,19 @@ final class BatchTaskProcessor {
                         task: task,
                         at: reference,
                         in: store,
-                        totalProgressUnits: totalProgressUnits
+                        totalProgressUnits: totalProgressUnits,
+                        configuration: context.configuration
                     )
                 }
-                diagnosticsRecorder.recordTaskDuration(
-                    startedAt: startedAt,
-                    route: route,
-                    phase: .completed,
-                    task: task,
-                    jobID: store.currentJobID(at: reference)
-                )
+                if let phase = store.currentTaskPhase(at: reference), phase.isTerminal {
+                    diagnosticsRecorder.recordTaskDuration(
+                        startedAt: startedAt,
+                        route: route,
+                        phase: phase,
+                        task: task,
+                        jobID: store.currentJobID(at: reference)
+                    )
+                }
                 return
             }
 
@@ -137,7 +141,7 @@ final class BatchTaskProcessor {
                 )
             }
 
-            guard let configuration = store.currentJob(at: reference)?.configuration else { return }
+            let configuration = context.configuration
             let card = try await diagnosticsRecorder.measureStageDuration(
                 "build",
                 route: route,
@@ -337,9 +341,9 @@ final class BatchTaskProcessor {
         task: BatchTask,
         at reference: BatchQueueExecution.TaskReference,
         in store: BatchQueueStore,
-        totalProgressUnits: Int
+        totalProgressUnits: Int,
+        configuration: BatchConfigurationSnapshot
     ) async throws {
-        guard let configuration = store.currentJob(at: reference)?.configuration else { return }
         store.updateTask(at: reference) { task in
             task.phase = .exporting
             task.progress = BatchTaskProgress(
@@ -408,6 +412,17 @@ final class BatchTaskProcessor {
         if budget.cost.isRAW { return "已生成 RAW 显示版本" }
         if budget.requiresExtendedPreviewPreparation { return "已生成高分辨率预览版本" }
         return "已读取 EXIF 和拍摄时间"
+    }
+}
+
+private enum BatchTaskProcessorError: LocalizedError {
+    case taskUnavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .taskUnavailable:
+            return "批处理任务已不存在"
+        }
     }
 }
 #endif

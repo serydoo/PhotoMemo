@@ -437,10 +437,7 @@ extension BatchQueueStore {
         at reference:
             BatchQueueExecution.TaskReference
     ) -> BatchJob? {
-
-        job(
-            at: reference.jobIndex
-        )
+        jobs.first { $0.id == reference.jobID }
     }
 
     func currentTask(
@@ -448,18 +445,10 @@ extension BatchQueueStore {
             BatchQueueExecution.TaskReference
     ) -> BatchTask? {
 
-        guard jobs.indices.contains(
-            reference.jobIndex
-        ),
-        jobs[reference.jobIndex]
-            .tasks.indices.contains(
-                reference.taskIndex
-            ) else {
+        guard let job = jobs.first(where: { $0.id == reference.jobID }) else {
             return nil
         }
-
-        return jobs[reference.jobIndex]
-            .tasks[reference.taskIndex]
+        return job.tasks.first { $0.id == reference.taskID }
     }
 
     func currentTaskPhase(
@@ -479,26 +468,19 @@ extension BatchQueueStore {
         mutate: (inout BatchTask) -> Void
     ) {
 
-        guard jobs.indices.contains(
-            reference.jobIndex
-        ),
-        jobs[reference.jobIndex]
-            .tasks.indices.contains(
-                reference.taskIndex
-            ) else {
+        guard let jobIndex = jobs.firstIndex(where: { $0.id == reference.jobID }),
+              let taskIndex = jobs[jobIndex].tasks.firstIndex(where: { $0.id == reference.taskID }) else {
             return
         }
 
-        var job = jobs[reference.jobIndex]
-        mutate(
-            &job.tasks[reference.taskIndex]
-        )
+        var job = jobs[jobIndex]
+        mutate(&job.tasks[taskIndex])
         job.updatedAt = Date()
         job.state =
             execution.derivedJobState(
                 from: job.tasks
             )
-        jobs[reference.jobIndex] = job
+        jobs[jobIndex] = job
 
         guard persist else {
             return
