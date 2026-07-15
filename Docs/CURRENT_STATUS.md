@@ -18054,3 +18054,49 @@ Verification passed:
 - A signed generic iOS Debug build completed, then installed and launched on
   physical device `IPhone5` without clearing its app data. Manual interaction
   feel remains pending user confirmation.
+
+## 2026-07-15 iOS Root Coordinator Responsibility Split
+
+The highest-risk `PhotoMemoiOSV1View` coordination slice was decomposed without
+reopening IA-002 or changing Renderer, Metadata, Export, Share Extension,
+Photo Library, or Layout Engine behavior.
+
+Completed extractions:
+
+- `EntryNavigationState` now owns entry flow, expanded editor sections, and
+  profile/preview scroll state while the root keeps `@AppStorage`, imports,
+  view construction, and runtime side effects.
+- `LogoAssetCoordinator` now maps existing Logo selection and optimization
+  outcomes into typed updates while preserving managed paths, subject-avatar
+  behavior, and the Apple mini-logo fallback.
+- `ConfigurationLibraryActions` now owns typed create/reset/begin-rename/
+  commit-rename/save/activate/delete decisions, including dirty-before-save,
+  last-durable protection, sibling selection, and receipt revision projection.
+- `ConfigurationBackupRestoreCoordinator` now owns local backup, listing,
+  deletion, restore/import resolution, security-scoped access, asset URL
+  collection, and error mapping through typed requests and results.
+- The root view remains the owner of `ConfigurationSession`, async save
+  triggering, SwiftUI state, restored aggregate application, draft bootstrap,
+  preview refresh, and user feedback presentation.
+
+Reliability improvements verified during review:
+
+- rename begin and commit are explicit actions rather than inferred from
+  mutable editor state
+- save callbacks use one typed dispatcher path
+- security-scoped access is balanced on success and failure
+- restore revision uses the durable save receipt
+- backup/list/delete/restore failures retain the previous backup list
+- a successful backup or restore followed by list-refresh failure reports
+  partial success instead of an overall failure that could trigger duplicates
+
+Fresh verification:
+
+- focused configuration action/import/repository/backup-restore tests: 41/41
+- serial `PhotoMemoTests` build-for-testing: exit 0
+- generic iOS Simulator `PhotoMemoiOS` Debug build: exit 0
+- `git diff --check`: passed
+
+The broad `V1` naming migration remains intentionally deferred to a separate
+iOS-only compatibility plan. Physical-device interaction and end-to-end manual
+backup/restore UI verification were not performed in this refactor session.
