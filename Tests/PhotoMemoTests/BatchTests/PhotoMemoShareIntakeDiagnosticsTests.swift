@@ -94,8 +94,10 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
 
         let intakeSource =
             try sourceText(
-                relativePath:
-                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+                relativePaths: [
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift",
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
+                ]
             )
         let resultSource =
             try sourceText(
@@ -205,8 +207,13 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
     func shareExtensionIntakeUsesLivePhotoFirstProviderSelector() throws {
         let intakeSource =
             try sourceText(
-                relativePath:
-                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+                relativePaths: [
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift",
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareItemProviderLoader.swift",
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift",
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareLivePhotoRecovery.swift",
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareIntakeDiagnostics.swift"
+                ]
             )
 
         #expect(
@@ -218,13 +225,13 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         #expect(
             intakeSource
             .contains(
-                "let preferredTypeIdentifier =\n            preferredImportTypeIdentifier("
+                "let preferredTypeIdentifier ="
             )
         )
         #expect(
             intakeSource
             .contains(
-                "preferredImportTypeIdentifier(\n        from registeredTypeIdentifiers:"
+                "func preferredImportTypeIdentifier("
             )
         )
         #expect(
@@ -272,7 +279,13 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         #expect(
             intakeSource
             .contains(
-                "preferredRegisteredTypeIdentifier:\n                    preferredStaticImageTypeIdentifier"
+                "preferredRegisteredTypeIdentifier:"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "preferredStaticImageTypeIdentifier"
             )
         )
         #expect(
@@ -294,7 +307,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         let intakeSource =
             try sourceText(
                 relativePath:
-                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
             )
 
         #expect(
@@ -332,7 +345,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         let intakeSource =
             try sourceText(
                 relativePath:
-                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
             )
 
         #expect(
@@ -404,6 +417,21 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
                 ),
             encoding: .utf8
         )
+    }
+
+    private func sourceText(
+        relativePaths: [String]
+    ) throws -> String {
+
+        try relativePaths
+            .map {
+                try sourceText(
+                    relativePath: $0
+                )
+            }
+            .joined(
+                separator: "\n"
+            )
     }
 
     private func sourceURL(

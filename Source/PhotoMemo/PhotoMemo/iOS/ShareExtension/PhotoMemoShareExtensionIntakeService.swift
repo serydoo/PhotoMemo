@@ -1,7 +1,5 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import Foundation
-import CryptoKit
-import ImageIO
 import UniformTypeIdentifiers
 import UIKit
 
@@ -196,6 +194,15 @@ final class PhotoMemoShareExtensionIntakeService {
     private let snapshotService:
         SharedBatchConfigurationSnapshotService
 
+    private let providerLoader:
+        ShareItemProviderLoader
+
+    private let managedFileImporter:
+        ShareManagedFileImporter
+
+    private let diagnostics:
+        ShareIntakeDiagnostics
+
     static let maxSupportedPhotoCount = 20
 
     init(
@@ -203,9 +210,29 @@ final class PhotoMemoShareExtensionIntakeService {
         snapshotService:
             SharedBatchConfigurationSnapshotService
     ) {
+        let diagnostics =
+            ShareIntakeDiagnostics()
+        let providerLoader =
+            ShareItemProviderLoader()
+        let livePhotoRecovery =
+            ShareLivePhotoRecovery(
+                diagnostics: diagnostics
+            )
+
         self.intakeStore = intakeStore
         self.snapshotService =
             snapshotService
+        self.providerLoader =
+            providerLoader
+        self.managedFileImporter =
+            ShareManagedFileImporter(
+                intakeStore: intakeStore,
+                providerLoader: providerLoader,
+                livePhotoRecovery:
+                    livePhotoRecovery,
+                diagnostics: diagnostics
+            )
+        self.diagnostics = diagnostics
     }
 
     convenience init() {
@@ -221,19 +248,21 @@ final class PhotoMemoShareExtensionIntakeService {
     ) async throws -> PhotoMemoShareExtensionImportResult {
 
         let itemProviders =
-            allItemProviders(
+            providerLoader
+            .allItemProviders(
                 in: items
             )
         let providers =
-            supportedImageProviders(
+            providerLoader
+            .supportedImageProviders(
                 in: items
             )
 
-        PhotoMemoShareIntakeLog.notice(
-            "Extension received \(itemProviders.count) item providers."
-        )
-        PhotoMemoShareIntakeLog.notice(
-            "Supported providers count: \(providers.count)."
+        diagnostics.recordReceived(
+            itemProviderCount:
+                itemProviders.count,
+            supportedProviderCount:
+                providers.count
         )
 
         guard !providers.isEmpty else {
@@ -265,12 +294,12 @@ final class PhotoMemoShareExtensionIntakeService {
                         )
                 )
 
-            PhotoMemoShareDiagnostics.record(
-                stage: .extensionError,
-                message:
-                    "tooManySharedItems supported=\(providers.count), max=\(Self.maxSupportedPhotoCount)",
-                requestID:
-                    requestID
+            diagnostics.recordTooManySharedItems(
+                supportedProviderCount:
+                    providers.count,
+                maxSupportedPhotoCount:
+                    Self.maxSupportedPhotoCount,
+                requestID: requestID
             )
 
             throw PhotoMemoShareExtensionError(
@@ -281,14 +310,14 @@ final class PhotoMemoShareExtensionIntakeService {
         }
 
         let requestID = UUID()
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionRequestCreated,
-            message:
-                "providers=\(providers.count), itemProviders=\(itemProviders.count)",
-            requestID:
-                requestID
+        diagnostics.recordRequestCreated(
+            itemProviderCount:
+                itemProviders.count,
+            supportedProviderCount:
+                providers.count,
+            requestID: requestID
         )
-        recordProviderDiagnostics(
+        diagnostics.recordProviderDiagnostics(
             itemProviders,
             requestID: requestID
         )
@@ -309,7 +338,8 @@ final class PhotoMemoShareExtensionIntakeService {
         ) in providers.enumerated() {
 
             let outcome =
-                await loadManagedURL(
+                await managedFileImporter
+                .loadManagedURL(
                     from: provider,
                     requestID: requestID,
                     index: index,
@@ -330,21 +360,16 @@ final class PhotoMemoShareExtensionIntakeService {
                 if importRecord.livePhotoStaticFallback {
                     livePhotoStaticFallbackCount += 1
                 }
-                PhotoMemoShareDiagnostics.record(
-                    stage: .extensionItemImported,
-                    message:
+                diagnostics.recordImported(
+                    fileName:
                         importRecord.item.originalFileName,
-                    requestID:
-                        requestID
+                    requestID: requestID
                 )
 
             case .skippedDuplicate:
                 skippedCount += 1
-                PhotoMemoShareDiagnostics.record(
-                    stage: .extensionItemSkipped,
-                    message: "duplicate",
-                    requestID:
-                        requestID
+                diagnostics.recordSkippedDuplicate(
+                    requestID: requestID
                 )
 
             case .skippedUnsupported(let report):
@@ -352,26 +377,20 @@ final class PhotoMemoShareExtensionIntakeService {
                 unsupportedRejectionReports.append(
                     report
                 )
-                PhotoMemoShareDiagnostics.record(
-                    stage: .extensionItemSkipped,
-                    message:
-                        "unsupported:\(report.reasonRawValue ?? "unknown")",
-                    requestID:
-                        requestID
+                diagnostics.recordSkippedUnsupported(
+                    report,
+                    requestID: requestID
                 )
 
             case .failed(let failureContext):
                 failedCount += 1
                 lastFailureContext =
                     failureContext
-                PhotoMemoShareDiagnostics.record(
-                    stage: .extensionItemFailed,
-                    message:
-                        failureContext.stage.title,
-                    requestID:
-                        requestID
+                diagnostics.recordFailed(
+                    failureContext,
+                    requestID: requestID
                 )
-                logFailureContext(
+                diagnostics.logFailureContext(
                     failureContext,
                     prefix:
                         "Share intake provider failed"
@@ -413,7 +432,7 @@ final class PhotoMemoShareExtensionIntakeService {
                         livePhotoStaticFallbackCount
                 )
 
-            logImportResult(
+            diagnostics.logImportResult(
                 result,
                 label:
                     "persistSharedItems.allImportsFailed"
@@ -493,14 +512,14 @@ final class PhotoMemoShareExtensionIntakeService {
             if let failureContext =
                 persistResult
                 .failureContext {
-                logFailureContext(
+                diagnostics.logFailureContext(
                     failureContext,
                     prefix:
                         "Share intake persist failed"
                 )
             }
 
-            logImportResult(
+            diagnostics.logImportResult(
                 result,
                 label:
                     "persistSharedItems.persistFailed"
@@ -515,16 +534,14 @@ final class PhotoMemoShareExtensionIntakeService {
                 )
         }
 
-        PhotoMemoShareIntakeLog.notice(
+        ShareIntakeDiagnostics.notice(
             "persistSharedItems result: persistedRequestID=\(request.id.uuidString)"
         )
 
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionRequestPersisted,
-            message:
-                "requestID=\(request.id.uuidString), imported=\(managedItems.count)",
-            requestID:
-                request.id
+        diagnostics.recordRequestPersisted(
+            requestID: request.id,
+            importedCount:
+                managedItems.count
         )
 
         let result =
@@ -550,7 +567,7 @@ final class PhotoMemoShareExtensionIntakeService {
                     livePhotoStaticFallbackCount
             )
 
-        logImportResult(
+        diagnostics.logImportResult(
             result,
             label:
                 "persistSharedItems.success"
@@ -563,1511 +580,11 @@ final class PhotoMemoShareExtensionIntakeService {
         in items: [NSExtensionItem]
     ) -> Int {
 
-        supportedImageProviders(
-            in: items
-        ).count
-    }
-}
-
-private extension PhotoMemoShareExtensionIntakeService {
-
-    enum ManagedImportOutcome {
-
-        case imported(
-            ManagedImportRecord
-        )
-
-        case skippedDuplicate
-
-        case skippedUnsupported(
-            PhotoMemoMediaIntakeRejectionReport
-        )
-
-        case failed(
-            PhotoMemoShareIntakeFailureContext
-        )
-    }
-
-    struct ManagedImportRecord {
-
-        let item:
-            ExternalPhotoIntakeItem
-
-        let dedupeKey: String
-
-        let livePhotoStaticFallback:
-            Bool
-
-        init(
-            item: ExternalPhotoIntakeItem,
-            dedupeKey: String,
-            livePhotoStaticFallback: Bool = false
-        ) {
-            self.item = item
-            self.dedupeKey = dedupeKey
-            self.livePhotoStaticFallback =
-                livePhotoStaticFallback
-        }
-
-        var managedURL: URL {
-            item.managedURL
-        }
-    }
-
-    struct FileRepresentationLoadResult {
-
-        let importRecord:
-            ManagedImportRecord?
-
-        let failureContext:
-            PhotoMemoShareIntakeFailureContext?
-    }
-
-    func allItemProviders(
-        in items: [NSExtensionItem]
-    ) -> [NSItemProvider] {
-
-        items.flatMap { item in
-            item.attachments ?? []
-        }
-    }
-
-    func supportedImageProviders(
-        in items: [NSExtensionItem]
-    ) -> [NSItemProvider] {
-
-        allItemProviders(
-            in: items
-        )
-        .filter {
-            $0.hasItemConformingToTypeIdentifier(
-                UTType.image.identifier
+        providerLoader
+            .supportedImageProviders(
+                in: items
             )
-            || PhotoMemoShareProviderTypeSelection
-                .supportsLivePhoto(
-                    $0.registeredTypeIdentifiers
-                )
-        }
-    }
-
-    func recordProviderDiagnostics(
-        _ providers: [NSItemProvider],
-        requestID: UUID
-    ) {
-
-        for (index, provider) in providers.enumerated() {
-            let identifiers =
-                provider.registeredTypeIdentifiers
-            let preferredImportType =
-                PhotoMemoShareProviderTypeSelection
-                .preferredImportTypeIdentifier(
-                    from: identifiers
-                )
-            let preferredImageType =
-                preferredImageTypeIdentifier(
-                    from: identifiers
-                )
-            let supportsLivePhoto =
-                PhotoMemoShareProviderTypeSelection
-                .supportsLivePhoto(
-                    identifiers
-                )
-            let supportsMovie =
-                identifiers
-                .contains {
-                    UTType($0)?
-                        .conforms(to: .movie)
-                        == true
-                }
-            let joinedIdentifiers =
-                identifiers
-                .prefix(12)
-                .joined(separator: ",")
-
-            PhotoMemoShareDiagnostics.record(
-                stage: .extensionProviderObserved,
-                message:
-                    "index=\(index), suggestedName=\(provider.suggestedName ?? "nil"), preferredImportType=\(preferredImportType ?? "nil"), preferredImageType=\(preferredImageType ?? "nil"), supportsLivePhoto=\(supportsLivePhoto), supportsMovie=\(supportsMovie), registeredTypes=\(joinedIdentifiers)",
-                requestID: requestID
-            )
-        }
-    }
-
-    func loadManagedURL(
-        from provider: NSItemProvider,
-        requestID: UUID,
-        index: Int,
-        itemProviderCount: Int,
-        supportedProviderCount: Int,
-        seenSourceKeys: inout Set<String>
-    ) async -> ManagedImportOutcome {
-
-        let registeredTypeIdentifiers =
-            provider
-            .registeredTypeIdentifiers
-        let preferredTypeIdentifier =
-            preferredImportTypeIdentifier(
-                from:
-                    registeredTypeIdentifiers
-            )
-        let preferredStaticImageTypeIdentifier =
-            preferredImageTypeIdentifier(
-                from:
-                    registeredTypeIdentifiers
-            )
-        let diagnosticsSeed =
-            PhotoMemoShareIntakeOperationSeed(
-                itemProviderCount:
-                    itemProviderCount,
-                supportedProviderCount:
-                    supportedProviderCount,
-                providerIndex: index,
-                requestedTypeIdentifier:
-                    UTType.image.identifier,
-                preferredRegisteredTypeIdentifier:
-                    preferredTypeIdentifier
-            )
-
-        PhotoMemoShareIntakeLog.notice(
-            "Provider[\(index)] selectedUTType=\(UTType.image.identifier) preferredUTType=\(preferredTypeIdentifier ?? "unknown")"
-        )
-
-        if let livePhotoTypeIdentifier =
-            PhotoMemoShareProviderTypeSelection
-            .preferredLivePhotoTypeIdentifier(
-                from: registeredTypeIdentifiers
-            ) {
-            let liveFileLoadResult =
-                await loadFileRepresentationResult(
-                    from: provider,
-                    requestID: requestID,
-                    index: index,
-                    diagnosticsSeed:
-                        PhotoMemoShareIntakeOperationSeed(
-                            itemProviderCount:
-                                itemProviderCount,
-                            supportedProviderCount:
-                                supportedProviderCount,
-                            providerIndex: index,
-                            requestedTypeIdentifier:
-                                livePhotoTypeIdentifier,
-                            preferredRegisteredTypeIdentifier:
-                                livePhotoTypeIdentifier
-                        ),
-                    requestedTypeIdentifier:
-                        livePhotoTypeIdentifier,
-                    allowsDirectoryPackage:
-                        true
-                )
-
-            if let importRecord =
-                liveFileLoadResult.importRecord {
-
-                let resolvedImportRecord =
-                    recordStaticLivePhotoPayloadIfNeeded(
-                    importRecord,
-                    requestedTypeIdentifier:
-                        livePhotoTypeIdentifier,
-                    requestID: requestID,
-                    index: index
-                )
-
-                if let unsupportedOutcome =
-                    unsupportedManagedImportOutcomeIfNeeded(
-                        resolvedImportRecord,
-                        diagnosticsSeed:
-                            diagnosticsSeed
-                    ) {
-                    return unsupportedOutcome
-                }
-
-                let sourceKey =
-                    resolvedImportRecord.dedupeKey
-
-                guard seenSourceKeys.insert(sourceKey)
-                    .inserted else {
-                    intakeStore
-                        .cleanupManagedSourceIfNeeded(
-                            at: resolvedImportRecord.managedURL
-                        )
-                    return .skippedDuplicate
-                }
-
-                return .imported(
-                    resolvedImportRecord
-                )
-            }
-        }
-
-        let staticDiagnosticsSeed =
-            PhotoMemoShareIntakeOperationSeed(
-                itemProviderCount:
-                    itemProviderCount,
-                supportedProviderCount:
-                    supportedProviderCount,
-                providerIndex: index,
-                requestedTypeIdentifier:
-                    UTType.image.identifier,
-                preferredRegisteredTypeIdentifier:
-                    preferredStaticImageTypeIdentifier
-                    ?? UTType.image.identifier
-            )
-        let shouldMarkLivePhotoStaticFallback =
-            PhotoMemoShareProviderTypeSelection
-            .supportsLivePhoto(
-                registeredTypeIdentifiers
-            )
-        let fileLoadResult =
-            await loadFileRepresentationResult(
-                from: provider,
-                requestID: requestID,
-                index: index,
-                diagnosticsSeed:
-                    staticDiagnosticsSeed
-            )
-
-        if let importRecord =
-            fileLoadResult.importRecord {
-
-            let resolvedImportRecord =
-                shouldMarkLivePhotoStaticFallback
-                ? recordStaticLivePhotoPayloadIfNeeded(
-                    importRecord,
-                    requestedTypeIdentifier:
-                        preferredTypeIdentifier
-                        ?? "unknown",
-                    requestID: requestID,
-                    index: index
-                )
-                : importRecord
-
-            if let unsupportedOutcome =
-                unsupportedManagedImportOutcomeIfNeeded(
-                    resolvedImportRecord,
-                    diagnosticsSeed:
-                        staticDiagnosticsSeed
-                ) {
-                return unsupportedOutcome
-            }
-
-            let sourceKey =
-                resolvedImportRecord.dedupeKey
-
-            guard
-                seenSourceKeys.insert(sourceKey)
-                    .inserted
-            else {
-                intakeStore
-                    .cleanupManagedSourceIfNeeded(
-                        at: resolvedImportRecord.managedURL
-                    )
-                return .skippedDuplicate
-            }
-
-            return .imported(
-                resolvedImportRecord
-            )
-        }
-
-        let fallbackResult =
-            await loadFallbackItem(
-                from: provider,
-                requestID: requestID,
-                index: index,
-                diagnosticsSeed:
-                    staticDiagnosticsSeed
-            )
-
-        if case .failed(let failureContext) =
-            fallbackResult {
-            return .failed(
-                failureContext
-            )
-        }
-
-        if case .imported(let imported) =
-            fallbackResult {
-
-            let resolvedImported =
-                shouldMarkLivePhotoStaticFallback
-                ? recordStaticLivePhotoPayloadIfNeeded(
-                    imported,
-                    requestedTypeIdentifier:
-                        preferredTypeIdentifier
-                        ?? "unknown",
-                    requestID: requestID,
-                    index: index
-                )
-                : imported
-
-            if let unsupportedOutcome =
-                unsupportedManagedImportOutcomeIfNeeded(
-                    resolvedImported,
-                    diagnosticsSeed:
-                        staticDiagnosticsSeed
-                ) {
-                return unsupportedOutcome
-            }
-
-            let sourceKey =
-                resolvedImported.dedupeKey
-
-            guard
-                seenSourceKeys.insert(sourceKey)
-                    .inserted
-            else {
-                intakeStore
-                    .cleanupManagedSourceIfNeeded(
-                        at: resolvedImported
-                        .managedURL
-                    )
-                return .skippedDuplicate
-            }
-
-            return .imported(
-                resolvedImported
-            )
-        }
-
-        if let failureContext =
-            fileLoadResult
-            .failureContext {
-            return .failed(
-                failureContext
-            )
-        }
-
-        let error =
-            PhotoMemoShareIntakeDiagnosticError
-            .make(
-                description:
-                    "Share intake finished without a loadable file or fallback item.",
-                code: 1006
-            )
-
-        return .failed(
-            diagnosticsSeed
-            .failureContext(
-                stage: .completion,
-                operation:
-                    "loadManagedURL.noLoadableResult",
-                error: error
-            )
-        )
-    }
-
-    func loadFileRepresentationResult(
-        from provider: NSItemProvider,
-        requestID: UUID,
-        index: Int,
-        diagnosticsSeed:
-            PhotoMemoShareIntakeOperationSeed,
-        requestedTypeIdentifier: String =
-            UTType.image.identifier,
-        allowsDirectoryPackage: Bool = false
-    ) async -> FileRepresentationLoadResult {
-
-        PhotoMemoShareIntakeLog.notice(
-            "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation start for \(requestedTypeIdentifier)"
-        )
-
-        let suggestedName =
-            provider.suggestedName
-
-        return await withCheckedContinuation {
-            (
-                continuation:
-                    CheckedContinuation<
-                        FileRepresentationLoadResult,
-                        Never
-                    >
-            ) in
-
-            provider.loadFileRepresentation(
-                forTypeIdentifier:
-                    requestedTypeIdentifier
-            ) { [intakeStore] url, error in
-
-                if let error {
-                    let wrappedError =
-                        PhotoMemoShareIntakeDiagnosticError
-                        .make(
-                            description:
-                                "loadFileRepresentation returned an error.",
-                            code: 3001,
-                            underlyingError: error
-                        )
-                    let failureContext =
-                        diagnosticsSeed
-                        .failureContext(
-                            stage: .load,
-                            operation:
-                                "loadFileRepresentation",
-                            returnedURL:
-                                url,
-                            error:
-                                wrappedError
-                        )
-
-                    PhotoMemoShareIntakeLog.error(
-                        "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation failed.\n\(failureContext.debugDescription)"
-                    )
-
-                    continuation.resume(
-                        returning:
-                            FileRepresentationLoadResult(
-                                importRecord: nil,
-                                failureContext:
-                                    failureContext
-                            )
-                    )
-                    return
-                }
-
-                guard let url else {
-                    let failureContext =
-                        diagnosticsSeed
-                        .failureContext(
-                            stage: .load,
-                            operation:
-                                "loadFileRepresentation.missingURL",
-                            error:
-                                PhotoMemoShareIntakeDiagnosticError
-                                .make(
-                                    description:
-                                        "loadFileRepresentation completed without returning a URL.",
-                                    code: 3002
-                                )
-                        )
-
-                    PhotoMemoShareIntakeLog.error(
-                        "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returned nil URL.\n\(failureContext.debugDescription)"
-                    )
-
-                    continuation.resume(
-                        returning:
-                            FileRepresentationLoadResult(
-                                importRecord: nil,
-                                failureContext:
-                                    failureContext
-                            )
-                    )
-                    return
-                }
-
-                PhotoMemoShareIntakeLog.notice(
-                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returnedURL=\(url.standardizedFileURL.path)"
-                )
-
-                let sourceReadiness =
-                    PhotoMemoImageFileReadiness
-                    .probe(
-                        at: url.standardizedFileURL
-                    )
-                Self.recordSourcePreparationIfNeeded(
-                    sourceReadiness,
-                    requestID: requestID,
-                    index: index
-                )
-
-                let originalFileName =
-                    Self.resolvedOriginalFileName(
-                        preferredName:
-                            suggestedName,
-                        sourceURL: url
-                    )
-
-                let copyResult =
-                    intakeStore
-                        .createManagedCopyDetailed(
-                        from: url,
-                        requestID: requestID,
-                        index: index,
-                        preferredOriginalFileName:
-                            originalFileName,
-                        requiresReadableImage:
-                            !allowsDirectoryPackage,
-                        diagnosticsSeed:
-                            diagnosticsSeed
-                    )
-
-                PhotoMemoShareIntakeLog.notice(
-                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
-                )
-
-                guard let managedURL =
-                    copyResult.managedURL
-                else {
-                    Self.recordSourceUnavailableIfNeeded(
-                        sourceReadiness,
-                        copyResult:
-                            copyResult,
-                        requestID:
-                            requestID,
-                        index:
-                            index
-                    )
-                    continuation.resume(
-                        returning:
-                            FileRepresentationLoadResult(
-                                importRecord: nil,
-                                failureContext:
-                                    copyResult
-                                    .failureContext
-                                    ?? diagnosticsSeed
-                                    .failureContext(
-                                        stage: .copy,
-                                        operation:
-                                            "loadFileRepresentation.copyURL.missingManagedURL",
-                                        returnedURL:
-                                            url,
-                                        temporaryCopyResult:
-                                            copyResult
-                                            .temporaryCopyResult
-                                            ?? "missing-managed-url",
-                                        sharedContainerDestination:
-                                            copyResult
-                                            .sharedContainerDestination,
-                                        error:
-                                            PhotoMemoShareIntakeDiagnosticError
-                                            .make(
-                                                description:
-                                                    "File representation copy did not produce a managed URL.",
-                                                code: 3007
-                                            )
-                                    )
-                            )
-                    )
-                    return
-                }
-
-                Self.recordSourceReadyIfNeeded(
-                    sourceReadiness,
-                    requestID: requestID,
-                    index: index
-                )
-
-                continuation.resume(
-                    returning:
-                        FileRepresentationLoadResult(
-                            importRecord:
-                                ManagedImportRecord(
-                                    item:
-                                        ExternalPhotoIntakeItem(
-                                            managedURL:
-                                                managedURL,
-                                            originalFileName:
-                                                originalFileName,
-                                            contentTypeIdentifier:
-                                                diagnosticsSeed
-                                                .preferredRegisteredTypeIdentifier
-                                        ),
-                                    dedupeKey:
-                                        url
-                                        .standardizedFileURL
-                                        .path
-                                ),
-                            failureContext: nil
-                        )
-                )
-            }
-        }
-    }
-
-    func loadFallbackItem(
-        from provider: NSItemProvider,
-        requestID: UUID,
-        index: Int,
-        diagnosticsSeed:
-            PhotoMemoShareIntakeOperationSeed
-    ) async -> ManagedImportOutcome {
-
-        let suggestedName =
-            provider.suggestedName
-
-        let preferredExtension =
-            preferredFileExtension(
-                from:
-                    provider
-                    .registeredTypeIdentifiers
-            )
-
-        PhotoMemoShareIntakeLog.notice(
-            "Provider[\(index)] loadItem start for \(UTType.image.identifier)"
-        )
-
-        return await withCheckedContinuation {
-            (
-                continuation:
-                    CheckedContinuation<
-                        ManagedImportOutcome,
-                        Never
-                    >
-            ) in
-
-            provider.loadItem(
-                forTypeIdentifier:
-                    UTType.image.identifier,
-                options: nil
-            ) { [intakeStore] item, error in
-
-                if let error {
-                    let wrappedError =
-                        PhotoMemoShareIntakeDiagnosticError
-                        .make(
-                            description:
-                                "Fallback loadItem returned an error.",
-                            code: 3003,
-                            underlyingError: error
-                        )
-
-                    let failureContext =
-                        diagnosticsSeed
-                        .failureContext(
-                            stage: .load,
-                            operation:
-                                "loadItem",
-                            error:
-                                wrappedError
-                        )
-
-                    PhotoMemoShareIntakeLog.error(
-                        "Provider[\(index)] loadItem failed.\n\(failureContext.debugDescription)"
-                    )
-
-                    continuation.resume(
-                        returning:
-                            .failed(
-                                failureContext
-                            )
-                    )
-                    return
-                }
-
-                if let url = item as? URL {
-                    let normalizedURL =
-                        url.standardizedFileURL
-
-                    PhotoMemoShareIntakeLog.notice(
-                        "Provider[\(index)] loadItem returnedURL=\(normalizedURL.path)"
-                    )
-
-                    let sourceReadiness =
-                        PhotoMemoImageFileReadiness
-                        .probe(
-                            at: normalizedURL
-                        )
-                    Self.recordSourcePreparationIfNeeded(
-                        sourceReadiness,
-                        requestID: requestID,
-                        index: index
-                    )
-
-                    let originalFileName =
-                        Self.resolvedOriginalFileName(
-                            preferredName:
-                                suggestedName,
-                            sourceURL:
-                                normalizedURL
-                        )
-
-                    let copyResult =
-                        intakeStore
-                        .createManagedCopyDetailed(
-                            from: normalizedURL,
-                            requestID: requestID,
-                            index: index,
-                            preferredOriginalFileName:
-                                originalFileName,
-                            diagnosticsSeed:
-                                diagnosticsSeed
-                        )
-
-                    PhotoMemoShareIntakeLog.notice(
-                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
-                    )
-
-                    guard let managedURL =
-                        copyResult.managedURL
-                    else {
-                        Self.recordSourceUnavailableIfNeeded(
-                            sourceReadiness,
-                            copyResult:
-                                copyResult,
-                            requestID:
-                                requestID,
-                            index:
-                                index
-                        )
-                        continuation.resume(
-                            returning:
-                                .failed(
-                                    copyResult
-                                    .failureContext
-                                    ?? diagnosticsSeed
-                                    .failureContext(
-                                        stage: .copy,
-                                        operation:
-                                            "loadItem.copyURL.missingManagedURL",
-                                        returnedURL:
-                                            normalizedURL,
-                                        temporaryCopyResult:
-                                            copyResult
-                                            .temporaryCopyResult
-                                            ?? "missing-managed-url",
-                                        sharedContainerDestination:
-                                            copyResult
-                                            .sharedContainerDestination,
-                                        error:
-                                            PhotoMemoShareIntakeDiagnosticError
-                                            .make(
-                                                description:
-                                                    "Fallback URL copy did not produce a managed URL.",
-                                                code: 3004
-                                            )
-                                    )
-                                )
-                        )
-                        return
-                    }
-
-                    Self.recordSourceReadyIfNeeded(
-                        sourceReadiness,
-                        requestID: requestID,
-                        index: index
-                    )
-
-                    continuation.resume(
-                        returning:
-                            .imported(
-                                ManagedImportRecord(
-                                    item:
-                                        ExternalPhotoIntakeItem(
-                                            managedURL:
-                                                managedURL,
-                                            originalFileName:
-                                                originalFileName,
-                                            contentTypeIdentifier:
-                                                diagnosticsSeed
-                                                .preferredRegisteredTypeIdentifier
-                                        ),
-                                    dedupeKey:
-                                        "url:\(normalizedURL.path)"
-                                )
-                            )
-                    )
-                    return
-                }
-
-                if let data = item as? Data {
-                    PhotoMemoShareIntakeLog.notice(
-                        "Provider[\(index)] loadItem returnedDataBytes=\(data.count)"
-                    )
-
-                    let copyResult =
-                        intakeStore
-                        .createManagedCopyDetailed(
-                            fromData: data,
-                            requestID: requestID,
-                            index: index,
-                            preferredFileExtension:
-                                preferredExtension,
-                            preferredBaseName:
-                                suggestedName,
-                            diagnosticsSeed:
-                                diagnosticsSeed
-                        )
-
-                    PhotoMemoShareIntakeLog.notice(
-                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
-                    )
-
-                    guard let managedURL =
-                        copyResult.managedURL
-                    else {
-                        continuation.resume(
-                            returning:
-                                .failed(
-                                    copyResult
-                                    .failureContext
-                                    ?? diagnosticsSeed
-                                    .failureContext(
-                                        stage: .copy,
-                                        operation:
-                                            "loadItem.copyData.missingManagedURL",
-                                        temporaryCopyResult:
-                                            copyResult
-                                            .temporaryCopyResult
-                                            ?? "missing-managed-url",
-                                        sharedContainerDestination:
-                                            copyResult
-                                            .sharedContainerDestination,
-                                        error:
-                                            PhotoMemoShareIntakeDiagnosticError
-                                            .make(
-                                                description:
-                                                    "Fallback data copy did not produce a managed URL.",
-                                                code: 3005
-                                            )
-                                    )
-                                )
-                        )
-                        return
-                    }
-
-                    continuation.resume(
-                        returning:
-                            .imported(
-                                ManagedImportRecord(
-                                    item:
-                                        ExternalPhotoIntakeItem(
-                                            managedURL:
-                                                managedURL,
-                                            originalFileName:
-                                                Self.resolvedOriginalFileName(
-                                                    preferredName:
-                                                        suggestedName
-                                                ),
-                                            sourceIdentifier:
-                                                Self
-                                                .fallbackDataSourceIdentifier(
-                                                    for: data,
-                                                    suggestedName:
-                                                        suggestedName,
-                                                    contentTypeIdentifier:
-                                                        diagnosticsSeed
-                                                        .preferredRegisteredTypeIdentifier
-                                                ),
-                                            contentTypeIdentifier:
-                                                diagnosticsSeed
-                                                .preferredRegisteredTypeIdentifier
-                                        ),
-                                    dedupeKey:
-                                        Self
-                                        .dedupeKey(
-                                            for: data,
-                                            suggestedName:
-                                                suggestedName
-                                        )
-                                )
-                            )
-                    )
-                    return
-                }
-
-                let failureContext =
-                    diagnosticsSeed
-                    .failureContext(
-                        stage: .load,
-                        operation:
-                            "loadItem.unsupportedPayload",
-                        error:
-                            PhotoMemoShareIntakeDiagnosticError
-                            .make(
-                                description:
-                                    "Fallback loadItem returned an unsupported payload type.",
-                                code: 3006
-                            )
-                    )
-
-                PhotoMemoShareIntakeLog.error(
-                    "Provider[\(index)] loadItem returned unsupported payload.\n\(failureContext.debugDescription)"
-                )
-
-                continuation.resume(
-                    returning:
-                        .failed(
-                            failureContext
-                        )
-                )
-            }
-        }
-    }
-
-    func preferredFileExtension(
-        from registeredTypeIdentifiers:
-            [String]
-    ) -> String? {
-
-        let supportedType =
-            registeredTypeIdentifiers
-            .compactMap(UTType.init)
-            .first { type in
-                type.conforms(to: .image)
-            }
-
-        return supportedType?
-            .preferredFilenameExtension
-    }
-
-    func unsupportedManagedImportOutcomeIfNeeded(
-        _ importRecord: ManagedImportRecord,
-        diagnosticsSeed:
-            PhotoMemoShareIntakeOperationSeed
-    ) -> ManagedImportOutcome? {
-
-        let verdict =
-            PhotoProcessingInputPolicy(
-                allowsLivePhoto: true
-            )
-            .verdict(
-                fileURL:
-                    importRecord.managedURL,
-                declaredContentTypeIdentifier:
-                    importRecord.item
-                    .contentTypeIdentifier
-            )
-
-        guard !verdict.isSupported else {
-            return nil
-        }
-
-        intakeStore.cleanupManagedSourceIfNeeded(
-            at: importRecord.managedURL
-        )
-
-        PhotoMemoShareIntakeLog.notice(
-            """
-            Provider[\(diagnosticsSeed.providerIndex ?? -1)] skipped unsupported photo.
-            reason=\(verdict.reason?.rawValue ?? "unknown")
-            title=\(verdict.title)
-            message=\(verdict.message)
-            """
-        )
-
-        let rejectionReport =
-            PhotoMemoMediaIntakeRejectionReport(
-                verdict: verdict,
-                fileName:
-                    importRecord
-                    .managedURL
-                    .lastPathComponent,
-                contentTypeIdentifier:
-                    importRecord.item
-                    .contentTypeIdentifier,
-                pixelSize:
-                    MediaPixelSize(
-                        fileURL:
-                            importRecord
-                            .managedURL
-                    )
-            )
-
-        return .skippedUnsupported(
-            rejectionReport
-        )
-    }
-
-    func recordStaticLivePhotoPayloadIfNeeded(
-        _ importRecord: ManagedImportRecord,
-        requestedTypeIdentifier: String,
-        requestID: UUID,
-        index: Int
-    ) -> ManagedImportRecord {
-
-        let readiness =
-            livePhotoBundleReadiness(
-                at: importRecord.managedURL
-            )
-
-        guard !readiness.canResolveBundle else {
-            return importRecord
-        }
-
-        PhotoMemoShareDiagnostics.record(
-            stage:
-                .extensionLivePhotoRepresentationStaticPayload,
-            message:
-                "index=\(index), requestedType=\(requestedTypeIdentifier), fileName=\(importRecord.item.originalFileName), contentType=\(importRecord.item.contentTypeIdentifier ?? "nil"), \(readiness.diagnosticMessage), routeWillFallbackToStaticWithoutAssetIdentity=true",
-            requestID: requestID
-        )
-
-        let resolvedStaticContentTypeIdentifier =
-            staticContentTypeIdentifier(
-                for:
-                    importRecord.item.managedURL,
-                fallback:
-                    importRecord.item
-                    .contentTypeIdentifier
-            )
-        let metadataHints =
-            staticFallbackRecoveryMetadataHints(
-                for:
-                    importRecord.item.managedURL
-            )
-        let staticItem =
-            ExternalPhotoIntakeItem(
-                managedURL:
-                    importRecord.item.managedURL,
-                originalFileName:
-                    importRecord.item.originalFileName,
-                sourceIdentifier:
-                    importRecord.item.sourceIdentifier,
-                contentTypeIdentifier:
-                    resolvedStaticContentTypeIdentifier,
-                livePhotoRecoveryHint:
-                    LivePhotoStaticFallbackRecoveryHint(
-                        originalFileName:
-                            importRecord.item
-                            .originalFileName,
-                        advertisedLivePhotoTypeIdentifier:
-                            requestedTypeIdentifier,
-                        staticContentTypeIdentifier:
-                            resolvedStaticContentTypeIdentifier,
-                        captureDate:
-                            metadataHints.captureDate,
-                        pixelWidth:
-                            metadataHints.pixelWidth,
-                        pixelHeight:
-                            metadataHints.pixelHeight
-                    )
-            )
-
-        return ManagedImportRecord(
-            item: staticItem,
-            dedupeKey: importRecord.dedupeKey,
-            livePhotoStaticFallback: true
-        )
-    }
-
-    func staticContentTypeIdentifier(
-        for fileURL: URL,
-        fallback: String?
-    ) -> String? {
-
-        if let type =
-            UTType(
-                filenameExtension:
-                    fileURL
-                    .pathExtension
-            ),
-           type.conforms(
-            to: .image
-           ) {
-            return type.identifier
-        }
-
-        return fallback
-    }
-
-    func staticFallbackRecoveryMetadataHints(
-        for fileURL: URL
-    ) -> (
-        captureDate: Date?,
-        pixelWidth: Int?,
-        pixelHeight: Int?
-    ) {
-
-        guard let source =
-            CGImageSourceCreateWithURL(
-                fileURL as CFURL,
-                nil
-            ),
-            let properties =
-                CGImageSourceCopyPropertiesAtIndex(
-                    source,
-                    0,
-                    nil
-                ) as? [CFString: Any]
-        else {
-            return (
-                captureDate: nil,
-                pixelWidth: nil,
-                pixelHeight: nil
-            )
-        }
-
-        return (
-            captureDate:
-                captureDateHint(
-                    from: properties
-                ),
-            pixelWidth:
-                properties[
-                    kCGImagePropertyPixelWidth
-                ] as? Int,
-            pixelHeight:
-                properties[
-                    kCGImagePropertyPixelHeight
-                ] as? Int
-        )
-    }
-
-    func captureDateHint(
-        from properties: [CFString: Any]
-    ) -> Date? {
-
-        if let exif =
-            properties[
-                kCGImagePropertyExifDictionary
-            ] as? [CFString: Any],
-           let dateString =
-            exif[
-                kCGImagePropertyExifDateTimeOriginal
-            ] as? String,
-           let date =
-            parseStaticFallbackDateHint(
-                dateString
-            ) {
-            return date
-        }
-
-        if let tiff =
-            properties[
-                kCGImagePropertyTIFFDictionary
-            ] as? [CFString: Any],
-           let dateString =
-            tiff[
-                kCGImagePropertyTIFFDateTime
-            ] as? String {
-            return parseStaticFallbackDateHint(
-                dateString
-            )
-        }
-
-        return nil
-    }
-
-    func parseStaticFallbackDateHint(
-        _ dateString: String
-    ) -> Date? {
-
-        LivePhotoStaticFallbackDateParser
-            .parse(
-                dateString
-            )
-    }
-
-    func parseStaticFallbackDateHint(
-        _ dateString: String,
-        timeZone: TimeZone
-    ) -> Date? {
-
-        LivePhotoStaticFallbackDateParser
-            .parse(
-                dateString,
-                timeZone: timeZone
-            )
-    }
-
-    func livePhotoBundleReadiness(
-        at sourceURL: URL
-    ) -> (
-        canResolveBundle: Bool,
-        diagnosticMessage: String
-    ) {
-
-        let standardizedURL =
-            sourceURL.standardizedFileURL
-        var isDirectory:
-            ObjCBool = false
-
-        guard FileManager.default.fileExists(
-            atPath: standardizedURL.path,
-            isDirectory: &isDirectory
-        ) else {
-            return (
-                false,
-                "managedPayload=missing"
-            )
-        }
-
-        guard isDirectory.boolValue else {
-            return (
-                false,
-                "managedPayload=file, pathExtension=\(standardizedURL.pathExtension)"
-            )
-        }
-
-        guard let enumerator =
-            FileManager.default.enumerator(
-                at: standardizedURL,
-                includingPropertiesForKeys: [
-                    .isRegularFileKey
-                ],
-                options: [
-                    .skipsHiddenFiles,
-                    .skipsPackageDescendants
-                ]
-            ) else {
-            return (
-                false,
-                "managedPayload=directory, enumerable=false"
-            )
-        }
-
-        var stillImageURLs: [URL] = []
-        var pairedMovieURLs: [URL] = []
-
-        for case let fileURL as URL in enumerator {
-            guard (
-                try? fileURL.resourceValues(
-                    forKeys: [
-                        .isRegularFileKey
-                    ]
-                )
-                .isRegularFile
-            ) == true else {
-                continue
-            }
-
-            guard let type =
-                UTType(
-                    filenameExtension:
-                        fileURL.pathExtension
-                ) else {
-                continue
-            }
-
-            if type.conforms(
-                to: .image
-            ),
-               !type.conforms(
-                   to: .movie
-               ) {
-                stillImageURLs.append(
-                    fileURL
-                )
-            }
-
-            if type.conforms(
-                to: .movie
-            ) {
-                pairedMovieURLs.append(
-                    fileURL
-                )
-            }
-        }
-
-        let hasStillImage =
-            !stillImageURLs.isEmpty
-        let hasPairedMovie =
-            !pairedMovieURLs.isEmpty
-        let hasUniquePair =
-            stillImageURLs.count == 1
-            && pairedMovieURLs.count == 1
-        let basenameMatches =
-            hasUniquePair
-            && Self.livePhotoResourceBasename(
-                stillImageURLs[0]
-            )
-            == Self.livePhotoResourceBasename(
-                pairedMovieURLs[0]
-            )
-
-        return (
-            hasUniquePair && basenameMatches,
-            "managedPayload=directory, hasStillImage=\(hasStillImage), hasPairedMovie=\(hasPairedMovie), stillCandidateCount=\(stillImageURLs.count), movieCandidateCount=\(pairedMovieURLs.count), basenameMatches=\(basenameMatches)"
-        )
-    }
-
-    nonisolated static func livePhotoResourceBasename(
-        _ url: URL
-    ) -> String {
-
-        url
-            .deletingPathExtension()
-            .lastPathComponent
-            .lowercased()
-    }
-
-    func preferredImageTypeIdentifier(
-        from registeredTypeIdentifiers:
-            [String]
-    ) -> String? {
-
-        PhotoMemoShareProviderTypeSelection
-            .preferredImageTypeIdentifier(
-                from: registeredTypeIdentifiers
-            )
-    }
-
-    func preferredImportTypeIdentifier(
-        from registeredTypeIdentifiers:
-            [String]
-    ) -> String? {
-
-        PhotoMemoShareProviderTypeSelection
-            .preferredImportTypeIdentifier(
-                from: registeredTypeIdentifiers
-            )
-    }
-
-    nonisolated static
-    func fallbackDataSourceIdentifier(
-        for data: Data,
-        suggestedName: String?,
-        contentTypeIdentifier: String?
-    ) -> String? {
-
-        guard !PhotoProcessingInputPolicy
-            .isLivePhotoContentType(
-                contentTypeIdentifier
-                .flatMap(UTType.init)
-            )
-        else {
-            return nil
-        }
-
-        return dedupeKey(
-            for: data,
-            suggestedName:
-                suggestedName
-        )
-    }
-
-    nonisolated static
-    func recordSourcePreparationIfNeeded(
-        _ probe:
-            PhotoMemoImageFileReadiness.ProbeResult,
-        requestID: UUID,
-        index: Int
-    ) {
-
-        guard probe.shouldDisplayPreparationState else {
-            return
-        }
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionSourcePrepare,
-            message:
-                "providerIndex=\(index), \(probe.diagnosticMessage)",
-            requestID:
-                requestID
-        )
-    }
-
-    nonisolated static
-    func recordSourceReadyIfNeeded(
-        _ probe:
-            PhotoMemoImageFileReadiness.ProbeResult,
-        requestID: UUID,
-        index: Int
-    ) {
-
-        guard probe.shouldDisplayPreparationState else {
-            return
-        }
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionSourceReady,
-            message:
-                "providerIndex=\(index)",
-            requestID:
-                requestID
-        )
-    }
-
-    nonisolated static
-    func recordSourceUnavailableIfNeeded(
-        _ probe:
-            PhotoMemoImageFileReadiness.ProbeResult,
-        copyResult:
-            PhotoMemoShareIntakeManagedCopyResult,
-        requestID: UUID,
-        index: Int
-    ) {
-
-        guard probe.shouldDisplayPreparationState else {
-            return
-        }
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionSourceUnavailable,
-            message:
-                "providerIndex=\(index), result=\(copyResult.temporaryCopyResult ?? "unknown")",
-            requestID:
-                requestID
-        )
-    }
-
-    nonisolated static
-    func resolvedOriginalFileName(
-        preferredName: String?,
-        sourceURL: URL? = nil
-    ) -> String? {
-
-        PhotoFileNameResolver
-            .sanitizedOriginalFileName(
-                preferredName
-            )
-            ?? PhotoFileNameResolver
-            .sanitizedOriginalFileName(
-                sourceURL?
-                .lastPathComponent
-            )
-    }
-
-    func logFailureContext(
-        _ failureContext:
-            PhotoMemoShareIntakeFailureContext,
-        prefix: String
-    ) {
-
-        PhotoMemoShareIntakeLog.error(
-            "\(prefix)\n\(failureContext.debugDescription)"
-        )
-    }
-
-    func logImportResult(
-        _ result:
-            PhotoMemoShareExtensionImportResult,
-        label: String
-    ) {
-
-        var lines = [
-            "\(label)",
-            "itemProviderCount: \(result.itemProviderCount)",
-            "supportedProviderCount: \(result.supportedProviderCount)",
-            "requestedCount: \(result.requestedCount)",
-            "importedCount: \(result.importedCount)",
-            "skippedCount: \(result.skippedCount)",
-            "failedCount: \(result.failedCount)",
-            "livePhotoStaticFallbackCount: \(result.livePhotoStaticFallbackCount)",
-            "failureStage: \(result.failureStage?.title ?? "none")"
-        ]
-
-        if let failureContext =
-            result.failureContext {
-            lines.append(
-                failureContext.debugDescription
-            )
-        }
-
-        PhotoMemoShareIntakeLog.notice(
-            lines.joined(
-                separator: "\n"
-            )
-        )
-    }
-
-    nonisolated static
-    func dedupeKey(
-        for data: Data,
-        suggestedName: String?
-    ) -> String {
-
-        let digest =
-            SHA256.hash(data: data)
-                .compactMap {
-                    String(
-                        format: "%02x",
-                        $0
-                    )
-                }
-                .joined()
-
-        let normalizedName =
-            suggestedName?
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        if normalizedName.isEmpty {
-            return "data:\(digest)"
-        }
-
-        return "data:\(digest):\(normalizedName)"
+            .count
     }
 }
 #endif
