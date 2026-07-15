@@ -338,7 +338,7 @@ final class BatchQueueExecution {
             }
 
             let usesLivePhotoProcessing =
-                shouldUseLivePhotoProcessing(
+                BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(
                     for: task
                 )
             route =
@@ -409,7 +409,7 @@ final class BatchQueueExecution {
                         ImportBatchPhotoIntent(
                             task: task,
                             contentTypeIdentifierOverride:
-                                staticImportContentTypeIdentifier(
+                                BatchTaskMemoryPolicy.staticImportContentTypeIdentifier(
                                     for: task,
                                     usesLivePhotoProcessing:
                                         usesLivePhotoProcessing
@@ -421,9 +421,11 @@ final class BatchQueueExecution {
                     )
                 }
 
-            guard !shouldAbortFurtherProcessing(
-                at: reference,
-                in: store
+            guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
+                currentPhase:
+                    store.currentTaskPhase(
+                        at: reference
+                    )
             ) else {
                 return
             }
@@ -558,9 +560,11 @@ final class BatchQueueExecution {
             temporaryFileURL =
                 exportedFileURL
 
-            guard !shouldAbortFurtherProcessing(
-                at: reference,
-                in: store
+            guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
+                currentPhase:
+                    store.currentTaskPhase(
+                        at: reference
+                    )
             ) else {
                 coordinator.cleanupTemporaryFile(
                     at: exportedFileURL
@@ -584,9 +588,11 @@ final class BatchQueueExecution {
                 )
             }
 
-            guard !shouldAbortFurtherProcessing(
-                at: reference,
-                in: store
+            guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
+                currentPhase:
+                    store.currentTaskPhase(
+                        at: reference
+                    )
             ) else {
                 coordinator.cleanupTemporaryFile(
                     at: exportedFileURL
@@ -685,9 +691,11 @@ final class BatchQueueExecution {
 
         } catch {
 
-            if shouldIgnoreErrorBecauseTaskEnded(
-                at: reference,
-                in: store
+            if BatchTaskFailurePolicy.shouldIgnoreErrorBecauseTaskEnded(
+                currentPhase:
+                    store.currentTaskPhase(
+                        at: reference
+                    )
             ) {
                 coordinator.cleanupTemporaryFile(
                     at: temporaryFileURL
@@ -718,7 +726,7 @@ final class BatchQueueExecution {
                 at: reference
             ) { task in
                 let canRetry =
-                    canRetryTaskAfterFailure(
+                    BatchTaskFailurePolicy.canRetryTaskAfterFailure(
                         sourceURL: task.sourceURL
                     )
 
@@ -732,7 +740,7 @@ final class BatchQueueExecution {
                         .errorDescription
                         ?? error.localizedDescription,
                     classification:
-                        failureClassification(
+                        BatchTaskFailurePolicy.failureClassification(
                             for: error
                         ),
                     canRetry: canRetry
@@ -877,13 +885,8 @@ extension BatchQueueExecution {
         for task: BatchTask
     ) -> MediaMemoryBudget {
 
-        MediaMemoryBudget(
-            cost:
-                MediaCost(
-                    fileURL: task.sourceURL,
-                    contentTypeIdentifier:
-                        task.contentTypeIdentifier
-                )
+        BatchTaskMemoryPolicy.mediaMemoryBudget(
+            for: task
         )
     }
 
@@ -943,89 +946,6 @@ private extension BatchQueueExecution {
         }
     }
 
-    func shouldAbortFurtherProcessing(
-        at reference: TaskReference,
-        in store: BatchQueueStore
-    ) -> Bool {
-
-        guard let phase =
-            store.currentTaskPhase(
-                at: reference
-            ) else {
-            return true
-        }
-
-        return phase.isTerminal
-    }
-
-    func shouldIgnoreErrorBecauseTaskEnded(
-        at reference: TaskReference,
-        in store: BatchQueueStore
-    ) -> Bool {
-
-        guard let phase =
-            store.currentTaskPhase(
-                at: reference
-            ) else {
-            return true
-        }
-
-        return phase.isTerminal
-    }
-
-    func shouldUseLivePhotoProcessing(
-        for task: BatchTask
-    ) -> Bool {
-        if PhotoProcessingInputPolicy
-            .canUseLivePhotoProcessing(
-                contentTypeIdentifier:
-                    task.contentTypeIdentifier,
-                sourceIdentifier:
-                    task.sourceIdentifier
-            ) {
-            return true
-        }
-
-        guard PhotoProcessingInputPolicy
-            .isLivePhotoContentType(
-                task
-                    .contentTypeIdentifier
-                    .flatMap(UTType.init)
-            )
-        else {
-            return false
-        }
-
-        return LivePhotoSourceBundleLocator
-            .canResolveBundle(
-                at: task.sourceURL
-            )
-    }
-
-    func staticImportContentTypeIdentifier(
-        for task: BatchTask,
-        usesLivePhotoProcessing: Bool
-    ) -> String? {
-
-        guard !usesLivePhotoProcessing,
-              PhotoProcessingInputPolicy
-            .isLivePhotoContentType(
-                task
-                    .contentTypeIdentifier
-                    .flatMap(UTType.init)
-            )
-        else {
-            return task.contentTypeIdentifier
-        }
-
-        return UTType(
-            filenameExtension:
-                task.sourceURL
-                .pathExtension
-                .lowercased()
-        )?.identifier
-    }
-
     func processLivePhotoTask(
         task: BatchTask,
         at reference: TaskReference,
@@ -1066,9 +986,11 @@ private extension BatchQueueExecution {
                     configuration
             )
 
-        guard !shouldAbortFurtherProcessing(
-            at: reference,
-            in: store
+        guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
+            currentPhase:
+                store.currentTaskPhase(
+                    at: reference
+                )
         ) else {
             cleanupTemporaryFiles(
                 result.temporaryFileURLs
@@ -1188,7 +1110,7 @@ private extension BatchQueueExecution {
                         Self.admissionDiagnosticMessage(
                             for: task,
                             budget:
-                                mediaMemoryBudget(
+                                BatchTaskMemoryPolicy.mediaMemoryBudget(
                                     for: task
                                 )
                         ),
@@ -1396,7 +1318,7 @@ private extension BatchQueueExecution {
             return
         }
 
-        guard isManagedIntakeSourceURL(
+        guard BatchTaskFailurePolicy.isManagedIntakeSourceURL(
             sourceURL
         ) else {
             return
@@ -1413,57 +1335,6 @@ private extension BatchQueueExecution {
             }
             return
         }
-    }
-
-    func isManagedIntakeSourceURL(
-        _ url: URL
-    ) -> Bool {
-
-        url.standardizedFileURL.path.hasPrefix(
-            PhotoMemoSharedContainer
-            .externalIntakeDirectoryURL
-            .standardizedFileURL
-            .path
-        )
-    }
-
-    func canRetryTaskAfterFailure(
-        sourceURL: URL
-    ) -> Bool {
-
-        if isManagedIntakeSourceURL(
-            sourceURL
-        ) {
-            return FileManager.default
-                .fileExists(
-                    atPath:
-                        sourceURL
-                        .standardizedFileURL
-                        .path
-                )
-        }
-
-        return true
-    }
-
-    func failureClassification(
-        for error: Error
-    ) -> BatchTaskFailure.Classification {
-
-        if let importError =
-            error as? PhotoImportError {
-            switch importError {
-            case .unsupportedInput:
-                return .unsupportedInput
-            case .imageLoadFailed,
-                 .temporaryImportPreparationFailed:
-                return .interrupted
-            case .rawDisplayRenderFailed:
-                return .processingFailure
-            }
-        }
-
-        return .processingFailure
     }
 
     func initialPreparationStatusMessage(

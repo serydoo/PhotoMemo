@@ -8,6 +8,126 @@ import UniformTypeIdentifiers
 struct BatchQueueExecutionContractTests {
 
     @MainActor
+    @Test("Failure policy preserves classification and terminal-state decisions")
+    func failurePolicyPreservesClassificationAndTerminalStateDecisions() {
+        #expect(
+            BatchTaskFailurePolicy.failureClassification(
+                for: PhotoImportError.imageLoadFailed
+            ) == .interrupted
+        )
+        #expect(
+            BatchTaskFailurePolicy.failureClassification(
+                for: PhotoImportError.rawDisplayRenderFailed
+            ) == .processingFailure
+        )
+        #expect(
+            BatchTaskFailurePolicy.failureClassification(
+                for: CocoaError(.fileReadUnknown)
+            ) == .processingFailure
+        )
+        #expect(
+            BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
+                currentPhase: nil
+            )
+        )
+        #expect(
+            !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
+                currentPhase: .importing
+            )
+        )
+        #expect(
+            BatchTaskFailurePolicy.shouldIgnoreErrorBecauseTaskEnded(
+                currentPhase: .cancelled
+            )
+        )
+        #expect(
+            !BatchTaskFailurePolicy.shouldIgnoreErrorBecauseTaskEnded(
+                currentPhase: .exporting
+            )
+        )
+    }
+
+    @MainActor
+    @Test("Failure policy disables retry only for missing managed sources")
+    func failurePolicyDisablesRetryOnlyForMissingManagedSources() {
+        let missingManagedSource =
+            PhotoMemoSharedContainer
+            .externalIntakeDirectoryURL
+            .appendingPathComponent(
+                "missing-\(UUID().uuidString).jpg"
+            )
+        let missingUnmanagedSource =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "missing-\(UUID().uuidString).jpg"
+            )
+
+        #expect(
+            !BatchTaskFailurePolicy.canRetryTaskAfterFailure(
+                sourceURL: missingManagedSource
+            )
+        )
+        #expect(
+            BatchTaskFailurePolicy.canRetryTaskAfterFailure(
+                sourceURL: missingUnmanagedSource
+            )
+        )
+    }
+
+    @MainActor
+    @Test("Memory policy preserves RAW budget and Live Photo fallback routing")
+    func memoryPolicyPreservesBudgetAndLivePhotoFallbackRouting() throws {
+        let rawTask = BatchTask(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_9001.DNG"),
+            contentTypeIdentifier: try #require(
+                UTType(filenameExtension: "dng")
+            ).identifier
+        )
+        let identifiedLivePhotoTask = BatchTask(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_1001.HEIC"),
+            sourceIdentifier: "asset-local-1001",
+            contentTypeIdentifier: try #require(
+                UTType("com.apple.live-photo")
+            ).identifier
+        )
+        let staticFallbackTask = BatchTask(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_1002.jpeg"),
+            contentTypeIdentifier: try #require(
+                UTType("com.apple.live-photo")
+            ).identifier
+        )
+
+        let budget = BatchTaskMemoryPolicy.mediaMemoryBudget(
+            for: rawTask
+        )
+
+        #expect(budget.cost.isRAW)
+        #expect(budget.requiresExtendedPreviewPreparation)
+        #expect(
+            BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(
+                for: identifiedLivePhotoTask
+            )
+        )
+        #expect(
+            !BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(
+                for: staticFallbackTask
+            )
+        )
+        #expect(
+            BatchTaskMemoryPolicy.staticImportContentTypeIdentifier(
+                for: staticFallbackTask,
+                usesLivePhotoProcessing: false
+            ) == UTType.jpeg.identifier
+        )
+        #expect(
+            BatchTaskMemoryPolicy.staticImportContentTypeIdentifier(
+                for: identifiedLivePhotoTask,
+                usesLivePhotoProcessing: true
+            ) == identifiedLivePhotoTask.contentTypeIdentifier
+        )
+    }
+
+    @MainActor
     @Test("Retry clears terminal output fields")
     func retryResetsRenderedAndSavedState() {
         let jobID = UUID()
