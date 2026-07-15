@@ -32,7 +32,7 @@ struct LivePhotoBatchQueueExecutionTests {
             )
 
         let message =
-            BatchQueueExecution
+            BatchTaskDiagnosticsRecorder
             .admissionDiagnosticMessage(
                 for: task,
                 budget: budget
@@ -91,7 +91,7 @@ struct LivePhotoBatchQueueExecutionTests {
             )
 
         let message =
-            BatchQueueExecution
+            BatchTaskDiagnosticsRecorder
             .admissionDiagnosticMessage(
                 for: task,
                 budget: budget
@@ -141,21 +141,21 @@ struct LivePhotoBatchQueueExecutionTests {
             )
 
         let identityMessage =
-            BatchQueueExecution
+            BatchTaskDiagnosticsRecorder
             .routeDiagnosticMessage(
                 for: identityTask,
                 sourceURLIsLivePhotoBundle: false,
                 route: "livePhoto"
             )
         let bundleMessage =
-            BatchQueueExecution
+            BatchTaskDiagnosticsRecorder
             .routeDiagnosticMessage(
                 for: bundleTask,
                 sourceURLIsLivePhotoBundle: true,
                 route: "livePhoto"
             )
         let staticFallbackMessage =
-            BatchQueueExecution
+            BatchTaskDiagnosticsRecorder
             .routeDiagnosticMessage(
                 for: staticFallbackTask,
                 sourceURLIsLivePhotoBundle: false,

@@ -1,7 +1,5 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
-import ImageIO
-import UniformTypeIdentifiers
 
 @MainActor
 final class BatchQueueExecution {
@@ -12,9 +10,6 @@ final class BatchQueueExecution {
 
         let taskIndex: Int
     }
-
-    private let coordinator:
-        BatchProcessingCoordinator
 
     private let photoRepository:
         PhotoRepository
@@ -28,11 +23,14 @@ final class BatchQueueExecution {
     private let livePhotoProcessor:
         any LivePhotoBatchTaskProcessing
 
-    private let externalIntakeStore:
-        ExternalPhotoIntakeStore
-
     private let diagnosticsDefaults:
         UserDefaults
+
+    private let diagnosticsRecorder:
+        BatchTaskDiagnosticsRecorder
+
+    private let resourceLifecycle:
+        BatchTaskResourceLifecycle
 
     init(
         coordinator:
@@ -52,7 +50,7 @@ final class BatchQueueExecution {
                 PhotoMemoSharedContainer
                 .sharedUserDefaults
     ) {
-        self.coordinator =
+        let resolvedCoordinator =
             coordinator
             ?? BatchProcessingCoordinator()
         let resolvedPhotoImportService =
@@ -86,11 +84,21 @@ final class BatchQueueExecution {
                 photoLibraryRepository:
                     resolvedPhotoLibraryRepository
             )
-        self.externalIntakeStore =
+        let resolvedExternalIntakeStore =
             externalIntakeStore
             ?? .shared
         self.diagnosticsDefaults =
             diagnosticsDefaults
+        self.diagnosticsRecorder =
+            BatchTaskDiagnosticsRecorder(
+                defaults: diagnosticsDefaults
+            )
+        self.resourceLifecycle =
+            BatchTaskResourceLifecycle(
+                coordinator: resolvedCoordinator,
+                externalIntakeStore:
+                    resolvedExternalIntakeStore
+            )
         self.livePhotoProcessor =
             livePhotoProcessor
             ?? LivePhotoBatchTaskProcessor(
@@ -165,7 +173,7 @@ final class BatchQueueExecution {
                 intakeSummary
         )
 
-        recordAdmissionDiagnostics(
+        diagnosticsRecorder.recordAdmissionDiagnostics(
             for: job
         )
 
@@ -249,10 +257,9 @@ final class BatchQueueExecution {
                     totalUnits: 1,
                     statusMessage: "已取消"
                 )
-            externalIntakeStore
-                .cleanupManagedSourceIfNeeded(
-                    at: sourceURL
-                )
+            resourceLifecycle.cleanupManagedSourceIfNeeded(
+                at: sourceURL
+            )
         }
 
         job.updatedAt = Date()
@@ -350,15 +357,11 @@ final class BatchQueueExecution {
                 .canResolveBundle(
                     at: task.sourceURL
                 )
-            PhotoMemoShareDiagnostics.record(
-                stage: .batchTaskRoute,
-                message:
-                    Self.routeDiagnosticMessage(
-                        for: task,
-                        sourceURLIsLivePhotoBundle:
-                            sourceURLIsLivePhotoBundle,
-                        route: route
-                    ),
+            diagnosticsRecorder.recordRoute(
+                for: task,
+                sourceURLIsLivePhotoBundle:
+                    sourceURLIsLivePhotoBundle,
+                route: route,
                 jobID:
                     store.currentJob(
                         at: reference
@@ -366,7 +369,7 @@ final class BatchQueueExecution {
             )
 
             if usesLivePhotoProcessing {
-                try await measureStageDuration(
+                try await diagnosticsRecorder.measureStageDuration(
                     "livePhotoProcessing",
                     route: route,
                     task: task,
@@ -383,7 +386,7 @@ final class BatchQueueExecution {
                             totalProgressUnits
                     )
                 }
-                recordTaskDuration(
+                diagnosticsRecorder.recordTaskDuration(
                     startedAt: startedAt,
                     route: route,
                     phase: .completed,
@@ -396,7 +399,7 @@ final class BatchQueueExecution {
             }
 
             let importedPhoto =
-                try await measureStageDuration(
+                try await diagnosticsRecorder.measureStageDuration(
                     "import",
                     route: route,
                     task: task,
@@ -457,7 +460,7 @@ final class BatchQueueExecution {
             }
 
             let card =
-                try await measureStageDuration(
+                try await diagnosticsRecorder.measureStageDuration(
                     "build",
                     route: route,
                     task: task,
@@ -483,26 +486,27 @@ final class BatchQueueExecution {
                     card: card,
                     configuration: configuration
                 )
-                _ = PhotoMemoShareDiagnostics.recordResult(
-                    stage: .renderHealthCheckPassed,
-                    message:
-                        "taskID=\(task.id.uuidString) source=\(store.currentJob(at: reference)?.launchSource.rawValue ?? "unknown") configurationID=\(configuration.configurationID?.uuidString ?? "nil") revision=\(configuration.configurationRevision.map(String.init) ?? "nil")",
+                diagnosticsRecorder.recordRenderHealthCheckPassed(
+                    task: task,
+                    launchSource:
+                        store.currentJob(
+                            at: reference
+                        )?.launchSource,
+                    configuration: configuration,
                     jobID:
                         store.currentJobID(
                             at: reference
-                        ),
-                    defaults: diagnosticsDefaults
+                        )
                 )
             } catch {
-                _ = PhotoMemoShareDiagnostics.recordResult(
-                    stage: .renderHealthCheckFailed,
-                    message:
-                        "taskID=\(task.id.uuidString) configurationID=\(configuration.configurationID?.uuidString ?? "nil") revision=\(configuration.configurationRevision.map(String.init) ?? "nil") reason=\(String(describing: error))",
+                diagnosticsRecorder.recordRenderHealthCheckFailed(
+                    task: task,
+                    configuration: configuration,
+                    error: error,
                     jobID:
                         store.currentJobID(
                             at: reference
-                        ),
-                    defaults: diagnosticsDefaults
+                        )
                 )
                 throw error
             }
@@ -537,7 +541,7 @@ final class BatchQueueExecution {
             }
 
             let exportedFileURL =
-                try await measureStageDuration(
+                try await diagnosticsRecorder.measureStageDuration(
                     "export",
                     route: route,
                     task: task,
@@ -566,7 +570,7 @@ final class BatchQueueExecution {
                         at: reference
                     )
             ) else {
-                coordinator.cleanupTemporaryFile(
+                resourceLifecycle.cleanupTemporaryFile(
                     at: exportedFileURL
                 )
                 return
@@ -594,14 +598,14 @@ final class BatchQueueExecution {
                         at: reference
                     )
             ) else {
-                coordinator.cleanupTemporaryFile(
+                resourceLifecycle.cleanupTemporaryFile(
                     at: exportedFileURL
                 )
                 return
             }
 
             let saveResult =
-                try await measureStageDuration(
+                try await diagnosticsRecorder.measureStageDuration(
                     "save",
                     route: route,
                     task: task,
@@ -627,7 +631,7 @@ final class BatchQueueExecution {
                 }
 
             let notificationAttachmentURL =
-                measureNotificationAttachmentStage(
+                diagnosticsRecorder.measureNotificationAttachmentStage(
                     route: route,
                     task: task,
                     jobID:
@@ -635,13 +639,13 @@ final class BatchQueueExecution {
                             at: reference
                         )
                 ) {
-                    makeNotificationAttachmentIfNeeded(
+                    resourceLifecycle.makeNotificationAttachmentIfNeeded(
                         from: exportedFileURL,
                         taskID: task.id
                     )
                 }
 
-            coordinator.cleanupTemporaryFile(
+            resourceLifecycle.cleanupTemporaryFile(
                 at: exportedFileURL
             )
 
@@ -664,7 +668,7 @@ final class BatchQueueExecution {
                     statusMessage: "处理完成"
                 )
             }
-            recordTaskDuration(
+            diagnosticsRecorder.recordTaskDuration(
                 startedAt: startedAt,
                 route: route,
                 phase: .completed,
@@ -674,9 +678,11 @@ final class BatchQueueExecution {
                 )
             )
 
-            cleanupManagedTaskSourceIfNeeded(
-                at: reference,
-                in: store
+            resourceLifecycle.cleanupManagedSourceIfNeeded(
+                at:
+                    store.currentTask(
+                        at: reference
+                    )?.sourceURL
             )
 
             if let jobID =
@@ -697,7 +703,7 @@ final class BatchQueueExecution {
                         at: reference
                     )
             ) {
-                coordinator.cleanupTemporaryFile(
+                resourceLifecycle.cleanupTemporaryFile(
                     at: temporaryFileURL
                 )
 
@@ -718,7 +724,7 @@ final class BatchQueueExecution {
                     at: reference
                 ) ?? .queued
 
-            coordinator.cleanupTemporaryFile(
+            resourceLifecycle.cleanupTemporaryFile(
                 at: temporaryFileURL
             )
 
@@ -752,17 +758,26 @@ final class BatchQueueExecution {
                 )
             }
 
-            preserveManagedTaskSourceForRetryIfNeeded(
-                at: reference,
-                in: store
-            )
+            if let sourceURL =
+                store.currentTask(
+                    at: reference
+                )?.sourceURL,
+               !resourceLifecycle.canPreserveManagedSourceForRetry(
+                    at: sourceURL
+               ) {
+                store.updateTask(
+                    at: reference
+                ) { task in
+                    task.failure?.canRetry = false
+                }
+            }
 
             store.setLastErrorMessage(
                 (error as? LocalizedError)?
                 .errorDescription
                 ?? error.localizedDescription
             )
-            recordTaskDuration(
+            diagnosticsRecorder.recordTaskDuration(
                 startedAt: startedAt,
                 route: route,
                 phase: .failed,
@@ -864,23 +879,6 @@ final class BatchQueueExecution {
 
 extension BatchQueueExecution {
 
-    static func routeDiagnosticMessage(
-        for task: BatchTask,
-        sourceURLIsLivePhotoBundle: Bool,
-        route: String
-    ) -> String {
-
-        [
-            "taskID=\(task.id.uuidString)",
-            "fileName=\(task.fileName)",
-            "contentType=\(task.contentTypeIdentifier ?? "nil")",
-            "hasSourceIdentifier=\(task.sourceIdentifier?.isEmpty == false)",
-            "sourceURLIsLivePhotoBundle=\(sourceURLIsLivePhotoBundle)",
-            "route=\(route)"
-        ]
-        .joined(separator: ", ")
-    }
-
     func mediaMemoryBudget(
         for task: BatchTask
     ) -> MediaMemoryBudget {
@@ -888,34 +886,6 @@ extension BatchQueueExecution {
         BatchTaskMemoryPolicy.mediaMemoryBudget(
             for: task
         )
-    }
-
-    static func admissionDiagnosticMessage(
-        for task: BatchTask,
-        budget: MediaMemoryBudget
-    ) -> String {
-
-        let pixelSize =
-            budget.cost.pixelSize
-
-        return [
-            "taskID=\(task.id.uuidString)",
-            "fileName=\(task.fileName)",
-            "contentType=\(task.contentTypeIdentifier ?? "nil")",
-            "isRAW=\(budget.cost.isRAW)",
-            "pixelWidth=\(pixelSize?.width ?? 0)",
-            "pixelHeight=\(pixelSize?.height ?? 0)",
-            "pixelCount=\(budget.cost.pixelCount)",
-            "estimatedDecodedByteCount=\(budget.cost.estimatedDecodedByteCount)",
-            "memoryTier=\(budget.tier.rawValue)",
-            "requiresExtendedPreviewPreparation=\(budget.requiresExtendedPreviewPreparation)",
-            "maxConcurrentDecodes=\(budget.maxConcurrentDecodes)",
-            "maxConcurrentRenders=\(budget.maxConcurrentRenders)",
-            "maxConcurrentExports=\(budget.maxConcurrentExports)",
-            "schedulerMode=singleTaskLoop",
-            "admission=queued"
-        ]
-        .joined(separator: ", ")
     }
 }
 
@@ -992,7 +962,7 @@ private extension BatchQueueExecution {
                     at: reference
                 )
         ) else {
-            cleanupTemporaryFiles(
+            resourceLifecycle.cleanupTemporaryFiles(
                 result.temporaryFileURLs
             )
             return
@@ -1001,13 +971,13 @@ private extension BatchQueueExecution {
         let notificationAttachmentURL =
             result.notificationSourceURL
             .flatMap {
-                makeNotificationAttachmentIfNeeded(
+                resourceLifecycle.makeNotificationAttachmentIfNeeded(
                     from: $0,
                     taskID: task.id
                 )
             }
 
-        cleanupTemporaryFiles(
+        resourceLifecycle.cleanupTemporaryFiles(
             result.temporaryFileURLs
         )
 
@@ -1032,9 +1002,11 @@ private extension BatchQueueExecution {
             )
         }
 
-        cleanupManagedTaskSourceIfNeeded(
-            at: reference,
-            in: store
+        resourceLifecycle.cleanupManagedSourceIfNeeded(
+            at:
+                store.currentTask(
+                    at: reference
+                )?.sourceURL
         )
 
         if let jobID =
@@ -1045,295 +1017,6 @@ private extension BatchQueueExecution {
                 .deliverFinalNotificationIfNeeded(
                     for: jobID
                 )
-        }
-    }
-
-    func cleanupManagedTaskSourceIfNeeded(
-        at reference: TaskReference,
-        in store: BatchQueueStore
-    ) {
-
-        guard let sourceURL =
-            store.currentTask(
-                at: reference
-            )?.sourceURL else {
-            return
-        }
-
-        externalIntakeStore
-            .cleanupManagedSourceIfNeeded(
-                at: sourceURL
-            )
-    }
-
-    func cleanupTemporaryFiles(
-        _ urls: [URL]
-    ) {
-        for url in urls {
-            coordinator.cleanupTemporaryFile(
-                at: url
-            )
-        }
-    }
-
-    func recordTaskDuration(
-        startedAt: Date,
-        route: String,
-        phase: BatchTaskPhase,
-        task: BatchTask,
-        jobID: UUID?
-    ) {
-        let durationSeconds =
-            max(
-                Date()
-                    .timeIntervalSince(startedAt),
-                0
-            )
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .batchTaskDuration,
-            message:
-                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), runtimeStage=total, phase=\(phase.rawValue), durationSeconds=\(String(format: "%.3f", durationSeconds))",
-            jobID: jobID
-        )
-    }
-
-    func recordAdmissionDiagnostics(
-        for job: BatchJob
-    ) {
-
-        for task in job.tasks {
-            _ = PhotoMemoShareDiagnostics
-                .recordResult(
-                    stage: .batchTaskAdmission,
-                    message:
-                        Self.admissionDiagnosticMessage(
-                            for: task,
-                            budget:
-                                BatchTaskMemoryPolicy.mediaMemoryBudget(
-                                    for: task
-                                )
-                        ),
-                    jobID: job.id,
-                    defaults:
-                        diagnosticsDefaults
-                )
-        }
-    }
-
-    func measureStageDuration<Value>(
-        _ stageName: String,
-        route: String,
-        task: BatchTask,
-        jobID: UUID?,
-        operation: () async throws -> Value
-    ) async throws -> Value {
-
-        let startedAt = Date()
-
-        do {
-            let value =
-                try await operation()
-            recordStageDuration(
-                stageName: stageName,
-                startedAt: startedAt,
-                route: route,
-                outcome: "completed",
-                task: task,
-                jobID: jobID
-            )
-            return value
-        } catch {
-            recordStageDuration(
-                stageName: stageName,
-                startedAt: startedAt,
-                route: route,
-                outcome: "failed",
-                task: task,
-                jobID: jobID
-            )
-            throw error
-        }
-    }
-
-    func measureNotificationAttachmentStage(
-        route: String,
-        task: BatchTask,
-        jobID: UUID?,
-        operation: () -> URL?
-    ) -> URL? {
-
-        let startedAt = Date()
-        let attachmentURL =
-            operation()
-        recordStageDuration(
-            stageName: "notificationAttachment",
-            startedAt: startedAt,
-            route: route,
-            outcome: "completed",
-            task: task,
-            jobID: jobID,
-            extraFields: [
-                "attachmentCreated":
-                    attachmentURL == nil
-                    ? "false"
-                    : "true"
-            ]
-        )
-        return attachmentURL
-    }
-
-    func recordStageDuration(
-        stageName: String,
-        startedAt: Date,
-        route: String,
-        outcome: String,
-        task: BatchTask,
-        jobID: UUID?,
-        extraFields:
-            [String: String] = [:]
-    ) {
-
-        let durationSeconds =
-            max(
-                Date()
-                    .timeIntervalSince(startedAt),
-                0
-            )
-        let extraMessage =
-            extraFields
-            .sorted {
-                $0.key < $1.key
-            }
-            .map {
-                "\($0.key)=\($0.value)"
-            }
-            .joined(separator: ", ")
-        let suffix =
-            extraMessage.isEmpty
-            ? ""
-            : ", \(extraMessage)"
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .batchTaskStageDuration,
-            message:
-                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), stageName=\(stageName), outcome=\(outcome), durationSeconds=\(String(format: "%.3f", durationSeconds))\(suffix)",
-            jobID: jobID
-        )
-    }
-
-    func makeNotificationAttachmentIfNeeded(
-        from exportedFileURL: URL,
-        taskID: UUID
-    ) -> URL? {
-
-        let directory =
-            PhotoMemoSharedContainer
-            .baseDirectoryURL
-            .appendingPathComponent(
-                "NotificationAttachments",
-                isDirectory: true
-            )
-
-        do {
-            try PhotoMemoSharedContainer
-                .ensureDirectory(
-                    at: directory
-                )
-        } catch {
-            return nil
-        }
-
-        let destinationURL =
-            directory
-            .appendingPathComponent(
-                "\(taskID.uuidString).jpg",
-                isDirectory: false
-            )
-
-        try? FileManager.default
-            .removeItem(
-                at: destinationURL
-            )
-
-        guard let source =
-            CGImageSourceCreateWithURL(
-                exportedFileURL as CFURL,
-                [
-                    kCGImageSourceShouldCache:
-                        false
-                ] as CFDictionary
-            ),
-              let thumbnail =
-            CGImageSourceCreateThumbnailAtIndex(
-                source,
-                0,
-                [
-                    kCGImageSourceCreateThumbnailFromImageAlways:
-                        true,
-                    kCGImageSourceCreateThumbnailWithTransform:
-                        true,
-                    kCGImageSourceShouldCacheImmediately:
-                        true,
-                    kCGImageSourceThumbnailMaxPixelSize:
-                        720
-                ] as CFDictionary
-            ),
-              let destination =
-            CGImageDestinationCreateWithURL(
-                destinationURL as CFURL,
-                UTType.jpeg.identifier as CFString,
-                1,
-                nil
-            )
-        else {
-            return nil
-        }
-
-        CGImageDestinationAddImage(
-            destination,
-            thumbnail,
-            [
-                kCGImageDestinationLossyCompressionQuality:
-                    0.82
-            ] as CFDictionary
-        )
-
-        return CGImageDestinationFinalize(
-            destination
-        )
-        ? destinationURL
-        : nil
-    }
-
-    func preserveManagedTaskSourceForRetryIfNeeded(
-        at reference: TaskReference,
-        in store: BatchQueueStore
-    ) {
-
-        guard let sourceURL =
-            store.currentTask(
-                at: reference
-            )?.sourceURL else {
-            return
-        }
-
-        guard BatchTaskFailurePolicy.isManagedIntakeSourceURL(
-            sourceURL
-        ) else {
-            return
-        }
-
-        guard FileManager.default.fileExists(
-            atPath:
-                sourceURL.standardizedFileURL.path
-        ) else {
-            store.updateTask(
-                at: reference
-            ) { task in
-                task.failure?.canRetry = false
-            }
-            return
         }
     }
 

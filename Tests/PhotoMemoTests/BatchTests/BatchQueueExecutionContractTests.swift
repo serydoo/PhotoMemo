@@ -269,6 +269,104 @@ struct BatchQueueExecutionContractTests {
     }
 
     @MainActor
+    @Test("Cancelling a queued task cleans its managed source")
+    func cancellationCleansManagedSource() throws {
+        let context = try makeManagedSourceContext()
+        defer { cleanup(context) }
+        let managedSourceURL = try #require(
+            context.intakeStore.createManagedCopy(
+                from: SyntheticFixtureLibrary.fixtureURL(.portraitJPEG),
+                requestID: UUID(),
+                index: 0
+            )
+        )
+        let jobID = UUID()
+        var jobs = [
+            BatchJob(
+                id: jobID,
+                title: "Queued",
+                configuration: makeConfiguration(),
+                tasks: [BatchTask(sourceURL: managedSourceURL)]
+            )
+        ]
+
+        let didCancel = BatchQueueExecution(
+            externalIntakeStore: context.intakeStore
+        ).cancelJob(in: &jobs, jobID: jobID)
+
+        #expect(didCancel)
+        #expect(jobs[0].tasks[0].phase == .cancelled)
+        #expect(!FileManager.default.fileExists(atPath: managedSourceURL.path))
+    }
+
+    @MainActor
+    @Test("Resource cleanup is idempotent and preserves retryable managed sources")
+    func resourceCleanupIsIdempotentAndPreservesRetryableManagedSources() throws {
+        let context = try makeManagedSourceContext()
+        defer { cleanup(context) }
+        let temporaryFileURL = context.intakeDirectoryURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("temporary-\(UUID().uuidString).jpg")
+        try FileManager.default.createDirectory(
+            at: temporaryFileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("temporary".utf8).write(to: temporaryFileURL)
+        let managedSourceURL = try #require(
+            context.intakeStore.createManagedCopy(
+                from: SyntheticFixtureLibrary.fixtureURL(.portraitJPEG),
+                requestID: UUID(),
+                index: 0
+            )
+        )
+        let lifecycle = BatchTaskResourceLifecycle(
+            coordinator: BatchProcessingCoordinator(),
+            externalIntakeStore: context.intakeStore,
+            managedIntakeRootURL: context.intakeDirectoryURL,
+            notificationAttachmentsDirectoryURL:
+                context.notificationAttachmentsDirectoryURL
+        )
+
+        lifecycle.cleanupTemporaryFiles([temporaryFileURL, temporaryFileURL])
+
+        #expect(!FileManager.default.fileExists(atPath: temporaryFileURL.path))
+        #expect(lifecycle.canPreserveManagedSourceForRetry(at: managedSourceURL))
+        #expect(FileManager.default.fileExists(atPath: managedSourceURL.path))
+    }
+
+    @MainActor
+    @Test("Notification attachment generation is replaceable and isolated")
+    func notificationAttachmentGenerationIsReplaceableAndIsolated() throws {
+        let context = try makeManagedSourceContext()
+        defer { cleanup(context) }
+        let lifecycle = BatchTaskResourceLifecycle(
+            coordinator: BatchProcessingCoordinator(),
+            externalIntakeStore: context.intakeStore,
+            managedIntakeRootURL: context.intakeDirectoryURL,
+            notificationAttachmentsDirectoryURL:
+                context.notificationAttachmentsDirectoryURL
+        )
+        let taskID = UUID()
+
+        let firstURL = try #require(
+            lifecycle.makeNotificationAttachmentIfNeeded(
+                from: SyntheticFixtureLibrary.fixtureURL(.portraitJPEG),
+                taskID: taskID
+            )
+        )
+        let secondURL = try #require(
+            lifecycle.makeNotificationAttachmentIfNeeded(
+                from: SyntheticFixtureLibrary.fixtureURL(.portraitJPEG),
+                taskID: taskID
+            )
+        )
+
+        #expect(firstURL == secondURL)
+        #expect(firstURL.deletingLastPathComponent() == context.notificationAttachmentsDirectoryURL)
+        #expect(FileManager.default.fileExists(atPath: secondURL.path))
+    }
+
+    @MainActor
     @Test("Successful final delivery marker gates repeated delivery attempts")
     func finalNotificationMarkerGatesRepeatedDeliveryAttempts() async throws {
         // This locks BatchQueueStore's successful-delivery marker and repeat
@@ -332,6 +430,14 @@ private extension BatchQueueExecutionContractTests {
         let intakeDirectoryURL: URL
     }
 
+    struct ManagedSourceContext {
+        let intakeStore: ExternalPhotoIntakeStore
+        let defaults: UserDefaults
+        let defaultsSuiteName: String
+        let intakeDirectoryURL: URL
+        let notificationAttachmentsDirectoryURL: URL
+    }
+
     @MainActor
     func makeConfiguration() -> BatchConfigurationSnapshot {
         BatchConfigurationSnapshot(
@@ -371,6 +477,31 @@ private extension BatchQueueExecutionContractTests {
         )
     }
 
+    func makeManagedSourceContext() throws -> ManagedSourceContext {
+        let suiteName =
+            "PhotoMemo.BatchQueueExecutionContractTests.Resources.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(suiteName, isDirectory: true)
+        let intakeDirectoryURL = rootURL
+            .appendingPathComponent("ExternalIntake", isDirectory: true)
+        return ManagedSourceContext(
+            intakeStore: ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: intakeDirectoryURL
+            ),
+            defaults: defaults,
+            defaultsSuiteName: suiteName,
+            intakeDirectoryURL: intakeDirectoryURL,
+            notificationAttachmentsDirectoryURL:
+                rootURL.appendingPathComponent(
+                    "NotificationAttachments",
+                    isDirectory: true
+                )
+        )
+    }
+
     @MainActor
     func terminalTask(in store: BatchQueueStore) async throws -> BatchTask {
         let clock = ContinuousClock()
@@ -395,6 +526,15 @@ private extension BatchQueueExecutionContractTests {
         )
         try? FileManager.default.removeItem(
             at: context.intakeDirectoryURL
+        )
+    }
+
+    func cleanup(_ context: ManagedSourceContext) {
+        context.defaults.removePersistentDomain(
+            forName: context.defaultsSuiteName
+        )
+        try? FileManager.default.removeItem(
+            at: context.intakeDirectoryURL.deletingLastPathComponent()
         )
     }
 
