@@ -229,8 +229,7 @@ final class PhotoMemoShareExtensionIntakeService {
                 intakeStore: intakeStore,
                 providerLoader: providerLoader,
                 livePhotoRecovery:
-                    livePhotoRecovery,
-                diagnostics: diagnostics
+                    livePhotoRecovery
             )
         self.diagnostics = diagnostics
     }

@@ -68,20 +68,15 @@ struct ShareManagedFileImporter {
     private let livePhotoRecovery:
         ShareLivePhotoRecovery
 
-    private let diagnostics:
-        ShareIntakeDiagnostics
-
     init(
         intakeStore: ExternalPhotoIntakeStore,
         providerLoader: ShareItemProviderLoader,
-        livePhotoRecovery: ShareLivePhotoRecovery,
-        diagnostics: ShareIntakeDiagnostics
+        livePhotoRecovery: ShareLivePhotoRecovery
     ) {
         self.intakeStore = intakeStore
         self.providerLoader = providerLoader
         self.livePhotoRecovery =
             livePhotoRecovery
-        self.diagnostics = diagnostics
     }
 
     func loadManagedURL(

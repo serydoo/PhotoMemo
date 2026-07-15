@@ -213,7 +213,7 @@ struct ShareIntakeDiagnostics {
         )
     }
 
-    static func notice(
+    nonisolated static func notice(
         _ message: String
     ) {
 
@@ -222,7 +222,7 @@ struct ShareIntakeDiagnostics {
         )
     }
 
-    static func error(
+    nonisolated static func error(
         _ message: String
     ) {
 

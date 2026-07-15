@@ -1,8 +1,60 @@
 import Foundation
 import Testing
+import UniformTypeIdentifiers
+@testable import PhotoMemo
 
 @Suite("Share intake responsibility split")
 struct ShareIntakeResponsibilitySplitTests {
+
+    @Test("Provider selector prioritizes Live Photo and preserves static fallback")
+    func providerSelectorPrioritizesLivePhoto() throws {
+        let livePhotoType =
+            try #require(
+                PhotoMemoShareProviderTypeSelection
+                .livePhotoTypeIdentifiers
+                .first
+            )
+        let registeredTypes = [
+            UTType.jpeg.identifier,
+            livePhotoType,
+            UTType.png.identifier
+        ]
+        let staticTypes = [
+            UTType.plainText.identifier,
+            UTType.jpeg.identifier
+        ]
+
+        #expect(
+            PhotoMemoShareProviderTypeSelection
+            .preferredImportTypeIdentifier(
+                from: registeredTypes
+            ) == livePhotoType
+        )
+        #expect(
+            PhotoMemoShareProviderTypeSelection
+            .preferredImageTypeIdentifier(
+                from: registeredTypes
+            ) == UTType.jpeg.identifier
+        )
+        #expect(
+            PhotoMemoShareProviderTypeSelection
+            .supportsLivePhoto(
+                registeredTypes
+            )
+        )
+        #expect(
+            PhotoMemoShareProviderTypeSelection
+            .preferredImportTypeIdentifier(
+                from: staticTypes
+            ) == UTType.jpeg.identifier
+        )
+        #expect(
+            !PhotoMemoShareProviderTypeSelection
+            .supportsLivePhoto(
+                staticTypes
+            )
+        )
+    }
 
     @Test("Share intake declares four focused collaborators")
     func shareIntakeDeclaresFourFocusedCollaborators() throws {
