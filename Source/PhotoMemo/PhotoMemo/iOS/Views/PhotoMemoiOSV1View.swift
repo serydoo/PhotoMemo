@@ -234,6 +234,11 @@ struct PhotoMemoiOSV1View: View {
         LogoAssetCoordinator()
     }
 
+    private var configurationLibraryActions:
+        ConfigurationLibraryActions {
+        ConfigurationLibraryActions()
+    }
+
     private var configurationApplyCoordinator:
         V1ConfigurationApplyCoordinator {
         V1ConfigurationApplyCoordinator(
@@ -1302,22 +1307,14 @@ struct PhotoMemoiOSV1View: View {
                 showsRegionContentSheet = true
             },
             onSaveCurrentConfiguration:
-                saveCurrentConfigurationWithFeedback,
+                {
+                    performConfigurationLibraryAction(.saveCurrent)
+                },
             onCreateConfiguration: {
-                session.createMemoryPresetFromCurrent(
-                    logoMode: logoMode,
-                    outputConfiguration:
-                        currentSavedOutputConfiguration
-                )
-                memoryPresetTitleDraft =
-                    session.currentMemoryPresetTitle
-                isEditingMemoryPresetTitle = true
-                activeConfigurationStatus = .dirty
+                performConfigurationLibraryAction(.create)
             },
             onResetConfiguration: {
-                session.resetSelectedMemoryPreset()
-                bootstrapDrafts()
-                activeConfigurationStatus = .dirty
+                performConfigurationLibraryAction(.reset)
             },
             onDeleteConfiguration: {
                 guard let selectedPreset =
@@ -1446,7 +1443,9 @@ struct PhotoMemoiOSV1View: View {
             isSavingConfiguration: isSavingConfiguration,
             configurationStatus: activeConfigurationStatus,
             onSaveConfiguration:
-                saveCurrentConfigurationWithFeedback,
+                {
+                    performConfigurationLibraryAction(.saveCurrent)
+                },
             usesCustomMemoryWriteText: $session.usesCustomMemoryWriteText,
             customMemoryWriteText: $session.customMemoryWriteText,
             resolvedMemoryWriteText: resolvedMemoryWriteText,
@@ -1493,9 +1492,7 @@ struct PhotoMemoiOSV1View: View {
         V1PresetOperationsMenu(
             onRename: beginEditingMemoryPresetTitle,
             onRestoreDefaults: {
-                session.resetSelectedMemoryPreset()
-                bootstrapDrafts()
-                activeConfigurationStatus = .dirty
+                performConfigurationLibraryAction(.reset)
             }
         )
     }
@@ -1566,8 +1563,9 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func beginEditingMemoryPresetTitle() {
-        memoryPresetTitleDraft = session.currentMemoryPresetTitle
-        isEditingMemoryPresetTitle = true
+        performConfigurationLibraryAction(
+            .beginRename(title: session.currentMemoryPresetTitle)
+        )
 
         DispatchQueue.main.async {
             memoryPresetTitleFieldFocused = true
@@ -1575,15 +1573,12 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func commitMemoryPresetTitle() {
-        session.updateSelectedMemoryPresetTitle(
-            memoryPresetTitleDraft
+        performConfigurationLibraryAction(
+            .commitRename(title: memoryPresetTitleDraft)
         )
-        activeConfigurationStatus = .dirty
-        isEditingMemoryPresetTitle = false
-        memoryPresetTitleFieldFocused = false
     }
 
-    private func saveCurrentConfigurationWithFeedback() {
+    private func startCurrentConfigurationSaveWithFeedback() {
         Task { @MainActor in
             let didSave =
                 await applyCurrentV1Configuration()
@@ -1601,14 +1596,7 @@ struct PhotoMemoiOSV1View: View {
     private func activateHomePreset(
         _ preset: MemoryPreset
     ) {
-        logoMode = preset.logoMode
-        session.selectMemoryPreset(preset)
-        bootstrapDrafts()
-        activeConfigurationStatus = .saving
-
-        Task {
-            await applyCurrentV1Configuration()
-        }
+        performConfigurationLibraryAction(.activate(preset))
     }
 
     private func deleteHomePreset(
@@ -1621,33 +1609,20 @@ struct PhotoMemoiOSV1View: View {
 
     @MainActor
     private func deleteHomePresetNow(
-        _ preset: MemoryPreset
+        _ preset: MemoryPreset,
+        mayApplyCurrentConfiguration: Bool = true
     ) async {
-        guard !isSavingConfiguration,
-              let configurationCoordinator,
-              let initialAggregate = session.state.configurationLibrary,
-              let subjectID = session.state.selectedSubject?.id,
-              let subjectRecord = initialAggregate.subjects.first(
-                  where: { $0.subject.id == subjectID }
-              ) else {
-            presentHomeConfigurationActionFeedback(
-                "当前配置库不可用，请稍后重试。"
-            )
-            return
-        }
-        let deletionAction = V1LocalConfigurationLibraryPresenter
-            .deletionAction(
-                configurationID: preset.id,
-                currentConfigurationID:
-                    session.state.selectedMemoryPresetID,
-                isCurrentConfigurationDirty:
-                    activeConfigurationStatus == .dirty,
-                durableConfigurationIDs:
-                    subjectRecord.configurations.map(\.id),
-                visibleConfigurationIDs:
-                    homeAvailablePresets.map(\.id)
-            )
-        if deletionAction == .applyCurrentThenDelete {
+        let decision = configurationLibraryActions.decide(
+            .delete(configurationDeletionRequest(for: preset))
+        )
+        switch decision {
+        case .applyCurrentThenDelete:
+            guard mayApplyCurrentConfiguration else {
+                presentHomeConfigurationActionFeedback(
+                    "删除配置失败，原配置仍然保留。"
+                )
+                return
+            }
             guard await applyCurrentV1Configuration(),
                   activeConfigurationStatus == .saved else {
                 presentHomeConfigurationActionFeedback(
@@ -1655,41 +1630,116 @@ struct PhotoMemoiOSV1View: View {
                 )
                 return
             }
-        } else if deletionAction == .unavailable {
-            presentHomeConfigurationActionFeedback(
-                "请至少保留一条已保存配置；可以先保存当前新增配置。"
+            await deleteHomePresetNow(
+                preset,
+                mayApplyCurrentConfiguration: false
             )
+        case .persistDeletion(let result):
+            await persistConfigurationDeletion(result)
+        case .unavailable(let message):
+            presentHomeConfigurationActionFeedback(message)
+        default:
             return
         }
-        guard let aggregate = session.state.configurationLibrary,
-              let candidate = V1LocalConfigurationLibraryPresenter
-                .deletingConfiguration(preset.id, from: aggregate) else {
-            presentHomeConfigurationActionFeedback(
-                "删除配置失败，原配置仍然保留。"
-            )
-            return
-        }
+    }
 
+    @MainActor
+    private func persistConfigurationDeletion(
+        _ result: ConfigurationLibraryDeletionResult
+    ) async {
+        guard let configurationCoordinator else {
+            presentHomeConfigurationActionFeedback(
+                "当前配置库不可用，请稍后重试。"
+            )
+            return
+        }
         isSavingConfiguration = true
         activeConfigurationStatus = .saving
         defer { isSavingConfiguration = false }
         do {
             let receipt = try await configurationCoordinator
-                .saveConfigurationLibrary(candidate)
-            var durableCandidate = candidate
-            durableCandidate.revision = receipt.revision
-            session.restoreConfigurationLibrary(durableCandidate)
+                .saveConfigurationLibrary(result.candidate)
+            let durableResult = result.reconcilingRevision(
+                receipt.revision
+            )
+            session.restoreConfigurationLibrary(
+                durableResult.candidate
+            )
             memoryPresetTitleDraft = session.currentMemoryPresetTitle
             bootstrapDrafts()
             activeConfigurationStatus = .saved
             presentHomeConfigurationActionFeedback(
-                "已删除“\(preset.title)”。本地备份仍会保留。"
+                "已删除“\(result.deletedPreset.title)”。本地备份仍会保留。"
             )
         } catch {
             activeConfigurationStatus = .dirty
             presentHomeConfigurationActionFeedback(
                 "删除配置失败，原配置仍然保留。"
             )
+        }
+    }
+
+    private func configurationDeletionRequest(
+        for preset: MemoryPreset
+    ) -> ConfigurationLibraryDeletionRequest {
+        ConfigurationLibraryDeletionRequest(
+            preset: preset,
+            aggregate: session.state.configurationLibrary,
+            subjectID: session.state.selectedSubject?.id,
+            selectedConfigurationID:
+                session.state.selectedMemoryPresetID,
+            isCurrentConfigurationDirty:
+                activeConfigurationStatus == .dirty,
+            visibleConfigurationIDs:
+                homeAvailablePresets.map(\.id),
+            isPersistenceAvailable:
+                configurationCoordinator != nil,
+            isSavingConfiguration:
+                isSavingConfiguration
+        )
+    }
+
+    private func performConfigurationLibraryAction(
+        _ intent: ConfigurationLibraryActionIntent
+    ) {
+        switch configurationLibraryActions.decide(intent) {
+        case .create:
+            session.createMemoryPresetFromCurrent(
+                logoMode: logoMode,
+                outputConfiguration:
+                    currentSavedOutputConfiguration
+            )
+            memoryPresetTitleDraft = session.currentMemoryPresetTitle
+            isEditingMemoryPresetTitle = true
+            activeConfigurationStatus = .dirty
+        case .reset:
+            session.resetSelectedMemoryPreset()
+            bootstrapDrafts()
+            activeConfigurationStatus = .dirty
+        case .beginRename(let title):
+            memoryPresetTitleDraft = title
+            isEditingMemoryPresetTitle = true
+        case .commitRename(let title):
+            session.updateSelectedMemoryPresetTitle(title)
+            activeConfigurationStatus = .dirty
+            isEditingMemoryPresetTitle = false
+            memoryPresetTitleFieldFocused = false
+        case .activate(let preset):
+            logoMode = preset.logoMode
+            session.selectMemoryPreset(preset)
+            bootstrapDrafts()
+            activeConfigurationStatus = .saving
+            Task {
+                await applyCurrentV1Configuration()
+            }
+        case .saveCurrent:
+            startCurrentConfigurationSaveWithFeedback()
+        case .applyCurrentThenDelete,
+             .applyCurrentThenSave,
+             .saveDurableConfiguration,
+             .persistDeletion,
+             .unavailable:
+            return
         }
     }
 
@@ -1718,7 +1768,6 @@ struct PhotoMemoiOSV1View: View {
         configurationID: UUID
     ) async {
         guard !isWorkingWithLocalConfigurationLibrary,
-              !isSavingConfiguration,
               let aggregate = session.state.configurationLibrary,
               let subjectID = session.state.selectedSubject?.id,
               let subjectRecord = aggregate.subjects.first(
@@ -1730,25 +1779,35 @@ struct PhotoMemoiOSV1View: View {
             return
         }
 
-        let action = V1LocalConfigurationLibraryPresenter.backupAction(
-            configurationID: configurationID,
-            currentConfigurationID:
-                session.state.selectedMemoryPresetID,
-            isCurrentConfigurationDirty:
-                activeConfigurationStatus == .dirty,
-            isSavingConfiguration:
-                isSavingConfiguration,
-            durableConfigurationIDs:
-                subjectRecord.configurations.map(\.id)
-        )
-        guard action != .unavailable else {
+        guard let preset = homeAvailablePresets.first(
+            where: { $0.id == configurationID }
+        ) else {
             presentHomeConfigurationActionFeedback(
                 "找不到这条配置的持久化版本。"
             )
             return
         }
+        let action = configurationLibraryActions.decide(
+            .saveToLocalLibrary(
+                ConfigurationLibrarySaveRequest(
+                    preset: preset,
+                    selectedConfigurationID:
+                        session.state.selectedMemoryPresetID,
+                    isCurrentConfigurationDirty:
+                        activeConfigurationStatus == .dirty,
+                    isSavingConfiguration:
+                        isSavingConfiguration,
+                    durableConfigurationIDs:
+                        subjectRecord.configurations.map(\.id)
+                )
+            )
+        )
+        if case .unavailable(let message) = action {
+            presentHomeConfigurationActionFeedback(message)
+            return
+        }
 
-        if action == .applyCurrentThenBackup,
+        if case .applyCurrentThenSave = action,
            (!(await applyCurrentV1Configuration())
             || activeConfigurationStatus != .saved) {
             presentHomeConfigurationActionFeedback(

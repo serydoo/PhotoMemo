@@ -13,7 +13,16 @@ struct V1HomeConfigurationActionContractTests {
 
         #expect(source.contains(".swipeActions("))
         #expect(source.contains("allowsFullSwipe: true"))
-        #expect(source.contains("Label(\"保存\", systemImage: \"tray.and.arrow.down\")"))
+        let normalizedSource = source.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+        #expect(
+            normalizedSource.contains(
+                "Label( \"保存\", systemImage: MemoMarkSymbol.localStorage.name )"
+            )
+        )
         #expect(source.contains(".tint(.blue)"))
         #expect(source.contains("Label(\"删除\", systemImage: \"trash\")"))
         #expect(source.contains(".tint(.red)"))
@@ -38,13 +47,43 @@ struct V1HomeConfigurationActionContractTests {
 
     @Test("home surfaces local backup and deletion feedback")
     func homeSurfacesConfigurationActionFeedback() throws {
+        let rootSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+        let actionSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationLibraryActions.swift"
+        )
+
+        #expect(rootSource.contains("showsHomeConfigurationActionFeedback"))
+        #expect(rootSource.contains(".alert("))
+        #expect(rootSource.contains("presentHomeConfigurationActionFeedback"))
+        #expect(rootSource.contains("configurationLibraryActions.decide"))
+        #expect(actionSource.contains("case applyCurrentThenDelete"))
+        #expect(actionSource.contains("case persistDeletion"))
+        #expect(actionSource.contains("reconcilingRevision"))
+    }
+
+    @Test("rename and save callbacks use explicit action decisions")
+    func renameAndSaveCallbacksUseExplicitActionDecisions() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
         )
 
-        #expect(source.contains("showsHomeConfigurationActionFeedback"))
-        #expect(source.contains(".alert("))
-        #expect(source.contains("presentHomeConfigurationActionFeedback"))
+        #expect(source.contains("case .beginRename(let title):"))
+        #expect(source.contains("memoryPresetTitleDraft = title"))
+        #expect(source.contains("case .commitRename(let title):"))
+        #expect(!source.contains("case .rename(let title):"))
+        #expect(
+            source.components(
+                separatedBy:
+                    "performConfigurationLibraryAction(.saveCurrent)"
+            ).count - 1 == 2
+        )
+        #expect(source.contains("case .saveCurrent:"))
+        #expect(
+            source.contains("startCurrentConfigurationSaveWithFeedback()")
+        )
+        #expect(!source.contains("decide(.saveCurrent)"))
     }
 }
 

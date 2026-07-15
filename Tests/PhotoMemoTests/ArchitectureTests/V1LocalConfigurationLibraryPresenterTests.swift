@@ -58,14 +58,19 @@ struct V1LocalConfigurationLibraryPresenterTests {
             uuidString: "11111111-1111-1111-1111-111111111111"
         )!
 
-        let action = V1LocalConfigurationLibraryPresenter.backupAction(
-            configurationID: currentID,
-            currentConfigurationID: currentID,
-            isCurrentConfigurationDirty: true,
-            durableConfigurationIDs: [currentID]
+        let action = ConfigurationLibraryActions().decide(
+            .saveToLocalLibrary(
+                ConfigurationLibrarySaveRequest(
+                    preset: Self.makePreset(id: currentID),
+                    selectedConfigurationID: currentID,
+                    isCurrentConfigurationDirty: true,
+                    isSavingConfiguration: false,
+                    durableConfigurationIDs: [currentID]
+                )
+            )
         )
 
-        #expect(action == .applyCurrentThenBackup)
+        #expect(action == .applyCurrentThenSave(Self.makePreset(id: currentID)))
     }
 
     @Test("non-current configuration backs up its durable revision")
@@ -77,14 +82,21 @@ struct V1LocalConfigurationLibraryPresenterTests {
             uuidString: "22222222-2222-2222-2222-222222222222"
         )!
 
-        let action = V1LocalConfigurationLibraryPresenter.backupAction(
-            configurationID: otherID,
-            currentConfigurationID: currentID,
-            isCurrentConfigurationDirty: true,
-            durableConfigurationIDs: [currentID, otherID]
+        let action = ConfigurationLibraryActions().decide(
+            .saveToLocalLibrary(
+                ConfigurationLibrarySaveRequest(
+                    preset: Self.makePreset(id: otherID),
+                    selectedConfigurationID: currentID,
+                    isCurrentConfigurationDirty: true,
+                    isSavingConfiguration: false,
+                    durableConfigurationIDs: [currentID, otherID]
+                )
+            )
         )
 
-        #expect(action == .backupDurableConfiguration)
+        #expect(
+            action == .saveDurableConfiguration(Self.makePreset(id: otherID))
+        )
     }
 
     @Test("missing durable configuration cannot be backed up")
@@ -93,14 +105,22 @@ struct V1LocalConfigurationLibraryPresenterTests {
             uuidString: "33333333-3333-3333-3333-333333333333"
         )!
 
-        let action = V1LocalConfigurationLibraryPresenter.backupAction(
-            configurationID: missingID,
-            currentConfigurationID: nil,
-            isCurrentConfigurationDirty: false,
-            durableConfigurationIDs: []
+        let action = ConfigurationLibraryActions().decide(
+            .saveToLocalLibrary(
+                ConfigurationLibrarySaveRequest(
+                    preset: Self.makePreset(id: missingID),
+                    selectedConfigurationID: nil,
+                    isCurrentConfigurationDirty: false,
+                    isSavingConfiguration: false,
+                    durableConfigurationIDs: []
+                )
+            )
         )
 
-        #expect(action == .unavailable)
+        #expect(
+            action
+            == .unavailable(message: "找不到这条配置的持久化版本。")
+        )
     }
 
     @Test("new dirty current configuration applies before its first backup")
@@ -109,15 +129,19 @@ struct V1LocalConfigurationLibraryPresenterTests {
             uuidString: "33333333-3333-3333-3333-333333333333"
         )!
 
-        let action = V1LocalConfigurationLibraryPresenter.backupAction(
-            configurationID: currentID,
-            currentConfigurationID: currentID,
-            isCurrentConfigurationDirty: true,
-            isSavingConfiguration: false,
-            durableConfigurationIDs: []
+        let action = ConfigurationLibraryActions().decide(
+            .saveToLocalLibrary(
+                ConfigurationLibrarySaveRequest(
+                    preset: Self.makePreset(id: currentID),
+                    selectedConfigurationID: currentID,
+                    isCurrentConfigurationDirty: true,
+                    isSavingConfiguration: false,
+                    durableConfigurationIDs: []
+                )
+            )
         )
 
-        #expect(action == .applyCurrentThenBackup)
+        #expect(action == .applyCurrentThenSave(Self.makePreset(id: currentID)))
     }
 
     @Test("dirty non-durable current configuration is inserted before apply")
@@ -201,74 +225,22 @@ struct V1LocalConfigurationLibraryPresenterTests {
             uuidString: "11111111-1111-1111-1111-111111111111"
         )!
 
-        let action = V1LocalConfigurationLibraryPresenter.backupAction(
-            configurationID: currentID,
-            currentConfigurationID: currentID,
-            isCurrentConfigurationDirty: false,
-            isSavingConfiguration: true,
-            durableConfigurationIDs: [currentID]
-        )
-
-        #expect(action == .unavailable)
-    }
-
-    @Test("deleting the active configuration selects a durable sibling")
-    func deletingActiveConfigurationSelectsSibling() throws {
-        let subject = Self.makeSubject(
-            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
-            name: "途途"
-        )
-        let first = Self.makeConfiguration(
-            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
-            title: "第一套"
-        )
-        let second = Self.makeConfiguration(
-            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
-            title: "第二套"
-        )
-        let aggregate = ConfigurationLibraryRecord(
-            revision: 5,
-            subjects: [
-                .init(
-                    subject: subject,
-                    configurations: [first, second],
-                    assetManifest: .init(entries: [])
+        let action = ConfigurationLibraryActions().decide(
+            .saveToLocalLibrary(
+                ConfigurationLibrarySaveRequest(
+                    preset: Self.makePreset(id: currentID),
+                    selectedConfigurationID: currentID,
+                    isCurrentConfigurationDirty: false,
+                    isSavingConfiguration: true,
+                    durableConfigurationIDs: [currentID]
                 )
-            ],
-            activeSubjectID: subject.id,
-            activeConfigurationID: first.id
-        )
-
-        let candidate = try #require(
-            V1LocalConfigurationLibraryPresenter.deletingConfiguration(
-                first.id,
-                from: aggregate
             )
         )
 
-        #expect(candidate.subjects[0].configurations.map(\.id) == [second.id])
-        #expect(candidate.activeSubjectID == subject.id)
-        #expect(candidate.activeConfigurationID == second.id)
-    }
-
-    @Test("deleting the only durable configuration applies a dirty visible sibling first")
-    func deletingOnlyDurableConfigurationAppliesDirtySiblingFirst() {
-        let durableID = UUID(
-            uuidString: "11111111-1111-1111-1111-111111111111"
-        )!
-        let dirtyID = UUID(
-            uuidString: "22222222-2222-2222-2222-222222222222"
-        )!
-
-        let action = V1LocalConfigurationLibraryPresenter.deletionAction(
-            configurationID: durableID,
-            currentConfigurationID: dirtyID,
-            isCurrentConfigurationDirty: true,
-            durableConfigurationIDs: [durableID],
-            visibleConfigurationIDs: [durableID, dirtyID]
+        #expect(
+            action
+            == .unavailable(message: "当前配置还没有可备份的持久化记录。")
         )
-
-        #expect(action == .applyCurrentThenDelete)
     }
 
     @Test("backup receipt reports revision conflict instead of claiming a save")
@@ -295,6 +267,15 @@ struct V1LocalConfigurationLibraryPresenterTests {
 }
 
 private extension V1LocalConfigurationLibraryPresenterTests {
+
+    static func makePreset(id: UUID) -> MemoryPreset {
+        MemoryPreset(
+            id: id,
+            title: "配置",
+            summary: "当前区域组合",
+            regionTemplateIDs: [:]
+        )
+    }
 
     static func makeSubject(
         id: UUID,

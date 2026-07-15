@@ -1,18 +1,6 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
-enum V1LocalConfigurationBackupAction: Hashable {
-    case applyCurrentThenBackup
-    case backupDurableConfiguration
-    case unavailable
-}
-
-enum V1LiveConfigurationDeletionAction: Hashable {
-    case applyCurrentThenDelete
-    case deleteDurableConfiguration
-    case unavailable
-}
-
 struct V1LocalConfigurationLibraryRow: Identifiable, Hashable {
     let id: UUID
     let title: String
@@ -45,50 +33,6 @@ enum V1LocalConfigurationLibraryPresenter {
                         == configuration.id
             )
         }
-    }
-
-    static func backupAction(
-        configurationID: UUID,
-        currentConfigurationID: UUID?,
-        isCurrentConfigurationDirty: Bool,
-        isSavingConfiguration: Bool = false,
-        durableConfigurationIDs: [UUID]
-    ) -> V1LocalConfigurationBackupAction {
-        guard !isSavingConfiguration else {
-            return .unavailable
-        }
-        if configurationID == currentConfigurationID,
-           isCurrentConfigurationDirty {
-            return .applyCurrentThenBackup
-        }
-        guard durableConfigurationIDs.contains(configurationID) else {
-            return .unavailable
-        }
-        return .backupDurableConfiguration
-    }
-
-    static func deletionAction(
-        configurationID: UUID,
-        currentConfigurationID: UUID?,
-        isCurrentConfigurationDirty: Bool,
-        durableConfigurationIDs: [UUID],
-        visibleConfigurationIDs: [UUID]
-    ) -> V1LiveConfigurationDeletionAction {
-        guard durableConfigurationIDs.contains(configurationID),
-              visibleConfigurationIDs.count > 1 else {
-            return .unavailable
-        }
-        if durableConfigurationIDs.count == 1,
-           let currentConfigurationID,
-           currentConfigurationID != configurationID,
-           isCurrentConfigurationDirty,
-           !durableConfigurationIDs.contains(currentConfigurationID) {
-            return .applyCurrentThenDelete
-        }
-        guard durableConfigurationIDs.count > 1 else {
-            return .unavailable
-        }
-        return .deleteDurableConfiguration
     }
 
     static func preparingCurrentConfiguration(
@@ -188,44 +132,5 @@ enum V1LocalConfigurationLibraryPresenter {
         }
     }
 
-    static func deletingConfiguration(
-        _ configurationID: UUID,
-        from aggregate: ConfigurationLibraryRecord
-    ) -> ConfigurationLibraryRecord? {
-        var candidate = aggregate
-        guard let subjectIndex = candidate.subjects.firstIndex(
-            where: {
-                $0.configurations.contains {
-                    $0.id == configurationID
-                }
-            }
-        ) else {
-            return nil
-        }
-
-        candidate.subjects[subjectIndex].configurations.removeAll {
-            $0.id == configurationID
-        }
-        let remainingSelections = candidate.subjects.flatMap {
-            subjectRecord in
-            subjectRecord.configurations.map {
-                (subjectRecord.subject.id, $0.id)
-            }
-        }
-        guard !remainingSelections.isEmpty else {
-            return nil
-        }
-
-        if candidate.activeConfigurationID == configurationID {
-            let selection = candidate.subjects[subjectIndex]
-                .configurations.first.map {
-                    (candidate.subjects[subjectIndex].subject.id, $0.id)
-                }
-                ?? remainingSelections[0]
-            candidate.activeSubjectID = selection.0
-            candidate.activeConfigurationID = selection.1
-        }
-        return candidate
-    }
 }
 #endif
