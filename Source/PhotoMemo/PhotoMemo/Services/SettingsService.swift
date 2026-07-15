@@ -1,5 +1,6 @@
-import Foundation
+#if !PHOTOMEMO_SHARE_EXTENSION
 import Combine
+import Foundation
 
 enum WorkspaceConfigurationSlotID:
     String,
@@ -9,43 +10,24 @@ enum WorkspaceConfigurationSlotID:
     Identifiable {
 
     case slot1
-
     case slot2
-
     case slot3
 
-    var id: String {
-        rawValue
-    }
+    var id: String { rawValue }
 
     var title: String {
-
         switch self {
-
         case .slot1:
             return "模块 1"
-
         case .slot2:
             return "模块 2"
-
         case .slot3:
             return "模块 3"
         }
     }
 
     var defaultPreset: TemplatePreset {
-
-        switch self {
-
-        case .slot1:
-            return .classicWhite
-
-        case .slot2:
-            return .classicWhite
-
-        case .slot3:
-            return .classicWhite
-        }
+        .classicWhite
     }
 }
 
@@ -55,30 +37,19 @@ struct WorkspaceConfigurationSlot:
     Hashable {
 
     let id: WorkspaceConfigurationSlotID
-
     var customTitle: String?
-
     var snapshot: BatchConfigurationSnapshot?
-
     var updatedAt: Date?
 
-    var title: String {
-        id.title
-    }
+    var title: String { id.title }
 
     var resolvedCustomTitle: String? {
-
-        guard
-            let trimmedTitle =
-                customTitle?
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                ),
-            !trimmedTitle.isEmpty
+        guard let trimmedTitle = customTitle?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmedTitle.isEmpty
         else {
             return nil
         }
-
         return trimmedTitle
     }
 
@@ -87,35 +58,22 @@ struct WorkspaceConfigurationSlot:
     }
 
     var displayTitleWithReference: String {
-
         guard let resolvedCustomTitle else {
             return title
         }
-
         return "\(resolvedCustomTitle)（\(title)）"
     }
 
-    var defaultPreset: TemplatePreset {
-        id.defaultPreset
-    }
-
-    var isCustomized: Bool {
-        snapshot != nil
-    }
+    var defaultPreset: TemplatePreset { id.defaultPreset }
+    var isCustomized: Bool { snapshot != nil }
 
     var resolvedDisplayName: String {
-
-        guard
-            let trimmedName =
-                snapshot?.template.name
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                ),
-            !trimmedName.isEmpty
+        guard let trimmedName = snapshot?.template.name
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmedName.isEmpty
         else {
             return defaultPreset.displayName
         }
-
         return trimmedName
     }
 
@@ -124,237 +82,106 @@ struct WorkspaceConfigurationSlot:
     }
 
     static var defaultSlots: [WorkspaceConfigurationSlot] {
-
-        WorkspaceConfigurationSlotID
-            .allCases
-            .map {
-                WorkspaceConfigurationSlot(
-                    id: $0,
-                    customTitle: nil,
-                    snapshot: nil,
-                    updatedAt: nil
-                )
-            }
+        WorkspaceConfigurationSlotID.allCases.map {
+            WorkspaceConfigurationSlot(
+                id: $0,
+                customTitle: nil,
+                snapshot: nil,
+                updatedAt: nil
+            )
+        }
     }
 
     static func normalized(
         _ slots: [WorkspaceConfigurationSlot]
     ) -> [WorkspaceConfigurationSlot] {
-
-        WorkspaceConfigurationSlotID
-            .allCases
-            .map { slotID in
-
-                slots.first(where: {
-                    $0.id == slotID
-                }) ?? WorkspaceConfigurationSlot(
-                    id: slotID,
-                    customTitle: nil,
-                    snapshot: nil,
-                    updatedAt: nil
-                )
-            }
+        WorkspaceConfigurationSlotID.allCases.map { slotID in
+            slots.first(where: { $0.id == slotID })
+            ?? WorkspaceConfigurationSlot(
+                id: slotID,
+                customTitle: nil,
+                snapshot: nil,
+                updatedAt: nil
+            )
+        }
     }
 }
 
 struct V1ConfigurationBootstrapReadState {
-
-    let configurationLibrary:
-        ConfigurationLibraryRecord?
-
+    let configurationLibrary: ConfigurationLibraryRecord?
     let subjectLibraryResult:
-        PhotoMemoSharedDefaultsReadResult<
-            V1SubjectLibraryRecord
-        >
-
+        PhotoMemoSharedDefaultsReadResult<V1SubjectLibraryRecord>
     let subjectResult:
-        PhotoMemoSharedDefaultsReadResult<
-            MemorySubject
-        >
-
+        PhotoMemoSharedDefaultsReadResult<MemorySubject>
     let badgeResult:
-        PhotoMemoSharedDefaultsReadResult<
-            Badge
-        >
-
+        PhotoMemoSharedDefaultsReadResult<Badge>
     let selectedAlbumIdentifier: String
-
     let selectedAlbumTitle: String
-
-    let mediaOutputMode:
-        V1MediaOutputMode
+    let mediaOutputMode: V1MediaOutputMode
 }
 
 @MainActor
 final class SettingsService: ObservableObject {
 
-    private let autosaveDelayNanoseconds:
-        UInt64 = 350_000_000
+    private let autosaveDelayNanoseconds: UInt64 = 350_000_000
+    private var templateSaveTask: Task<Void, Never>?
+    private var editorStateSaveTask: Task<Void, Never>?
+    private var photoDescriptionSaveTask: Task<Void, Never>?
 
-    private var templateSaveTask:
-        Task<Void, Never>?
-
-    private var editorStateSaveTask:
-        Task<Void, Never>?
-
-    private var photoDescriptionSaveTask:
-        Task<Void, Never>?
-
-    private let defaults:
-        UserDefaults
-
-    private let snapshotProvider:
-        BatchConfigurationSnapshotProvider
-
-    private let configurationLibraryRepository:
-        ConfigurationLibraryRepository
-
-    private let configurationLibraryStorage:
-        (any ConfigurationLibraryDataStorage)?
-
+    private let legacyStore: LegacySettingsStore
+    private let configurationLibraryStore: ConfigurationLibraryStore
+    private let configurationProjectionService:
+        ConfigurationProjectionService
     private let configurationLibraryProjection:
         (@MainActor (ConfigurationLibraryRecord) throws -> Void)?
 
     private(set) var configurationLibraryStartupRecoveryError:
         ConfigurationLibraryPersistenceError?
 
-    private var recoveredConfigurationLibrary:
-        ConfigurationLibraryRecord?
-
-    private enum Keys {
-
-        static let anchors = "photomemo.anchors"
-
-        static let selectedTemplate = "photomemo.selectedTemplate"
-
-        static let selectedBadge = "photomemo.selectedBadge"
-
-        static let shouldWritePhotoDescription =
-            "photomemo.shouldWritePhotoDescription"
-
-        static let photoDescriptionOverride =
-            "photomemo.photoDescriptionOverride"
-
-        static let selectedAnchorID =
-            "photomemo.selectedAnchorID"
-
-        static let selectedAlbumIdentifier =
-            "photomemo.selectedAlbumIdentifier"
-
-        static let selectedAlbumTitle =
-            "photomemo.selectedAlbumTitle"
-
-        static let mediaOutputMode =
-            "photomemo.v1.mediaOutputMode"
-
-        static let selectedMemorySubject =
-            "photomemo.selectedMemorySubject"
-
-        static let productionConfigurationReference =
-            "photomemo.productionConfigurationReference"
-
-        static let selectedMemorySubjectText =
-            "photomemo.selectedMemorySubjectText"
-
-        static let locationDisplayConfiguration =
-            "photomemo.locationDisplayConfiguration"
-
-        static let subjectLibrary =
-            "photomemo.v1.subjectLibrary"
-
-        static let activeConfigurationSlotID =
-            "photomemo.activeConfigurationSlotID"
-
-        static let configurationSlots =
-            "photomemo.configurationSlots"
-    }
-
     @Published var anchors: [Anchor] = []
-
     @Published var selectedTemplate: Template?
-
     @Published var selectedBadge: Badge?
-
     @Published var shouldWritePhotoDescription = true
-
     @Published var photoDescriptionOverride = ""
-
     @Published var selectedAnchorIDString = ""
-
     @Published var selectedAlbumIdentifier = ""
-
     @Published var selectedAlbumTitle = ""
-
-    @Published
-    var mediaOutputMode:
-        V1MediaOutputMode = .originalFormat
-
-    @Published
-    var activeConfigurationSlotID:
+    @Published var mediaOutputMode: V1MediaOutputMode = .originalFormat
+    @Published var activeConfigurationSlotID:
         WorkspaceConfigurationSlotID = .slot1
-
-    @Published
-    var configurationSlots:
+    @Published var configurationSlots:
         [WorkspaceConfigurationSlot] =
             WorkspaceConfigurationSlot.defaultSlots
 
     init() {
-
-        self.defaults =
-            PhotoMemoSharedContainer
-            .sharedUserDefaults
-        self.snapshotProvider =
-            BatchConfigurationSnapshotProvider(
-                defaults: self.defaults
-            )
-        let configurationLibraryStorage =
-            FileConfigurationLibraryStorage(
-                legacyDefaults: self.defaults
-            )
-        self.configurationLibraryStorage =
-            configurationLibraryStorage
-        self.configurationLibraryRepository =
-            ConfigurationLibraryRepository(
-                persistence:
-                    ConfigurationLibraryPersistence(
-                        storage:
-                            configurationLibraryStorage
+        let defaults = PhotoMemoSharedContainer.sharedUserDefaults
+        let storage = FileConfigurationLibraryStorage(
+            legacyDefaults: defaults
+        )
+        let legacyStore = LegacySettingsStore(defaults: defaults)
+        self.legacyStore = legacyStore
+        self.configurationLibraryStore = ConfigurationLibraryStore(
+            repository: ConfigurationLibraryRepository(
+                persistence: ConfigurationLibraryPersistence(
+                    storage: storage
+                )
+            ),
+            storage: storage
+        )
+        self.configurationProjectionService =
+            ConfigurationProjectionService(
+                legacyStore: legacyStore,
+                snapshotProvider:
+                    BatchConfigurationSnapshotProvider(
+                        defaults: defaults
                     )
             )
         self.configurationLibraryProjection = nil
         self.configurationLibraryStartupRecoveryError = nil
-        self.recoveredConfigurationLibrary = nil
-
-        replayConfigurationLibraryProjectionIfAvailable()
-
-        loadConfigurationSlots()
-
-        loadAnchors()
-
-        loadTemplate()
-
-        loadBadge()
-
-        loadPhotoDescriptionSettings()
-
-        loadEditorState()
-
-        loadMediaOutputMode()
-
-        if selectedTemplate == nil,
-           configurationLibraryStartupRecoveryError == nil {
-            selectedTemplate = .classicWhite
-        }
-
-        if selectedBadge == nil,
-           configurationLibraryStartupRecoveryError == nil {
-            selectedBadge = Badge.none
-        }
+        restoreInitialState()
     }
 
-    convenience init(
-        defaults: UserDefaults
-    ) {
+    convenience init(defaults: UserDefaults) {
         self.init(
             defaults: defaults,
             configurationLibraryBaseDirectoryURL:
@@ -367,56 +194,32 @@ final class SettingsService: ObservableObject {
         defaults: UserDefaults,
         configurationLibraryBaseDirectoryURL: URL
     ) {
-        self.defaults = defaults
-        self.snapshotProvider =
-            BatchConfigurationSnapshotProvider(
-                defaults: self.defaults
-            )
-        let configurationLibraryStorage =
-            FileConfigurationLibraryStorage(
-                baseDirectoryURL:
-                    configurationLibraryBaseDirectoryURL,
-                legacyDefaults: defaults
-            )
-        self.configurationLibraryStorage =
-            configurationLibraryStorage
-        self.configurationLibraryRepository =
-            ConfigurationLibraryRepository(
-                persistence:
-                    ConfigurationLibraryPersistence(
-                        storage:
-                            configurationLibraryStorage
+        let storage = FileConfigurationLibraryStorage(
+            baseDirectoryURL:
+                configurationLibraryBaseDirectoryURL,
+            legacyDefaults: defaults
+        )
+        let legacyStore = LegacySettingsStore(defaults: defaults)
+        self.legacyStore = legacyStore
+        self.configurationLibraryStore = ConfigurationLibraryStore(
+            repository: ConfigurationLibraryRepository(
+                persistence: ConfigurationLibraryPersistence(
+                    storage: storage
+                )
+            ),
+            storage: storage
+        )
+        self.configurationProjectionService =
+            ConfigurationProjectionService(
+                legacyStore: legacyStore,
+                snapshotProvider:
+                    BatchConfigurationSnapshotProvider(
+                        defaults: defaults
                     )
             )
         self.configurationLibraryProjection = nil
         self.configurationLibraryStartupRecoveryError = nil
-        self.recoveredConfigurationLibrary = nil
-
-        replayConfigurationLibraryProjectionIfAvailable()
-
-        loadConfigurationSlots()
-
-        loadAnchors()
-
-        loadTemplate()
-
-        loadBadge()
-
-        loadPhotoDescriptionSettings()
-
-        loadEditorState()
-
-        loadMediaOutputMode()
-
-        if selectedTemplate == nil,
-           configurationLibraryStartupRecoveryError == nil {
-            selectedTemplate = .classicWhite
-        }
-
-        if selectedBadge == nil,
-           configurationLibraryStartupRecoveryError == nil {
-            selectedBadge = Badge.none
-        }
+        restoreInitialState()
     }
 
     init(
@@ -428,138 +231,55 @@ final class SettingsService: ObservableObject {
         configurationLibraryProjection:
             (@MainActor (ConfigurationLibraryRecord) throws -> Void)? = nil
     ) {
-        self.defaults = defaults
-        self.snapshotProvider =
-            BatchConfigurationSnapshotProvider(
-                defaults: self.defaults
+        let legacyStore = LegacySettingsStore(defaults: defaults)
+        self.legacyStore = legacyStore
+        self.configurationLibraryStore = ConfigurationLibraryStore(
+            repository: configurationLibraryRepository,
+            storage: configurationLibraryStorage
+        )
+        self.configurationProjectionService =
+            ConfigurationProjectionService(
+                legacyStore: legacyStore,
+                snapshotProvider:
+                    BatchConfigurationSnapshotProvider(
+                        defaults: defaults
+                    )
             )
-        self.configurationLibraryRepository =
-            configurationLibraryRepository
-        self.configurationLibraryStorage =
-            configurationLibraryStorage
         self.configurationLibraryProjection =
             configurationLibraryProjection
         self.configurationLibraryStartupRecoveryError = nil
-        self.recoveredConfigurationLibrary = nil
-
-        replayConfigurationLibraryProjectionIfAvailable()
-
-        loadConfigurationSlots()
-        loadAnchors()
-        loadTemplate()
-        loadBadge()
-        loadPhotoDescriptionSettings()
-        loadEditorState()
-        loadMediaOutputMode()
-
-        if selectedTemplate == nil,
-           configurationLibraryStartupRecoveryError == nil {
-            selectedTemplate = .classicWhite
-        }
-        if selectedBadge == nil,
-           configurationLibraryStartupRecoveryError == nil {
-            selectedBadge = Badge.none
-        }
+        restoreInitialState()
     }
 
     func saveAnchors() {
-
-        guard let data = try? JSONEncoder().encode(anchors) else {
-            return
-        }
-
-        defaults.set(
-            data,
-            forKey: Keys.anchors
-        )
+        legacyStore.saveAnchors(anchors)
     }
 
     func saveTemplate() {
-
-        guard let selectedTemplate else {
-            defaults.removeObject(
-                forKey: Keys.selectedTemplate
-            )
-            return
-        }
-
-        guard let data = try? JSONEncoder().encode(selectedTemplate) else {
-            return
-        }
-
-        defaults.set(
-            data,
-            forKey: Keys.selectedTemplate
-        )
+        legacyStore.saveTemplate(selectedTemplate)
     }
 
     func scheduleTemplateSave() {
-
         templateSaveTask?.cancel()
         templateSaveTask = Task { @MainActor in
             try? await Task.sleep(
-                nanoseconds:
-                    autosaveDelayNanoseconds
+                nanoseconds: autosaveDelayNanoseconds
             )
-
             guard !Task.isCancelled else {
                 return
             }
-
             saveTemplate()
         }
     }
 
     func saveBadge() {
-
-        guard let selectedBadge else {
-            defaults.removeObject(
-                forKey: Keys.selectedBadge
-            )
-            return
-        }
-
-        guard let data = try? JSONEncoder().encode(selectedBadge) else {
-            return
-        }
-
-        defaults.set(
-            data,
-            forKey: Keys.selectedBadge
-        )
+        legacyStore.saveBadge(selectedBadge)
     }
 
     func saveSelectedMemorySubject(
         _ subject: MemorySubject?
     ) {
-
-        guard let subject else {
-            defaults.removeObject(
-                forKey: Keys.selectedMemorySubject
-            )
-            defaults.removeObject(
-                forKey:
-                    Keys.selectedMemorySubjectText
-            )
-            return
-        }
-
-        guard let data =
-            try? JSONEncoder().encode(subject)
-        else {
-            return
-        }
-
-        defaults.set(
-            data,
-            forKey: Keys.selectedMemorySubject
-        )
-
-        defaults.set(
-            subject.resolvedExpressionSubjectText,
-            forKey:
-                Keys.selectedMemorySubjectText
-        )
+        legacyStore.saveSelectedMemorySubject(subject)
     }
 
     func saveV1SubjectLibrary(
@@ -568,104 +288,55 @@ final class SettingsService: ObservableObject {
         memoryPresets: [MemoryPreset] = [],
         selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
-        let record =
-            V1SubjectLibraryRecord(
-                subjects: subjects,
-                selectedSubjectID: selectedSubjectID,
-                memoryPresets: memoryPresets,
-                selectedMemoryPresetID:
-                    selectedMemoryPresetID
-            )
-
-        guard let data =
-            try? JSONEncoder().encode(record)
-        else {
+        let record = V1SubjectLibraryRecord(
+            subjects: subjects,
+            selectedSubjectID: selectedSubjectID,
+            memoryPresets: memoryPresets,
+            selectedMemoryPresetID: selectedMemoryPresetID
+        )
+        guard legacyStore.saveSubjectLibrary(record) else {
             return
         }
-
-        defaults.set(
-            data,
-            forKey: Keys.subjectLibrary
-        )
-
-        let selectedSubject =
-            subjects.first {
-                $0.id == selectedSubjectID
-            }
-            ?? subjects.first
-
+        let selectedSubject = subjects.first {
+            $0.id == selectedSubjectID
+        } ?? subjects.first
         saveSelectedMemorySubject(selectedSubject)
     }
 
     func savePhotoDescriptionSettings() {
-
-        defaults.set(
-            shouldWritePhotoDescription,
-            forKey: Keys.shouldWritePhotoDescription
-        )
-
-        defaults.set(
-            photoDescriptionOverride,
-            forKey: Keys.photoDescriptionOverride
+        legacyStore.savePhotoDescriptionSettings(
+            LegacyPhotoDescriptionSettings(
+                shouldWrite: shouldWritePhotoDescription,
+                override: photoDescriptionOverride
+            )
         )
     }
 
     func saveLocationDisplayConfiguration(
         _ configuration: ExpressionModuleConfiguration?
     ) {
-        guard let configuration else {
-            defaults.removeObject(
-                forKey:
-                    Keys.locationDisplayConfiguration
-            )
-            return
-        }
-
-        guard
-            let data =
-                try? JSONEncoder().encode(
-                    configuration
-                )
-        else {
-            return
-        }
-
-        defaults.set(
-            data,
-            forKey:
-                Keys.locationDisplayConfiguration
-        )
+        legacyStore.saveLocationDisplayConfiguration(configuration)
     }
 
-    func saveMediaOutputMode(
-        _ mode: V1MediaOutputMode
-    ) {
+    func saveMediaOutputMode(_ mode: V1MediaOutputMode) {
         mediaOutputMode = mode
-        defaults.set(
-            mode.rawValue,
-            forKey: Keys.mediaOutputMode
-        )
+        legacyStore.saveMediaOutputMode(mode)
     }
 
     func schedulePhotoDescriptionSettingsSave() {
-
         photoDescriptionSaveTask?.cancel()
         photoDescriptionSaveTask = Task { @MainActor in
             try? await Task.sleep(
-                nanoseconds:
-                    autosaveDelayNanoseconds
+                nanoseconds: autosaveDelayNanoseconds
             )
-
             guard !Task.isCancelled else {
                 return
             }
-
             savePhotoDescriptionSettings()
         }
     }
 
     func saveAll() {
-
         saveAnchors()
         saveTemplate()
         saveBadge()
@@ -680,80 +351,48 @@ final class SettingsService: ObservableObject {
         selectedAlbumIdentifier: String? = nil,
         selectedAlbumTitle: String? = nil
     ) {
-
-        if let selectedAnchorID {
-            self.selectedAnchorIDString =
-                selectedAnchorID.uuidString
-        }
-
-        if let selectedAlbumIdentifier {
-            self.selectedAlbumIdentifier =
-                selectedAlbumIdentifier
-        }
-
-        if let selectedAlbumTitle {
-            self.selectedAlbumTitle =
-                selectedAlbumTitle
-        }
-
-        defaults.set(
-            selectedAnchorIDString,
-            forKey: Keys.selectedAnchorID
+        updateEditorState(
+            selectedAnchorID: selectedAnchorID,
+            selectedAlbumIdentifier: selectedAlbumIdentifier,
+            selectedAlbumTitle: selectedAlbumTitle
         )
-
-        defaults.set(
-            self.selectedAlbumIdentifier,
-            forKey: Keys.selectedAlbumIdentifier
-        )
-
-        defaults.set(
-            self.selectedAlbumTitle,
-            forKey: Keys.selectedAlbumTitle
-        )
+        legacyStore.saveEditorState(currentEditorState)
     }
 
     func reloadV1BootstrapState() {
-        loadBadge()
-        loadEditorState()
+        switch legacyStore.loadBadgeResult() {
+        case .noValue:
+            break
+        case .success(let badge):
+            selectedBadge = badge
+        case .decodingFailed:
+            selectedBadge = nil
+        }
+        restoreEditorState()
     }
 
     func loadV1SelectedSubjectResult()
-    -> PhotoMemoSharedDefaultsReadResult<
-        MemorySubject
-    > {
-
-        decodeValueResult(
-            MemorySubject.self,
-            forKey: Keys.selectedMemorySubject
-        )
+    -> PhotoMemoSharedDefaultsReadResult<MemorySubject> {
+        legacyStore.loadSelectedMemorySubjectResult()
     }
 
     func loadV1SubjectLibraryResult()
-    -> PhotoMemoSharedDefaultsReadResult<
-        V1SubjectLibraryRecord
-    > {
-
-        decodeValueResult(
-            V1SubjectLibraryRecord.self,
-            forKey: Keys.subjectLibrary
-        )
+    -> PhotoMemoSharedDefaultsReadResult<V1SubjectLibraryRecord> {
+        legacyStore.loadSubjectLibraryResult()
     }
 
     func loadV1BootstrapReadState()
     -> V1ConfigurationBootstrapReadState {
-
-        loadEditorState()
-
+        restoreEditorState()
         return V1ConfigurationBootstrapReadState(
             configurationLibrary:
-                recoveredConfigurationLibrary,
+                configurationLibraryStore.recoveredAggregate,
             subjectLibraryResult:
                 loadV1SubjectLibraryResult(),
             subjectResult:
                 loadV1SelectedSubjectResult(),
             badgeResult:
-                snapshotProvider
-                .loadBadgeResult(),
+                legacyStore.loadBadgeResult(),
             selectedAlbumIdentifier:
                 selectedAlbumIdentifier,
             selectedAlbumTitle:
@@ -771,7 +410,7 @@ final class SettingsService: ObservableObject {
                 ConfigurationLibrarySaveReceipt
             ) -> Void = { _, _ in }
     ) async throws -> ConfigurationLibrarySaveReceipt {
-        try await configurationLibraryRepository.save(
+        try await configurationLibraryStore.save(
             aggregate,
             compatibilityProjection: {
                 [weak self]
@@ -780,20 +419,17 @@ final class SettingsService: ObservableObject {
                 guard let self else {
                     return
                 }
-                recoveredConfigurationLibrary = saved
                 if let configurationLibraryProjection {
                     try configurationLibraryProjection(saved)
                 } else {
-                    try emitCompatibilityProjections(
-                        from: saved
-                    )
+                    try applyDefaultProjection(saved)
                 }
                 afterSuccessfulProjection(
                     buildBatchConfigurationSnapshot()
                         .withConfigurationIdentity(
-                            id: provisionalReceipt
-                                .configurationID,
-                            revision: provisionalReceipt
+                            id: provisionalReceipt.configurationID,
+                            revision:
+                                provisionalReceipt
                                 .configurationRevision
                         ),
                     provisionalReceipt
@@ -804,44 +440,20 @@ final class SettingsService: ObservableObject {
 
     func loadConfigurationLibrary()
     async throws -> ConfigurationLibraryLoadReceipt {
-        try await configurationLibraryRepository.load()
+        try await configurationLibraryStore.load()
     }
 
     func resolveDurableProductionConfiguration(
         _ reference: ProductionConfigurationReference
     ) throws -> BatchConfigurationSnapshot {
-        guard let recoveredConfigurationLibrary else {
-            throw ProductionConfigurationContractError
-                .configurationNotFound(
-                    reference.configurationID
-                )
-        }
-        return try ProductionConfigurationSnapshotFactory
-            .resolve(
-                reference: reference,
-                from: recoveredConfigurationLibrary
-            )
+        try configurationLibraryStore
+            .resolveDurableProductionConfiguration(reference)
     }
 
     func saveConfigurationSlots() {
-
-        guard
-            let slotsData =
-                try? JSONEncoder().encode(
-                    configurationSlots
-                )
-        else {
-            return
-        }
-
-        defaults.set(
-            activeConfigurationSlotID.rawValue,
-            forKey: Keys.activeConfigurationSlotID
-        )
-
-        defaults.set(
-            slotsData,
-            forKey: Keys.configurationSlots
+        legacyStore.saveConfigurationSlots(
+            activeSlotID: activeConfigurationSlotID,
+            slots: configurationSlots
         )
     }
 
@@ -849,50 +461,36 @@ final class SettingsService: ObservableObject {
         _ slotID: WorkspaceConfigurationSlotID,
         snapshot: BatchConfigurationSnapshot?
     ) {
-
-        configurationSlots =
-            configurationSlots.map { slot in
-
-                guard slot.id == slotID else {
-                    return slot
-                }
-
-                var updatedSlot = slot
-                updatedSlot.snapshot = snapshot
-                updatedSlot.updatedAt =
-                    snapshot == nil ? nil : Date()
-                return updatedSlot
+        configurationSlots = configurationSlots.map { slot in
+            guard slot.id == slotID else {
+                return slot
             }
-
+            var updatedSlot = slot
+            updatedSlot.snapshot = snapshot
+            updatedSlot.updatedAt = snapshot == nil ? nil : Date()
+            return updatedSlot
+        }
         saveConfigurationSlots()
     }
 
     func configurationSlot(
         for slotID: WorkspaceConfigurationSlotID
     ) -> WorkspaceConfigurationSlot? {
-
-        configurationSlots.first {
-            $0.id == slotID
-        }
+        configurationSlots.first { $0.id == slotID }
     }
 
     func renameConfigurationSlot(
         _ slotID: WorkspaceConfigurationSlotID,
         customTitle: String?
     ) {
-
-        configurationSlots =
-            configurationSlots.map { slot in
-
-                guard slot.id == slotID else {
-                    return slot
-                }
-
-                var updatedSlot = slot
-                updatedSlot.customTitle = customTitle
-                return updatedSlot
+        configurationSlots = configurationSlots.map { slot in
+            guard slot.id == slotID else {
+                return slot
             }
-
+            var updatedSlot = slot
+            updatedSlot.customTitle = customTitle
+            return updatedSlot
+        }
         saveConfigurationSlots()
     }
 
@@ -901,499 +499,204 @@ final class SettingsService: ObservableObject {
         selectedAlbumIdentifier: String? = nil,
         selectedAlbumTitle: String? = nil
     ) {
-
-        if let selectedAnchorID {
-            self.selectedAnchorIDString =
-                selectedAnchorID.uuidString
-        }
-
-        if let selectedAlbumIdentifier {
-            self.selectedAlbumIdentifier =
-                selectedAlbumIdentifier
-        }
-
-        if let selectedAlbumTitle {
-            self.selectedAlbumTitle =
-                selectedAlbumTitle
-        }
-
+        updateEditorState(
+            selectedAnchorID: selectedAnchorID,
+            selectedAlbumIdentifier: selectedAlbumIdentifier,
+            selectedAlbumTitle: selectedAlbumTitle
+        )
         editorStateSaveTask?.cancel()
         editorStateSaveTask = Task { @MainActor in
             try? await Task.sleep(
-                nanoseconds:
-                    autosaveDelayNanoseconds
+                nanoseconds: autosaveDelayNanoseconds
             )
-
             guard !Task.isCancelled else {
                 return
             }
-
             saveEditorState()
         }
-    }
-
-    private func loadAnchors() {
-
-        guard
-            let data = defaults.data(
-                forKey: Keys.anchors
-            )
-        else {
-            return
-        }
-
-        anchors =
-            (try? JSONDecoder().decode(
-                [Anchor].self,
-                from: data
-            )) ?? []
-    }
-
-    private func loadTemplate() {
-
-        guard
-            let data = defaults.data(
-                forKey: Keys.selectedTemplate
-            )
-        else {
-            return
-        }
-
-        guard let decodedTemplate =
-            try? JSONDecoder().decode(
-                Template.self,
-                from: data
-            )
-        else {
-            return
-        }
-
-        let normalizedTemplate =
-            decodedTemplate.normalizedForEditing
-
-        selectedTemplate =
-            normalizedTemplate
-
-        if normalizedTemplate != decodedTemplate {
-            saveTemplate()
-        }
-    }
-
-    private func loadBadge() {
-
-        guard
-            let data = defaults.data(
-                forKey: Keys.selectedBadge
-            )
-        else {
-            return
-        }
-
-        selectedBadge =
-            try? JSONDecoder().decode(
-                Badge.self,
-                from: data
-            )
-    }
-
-    private func loadPhotoDescriptionSettings() {
-
-        if defaults.object(
-            forKey: Keys.shouldWritePhotoDescription
-        ) != nil {
-
-            shouldWritePhotoDescription =
-                defaults.bool(
-                    forKey: Keys.shouldWritePhotoDescription
-                )
-        }
-
-        photoDescriptionOverride =
-            defaults.string(
-                forKey: Keys.photoDescriptionOverride
-            ) ?? ""
-    }
-
-    private func loadEditorState() {
-
-        selectedAnchorIDString =
-            defaults.string(
-                forKey: Keys.selectedAnchorID
-            ) ?? ""
-
-        selectedAlbumIdentifier =
-            defaults.string(
-                forKey: Keys.selectedAlbumIdentifier
-            ) ?? ""
-
-        selectedAlbumTitle =
-            defaults.string(
-                forKey: Keys.selectedAlbumTitle
-            ) ?? ""
-    }
-
-    private func loadMediaOutputMode() {
-        guard let rawValue =
-            defaults.string(
-                forKey: Keys.mediaOutputMode
-            ),
-              let mode =
-            V1MediaOutputMode(rawValue: rawValue)
-        else {
-            mediaOutputMode = .originalFormat
-            return
-        }
-
-        mediaOutputMode = mode
-    }
-
-    private func loadConfigurationSlots() {
-
-        if let activeSlotRawValue =
-            defaults.string(
-                forKey: Keys.activeConfigurationSlotID
-            ),
-           let activeSlotID =
-            WorkspaceConfigurationSlotID(
-                rawValue: activeSlotRawValue
-            ) {
-            activeConfigurationSlotID =
-                activeSlotID
-        }
-
-        guard
-            let slotsData =
-                defaults.data(
-                    forKey: Keys.configurationSlots
-                ),
-            let decodedSlots =
-                try? JSONDecoder().decode(
-                    [WorkspaceConfigurationSlot].self,
-                    from: slotsData
-                )
-        else {
-            configurationSlots =
-                WorkspaceConfigurationSlot.defaultSlots
-            return
-        }
-
-        configurationSlots =
-            WorkspaceConfigurationSlot.normalized(
-                decodedSlots
-            )
     }
 
     func decodeValueResult<Value: Decodable>(
         _ valueType: Value.Type,
         forKey storageKey: String
-    ) -> PhotoMemoSharedDefaultsReadResult<
-        Value
-    > {
-
-        guard
-            let data = defaults.data(
-                forKey: storageKey
-            )
-        else {
-            return .noValue
-        }
-
-        do {
-            return .success(
-                try JSONDecoder().decode(
-                    valueType,
-                    from: data
-                )
-            )
-        } catch {
-            return .decodingFailed(
-                PhotoMemoSharedDefaultsReadFailure(
-                    storageKey: storageKey,
-                    payloadByteCount: data.count,
-                    underlyingDescription:
-                        String(
-                            describing: error
-                        ),
-                    rawPayload: data
-                )
-            )
-        }
+    ) -> PhotoMemoSharedDefaultsReadResult<Value> {
+        legacyStore.decodeValueResult(
+            valueType,
+            forKey: storageKey
+        )
     }
 }
 
 extension SettingsService {
 
     var resolvedSelectedAnchor: Anchor? {
-
-        resolvedAnchor(
-            for: selectedAnchorIDString
-        )
+        resolvedAnchor(for: selectedAnchorIDString)
     }
 
     func resolvedAnchor(
         for identifierString: String
     ) -> Anchor? {
-
-        guard
-            let identifier = UUID(
-                uuidString: identifierString
-            )
-        else {
+        guard let identifier = UUID(
+            uuidString: identifierString
+        ) else {
             return nil
         }
-
-        return anchors.first {
-            $0.id == identifier
-        }
+        return anchors.first { $0.id == identifier }
     }
 
     func buildBatchConfigurationSnapshot(
         selectedAnchorID: UUID? = nil,
         selectedAlbumIdentifier: String? = nil
     ) -> BatchConfigurationSnapshot {
-
-        let resolvedSelectedAnchorIDString =
-            selectedAnchorID?.uuidString
-            ?? selectedAnchorIDString
-
-        let compatibilitySnapshot = snapshotProvider.makeSnapshot(
-            template: selectedTemplate,
-            badge: selectedBadge,
-            anchors: anchors,
-            selectedAnchorIDString:
-                resolvedSelectedAnchorIDString,
-            memorySubjectText:
-                defaults.string(
-                    forKey:
-                        Keys.selectedMemorySubjectText
+        configurationProjectionService
+            .buildBatchConfigurationSnapshot(
+                input: ConfigurationSnapshotProjectionInput(
+                    selectedTemplate: selectedTemplate,
+                    selectedBadge: selectedBadge,
+                    anchors: anchors,
+                    selectedAnchorIDString:
+                        selectedAnchorID?.uuidString
+                        ?? selectedAnchorIDString,
+                    selectedAlbumIdentifier:
+                        selectedAlbumIdentifier
+                        ?? self.selectedAlbumIdentifier,
+                    shouldWritePhotoDescription:
+                        shouldWritePhotoDescription,
+                    photoDescriptionOverride:
+                        photoDescriptionOverride,
+                    mediaOutputMode: mediaOutputMode
                 ),
-            shouldWritePhotoDescription:
-                shouldWritePhotoDescription,
-            photoDescriptionOverride:
-                photoDescriptionOverride,
-            selectedAlbumIdentifier:
-                selectedAlbumIdentifier
-                ?? self.selectedAlbumIdentifier,
-            locationDisplayConfiguration:
-                loadLocationDisplayConfiguration(),
-            mediaOutputModeRawValue:
-                mediaOutputMode.rawValue
-        )
-
-        guard let aggregate = recoveredConfigurationLibrary,
-            let configurationID = aggregate.activeConfigurationID,
-            let configuration = aggregate.subjects.lazy
-                .flatMap(\.configurations)
-                .first(where: { $0.id == configurationID })
-        else {
-            return compatibilitySnapshot
-        }
-
-        let reference = ProductionConfigurationReference(
-            configurationID: configurationID,
-            revision: configuration.revision
-        )
-
-        if let exact = try? ProductionConfigurationSnapshotFactory
-            .resolve(
-                reference: reference,
-                from: aggregate
-            ) {
-            return exact
-        }
-
-        return compatibilitySnapshot
-            .withProductionConfigurationReference(
-                reference
+                durableAggregate:
+                    configurationLibraryStore
+                    .recoveredAggregate
             )
     }
 
     func loadLocationDisplayConfiguration()
     -> ExpressionModuleConfiguration? {
-        guard
-            let data =
-                defaults.data(
-                    forKey:
-                        Keys.locationDisplayConfiguration
-                )
-        else {
-            return nil
-        }
-
-        return try? JSONDecoder().decode(
-            ExpressionModuleConfiguration.self,
-            from: data
-        )
+        legacyStore.loadLocationDisplayConfiguration()
     }
 
     var normalizedSelectedAlbumIdentifier: String {
-
-        normalizedAlbumIdentifier(
-            selectedAlbumIdentifier
-        )
+        normalizedAlbumIdentifier(selectedAlbumIdentifier)
     }
 
     func normalizedAlbumIdentifier(
         _ identifier: String
     ) -> String {
-
-        snapshotProvider
+        configurationProjectionService
             .normalizedAlbumIdentifier(identifier)
     }
+}
 
-    private func emitCompatibilityProjections(
-        from aggregate: ConfigurationLibraryRecord
-    ) throws {
-        guard
-            let activeSubjectID = aggregate.activeSubjectID,
-            let activeConfigurationID =
-                aggregate.activeConfigurationID,
-            let activeSubjectRecord =
-                aggregate.subjects.first(where: {
-                    $0.subject.id == activeSubjectID
-                }),
-            let activeConfiguration =
-                activeSubjectRecord.configurations.first(
-                    where: {
-                        $0.id == activeConfigurationID
-                    }
-                )
-        else {
-            throw ConfigurationLibraryPersistenceError
-                .missingActiveSelection
+private extension SettingsService {
+
+    var currentEditorState: LegacySettingsEditorState {
+        LegacySettingsEditorState(
+            selectedAnchorIDString: selectedAnchorIDString,
+            selectedAlbumIdentifier: selectedAlbumIdentifier,
+            selectedAlbumTitle: selectedAlbumTitle
+        )
+    }
+
+    func restoreInitialState() {
+        replayConfigurationLibraryProjectionIfAvailable()
+        restoreCompatibilityProjectionState()
+        let slots = legacyStore.loadConfigurationSlots()
+        activeConfigurationSlotID = slots.activeSlotID
+        configurationSlots = slots.slots
+
+        if selectedTemplate == nil,
+           configurationLibraryStartupRecoveryError == nil {
+            selectedTemplate = .classicWhite
         }
-
-        let subjectLibrary = V1SubjectLibraryRecord(
-            subjects: aggregate.subjects.map(\.subject),
-            selectedSubjectID: activeSubjectID,
-            memoryPresets:
-                aggregate.subjects.flatMap { subjectRecord in
-                    subjectRecord.configurations.map {
-                        legacyMemoryPreset(
-                            from: $0,
-                            subjectID:
-                                subjectRecord.subject.id
-                        )
-                    }
-                },
-            selectedMemoryPresetID:
-                activeConfigurationID
-        )
-
-        defaults.set(
-            try JSONEncoder().encode(subjectLibrary),
-            forKey: Keys.subjectLibrary
-        )
-        defaults.set(
-            try JSONEncoder().encode(
-                ProductionConfigurationReference(
-                    configurationID:
-                        activeConfigurationID,
-                    revision:
-                        activeConfiguration.revision
-                )
-            ),
-            forKey:
-                Keys.productionConfigurationReference
-        )
-        defaults.set(
-            try JSONEncoder().encode(
-                activeSubjectRecord.subject
-            ),
-            forKey: Keys.selectedMemorySubject
-        )
-        defaults.set(
-            activeSubjectRecord.subject
-                .resolvedExpressionSubjectText,
-            forKey: Keys.selectedMemorySubjectText
-        )
-
-        selectedTemplate =
-            activeConfiguration.editor.template
-                .normalizedForEditing
-        defaults.set(
-            try JSONEncoder().encode(
-                activeConfiguration.editor.template
-                    .normalizedForEditing
-            ),
-            forKey: Keys.selectedTemplate
-        )
-
-        selectedBadge = legacyBadge(
-            from: activeConfiguration.presentation.logo.badge
-        )
-        if let selectedBadge {
-            defaults.set(
-                try JSONEncoder().encode(selectedBadge),
-                forKey: Keys.selectedBadge
-            )
-        } else {
-            defaults.removeObject(forKey: Keys.selectedBadge)
+        if selectedBadge == nil,
+           configurationLibraryStartupRecoveryError == nil {
+            selectedBadge = Badge.none
         }
+    }
 
-        if let locationConfiguration =
-            activeConfiguration.presentation
-                .locationConfiguration {
-            defaults.set(
-                try JSONEncoder().encode(
-                    locationConfiguration
-                ),
-                forKey: Keys.locationDisplayConfiguration
-            )
-        } else {
-            defaults.removeObject(
-                forKey: Keys.locationDisplayConfiguration
-            )
-        }
-
+    func restoreCompatibilityProjectionState() {
+        anchors = legacyStore.loadAnchors()
+        selectedTemplate = legacyStore.loadTemplate()
+        selectedBadge = legacyStore.loadBadge()
+        let photoDescription =
+            legacyStore.loadPhotoDescriptionSettings()
         shouldWritePhotoDescription =
-            activeConfiguration.output
-                .photosDescriptionPolicy.isEnabled
+            photoDescription.shouldWrite
         photoDescriptionOverride =
-            activeConfiguration.output
-                .photosDescriptionPolicy.overrideText
-        defaults.set(
-            shouldWritePhotoDescription,
-            forKey: Keys.shouldWritePhotoDescription
-        )
-        defaults.set(
-            photoDescriptionOverride,
-            forKey: Keys.photoDescriptionOverride
-        )
+            photoDescription.override
+        restoreEditorState()
+        mediaOutputMode = legacyStore.loadMediaOutputMode()
+    }
 
+    func restoreEditorState() {
+        let editorState = legacyStore.loadEditorState()
         selectedAnchorIDString =
-            activeConfiguration.selectedTimeAnchorID?
-                .uuidString ?? ""
+            editorState.selectedAnchorIDString
         selectedAlbumIdentifier =
-            legacyAlbumIdentifier(
-                activeConfiguration.output.album
-            )
+            editorState.selectedAlbumIdentifier
         selectedAlbumTitle =
-            activeConfiguration.output.album.title
-        defaults.set(
-            selectedAnchorIDString,
-            forKey: Keys.selectedAnchorID
-        )
-        defaults.set(
-            selectedAlbumIdentifier,
-            forKey: Keys.selectedAlbumIdentifier
-        )
-        defaults.set(
-            selectedAlbumTitle,
-            forKey: Keys.selectedAlbumTitle
-        )
+            editorState.selectedAlbumTitle
+    }
 
-        mediaOutputMode =
-            activeConfiguration.output.mediaMode
-        defaults.set(
-            mediaOutputMode.rawValue,
-            forKey: Keys.mediaOutputMode
-        )
+    func updateEditorState(
+        selectedAnchorID: UUID?,
+        selectedAlbumIdentifier: String?,
+        selectedAlbumTitle: String?
+    ) {
+        if let selectedAnchorID {
+            selectedAnchorIDString =
+                selectedAnchorID.uuidString
+        }
+        if let selectedAlbumIdentifier {
+            self.selectedAlbumIdentifier =
+                selectedAlbumIdentifier
+        }
+        if let selectedAlbumTitle {
+            self.selectedAlbumTitle =
+                selectedAlbumTitle
+        }
+    }
 
-        let projectedSnapshot = buildBatchConfigurationSnapshot()
+    func replayConfigurationLibraryProjectionIfAvailable() {
+        configurationLibraryStore
+            .replayProjectionIfAvailable { aggregate in
+                try applyDefaultProjection(aggregate)
+            }
+        configurationLibraryStartupRecoveryError =
+            configurationLibraryStore.startupRecoveryError
+    }
+
+    func applyDefaultProjection(
+        _ aggregate: ConfigurationLibraryRecord
+    ) throws {
+        let projection = try configurationProjectionService
+            .projectAndPersist(aggregate)
+
+        selectedTemplate = projection.template
+        selectedBadge = projection.badge
+        shouldWritePhotoDescription =
+            projection.photoDescriptionSettings.shouldWrite
+        photoDescriptionOverride =
+            projection.photoDescriptionSettings.override
+        selectedAnchorIDString =
+            projection.editorState.selectedAnchorIDString
+        selectedAlbumIdentifier =
+            projection.editorState.selectedAlbumIdentifier
+        selectedAlbumTitle =
+            projection.editorState.selectedAlbumTitle
+        mediaOutputMode = projection.mediaOutputMode
+
+        let projectedSnapshot =
+            buildBatchConfigurationSnapshot()
             .withConfigurationIdentity(
-                id: activeConfigurationID,
-                revision: activeConfiguration.revision
+                id: projection
+                    .productionConfigurationReference
+                    .configurationID,
+                revision: projection
+                    .productionConfigurationReference
+                    .revision
             )
         configurationSlots = configurationSlots.map { slot in
             guard slot.id == activeConfigurationSlotID else {
@@ -1401,139 +704,10 @@ extension SettingsService {
             }
             var projectedSlot = slot
             projectedSlot.snapshot = projectedSnapshot
-            projectedSlot.updatedAt = activeConfiguration.savedAt
+            projectedSlot.updatedAt = projection.savedAt
             return projectedSlot
         }
         saveConfigurationSlots()
     }
-
-    private func legacyBadge(
-        from descriptor:
-            MemoryConfigurationRecord.Presentation.Logo
-            .BadgeDescriptor?
-    ) -> Badge? {
-        guard let descriptor else {
-            return nil
-        }
-        return Badge(
-            id: descriptor.id,
-            name: descriptor.name,
-            type: descriptor.type,
-            imageName: descriptor.imageName,
-            imagePath:
-                descriptor.assetReference?.relativePath,
-            systemSymbol: descriptor.systemSymbol,
-            isSystemDefault: descriptor.isSystemDefault
-        )
-    }
-
-    private func legacyMemoryPreset(
-        from configuration: MemoryConfigurationRecord,
-        subjectID: UUID
-    ) -> MemoryPreset {
-        MemoryPreset(
-            id: configuration.id,
-            title: configuration.title,
-            summary: "",
-            regionTemplateIDs:
-                configuration.editor.regionTemplateIDs,
-            savedAt: configuration.savedAt,
-            selectedSubjectID: subjectID,
-            selectedTimeAnchorID:
-                configuration.selectedTimeAnchorID,
-            outputOption: .processedImage,
-            storageOption: .appFolder,
-            logoMode:
-                configuration.presentation.logo.mode,
-            usesCustomMemoryWriteText:
-                configuration.editor.memoryCopy
-                    .usesCustomText,
-            customMemoryWriteText:
-                configuration.editor.memoryCopy
-                    .customText,
-            savedOutputConfiguration:
-                legacyOutputConfiguration(
-                    configuration.output
-                )
-        )
-    }
-
-    private func legacyOutputConfiguration(
-        _ output: MemoryConfigurationRecord.Output
-    ) -> V1SavedOutputConfiguration {
-        let outputTarget: V1IOSOutputTarget
-        switch output.album.destination {
-        case .automatic:
-            outputTarget = .automatic
-        case .applePhotos:
-            outputTarget = .applePhotos
-        case .existingAlbum:
-            outputTarget = .existingAlbum
-        case .newAlbum:
-            outputTarget = .newAlbum
-        }
-        return V1SavedOutputConfiguration(
-            outputTarget: outputTarget,
-            mediaOutputMode: output.mediaMode,
-            selectedExistingAlbumIdentifier:
-                output.album.destination == .existingAlbum
-                ? output.album.identifier
-                : "",
-            newAlbumName:
-                output.album.destination == .newAlbum
-                ? output.album.title
-                : ""
-        )
-    }
-
-    private func legacyAlbumIdentifier(
-        _ album: MemoryConfigurationRecord.Output
-            .AlbumDescriptor
-    ) -> String {
-        switch album.destination {
-        case .automatic:
-            return PhotoMemoAlbumSelection
-                .automaticIdentifier
-        case .applePhotos:
-            return PhotoMemoAlbumSelection
-                .systemLibraryIdentifier
-        case .existingAlbum,
-             .newAlbum:
-            return album.identifier
-        }
-    }
-
-    private func replayConfigurationLibraryProjectionIfAvailable() {
-        guard let configurationLibraryStorage else {
-            return
-        }
-        do {
-            let snapshot = try
-                ConfigurationLibrarySynchronousStorageLoader
-                .snapshot(from: configurationLibraryStorage)
-            guard let recovered = try
-                ConfigurationLibraryRecordRecovery.recover(
-                    from: snapshot,
-                    allowNoValue: true
-                )
-            else {
-                return
-            }
-            recoveredConfigurationLibrary =
-                recovered.aggregate
-            try emitCompatibilityProjections(
-                from: recovered.aggregate
-            )
-        } catch ConfigurationLibraryPersistenceTransportError
-            .readFailed(let description) {
-            configurationLibraryStartupRecoveryError =
-                .readFailed(description)
-        } catch let error as
-            ConfigurationLibraryPersistenceError {
-            configurationLibraryStartupRecoveryError = error
-        } catch {
-            configurationLibraryStartupRecoveryError =
-                .encodingFailed(String(describing: error))
-        }
-    }
 }
+#endif
