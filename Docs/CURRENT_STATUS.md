@@ -1,6 +1,74 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
+
+## 2026-07-16 Responsibility Split Closure
+
+MemoMark completed the risk-ranked responsibility split program without
+changing the V3 product workflow, renderer/layout decisions, persistence keys,
+Share handoff records, or local-first ownership. This closure combines the
+already-landed iOS root and Batch Queue splits with the six remaining service,
+controller, state, and persistence splits.
+
+Completed boundaries:
+
+- `PhotoMemoiOSV1View` delegates configuration-library decisions, local
+  backup/restore, Logo asset handling, and entry navigation to the previously
+  landed focused coordinators while retaining root state and side-effect
+  ordering;
+- `BatchQueueExecution` remains a 109-line compatibility facade over
+  `BatchQueueCoordinator`, `BatchTaskProcessor`,
+  `BatchTaskDiagnosticsRecorder`, and `BatchTaskResourceLifecycle`;
+- `RecordCardExportService` is a 150-line facade over the export pipeline,
+  output naming, metadata writer, JPEG EXIF patcher, and rendered-artifact
+  guard;
+- `PhotoMemoShareExtensionIntakeService` delegates provider selection,
+  managed-file import, Live Photo recovery, and intake diagnostics;
+- `PhotoMemoShareExtensionViewController` is reduced to 1,056 lines and
+  delegates preview rendering, view-state projection, handoff, intake
+  persistence/error mapping, and diagnostic observation;
+- `ConfigurationSession` is a 482-line facade over value-type editing state
+  and persistence reconciliation;
+- `SettingsService` is a 713-line facade over legacy defaults,
+  Configuration Library persistence, and compatibility projection;
+- `ExternalPhotoIntakeStore` is a 412-line facade over request persistence,
+  managed-file storage, and cleanup.
+
+Review findings closed during integration:
+
+- Settings startup recovery continues to use the built-in compatibility
+  projection; injected save-time projection hooks are not called during
+  restart replay;
+- badge reload preserves the current in-memory badge when no persisted value
+  exists, matching the previous facade behavior;
+- managed-intake path checks now require a real directory boundary, so an
+  external sibling such as `ExternalIntake-Originals` cannot be deleted as if
+  it belonged to the managed inbox;
+- unused Share queue-observation helpers were removed instead of activating a
+  previously dormant, behavior-changing polling path.
+
+Verification completed on the merged integration branch:
+
+- focused responsibility, migration, Share intake/controller, export
+  readback, configuration, settings, and external-intake suites: `104/104`
+  passed;
+- an expanded configuration run passed `120/121`; the only failure is the
+  pre-existing stale assertion expecting `途途 生日` after the privacy-safe
+  default changed to `小宝 生日`, and the same failure is present on `main`;
+- `PhotoMemoTests` macOS `build-for-testing` passed;
+- generic iOS Simulator Debug builds passed for `PhotoMemoiOS` and
+  `PhotoMemoShareExtension`;
+- `git diff --check` passed and the extracted collaborator definitions are
+  unique;
+- no physical-device Share Sheet, iCloud temporary-URL, cross-process App
+  Group timing, or real Apple Photos/Live Photo lifecycle was manually
+  validated in this structural slice.
+
+Existing non-blocking test-host warnings remain separate follow-up items: the
+macOS test host reports an undeclared `com.apple.proraw` exported type when the
+RAW intake contract runs, and export fixture tests report QoS priority
+inversion warnings. Neither warning was introduced by these responsibility
+splits.
 
 ## 2026-07-15 Batch Processing Responsibility Split
 
