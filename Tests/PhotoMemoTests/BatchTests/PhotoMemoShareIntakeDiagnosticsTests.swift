@@ -147,6 +147,11 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
                 relativePath:
                     "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
             )
+        let rendererSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
+            )
 
         #expect(
             intakeSource
@@ -175,7 +180,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         #expect(
             viewControllerSource
             .contains(
-                "PhotoMemoShareExtensionIntakeService\n            .maxSupportedPhotoCount"
+                ".maxSupportedPhotoCount"
             )
         )
         #expect(
@@ -190,12 +195,12 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
             )
         )
         #expect(
-            viewControllerSource.contains(
+            rendererSource.contains(
                 "这次的照片有点多"
             )
         )
         #expect(
-            viewControllerSource.contains(
+            rendererSource.contains(
                 "返回分批分享"
             )
         )
@@ -312,6 +317,11 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
                 relativePath:
                     "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
             )
+        let rendererSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
+            )
 
         #expect(
             viewControllerSource
@@ -320,7 +330,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
             )
         )
         #expect(
-            viewControllerSource
+            rendererSource
             .contains(
                 "张 Live Photo 已按静态照片接收"
             )

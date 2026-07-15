@@ -45,7 +45,7 @@ struct MediaDecodeLayerContractTests {
         let source =
             try sourceText(
                 relativePath:
-                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionPreviewController.swift"
             )
 
         let forbiddenDecodeDetails = [
@@ -66,7 +66,7 @@ struct MediaDecodeLayerContractTests {
         )
         #expect(
             source.contains(
-                "thumbnailImage(\n                from: data"
+                "thumbnailImage(from: data)"
             )
         )
     }

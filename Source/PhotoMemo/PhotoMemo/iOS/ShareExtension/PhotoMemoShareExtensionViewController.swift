@@ -1,26 +1,8 @@
 #if os(iOS) && PHOTOMEMO_SHARE_EXTENSION
 import UIKit
-import UniformTypeIdentifiers
 
 final class PhotoMemoShareExtensionViewController:
     UIViewController {
-
-    private enum ViewState {
-
-        case confirming
-
-        case processing
-
-        case received
-
-        case failed(
-            title: String,
-            message: String,
-            suggestion: String
-        )
-
-        case handoffFailed
-    }
 
     private let intakeService =
         PhotoMemoShareExtensionIntakeService()
@@ -30,6 +12,32 @@ final class PhotoMemoShareExtensionViewController:
 
     private let batchSnapshotService =
         SharedBatchQueueSnapshotService()
+
+    private let previewController =
+        ShareExtensionPreviewController()
+
+    private let viewStateRenderer =
+        ShareExtensionViewStateRenderer()
+
+    private lazy var handoffCoordinator =
+        ShareExtensionHandoffCoordinator(
+            extensionContext: { [weak self] in
+                self?.extensionContext
+            },
+            firstResponder: { [weak self] in
+                self
+            }
+        )
+
+    private lazy var progressObserver =
+        ShareExtensionProgressObserver(
+            batchSnapshotService: batchSnapshotService,
+            enqueuedJobID: { [weak self] requestID in
+                self?.handoffCoordinator.enqueuedJobID(
+                    for: requestID
+                )
+            }
+        )
 
     private lazy var workflowSummaryBuilder =
         PhotoMemoShareWorkflowSummaryBuilder {
@@ -112,9 +120,6 @@ final class PhotoMemoShareExtensionViewController:
     private var firstPreviewTask:
         Task<Void, Never>?
 
-    private var intakeDiagnosticTask:
-        Task<Void, Never>?
-
     private var previewCardViews:
         [UIView] = []
 
@@ -143,7 +148,7 @@ final class PhotoMemoShareExtensionViewController:
 
     private var pendingHandoffPhotoCount = 0
 
-    private var viewState: ViewState = .confirming
+    private var viewState: ShareExtensionViewState = .confirming
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -156,6 +161,12 @@ final class PhotoMemoShareExtensionViewController:
         loadInputItems()
         applyWorkflowSummary()
         applyConfirmingState()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        firstPreviewTask?.cancel()
+        progressObserver.stopIntakeDiagnosticMonitoring()
+        super.viewDidDisappear(animated)
     }
 }
 
@@ -777,158 +788,36 @@ private extension PhotoMemoShareExtensionViewController {
 
     @MainActor
     func applyConfirmingState() {
-
-        viewState = .confirming
-        activityIndicator.stopAnimating()
-        statusMessageLabel.textColor =
-            .secondaryLabel
-        previewSectionView?.isHidden = true
-        summarySectionView?.isHidden =
-            sharedPhotoCount == 0
-
-        titleLabel.text =
-            sharedPhotoCount > 0
-            ? "检测到 \(sharedPhotoCount) 张可处理照片"
-            : "这次分享里没有可处理照片"
-
-        subtitleLabel.text =
-            configurationReadiness.isReady
-            ? (
-                sharedPhotoCount > 0
-            ? "时光记会按当前配置继续处理，并把结果写回系统相册。"
-            : "当前内容里没有可直接处理的照片。"
-            )
-            : "首次处理前，需要先在时光记里保存一个配置。"
-
-        if !configurationReadiness.isReady {
-            statusTitleLabel.text =
-                "需要先完成配置"
-            statusMessageLabel.text =
-                "请先打开时光记，在配置中心保存当前记忆对象的配置。输出部分默认可不改；如果你改了输出设置，保存后也会并入当前配置。"
-            footerLabel.text =
-                "配置保存完成后，再回到 Apple Photos 重新分享这批照片。"
-            applyPrimaryButton(
-                title:
-                    "打开时光记去配置"
-            )
-        } else if sharedPhotoCount
-            > PhotoMemoShareExtensionIntakeService
-            .maxSupportedPhotoCount {
-            statusTitleLabel.text =
-                "这次的照片有点多"
-            statusMessageLabel.text =
-                "美好的记忆适合慢慢整理。每次最多分享 \(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount) 张，可以分几次完成。"
-            footerLabel.text =
-                "少量分批处理，也能让每一张照片更稳定地回到 Apple Photos。"
-            applyPrimaryButton(
-                title:
-                    "返回分批分享"
-            )
-        } else if sharedPhotoCount > 0 {
-            statusTitleLabel.text =
-                "准备交给时光记"
-            statusMessageLabel.text =
-                "点击后会继续交给主程序，进度可在时光记或锁屏中查看。"
-            footerLabel.text =
-                "处理完成后会发送系统通知。你不需要停留在这里。"
-            applyPrimaryButton(
-                title:
-                    "交给时光记处理 \(sharedPhotoCount) 张"
-            )
-        } else {
-            statusTitleLabel.text =
-                "暂不支持这类内容"
-            statusMessageLabel.text =
-                PhotoMemoShareExtensionError
-                .noSupportedImages
-                .errorDescription
-            footerLabel.text =
-                PhotoMemoShareExtensionError
-                .noSupportedImages
-                .recoverySuggestion
-            applyPrimaryButton(
-                title:
-                    "关闭"
-            )
-        }
+        applyViewState(.confirming, photoCount: sharedPhotoCount)
     }
 
     @MainActor
     func applyProcessingState() {
-
-        viewState = .processing
-        activityIndicator.startAnimating()
-        summarySectionView?.isHidden =
-            sharedPhotoCount == 0
-        previewSectionView?.isHidden = true
-        titleLabel.text =
-            "正在交给时光记"
-        subtitleLabel.text =
-            "正在安全接收这次分享。"
-        statusTitleLabel.text =
-            "正在准备继续处理"
-        statusMessageLabel.textColor =
-            .secondaryLabel
-        statusMessageLabel.text =
-            "会先接收原图，再交给时光记主程序继续处理。"
-        footerLabel.text =
-            "原始照片不会被修改。"
-
-        primaryButton.isEnabled =
-            false
-        primaryButton.configuration?.title =
-            "正在接收"
-        UIAccessibility.post(
-            notification: .announcement,
-            argument: "正在安全接收照片并交给时光记"
-        )
+        applyViewState(.processing, photoCount: sharedPhotoCount)
     }
 
     @MainActor
     func startIntakeDiagnosticMonitor() {
-
-        intakeDiagnosticTask?.cancel()
-        intakeDiagnosticTask =
-            Task { @MainActor [weak self] in
-                for _ in 0..<40 {
-                    guard let self,
-                          !Task.isCancelled else {
-                        return
-                    }
-
-                    self.applyLatestIntakeDiagnosticStatus()
-
-                    try? await Task.sleep(
-                        nanoseconds: 180_000_000
-                    )
-                }
-            }
+        progressObserver.startIntakeDiagnosticMonitoring {
+            [weak self] update in
+            self?.applyIntakeDiagnosticUpdate(update)
+        }
     }
 
     @MainActor
     func stopIntakeDiagnosticMonitor() {
-
-        intakeDiagnosticTask?.cancel()
-        intakeDiagnosticTask = nil
+        progressObserver.stopIntakeDiagnosticMonitoring()
     }
 
     @MainActor
-    func applyLatestIntakeDiagnosticStatus() {
-
+    func applyIntakeDiagnosticUpdate(
+        _ update: ShareExtensionIntakeDiagnosticUpdate
+    ) {
         guard case .processing = viewState else {
             return
         }
-
-        let events =
-            PhotoMemoShareDiagnostics
-            .loadEvents()
-
-        if events.contains(where: {
-            $0.stage == .extensionSourcePrepare
-        }),
-           !events.contains(where: {
-               $0.stage == .extensionSourceReady
-           }) {
+        switch update {
+        case .preparingSource:
             titleLabel.text =
                 "正在准备原图"
             subtitleLabel.text =
@@ -939,12 +828,7 @@ private extension PhotoMemoShareExtensionViewController {
                 "原图可读取后会继续交给时光记处理。"
             primaryButton.configuration?.title =
                 "正在准备"
-            return
-        }
-
-        if events.contains(where: {
-            $0.stage == .extensionSourceReady
-        }) {
+        case .sourceReady:
             titleLabel.text =
             "原图已可读取"
             subtitleLabel.text =
@@ -964,35 +848,43 @@ private extension PhotoMemoShareExtensionViewController {
         message: String,
         suggestion: String
     ) {
-
-        viewState = .failed(
-            title: title,
-            message: message,
-            suggestion: suggestion
+        applyViewState(
+            .failed(
+                title: title,
+                message: message,
+                suggestion: suggestion
+            ),
+            photoCount: sharedPhotoCount
         )
-        activityIndicator.stopAnimating()
-        summarySectionView?.isHidden =
-            sharedPhotoCount == 0
-        titleLabel.text =
-            "这次交接没有完成"
-        subtitleLabel.text =
-            "可以直接重试；如果仍失败，再回到时光记查看。"
-        statusTitleLabel.text =
-            title
-        statusMessageLabel.textColor =
-            .systemOrange
-        statusMessageLabel.text =
-            message
-        footerLabel.text =
-            suggestion
+    }
 
-        applyPrimaryButton(
-            title:
-                "重新尝试"
+    @MainActor
+    func applyViewState(
+        _ state: ShareExtensionViewState,
+        photoCount: Int
+    ) {
+        let update = viewStateRenderer.update(
+            for: .init(
+                state: state,
+                photoCount: photoCount,
+                configurationIsReady: configurationReadiness.isReady
+            )
         )
-        UIAccessibility.post(
-            notification: .announcement,
-            argument: "\(title)。\(message)"
+        viewState = update.state
+        viewStateRenderer.apply(
+            update,
+            to: .init(
+                contentStack: contentStack,
+                activityIndicator: activityIndicator,
+                previewSectionView: previewSectionView,
+                summarySectionView: summarySectionView,
+                titleLabel: titleLabel,
+                subtitleLabel: subtitleLabel,
+                statusTitleLabel: statusTitleLabel,
+                statusMessageLabel: statusMessageLabel,
+                footerLabel: footerLabel,
+                primaryButton: primaryButton
+            )
         )
     }
 
@@ -1019,10 +911,11 @@ private extension PhotoMemoShareExtensionViewController {
         case .confirming:
             guard configurationReadiness.isReady else {
                 Task { @MainActor in
-                    let opened =
-                        await requestMainAppRefresh(
-                            requestID: nil
+                    let opened = await handoffCoordinator
+                        .requestMainAppRefresh(
+                            .init(requestID: nil)
                         )
+                        .opened
 
                     if opened {
                         extensionContext?
@@ -1086,11 +979,14 @@ private extension PhotoMemoShareExtensionViewController {
 
         case .handoffFailed:
             Task { @MainActor in
-                let opened =
-                    await requestMainAppRefresh(
-                        requestID:
-                            pendingHandoffRequestID
+                let opened = await handoffCoordinator
+                    .requestMainAppRefresh(
+                        .init(
+                            requestID:
+                                pendingHandoffRequestID
+                        )
                     )
+                    .opened
 
                 if opened {
                     extensionContext?
@@ -1158,7 +1054,7 @@ private extension PhotoMemoShareExtensionViewController {
             statusMessageLabel.textColor =
                 .secondaryLabel
             statusMessageLabel.text =
-                successMessage(
+                viewStateRenderer.successMessage(
                     for: result
                 )
             footerLabel.text =
@@ -1172,30 +1068,16 @@ private extension PhotoMemoShareExtensionViewController {
                     result.requestID
             )
 
-            let opened =
-                await requestMainAppRefresh(
-                requestID:
-                    result.requestID
-            )
+            let opened = await handoffCoordinator
+                .requestMainAppRefresh(
+                    .init(requestID: result.requestID)
+                )
+                .opened
 
             if opened {
-                titleLabel.text =
-                    "已交给时光记"
-                subtitleLabel.text =
-                    "时光记会继续处理，并把结果写回系统相册。"
-                statusTitleLabel.text =
-                    "后续进度会在时光记中显示"
-                statusMessageLabel.text =
-                    "如果系统没有自动切换，可手动打开时光记查看处理状态。"
-                footerLabel.text =
-                    "处理完成后会发送系统通知。现在可以关闭这个窗口。"
-                viewState = .received
-                activityIndicator.stopAnimating()
-                summarySectionView?.isHidden =
-                    pendingHandoffPhotoCount == 0
-                applyPrimaryButton(
-                    title:
-                        "关闭"
+                applyViewState(
+                    .received,
+                    photoCount: pendingHandoffPhotoCount
                 )
             } else {
                 applyHandoffFailureState()
@@ -1216,11 +1098,11 @@ private extension PhotoMemoShareExtensionViewController {
                     title:
                         shareError.failureTitle,
                     message:
-                        detailedFailureMessage(
+                        viewStateRenderer.detailedFailureMessage(
                             for: shareError
                         ),
                     suggestion:
-                        detailedSuggestion(
+                        viewStateRenderer.detailedSuggestion(
                             for: shareError
                         )
                 )
@@ -1275,66 +1157,11 @@ private extension PhotoMemoShareExtensionViewController {
             )
     }
 
-    func successMessage(
-        for result:
-            PhotoMemoShareExtensionImportResult
-    ) -> String {
-
-        if result.hasWarnings {
-            var summaryParts = [
-                "已接收 \(result.importedCount) / \(result.requestedCount) 张"
-            ]
-
-            if result.skippedCount > 0 {
-                summaryParts.append(
-                    "跳过 \(result.skippedCount) 张"
-                )
-            }
-
-            if result.failedCount > 0 {
-                summaryParts.append(
-                    "未接收 \(result.failedCount) 张"
-                )
-            }
-
-            if result.livePhotoStaticFallbackCount > 0 {
-                summaryParts.append(
-                    "\(result.livePhotoStaticFallbackCount) 张 Live Photo 已按静态照片接收"
-                )
-            }
-
-            return "\(summaryParts.joined(separator: "，"))，其余情况会在时光记中继续说明。"
-        }
-
-        return "已接收 \(result.requestedCount) 张，正在交给时光记继续处理。"
-    }
-
     @MainActor
     func applyHandoffFailureState() {
-
-        viewState = .handoffFailed
-        contentStack.alpha = 1
-        contentStack.transform = .identity
-        activityIndicator.stopAnimating()
-        summarySectionView?.isHidden =
-            pendingHandoffPhotoCount == 0
-
-        titleLabel.text =
-            "照片已经接收"
-        subtitleLabel.text =
-            "但这次没有顺利继续交给时光记。"
-        statusTitleLabel.text =
-            "重新交给时光记"
-        statusMessageLabel.textColor =
-            .secondaryLabel
-        statusMessageLabel.text =
-            "请点下面按钮再试一次；如果仍失败，请直接打开时光记，它会继续检查待处理照片。"
-        footerLabel.text =
-            "原图已经接收，原始照片不会被修改。"
-
-        applyPrimaryButton(
-            title:
-                "重新交给时光记"
+        applyViewState(
+            .handoffFailed,
+            photoCount: pendingHandoffPhotoCount
         )
     }
 
@@ -1352,263 +1179,6 @@ private extension PhotoMemoShareExtensionViewController {
         try? await Task.sleep(
             nanoseconds: 1_150_000_000
         )
-    }
-
-    func requestMainAppRefresh(
-        requestID: UUID?
-    ) async -> Bool {
-
-        let deepLinkURL =
-            PhotoMemoDeepLink.share.url
-
-        let opened =
-            await withCheckedContinuation {
-                (
-                    continuation:
-                        CheckedContinuation<Bool, Never>
-                ) in
-
-                guard
-                    let extensionContext
-                else {
-                    continuation.resume(
-                        returning: false
-                    )
-                    return
-                }
-
-                extensionContext.open(
-                    deepLinkURL
-                ) { success in
-                    continuation.resume(
-                        returning: success
-                    )
-                }
-            }
-
-        PhotoMemoShareIntakeLog.notice(
-            "Requested main-app refresh via deep link. success=\(opened)"
-        )
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionHandoffPrimary,
-            message: "extensionContext.open success=\(opened)"
-        )
-
-        if opened {
-            return true
-        }
-
-        let fallbackOpened =
-            requestMainAppRefreshThroughResponderChain(
-                deepLinkURL
-            )
-
-        PhotoMemoShareIntakeLog.notice(
-            "Requested main-app refresh through responder chain. success=\(fallbackOpened)"
-        )
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionHandoffFallback,
-            message: "responderChain success=\(fallbackOpened)"
-        )
-
-        guard fallbackOpened else {
-            return false
-        }
-
-        return true
-    }
-
-    @MainActor
-    func requestMainAppRefreshThroughResponderChain(
-        _ url: URL
-    ) -> Bool {
-
-        let selector =
-            NSSelectorFromString(
-                "openURL:"
-            )
-        var responder: UIResponder? =
-            self
-
-        while let currentResponder =
-            responder {
-            if currentResponder.responds(
-                to: selector
-            ) {
-                currentResponder.perform(
-                    selector,
-                    with: url
-                )
-                return true
-            }
-
-            responder =
-                currentResponder.next
-        }
-
-        return false
-    }
-
-    func waitForMainAppHandoffConfirmation(
-        requestID: UUID?,
-        source: String
-    ) async -> Bool {
-
-        guard let requestID else {
-            PhotoMemoShareDiagnostics.record(
-                stage: .extensionHandoffUnconfirmed,
-                message:
-                    "\(source) opened, but no requestID was available."
-            )
-            return false
-        }
-
-        for _ in 0..<25 {
-            if mainAppConsumedRequest(
-                requestID
-            ) {
-                PhotoMemoShareDiagnostics.record(
-                    stage: .extensionHandoffConfirmed,
-                    message:
-                        "\(source) confirmed request consumption.",
-                    requestID:
-                        requestID
-                )
-                return true
-            }
-
-            try? await Task.sleep(
-                nanoseconds: 200_000_000
-            )
-        }
-
-        PhotoMemoShareDiagnostics.record(
-            stage: .extensionHandoffUnconfirmed,
-            message:
-                "\(source) did not produce app drain/enqueue within timeout.",
-            requestID:
-                requestID
-        )
-        return false
-    }
-
-    func mainAppConsumedRequest(
-        _ requestID: UUID
-    ) -> Bool {
-
-        PhotoMemoShareDiagnostics
-            .loadEvents()
-            .contains { event in
-                guard event.requestID == requestID else {
-                    return false
-                }
-
-                switch event.stage {
-
-                case .appEnqueueCreated,
-                     .appEnqueueFailed,
-                     .appRequestDropped:
-                    return true
-
-                default:
-                    return false
-                }
-            }
-    }
-
-    func enqueuedJobID(
-        for requestID: UUID
-    ) -> UUID? {
-
-        PhotoMemoShareDiagnostics
-            .loadEvents()
-            .reversed()
-            .first { event in
-                event.requestID == requestID
-                && event.stage == .appEnqueueCreated
-            }?
-            .jobID
-    }
-
-    @MainActor
-    func observeProcessingProgress(
-        requestID: UUID,
-        fallbackPhotoCount: Int
-    ) async {
-
-        let startedAt =
-            Date()
-        var latestSnapshot:
-            SharedBatchJobSnapshot?
-
-        repeat {
-            if let jobID =
-                enqueuedJobID(
-                    for: requestID
-                ),
-               let snapshot =
-                batchSnapshotService
-                .loadSnapshot(
-                    for: jobID
-                ) {
-                latestSnapshot =
-                    snapshot
-                applyProcessingSnapshot(
-                    snapshot
-                )
-
-                if snapshot.isTerminal {
-                    break
-                }
-            } else {
-                applyWaitingForQueueState(
-                    fallbackPhotoCount:
-                        fallbackPhotoCount
-                )
-            }
-
-            try? await Task.sleep(
-                nanoseconds: 250_000_000
-            )
-        } while Date()
-            .timeIntervalSince(startedAt) < 3.5
-
-        if let latestSnapshot {
-            applyProcessingSnapshot(
-                latestSnapshot
-            )
-
-            if !latestSnapshot.isTerminal {
-                activityIndicator.stopAnimating()
-                statusTitleLabel.text =
-                    "处理已开始"
-                statusMessageLabel.text =
-                    currentProgressMessage(
-                        for: latestSnapshot
-                    )
-            }
-        } else {
-            applyWaitingForAppState(
-                fallbackPhotoCount:
-                    fallbackPhotoCount
-            )
-            return
-        }
-
-        viewState = .received
-        footerLabel.text =
-            "可以关闭窗口，处理完成后会收到系统通知。"
-        applyPrimaryButton(
-            title:
-                "关闭"
-        )
-
-        UIImpactFeedbackGenerator(
-            style: .soft
-        )
-        .impactOccurred()
     }
 
     @MainActor
@@ -1760,10 +1330,12 @@ private extension PhotoMemoShareExtensionViewController {
 
         firstPreviewTask?.cancel()
 
-        let providers =
-            supportedPreviewProviders(
+        let providers = previewController.supportedProviders(
+            for: .init(
+                inputItems: inputItems,
                 limit: 10
             )
+        )
 
         guard !providers.isEmpty else {
             previewCaptionLabel.text =
@@ -1779,10 +1351,9 @@ private extension PhotoMemoShareExtensionViewController {
         )
 
         firstPreviewTask = Task { @MainActor in
-            let images =
-                await loadPreviewImages(
-                    from: providers
-                )
+            let images = await previewController.loadImages(
+                from: providers
+            )
 
             guard !Task.isCancelled else {
                 return
@@ -1821,24 +1392,6 @@ private extension PhotoMemoShareExtensionViewController {
              .handoffFailed:
             return false
         }
-    }
-
-    func supportedPreviewProviders(
-        limit: Int
-    ) -> [NSItemProvider] {
-
-        Array(
-            inputItems
-            .flatMap { item in
-                item.attachments ?? []
-            }
-            .filter {
-                isSupportedPreviewProvider($0)
-            }
-            .prefix(
-                max(limit, 1)
-            )
-        )
     }
 
     @MainActor
@@ -2473,262 +2026,5 @@ private extension PhotoMemoShareExtensionViewController {
             + 4
     }
 
-    func loadPreviewImages(
-        from providers: [NSItemProvider]
-    ) async -> [UIImage?] {
-
-        var images: [UIImage?] = []
-        images.reserveCapacity(
-            providers.count
-        )
-
-        for provider in providers {
-            if Task.isCancelled {
-                break
-            }
-
-            images.append(
-                await loadPreviewImage(
-                    from: provider
-                )
-            )
-        }
-
-        return images
-    }
-
-    func loadPreviewImage(
-        from provider: NSItemProvider
-    ) async -> UIImage? {
-
-        if let systemPreview =
-            await loadSystemPreviewImage(
-                from: provider
-            ) {
-            return systemPreview
-        }
-
-        if let filePreview =
-            await loadFilePreviewImage(
-                from: provider
-            ) {
-            return filePreview
-        }
-
-        return await withCheckedContinuation {
-            (
-                continuation:
-                    CheckedContinuation<UIImage?, Never>
-            ) in
-
-            provider.loadItem(
-                forTypeIdentifier:
-                    preferredPreviewTypeIdentifier(
-                        from: provider
-                    )
-                    ?? UTType.image.identifier,
-                options: nil
-            ) { item, _ in
-
-                if let url = item as? URL,
-                   let image =
-                    self.thumbnailImage(
-                        from: url
-                    ) {
-                    continuation.resume(
-                        returning: image
-                    )
-                    return
-                }
-
-                if let image = item as? UIImage {
-                    continuation.resume(
-                        returning: image
-                    )
-                    return
-                }
-
-                if let data = item as? Data,
-                   let image =
-                    self.thumbnailImage(
-                        from: data
-                    ) {
-                    continuation.resume(
-                        returning: image
-                    )
-                    return
-                }
-
-                continuation.resume(
-                    returning: nil
-                )
-            }
-        }
-    }
-
-    func isSupportedPreviewProvider(
-        _ provider: NSItemProvider
-    ) -> Bool {
-
-        if provider.hasItemConformingToTypeIdentifier(
-            UTType.image.identifier
-        ) {
-            return true
-        }
-
-        return PhotoProcessingInputPolicy
-            .supportedImageTypes
-            .contains { type in
-                provider
-                    .hasItemConformingToTypeIdentifier(
-                        type.identifier
-                    )
-            }
-    }
-
-    func preferredPreviewTypeIdentifier(
-        from provider: NSItemProvider
-    ) -> String? {
-
-        provider
-            .registeredTypeIdentifiers
-            .compactMap(UTType.init)
-            .first { candidate in
-                PhotoProcessingInputPolicy
-                    .supportedImageTypes
-                    .contains { supportedType in
-                        candidate.conforms(
-                            to: supportedType
-                        )
-                        || candidate.identifier
-                            == supportedType.identifier
-                    }
-                || candidate.conforms(to: .image)
-            }?
-            .identifier
-    }
-
-    func loadSystemPreviewImage(
-        from provider: NSItemProvider
-    ) async -> UIImage? {
-
-        await withCheckedContinuation {
-            (
-                continuation:
-                    CheckedContinuation<UIImage?, Never>
-            ) in
-
-            provider.loadPreviewImage(
-                options: [
-                    NSItemProviderPreferredImageSizeKey:
-                        CGSize(width: 420, height: 420)
-                ]
-            ) { item, _ in
-                continuation.resume(
-                    returning:
-                        item as? UIImage
-                )
-            }
-        }
-    }
-
-    func loadFilePreviewImage(
-        from provider: NSItemProvider
-    ) async -> UIImage? {
-
-        guard let typeIdentifier =
-            preferredPreviewTypeIdentifier(
-                from: provider
-            )
-            ?? PhotoProcessingInputPolicy
-            .supportedImageTypes
-            .first(where: {
-                provider
-                    .hasItemConformingToTypeIdentifier(
-                        $0.identifier
-                    )
-            })?
-            .identifier
-        else {
-            return nil
-        }
-
-        return await withCheckedContinuation {
-            continuation in
-
-            provider.loadFileRepresentation(
-                forTypeIdentifier:
-                    typeIdentifier
-            ) { url, _ in
-                guard let url,
-                      let image =
-                        self.thumbnailImage(
-                            from: url
-                        ) else {
-                    continuation.resume(
-                        returning: nil
-                    )
-                    return
-                }
-
-                continuation.resume(
-                    returning: image
-                )
-            }
-        }
-    }
-
-    nonisolated
-    func thumbnailImage(
-        from url: URL
-    ) -> UIImage? {
-
-        MediaDecodeService()
-            .thumbnailImage(
-                from: url,
-                maxPixelDimension: 640
-            )
-    }
-
-    nonisolated
-    func thumbnailImage(
-        from data: Data
-    ) -> UIImage? {
-
-        MediaDecodeService()
-            .thumbnailImage(
-                from: data,
-                maxPixelDimension: 640
-            )
-    }
-
-    func detailedFailureMessage(
-        for error:
-            PhotoMemoShareExtensionError
-    ) -> String {
-
-        if let diagnosticSummary =
-            error.diagnosticSummaryLine {
-            return "\(error.errorDescription ?? "这次分享没有完成。")\n\n\(diagnosticSummary)"
-        }
-
-        return error.errorDescription
-            ?? "这次分享没有完成。"
-    }
-
-    func detailedSuggestion(
-        for error:
-            PhotoMemoShareExtensionError
-    ) -> String {
-
-        if let failureContext =
-            error.resolvedFailureContext,
-           let errorSummary =
-            failureContext.errorSummary {
-            return "\(error.recoverySuggestion)\n\nNSError: \(errorSummary.domain) / \(errorSummary.code)"
-        }
-
-        return error.recoverySuggestion
-    }
 }
 #endif
