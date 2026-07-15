@@ -59,6 +59,50 @@ final class ShareExtensionPreviewController: NSObject {
         return images
     }
 
+    func loadPreviews(
+        for request: ShareExtensionPreviewRequest,
+        sharedPhotoCount: Int,
+        showsProcessingLegend:
+            @MainActor () -> Bool
+    ) async {
+        let providers = supportedProviders(
+            for: request
+        )
+
+        guard !providers.isEmpty else {
+            setCaption(
+                sharedPhotoCount > 0
+                ? "这次会按相同风格处理 \(sharedPhotoCount) 张照片。"
+                : "未识别到可处理照片。"
+            )
+            resetCards()
+            return
+        }
+
+        configurePlaceholders(count: providers.count)
+        let images = await loadImages(
+            from: providers
+        )
+
+        guard !Task.isCancelled else {
+            return
+        }
+
+        applyImages(images)
+
+        if showsProcessingLegend() {
+            setCaption(Self.processingLegendText)
+        } else if sharedPhotoCount > 1 {
+            setCaption(
+                "左右滑动查看待处理照片，所有照片会使用相同风格处理。"
+            )
+        } else {
+            setCaption(
+                "将按当前默认风格处理这张照片。"
+            )
+        }
+    }
+
     func setCaption(_ text: String) {
         captionLabel?.text = text
     }

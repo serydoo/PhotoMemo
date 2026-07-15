@@ -10,9 +10,6 @@ final class PhotoMemoShareExtensionViewController:
     private let snapshotService =
         SharedBatchConfigurationSnapshotService()
 
-    private let batchSnapshotService =
-        SharedBatchQueueSnapshotService()
-
     private let previewController =
         ShareExtensionPreviewController()
 
@@ -30,13 +27,12 @@ final class PhotoMemoShareExtensionViewController:
         )
 
     private lazy var progressObserver =
-        ShareExtensionProgressObserver(
-            batchSnapshotService: batchSnapshotService,
-            enqueuedJobID: { [weak self] requestID in
-                self?.handoffCoordinator.enqueuedJobID(
-                    for: requestID
-                )
-            }
+        ShareExtensionProgressObserver()
+
+    private lazy var intakeCoordinator =
+        ShareExtensionIntakeCoordinator(
+            intakeService: intakeService,
+            handoffCoordinator: handoffCoordinator
         )
 
     private lazy var workflowSummaryBuilder =
@@ -46,8 +42,6 @@ final class PhotoMemoShareExtensionViewController:
                 for: identifier
             )
         }
-
-    private var pendingHandoffRequestID: UUID?
 
     private let scrollView =
         UIScrollView()
@@ -794,30 +788,10 @@ private extension PhotoMemoShareExtensionViewController {
         guard case .processing = viewState else {
             return
         }
-        switch update {
-        case .preparingSource:
-            titleLabel.text =
-                "正在准备原图"
-            subtitleLabel.text =
-                "系统正在把 iCloud 原图准备到本地。"
-            statusTitleLabel.text =
-                "正在读取 iCloud 原图"
-            statusMessageLabel.text =
-                "原图可读取后会继续交给时光记处理。"
-            primaryButton.configuration?.title =
-                "正在准备"
-        case .sourceReady:
-            titleLabel.text =
-            "原图已可读取"
-            subtitleLabel.text =
-            "正在安全交给时光记。"
-            statusTitleLabel.text =
-            "正在继续交给时光记"
-            statusMessageLabel.text =
-            "照片已经可处理，正在继续交给主程序。"
-            primaryButton.configuration?.title =
-            "正在交给时光记"
-        }
+        viewStateRenderer.apply(
+            update,
+            to: viewStateBindings
+        )
     }
 
     @MainActor
@@ -851,30 +825,23 @@ private extension PhotoMemoShareExtensionViewController {
         viewState = update.state
         viewStateRenderer.apply(
             update,
-            to: .init(
-                contentStack: contentStack,
-                activityIndicator: activityIndicator,
-                previewSectionView: previewSectionView,
-                summarySectionView: summarySectionView,
-                titleLabel: titleLabel,
-                subtitleLabel: subtitleLabel,
-                statusTitleLabel: statusTitleLabel,
-                statusMessageLabel: statusMessageLabel,
-                footerLabel: footerLabel,
-                primaryButton: primaryButton
-            )
+            to: viewStateBindings
         )
     }
 
-    func applyPrimaryButton(
-        title: String
-    ) {
-
-        primaryButton.isEnabled =
-            true
-        primaryButton.configuration?.title =
-            title
-        primaryButton.accessibilityLabel = title
+    var viewStateBindings: ShareExtensionViewStateBindings {
+        .init(
+            contentStack: contentStack,
+            activityIndicator: activityIndicator,
+            previewSectionView: previewSectionView,
+            summarySectionView: summarySectionView,
+            titleLabel: titleLabel,
+            subtitleLabel: subtitleLabel,
+            statusTitleLabel: statusTitleLabel,
+            statusMessageLabel: statusMessageLabel,
+            footerLabel: footerLabel,
+            primaryButton: primaryButton
+        )
     }
 
     @objc
@@ -890,9 +857,7 @@ private extension PhotoMemoShareExtensionViewController {
             guard configurationReadiness.isReady else {
                 Task { @MainActor in
                     let opened = await handoffCoordinator
-                        .requestMainAppRefresh(
-                            .init(requestID: nil)
-                        )
+                        .requestMainAppRefresh()
                         .opened
 
                     if opened {
@@ -958,12 +923,7 @@ private extension PhotoMemoShareExtensionViewController {
         case .handoffFailed:
             Task { @MainActor in
                 let opened = await handoffCoordinator
-                    .requestMainAppRefresh(
-                        .init(
-                            requestID:
-                                pendingHandoffRequestID
-                        )
-                    )
+                    .requestMainAppRefresh()
                     .opened
 
                 if opened {
@@ -980,138 +940,55 @@ private extension PhotoMemoShareExtensionViewController {
 
     @MainActor
     func persistIncomingItems() async {
-
-        PhotoMemoShareDiagnostics.reset(
-            reason: "Share confirmation started"
-        )
-
-        guard !inputItems.isEmpty else {
-            PhotoMemoShareIntakeLog.error(
-                "persistIncomingItems failed before intake: inputItems was empty."
-            )
-            PhotoMemoShareDiagnostics.record(
-                stage: .extensionInputEmpty,
-                message: "No NSExtensionItem was available."
-            )
-            applyFailureState(
-                title:
-                    "无法读取这次分享",
-                message:
-                    "时光记没有收到这次分享的原始内容。",
-                suggestion:
-                    "请返回系统相册重新分享；如果重复出现，请打开时光记检查默认风格后再试。"
-            )
-            return
-        }
-
-        applyProcessingState()
-        startIntakeDiagnosticMonitor()
         defer {
             stopIntakeDiagnosticMonitor()
         }
 
-        do {
-            let result =
-                try await intakeService
-                .persistSharedItems(
-                    inputItems
-                )
-            pendingHandoffRequestID =
-                result.requestID
+        let result = await intakeCoordinator.persistIncomingItems(
+            inputItems,
+            onIntakeStarted: { [weak self] in
+                self?.applyProcessingState()
+                self?.startIntakeDiagnosticMonitor()
+            },
+            onPersisted: { [weak self] result in
+                guard let self else {
+                    return
+                }
+
+                pendingHandoffPhotoCount =
+                    result.importedCount
+
+                statusTitleLabel.text =
+                    "正在打开时光记"
+                statusMessageLabel.textColor =
+                    .secondaryLabel
+                statusMessageLabel.text =
+                    viewStateRenderer.successMessage(
+                        for: result
+                    )
+                footerLabel.text =
+                    "处理进度会在时光记主程序中显示。"
+            }
+        )
+
+        switch result {
+        case .received(let importResult):
             pendingHandoffPhotoCount =
-                result.importedCount
-
-            PhotoMemoShareDiagnostics.record(
-                stage: .extensionPersisted,
-                message:
-                    "imported=\(result.importedCount), requested=\(result.requestedCount), skipped=\(result.skippedCount), failed=\(result.failedCount), livePhotoStaticFallback=\(result.livePhotoStaticFallbackCount)"
+                importResult.importedCount
+            applyViewState(
+                .received,
+                photoCount: importResult.importedCount
             )
-
-            statusTitleLabel.text =
-                "正在打开时光记"
-            statusMessageLabel.textColor =
-                .secondaryLabel
-            statusMessageLabel.text =
-                viewStateRenderer.successMessage(
-                    for: result
-                )
-            footerLabel.text =
-                "处理进度会在时光记主程序中显示。"
-
-            PhotoMemoShareDiagnostics.record(
-                stage: .extensionHandoffRequested,
-                message:
-                    "Intake is safely persisted; requesting host app handoff.",
-                requestID:
-                    result.requestID
+        case .handoffFailed(let importResult):
+            pendingHandoffPhotoCount =
+                importResult.importedCount
+            applyHandoffFailureState()
+        case .failed(let failure):
+            applyFailureState(
+                title: failure.title,
+                message: failure.message,
+                suggestion: failure.suggestion
             )
-
-            let opened = await handoffCoordinator
-                .requestMainAppRefresh(
-                    .init(requestID: result.requestID)
-                )
-                .opened
-
-            if opened {
-                applyViewState(
-                    .received,
-                    photoCount: pendingHandoffPhotoCount
-                )
-            } else {
-                applyHandoffFailureState()
-            }
-        } catch {
-            if let shareError =
-                error as? PhotoMemoShareExtensionError {
-                PhotoMemoShareIntakeLog.error(
-                    "Share extension caught PhotoMemoShareExtensionError.\n\(shareError.diagnosticsDescription ?? "no diagnostics")"
-                )
-                PhotoMemoShareDiagnostics.record(
-                    stage: .extensionError,
-                    message:
-                        shareError.errorDescription
-                        ?? shareError.failureTitle
-                )
-                applyFailureState(
-                    title:
-                        shareError.failureTitle,
-                    message:
-                        viewStateRenderer.detailedFailureMessage(
-                            for: shareError
-                        ),
-                    suggestion:
-                        viewStateRenderer.detailedSuggestion(
-                            for: shareError
-                        )
-                )
-            } else {
-                let nsError =
-                    error as NSError
-                PhotoMemoShareIntakeLog.error(
-                    """
-                    Share extension caught unexpected error.
-                    localizedDescription: \(nsError.localizedDescription)
-                    domain: \(nsError.domain)
-                    code: \(nsError.code)
-                    underlyingError: \(((nsError.userInfo[NSUnderlyingErrorKey] as? NSError)?.localizedDescription) ?? "nil")
-                    """
-                )
-                PhotoMemoShareDiagnostics.record(
-                    stage: .extensionErrorUnexpected,
-                    message:
-                        "\(nsError.domain) / \(nsError.code): \(nsError.localizedDescription)"
-                )
-                applyFailureState(
-                    title:
-                        "这次分享没有完成",
-                    message:
-                        (error as? LocalizedError)?
-                        .errorDescription
-                        ?? "无法把内容交给时光记。",
-                    suggestion:
-                        "请先返回系统相册重新分享；如果仍失败，请打开时光记检查默认风格和系统相册权限。"
-                )
-            }
         }
     }
 
@@ -1143,209 +1020,19 @@ private extension PhotoMemoShareExtensionViewController {
         )
     }
 
-    @MainActor
-    func holdCompletionStateBeforeDismissal() async {
-
-        UIImpactFeedbackGenerator(
-            style: .soft
-        )
-        .impactOccurred()
-
-        contentStack.transform = .identity
-        contentStack.alpha = 1
-
-        try? await Task.sleep(
-            nanoseconds: 1_150_000_000
-        )
-    }
-
-    @MainActor
-    func applyWaitingForQueueState(
-        fallbackPhotoCount: Int
-    ) {
-
-        activityIndicator.startAnimating()
-        statusTitleLabel.text =
-            "正在加入处理队列"
-        statusMessageLabel.textColor =
-            .secondaryLabel
-        statusMessageLabel.text =
-            "已接收 \(fallbackPhotoCount) 张照片，正在等待时光记开始逐张处理。"
-        previewController.setCaption(
-            ShareExtensionPreviewController.processingLegendText
-        )
-        previewController.updateRows(
-            phases:
-                Array(
-                    repeating: .queued,
-                    count:
-                        previewController.cardCount
-                )
-        )
-    }
-
-    @MainActor
-    func applyWaitingForAppState(
-        fallbackPhotoCount: Int
-    ) {
-
-        viewState = .handoffFailed
-        activityIndicator.stopAnimating()
-        titleLabel.text =
-            "照片已经接收"
-        subtitleLabel.text =
-            "需要时光记主程序接手后才会开始处理。"
-        statusTitleLabel.text =
-            "等待时光记开始处理"
-        statusMessageLabel.textColor =
-            .secondaryLabel
-        statusMessageLabel.text =
-            "iOS 不会因为 Share Extension 写入待处理请求就自动运行主程序。打开时光记后，队列会立即继续。"
-        footerLabel.text =
-            "原始照片已经安全暂存；点下面按钮打开时光记继续。"
-        previewCaptionLabel.text =
-            "队列已建立，等待时光记主程序接手。"
-        previewController.updateRows(
-            phases:
-                Array(
-                    repeating: .queued,
-                    count:
-                        max(
-                            previewController.cardCount,
-                            fallbackPhotoCount
-                        )
-                )
-        )
-        applyPrimaryButton(
-            title:
-                "打开时光记继续处理"
-        )
-    }
-
-    @MainActor
-    func applyProcessingSnapshot(
-        _ snapshot: SharedBatchJobSnapshot
-    ) {
-
-        statusMessageLabel.textColor =
-            .secondaryLabel
-        previewController.setCaption(
-            ShareExtensionPreviewController.processingLegendText
-        )
-        previewController.updateRows(
-            tasks:
-                snapshot.tasks
-        )
-
-        if snapshot.isTerminal {
-            activityIndicator.stopAnimating()
-
-            if snapshot.failedCount > 0 {
-                statusTitleLabel.text =
-                    "已完成 \(snapshot.completedCount) 张，\(snapshot.failedCount) 张需要处理"
-                statusMessageLabel.text =
-                    "失败项会保留记录，可回到时光记查看原因并重试。"
-            } else {
-                statusTitleLabel.text =
-                    "已完成 \(snapshot.completedCount) 张照片"
-                statusMessageLabel.text =
-                    "结果已写入系统图库。"
-            }
-            return
-        }
-
-        activityIndicator.startAnimating()
-        statusTitleLabel.text =
-            "正在处理第 \(activeTaskNumber(in: snapshot)) / \(snapshot.totalCount) 张"
-        statusMessageLabel.text =
-            currentProgressMessage(
-                for: snapshot
-            )
-    }
-
-    func activeTaskNumber(
-        in snapshot: SharedBatchJobSnapshot
-    ) -> Int {
-
-        guard let index =
-            snapshot.firstActiveTaskIndex else {
-            return snapshot.totalCount
-        }
-
-        return index + 1
-    }
-
-    func currentProgressMessage(
-        for snapshot: SharedBatchJobSnapshot
-    ) -> String {
-
-        guard let index =
-            snapshot.firstActiveTaskIndex,
-              snapshot.tasks.indices
-            .contains(index) else {
-            return "时光记会继续处理，完成后发送系统通知。"
-        }
-
-        let task =
-            snapshot.tasks[index]
-
-        if !task.statusMessage
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-            .isEmpty {
-            return task.statusMessage
-        }
-
-        return task.phase.displayTitle
-    }
-
     func loadFirstPreviewIfNeeded() {
 
         firstPreviewTask?.cancel()
-
-        let providers = previewController.supportedProviders(
-            for: .init(
-                inputItems: inputItems,
-                limit: 10
-            )
-        )
-
-        guard !providers.isEmpty else {
-            previewCaptionLabel.text =
-                sharedPhotoCount > 0
-                ? "这次会按相同风格处理 \(sharedPhotoCount) 张照片。"
-                : "未识别到可处理照片。"
-            previewController.resetCards()
-            return
-        }
-
-        previewController.configurePlaceholders(count: providers.count)
-
         firstPreviewTask = Task { @MainActor in
-            let images = await previewController.loadImages(
-                from: providers
-            )
-
-            guard !Task.isCancelled else {
-                return
-            }
-
-            previewController.applyImages(images)
-
-            guard shouldShowProcessingLegend else {
-                if sharedPhotoCount > 1 {
-                    previewCaptionLabel.text =
-                        "左右滑动查看待处理照片，所有照片会使用相同风格处理。"
-                } else {
-                    previewCaptionLabel.text =
-                        "将按当前默认风格处理这张照片。"
+            await previewController.loadPreviews(
+                for: .init(
+                    inputItems: inputItems,
+                    limit: 10
+                ),
+                sharedPhotoCount: sharedPhotoCount,
+                showsProcessingLegend: {
+                    shouldShowProcessingLegend
                 }
-                return
-            }
-
-            previewController.setCaption(
-                ShareExtensionPreviewController.processingLegendText
             )
         }
     }

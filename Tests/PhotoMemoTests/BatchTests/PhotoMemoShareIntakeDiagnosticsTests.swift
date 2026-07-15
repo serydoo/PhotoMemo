@@ -312,10 +312,10 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
 
     @Test("Share Extension copy tells users when Live Photos fall back to static photos")
     func shareExtensionCopyTellsUsersWhenLivePhotosFallBackToStaticPhotos() throws {
-        let viewControllerSource =
+        let intakeCoordinatorSource =
             try sourceText(
                 relativePath:
-                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionIntakeCoordinator.swift"
             )
         let rendererSource =
             try sourceText(
@@ -324,7 +324,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
             )
 
         #expect(
-            viewControllerSource
+            intakeCoordinatorSource
             .contains(
                 "livePhotoStaticFallback=\\(result.livePhotoStaticFallbackCount)"
             )

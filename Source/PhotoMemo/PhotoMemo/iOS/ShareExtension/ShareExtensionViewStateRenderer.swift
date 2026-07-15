@@ -157,6 +157,36 @@ final class ShareExtensionViewStateRenderer {
         }
     }
 
+    func apply(
+        _ update: ShareExtensionIntakeDiagnosticUpdate,
+        to bindings: ShareExtensionViewStateBindings
+    ) {
+        switch update {
+        case .preparingSource:
+            bindings.titleLabel.text =
+                "正在准备原图"
+            bindings.subtitleLabel.text =
+                "系统正在把 iCloud 原图准备到本地。"
+            bindings.statusTitleLabel.text =
+                "正在读取 iCloud 原图"
+            bindings.statusMessageLabel.text =
+                "原图可读取后会继续交给时光记处理。"
+            bindings.primaryButton.configuration?.title =
+                "正在准备"
+        case .sourceReady:
+            bindings.titleLabel.text =
+                "原图已可读取"
+            bindings.subtitleLabel.text =
+                "正在安全交给时光记。"
+            bindings.statusTitleLabel.text =
+                "正在继续交给时光记"
+            bindings.statusMessageLabel.text =
+                "照片已经可处理，正在继续交给主程序。"
+            bindings.primaryButton.configuration?.title =
+                "正在交给时光记"
+        }
+    }
+
     func successMessage(
         for result: PhotoMemoShareExtensionImportResult
     ) -> String {
@@ -178,24 +208,6 @@ final class ShareExtensionViewStateRenderer {
             return "\(summaryParts.joined(separator: "，"))，其余情况会在时光记中继续说明。"
         }
         return "已接收 \(result.requestedCount) 张，正在交给时光记继续处理。"
-    }
-
-    func detailedFailureMessage(
-        for error: PhotoMemoShareExtensionError
-    ) -> String {
-        if let diagnosticSummary = error.diagnosticSummaryLine {
-            return "\(error.errorDescription ?? "这次分享没有完成。")\n\n\(diagnosticSummary)"
-        }
-        return error.errorDescription ?? "这次分享没有完成。"
-    }
-
-    func detailedSuggestion(
-        for error: PhotoMemoShareExtensionError
-    ) -> String {
-        if let errorSummary = error.resolvedFailureContext?.errorSummary {
-            return "\(error.recoverySuggestion)\n\nNSError: \(errorSummary.domain) / \(errorSummary.code)"
-        }
-        return error.recoverySuggestion
     }
 
     private func confirmingUpdate(
