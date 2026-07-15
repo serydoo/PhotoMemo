@@ -8,6 +8,38 @@ import UniformTypeIdentifiers
 struct BatchQueueExecutionContractTests {
 
     @MainActor
+    @Test("Task processor context keeps immutable execution inputs")
+    func taskProcessorContextKeepsExecutionInputs() {
+        let task = BatchTask(
+            sourceURL: URL(fileURLWithPath: "/tmp/context.jpg"),
+            fileName: "context.jpg"
+        )
+        let reference = BatchQueueExecution.TaskReference(
+            jobIndex: 2,
+            taskIndex: 4
+        )
+        let budget = BatchTaskMemoryPolicy.mediaMemoryBudget(for: task)
+        let startedAt = Date(timeIntervalSince1970: 123)
+        let context = BatchTaskExecutionContext(
+            taskReference: reference,
+            taskSnapshot: task,
+            configuration: nil,
+            memoryBudget: budget,
+            route: "staticImage",
+            totalProgressUnits: 5,
+            startedAt: startedAt,
+            renderHealthValidator: ProductionRenderHealthCheck.validate
+        )
+
+        #expect(context.taskReference.jobIndex == 2)
+        #expect(context.taskReference.taskIndex == 4)
+        #expect(context.taskSnapshot.id == task.id)
+        #expect(context.route == "staticImage")
+        #expect(context.totalProgressUnits == 5)
+        #expect(context.startedAt == startedAt)
+    }
+
+    @MainActor
     @Test("Failure policy preserves classification and terminal-state decisions")
     func failurePolicyPreservesClassificationAndTerminalStateDecisions() {
         #expect(

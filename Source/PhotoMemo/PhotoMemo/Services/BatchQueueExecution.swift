@@ -32,6 +32,13 @@ final class BatchQueueExecution {
     private let resourceLifecycle:
         BatchTaskResourceLifecycle
 
+    private lazy var taskProcessor = BatchTaskProcessor { [weak self] context, store in
+        await self?.processTaskInternal(
+            context: context,
+            in: store
+        )
+    }
+
     init(
         coordinator:
             BatchProcessingCoordinator? = nil,
@@ -302,16 +309,40 @@ final class BatchQueueExecution {
             return
         }
 
+        let memoryBudget = mediaMemoryBudget(for: initialTask)
+        let totalProgressUnits =
+            memoryBudget.requiresExtendedPreviewPreparation ? 6 : 5
+        await taskProcessor.process(
+            context: BatchTaskExecutionContext(
+                taskReference: reference,
+                taskSnapshot: initialTask,
+                configuration: store.currentJob(at: reference)?.configuration,
+                memoryBudget: memoryBudget,
+                route: "unknown",
+                totalProgressUnits: totalProgressUnits,
+                startedAt: Date(),
+                renderHealthValidator: ProductionRenderHealthCheck.validate
+            ),
+            in: store
+        )
+    }
+
+    private func processTaskInternal(
+        context: BatchTaskExecutionContext,
+        in store: BatchQueueStore
+    ) async {
+
+        let reference = context.taskReference
+        let initialTask = context.taskSnapshot
+
         let memoryBudget =
-            mediaMemoryBudget(
-                for: initialTask
-            )
+            context.memoryBudget
         let requiresExtendedPreviewPreparation =
             memoryBudget
             .requiresExtendedPreviewPreparation
         let totalProgressUnits =
             requiresExtendedPreviewPreparation ? 6 : 5
-        let startedAt = Date()
+        let startedAt = context.startedAt
         var route = "unknown"
 
         store.setActiveProcessingReference(
@@ -482,10 +513,7 @@ final class BatchQueueExecution {
                 }
 
             do {
-                _ = try ProductionRenderHealthCheck.validate(
-                    card: card,
-                    configuration: configuration
-                )
+                _ = try context.renderHealthValidator(card, configuration)
                 diagnosticsRecorder.recordRenderHealthCheckPassed(
                     task: task,
                     launchSource:
