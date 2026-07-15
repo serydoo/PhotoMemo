@@ -3,23 +3,11 @@ import Foundation
 import PhotosUI
 import SwiftUI
 
-struct V1LogoSelectionUpdate {
-
-    let customLogoBadge: Badge?
-
-    let logoMode: V1LogoMode?
-
-    let logoStatusMessage: String
-
-    let activeConfigurationStatus:
-        V1ConfigurationStatus?
-}
-
 enum V1LogoSelectionCoordinator {
 
     static func optimize(
         _ item: PhotosPickerItem
-    ) async -> V1LogoSelectionUpdate {
+    ) async -> LogoAssetSelectionResult {
         let optimizer =
             LogoAssetOptimizationService()
 
@@ -38,7 +26,7 @@ enum V1LogoSelectionCoordinator {
                     data: data
                 )
 
-            return V1LogoSelectionUpdate(
+            return LogoAssetSelectionResult(
                 customLogoBadge:
                     optimizedAsset.badge,
                 logoMode: .customUpload,
@@ -48,7 +36,7 @@ enum V1LogoSelectionCoordinator {
                     .dirty
             )
         } catch {
-            return V1LogoSelectionUpdate(
+            return LogoAssetSelectionResult(
                 customLogoBadge: nil,
                 logoMode: nil,
                 logoStatusMessage:

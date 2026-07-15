@@ -229,6 +229,11 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
+    private var logoAssetCoordinator:
+        LogoAssetCoordinator {
+        LogoAssetCoordinator()
+    }
+
     private var configurationApplyCoordinator:
         V1ConfigurationApplyCoordinator {
         V1ConfigurationApplyCoordinator(
@@ -2972,20 +2977,23 @@ struct PhotoMemoiOSV1View: View {
     private func optimizeSelectedLogo(
         _ item: PhotosPickerItem
     ) async {
-        isOptimizingLogo = true
-        logoStatusMessage = "正在优化 Logo"
+        applyLogoAssetUpdate(
+            logoAssetCoordinator
+                .beginOptimization()
+        )
 
         let update =
-            await V1LogoSelectionCoordinator
+            await logoAssetCoordinator
             .optimize(item)
-        applyLogoSelectionUpdate(update)
-
-        isOptimizingLogo = false
+        applyLogoAssetUpdate(update)
     }
 
-    private func applyLogoSelectionUpdate(
-        _ update: V1LogoSelectionUpdate
+    private func applyLogoAssetUpdate(
+        _ update: LogoAssetUpdate
     ) {
+        isOptimizingLogo =
+            update.isOptimizingLogo
+
         if let customLogoBadge =
             update.customLogoBadge {
             self.customLogoBadge =
