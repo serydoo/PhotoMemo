@@ -235,6 +235,71 @@ struct FixtureExportReadbackTests {
     }
 
     @MainActor
+    @Test("Exports non-ASCII JPEG UserComment as EXIF Unicode data")
+    func exportsNonASCIIJPEGUserCommentAsEXIFUnicodeData() async throws {
+        let expectedDescription =
+            "\u{65F6}\u{5149}\u{8BB0}\u{5BFC}\u{51FA}\u{6D4B}\u{8BD5}"
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .gpsJPEG
+            )
+        let importedPhoto =
+            try await PhotoImportService()
+            .importPhoto(from: sourceURL)
+        let card =
+            RecordCardBuildService().buildCard(
+                from: importedPhoto,
+                configuration:
+                    makeConfiguration(
+                        shouldWriteDescription: true,
+                        description: expectedDescription
+                    )
+            )
+        let exportURL =
+            try RecordCardExportService()
+            .exportToTemporaryFile(
+                photo: importedPhoto,
+                card: card
+            )
+
+        defer {
+            try? FileManager.default.removeItem(
+                at: exportURL
+            )
+        }
+
+        let properties =
+            try SyntheticFixtureLibrary
+            .properties(at: exportURL)
+        let exif =
+            properties[
+                kCGImagePropertyExifDictionary
+            ] as? [CFString: Any] ?? [:]
+        let fileData =
+            try Data(contentsOf: exportURL)
+        var encodedComment =
+            Data("UNICODE\0".utf8)
+        encodedComment.append(
+            try #require(
+                expectedDescription.data(
+                    using: .utf16BigEndian
+                )
+            )
+        )
+
+        #expect(
+            stringValue(
+                exif["UserComment" as CFString]
+            ) == expectedDescription
+        )
+        #expect(
+            fileData.range(
+                of: encodedComment
+            ) != nil
+        )
+    }
+
+    @MainActor
     @Test("Suppresses export description fields for low-metadata fixtures when writing is disabled")
     func suppressesDescriptionFieldsForLowMetadataFixture() async throws {
 
