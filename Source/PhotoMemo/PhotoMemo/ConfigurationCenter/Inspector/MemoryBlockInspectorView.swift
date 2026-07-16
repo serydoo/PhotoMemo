@@ -573,8 +573,8 @@ struct MemoryBlockInspectorView: View {
                 from:
                     DateComponents(
                         year: 2026,
-                        month: 5,
-                        day: 24
+                        month: 6,
+                        day: 1
                     )
             ) ?? Date()
 
@@ -714,14 +714,14 @@ private extension MemoryBlockTemplateDraft {
                     templateID: "timeline.configuration1",
                     key: "date",
                     label: "拍摄日期",
-                    defaultValue: "2026.05.24",
+                    defaultValue: "2026.06.01",
                     source: .exif
                 ),
                 .init(
                     templateID: "timeline.configuration1",
                     key: "time",
                     label: "拍摄时间",
-                    defaultValue: "14:33:13",
+                    defaultValue: "12:00:00",
                     source: .exif
                 )
             ],
@@ -737,7 +737,7 @@ private extension MemoryBlockTemplateDraft {
                     templateID: "timeline.configuration2",
                     key: "date",
                     label: "拍摄日期",
-                    defaultValue: "2026.05.24",
+                    defaultValue: "2026.06.01",
                     source: .exif
                 )
             ],

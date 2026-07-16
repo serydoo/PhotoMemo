@@ -36,8 +36,8 @@ struct ConfigurationCenterCompactPreviewPresenterTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "团团",
-                        shortName: "团团"
+                        displayName: "示例昵称",
+                        shortName: "示例昵称"
                     ),
                 relationship:
                     .init(
@@ -72,8 +72,8 @@ struct ConfigurationCenterCompactPreviewPresenterTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "团团",
-                        shortName: "团团"
+                        displayName: "示例昵称",
+                        shortName: "示例昵称"
                     ),
                 relationship:
                     .init(

@@ -63,18 +63,17 @@ Passed before merge to `main`:
 
 Post-merge simulator smoke:
 
-- Installed `PhotoMemoiOSV1.app` on iPhone 17 Pro simulator
-  `95A87461-1623-469A-8F06-3159CC12B1CC`.
+- Installed `PhotoMemoiOSV1.app` on an iPhone 17 Pro simulator with its local
+  simulator identifier redacted.
 - Launched bundle `com.serydoo.PhotoMemo.iOS` successfully.
 - Launch logs show the app in `running-active-Visible` state.
 - First-run flow reached the system Photos permission dialog.
-- Local sample inspection found that `/Users/rui/Downloads/IMG_0537.jpeg`
+- Local sample inspection found that `<private-sample-path>`
   has no GPS latitude / longitude, so it cannot serve as the Location Module
   acceptance fixture.
-- Follow-up local acceptance used the Photos render
-  `0194231B-1F96-4A84-A5D7-B32200353811_1_201_a.jpeg`; the real MemoMark
+- Follow-up local acceptance used a redacted GPS-bearing Photos render; the real MemoMark
   metadata, Location provider, configuration adapter, and `ExpressionContext`
-  lookup sources resolved `33.930355, 116.444153`.
+  lookup sources resolved `REDACTED_LATITUDE, REDACTED_LONGITUDE`.
 
 ## Known Issues
 

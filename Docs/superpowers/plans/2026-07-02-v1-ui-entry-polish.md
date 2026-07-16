@@ -373,10 +373,10 @@ Run: `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMem
 
 Run: `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build`
 
-Run: `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'id=863C2747-6742-5E93-B715-6F89DBF90B31' -derivedDataPath /tmp/PhotoMemoDeviceSignedBuild COMPILER_INDEX_STORE_ENABLE=NO build`
+Run: `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOSV1 -destination 'id=REDACTED_DEVICE_ID' -derivedDataPath /tmp/PhotoMemoDeviceSignedBuild COMPILER_INDEX_STORE_ENABLE=NO build`
 
-Run: `xcrun devicectl device install app --device 863C2747-6742-5E93-B715-6F89DBF90B31 /tmp/PhotoMemoDeviceSignedBuild/Build/Products/Debug-iphoneos/PhotoMemoiOSV1.app`
+Run: `xcrun devicectl device install app --device REDACTED_DEVICE_ID /tmp/PhotoMemoDeviceSignedBuild/Build/Products/Debug-iphoneos/PhotoMemoiOSV1.app`
 
-Run: `xcrun devicectl device process launch --device 863C2747-6742-5E93-B715-6F89DBF90B31 com.serydoo.PhotoMemo.iOS`
+Run: `xcrun devicectl device process launch --device REDACTED_DEVICE_ID com.serydoo.PhotoMemo.iOS`
 
-Expected: lint-style diff check is clean, targeted tests pass, simulator build passes, signed device build installs, and the app launches on `iPhone7`.
+Expected: lint-style diff check is clean, targeted tests pass, simulator build passes, signed device build installs, and the app launches on `TestDeviceB`.

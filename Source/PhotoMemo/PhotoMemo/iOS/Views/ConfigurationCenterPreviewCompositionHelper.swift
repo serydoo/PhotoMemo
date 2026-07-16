@@ -39,11 +39,11 @@ struct ConfigurationCenterPreviewCompositionHelper {
         var components =
             DateComponents()
         components.year = 2026
-        components.month = 5
-        components.day = 24
-        components.hour = 14
-        components.minute = 33
-        components.second = 13
+        components.month = 6
+        components.day = 1
+        components.hour = 12
+        components.minute = 0
+        components.second = 0
         return Calendar.current.date(from: components)
             ?? Date()
     }()
@@ -261,9 +261,9 @@ struct ConfigurationCenterPreviewCompositionHelper {
         case .smartTime:
             return smartTimeResult
         case .captureDate:
-            return "2026.05.24"
+            return "2026.06.01"
         case .captureTime:
-            return "14:33:13"
+            return "12:00:00"
         case .cameraMaker:
             return ""
         case .cameraModel:
@@ -326,9 +326,9 @@ struct ConfigurationCenterPreviewCompositionHelper {
     ) -> ExpressionContext? {
         let metadata =
             PhotoMetadata(
-                city: " 商丘 ",
-                district: " 永城 ",
-                province: " 河南 "
+                city: " 示例市 ",
+                district: " 示例区 ",
+                province: " 示例省 "
             )
 
         let locationContext =

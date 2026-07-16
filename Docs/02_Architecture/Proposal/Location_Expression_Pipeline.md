@@ -52,7 +52,7 @@ That is not a stable long-term model for Location, Weather, People, AI, or
 future memory intelligence.
 
 Preview also contains local demo values for location. A preview string such as
-`河南 · 商丘` can drift from the real production photo, which violates the
+`示例省 · 示例市` can drift from the real production photo, which violates the
 preview and production convergence principle.
 
 ## Configuration Center Boundary
@@ -257,7 +257,7 @@ Presentation = Province + City
 It must not store a resolved asset value such as:
 
 ```text
-河南 · 商丘
+示例省 · 示例市
 ```
 
 Changing the photo changes provider output. It must not change the saved

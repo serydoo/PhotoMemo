@@ -32,7 +32,7 @@ enum ConfigurationCenterPreviewDefaults {
         case .slotA:
             return "记录"
         case .slotB:
-            return "2026.05.24 14:33:13"
+            return "2026.06.01 12:00:00"
         case .slotC:
             return "20mm f/1.9 1/117s ISO80"
         case .slotD:
@@ -79,9 +79,9 @@ enum ConfigurationCenterPreviewDefaults {
              "recorder.configuration3":
             return " "
         case "timeline.configuration1":
-            return "2026.05.24 14:33:13"
+            return "2026.06.01 12:00:00"
         case "timeline.configuration2":
-            return "2026.05.24"
+            return "2026.06.01"
         case "timeline.configuration3":
             return " "
         case "context.configuration1":

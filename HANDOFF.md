@@ -1,15 +1,55 @@
 # MemoMark Handoff
 
+## 2026-07-16 Post-refactor release verification
+
+- The responsibility-split integration passed the complete Xcode 26.6 test
+  run: `952` passed, `0` failed, and `1` documented manual ImageIO fixture
+  test was skipped.
+- Unsigned Debug builds passed for macOS `PhotoMemo`, `PhotoMemoiOS`, and
+  `PhotoMemoShareExtension`.
+- A signed overwrite installation on device `IPhone5` preserved the existing
+  app data path. Four manual Share batches completed and saved `7/7` assets
+  (one JPEG and six Live Photos) with no failed or pending work and no observed
+  crash. Evidence: `/tmp/PhotoMemoRuntimeEvidence/iphone5-post-refactor-manual-20260716-071232`.
+- AVFoundation Live Photo metadata now uses the public Auto Live Photo
+  identifier and the valid `mdta/com.apple.quicktime.still-image-time` key.
+- The four Classic White renderer snapshots and all App icon assets remain
+  unchanged.
+- The current tree is ready for a normal GitHub commit and push. Historical
+  object removal remains a separate destructive operation requiring explicit
+  authorization.
+
+## 2026-07-16 Public repository privacy containment
+
+- Runtime seeds now use neutral nickname examples, synthetic dates, synthetic
+  preview locations, and no personal social-media contact.
+- Test fixtures and current text documentation no longer contain the former
+  family nicknames, private hometown values, exact private GPS coordinates,
+  physical-device identifiers, private review phone, or Apple ID email.
+- The tracked development-signed IPA, its checksum, and the generated guide
+  PDF were removed. IPA, provisioning, archive, and signing-certificate
+  artifacts are now ignored.
+- The four existing Classic White renderer snapshots are intentionally retained
+  for regression continuity. They remain the only current-tree bitmap exception
+  to the synthetic-demo-data cleanup and must not be replaced with new private
+  material.
+- The editable user guide DOCX was regenerated from its sanitized source.
+- Public support remains available through `serydoo@gmail.com` and GitHub
+  Issues; private App Store review contacts must be entered directly in App
+  Store Connect.
+- Historical Git objects and tags still retain earlier data until an explicitly
+  authorized history rewrite and force-push is completed.
+
 ## 2026-07-14 Privacy-safe default memory subject
 
-- Replaced the family-specific user-visible `途途` nickname with the neutral
+- Replaced the former family-specific user-visible nickname with the neutral
   `小宝` default across Configuration Center seeds, preview fallbacks, and
   editor examples.
-- First-run nickname examples now use `小宝、宝贝儿、安安`.
+- First-run nickname examples now use `小宝、宝宝、小朋友`.
 - The hard-coded first-run and mock-seed birthday now defaults to
-  `2025-12-20`, a recent year-end date.
-- Test-only scenario names, author headers, camera parameters, and device
-  models remain unchanged.
+  the synthetic date `2024-01-01`.
+- Test-only names and author headers were later anonymized during the
+  repository-wide containment pass above.
 
 ## 2026-07-13 V3 reliability closure ready for clean device distribution
 
@@ -31,10 +71,10 @@
   sorted-key encodings rather than nondeterministic dictionary byte order.
 - Final unsigned macOS, iOS app, and Share Extension builds pass.
 - Commit `eeffb072` is pushed to GitHub.
-- `IPhone5`, `iPhone7`, and `Hong` completed uninstall, clean install, launch,
+- `TestDeviceA`, `TestDeviceB`, and `TestDeviceC` completed uninstall, clean install, launch,
   installed-version verification, and process verification with signed
   `1.7 (7)` builds from the same verified source.
-- `Hong` received a fresh signed rebuild from current `main`; both the main app
+- `TestDeviceC` received a fresh signed rebuild from current `main`; both the main app
   and Widget Extension processes were confirmed after launch.
 - Durable evidence:
   `Docs/07_Releases/2026-07-13-V3-Device-Installation-Evidence.md`.
@@ -59,8 +99,8 @@
   - `/tmp/PhotoMemoResponsiveLayoutQA/iphone-se3-375-home.png`
   - `/tmp/PhotoMemoResponsiveLayoutQA/iphone15pro-393-home-final4.png`
   - `/tmp/PhotoMemoResponsiveLayoutQA/iphone17promax-440-home-final.png`
-- Signed `1.7 (7)` was installed and launched on physical `IPhone5` and
-  `iPhone7` without deleting their existing configuration data.
+- Signed `1.7 (7)` was installed and launched on physical `TestDeviceA` and
+  `TestDeviceB` without deleting their existing configuration data.
 - Next required action: on both devices inspect Home, Configuration Center,
   Output, Task, Settings, memory-object overview/anchors, and local
   configuration backup actions. Confirm complete left/right card corners,
@@ -138,7 +178,7 @@
 Closure evidence:
 
 - The previous app was deleted and the same signed fixed build was installed
-  on `IPhone5` and `iPhone7`.
+  on `TestDeviceA` and `TestDeviceB`.
 - Both devices completed clean first-run setup with matching configuration and
   processed the same `IMG_1171.jpg` through Apple Photos Share.
 - User inspection confirmed non-empty smart-module output on both devices.
@@ -333,17 +373,17 @@ Evidence:
 - V3 validation batch 6 is locally verified and superseded by later V3 slices.
   It closed the Memory Engine
   capture-calendar regression and adds a no-file HEIC non-ASCII UserComment
-  metadata-preservation regression. iPhone7 evidence now proves 21-photo
+  metadata-preservation regression. TestDeviceB evidence now proves 21-photo
   rejection and proves 1-photo plus 20-photo Share Extension requests drain
   into completed `shareExtension` jobs after the main app launches. Stable
   evidence:
   `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-stable-20260710-220803`.
   The current dirty working tree was rebuilt, installed, and launched on
-  iPhone7 after these code-only changes; post-install evidence is
+  TestDeviceB after these code-only changes; post-install evidence is
   `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-after-current-install-20260710-222315`
   with no new requests, jobs, or crashes.
 - The runtime evidence summarizer now records per-job `durationSeconds` and
-  `savedTasksPerMinute`. The stable iPhone7 20-photo completed jobs measured
+  `savedTasksPerMinute`. The stable TestDeviceB 20-photo completed jobs measured
   `21.56s` / `55.66 saved tasks per minute` and `25.082s` / `47.84 saved tasks
   per minute`. This is a throughput evidence baseline, not a replacement for
   Instruments or main-thread stall analysis.
@@ -359,7 +399,7 @@ Evidence:
   item, not a 1.6 blocker. Current code has explicit RAW/ProRAW/DNG input
   policy, generated still-output policy, user-facing supported-format copy, and
   metadata-warning coverage without promising RAW output preservation. Current
-  iPhone7 Share evidence after installing local `1.6` shows high-resolution /
+  TestDeviceB Share evidence after installing local `1.6` shows high-resolution /
   RAW-like Apple Photos inputs can arrive as `public.jpeg` and complete
   successfully; true RAW/ProRAW provider behavior still needs real-device
   evidence.
@@ -547,8 +587,8 @@ Evidence:
   - self-baseline `share-21-reject` dry run, confirming the no-new-job /
     no-new-request comparison path
 - Device note:
-  - `xcrun devicectl list devices` currently reports physical `iPhone7`
-    (`863C2747-6742-5E93-B715-6F89DBF90B31`) as `unavailable`.
+  - `xcrun devicectl list devices` currently reports physical `TestDeviceB`
+    (`REDACTED_DEVICE_ID`) as `unavailable`.
   - Wait for the device to be online / trusted before collecting the next
     Apple Photos -> Share -> MemoMark evidence run.
 
@@ -609,7 +649,7 @@ Evidence:
   - `PhotoMemoiOS` Debug generic iOS build from
     `/tmp/PhotoMemoV3Batch6IOSBuild`
   - `git diff --check`
-- iPhone7 evidence:
+- TestDeviceB evidence:
   - Installed signed Debug build:
     `/tmp/PhotoMemoV3DeviceBuild_20260710/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
   - Baseline:
@@ -625,7 +665,7 @@ Evidence:
   - No new `shareExtension` batch job appeared yet. `devicectl` could not
     launch the main app because iOS reported the device as locked.
 - Next required device step:
-  - Unlock iPhone7 and open MemoMark / 时光记.
+  - Unlock TestDeviceB and open MemoMark / 时光记.
   - Collect evidence again with baseline
     `/tmp/PhotoMemoRuntimeEvidence/v3-iphone7-baseline-20260710-211400`.
   - Verify the two persisted requests are drained and enqueued.
@@ -696,13 +736,13 @@ Evidence:
     `ExternalPhotoIntakeCenterTests`, and
     `PhotoMemoShareDiagnosticsTests`.
   - Earlier in this pass, `PhotoMemoiOS` Debug physical-device build passed for
-    iPhone7 (`00008150-000A043136A1401C`), installed successfully, and launched
+    TestDeviceB (`REDACTED_PHYSICAL_DEVICE_UDID`), installed successfully, and launched
     successfully on the paired device.
   - Focused macOS `PhotoMemoTests` passed for configuration lifecycle, subject
     library support, Home projection, V1 apply request builder, and bootstrap
     flow/runtime suites.
 - Not completed:
-  - The latest Live Photo picker correction was not reinstalled to iPhone7
+  - The latest Live Photo picker correction was not reinstalled to TestDeviceB
     because Xcode/CoreDevice currently reports the physical device as offline /
     unavailable.
   - Share Extension motion-preserving Live Photo still needs a dedicated intake
@@ -732,14 +772,14 @@ Evidence:
 - Verification passed:
   - `V1SettingsPagePresenterTests`
   - `PhotoMemoiOS` Debug build for the connected physical device named
-    `iPhone7`
+    `TestDeviceB`
   - install via `devicectl`
   - launch via `devicectl`
 
 ## 2026-07-09 V1 iOS design-language first polish pass installed on device
 
 - The first low-risk MemoMark design-language polish pass is installed on the
-  connected physical device named `iPhone7`.
+  connected physical device named `TestDeviceB`.
 - Scope intentionally stayed below information-architecture changes:
   - added shared V1 page header, section heading, and card chrome primitives
   - moved the Configuration Center preview title above the preview card border
@@ -757,7 +797,7 @@ Evidence:
 - Verification passed:
   - `git diff --check`
   - `PhotoMemoiOS` Debug build for the connected physical device named
-    `iPhone7`
+    `TestDeviceB`
   - install via `devicectl`
   - launch via `devicectl`
   - `V1SettingsPagePresenterTests`
@@ -783,7 +823,7 @@ Evidence:
   rows no longer show trailing navigation chevrons, `边框样式` is rendered as
   static text, and `区域内容设置` now exposes a single `进入设置` action label.
 - Configuration naming now defaults new configurations to the current effective
-  subject name plus active anchor name, for example `途途 生日`. Users can still
+  subject name plus active anchor name, for example `小宝 生日`. Users can still
   edit the name from the Home current-configuration module.
 - Saving while the current subject has no existing configuration now creates a
   saved configuration for that subject so it appears in Home's current
@@ -792,7 +832,7 @@ Evidence:
   - `git diff --check`
   - `ConfigurationSessionConfigurationLifecycleTests`
   - `PhotoMemoiOS` Debug build for the connected physical device named
-    `iPhone7`
+    `TestDeviceB`
   - install via `devicectl`
   - launch via `devicectl`
 
@@ -824,7 +864,7 @@ Evidence:
 - Verification passed:
   - `git diff --check`
   - `PhotoMemoiOS` Debug build for the connected physical device named
-    `iPhone7`
+    `TestDeviceB`
   - install via `devicectl`
   - launch via `devicectl`
 
@@ -862,9 +902,9 @@ Evidence:
   - `xcodebuild -list`
   - `PhotoMemoiOS` Debug generic iOS Simulator build
   - `PhotoMemoiOS` Debug generic iOS build
-  - `PhotoMemoiOS` signed Debug iPhone7 device build
-  - iPhone7 install through `devicectl`
-  - iPhone7 launch through `devicectl`
+  - `PhotoMemoiOS` signed Debug TestDeviceB device build
+  - TestDeviceB install through `devicectl`
+  - TestDeviceB launch through `devicectl`
   - built-product inspection confirmed app display name, bundle identifier,
     version/build, embedded Share Extension, embedded Widget Extension, and
     privacy manifests
@@ -1149,7 +1189,7 @@ Simulator target:
 
 - runtime: iOS 26.5
 - device: `iPhone 17 Pro`
-- UDID: `FD060AA4-67FE-4142-BA34-E7584089F350`
+- UDID: `REDACTED_DEVICE_ID`
 
 What was verified:
 
@@ -1201,10 +1241,10 @@ Next recommended verification:
 Device install follow-up:
 
 - connected physical device used for this pass:
-  - display name: `iPhone7`
-  - devicectl ID: `863C2747-6742-5E93-B715-6F89DBF90B31`
+  - display name: `TestDeviceB`
+  - devicectl ID: `REDACTED_DEVICE_ID`
   - Xcode destination ID used for the successful build:
-    `00008150-000A043136A1401C`
+    `REDACTED_PHYSICAL_DEVICE_UDID`
 - `PhotoMemoiOS` Debug iPhoneOS build passed with local development signing
 - install succeeded after the user removed the older installed app:
   - bundle ID: `com.serydoo.PhotoMemo.iOS`
@@ -1214,7 +1254,7 @@ Device install follow-up:
   - reason: developer profile/signature has not been explicitly trusted by the
     user on the device
 - next manual action:
-  - on iPhone, trust the Apple Development profile for `serydoo@163.com`
+  - on iPhone, trust the Apple Development profile for `redacted Apple ID`
   - then relaunch `时光记` manually or rerun `devicectl device process launch`
   - after launch, run the Live Photo acceptance checklist on device
 
@@ -1368,9 +1408,9 @@ Architecture freeze follow-up:
     scrollable details, and a stable bottom action
 - Verification passed:
   - `git diff --check`
-  - `PhotoMemoiOS` iPhone7 signed real-device build
-  - iPhone7 install
-  - iPhone7 launch via `devicectl`
+  - `PhotoMemoiOS` TestDeviceB signed real-device build
+  - TestDeviceB install
+  - TestDeviceB launch via `devicectl`
 - Manual device confirmation still wanted:
   - from Apple Photos, share one photo to PhotoMemo
   - confirm the top spacing feels calmer
@@ -1380,7 +1420,7 @@ Architecture freeze follow-up:
 
 ## 2026-07-07 V1 output album refresh regression fixed
 
-- User-reported symptom on the installed iPhone7 build:
+- User-reported symptom on the installed TestDeviceB build:
   - entering `输出`
   - checking `已有相册`
   - album choices could look stale and appear to show only the previously
@@ -1403,9 +1443,9 @@ Architecture freeze follow-up:
   - `git diff --check`
   - focused `ExportAlbumPresenterTests`
   - `PhotoMemoiOS` iOS Simulator build
-  - iPhone7 signed real-device build
-  - iPhone7 install
-  - iPhone7 launch via `devicectl`
+  - TestDeviceB signed real-device build
+  - TestDeviceB install
+  - TestDeviceB launch via `devicectl`
 - Manual device confirmation still wanted:
   - open `输出 -> 已有相册`
   - confirm returning from background or re-entering the tab refreshes the
@@ -1439,9 +1479,9 @@ Architecture freeze follow-up:
   - focused `ProductionMemoryResolverTests`
   - focused `RecordCardBuildServiceTests`
   - generic `PhotoMemoiOS` iOS build
-  - iPhone7 signed real-device build
-  - iPhone7 install
-- Automatic launch on iPhone7 failed only because iOS rejected the untrusted
+  - TestDeviceB signed real-device build
+  - TestDeviceB install
+- Automatic launch on TestDeviceB failed only because iOS rejected the untrusted
   developer profile/signature. The app is installed; trust the developer
   profile on device before launching manually.
 
@@ -1457,8 +1497,8 @@ Architecture freeze follow-up:
   - `RecordCardBuildServiceTests`
   - required `PhotoMemo` build
   - `PhotoMemoiOS` iOS Simulator build
-  - iPhone7 real-device build and install
-- Automatic launch on iPhone7 was attempted but blocked because the device was
+  - TestDeviceB real-device build and install
+- Automatic launch on TestDeviceB was attempted but blocked because the device was
   locked. Manual visual confirmation should still be done by opening the
   installed app on device.
 
@@ -1496,9 +1536,9 @@ Architecture freeze follow-up:
       protects against fallback output such as legacy `家人`
   - iOS Simulator build passed:
     - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'generic/platform=iOS Simulator' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDerivedData CODE_SIGNING_ALLOWED=NO -quiet build`
-  - iPhone7 real-device build and install passed:
-    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=00008150-000A043136A1401C' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
-    - `xcrun devicectl device install app --device 863C2747-6742-5E93-B715-6F89DBF90B31 /tmp/PhotoMemoIOSDeviceDerivedData/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
+  - TestDeviceB real-device build and install passed:
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=REDACTED_PHYSICAL_DEVICE_UDID' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
+    - `xcrun devicectl device install app --device REDACTED_DEVICE_ID /tmp/PhotoMemoIOSDeviceDerivedData/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
 
 - Not yet manually verified:
   - physical-device relaunch was blocked because the device was locked
@@ -1563,7 +1603,7 @@ Architecture freeze follow-up:
 
 - Not yet manually verified:
   - physical-device install/launch after this slice
-  - current connected device `IPhone5` is visible to Xcode, but Developer Mode
+  - current connected device `TestDeviceA` is visible to Xcode, but Developer Mode
     is disabled, so direct device build/install timed out waiting for the
     destination to become available
   - visual density on the actual small iPhone screen after removing homepage
@@ -1597,10 +1637,10 @@ Architecture freeze follow-up:
   - hygiene check passed:
     - `git diff --check`
   - real-device build passed:
-    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=00008150-000A043136A1401C' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
-  - installed and launched on connected iPhone7:
-    - `xcrun devicectl device install app --device 863C2747-6742-5E93-B715-6F89DBF90B31 /tmp/PhotoMemoIOSDeviceDerivedData/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
-    - `xcrun devicectl device process launch --device 863C2747-6742-5E93-B715-6F89DBF90B31 --terminate-existing --activate com.serydoo.PhotoMemo.iOS`
+    - `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=REDACTED_PHYSICAL_DEVICE_UDID' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
+  - installed and launched on connected TestDeviceB:
+    - `xcrun devicectl device install app --device REDACTED_DEVICE_ID /tmp/PhotoMemoIOSDeviceDerivedData/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
+    - `xcrun devicectl device process launch --device REDACTED_DEVICE_ID --terminate-existing --activate com.serydoo.PhotoMemo.iOS`
 
 - Not yet manually verified:
   - the exact visual rhythm on the physical iPhone after tapping into the
@@ -2696,7 +2736,7 @@ Architecture freeze follow-up:
   - overview active-anchor card spacing on device
   - anchor switching flow in overview after the badge removal
 
-## 2026-07-06 iPhone7 Location and MemorySubject production fixes installed
+## 2026-07-06 TestDeviceB Location and MemorySubject production fixes installed
 
 - User device testing confirmed Location display configuration worked in
   preview but production output initially fell back to raw GPS coordinates for
@@ -2706,7 +2746,7 @@ Architecture freeze follow-up:
 - Explicit Location display configuration no longer falls back to legacy raw
   coordinates when the configured semantic display cannot resolve text.
 - A second device issue showed Time Anchor preview using the selected subject
-  `途途` while production output showed the default subject text `家人`.
+  `小宝` while production output showed the default subject text `家人`.
 - Root cause: production snapshot loading only consulted the standalone
   selected subject payload before falling back to legacy profile defaults, while
   preview restored the selected subject from the V1 subject library record.
@@ -2719,16 +2759,16 @@ Architecture freeze follow-up:
   - `RecordCardBuildServiceTests`
   - `PhotoImportServiceTests`
 - Verified `git diff --check`.
-- Built `PhotoMemoiOSV1` for connected `iPhone7` using:
+- Built `PhotoMemoiOSV1` for connected `TestDeviceB` using:
   `/tmp/PhotoMemoV1DeviceBuild_20260706_SubjectFix`.
 - The previous app was uninstalled and the new build installed successfully on
   device. Automatic launch was blocked until the development profile is trusted
   on-device.
 
-## 2026-07-03 iPhone7 usable V1 checkpoint
+## 2026-07-03 TestDeviceB usable V1 checkpoint
 
 - The current `/Users/rui/Desktop/PhotoMemo` working tree is the accepted latest V1 functional baseline.
-- It was built for the connected `iPhone7`, installed, launched, and then accepted by user inspection.
+- It was built for the connected `TestDeviceB`, installed, launched, and then accepted by user inspection.
 - Installed bundle id:
   - `com.serydoo.PhotoMemo.iOS`
 - Device build product:
@@ -2831,7 +2871,7 @@ Architecture freeze follow-up:
   - 因此这轮 UX 修复已经全部重新落在原始 V1 工作树，而不是旧归档副本
 
 - 本轮完成的 V1 UX 项：
-  - 时间锚点标题不再使用硬编码 `途途生日`
+  - 时间锚点标题不再使用硬编码 `小宝生日`
   - 切换记忆对象时，V1 accessory / preview-side anchor date 跟随当前对象刷新
   - overview 区只保留当前状态表达
   - `关系类型 / 对象定义 / 行为映射` 已从当前 V1 subject surface 移除
@@ -2952,7 +2992,7 @@ Architecture freeze follow-up:
   - `PhotoMemoiOSV1` generic iOS Simulator build 通过
 
 - 还没做：
-  - 这一轮未重新签名安装到 iPhone7
+  - 这一轮未重新签名安装到 TestDeviceB
   - 还需要真机实际点一次 `处理照片`，尤其测试大 HEIC / Live Photo 派生图
 
 ## 2026-07-02 V1 iOS compile chain recovered + root-view review refreshed
@@ -3049,7 +3089,7 @@ Architecture freeze follow-up:
     - 随后连带出现的 immutable `self` 报错
   - 也就是说：
     - 这轮 V1 入口 polish 的行为测试是稳定的
-    - 但如果下一轮目标是“重新推送 iPhone7”，优先级应该先切到 iOS SwiftUI 编译链恢复
+    - 但如果下一轮目标是“重新推送 TestDeviceB”，优先级应该先切到 iOS SwiftUI 编译链恢复
 
 - 这轮额外结构判断也已经有结论：
   - 继续该拆的前 3 个点是：
@@ -3084,12 +3124,12 @@ Architecture freeze follow-up:
   - 先用未签名包验证功能构建通过
   - 再切回自动签名，完成：
     - signed device build
-    - install to `iPhone7`
+    - install to `TestDeviceB`
     - launch on device
-  - 所以当前 `iPhone7` 上已经是包含这次修正的新包，不是旧界面残留
+  - 所以当前 `TestDeviceB` 上已经是包含这次修正的新包，不是旧界面残留
 
 - 关键结论：
-  - 如果用户现在在 `iPhone7` 上继续看到旧的 `编辑` 顶栏样式或灰色下拉，就不再是“没装到新包”的问题了，而要继续排查更上层容器状态
+  - 如果用户现在在 `TestDeviceB` 上继续看到旧的 `编辑` 顶栏样式或灰色下拉，就不再是“没装到新包”的问题了，而要继续排查更上层容器状态
   - 但本轮实际结果是：新包已成功安装并启动，用户随后确认“可以了”
 
 ## 2026-07-02 V1 formula selector surfaced + smart-module preview refresh aligned
@@ -3129,7 +3169,7 @@ Architecture freeze follow-up:
   - 所以 preview runtime 会回退成老的：
     - `昵称 今天 年龄 啦`
   - 现在 snapshot runtime 会自动归一化成生日默认规则，所以 slot D 默认预览重新回到了：
-    - `途途今天11个月28天啦！`
+    - `小宝今天11个月28天啦！`
 
 - 新增 / 更新测试：
   - [V1TimeAnchorEntryPresenterTests.swift](/Users/rui/Desktop/PhotoMemo/Tests/PhotoMemoTests/ArchitectureTests/V1TimeAnchorEntryPresenterTests.swift)
@@ -5349,8 +5389,8 @@ Architecture freeze follow-up:
   - `PreviewCompositionMigrationTests`
     现在锁住的是旧 view 的真实输出：
     - `记录iPhone 17 Pro Max`
-    - `记录于2026.05.24 14:33:00`
-    - `途途当天11个月28天`
+    - `记录于2026.06.01 12:00:00`
+    - `小宝当天11个月28天`
   - 不是错误地假定 text-token 之间会自动插入空格
   - `ConfigurationMigrationTests`
     修正了自定义 badge 的构造参数，并锁住 automatic bootstrap
@@ -6193,8 +6233,8 @@ Architecture freeze follow-up:
   - `git diff --check` 通过。
   - `PhotoMemoShareExtension` generic iOS Debug build 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
-  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
-  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemoiOSMVP` TestDeviceB Debug build 通过。
+  - 已覆盖安装到 TestDeviceB `REDACTED_DEVICE_ID`。
   - 自动启动被 iOS 拒绝，原因是当前 debug 签名 profile 未在设备上信任。
 - 下一轮真机重点：
   - 从 Apple Photos 分享一张本地图片，确认不额外显示 iCloud 准备环节。
@@ -6328,9 +6368,9 @@ Architecture freeze follow-up:
   - `PhotoMemoTests/PhotoImportServiceTests` 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
   - `PhotoMemo` macOS Debug build 通过。
-  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemoiOSMVP` TestDeviceB Debug build 通过。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 下一轮真机重点：
   - 用同一张竖图重新 Share 生成新图，确认照片区域左侧 51px 黑边消失。
   - 测 1 张、2 张、3 张混合横竖图的 Share 确认预览。
@@ -6514,9 +6554,9 @@ Architecture freeze follow-up:
   - `PhotoMemoTests/BatchNotificationMessageFormatterTests` 通过。
   - `PhotoMemoShareExtension` generic iOS Debug build 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
-  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemoiOSMVP` TestDeviceB Debug build 通过。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 下一轮真机观察：
   - 从 Apple Photos 重新 Share 一张或两张照片。
   - 快速任务可只看到完成通知，不强求持续进度。
@@ -6588,7 +6628,7 @@ Architecture freeze follow-up:
 - 用户反馈：
   - 默认苹果 Logo 仍然偏黑，希望改成柔和灰色。
   - 右上参数区域前面已经修正过，不希望因为这轮继续误改参数几何。
-  - 自定义短语与模块组合后，不能出现类似 `途途今天 1 岁... 啦`
+  - 自定义短语与模块组合后，不能出现类似 `小宝今天 1 岁... 啦`
     这种不自然空格。
 - 已修复：
   - `BadgeRenderer` 新增 `systemSymbolTint`，系统符号可直接使用指定 tint。
@@ -6662,7 +6702,7 @@ Architecture freeze follow-up:
   - Share 后确认页正常，handoff 也不再停在失败界面。
   - 但用户看不见是否在处理，之前还出现过没有输出的情况。
 - 真机抓数方式：
-  - 通过 `xcrun devicectl device copy from` 拉取 iPhone7 的
+  - 通过 `xcrun devicectl device copy from` 拉取 TestDeviceB 的
     App Group `group.com.serydoo.PhotoMemo` 下 `Library/Preferences`。
   - 解码 `photomemo.shareDiagnostics.events` 和
     `photomemo.batchQueue.jobs`。
@@ -6692,9 +6732,9 @@ Architecture freeze follow-up:
   - `git diff --check` 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
   - `PhotoMemoShareExtension` generic iOS Debug build 通过。
-  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemoiOSMVP` TestDeviceB Debug build 通过。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
   - 用户重新从 Apple Photos 分享 1 张 JPEG 后，设备诊断显示：
     - `app.request.validated payloads=1, valid=1`
     - `app.enqueue.created tasks=1`
@@ -6730,9 +6770,9 @@ Architecture freeze follow-up:
   - `git diff --check` 通过。
   - `PhotoMemoShareExtension` generic iOS Debug build 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
-  - `PhotoMemoiOSMVP` iPhone7 Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemoiOSMVP` TestDeviceB Debug build 通过。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 仍需用户真机观察：
   - 从 Apple Photos 重新分享一张照片，确认 handoff 不再停在失败界面。
   - 确认新任务进度出现。
@@ -6783,8 +6823,8 @@ Architecture freeze follow-up:
   - `git diff --check` 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 仍需用户真机观察：
   - 重新 Share 一张照片，确认普通通知中心不再出现阶段堆叠。
   - 确认实时进度主要显示在 Live Activity 上。
@@ -6806,8 +6846,8 @@ Architecture freeze follow-up:
   - `git diff --check` 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 仍需用户真机观察：
   - 重新 Share 一张图片，让新的 Live Activity 状态刷新，确认状态正文在当前黑色壁纸上可读。
 
@@ -6834,8 +6874,8 @@ Architecture freeze follow-up:
   - `git diff --check` 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 仍需用户真机观察：
   - 左上 Recorder 是否恢复到满意的字号感。
   - 右上拍摄参数是否仍然完整。
@@ -6865,8 +6905,8 @@ Architecture freeze follow-up:
   - `git diff --check` 通过。
   - `PhotoMemoiOSMVP` generic iOS Debug build 通过。
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装并启动到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装并启动到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 仍需用户真机观察：
   - 在四个区域里测试“输入文字 -> 插入模块 -> 继续输入”的实际顺序。
   - 分享单张 JPEG / RAW，确认通知栏不再堆叠多个阶段通知。
@@ -6913,14 +6953,14 @@ Architecture freeze follow-up:
   - 该项属于 Classic White 渲染快照；在“边框输出冻结”前提下，不应顺手更新
     snapshot，应单独调查。
 - 设备状态：
-  - `iPhone7` 当前在 `xcrun devicectl list devices` 中为 unavailable。
-  - `IPhone5` 可见但 Developer Mode disabled，不能用于开发安装。
+  - `TestDeviceB` 当前在 `xcrun devicectl list devices` 中为 unavailable。
+  - `TestDeviceA` 可见但 Developer Mode disabled，不能用于开发安装。
   - 本轮没有推送到手机，只完成 generic iOS build。
 - 下一步建议：
   1. 为 `PhotoMemoBackgroundStatusService` 的 display mode 增加自动化测试。
   2. 为最终通知文案增加自动化测试。
   3. 单独调查 Classic White landscape snapshot。
-  4. iPhone7 恢复 available 后，再推真机做真实 Share 回归。
+  4. TestDeviceB 恢复 available 后，再推真机做真实 Share 回归。
 
 ## 2026-06-29 MVP Queue Naming Refinement
 
@@ -6952,8 +6992,8 @@ Architecture freeze follow-up:
 - 已验证：
   - `git diff --check` 通过。
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装到 iPhone7
-    `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装到 TestDeviceB
+    `REDACTED_DEVICE_ID`。
 - 仍需人工复测：
   - 分享单张照片，确认通知/锁屏/状态 sheet 使用 compact 队列名。
   - 连续分享 2-3 批，确认每行代表一次 Share 任务。
@@ -6988,7 +7028,7 @@ Architecture freeze follow-up:
   - 构建产物仍嵌入：
     - `PhotoMemoShareExtension.appex`
     - `PhotoMemoWidgetExtension.appex`
-  - `PhotoMemoiOSMVP` 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - `PhotoMemoiOSMVP` 已覆盖安装到 TestDeviceB `REDACTED_DEVICE_ID`。
   - `PhotoMemoiOSMVP` iOS Simulator Debug build 通过。
   - `PhotoMemo` macOS Debug build 通过。
   - `git diff --check` 通过。
@@ -7024,7 +7064,7 @@ Architecture freeze follow-up:
     - 非选中项轻微降透明
 - 已验证：
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装到 TestDeviceB `REDACTED_DEVICE_ID`。
 - 仍需人工验证：
   - 从 Apple Photos 分享 RAW / ProRAW 到 MVP，确认缩略图能出现。
   - 确认无边框预览在横图、竖图、多图下视觉足够克制。
@@ -7048,7 +7088,7 @@ Architecture freeze follow-up:
     - 保持 Apple Photos Share 的轻量确认感。
 - 已验证：
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装到 TestDeviceB `REDACTED_DEVICE_ID`。
 - 后续交互方向：
   - 通知栏/Live Activity 应区分单任务、2-3 个任务、4+ 聚合、完成、失败。
   - 主 App 后台状态页应从“后台状态”继续收敛为“处理进度/最近结果”，单任务显示完整 Pipeline，多任务显示可展开队列。
@@ -7090,7 +7130,7 @@ Architecture freeze follow-up:
     - 部分完成：`已保存 X 张，Y 张需要处理`
 - 已验证：
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装到 TestDeviceB `REDACTED_DEVICE_ID`。
   - `PhotoMemo` macOS Debug build 通过。
 - 人工复测建议：
   - 分享 1 张 JPEG，观察 Lock Screen / Notification Center 是否显示 Pipeline。
@@ -7129,7 +7169,7 @@ Architecture freeze follow-up:
 - 验证：
   - `PhotoMemoShareExtension` Debug iOS Simulator build 通过。
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
-  - 已覆盖安装到 iPhone7 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装到 TestDeviceB `REDACTED_DEVICE_ID`。
   - `git diff --check` 通过。
 - 人工复测建议：
   - 分享 1 张竖图，确认完整显示。
@@ -7155,7 +7195,7 @@ Architecture freeze follow-up:
   - `PhotoMemoiOSMVP` connected-device Debug build 通过。
   - 构建产物 `PhotoMemoiOSMVP.app/PlugIns` 已包含 `PhotoMemoWidgetExtension.appex`。
   - 构建产物 Info.plist 已包含 `NSSupportsLiveActivities = true`。
-  - 已覆盖安装到设备 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已覆盖安装到设备 `REDACTED_DEVICE_ID`。
   - `git diff --check` 通过。
 - 复测建议：
   - 优先用 RAW 或多张照片测试，因为单张普通图片处理太快，Live Activity 可能还没形成持续可见状态就结束。
@@ -7194,13 +7234,13 @@ Architecture freeze follow-up:
   - `PhotoMemoShareExtension` Debug iOS Simulator build 通过。
   - `git diff --check` 通过。
 - 已覆盖安装到设备：
-  - `iPhone7`
-  - device id `863C2747-6742-5E93-B715-6F89DBF90B31`
+  - `TestDeviceB`
+  - device id `REDACTED_DEVICE_ID`
   - bundle id `com.serydoo.PhotoMemo.iOS`
 - 未完成 / 需要人工验证：
   - 从 Apple Photos 分享真实 ProRAW / DNG 到 PhotoMemo。
   - 检查输出图片视觉、EXIF token、相册写入是否符合预期。
-  - 在 iPhone7 上观察 RAW 大图处理时是否发生内存压力；如有，下一步应把 RAW 显示版本上限进一步下调到设备自适应。
+  - 在 TestDeviceB 上观察 RAW 大图处理时是否发生内存压力；如有，下一步应把 RAW 显示版本上限进一步下调到设备自适应。
 
 ## 2026-06-29 MVP Queue Summary Live Activity
 
@@ -7227,7 +7267,7 @@ Architecture freeze follow-up:
   - 后续可改为最近 3 张平均耗时。
 - 验证：
   - `PhotoMemoiOSMVP` 真机 Debug build 通过。
-  - 已重新安装到设备 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已重新安装到设备 `REDACTED_DEVICE_ID`。
   - `git diff --check` 通过。
 - 下一步人工测试建议：
   - 分享 1 张，观察单张阶段/剩余时间。
@@ -7248,7 +7288,7 @@ Architecture freeze follow-up:
   - MVP 仍默认显示 `mvpTest` 页面，但外层保留正式 iOS runtime、deeplink flush、后台状态入口和 batch processing。
 - 验证：
   - `PhotoMemoiOSMVP` 真机 Debug build 通过。
-  - 已重新安装并启动到设备 `863C2747-6742-5E93-B715-6F89DBF90B31`。
+  - 已重新安装并启动到设备 `REDACTED_DEVICE_ID`。
   - `git diff --check` 通过。
 - 下一步人工验证：
   - 从 Apple Photos 分享一张普通静态照片到 `PhotoMemo Share`。
@@ -7468,9 +7508,9 @@ Compact AI summary for this round:
   - `PhotoMemo` Debug macOS build
   - `PhotoMemoiOS` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
   - `PhotoMemoiOSMVP` Debug iOS Simulator build，destination `iPhone 17 Pro, iOS 26.4`
-  - `PhotoMemoiOSMVP` Debug connected-device build，destination `iPhone7`
+  - `PhotoMemoiOSMVP` Debug connected-device build，destination `TestDeviceB`
 - 已覆盖安装并启动到连接设备：
-  - device: `iPhone7`
+  - device: `TestDeviceB`
   - bundle id: `com.serydoo.PhotoMemo.iOS.MVP`
 - 后续编译与文件整理补充：
   - 清理了 iOS compact preview 中已经不再使用的旧 PM-004/footer/slot helper。
@@ -7602,7 +7642,7 @@ Compact AI summary for this round:
   - Logo 标识：
     - 默认 Apple mini-logo
     - 可切换到自选上传占位
-  - `途途生日` 日期输入
+  - `小宝生日` 日期输入
   - 输出区域 UI-only 测试项
   - 写入记忆 UI-only 状态和预览
 - 页面行为目前为：
@@ -7610,7 +7650,7 @@ Compact AI summary for this round:
   - Preview 固定优先显示
   - 自定义功能区在 Preview 下方随滚动淡入
 - 新增智能时间格式化能力：
-  - 基于 mock 拍摄时间与 `途途生日` 的差值输出
+  - 基于 mock 拍摄时间与 `小宝生日` 的差值输出
   - 默认格式 `X年X个月X天`
   - 若差值小于 1 年则不显示 `X年`
   - 兜底可输出 `X天`
@@ -8749,8 +8789,8 @@ Every review should leave the repository simpler than before.
   - `PhotoMemoiOS` 真机构建通过：
     - `xcodebuild -scheme PhotoMemoiOS -destination 'generic/platform=iOS' -allowProvisioningUpdates build`
   - 成品已安装到设备：
-    - `iPhone7`
-    - `00008150-000A043136A1401C`
+    - `TestDeviceB`
+    - `REDACTED_PHYSICAL_DEVICE_UDID`
   - 已成功拉起：
     - `com.serydoo.PhotoMemo.iOS`
 
@@ -8823,7 +8863,7 @@ Every review should leave the repository simpler than before.
     - `PhotoMemoiOS`
     - `PhotoMemoShareExtension`
   - 真机安装并启动通过：
-    - 设备：`iPhone7`
+    - 设备：`TestDeviceB`
     - 型号：`iPhone 17 Pro Max`
     - bundle id：`com.serydoo.PhotoMemo.iOS`
 
@@ -9026,7 +9066,7 @@ Every review should leave the repository simpler than before.
     - `PhotoMemoiOS`
     - `PhotoMemoShareExtension`
   - 真机安装：
-    - 已重新安装到设备 `00008150-000A043136A1401C`
+    - 已重新安装到设备 `REDACTED_PHYSICAL_DEVICE_UDID`
   - 真机启动：
     - 安装成功
     - 自动启动被系统拒绝，原因是设备当时处于锁定状态
@@ -9749,10 +9789,10 @@ Build verification for this slice:
 - 本轮还没完全收口的问题：
   - EXIF 参数摘要模块重新插入和删除边界，仍要继续盯
   - 用户提到的异常拼接：
-    - `途途1岁24天）〕啦`
+    - `小宝1岁24天）〕啦`
     - 还没有拿到稳定复现场景
   - 分享失败提示图还没收到，本轮未分析
-  - `/Users/rui/Downloads/IMG_9565.HEIC` 本轮读取时本地未找到，需要你后续再补
+  - `REDACTED_SAMPLE_PATH` 本轮读取时本地未找到，需要你后续再补
 - 下一轮最值得继续：
   1. 先复现并修正右下区域异常拼接
   2. 把 EXIF 参数摘要模块做成更稳定的可重插入 chip
@@ -10887,7 +10927,7 @@ PhotoMemo 是一个 **local-first 的 macOS 原生照片信息纪念卡生成器
 
 最终表达由用户自己在前后补文字，例如：
 
-- `途途今天` + `{{anchor_age_text}}`
+- `小宝今天` + `{{anchor_age_text}}`
 - `距离高考` + `{{anchor_countdown_text}}`
 
 这条原则很重要，不要回退到“模块直接输出整句文案”。
@@ -12815,9 +12855,9 @@ Verification:
 - passed:
   - `git diff --check`
 - passed real-device build:
-  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=00008150-000A043136A1401C' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
+  - `xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -destination 'id=REDACTED_PHYSICAL_DEVICE_UDID' -configuration Debug -derivedDataPath /tmp/PhotoMemoIOSDeviceDerivedData build`
 - installed and launched on physical device:
-  - device: `iPhone7`
+  - device: `TestDeviceB`
   - bundle id: `com.serydoo.PhotoMemo.iOS`
 
 Known remaining verification gap:
@@ -12953,8 +12993,8 @@ Observed warnings:
 
 True-device status:
 
-- `IPhone5` is visible to `devicectl` as an available paired physical device:
-  - UDID: `00008130-001C30EA213A001C`
+- `TestDeviceA` is visible to `devicectl` as an available paired physical device:
+  - UDID: `REDACTED_SECONDARY_DEVICE_UDID`
   - model: iPhone 15 Pro
   - iOS: 27.0
 - device build/install is currently blocked because Developer Mode is disabled
@@ -13076,8 +13116,8 @@ Implemented the first pass of the iOS Memory Subject configuration polish:
 Verification:
 
 - `git diff --check`
-- `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'platform=iOS,id=00008150-000A043136A1401C' -derivedDataPath /tmp/PhotoMemoSubjectPolishBuild COMPILER_INDEX_STORE_ENABLE=NO -quiet build`
-- installed to device `863C2747-6742-5E93-B715-6F89DBF90B31`
+- `xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemoiOS -configuration Debug -destination 'platform=iOS,id=REDACTED_PHYSICAL_DEVICE_UDID' -derivedDataPath /tmp/PhotoMemoSubjectPolishBuild COMPILER_INDEX_STORE_ENABLE=NO -quiet build`
+- installed to device `REDACTED_DEVICE_ID`
 - launched bundle `com.serydoo.PhotoMemo.iOS`
 
 Follow-up polish notes:
@@ -13107,8 +13147,8 @@ Verification:
 
 - `git diff --check`
 - `PhotoMemoiOS` Debug real-device build to
-  `00008150-000A043136A1401C`
-- installed to device `863C2747-6742-5E93-B715-6F89DBF90B31`
+  `REDACTED_PHYSICAL_DEVICE_UDID`
+- installed to device `REDACTED_DEVICE_ID`
 - launch was blocked by iOS because the device was locked; install succeeded
 
 ## 2026-07-09 Time Anchor Maintenance And Compact Identity
@@ -13136,9 +13176,9 @@ Verification:
 
 - `git diff --check`
 - `PhotoMemoiOS` Debug real-device build to
-  `00008150-000A043136A1401C`
+  `REDACTED_PHYSICAL_DEVICE_UDID`
 - installed and launched on device
-  `863C2747-6742-5E93-B715-6F89DBF90B31`
+  `REDACTED_DEVICE_ID`
 
 ## 2026-07-09 Anchor Sheet And Home Metrics
 
@@ -13166,7 +13206,7 @@ Verification:
 - `git diff --check`
 - `PhotoMemoiOS` Debug real-device build
 - installed and launched on device
-  `863C2747-6742-5E93-B715-6F89DBF90B31`
+  `REDACTED_DEVICE_ID`
 
 ## 2026-07-09 Preset Logo And Output Icon Polish
 
@@ -13196,7 +13236,7 @@ Verification:
   index the removed second mock subject
 - `PhotoMemoiOS` Debug real-device build passed
 - installed and launched on device
-  `863C2747-6742-5E93-B715-6F89DBF90B31`
+  `REDACTED_DEVICE_ID`
 
 ## 2026-07-09 Row Rhythm And Preset Identity Icon Polish
 
@@ -13224,7 +13264,7 @@ Verification:
 - `PhotoMemoTests` build-for-testing passed
 - `PhotoMemoiOS` Debug real-device build passed
 - installed and launched on device
-  `863C2747-6742-5E93-B715-6F89DBF90B31`
+  `REDACTED_DEVICE_ID`
 
 ## 2026-07-09 Task Header And Location Preselection Polish
 
@@ -13250,7 +13290,7 @@ Verification:
 - `PhotoMemoTests` build-for-testing passed
 - `PhotoMemoiOS` Debug real-device build passed
 - installed and launched on device
-  `863C2747-6742-5E93-B715-6F89DBF90B31`
+  `REDACTED_DEVICE_ID`
 ## 2026-07-11 V3 Configuration And Rendering Handoff
 
 The configuration engineering slice is implemented and unsigned-build clean.
@@ -13289,7 +13329,7 @@ testing, and snapping.
 Focused configuration lifecycle, local-library presenter, and Home action
 tests passed. A signed `PhotoMemoiOS` Debug build, including Share and Widget
 extensions, was installed and launched on device
-`863C2747-6742-5E93-B715-6F89DBF90B31`. Manual confirmation remains for region
+`REDACTED_DEVICE_ID`. Manual confirmation remains for region
 content after restart, local-backup visibility, oldest-configuration deletion,
 and swipe feel.
 
@@ -13304,14 +13344,14 @@ refreshes all dynamic region previews after successful reconciliation.
 
 Focused apply-runtime and configuration-lifecycle tests passed, and the signed
 iOS build succeeded. The app was fully uninstalled and reinstalled on device
-`863C2747-6742-5E93-B715-6F89DBF90B31`, intentionally clearing its container.
+`REDACTED_DEVICE_ID`, intentionally clearing its container.
 The first remote launch was denied until the development profile is trusted
 again on the device.
 
 ## 2026-07-11 Unresolved Configuration Region Persistence Blocker
 
 Status: historical blocker, superseded by the later multi-module persistence,
-`CardTextBlockEngine`, and final iPhone7 verification recorded below. Keep this
+`CardTextBlockEngine`, and final TestDeviceB verification recorded below. Keep this
 section as root-cause history; do not treat it as an open V3 blocker.
 
 Exact reproduction:
@@ -13419,17 +13459,17 @@ device build still reproduces the blocker.
   intentionally preserved.
 - Verification passed with `LOCAL_COPY_IOS_EXIT:0` and
   `LOCAL_COPY_MAC_EXIT:0`.
-- The current Debug build is installed on physical device `iPhone7` (iPhone 17
+- The current Debug build is installed on physical device `TestDeviceB` (iPhone 17
   Pro Max, iOS 27.0). Device build and install passed with
   `DEVICE_BUILD_EXIT:0` and `DEVICE_INSTALL_EXIT:0`.
 - Launch remains pending because SpringBoard rejected the request while the
   phone was locked. Unlock the phone, keep the display awake, then rerun the
   `devicectl device process launch` step.
 - Home configuration rows have now been migrated from the custom drag presenter
-  to native non-full-swipe actions after direct iPhone7 feedback. The signed
+  to native non-full-swipe actions after direct TestDeviceB feedback. The signed
   build and install passed, and all embedded signatures verify locally.
-- Current launch blocker is device-side developer trust for `serydoo@163.com`.
-  On iPhone7 use Settings -> General -> VPN & Device Management -> Developer App
+- Current launch blocker is device-side developer trust for `redacted Apple ID`.
+  On TestDeviceB use Settings -> General -> VPN & Device Management -> Developer App
   -> Trust, then retry launch.
 - Home and Time Anchor swipe interactions are now unified. Both support partial
   reveal plus full-swipe-to-confirm-delete; Time Anchor also exposes Configure
@@ -13450,7 +13490,7 @@ device build still reproduces the blocker.
   `DIALOG_ANCHOR_MAC_EXIT:0`; the signed device build/install passed with
   `DIALOG_DEVICE_BUILD_EXIT:0` and `DIALOG_DEVICE_INSTALL_EXIT:0`.
 - The installed build could not launch because iOS requires developer
-  `serydoo@163.com` to be trusted again under Settings -> General -> VPN &
+  `redacted Apple ID` to be trusted again under Settings -> General -> VPN &
   Device Management. No source, build, signing, or installation error remains.
 - Configuration Center “更多模块” now opens a native searchable List sheet
   with medium/large detents. The six frequent module chips remain unchanged,
@@ -13486,7 +13526,7 @@ device build still reproduces the blocker.
 - Configuration Center symbol contracts and the iOS Simulator build passed
   with `CONFIG_SYMBOL_GREEN_EXIT:0` and `CONFIG_SYMBOL_IOS_BUILD_EXIT:0`.
 - The signed symbol-language build was installed and launched successfully on
-  iPhone7 (`CONFIG_SYMBOL_DEVICE_BUILD_EXIT:0`,
+  TestDeviceB (`CONFIG_SYMBOL_DEVICE_BUILD_EXIT:0`,
   `CONFIG_SYMBOL_DEVICE_INSTALL_EXIT:0`).
 - Fixed the multi-module persistence/export regression: template normalization
   no longer truncates regions to one item, and persisted variable items recover
@@ -13501,7 +13541,7 @@ device build still reproduces the blocker.
   `CardTextBlockEngine`, which still selected only the first item per region.
   It now composes every enabled custom-text/module item into one ordered block
   for all four regions. Focused tests and signed build/install passed.
-- Final iPhone7 verification confirmed Location recognition and complete
+- Final TestDeviceB verification confirmed Location recognition and complete
   four-region custom-text/module output. The corrected build launched with
   `FINAL_DEVICE_LAUNCH_EXIT:0`; GitHub synchronization is approved.
 # 2026-07-11 V1 legacy configuration first-save reconciliation fixed
@@ -13537,7 +13577,7 @@ device build still reproduces the blocker.
 - 点击“保存配置”复用正式配置聚合保存管线，成功后才关闭弹窗；失败时恢复此前 Session 与输出状态，避免留下半套内存配置。
 - 新增 `V1FirstRunConfigurationFactoryTests`，验证名称归一化、单一生日锚点、自然表达语气及主体/锚点关系。聚焦测试与 `PhotoMemoiOS` Simulator 构建通过。
 - CoreSimulator 本次自动截图仍只得到黑色内容区，应用进程与 UIKit Scene 正常且没有崩溃日志；需要真机或恢复 Simulator 图形流后补做初始化弹窗视觉与完整保存交互验证。
-- 最新首次初始化配置版本已使用历史 iPhone7 路径完成真机签名构建、覆盖安装和自动启动：设备 `iPhone7`，devicectl ID `863C2747-6742-5E93-B715-6F89DBF90B31`，bundle ID `com.serydoo.PhotoMemo.iOS`。真机现在可直接检查弹窗与首次保存流程。
+- 最新首次初始化配置版本已使用历史 TestDeviceB 路径完成真机签名构建、覆盖安装和自动启动：设备 `TestDeviceB`，devicectl ID `REDACTED_DEVICE_ID`，bundle ID `com.serydoo.PhotoMemo.iOS`。真机现在可直接检查弹窗与首次保存流程。
 
 ## 2026-07-12 首次初始化、锚点与中文日期阶段性暂停
 
@@ -13551,12 +13591,12 @@ device build still reproduces the blocker.
 - 时间锚点配置页的日期选择器已改为页面内嵌 Apple 原生 `.wheel` 年月日滚轮，不再使用 compact 日期弹窗。
 - 记忆对象首页“可用时间锚点”、锚点列表、首页“我的配置”、最近处理、本地配置库、任务和后台状态的用户可见日期已集中改为中文格式：纯日期 `yyyy年M月d日`，需要时刻时 `yyyy年M月d日 HH:mm`。
 - `PhotoMemoiOS` iOS Simulator 构建在日期统一修改后通过，`git diff --check` 通过。
-- 首次初始化单生日锚点版本曾在 iPhone7 完成签名构建、安装和启动；随后三锚点修正版也完成真机签名构建和覆盖安装。
+- 首次初始化单生日锚点版本曾在 TestDeviceB 完成签名构建、安装和启动；随后三锚点修正版也完成真机签名构建和覆盖安装。
 
 未完成 / 下次继续：
 
-- 三锚点修正版覆盖安装后未删除 App 重走全新首次初始化，因此还未在 iPhone7 真机确认“生日、百天、重要日子”三条均正确落盘和显示。
-- 年月日滚轮和全局中文日期修改尚未重新签名推送到 iPhone7，真机视觉、滚动手感、取消回滚与保存持久化仍待验证。
+- 三锚点修正版覆盖安装后未删除 App 重走全新首次初始化，因此还未在 TestDeviceB 真机确认“生日、百天、重要日子”三条均正确落盘和显示。
+- 年月日滚轮和全局中文日期修改尚未重新签名推送到 TestDeviceB，真机视觉、滚动手感、取消回滚与保存持久化仍待验证。
 - 聚焦测试在三锚点更新后遇到 Xcode/SwiftCompile 多文件“exit code 0 but produced no further output”工具链异常；之前的单锚点工厂测试通过，但最新三锚点断言尚未得到一次干净通过结果。iOS App 构建本身通过。
 - `V1SettingsPagePresenter.stepTimeText` 仍只显示本地短时刻；这是流水线单步时刻，不是完整日期。下次需决定是否也强制改为完整中文年月日时分。
 - `ConfigurationCenterSessionBindingPresenter` 的配置状态时间仍为 `yyyy.MM.dd HH:mm`，属于用户可见配置中心状态，下一次应改为统一中文格式。
@@ -13568,7 +13608,7 @@ device build still reproduces the blocker.
 
 1. 完成剩余两个用户可见日期入口的中文化并重新跑 iOS 构建。
 2. 清理或重启 Xcode 编译服务后，重新运行 `V1FirstRunConfigurationFactoryTests`。
-3. 重新签名安装到 iPhone7；删除 App 后全新启动。
+3. 重新签名安装到 TestDeviceB；删除 App 后全新启动。
 4. 真机完成“初始化弹窗 -> 保存配置 -> 首页 -> 记忆对象 -> 三个锚点 -> 滚轮编辑 -> 处理照片”完整回归。
 - 当前 Word/PDF 文件按内容审阅草案纳入仓库，不代表公开发布版已经通过视觉验收。
 
@@ -13577,15 +13617,15 @@ device build still reproduces the blocker.
 - 补齐了暂停记录中的两个用户可见日期入口：配置中心配置状态改为 `yyyy年M月d日 HH:mm`，设置页流水线步骤时间也使用完整中文年月日时分。
 - 所有主要 iOS 用户界面日期现集中使用 `V1UserFacingDateFormatter`：纯日期 `yyyy年M月d日`，日期时间 `yyyy年M月d日 HH:mm`。照片卡片输出中的 `yyyy.MM.dd` / `HH:mm:ss` 未修改。
 - `V1FirstRunConfigurationFactoryTests` 使用全新 DerivedData、`-jobs 1` 和关闭并行测试后通过：2 tests / 0 failures。之前的多文件无输出异常属于 Xcode 并发编译服务问题，不是测试断言失败。
-- 最新 `PhotoMemoiOS` 已完成 iPhone7 签名真机构建、覆盖安装和启动，包含：首次初始化弹窗、生日/百天/重要日子三锚点、年月日滚轮及中文 UI 日期。
+- 最新 `PhotoMemoiOS` 已完成 TestDeviceB 签名真机构建、覆盖安装和启动，包含：首次初始化弹窗、生日/百天/重要日子三锚点、年月日滚轮及中文 UI 日期。
 - 覆盖安装保留了设备现有 App 容器，因此本次没有自动删除 App，也没有重走全新首次初始化。删除 App 会清空本地配置，需用户明确确认或手动删除后再安装。
-- 当前仍需 iPhone7 人工确认：锚点滚轮视觉与手感、取消回滚、保存持久化、三个锚点可见、首页“我的配置”日期、本地配置库/任务/后台状态日期，以及首次保存后“处理照片”可用。
+- 当前仍需 TestDeviceB 人工确认：锚点滚轮视觉与手感、取消回滚、保存持久化、三个锚点可见、首页“我的配置”日期、本地配置库/任务/后台状态日期，以及首次保存后“处理照片”可用。
 
 ## 2026-07-12 两台 iPhone 15 Pro 全新安装
 
 - 使用正式版 Xcode 26.6（`/Applications/Xcode.app`）分别为两台 iPhone 15 Pro 完成签名构建；测试版 Xcode 27 因未登录开发者账号，不能注册新设备。
-- `Hong` 已卸载旧 App 并重新安装最新 `PhotoMemoiOS`；启动命令仅因设备锁定而被阻止，解锁后可直接重新启动验证。
-- `IPhone5` 已完成卸载、重新安装并成功启动 `com.serydoo.PhotoMemo.iOS`。
+- `TestDeviceC` 已卸载旧 App 并重新安装最新 `PhotoMemoiOS`；启动命令仅因设备锁定而被阻止，解锁后可直接重新启动验证。
+- `TestDeviceA` 已完成卸载、重新安装并成功启动 `com.serydoo.PhotoMemo.iOS`。
 - 两台设备安装的版本均包含首次初始化弹窗、三条预设时间锚点、年月日滚轮与统一中文 UI 日期。
 
 ## 2026-07-12 紧凑锚点日期与三机统一签名安装
@@ -13593,6 +13633,6 @@ device build still reproduces the blocker.
 - 时间锚点配置中的大尺寸年月日滚轮已替换为单行紧凑滚轮：年、月、日分别上下滑动，控件整体保持一行高度，并自动处理闰年和每月天数。
 - 首页“我的配置”上次修改时间改为 `M月d日 HH:mm`，不再显示年份，以适配 iPhone 小屏；其他需要完整日期证据的页面仍保持中文年月日。
 - 当前 iOS 主流程的另一个主动日期选择入口是首次初始化生日；该入口只使用一次，暂时保留系统日期选择器。其余 `DatePicker` 属于旧版或跨平台编辑入口。
-- 使用正式版 Xcode 26.6 和同一开发团队签名完成最新真机 Debug 构建，并安装到 `iPhone7`、`Hong`、`IPhone5`。
+- 使用正式版 Xcode 26.6 和同一开发团队签名完成最新真机 Debug 构建，并安装到 `TestDeviceB`、`TestDeviceC`、`TestDeviceA`。
 - 三台设备的安装均成功；自动启动均仅因设备锁定被系统拒绝，没有报告开发者证书不受信任。
-- `IPhone5` 卸载阶段出现一次 Developer Disk Image 元数据读取异常，随后最新版覆盖安装成功；另外两台完成卸载后全新安装。
+- `TestDeviceA` 卸载阶段出现一次 Developer Disk Image 元数据读取异常，随后最新版覆盖安装成功；另外两台完成卸载后全新安装。

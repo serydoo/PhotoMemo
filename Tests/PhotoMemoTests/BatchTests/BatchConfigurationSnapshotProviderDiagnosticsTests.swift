@@ -229,7 +229,7 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
             PersonalProfile(
                 relationshipRole: .custom,
                 customRelationshipLabel: "妈妈",
-                babyNickname: "途途"
+                babyNickname: "小宝"
             )
         defaults.set(
             try JSONEncoder().encode(profile),
@@ -278,7 +278,7 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
 
         #expect(
             subject.identity.displayName
-            == "途途"
+            == "小宝"
         )
         #expect(
             subject.primaryTimeAnchor?.title
@@ -473,8 +473,8 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "途途",
-                        shortName: "途途"
+                        displayName: "小宝",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -484,7 +484,7 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
                 referenceDate: anchorDate,
                 timeAnchors: [
                     .init(
-                        title: "途途生日",
+                        title: "小宝生日",
                         date: anchorDate,
                         note: "生日",
                         anchorType: .birthday,
@@ -497,16 +497,16 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
                 behavior:
                     MemoryBehavior(
                         primaryAnchor:
-                            "途途生日",
+                            "小宝生日",
                         iconStrategy:
                             .autoMatch,
                         badgeStrategy:
                             .autoMatch,
                         memoryExpression:
                             MemoryExpression(
-                                title: "途途表达",
+                                title: "小宝表达",
                                 blocks: [
-                                    .text("途途")
+                                    .text("小宝")
                                 ]
                             )
                     ),
@@ -579,19 +579,19 @@ struct BatchConfigurationSnapshotProviderDiagnosticsTests {
 
         #expect(
             subject.identity.displayName
-            == "途途"
+            == "小宝"
         )
         #expect(
             snapshot.memorySubjectText
-            == "途途"
+            == "小宝"
         )
         #expect(
             subject.primaryTimeAnchor?.title
-            == "途途生日"
+            == "小宝生日"
         )
         #expect(
             configurationSnapshot.expression.title
-            == "途途表达"
+            == "小宝表达"
         )
     }
 #endif

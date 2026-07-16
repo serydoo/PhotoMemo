@@ -10,8 +10,8 @@ struct ConfigurationCenterMemoryDisplaySupportTests {
     func summaryUsesActiveAnchorExpressionStyle() {
         let subject = MemorySubject(
             identity: .init(
-                displayName: "团团",
-                shortName: "团团"
+                displayName: "示例昵称",
+                shortName: "示例昵称"
             ),
             relationship: .init(
                 role: "家庭",
@@ -50,7 +50,7 @@ struct ConfigurationCenterMemoryDisplaySupportTests {
         #expect(
             ConfigurationCenterMemoryDisplaySupport
                 .summaryDetail(subject: subject)
-            == "锚点前：等待团团到来，还有倒计时天数｜锚点后：陪团团走到年龄结果"
+            == "锚点前：等待示例昵称到来，还有倒计时天数｜锚点后：陪示例昵称走到年龄结果"
         )
         #expect(
             ConfigurationCenterMemoryDisplaySupport

@@ -173,7 +173,7 @@ struct ProductionMemoryResolverTests {
         let profile = PersonalProfile(
             relationshipRole: .custom,
             customRelationshipLabel: "妈妈",
-            babyNickname: "途途"
+            babyNickname: "小宝"
         )
         let profileData =
             try #require(
@@ -775,7 +775,7 @@ struct ProductionMemoryResolverTests {
                                 title: "生日",
                                 date: anchorDate
                             ),
-                        memorySubjectText: "途途",
+                        memorySubjectText: "小宝",
                         shouldWritePhotoDescription:
                             false,
                         photoDescriptionOverride: "",
@@ -785,7 +785,7 @@ struct ProductionMemoryResolverTests {
 
         #expect(
             payload.subject.identity.displayName
-            == "途途"
+            == "小宝"
         )
         #expect(
             payload.module.sourceAnchor?.title
@@ -793,7 +793,7 @@ struct ProductionMemoryResolverTests {
         )
         #expect(
             payload.module.renderedText
-            == "今天途途18天"
+            == "今天小宝18天"
         )
     }
 

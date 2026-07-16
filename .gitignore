@@ -1,11 +1,19 @@
 xcuserdata/
 *.xcuserstate
 .DS_Store
+# macOS Finder custom folder icon metadata (the final character is a carriage return).
+/Icon?
 __pycache__/
 *.pyc
 .autosync/
 .superpowers/
 Source/PhotoMemo/build/
+*.ipa
+*.mobileprovision
+*.xcarchive/
+*.p12
+*.cer
+Docs/UserGuide/时光记-首次使用指南.pdf
 .codex/skills/README.md
 .codex/skills/architecture-decision-records/
 .codex/skills/code-reviewer/

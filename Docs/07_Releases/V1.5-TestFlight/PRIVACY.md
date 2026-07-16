@@ -71,4 +71,3 @@ https://github.com/serydoo/PhotoMemo/blob/main/PRIVACY.md
 ## Contact
 
 - serydoo@gmail.com
-- serydoo@163.com

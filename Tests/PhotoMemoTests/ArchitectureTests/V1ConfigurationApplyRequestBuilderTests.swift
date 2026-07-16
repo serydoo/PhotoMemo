@@ -64,7 +64,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                     .text("记录于"),
                     .token(
                         IOSInsertableModule.captureDate.title,
-                        value: "2026.05.24",
+                        value: "2026.06.01",
                         templateValue: IOSInsertableModule.captureDate.rendererToken,
                         systemImage: IOSInsertableModule.captureDate.systemImage
                     )
@@ -72,7 +72,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 .slotC: V1EditorDraft(items: [
                     .token(
                         IOSInsertableModule.location.title,
-                        value: "商丘 · 永城",
+                        value: "示例市 · 示例区",
                         templateValue: IOSInsertableModule.location.rendererToken,
                         systemImage: IOSInsertableModule.location.systemImage
                     )
@@ -80,7 +80,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 .slotD: V1EditorDraft(items: [
                     .token(
                         IOSInsertableModule.smartTime.title,
-                        value: "今天途途1岁1个月15天",
+                        value: "今天小宝1岁1个月15天",
                         templateValue: IOSInsertableModule.smartTime.rendererToken,
                         systemImage: IOSInsertableModule.smartTime.systemImage
                     ),
@@ -516,7 +516,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 )
             )
         let anchor = MemorySubject.TimeAnchor(
-            title: "途途生日",
+            title: "小宝生日",
             date: anchorDate,
             note: "对象页锚点",
             anchorType: .birthday,
@@ -567,8 +567,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
         var selectedSubject = try #require(
             ConfigurationCenterState.mock.selectedSubject
         )
-        selectedSubject.identity.displayName = "途途"
-        selectedSubject.identity.shortName = "途途"
+        selectedSubject.identity.displayName = "小宝"
+        selectedSubject.identity.shortName = "小宝"
 
         let staleSubject =
             MemorySubject(
@@ -641,7 +641,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 $0.id == selectedSubject.id
             }?
             .resolvedExpressionSubjectText
-            == "途途"
+            == "小宝"
         )
     }
 

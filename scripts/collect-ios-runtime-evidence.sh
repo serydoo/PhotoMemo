@@ -2,7 +2,12 @@
 
 set -euo pipefail
 
-DEVICE_ID="${1:-863C2747-6742-5E93-B715-6F89DBF90B31}"
+if [[ $# -lt 1 || -z "$1" ]]; then
+  echo "Usage: $0 <device-id>" >&2
+  exit 64
+fi
+
+DEVICE_ID="$1"
 STAMP="$(date '+%Y%m%d-%H%M%S')"
 OUTPUT_DIR="${PHOTOMEMO_RUNTIME_EVIDENCE_DIR:-/tmp/PhotoMemoRuntimeEvidence/$STAMP}"
 APP_BUNDLE_ID="com.serydoo.PhotoMemo.iOS"

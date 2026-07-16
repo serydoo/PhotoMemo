@@ -19,16 +19,15 @@ Recommended values:
 - Build: Xcode Cloud generated, currently `13`, next expected `14`
 - Next planned development label: `1.6`
 - Copyright:
-  `Copyright (c) 2026 serydoo wang. All rights reserved.`
+  `Copyright (c) 2026 MemoMark. All rights reserved.`
 
 Confirmed owner fields:
 
 - Support URL: `https://github.com/serydoo/PhotoMemo`
 - Privacy Policy URL: `https://github.com/serydoo/PhotoMemo/blob/main/PRIVACY.md`
 - Marketing URL: optional
-- App Review contact name: `汪瑞`
-- App Review contact email: `serydoo@gmail.com`
-- App Review contact phone: `18937050153`
+- App Review contact name, email, and phone: enter directly in App Store
+  Connect; never store private review-contact details in this repository.
 
 ## TestFlight Beta App Description
 
@@ -85,10 +84,8 @@ Chinese:
 ## Test Information
 
 - Feedback email: `serydoo@gmail.com`
-- Alternate feedback email: `serydoo@163.com`
-- Xiaohongshu contact: `49956456623`
 - Public issue tracker: `https://github.com/serydoo/PhotoMemo/issues`
-- Beta review contact: `serydoo@gmail.com`
+- Beta review contact: enter privately in App Store Connect.
 - Sign-in required: `No`
 - Demo account required: `No`
 - Notes for tester invitation:
@@ -127,7 +124,7 @@ commit c6b97d99 或之后生成的构建还包含主程序 Picker 的 Live Photo
 Recommended public tester copy:
 
 ```text
-Please send feedback through TestFlight's built-in feedback button when possible, especially for crashes, screenshots, and screen recordings. You can also email serydoo@gmail.com or serydoo@163.com. Chinese testers can contact Xiaohongshu ID 49956456623 for group discussion.
+Please send feedback through TestFlight's built-in feedback button when possible, especially for crashes, screenshots, and screen recordings. You can also email serydoo@gmail.com or file a reproducible issue on GitHub.
 
 For reproducible issues, please include device model, iOS version, MemoMark build number, whether the issue happened in Apple Photos Share or inside MemoMark, steps to reproduce, expected result, actual result, and screenshots or recordings if available.
 ```

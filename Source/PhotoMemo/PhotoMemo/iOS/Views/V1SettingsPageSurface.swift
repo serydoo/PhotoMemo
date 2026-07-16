@@ -196,15 +196,6 @@ struct V1SettingsPageSurface: View {
                 }
 
                 settingsLinkRow(
-                    title: "小红书",
-                    headline: "ID 49956456623",
-                    detail:
-                        "可以通过小红书联系，也可以进一步加群沟通测试反馈。",
-                    systemImage: "person.2.fill",
-                    tint: .pink
-                )
-
-                settingsLinkRow(
                     title: "GitHub Issues",
                     headline: "公开可复现问题",
                     detail:

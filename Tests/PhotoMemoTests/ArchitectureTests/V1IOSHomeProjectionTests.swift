@@ -11,8 +11,8 @@ struct V1IOSHomeProjectionTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "途途成长记录",
-                    shortName: "途途"
+                    displayName: "小宝成长记录",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "家庭",
@@ -57,7 +57,7 @@ struct V1IOSHomeProjectionTests {
                 selectedAnchorTitle: "生日"
             )
 
-        #expect(projection.title == "途途")
+        #expect(projection.title == "小宝")
         #expect(projection.subtitle == "成长记录")
         #expect(projection.anchorTitle == "生日")
     }
@@ -130,14 +130,14 @@ struct V1IOSHomeProjectionTests {
             V1IOSHomeProjection
             .presetSummary(
                 presetTitle: "Classic White",
-                configurationLabel: "途途 · 生日",
+                configurationLabel: "小宝 · 生日",
                 presetSummary: "底栏四槽位",
                 activeConfigurationStatus: .idle,
                 isApplied: true
             )
 
         #expect(projection.title == "Classic White")
-        #expect(projection.subtitle == "途途 · 生日")
+        #expect(projection.subtitle == "小宝 · 生日")
         #expect(projection.detail == "底栏四槽位")
         #expect(projection.statusLabel == "当前生效")
         #expect(projection.emphasizesAppliedState)

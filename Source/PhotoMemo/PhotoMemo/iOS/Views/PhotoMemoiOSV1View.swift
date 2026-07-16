@@ -77,9 +77,9 @@ struct PhotoMemoiOSV1View: View {
     private var birthdayDate =
         Calendar.current.date(
             from: DateComponents(
-                year: 2025,
-                month: 12,
-                day: 20
+                year: 2024,
+                month: 1,
+                day: 1
             )
         ) ?? Date()
 

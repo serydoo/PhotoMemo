@@ -195,22 +195,22 @@ private extension TemplateEditorView {
                     "06",
 
                 "day":
-                    "17",
-
-                "hour":
                     "01",
 
+                "hour":
+                    "12",
+
                 "minute":
-                    "58",
+                    "00",
 
                 "location":
-                    "Yongcheng",
+                    "Sample City",
 
                 "memory_summary":
-                    "今天小宝1岁2个月18天",
+                    "今天小宝5个月",
 
                 "story":
-                    "First Family Trip"
+                    "Sample Memory"
             ]
         )
     }

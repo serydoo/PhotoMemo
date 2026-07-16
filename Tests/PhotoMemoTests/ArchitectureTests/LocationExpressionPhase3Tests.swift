@@ -10,9 +10,9 @@ struct LocationExpressionPhase3Tests {
         let context =
             LocationContext(
                 address: LocationAddress(
-                    province: "Henan",
-                    city: "Shangqiu",
-                    district: "Yongcheng"
+                    province: "Sample Province",
+                    city: "Sample City",
+                    district: "Sample District"
                 )
             )
 
@@ -34,7 +34,7 @@ struct LocationExpressionPhase3Tests {
                 resolution: resolution
             )
 
-        #expect(text == "Henan · Shangqiu")
+        #expect(text == "Sample Province · Sample City")
     }
 
     @Test("Given province missing When province city requested Then downgrade to city district")
@@ -42,8 +42,8 @@ struct LocationExpressionPhase3Tests {
         let context =
             LocationContext(
                 address: LocationAddress(
-                    city: "Shangqiu",
-                    district: "Yongcheng"
+                    city: "Sample City",
+                    district: "Sample District"
                 )
             )
 
@@ -65,7 +65,7 @@ struct LocationExpressionPhase3Tests {
                 resolution: resolution
             )
 
-        #expect(text == "Shangqiu · Yongcheng")
+        #expect(text == "Sample City · Sample District")
     }
 
     @Test("Given address missing When coordinate fallback allowed Then coordinate selected")
@@ -141,7 +141,7 @@ struct LocationExpressionPhase3Tests {
         let context =
             LocationContext(
                 address: LocationAddress(
-                    city: "Shangqiu"
+                    city: "Sample City"
                 )
             )
 
@@ -162,8 +162,8 @@ struct LocationExpressionPhase3Tests {
         let context =
             LocationContext(
                 address: LocationAddress(
-                    city: "Shangqiu",
-                    district: "Yongcheng"
+                    city: "Sample City",
+                    district: "Sample District"
                 )
             )
 

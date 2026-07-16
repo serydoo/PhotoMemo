@@ -13,7 +13,7 @@ struct MemorySubjectAdapterTests {
         let profile =
             PersonalProfile(
                 relationshipRole: .mother,
-                babyNickname: "途途",
+                babyNickname: "小宝",
                 babyBirthday: birthday
             )
         let anchors = [
@@ -36,8 +36,8 @@ struct MemorySubjectAdapterTests {
                 selectedAnchorID: anchors[1].id
             )
 
-        #expect(subject.identity.displayName == "途途")
-        #expect(subject.identity.shortName == "途途")
+        #expect(subject.identity.displayName == "小宝")
+        #expect(subject.identity.shortName == "小宝")
         #expect(subject.relationship.role == "家庭")
         #expect(subject.relationship.label == "妈妈")
         #expect(subject.referenceDate == birthday)

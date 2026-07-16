@@ -55,8 +55,8 @@ struct MemoryExpressionEngineTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",
@@ -100,7 +100,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "今天途途18天")
+        #expect(module.renderedText == "今天小宝18天")
         #expect(module.sourceAnchor?.anchorType == .birthday)
         #expect(
             module.sourceAnchor?.expressionStyle
@@ -152,8 +152,8 @@ struct MemoryExpressionEngineTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",
@@ -232,7 +232,7 @@ struct MemoryExpressionEngineTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "安安",
+                    displayName: "示例昵称",
                     shortName: ""
                 ),
                 relationship: .init(
@@ -274,7 +274,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "今天安安1岁2个月8天")
+        #expect(module.renderedText == "今天示例昵称1岁2个月8天")
     }
 
     @Test("uses countdown branch when birthday capture time is before the anchor date")
@@ -298,8 +298,8 @@ struct MemoryExpressionEngineTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",
@@ -343,7 +343,7 @@ struct MemoryExpressionEngineTests {
                 captureDate: captureDate
             )
 
-        #expect(module.renderedText == "还有18天，途途就要出生了")
+        #expect(module.renderedText == "还有18天，小宝就要出生了")
         #expect(module.sourceAnchor?.anchorType == .birthday)
         #expect(
             module.sourceAnchor?.expressionStyle
@@ -372,8 +372,8 @@ struct MemoryExpressionEngineTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",
@@ -497,13 +497,13 @@ struct MemoryExpressionEngineTests {
         #expect(
             MemoryAnchorExpressionResolver
                 .renderedText(
-                    subjectText: "途途",
+                    subjectText: "小宝",
                     anchorTitle: "生日",
                     anchorType: .birthday,
                     expressionStyle: .birthdayNatural,
                     relativeSnapshot: beforeBirthday
                 )
-            == "还有18天，途途就要出生了"
+            == "还有18天，小宝就要出生了"
         )
         #expect(
             MemoryAnchorExpressionResolver
@@ -566,13 +566,13 @@ struct MemoryExpressionEngineTests {
         #expect(
             MemoryAnchorExpressionResolver
                 .renderedText(
-                    subjectText: "途途",
+                    subjectText: "小宝",
                     anchorTitle: "生日",
                     anchorType: .birthday,
                     expressionStyle: .birthdayWarm,
                     relativeSnapshot: afterBirthday
                 )
-            == "陪途途走到3岁2个月1天"
+            == "陪小宝走到3岁2个月1天"
         )
     }
 
@@ -646,7 +646,7 @@ struct MemoryExpressionEngineTests {
         #expect(
             MemoryAnchorExpressionResolver
                 .renderedText(
-                    subjectText: "途途",
+                    subjectText: "小宝",
                     anchorTitle: "生日",
                     anchorType: .birthday,
                     expressionStyle: .birthdayNatural,
@@ -657,7 +657,7 @@ struct MemoryExpressionEngineTests {
                     prefersAnnualOccurrence:
                         true
                 )
-            == "还有35天，就是途途4岁生日"
+            == "还有35天，就是小宝4岁生日"
         )
     }
 

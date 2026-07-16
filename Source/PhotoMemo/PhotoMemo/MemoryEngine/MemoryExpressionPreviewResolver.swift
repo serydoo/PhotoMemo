@@ -7,11 +7,11 @@ enum MemoryExpressionPreviewResolver {
         var components =
             DateComponents()
         components.year = 2026
-        components.month = 5
-        components.day = 24
-        components.hour = 14
-        components.minute = 33
-        components.second = 13
+        components.month = 6
+        components.day = 1
+        components.hour = 12
+        components.minute = 0
+        components.second = 0
         return Calendar.current.date(from: components)
             ?? Date()
     }()

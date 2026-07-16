@@ -173,7 +173,7 @@ V1 只需要两类：
 
 例如：
 
-- `途途今天` + `{{anchor_age_text}}`
+- `小宝今天` + `{{anchor_age_text}}`
 - `距离高考` + `{{anchor_countdown_text}}`
 - `来到这个世界` + `{{anchor_day_index_text}}`
 

@@ -55,7 +55,7 @@ drift.
   - `Docs/CURRENT_STATUS.md`
   - `HANDOFF.md`
 - Unsigned IPA from earlier stabilization pass:
-  - `/Users/rui/Desktop/MemoMark_IPA/MemoMark-PhotoMemoiOS-4c155e60-unsigned.ipa`
+  - `<local-build-path>`
 - Not yet proven by this audit:
   - signed upload to App Store Connect
   - App Store Connect processing completion

@@ -19,13 +19,13 @@ struct InlineContentTextComposerTests {
     func keepsSuffixTextAttachedToAgeModules() {
         let text =
             InlineContentTextComposer.compose([
-                .init(kind: .token, value: "途途"),
+                .init(kind: .token, value: "小宝"),
                 .init(kind: .text, value: "今天"),
                 .init(kind: .token, value: "1岁1个月2天"),
                 .init(kind: .text, value: "啦！")
             ])
 
-        #expect(text == "途途今天1岁1个月2天啦！")
+        #expect(text == "小宝今天1岁1个月2天啦！")
     }
 
     @Test("Keeps adjacent token values readable")
@@ -55,11 +55,11 @@ struct InlineContentTextComposerTests {
     func composesFormalConfigurationPartsNaturally() {
         let text =
             InlineContentTextComposer.compose([
-                .init(kind: .text, value: "途途今天"),
+                .init(kind: .text, value: "小宝今天"),
                 .init(kind: .token, value: "1岁1个月2天"),
                 .init(kind: .text, value: "啦！")
             ])
 
-        #expect(text == "途途今天1岁1个月2天啦！")
+        #expect(text == "小宝今天1岁1个月2天啦！")
     }
 }

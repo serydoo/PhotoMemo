@@ -17,12 +17,12 @@ struct V1FirstRunConfigurationFactoryTests {
         )
 
         let subject = V1SubjectLibraryFactory.makeFirstRunSubject(
-            name: "  小满  ",
+            name: "  示例昵称  ",
             birthday: date
         )
 
-        #expect(subject.identity.displayName == "小满")
-        #expect(subject.identity.shortName == "小满")
+        #expect(subject.identity.displayName == "示例昵称")
+        #expect(subject.identity.shortName == "示例昵称")
         #expect(subject.referenceDate == date)
         #expect(subject.timeAnchors.count == 3)
 

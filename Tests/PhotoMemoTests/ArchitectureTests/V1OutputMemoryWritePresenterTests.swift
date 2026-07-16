@@ -42,8 +42,8 @@ struct V1ResolvedMemoryWriteTextPresenterTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",
@@ -83,7 +83,7 @@ struct V1ResolvedMemoryWriteTextPresenterTests {
             )
 
         #expect(
-            resolvedText == "今天途途18天"
+            resolvedText == "今天小宝18天"
         )
     }
 
@@ -107,8 +107,8 @@ struct V1ResolvedMemoryWriteTextPresenterTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",

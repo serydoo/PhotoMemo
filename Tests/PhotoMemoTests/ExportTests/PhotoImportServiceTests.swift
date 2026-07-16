@@ -255,9 +255,9 @@ struct PhotoImportServiceTests {
                 locationMetadataEnricher:
                     StubLocationMetadataEnricher { metadata in
                         var enrichedMetadata = metadata
-                        enrichedMetadata.city = "商丘"
-                        enrichedMetadata.district = "永城"
-                        enrichedMetadata.province = "河南"
+                        enrichedMetadata.city = "示例市"
+                        enrichedMetadata.district = "示例区"
+                        enrichedMetadata.province = "示例省"
                         enrichedMetadata.country = "中国"
                         return enrichedMetadata
                     }
@@ -268,9 +268,9 @@ struct PhotoImportServiceTests {
                 from: sourceURL
             )
 
-        #expect(importedPhoto.metadata.city == "商丘")
-        #expect(importedPhoto.metadata.district == "永城")
-        #expect(importedPhoto.metadata.province == "河南")
+        #expect(importedPhoto.metadata.city == "示例市")
+        #expect(importedPhoto.metadata.district == "示例区")
+        #expect(importedPhoto.metadata.province == "示例省")
         #expect(importedPhoto.metadata.country == "中国")
     }
 

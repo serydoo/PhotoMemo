@@ -25,9 +25,10 @@
 - Modify: `Source/PhotoMemo/PhotoMemo/Views/FirstRun/FirstRunWizardView.swift`
 - Modify: `Source/PhotoMemo/PhotoMemo/iOS/Views/V1WelcomePresentation.swift`
 
-- [ ] Replace runtime-visible `途途` fallbacks and examples with `小宝`.
-- [ ] Change multi-name examples to `小宝、宝贝儿、安安`.
-- [ ] Set hard-coded default birthday components to `2025-12-20`.
+- [ ] Replace the family-specific runtime fallback with `小宝`.
+- [ ] Change multi-name examples to `小宝、宝宝、小朋友`.
+- [ ] Set hard-coded default birthday components to `2024-01-01` and preview
+  capture time to `2026-06-01 12:00:00`.
 - [ ] Keep unrelated camera and device strings unchanged.
 
 ### Task 2: Focused tests
@@ -35,7 +36,8 @@
 **Files:**
 - Modify only tests whose assertions directly encode changed runtime defaults.
 
-- [ ] Search tests for assertions affected by `小宝` and `2025-12-20`.
+- [ ] Search tests for assertions affected by the neutral nickname and
+  synthetic dates.
 - [ ] Run focused Configuration Center, preview-composition, and first-run tests.
 - [ ] Fix only assertions that represent the approved new defaults.
 
@@ -45,7 +47,8 @@
 - Modify: `HANDOFF.md`
 
 - [ ] Record the privacy-default cleanup and its verification in `HANDOFF.md`.
-- [ ] Confirm runtime source contains no remaining user-visible `途途` occurrence.
+- [ ] Confirm the tracked repository contains no former family-specific value,
+  private device identifier, exact private coordinate, or signed IPA.
 - [ ] Run `git diff --check`.
 - [ ] Run the unsigned iOS Debug build from `AGENTS.md`.
 - [ ] Review the complete scoped diff for correctness, architecture, security, and performance.

@@ -135,7 +135,7 @@ struct ConfigurationMigrationTests {
                 photoDescriptionOverride: "第一次一起看海",
                 timeAnchor:
                     .init(
-                        title: "团团",
+                        title: "示例昵称",
                         date: Date(
                             timeIntervalSince1970:
                                 1_725_206_400
@@ -513,7 +513,7 @@ struct ConfigurationMigrationTests {
                 photoDescriptionOverride: "",
                 timeAnchor:
                     .init(
-                        title: "团团",
+                        title: "示例昵称",
                         date: updatedBirthday
                     ),
                 albumSelection:
@@ -558,7 +558,7 @@ struct ConfigurationMigrationTests {
         )
         #expect(
             persistedBirthdayAnchor.title
-            == "团团"
+            == "示例昵称"
         )
         #expect(
             persistedBirthdayAnchor.date
@@ -613,7 +613,7 @@ struct ConfigurationMigrationTests {
                 badge: .family,
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride:
-                    "今天途途18天",
+                    "今天小宝18天",
                 timeAnchor:
                     .init(
                         title: "生日",
@@ -651,7 +651,7 @@ struct ConfigurationMigrationTests {
         #expect(snapshot.badge == .family)
         #expect(
             snapshot.photoDescriptionOverride
-            == "今天途途18天"
+            == "今天小宝18天"
         )
         #expect(
             snapshot.selectedAlbumIdentifier
@@ -763,8 +763,8 @@ struct ConfigurationMigrationTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途",
+                    displayName: "示例对象",
+                    shortName: "小宝",
                     avatarImagePath: "/tmp/avatar-display.png",
                     avatarBadgeImagePath: "/tmp/avatar-badge.png",
                     avatarPreviewImagePath: "/tmp/avatar-preview.png"
@@ -1264,8 +1264,8 @@ struct ConfigurationMigrationTests {
                     .mock
                     .selectedSubject
             )
-        selectedSubject.identity.displayName = "途途"
-        selectedSubject.identity.shortName = "途途"
+        selectedSubject.identity.displayName = "小宝"
+        selectedSubject.identity.shortName = "小宝"
 
         let coordinator =
             Self.makeConfigurationCoordinator(
@@ -1339,14 +1339,14 @@ struct ConfigurationMigrationTests {
         #expect(
             reloadedSubject
                 .resolvedExpressionSubjectText
-            == "途途"
+            == "小宝"
         )
         #expect(
             defaults.string(
                 forKey:
                     "photomemo.selectedMemorySubjectText"
             )
-            == "途途"
+            == "小宝"
         )
     }
 
@@ -2376,8 +2376,8 @@ private extension ConfigurationMigrationTests {
                     "71717171-7171-7171-7171-717171717171"
             )!,
             identity: .init(
-                displayName: "王途途",
-                shortName: "途途"
+                displayName: "示例对象",
+                shortName: "小宝"
             ),
             relationship: .init(
                 role: "宝宝",

@@ -166,7 +166,7 @@ struct ConfigurationCenterRegionBindingAdapterTests {
         let insertedModule =
             IOSInsertedModule(
                 title: IOSInsertableModule.location.title,
-                value: "河南 · 商丘",
+                value: "示例省 · 示例市",
                 systemImage: IOSInsertableModule.location.systemImage
             )
         store.setText("", for: .slotC)
@@ -202,7 +202,7 @@ struct ConfigurationCenterRegionBindingAdapterTests {
         #expect(
             updatedModule.expressionConfiguration == configuration
         )
-        #expect(updatedModule.value == "河南 · 商丘 · 永城")
+        #expect(updatedModule.value == "示例省 · 示例市 · 示例区")
         #expect(
             mutation.previewText
             == helper.composedPreviewText(
@@ -279,7 +279,7 @@ struct ConfigurationCenterRegionBindingAdapterTests {
         let insertedModule =
             IOSInsertedModule(
                 title: "拍摄日期",
-                value: "2026.05.24",
+                value: "2026.06.01",
                 systemImage: "calendar"
             )
         store.setText("记录于", for: .slotB)

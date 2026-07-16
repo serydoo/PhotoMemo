@@ -9,9 +9,9 @@ struct LocationExpressionPhase4DTests {
     func givenPhotoMetadataWhenLocationProviderCompilesLocationThenExpressionContextStoresLocationValue() throws {
         let metadata =
             PhotoMetadata(
-                city: " 商丘 ",
-                district: " 永城 ",
-                province: " 河南 "
+                city: " 示例市 ",
+                district: " 示例区 ",
+                province: " 示例省 "
             )
 
         let context =
@@ -43,7 +43,7 @@ struct LocationExpressionPhase4DTests {
                     for: LocationExpressionProvider.locationToken
                 )?
                 .resolvedText
-            == "河南 · 商丘"
+            == "示例省 · 示例市"
         )
     }
 

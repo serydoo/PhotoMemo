@@ -240,8 +240,8 @@ struct RendererDependencyIsolationTests {
             context: MetadataContext(values: [
                 "model": "iPhone 17 Pro Max",
                 "year": "2026",
-                "location": "商丘 · 永城",
-                "story": "途途1岁1个月15天"
+                "location": "示例市 · 示例区",
+                "story": "小宝1岁1个月15天"
             ])
         )
 
@@ -254,8 +254,8 @@ struct RendererDependencyIsolationTests {
 
         #expect(values[.leftTop] == "他爹手持iPhone 17 Pro Max记录")
         #expect(values[.leftBottom] == "记录于2026年")
-        #expect(values[.rightTop] == "位于商丘 · 永城拍摄")
-        #expect(values[.rightBottom] == "今天途途1岁1个月15天啦！")
+        #expect(values[.rightTop] == "位于示例市 · 示例区拍摄")
+        #expect(values[.rightBottom] == "今天小宝1岁1个月15天啦！")
     }
 
     @Test("PI-13D Regression CardTextBlockEngine model output matches parity-proven provider value")
@@ -338,7 +338,7 @@ struct RendererDependencyIsolationTests {
         let memoryValue =
             ExpressionValue(
                 token: MemoryProvider.memoryToken,
-                resolvedText: "今天途途18天"
+                resolvedText: "今天小宝18天"
             )
         var card =
             RecordCard(

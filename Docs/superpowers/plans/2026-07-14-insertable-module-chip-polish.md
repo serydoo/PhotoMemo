@@ -37,7 +37,7 @@
   rectangle.
 - [x] Keep module symbol, title, and removal action in distinct accent, primary,
   and secondary visual roles.
-- [x] Rebuild, sign, install, and launch the updated App on `IPhone5`.
+- [x] Rebuild, sign, install, and launch the updated App on `TestDeviceA`.
 
 ### Task 4: Add causal module feedback
 
@@ -48,8 +48,8 @@
 - [x] Keep sheet presentation, search, scrolling, literal-text editing, and
   configuration changes silent.
 - [x] Rebuild, sign, install, and launch the tactile-feedback build on
-  `IPhone5`.
-- [x] Confirm on `IPhone5` that module insertion produces perceptible native
+  `TestDeviceA`.
+- [x] Confirm on `TestDeviceA` that module insertion produces perceptible native
   selection feedback.
 
 ### Task 5: Clarify module-library actions
@@ -59,8 +59,8 @@
   the row action.
 - [x] Move the Done command to the confirmation toolbar position.
 - [x] Rebuild, sign, install, and launch the module-library polish build on
-  `IPhone5`.
-- [x] Confirm on `IPhone5` that the module-row action hierarchy is visible.
+  `TestDeviceA`.
+- [x] Confirm on `TestDeviceA` that the module-row action hierarchy is visible.
 
 ### Task 6: Strengthen the composition result
 
@@ -70,7 +70,7 @@
 - [x] Promote resolved content from caption-secondary styling to subheadline
   primary styling without changing the resolved value.
 - [x] Rebuild, sign, install, and launch the result-hierarchy build on
-  `IPhone5`.
+  `TestDeviceA`.
 
 ### Task 7: Distinguish literal-text objects
 
@@ -80,8 +80,8 @@
   faint hairline.
 - [x] Preserve focus, cursor, width calculation, insertion, and synchronization
   behavior.
-- [x] Rebuild, sign, install, and launch the literal-object build on `IPhone5`.
-- [x] Confirm on `IPhone5` that literal text and module objects are visually
+- [x] Rebuild, sign, install, and launch the literal-object build on `TestDeviceA`.
+- [x] Confirm on `TestDeviceA` that literal text and module objects are visually
   distinct.
 
 ### Task 8: Clarify expanded-object state
@@ -90,4 +90,4 @@
 - [x] Promote the expanded icon and chevron into the accent hierarchy.
 - [x] Expose expanded/collapsed state to accessibility.
 - [x] Disable disclosure animation when Reduce Motion is enabled.
-- [ ] Rebuild, sign, install, and launch the expanded-state build on `IPhone5`.
+- [ ] Rebuild, sign, install, and launch the expanded-state build on `TestDeviceA`.

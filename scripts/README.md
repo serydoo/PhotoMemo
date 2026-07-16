@@ -25,7 +25,7 @@ Create a baseline before a manual Apple Photos -> Share -> MemoMark run:
 ```bash
 PHOTOMEMO_RUNTIME_EVIDENCE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-baseline-$(date '+%Y%m%d-%H%M%S') \
 PHOTOMEMO_RUNTIME_SCENARIO=baseline \
-  scripts/collect-ios-runtime-evidence.sh 863C2747-6742-5E93-B715-6F89DBF90B31
+  scripts/collect-ios-runtime-evidence.sh '<device-id>'
 ```
 
 After sharing a validation batch from Apple Photos, collect again with the
@@ -35,7 +35,7 @@ baseline directory:
 PHOTOMEMO_RUNTIME_BASELINE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-baseline-YYYYMMDD-HHMMSS \
 PHOTOMEMO_RUNTIME_EVIDENCE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-share-20-$(date '+%Y%m%d-%H%M%S') \
 PHOTOMEMO_RUNTIME_SCENARIO=share-20 \
-  scripts/collect-ios-runtime-evidence.sh 863C2747-6742-5E93-B715-6F89DBF90B31
+  scripts/collect-ios-runtime-evidence.sh '<device-id>'
 ```
 
 Supported scenario values are:

@@ -414,8 +414,7 @@ struct MemoryResultContractTests {
         let body =
             try sourceRange(
                 from: "struct BatchConfigurationSnapshot:",
-                to:
-                    "\n#if !PHOTOMEMO_SHARE_EXTENSION\nextension BatchConfigurationSnapshot",
+                to: "\n    init(",
                 in: source
             )
         let storedPropertyNames =
@@ -429,17 +428,25 @@ struct MemoryResultContractTests {
             storedPropertyNames == [
                 "id",
                 "createdAt",
+                "configurationID",
+                "configurationRevision",
+                "productionContractVersion",
                 "template",
                 "badge",
                 "anchor",
                 "memorySubjectText",
                 "locationDisplayConfiguration",
+                "usesCustomMemoryWriteText",
+                "customMemoryWriteText",
+                "presentationRouteRawValue",
+                "logoModeRawValue",
                 "frozenMemorySubject",
                 "frozenConfigurationSnapshot",
                 "shouldWritePhotoDescription",
                 "photoDescriptionOverride",
                 "selectedAlbumIdentifier",
-                "mediaOutputModeRawValue"
+                "mediaOutputModeRawValue",
+                "livePhotoPolicyRawValue"
             ]
         )
     }
@@ -511,8 +518,8 @@ struct MemoryResultContractTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -589,7 +596,7 @@ struct MemoryResultContractTests {
                 context: context
             )
 
-        #expect(module.renderedText == "今天途途18天")
+        #expect(module.renderedText == "今天小宝18天")
         #expect(module.sourceAnchor == snapshot.primaryAnchor)
         #expect(module.preferredRegion == .slotD)
     }
@@ -610,8 +617,8 @@ struct MemoryResultContractTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -707,8 +714,8 @@ struct MemoryResultContractTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -804,8 +811,8 @@ struct MemoryResultContractTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(

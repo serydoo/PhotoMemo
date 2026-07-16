@@ -12,7 +12,7 @@ struct ExpressionContextMetadataAdapterTests {
                 values: [
                     ExpressionValue(
                         token: ExpressionToken(rawValue: "location"),
-                        resolvedText: "河南 · 商丘"
+                        resolvedText: "示例省 · 示例市"
                     )
                 ]
             )
@@ -25,7 +25,7 @@ struct ExpressionContextMetadataAdapterTests {
 
         #expect(
             metadataContext[MetadataContext.Key.locationDisplay]
-                == "河南 · 商丘"
+                == "示例省 · 示例市"
         )
     }
 
@@ -36,7 +36,7 @@ struct ExpressionContextMetadataAdapterTests {
                 values: [
                     ExpressionValue(
                         token: ExpressionToken(rawValue: "location"),
-                        resolvedText: "河南 · 商丘"
+                        resolvedText: "示例省 · 示例市"
                     )
                 ]
             )
@@ -54,7 +54,7 @@ struct ExpressionContextMetadataAdapterTests {
                 context: metadataContext
             )
 
-        #expect(rendered == "河南 · 商丘")
+        #expect(rendered == "示例省 · 示例市")
     }
 
     @Test("PI-13D Given model expression value When projected Then legacy model is set")
@@ -88,7 +88,7 @@ struct ExpressionContextMetadataAdapterTests {
                 values: [
                     ExpressionValue(
                         token: MemoryProvider.memoryToken,
-                        resolvedText: "今天途途18天"
+                        resolvedText: "今天小宝18天"
                     )
                 ]
             )
@@ -101,7 +101,7 @@ struct ExpressionContextMetadataAdapterTests {
 
         #expect(
             metadataContext[MetadataContext.Key.memorySummary]
-                == "今天途途18天"
+                == "今天小宝18天"
         )
     }
 
@@ -148,7 +148,7 @@ struct ExpressionContextMetadataAdapterTests {
                 values: [
                     ExpressionValue(
                         token: ExpressionToken(rawValue: "location"),
-                        resolvedText: "河南 · 商丘"
+                        resolvedText: "示例省 · 示例市"
                     )
                 ]
             )
@@ -169,7 +169,7 @@ struct ExpressionContextMetadataAdapterTests {
 
         #expect(
             metadataContext[MetadataContext.Key.locationDisplay]
-                == "河南 · 商丘"
+                == "示例省 · 示例市"
         )
         #expect(
             metadataContext[MetadataContext.Key.model]

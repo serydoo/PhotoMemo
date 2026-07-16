@@ -114,7 +114,7 @@ The following verification has already been completed in this session:
 
 Installed device:
 
-- user-visible name: `iPhone7`
+- user-visible name: `TestDeviceB`
 - model: `iPhone 17 Pro Max`
 - bundle id: `com.serydoo.PhotoMemo.iOS`
 

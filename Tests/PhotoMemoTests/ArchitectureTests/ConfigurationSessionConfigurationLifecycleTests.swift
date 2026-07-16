@@ -433,7 +433,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         #expect(session.state.memoryPresets.count == originalCount + 1)
         #expect(createdPreset.id != originalPresetID)
-        #expect(createdPreset.title == "途途 生日")
+        #expect(createdPreset.title == "小宝 生日")
         #expect(createdPreset.savedAt == nil)
         #expect(createdPreset.selectedSubjectID == selectedSubject.id)
         #expect(createdPreset.outputOption == .processedImage)
@@ -1074,7 +1074,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         #expect(session.state.selectedMemoryPresetID == secondPreset.id)
         #expect(session.previewText(for: .slotA) == " ")
-        #expect(session.previewText(for: .slotB) == "2026.05.24")
+        #expect(session.previewText(for: .slotB) == "2026.06.01")
         #expect(session.previewText(for: .slotC) == "24mm f/1.78 1/100s ISO125")
         #expect(session.previewText(for: .slotD) == " ")
     }

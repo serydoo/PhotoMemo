@@ -442,7 +442,7 @@ struct ProductionConfigurationContractTests {
             template: snapshot.template,
             metadata: PhotoMetadata(),
             context: MetadataContext(),
-            memorySubjectText: "途途"
+            memorySubjectText: "小宝"
         )
 
         #expect(throws: ProductionConfigurationContractError.self) {
@@ -460,7 +460,7 @@ struct ProductionConfigurationContractTests {
         aggregate.subjects[0].configurations[0]
             .editor.memoryCopy = .init(
                 usesCustomText: true,
-                customText: "今天是途途的重要一天"
+                customText: "今天是小宝的重要一天"
             )
         let configuration = aggregate.subjects[0].configurations[0]
         let snapshot = try ProductionConfigurationSnapshotFactory.resolve(
@@ -489,10 +489,10 @@ struct ProductionConfigurationContractTests {
             .resolvedText
         let renderedBlocks = CardTextBlockEngine().build(from: card)
 
-        #expect(variableSummary == "今天是途途的重要一天")
-        #expect(expressionSummary == "今天是途途的重要一天")
+        #expect(variableSummary == "今天是小宝的重要一天")
+        #expect(expressionSummary == "今天是小宝的重要一天")
         #expect(renderedBlocks.contains(where: {
-            $0.value.contains("今天是途途的重要一天")
+            $0.value.contains("今天是小宝的重要一天")
         }))
         let blocks = try ProductionRenderHealthCheck.validate(
             card: card,
@@ -502,10 +502,10 @@ struct ProductionConfigurationContractTests {
         #expect(
             CardVariableProvider.build(from: card)[
                 MetadataContext.Key.memorySummary
-            ] == "今天是途途的重要一天"
+            ] == "今天是小宝的重要一天"
         )
         #expect(blocks.contains(where: {
-            $0.value.contains("今天是途途的重要一天")
+            $0.value.contains("今天是小宝的重要一天")
         }))
     }
 
@@ -522,7 +522,7 @@ struct ProductionConfigurationContractTests {
             template: fixture.configuration.editor.template,
             badge: nil,
             anchor: nil,
-            memorySubjectText: "途途",
+            memorySubjectText: "小宝",
             shouldWritePhotoDescription: false,
             photoDescriptionOverride: "",
             selectedAlbumIdentifier: ""
@@ -723,7 +723,7 @@ struct ProductionConfigurationContractTests {
             id: UUID(
                 uuidString: "11111111-1111-1111-1111-111111111111"
             )!,
-            identity: .init(displayName: "王途途", shortName: "途途"),
+            identity: .init(displayName: "示例对象", shortName: "小宝"),
             relationship: .init(role: "宝宝", label: "孩子"),
             referenceDate: birthday,
             timeAnchors: [anchor],

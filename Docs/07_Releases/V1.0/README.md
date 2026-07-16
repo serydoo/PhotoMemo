@@ -8,15 +8,17 @@ App version:
 - Build number: `1`
 - Bundle ID: `com.serydoo.PhotoMemo.iOS`
 
-Artifacts:
+Repository policy:
 
-- `MemoMark-V1.0.0-test1.ipa`
+- Signed IPA files and provisioning profiles are not stored in source control.
+- Use TestFlight or a locally generated archive for installation testing.
 
 Packaging notes:
 
-- This release is exported as a signed `debugging` IPA from the current local Xcode signing setup.
-- It is suitable for internal testing, developer-device installation, or any device allowed by the active provisioning profile.
+- This release can be exported as a signed `debugging` IPA from a local Xcode signing setup.
+- The generated artifact is suitable only for internal testing or devices allowed by the active provisioning profile.
 - Wider public distribution still requires a broader distribution path such as TestFlight or an ad hoc profile that includes every tester device.
+- Never commit the generated IPA, archive, or embedded provisioning data.
 
 Source:
 

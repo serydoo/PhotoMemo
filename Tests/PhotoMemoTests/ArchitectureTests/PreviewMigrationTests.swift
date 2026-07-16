@@ -55,9 +55,9 @@ struct PreviewMigrationTests {
             )
         let previews: [CardRegion: String] = [
             .slotA: "记录 iPhone 17 Pro Max",
-            .slotB: "记录于 2026.05.24 14:33:00",
+            .slotB: "记录于 2026.06.01 12:00:00",
             .slotC: "20mm f/1.9 1/117s ISO80",
-            .slotD: "途途 当天 1岁"
+            .slotD: "小宝 当天 1岁"
         ]
 
         let syncResult =

@@ -93,7 +93,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
                 store: update.store
             )
         )
-        #expect(update.previewText.contains("河南 · 商丘"))
+        #expect(update.previewText.contains("示例省 · 示例市"))
     }
 
     @MainActor
@@ -108,7 +108,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
 
         #expect(
             helper.moduleDisplayText(.location)
-            == "河南 · 商丘"
+            == "示例省 · 示例市"
         )
     }
 
@@ -139,7 +139,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
 
         #expect(
             update.store.modules(for: .slotC).first?.value
-            == "河南 · 商丘 · 永城"
+            == "示例省 · 示例市 · 示例区"
         )
         #expect(
             update.store.modules(for: .slotC).first?
@@ -161,13 +161,13 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
         let keptModule =
             IOSInsertedModule(
                 title: "拍摄日期",
-                value: "2026.05.24",
+                value: "2026.06.01",
                 systemImage: "calendar"
             )
         let removedModule =
             IOSInsertedModule(
                 title: "拍摄时间",
-                value: "14:33:13",
+                value: "12:00:00",
                 systemImage: "clock"
             )
 
@@ -201,7 +201,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
         )
         #expect(
             update.previewText
-            == "记录于2026.05.24在夏天"
+            == "记录于2026.06.01在夏天"
         )
     }
 
@@ -244,7 +244,7 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
             helper.composedPreviewText(
                 for: .slotA,
                 store: store
-            ) == "记录今天途途11个月28天记得那一天"
+            ) == "记录今天小宝1岁6天记得那一天"
         )
     }
 
@@ -270,11 +270,11 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
         )
         #expect(
             helper.moduleDisplayText(.smartTime)
-            == "今天途途11个月28天"
+            == "今天小宝1岁6天"
         )
         #expect(
             helper.moduleDisplayText(.location)
-            == "河南 · 商丘"
+            == "示例省 · 示例市"
         )
         #expect(
             fallbackHelper.smartTimeResult
@@ -295,8 +295,8 @@ private func previewSubject() -> MemorySubject {
 
     return MemorySubject(
         identity: .init(
-            displayName: "王途途",
-            shortName: "途途"
+            displayName: "示例对象",
+            shortName: "小宝"
         ),
         relationship: .init(
             role: "宝宝",

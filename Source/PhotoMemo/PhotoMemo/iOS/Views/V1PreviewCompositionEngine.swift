@@ -419,10 +419,10 @@ struct V1PreviewCompositionEngine {
         Calendar.current.date(
             from: DateComponents(
                 year: 2026,
-                month: 5,
-                day: 24,
-                hour: 14,
-                minute: 33
+                month: 6,
+                day: 1,
+                hour: 12,
+                minute: 0
             )
         ) ?? Date()
     }()
@@ -739,9 +739,9 @@ struct V1PreviewCompositionEngine {
     ) -> ExpressionContext? {
         let metadata =
             PhotoMetadata(
-                city: " 商丘 ",
-                district: " 永城 ",
-                province: " 河南 "
+                city: " 示例市 ",
+                district: " 示例区 ",
+                province: " 示例省 "
             )
 
         let locationContext =

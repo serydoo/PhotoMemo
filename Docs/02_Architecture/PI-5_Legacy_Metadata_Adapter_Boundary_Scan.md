@@ -45,12 +45,12 @@ with one approved projection:
 ```text
 ExpressionValue(
     token: .location,
-    resolvedText: "河南 · 商丘"
+    resolvedText: "示例省 · 示例市"
 )
 
 ↓
 
-MetadataContext[location_display] == "河南 · 商丘"
+MetadataContext[location_display] == "示例省 · 示例市"
 ```
 
 This seam is the smallest architectural surface because the adapter consumes

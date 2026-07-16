@@ -10,7 +10,7 @@ struct V1LocalConfigurationLibraryPresenterTests {
     func rowsFilterByCurrentSubject() {
         let currentSubject = Self.makeSubject(
             id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
-            name: "途途"
+            name: "小宝"
         )
         let otherSubject = Self.makeSubject(
             id: UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!,
@@ -148,7 +148,7 @@ struct V1LocalConfigurationLibraryPresenterTests {
     func dirtyNonDurableCurrentConfigurationIsPreparedForApply() throws {
         let subject = Self.makeSubject(
             id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
-            name: "途途"
+            name: "小宝"
         )
         let durable = Self.makeConfiguration(
             id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
@@ -192,7 +192,7 @@ struct V1LocalConfigurationLibraryPresenterTests {
     func legacyCurrentConfigurationBootstrapsAggregate() throws {
         let subject = Self.makeSubject(
             id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
-            name: "途途"
+            name: "小宝"
         )
         let configurationID = UUID(
             uuidString: "33333333-3333-3333-3333-333333333333"

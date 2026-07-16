@@ -215,12 +215,12 @@ struct PhotoMemoBackgroundStatusServiceTests {
             == 10
         )
         #expect(
-            service.recentJobSummaries.first?.configurationName
-            == "任务 11"
+            service.recentJobSummaries.first?.jobID
+            == jobs[11].id
         )
         #expect(
-            service.recentJobSummaries.last?.configurationName
-            == "任务 2"
+            service.recentJobSummaries.last?.jobID
+            == jobs[2].id
         )
 
         defaults.removePersistentDomain(

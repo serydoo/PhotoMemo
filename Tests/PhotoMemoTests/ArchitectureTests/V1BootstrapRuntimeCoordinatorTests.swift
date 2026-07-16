@@ -11,7 +11,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
     func restoreLibraryPatchUpdatesViewProjectionWelcomeStateAndPreviewRefresh() {
         let selectedSubject =
             Self.makeSubject(
-                displayName: "途途",
+                displayName: "小宝",
                 anchorTitle: "生日",
                 anchorDate: Date(timeIntervalSince1970: 86_400)
             )

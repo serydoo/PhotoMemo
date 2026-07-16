@@ -530,9 +530,9 @@ enum CenterInsertableModule:
                     subject: nil
                 )
         case .captureDate:
-            return "2026.05.24"
+            return "2026.06.01"
         case .captureTime:
-            return "14:33:13"
+            return "12:00:00"
         case .cameraMaker:
             return "Apple"
         case .cameraModel:
@@ -558,7 +558,7 @@ enum CenterInsertableModule:
         case .captureSummary:
             return "20mm f/1.9 1/117s ISO80"
         case .location:
-            return "河南 · 商丘"
+            return "示例省 · 示例市"
         case .altitude:
             return "42m"
         case .imageSize:

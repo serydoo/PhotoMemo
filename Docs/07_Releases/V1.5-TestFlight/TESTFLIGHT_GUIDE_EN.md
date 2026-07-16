@@ -132,10 +132,6 @@ crashes, screenshots, and screen recordings. You can also send feedback by
 email:
 
 - `serydoo@gmail.com`
-- `serydoo@163.com`
-
-Chinese testers can also contact Xiaohongshu ID `49956456623` for group
-discussion.
 
 Public reproducible issues can also be filed on GitHub Issues:
 

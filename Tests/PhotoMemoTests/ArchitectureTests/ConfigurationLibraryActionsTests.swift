@@ -206,7 +206,7 @@ private extension ConfigurationLibraryActionsTests {
     static func makeSubject() -> MemorySubject {
         MemorySubject(
             id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
-            identity: .init(displayName: "途途", shortName: "途途"),
+            identity: .init(displayName: "小宝", shortName: "小宝"),
             relationship: .init(role: "family", label: "记忆对象"),
             referenceDate: Date(timeIntervalSince1970: 0),
             behavior: .init(

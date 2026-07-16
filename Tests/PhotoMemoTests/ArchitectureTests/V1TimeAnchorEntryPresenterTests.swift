@@ -11,8 +11,8 @@ struct V1TimeAnchorEntryPresenterTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",
@@ -127,8 +127,8 @@ struct V1TimeAnchorEntryPresenterTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",

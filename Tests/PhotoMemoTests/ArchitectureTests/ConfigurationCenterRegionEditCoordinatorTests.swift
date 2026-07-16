@@ -44,7 +44,7 @@ struct ConfigurationCenterRegionEditCoordinatorTests {
         let module =
             IOSInsertedModule(
                 title: "拍摄日期",
-                value: "2026.05.24",
+                value: "2026.06.01",
                 systemImage: "calendar"
             )
         var store =
@@ -70,7 +70,7 @@ struct ConfigurationCenterRegionEditCoordinatorTests {
             update.previewText.contains("记录于")
         )
         #expect(
-            update.previewText.contains("2026.05.24")
+            update.previewText.contains("2026.06.01")
         )
     }
 
@@ -86,7 +86,7 @@ struct ConfigurationCenterRegionEditCoordinatorTests {
         let module =
             IOSInsertedModule(
                 title: "地点",
-                value: "河南 · 商丘",
+                value: "示例省 · 示例市",
                 systemImage: "location"
             )
         var store =
@@ -131,7 +131,7 @@ struct ConfigurationCenterRegionEditCoordinatorTests {
             switchedBack.previewText.contains("配置二")
         )
         #expect(
-            switchedBack.previewText.contains("河南 · 商丘")
+            switchedBack.previewText.contains("示例省 · 示例市")
         )
         #expect(
             switchedBack.previewText.contains("旅程中")

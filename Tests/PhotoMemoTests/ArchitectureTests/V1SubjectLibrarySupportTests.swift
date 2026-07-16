@@ -10,8 +10,8 @@ struct V1SubjectLibrarySupportTests {
     @MainActor
     func addDefaultSubjectAppendsAndSelects() throws {
         let existingSubject = makeSubject(
-            displayName: "途途成长记录",
-            shortName: "途途",
+            displayName: "小宝成长记录",
+            shortName: "小宝",
             relationship: "成长记录",
             anchorTitle: "生日",
             anchorDate: Date(timeIntervalSince1970: 0)
@@ -58,8 +58,8 @@ struct V1SubjectLibrarySupportTests {
         )
         let subject = MemorySubject(
             identity: .init(
-                displayName: "途途成长记录",
-                shortName: "途途"
+                displayName: "小宝成长记录",
+                shortName: "小宝"
             ),
             relationship: .init(
                 role: "family",
@@ -112,8 +112,8 @@ struct V1SubjectLibrarySupportTests {
     @MainActor
     func deletingCurrentSubjectRemovesItAndSelectsFallback() throws {
         let firstSubject = makeSubject(
-            displayName: "途途成长记录",
-            shortName: "途途",
+            displayName: "小宝成长记录",
+            shortName: "小宝",
             relationship: "成长记录",
             anchorTitle: "生日",
             anchorDate: Date(timeIntervalSince1970: 0)
@@ -167,8 +167,8 @@ struct V1SubjectLibrarySupportTests {
         )
         let subject = MemorySubject(
             identity: .init(
-                displayName: "途途成长记录",
-                shortName: "途途"
+                displayName: "小宝成长记录",
+                shortName: "小宝"
             ),
             relationship: .init(
                 role: "family",
@@ -227,8 +227,8 @@ struct V1SubjectLibrarySupportTests {
     @MainActor
     func overviewSubjectSwitchRequestsPreviewDraftBootstrap() throws {
         let firstSubject = makeSubject(
-            displayName: "途途成长记录",
-            shortName: "途途",
+            displayName: "小宝成长记录",
+            shortName: "小宝",
             relationship: "成长记录",
             anchorTitle: "生日",
             anchorDate: Date(timeIntervalSince1970: 0)
@@ -327,8 +327,8 @@ struct V1SubjectLibrarySupportTests {
         }
 
         let firstSubject = makeSubject(
-            displayName: "途途成长记录",
-            shortName: "途途",
+            displayName: "小宝成长记录",
+            shortName: "小宝",
             relationship: "成长记录",
             anchorTitle: "生日",
             anchorDate: Date(timeIntervalSince1970: 0)
@@ -402,8 +402,8 @@ struct V1SubjectLibrarySupportTests {
     @MainActor
     func addingDefaultSubjectDoesNotReopenCorruptLibraryPersistence() throws {
         let existingSubject = makeSubject(
-            displayName: "途途成长记录",
-            shortName: "途途",
+            displayName: "小宝成长记录",
+            shortName: "小宝",
             relationship: "成长记录",
             anchorTitle: "生日",
             anchorDate: Date(timeIntervalSince1970: 0)
@@ -447,8 +447,8 @@ struct V1SubjectLibrarySupportTests {
     @MainActor
     func addingDefaultSubjectEmitsReopenEventWhenPersistenceIsEnabled() throws {
         let existingSubject = makeSubject(
-            displayName: "途途成长记录",
-            shortName: "途途",
+            displayName: "小宝成长记录",
+            shortName: "小宝",
             relationship: "成长记录",
             anchorTitle: "生日",
             anchorDate: Date(timeIntervalSince1970: 0)
@@ -744,8 +744,8 @@ struct V1SubjectLibrarySupportTests {
     @MainActor
     func editorFlowCallbackEmitsSyncPatchAfterSaving() throws {
         let subject = makeSubject(
-            displayName: "途途成长记录",
-            shortName: "途途",
+            displayName: "小宝成长记录",
+            shortName: "小宝",
             relationship: "成长记录",
             anchorTitle: "生日",
             anchorDate: Date(timeIntervalSince1970: 0)

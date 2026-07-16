@@ -42,9 +42,9 @@ struct RecordCardBuildServiceTests {
                     ),
                 metadata:
                     PhotoMetadata(
-                        city: "商丘",
-                        district: "永城",
-                        province: "河南",
+                        city: "示例市",
+                        district: "示例区",
+                        province: "示例省",
                         country: "中国"
                     )
             )
@@ -78,7 +78,7 @@ struct RecordCardBuildServiceTests {
                     .first
             )
 
-        #expect(block.value == "商丘 · 永城")
+        #expect(block.value == "示例市 · 示例区")
     }
 
     @Test("Explicit location display configuration does not fall back to legacy coordinates")
@@ -117,8 +117,8 @@ struct RecordCardBuildServiceTests {
                     ),
                 metadata:
                     PhotoMetadata(
-                        latitude: 33.932230,
-                        longitude: 116.459672
+                        latitude: 0,
+                        longitude: 0
                     )
             )
         let configuration =
@@ -156,7 +156,7 @@ struct RecordCardBuildServiceTests {
         let profile = PersonalProfile(
             relationshipRole: .custom,
             customRelationshipLabel: "他爹",
-            babyNickname: "途途"
+            babyNickname: "小宝"
         )
 
         let service =
@@ -204,7 +204,7 @@ struct RecordCardBuildServiceTests {
         let anchor =
             Anchor(
                 type: .birthday,
-                title: "途途",
+                title: "小宝",
                 date: birthday,
                 isCountdown: false
             )
@@ -258,7 +258,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "今天途途9个月14天"
+            == "今天小宝9个月14天"
         )
         #expect(
             card
@@ -267,7 +267,7 @@ struct RecordCardBuildServiceTests {
                     for: MemoryProvider.memoryToken
                 )?
                 .resolvedText
-            == "今天途途9个月14天"
+            == "今天小宝9个月14天"
         )
     }
 
@@ -832,7 +832,7 @@ struct RecordCardBuildServiceTests {
                         badge: nil,
                         anchor: Anchor(
                             type: .birthday,
-                            title: "途途",
+                            title: "小宝",
                             date: birthday,
                             isCountdown: false
                         ),
@@ -850,7 +850,7 @@ struct RecordCardBuildServiceTests {
                     PersonalProfile(
                         relationshipRole: .custom,
                         customRelationshipLabel: "爸爸",
-                        babyNickname: "途途"
+                        babyNickname: "小宝"
                     ),
                 anchors:
                     legacySnapshot.anchor.map {
@@ -883,7 +883,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             context[MetadataContext.Key.memorySummary]
-            == "今天途途18天"
+            == "今天小宝18天"
         )
         #expect(
             card.memoryResult?.subjectID
@@ -980,8 +980,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "小满",
-                        shortName: "小满"
+                        displayName: "示例昵称",
+                        shortName: "示例昵称"
                     ),
                 relationship:
                     .init(
@@ -1083,7 +1083,7 @@ struct RecordCardBuildServiceTests {
                 from: card
             )
 
-        #expect(previewText.hasPrefix("陪小满走到"))
+        #expect(previewText.hasPrefix("陪示例昵称走到"))
         #expect(previewText.contains("1岁2个月6天"))
         #expect(!previewText.contains("家人"))
         #expect(
@@ -1154,7 +1154,7 @@ struct RecordCardBuildServiceTests {
                         date: birthday,
                         isCountdown: false
                     ),
-                memorySubjectText: "途途",
+                memorySubjectText: "小宝",
                 shouldWritePhotoDescription: false,
                 photoDescriptionOverride: "",
                 selectedAlbumIdentifier: ""
@@ -1196,15 +1196,15 @@ struct RecordCardBuildServiceTests {
             )
 
         #expect(
-            card.memorySubjectText == "途途"
+            card.memorySubjectText == "小宝"
         )
         #expect(
             context[MetadataContext.Key.memorySummary]
-            == "今天途途18天"
+            == "今天小宝18天"
         )
         #expect(
             card.exportDescriptionOverride
-            == "今天途途18天"
+            == "今天小宝18天"
         )
         #expect(
             card.exportDescriptionOverride?
@@ -1243,8 +1243,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -1360,7 +1360,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             context[MetadataContext.Key.subjectNickname]
-            == "途途"
+            == "小宝"
         )
         #expect(
             context[MetadataContext.Key.relationshipLabel]
@@ -1368,7 +1368,7 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             card.exportDescriptionOverride
-            == "途途|家人"
+            == "小宝|家人"
         )
     }
 
@@ -1482,8 +1482,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -1548,7 +1548,7 @@ struct RecordCardBuildServiceTests {
                 .anchorType == .relationship
         )
         #expect(
-            card.memorySubjectText == "途途"
+            card.memorySubjectText == "小宝"
         )
         #expect(
             card.title == "相识"
@@ -1692,8 +1692,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -1884,8 +1884,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -2075,8 +2075,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -2268,8 +2268,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -2521,8 +2521,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(
@@ -2713,8 +2713,8 @@ struct RecordCardBuildServiceTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "王途途",
-                        shortName: "途途"
+                        displayName: "示例对象",
+                        shortName: "小宝"
                     ),
                 relationship:
                     .init(

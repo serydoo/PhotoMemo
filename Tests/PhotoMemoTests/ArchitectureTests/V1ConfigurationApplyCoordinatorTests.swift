@@ -20,7 +20,7 @@ struct V1ConfigurationApplyCoordinatorTests {
             V1ConfigurationSaveReceipt(
                 anchor: Anchor(
                     type: .birthday,
-                    title: "途途",
+                    title: "小宝",
                     date: Date(
                         timeIntervalSince1970:
                             1_725_206_400
@@ -48,7 +48,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                     true,
                 photoDescriptionOverride:
                     "第一次一起看海",
-                timeAnchorTitle: "途途",
+                timeAnchorTitle: "小宝",
                 timeAnchorDate:
                     Date(
                         timeIntervalSince1970:
@@ -126,7 +126,7 @@ struct V1ConfigurationApplyCoordinatorTests {
         #expect(
             receivedSaveRequest?.timeAnchor
             == .init(
-                title: "途途",
+                title: "小宝",
                 date: Date(
                     timeIntervalSince1970:
                         1_725_206_400
@@ -260,7 +260,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                         true,
                     photoDescriptionOverride:
                         "第一次一起看海",
-                    timeAnchorTitle: "途途",
+                    timeAnchorTitle: "小宝",
                     timeAnchorDate:
                         Date(
                             timeIntervalSince1970:
@@ -292,7 +292,7 @@ struct V1ConfigurationApplyCoordinatorTests {
             V1ConfigurationSaveReceipt(
                 anchor: Anchor(
                     type: .birthday,
-                    title: "途途",
+                    title: "小宝",
                     date: Date(
                         timeIntervalSince1970:
                             1_725_206_400
@@ -322,7 +322,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                     true,
                 photoDescriptionOverride:
                     "第一次一起看海",
-                timeAnchorTitle: "途途",
+                timeAnchorTitle: "小宝",
                 timeAnchorDate:
                     Date(
                         timeIntervalSince1970:

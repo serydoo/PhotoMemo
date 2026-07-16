@@ -11,8 +11,8 @@ struct V1IOSTimeAnchorPresentationTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "途途成长记录",
-                    shortName: "途途"
+                    displayName: "小宝成长记录",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "family",

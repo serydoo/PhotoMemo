@@ -8,11 +8,11 @@ Product stage: V3 Production Quality And Delivery
 - Git commit: `eeffb07233d4ad983a1a8c7feecdb634dd3363bb`
 - Bundle identifier: `com.serydoo.PhotoMemo.iOS`
 - App version: `1.7 (7)`
-- Signing team: `UK7ZR8G564`
-- Signing identity: `Apple Development: serydoo@163.com (GE3672Z8WA)`
-- IPhone5/iPhone7 main executable SHA-256:
+- Signing team and identity: verified privately; identifiers intentionally
+  omitted from the repository.
+- TestDeviceA/TestDeviceB main executable SHA-256:
   `6d1ea6913aed62d9401599593c54ee12cceaaddc68153a0f5a322cba49b3ff34`
-- Hong fresh rebuild main executable SHA-256:
+- TestDeviceC fresh rebuild main executable SHA-256:
   `846fcbed865810ea8718219c068df494170e5190bded46e2e17646a7ccf37a74`
 - Embedded extensions:
   - `com.serydoo.PhotoMemo.iOS.ShareExtension`
@@ -34,7 +34,7 @@ until 2027-07-13.
 
 ## Device Results
 
-### IPhone5 — iPhone 15 Pro
+### TestDeviceA - iPhone 15 Pro
 
 - Existing `com.serydoo.PhotoMemo.iOS` installation removed successfully.
 - Signed `1.7 (7)` app installed successfully.
@@ -45,7 +45,7 @@ until 2027-07-13.
 - Final process inspection confirmed `PhotoMemoiOS` running; the Widget
   extension also launched during verification.
 
-### iPhone7 — iPhone 17 Pro Max
+### TestDeviceB - iPhone 17 Pro Max
 
 - Existing `com.serydoo.PhotoMemo.iOS` installation removed successfully.
 - The same signed `1.7 (7)` app installed successfully.
@@ -54,7 +54,7 @@ until 2027-07-13.
 - Final process inspection confirmed `PhotoMemoiOS` running; the Widget
   extension launched during initial verification.
 
-### Hong — iPhone 15 Pro
+### TestDeviceC - iPhone 15 Pro
 
 - The device returned online as a paired physical iPhone with Developer Mode
   enabled.

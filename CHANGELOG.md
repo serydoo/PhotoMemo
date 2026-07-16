@@ -1,23 +1,37 @@
 # Changelog
 
-## Unreleased - 2026-07-09
+## Unreleased - 2026-07-16
 
 ### Added
 - Added Main App Picker Live Photo release-candidate support: selected Live Photo assets can be routed through the VNext media pipeline, composed with MemoMark geometry, and saved back as motion-preserving Live Photo output when using original-format output.
 - Added Media Geometry Foundation and CanonicalGeometry-based regression coverage for JPEG/HEIC geometry, Live Photo still/video composition, pairing identity, metadata readback, and batch queue routing.
 - Added runtime evidence tooling for iOS Live Photo validation without copying private media.
+- Added focused responsibility boundaries for the iOS root coordinator, Batch Queue execution, image export, Share Extension intake and presentation, configuration editing, settings persistence, and external-intake storage.
 
 ### Changed
 - Updated Live Photo still output metadata so MemoMark description text is written through stable TIFF/IPTC fields while avoiding corrupted non-ASCII HEIC UserComment readback.
 - Clarified release scope: Main App Picker Live Photo is a release candidate, while Share Extension Live Photo remains a separate production-validation item.
+- Reduced the former large coordinator and service facades while preserving persistence keys, Share handoff records, renderer/layout ownership, and the Apple Photos workflow.
+- Replaced repository and runtime demo values with neutral synthetic names, dates, places, coordinates, and device placeholders.
+- Removed personal social contact from Settings while retaining the public support email and GitHub Issues.
+- Removed tracked signed distribution artifacts, generated PDF output, and personal Xcode user state; signed artifacts are now ignored by Git.
+
+### Fixed
+- Corrected AVFoundation Live Photo metadata identifiers to use the public Auto Live Photo identifier and the valid `mdta/com.apple.quicktime.still-image-time` key.
+- Updated stale regression expectations for current MemoMark symbols and copy, preset fallback naming, job-ID-based background ordering, parsed anchor types, and stored DTO properties.
+
+### Verification
+- Passed the complete Xcode 26.6 test run: `952` passed, `0` failed, and `1` documented manual ImageIO fixture test skipped.
+- Passed unsigned Debug builds for macOS, the iOS app, and the Share Extension.
+- Completed four post-refactor Share batches on the signed device with `7/7` assets saved: one JPEG and six Live Photos, with no failure, backlog, or crash.
+- Retained the four existing Classic White renderer snapshots and all current App icon assets unchanged.
 
 ## v1.0.0-test1 - 2026-07-02
 
 ### Added
-- Added the first GitHub-synced V1 testing IPA at `Docs/07_Releases/V1.0/PhotoMemo-V1.0.0-test1.ipa`.
+- Documented the first V1 testing IPA build and its reproducible local packaging path.
 - Added `Docs/07_Releases/V1.0/README.md` with packaging notes, release label, and tester installation caveats.
 - Added `scripts/export_options_v1_testing.plist` so the current IPA export path is reproducible from the repository.
-- Added `Docs/07_Releases/V1.0/PhotoMemo-V1.0.0-test1.sha256` for artifact checksum verification.
 
 ### Changed
 - Standardized the repository release artifact path for the current V1 testing line under `Docs/07_Releases/V1.0/`.
@@ -25,6 +39,7 @@
 ### Notes
 - This is the first V1 testing release artifact, built from `PhotoMemoiOSV1`.
 - The exported IPA uses the current local signed debugging export path and is appropriate for the active tester/provisioning setup.
+- Signed IPA and provisioning artifacts are intentionally excluded from source control.
 
 ## PhotoMemo IA-001A Repository Product Definition Completion - 2026-06-23
 

@@ -12,8 +12,8 @@ struct V1SubjectHomeSummaryPresenterTests {
             MemorySubject(
                 identity:
                     .init(
-                        displayName: "团团小朋友",
-                        shortName: "团团"
+                        displayName: "示例对象",
+                        shortName: "示例昵称"
                     ),
                 relationship:
                     .init(
@@ -40,19 +40,19 @@ struct V1SubjectHomeSummaryPresenterTests {
             V1SubjectHomeSummaryPresenter
             .presentation(
                 subject: subject,
-                currentConfigurationLabel: "团团小朋友 · 出生",
+                currentConfigurationLabel: "示例对象 · 出生",
                 activeConfigurationStatus: .saved,
                 currentTimeAnchorTitle: "出生",
-                currentTimeAnchorDescription: "团团出生"
+                currentTimeAnchorDescription: "示例昵称出生"
             )
 
         #expect(
             presentation.configurationTitle
-            == "团团小朋友 · 出生"
+            == "示例对象 · 出生"
         )
         #expect(
             presentation.subjectTitle
-            == "团团"
+            == "示例昵称"
         )
         #expect(
             presentation.relationshipSummary
@@ -64,7 +64,7 @@ struct V1SubjectHomeSummaryPresenterTests {
         )
         #expect(
             presentation.description
-            == "团团出生"
+            == "示例昵称出生"
         )
         #expect(
             presentation.statusText

@@ -12,7 +12,7 @@ struct ExpressionLookupContractTests {
                 values: [
                     ExpressionValue(
                         token: "location",
-                        resolvedText: "河南 · 商丘"
+                        resolvedText: "示例省 · 示例市"
                     )
                 ]
             )
@@ -23,7 +23,7 @@ struct ExpressionLookupContractTests {
                     for: "location"
                 )?
                 .resolvedText
-            == "河南 · 商丘"
+            == "示例省 · 示例市"
         )
     }
 
@@ -55,7 +55,7 @@ struct ExpressionLookupContractTests {
                 values: [
                     ExpressionValue(
                         token: token,
-                        resolvedText: "河南 · 商丘"
+                        resolvedText: "示例省 · 示例市"
                     )
                 ]
             )
@@ -65,7 +65,7 @@ struct ExpressionLookupContractTests {
                 valuesByToken: [
                     token: ExpressionValue(
                         token: token,
-                        resolvedText: "河南 · 商丘"
+                        resolvedText: "示例省 · 示例市"
                     )
                 ]
             )

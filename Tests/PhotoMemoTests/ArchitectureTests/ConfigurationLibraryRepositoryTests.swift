@@ -337,8 +337,8 @@ private extension ConfigurationLibraryRepositoryTests {
                     "11111111-1111-1111-1111-111111111111"
             )!,
             identity: .init(
-                displayName: "王途途",
-                shortName: "途途"
+                displayName: "示例对象",
+                shortName: "小宝"
             ),
             relationship: .init(
                 role: "宝宝",

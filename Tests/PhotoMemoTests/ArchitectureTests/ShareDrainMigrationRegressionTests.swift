@@ -411,7 +411,7 @@ struct ShareDrainMigrationRegressionTests {
                 badge:
                     canonicalConfiguration.badge,
                 anchor: nil,
-                memorySubjectText: "途途",
+                memorySubjectText: "小宝",
                 locationDisplayConfiguration:
                     canonicalConfiguration
                     .locationDisplayConfiguration,

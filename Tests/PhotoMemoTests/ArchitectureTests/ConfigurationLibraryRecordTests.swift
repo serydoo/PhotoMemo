@@ -1017,7 +1017,7 @@ struct ConfigurationLibraryRecordTests {
 
     private static func makeSubject(
         id: UUID = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
-        name: String = "途途"
+        name: String = "小宝"
     ) -> MemorySubject {
         let birthday = MemorySubject.TimeAnchor(
             id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,

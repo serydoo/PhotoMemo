@@ -48,7 +48,7 @@ struct ConfigurationImportCoordinatorTests {
         #expect(
             receipt.aggregate.subjects.map {
                 $0.subject.identity.displayName
-            } == ["途途", "途途"]
+            } == ["小宝", "小宝"]
         )
         #expect(
             receipt.aggregate.activeSubjectID
@@ -561,7 +561,7 @@ private extension ConfigurationImportCoordinatorTests {
                 .init(
                     subject: makeSubject(
                         id: liveSubjectID,
-                        name: "途途"
+                        name: "小宝"
                     ),
                     configurations: [
                         makeConfiguration(

@@ -168,7 +168,7 @@
 - Update after evidence: `Docs/CURRENT_STATUS.md`
 - Update after evidence: `HANDOFF.md`
 
-- [ ] Install the signed build on physical `iPhone7`.
+- [ ] Install the signed build on physical `TestDeviceB`.
 - [ ] Verify save, app restart, configuration deletion, retained backup, restore as copy, and restore-current.
 - [ ] Verify custom avatar/logo asset restoration.
 - [ ] Verify missing album fallback and current revision in Share processing.

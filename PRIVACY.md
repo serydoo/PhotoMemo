@@ -41,4 +41,3 @@ app is built around local processing and the Apple Photos share workflow.
 For privacy or support questions, contact:
 
 - serydoo@gmail.com
-- serydoo@163.com

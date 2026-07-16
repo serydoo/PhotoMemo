@@ -56,12 +56,12 @@ struct ExpressionModuleConfigurationContractTests {
         let module =
             IOSInsertedModule(
                 title: "位置",
-                value: "河南 · 商丘",
+                value: "示例省 · 示例市",
                 systemImage: "location.fill"
             )
 
         #expect(module.title == "位置")
-        #expect(module.value == "河南 · 商丘")
+        #expect(module.value == "示例省 · 示例市")
         #expect(module.systemImage == "location.fill")
         #expect(module.expressionConfiguration == nil)
     }
@@ -79,7 +79,7 @@ struct ExpressionModuleConfigurationContractTests {
         let module =
             IOSInsertedModule(
                 title: "位置",
-                value: "河南 · 商丘",
+                value: "示例省 · 示例市",
                 systemImage: "location.fill",
                 expressionConfiguration: configuration
             )

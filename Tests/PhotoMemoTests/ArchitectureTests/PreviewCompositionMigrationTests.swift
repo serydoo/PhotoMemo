@@ -88,7 +88,7 @@ struct PreviewCompositionMigrationTests {
             )
             #expect(
                 slotBModel.displayText
-                == "记录于2026.05.24 14:33:00"
+                == "记录于2026.06.01 12:00:00"
             )
             #expect(
                 slotCModel.templateSourceText
@@ -104,7 +104,7 @@ struct PreviewCompositionMigrationTests {
             )
             #expect(
                 slotDModel.displayText
-                == "今天途途11个月28天"
+                == "今天小宝1岁6天"
             )
         case .failure(let error):
             Issue.record(
@@ -177,7 +177,7 @@ struct PreviewCompositionMigrationTests {
         )
         #expect(
             captureDateModel.displayText
-            == "2026.05.24"
+            == "2026.06.01"
         )
         #expect(
             unknownItemModel.templateSourceText
@@ -236,7 +236,7 @@ struct PreviewCompositionMigrationTests {
             model.templateSourceText == "{{subject_nickname}}"
         )
         #expect(
-            model.displayText == "途途"
+            model.displayText == "小宝"
         )
     }
 
@@ -337,7 +337,7 @@ struct PreviewCompositionMigrationTests {
                 context: context,
                 engine: engine
             )
-            .displayText == "记录于2026.05.24 14:33:00"
+            .displayText == "记录于2026.06.01 12:00:00"
         )
         #expect(
             renderModel(
@@ -345,7 +345,7 @@ struct PreviewCompositionMigrationTests {
                 context: context,
                 engine: engine
             )
-            .displayText == "今天途途11个月28天"
+            .displayText == "今天小宝1岁6天"
         )
     }
 
@@ -384,7 +384,7 @@ struct PreviewCompositionMigrationTests {
         )
         #expect(
             model.displayText
-            == "河南 · 商丘"
+            == "示例省 · 示例市"
         )
     }
 
@@ -400,7 +400,7 @@ struct PreviewCompositionMigrationTests {
         #expect(source.contains("ExpressionContext"))
         #expect(source.contains("LocationExpressionProvider"))
         #expect(source.contains("LocationContextBuilder"))
-        #expect(!source.contains("return \"河南 · 商丘\""))
+        #expect(!source.contains("return \"示例省 · 示例市\""))
         #expect(!source.contains("PreviewExpressionContext"))
         #expect(!source.contains("ConfigurationCenterPreviewCompositionHelper"))
         #expect(!source.contains("CardVariableProvider"))
@@ -457,8 +457,8 @@ struct PreviewCompositionMigrationTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "王途途",
-                    shortName: "途途"
+                    displayName: "示例对象",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "宝宝",
@@ -512,7 +512,7 @@ struct PreviewCompositionMigrationTests {
                 context: context,
                 engine: engine
             )
-            .displayText == "记录途途｜11个月28天"
+            .displayText == "记录小宝｜1岁6天"
         )
     }
 }
@@ -554,8 +554,8 @@ private func previewSubject() -> MemorySubject {
 
     return MemorySubject(
         identity: .init(
-            displayName: "王途途",
-            shortName: "途途"
+            displayName: "示例对象",
+            shortName: "小宝"
         ),
         relationship: .init(
             role: "宝宝",

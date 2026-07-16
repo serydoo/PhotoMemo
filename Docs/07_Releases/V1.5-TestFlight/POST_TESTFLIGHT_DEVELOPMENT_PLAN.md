@@ -79,8 +79,6 @@ Preferred tester channels:
 
 - TestFlight built-in feedback for screenshots, recordings, and crash context
 - email: `serydoo@gmail.com`
-- alternate email: `serydoo@163.com`
-- Xiaohongshu contact and group discussion: `49956456623`
 - public reproducible issues:
   `https://github.com/serydoo/PhotoMemo/issues`
 

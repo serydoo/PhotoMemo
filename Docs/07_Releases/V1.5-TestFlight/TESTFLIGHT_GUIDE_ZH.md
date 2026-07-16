@@ -122,11 +122,6 @@ Picker 的 Live Photo release-candidate 路径：
 请优先使用 TestFlight 内置反馈，尤其是闪退、截图和录屏反馈。也可以通过邮箱反馈：
 
 - `serydoo@gmail.com`
-- `serydoo@163.com`
-
-也可以通过小红书联系并加群沟通：
-
-- 小红书 ID：`49956456623`
 
 可公开复现的问题也可以提交到 GitHub Issues：
 

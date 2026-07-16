@@ -45,7 +45,7 @@ ConfigurationCenterPreviewCompositionHelper.insertModule(...)
 Default preview output must remain:
 
 ```text
-河南 · 商丘
+示例省 · 示例市
 ```
 
 Configured preview output may reflect the supplied provider-neutral module

@@ -34,7 +34,7 @@ struct PersonalProfileStoreTests {
             with: PersonalProfile(
                 relationshipRole: .father,
                 customRelationshipLabel: "",
-                babyNickname: "小满",
+                babyNickname: "示例昵称",
                 babyBirthday: birthday,
                 defaultStyleIdentifier: "slot1",
                 defaultSaveDestination: .photoMemoAlbum,
@@ -50,7 +50,7 @@ struct PersonalProfileStoreTests {
 
         #expect(reloadedStore.requiresFirstRun == false)
         #expect(reloadedStore.profile.relationshipRole == .father)
-        #expect(reloadedStore.profile.babyNickname == "小满")
+        #expect(reloadedStore.profile.babyNickname == "示例昵称")
         #expect(reloadedStore.profile.babyBirthday == birthday)
         #expect(reloadedStore.profile.defaultStyleIdentifier == "slot1")
         #expect(reloadedStore.profile.defaultSaveDestination == .photoMemoAlbum)
@@ -60,7 +60,7 @@ struct PersonalProfileStoreTests {
                 $0.type == .birthday
             }
 
-        #expect(birthdayAnchor?.title == "小满")
+        #expect(birthdayAnchor?.title == "示例昵称")
         #expect(birthdayAnchor?.date == birthday)
         #expect(reloadedSettings.selectedAnchorIDString == birthdayAnchor?.id.uuidString)
         #expect(reloadedSettings.activeConfigurationSlotID.rawValue == "slot1")
@@ -96,7 +96,7 @@ struct PersonalProfileStoreTests {
         let birthdayAnchor =
             Anchor(
                 type: .birthday,
-                title: "糖糖",
+                title: "示例昵称",
                 date: birthday
             )
 
@@ -114,7 +114,7 @@ struct PersonalProfileStoreTests {
             PersonalProfileStore(defaults: defaults)
 
         #expect(store.requiresFirstRun == true)
-        #expect(store.profile.babyNickname == "糖糖")
+        #expect(store.profile.babyNickname == "示例昵称")
         #expect(store.profile.babyBirthday == birthday)
         #expect(store.profile.defaultStyleIdentifier == "slot3")
         #expect(store.profile.defaultSaveDestination == .selectedAlbum)
@@ -150,7 +150,7 @@ struct PersonalProfileStoreTests {
             with: PersonalProfile(
                 relationshipRole: .mother,
                 customRelationshipLabel: "",
-                babyNickname: "可乐",
+                babyNickname: "示例昵称",
                 babyBirthday: Date(timeIntervalSince1970: 1_725_206_400),
                 defaultStyleIdentifier: "slot1",
                 defaultSaveDestination: .systemLibrary,

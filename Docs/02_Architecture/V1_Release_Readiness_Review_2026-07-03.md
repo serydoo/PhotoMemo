@@ -237,7 +237,7 @@ Evidence available at review time:
 - Current branch: `v1-checkpoint-20260702`
 - Current checkpoint: `2218878d Checkpoint usable V1 device baseline`
 - Worktree at review start: clean
-- iPhone7 device build/install/launch had already succeeded and was accepted by user inspection
+- TestDeviceB device build/install/launch had already succeeded and was accepted by user inspection
 - Contract baseline tests had already passed:
   - `PreviewCompositionMigrationTests`
   - `V1PreviewSyncCoordinatorTests`

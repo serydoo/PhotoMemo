@@ -34,7 +34,7 @@ struct MemoryProviderTests {
                     for: MemoryProvider.memoryToken
                 )?
                 .resolvedText
-            == "今天途途18天"
+            == "今天小宝18天"
         )
     }
 
@@ -201,8 +201,8 @@ private func memoryExpressionContext() -> MemoryExpressionContext {
     let subject =
         MemorySubject(
             identity: .init(
-                displayName: "王途途",
-                shortName: "途途"
+                displayName: "示例对象",
+                shortName: "小宝"
             ),
             relationship: .init(
                 role: "宝宝",

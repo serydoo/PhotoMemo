@@ -11,8 +11,8 @@ struct V1IOSSubjectOverviewPresenterTests {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "途途成长记录",
-                    shortName: "途途"
+                    displayName: "小宝成长记录",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "family",
@@ -28,7 +28,7 @@ struct V1IOSSubjectOverviewPresenterTests {
                         date: Date(
                             timeIntervalSince1970: 0
                         ),
-                        note: "途途出生日期"
+                        note: "小宝出生日期"
                     ),
                     .init(
                         title: "入园",
@@ -55,7 +55,7 @@ struct V1IOSSubjectOverviewPresenterTests {
             .presentation(
                 subject: subject,
                 currentTimeAnchorTitle: "生日",
-                currentTimeAnchorDescription: "途途出生日期"
+                currentTimeAnchorDescription: "小宝出生日期"
             )
         let expectedAnchorDateLabel =
             Date(timeIntervalSince1970: 0)
@@ -64,18 +64,19 @@ struct V1IOSSubjectOverviewPresenterTests {
                     .year()
                     .month()
                     .day()
+                    .locale(Locale(identifier: "zh_CN"))
             )
 
-        #expect(presentation.title == "途途")
+        #expect(presentation.title == "小宝")
         #expect(presentation.subtitle == "成长记录")
         #expect(presentation.expressionSubjectTitle == "显示名称")
-        #expect(presentation.expressionSubjectValue == "途途成长记录")
+        #expect(presentation.expressionSubjectValue == "小宝成长记录")
         #expect(presentation.anchorTitle == "生日")
         #expect(
             presentation.anchorDateLabel
             == expectedAnchorDateLabel
         )
-        #expect(presentation.anchorDescription == "途途出生日期")
+        #expect(presentation.anchorDescription == "小宝出生日期")
     }
 
     @Test("presentation falls back when subject is unavailable")
@@ -107,8 +108,8 @@ struct V1IOSSubjectOverviewPresenterTests {
         let originalSubject =
             MemorySubject(
                 identity: .init(
-                    displayName: "途途成长记录",
-                    shortName: "途途"
+                    displayName: "小宝成长记录",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "family",
@@ -150,7 +151,7 @@ struct V1IOSSubjectOverviewPresenterTests {
         #expect(flow?.sourceSubjectID == originalSubject.id)
         #expect(
             flow?.draftSession.state.selectedSubject?.identity.displayName
-            == "途途成长记录"
+            == "小宝成长记录"
         )
 
         var updatedDraft =
@@ -162,7 +163,7 @@ struct V1IOSSubjectOverviewPresenterTests {
 
         #expect(
             liveSession.state.selectedSubject?.identity.displayName
-            == "途途成长记录"
+            == "小宝成长记录"
         )
 
         flow?.saveChanges()
@@ -178,8 +179,8 @@ struct V1IOSSubjectOverviewPresenterTests {
         let originalSubject =
             MemorySubject(
                 identity: .init(
-                    displayName: "途途成长记录",
-                    shortName: "途途"
+                    displayName: "小宝成长记录",
+                    shortName: "小宝"
                 ),
                 relationship: .init(
                     role: "family",

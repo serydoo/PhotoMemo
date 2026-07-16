@@ -205,14 +205,11 @@ private extension LivePhotoVideoMetadataWritePlanner {
 struct AVFoundationLivePhotoVideoMetadataReviser {
 
     static let livePhotoAutoIdentifier =
-        AVMetadataIdentifier(
-            rawValue:
-                "com.apple.quicktime.live-photo.auto"
-        )
+        AVMetadataIdentifier.quickTimeMetadataAutoLivePhoto
     static let livePhotoStillImageTimeIdentifier =
         AVMetadataIdentifier(
             rawValue:
-                "com.apple.quicktime.still-image-time"
+                "mdta/com.apple.quicktime.still-image-time"
         )
 
     func revisedMetadata(

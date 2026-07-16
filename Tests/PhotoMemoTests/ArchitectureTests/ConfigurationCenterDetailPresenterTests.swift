@@ -20,8 +20,8 @@ struct ConfigurationCenterDetailPresenterTests {
         #expect(presentation.subtitle == nil)
     }
 
-    @Test("subject panel subtitle reflects the simplified V1 subject surface")
-    func subjectPanelSubtitleReflectsSimplifiedV1SubjectSurface() {
+    @Test("subject panel reflects the current object maintenance surface")
+    func subjectPanelReflectsCurrentObjectMaintenanceSurface() {
         let presentation =
             ConfigurationCenterDetailPresenter
             .panelPresentation(
@@ -30,15 +30,18 @@ struct ConfigurationCenterDetailPresenterTests {
 
         #expect(presentation.content == .subject)
         #expect(presentation.title == "记忆对象")
-        #expect(presentation.systemImage == "person.fill")
+        #expect(
+            presentation.systemImage
+            == MemoMarkSymbol.memorySubject.name
+        )
         #expect(
             presentation.subtitle
-            == "身份与时间锚点"
+            == "对象资料与锚点维护"
         )
     }
 
-    @Test("region editor presentation keeps the badge icon quirk")
-    func regionEditorPresentationKeepsBadgeIconQuirk() {
+    @Test("badge editor uses the configuration symbol")
+    func badgeEditorUsesConfigurationSymbol() {
         let presentation =
             ConfigurationCenterDetailPresenter
             .regionEditorPresentation(
@@ -47,7 +50,10 @@ struct ConfigurationCenterDetailPresenterTests {
 
         #expect(presentation.content == .badgeLibrary)
         #expect(presentation.title == "徽标配置")
-        #expect(presentation.systemImage == "camera.fill")
+        #expect(
+            presentation.systemImage
+            == MemoMarkSymbol.configuration.name
+        )
     }
 
     @Test("slotD region editor remains the memory composer route")
@@ -60,7 +66,10 @@ struct ConfigurationCenterDetailPresenterTests {
 
         #expect(presentation.content == .regionComposer)
         #expect(presentation.title == "区域 D 配置")
-        #expect(presentation.systemImage == "text.quote")
+        #expect(
+            presentation.systemImage
+            == MemoMarkSymbol.memoryContent.name
+        )
     }
 
     @Test("memory module panel is presented as an independent secondary menu")
@@ -75,7 +84,7 @@ struct ConfigurationCenterDetailPresenterTests {
         #expect(presentation.title == "智能模块")
         #expect(
             presentation.subtitle
-            == "先生成 1 个智能模块，再决定承载与写入方式"
+            == "先生成 1 个智能结果，再决定承载与写入方式"
         )
     }
 }

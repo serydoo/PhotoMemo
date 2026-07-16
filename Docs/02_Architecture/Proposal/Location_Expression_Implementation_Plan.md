@@ -138,7 +138,7 @@ Preview differs from production by data source only.
 | Phase 4-C | `ExpressionContext` storage and ownership tests | Yes, isolated internals |
 | Phase 4-D | `LocationExpressionProvider` compiles Location domain output into `ExpressionValue` for `location` only | Yes, isolated internals |
 | Phase 5 | `MetadataContext` adapter projects `ExpressionContext` into the legacy pipeline | Yes |
-| Phase 6 | Preview uses `ExpressionContext` built from sample values and removes demo values such as `河南 · 商丘` | Yes |
+| Phase 6 | Preview uses `ExpressionContext` built from sample values and removes demo values such as `示例省 · 示例市` | Yes |
 | Phase 7 | Object Inspector stores `LocationPresentationMode` configuration | Yes |
 | Phase 8 | Add Reverse Geocoder Apple adapter | Deferred |
 | Phase 9 | POI, Landmark, and Location Intelligence | V2 |
@@ -386,7 +386,7 @@ Preview differs from production by data source only.
     sample strings.
   - Acceptance:
     - `V1PreviewCompositionEngine` no longer contains demo location strings
-      such as `河南 · 商丘`.
+      such as `示例省 · 示例市`.
     - Preview and production both feed Renderer through `ExpressionContext`.
     - No `PreviewExpressionContext` model is introduced.
     - Missing location data renders empty or configured fallback text.

@@ -39,7 +39,7 @@ struct V1DraftOrchestrationCoordinatorTests {
                         items: [
                             .text("记录"),
                             .token(
-                                value: "今天途途11个月28天",
+                                value: "今天小宝11个月28天",
                                 templateValue:
                                     "{{memory_summary}}"
                             ),
@@ -64,7 +64,7 @@ struct V1DraftOrchestrationCoordinatorTests {
             application.viewState.regionDrafts[
                 .slotA
             ]?.singleLineText
-            == "记录今天途途11个月28天"
+            == "记录今天小宝11个月28天"
         )
         #expect(
             application.viewState
@@ -87,7 +87,7 @@ struct V1DraftOrchestrationCoordinatorTests {
             application.previewDraftsByRegion[
                 .slotA
             ]?.resolvedSingleLineText
-            == "记录今天途途11个月28天"
+            == "记录今天小宝11个月28天"
         )
     }
 }

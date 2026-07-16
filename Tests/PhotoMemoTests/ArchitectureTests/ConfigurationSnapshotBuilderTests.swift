@@ -33,7 +33,8 @@ struct ConfigurationSnapshotBuilderTests {
         )
         #expect(
             snapshot.primaryAnchor?.anchorType
-            == session.state.selectedSubject?.primaryTimeAnchor?.anchorType
+            == session.state.selectedSubject?.primaryTimeAnchor?
+                .resolvedAnchorType
         )
         #expect(
             snapshot.smartModuleCarrierRegion

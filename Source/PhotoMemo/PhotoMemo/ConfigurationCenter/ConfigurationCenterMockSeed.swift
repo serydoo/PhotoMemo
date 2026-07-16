@@ -55,9 +55,9 @@ enum ConfigurationCenterMockSeed {
                     Calendar.current.date(
                         from:
                             DateComponents(
-                                year: 2025,
-                                month: 12,
-                                day: 20
+                                year: 2024,
+                                month: 1,
+                                day: 1
                             )
                     ) ?? Date(),
                 timeAnchors: [
@@ -67,12 +67,12 @@ enum ConfigurationCenterMockSeed {
                             Calendar.current.date(
                                 from:
                                     DateComponents(
-                                        year: 2025,
-                                        month: 12,
-                                        day: 20
+                                        year: 2024,
+                                        month: 1,
+                                        day: 1
                                     )
                             ) ?? Date(),
-                        note: "小宝出生日期"
+                        note: "示例出生日期"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "重要日子",
@@ -80,12 +80,12 @@ enum ConfigurationCenterMockSeed {
                             Calendar.current.date(
                                 from:
                                     DateComponents(
-                                        year: 2025,
-                                        month: 10,
-                                        day: 2
+                                        year: 2024,
+                                        month: 6,
+                                        day: 1
                             )
                     ) ?? Date(),
-                        note: "小宝的重要纪念日"
+                        note: "示例重要日期"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "入园",
@@ -93,12 +93,12 @@ enum ConfigurationCenterMockSeed {
                             Calendar.current.date(
                                 from:
                                     DateComponents(
-                                        year: 2027,
+                                        year: 2028,
                                         month: 9,
                                         day: 1
                                     )
                             ) ?? Date(),
-                        note: "小宝入园日期"
+                        note: "示例入园日期"
                     )
                 ],
                 behavior:

@@ -18,7 +18,7 @@ Post-merge note:
 - App version: `1.5`
 - Build number: Xcode Cloud generated, currently `13`, next expected `14`
 - Bundle ID: `com.serydoo.PhotoMemo.iOS`
-- Team ID: `UK7ZR8G564`
+- Team ID: configured privately in App Store Connect and Xcode Cloud.
 - Signing path verified: Cloud Managed Apple Distribution
 - Primary workflow:
 

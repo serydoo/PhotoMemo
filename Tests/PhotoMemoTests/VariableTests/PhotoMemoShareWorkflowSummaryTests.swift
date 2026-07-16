@@ -76,7 +76,10 @@ struct PhotoMemoShareWorkflowSummaryTests {
         let summary =
             builder.build(from: snapshot)
 
-        #expect(summary.styleTitle == "模板 1")
+        #expect(
+            summary.styleTitle
+            == TemplatePreset.classicWhite.displayName
+        )
     }
 
     @Test("Formats countdown anchors and custom album output")

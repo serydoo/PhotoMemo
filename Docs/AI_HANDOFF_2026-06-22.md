@@ -100,8 +100,8 @@ The iOS app was successfully built with provisioning updates enabled and then in
 
 Verified device:
 
-- visible name: `iPhone7`
-- UDID: `00008150-000A043136A1401C`
+- visible name: `TestDeviceB`
+- UDID: intentionally omitted from the repository.
 
 Verified app:
 

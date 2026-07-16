@@ -2,7 +2,7 @@
 //  CardPreviewView.swift
 //  PhotoMemo
 //
-//  Created by 汪瑞 on 2026/6/17.
+//  Created by MemoMark on 2026/6/17.
 //
 
 

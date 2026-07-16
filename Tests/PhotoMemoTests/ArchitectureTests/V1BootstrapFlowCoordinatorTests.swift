@@ -212,8 +212,8 @@ struct V1BootstrapFlowCoordinatorTests {
             Date(timeIntervalSince1970: 86_400)
         let selectedSubject =
             Self.makeSubject(
-                displayName: "途途成长记录",
-                shortName: "途途",
+                displayName: "小宝成长记录",
+                shortName: "小宝",
                 label: "成长记录",
                 anchorTitle: "生日",
                 anchorDate: selectedAnchorDate

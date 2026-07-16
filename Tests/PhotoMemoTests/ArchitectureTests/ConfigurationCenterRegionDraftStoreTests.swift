@@ -76,7 +76,7 @@ struct ConfigurationCenterRegionDraftStoreTests {
         let module =
             IOSInsertedModule(
                 title: "拍摄日期",
-                value: "2026.05.24",
+                value: "2026.06.01",
                 systemImage: "calendar"
             )
 
@@ -163,7 +163,7 @@ struct ConfigurationCenterRegionDraftStoreTests {
         let firstModule =
             IOSInsertedModule(
                 title: "拍摄日期",
-                value: "2026.05.24",
+                value: "2026.06.01",
                 systemImage: "calendar"
             )
         let secondModule =

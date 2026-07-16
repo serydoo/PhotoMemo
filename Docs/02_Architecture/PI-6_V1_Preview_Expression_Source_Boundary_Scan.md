@@ -43,7 +43,7 @@ V1PreviewCompositionEngine.moduleDisplayText(.location)
 The rendered preview output remains:
 
 ```text
-河南 · 商丘
+示例省 · 示例市
 ```
 
 The important change is source ownership:

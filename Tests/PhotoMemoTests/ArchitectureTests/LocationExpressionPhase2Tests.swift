@@ -11,9 +11,9 @@ struct LocationExpressionPhase2Tests {
             LocationContext(
                 address: LocationAddress(
                     country: "China",
-                    province: "Henan",
-                    city: "Shangqiu",
-                    district: "Yongcheng"
+                    province: "Sample Province",
+                    city: "Sample City",
+                    district: "Sample District"
                 )
             )
 
@@ -24,21 +24,21 @@ struct LocationExpressionPhase2Tests {
             formatter.format(
                 context: context,
                 mode: .provinceCity
-            ) == "Henan · Shangqiu"
+            ) == "Sample Province · Sample City"
         )
 
         #expect(
             formatter.format(
                 context: context,
                 mode: .cityDistrict
-            ) == "Shangqiu · Yongcheng"
+            ) == "Sample City · Sample District"
         )
 
         #expect(
             formatter.format(
                 context: context,
                 mode: .provinceCityDistrict
-            ) == "Henan · Shangqiu · Yongcheng"
+            ) == "Sample Province · Sample City · Sample District"
         )
     }
 
