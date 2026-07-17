@@ -1,14 +1,25 @@
 # Changelog
 
-## Unreleased - 2026-07-16
+## v1.7.0 (Build 7) - 2026-07-17
 
 ### Added
+- Added the beginner-facing Expression Formula Guide inside Settings ->
+  Usage & Help. It lists every configured time-anchor category and expression
+  style, with separate Before, On Anchor/Day, and After examples.
+- Added color-coded formula tokens so new users can distinguish Subject,
+  Smart Output, and Anchor Result at a glance.
+- Added a concise development-background section above Memory Objects on the
+  Home surface, explaining the original child-memory use case and the later
+  expansion from birth dates to anniversaries and future important dates.
 - Added Main App Picker Live Photo release-candidate support: selected Live Photo assets can be routed through the VNext media pipeline, composed with MemoMark geometry, and saved back as motion-preserving Live Photo output when using original-format output.
 - Added Media Geometry Foundation and CanonicalGeometry-based regression coverage for JPEG/HEIC geometry, Live Photo still/video composition, pairing identity, metadata readback, and batch queue routing.
 - Added runtime evidence tooling for iOS Live Photo validation without copying private media.
 - Added focused responsibility boundaries for the iOS root coordinator, Batch Queue execution, image export, Share Extension intake and presentation, configuration editing, settings persistence, and external-intake storage.
 
 ### Changed
+- Clarified the expression model as Subject + Smart Output + Anchor Result.
+  Smart modules continue to provide reusable time results, while users retain
+  control over the final sentence wording.
 - Updated Live Photo still output metadata so MemoMark description text is written through stable TIFF/IPTC fields while avoiding corrupted non-ASCII HEIC UserComment readback.
 - Clarified release scope: Main App Picker Live Photo is a release candidate, while Share Extension Live Photo remains a separate production-validation item.
 - Reduced the former large coordinator and service facades while preserving persistence keys, Share handoff records, renderer/layout ownership, and the Apple Photos workflow.
@@ -17,10 +28,26 @@
 - Removed tracked signed distribution artifacts, generated PDF output, and personal Xcode user state; signed artifacts are now ignored by Git.
 
 ### Fixed
+- Fixed the iOS crash triggered by destructive swipe actions in nested
+  collection views. Home preset rows and Time Anchor rows no longer embed
+  nested List containers inside outer scroll surfaces; Time Anchor deletion
+  now mutates data only after confirmation.
+- Fixed the expression-guide formula marker parser so the iOS target builds
+  successfully for device deployment.
 - Corrected AVFoundation Live Photo metadata identifiers to use the public Auto Live Photo identifier and the valid `mdta/com.apple.quicktime.still-image-time` key.
 - Updated stale regression expectations for current MemoMark symbols and copy, preset fallback naming, job-ID-based background ordering, parsed anchor types, and stored DTO properties.
 
 ### Verification
+- Passed the arm64 physical-device Debug build for PhotoMemoiOS, including
+  the Share Extension and Widget Extension.
+- Passed 11 focused contract tests covering the expression guide, Home swipe
+  actions, and Time Anchor confirmation deletion.
+- Installed the resulting 1.7 (7) development build over the existing iPhone7
+  installation without uninstalling or clearing app data.
+- Successfully launched the installed build on iPhone7 after unlocking the
+  device; the main App and Widget Extension processes were observed running.
+- Captured the launched Home surface at
+  /tmp/PhotoMemo-iPhone7-1.7-7-launch.png.
 - Passed the complete Xcode 26.6 test run: `952` passed, `0` failed, and `1` documented manual ImageIO fixture test skipped.
 - Passed unsigned Debug builds for macOS, the iOS app, and the Share Extension.
 - Completed four post-refactor Share batches on the signed device with `7/7` assets saved: one JPEG and six Live Photos, with no failure, backlog, or crash.

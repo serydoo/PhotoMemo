@@ -1,6 +1,48 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-16
+Last updated: 2026-07-17
+
+## 2026-07-16 Expression Formula Guide And Device Delivery
+
+The Settings -> Usage & Help surface now includes a native SwiftUI expression
+formula guide for first-time users. It follows the configured
+AnchorType.allCases and MemoryAnchorExpressionStyle.availableStyles(for:)
+ordering, shows Before / On Anchor or Day / After examples, and uses distinct
+colors for Subject, Smart Output, and Anchor Result.
+
+The same delivery slice includes the iOS swipe-delete crash fix from the
+TestFlight feedback: nested List containers were removed from the Home and
+Time Anchor swipe-action rows, and Time Anchor deletion is committed only
+after confirmation.
+
+Verification:
+
+- arm64 physical-device Debug build for PhotoMemoiOS succeeded;
+- 11 focused contract tests for the expression guide, Home swipe actions, and
+  Time Anchor confirmation deletion passed;
+- 1.7 (7) was installed over the existing iPhone7 app without clearing
+  local data;
+- after the device was unlocked, launch verification succeeded; the main App
+  process and Widget Extension were observed running;
+- a real-device Home screenshot was captured at
+  /tmp/PhotoMemo-iPhone7-1.7-7-launch.png.
+
+## 2026-07-16 TestFlight 1.7 Swipe-Delete Crash Fix
+
+Analyzed TestFlight build `1.7 (34)` crash report
+`B144F6A1-3A7D-4028-9CC7-0F211F5EF617`. The foreground crash was an iOS
+`UICollectionView` invalid-item-count assertion during a SwiftUI destructive
+swipe action, not a media-processing or export failure.
+
+The fix removes nested `List` containers from the home preset rows and time
+anchor rows, which were embedded inside outer `ScrollView` layouts. The time
+anchor swipe button now only opens its confirmation dialog; the confirmation
+button remains the actual destructive action and performs the data mutation.
+
+Regression coverage was added for both contracts. The iOS simulator Debug
+build and the focused home/time-anchor test suites pass. The full test suite
+still reports one unrelated failure in the concurrently changed
+`V1SettingsExpressionGuideContractTests` contract.
 
 ## 2026-07-16 Post-Refactor Release And Privacy Closure
 

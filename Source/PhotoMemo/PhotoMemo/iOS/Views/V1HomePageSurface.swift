@@ -62,10 +62,60 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private var topSummaryCluster: some View {
         VStack(spacing: 14) {
+            developmentBackgroundSection
+
             profileSection
                 .background(profileTrackingBackground)
 
             currentPresetSection
+        }
+    }
+
+    private var developmentBackgroundSection: some View {
+        V1CardSurface(title: "为什么开发时光记") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "heart.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.pink)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color.pink.opacity(0.10))
+                        )
+
+                    Text("陪伴孩子长大的过程中，我们留下了很多很多照片。")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Text("时光记最初只是想回答一个问题：打开照片时，能不能马上知道那一天，孩子多大？")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("从儿子出生这个时间点开始，我们逐渐发现，纪念日和未来的重要日期，也都可以成为时间锚点。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("希望它能陪大家记录生活、享受记忆。欢迎在日常使用中提出反馈和建议，也欢迎在小红书等公开渠道分享体验，邀请更多人一起参与。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(alignment: .top, spacing: 7) {
+                    Image(systemName: "sparkles")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+
+                    Text("愿大家都能享受这些被时间标记的记忆。")
+                        .font(.caption)
+                        .foregroundStyle(Color.accentColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 
@@ -168,38 +218,36 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 if memoryPresets.isEmpty {
                     V1HomeEmptyPresetRow()
                 } else {
-                    List(memoryPresets) { preset in
-                        V1HomeMemoryPresetRow(
-                            preset: preset,
-                            borderStyleName: borderStyleName,
-                            anchorType: anchorType(for: preset),
-                            subjectAvatarImagePath:
-                                subject?.identity.avatarPreviewImagePath
-                                ?? subject?.identity.avatarImagePath,
-                            isSelected: preset.id == selectedMemoryPresetID,
-                            onSelect: {
-                                onSelectMemoryPreset(preset)
-                            },
-                            onRename: {
-                                if preset.id != selectedMemoryPresetID {
+                    VStack(spacing: 0) {
+                        ForEach(memoryPresets) { preset in
+                            V1HomeMemoryPresetRow(
+                                preset: preset,
+                                borderStyleName: borderStyleName,
+                                anchorType: anchorType(for: preset),
+                                subjectAvatarImagePath:
+                                    subject?.identity.avatarPreviewImagePath
+                                    ?? subject?.identity.avatarImagePath,
+                                isSelected:
+                                    preset.id == selectedMemoryPresetID,
+                                onSelect: {
                                     onSelectMemoryPreset(preset)
+                                },
+                                onRename: {
+                                    if preset.id != selectedMemoryPresetID {
+                                        onSelectMemoryPreset(preset)
+                                    }
+                                    onRenameMemoryPreset()
+                                },
+                                onSave: {
+                                    onSaveMemoryPreset(preset)
+                                },
+                                isSaveDisabled: isSavingConfiguration,
+                                onDelete: {
+                                    onDeleteMemoryPreset(preset)
                                 }
-                                onRenameMemoryPreset()
-                            },
-                            onSave: {
-                                onSaveMemoryPreset(preset)
-                            },
-                            isSaveDisabled: isSavingConfiguration,
-                            onDelete: {
-                                onDeleteMemoryPreset(preset)
-                            }
-                        )
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
+                            )
+                        }
                     }
-                    .listStyle(.plain)
-                    .scrollDisabled(true)
-                    .scrollContentBackground(.hidden)
                     .frame(height: CGFloat(memoryPresets.count) * 92)
                 }
 

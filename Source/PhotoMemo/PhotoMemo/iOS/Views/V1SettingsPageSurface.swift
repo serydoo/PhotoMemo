@@ -5,6 +5,9 @@ struct V1SettingsPageSurface: View {
 
     @Environment(\.openURL) private var openURL
 
+    @State
+    private var showsExpressionGuide = false
+
     let onShowWelcome: () -> Void
     let onShowWorkflow: () -> Void
     let onDismissKeyboard: () -> Void
@@ -32,6 +35,9 @@ struct V1SettingsPageSurface: View {
         )
         .navigationTitle("设置")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showsExpressionGuide) {
+            expressionGuideSheet
+        }
     }
 
     private var overviewSection: some View {
@@ -120,8 +126,51 @@ struct V1SettingsPageSurface: View {
                     )
                 }
                 .buttonStyle(.plain)
+
+                Button {
+                    showsExpressionGuide = true
+                } label: {
+                    settingsActionRow(
+                        title: "查看表达公式说明",
+                        detail: "按时间锚点查看主体、智能输出和锚点结果的组合方式。",
+                        systemImage: "textformat",
+                        accent: .orange,
+                        thumbnail: {
+                            settingsThumbnailStack(
+                                accent: .orange,
+                                symbols: [
+                                    "textformat",
+                                    "calendar.badge.clock",
+                                    "paintpalette.fill"
+                                ]
+                            )
+                        }
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    private var expressionGuideSheet: some View {
+        NavigationStack {
+            ScrollView {
+                V1SettingsExpressionGuide()
+                    .padding(.top, 16)
+                    .padding(.bottom, 34)
+                    .v1AdaptiveScrollContent(
+                        horizontalPadding: 18
+                    )
+            }
+            .background(
+                ConfigurationUI.appBackground
+                    .ignoresSafeArea()
+            )
+            .navigationTitle("表达公式说明")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     private var releaseSection: some View {

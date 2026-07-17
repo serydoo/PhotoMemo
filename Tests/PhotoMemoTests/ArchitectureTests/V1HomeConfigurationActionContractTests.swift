@@ -34,6 +34,21 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains("删除这个配置？"))
     }
 
+    @Test("swipe-action rows avoid nested collection-view lists")
+    func swipeActionRowsAvoidNestedCollectionViewLists() throws {
+        let homeSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let subjectSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+
+        #expect(homeSource.contains("ForEach(memoryPresets)"))
+        #expect(!homeSource.contains("List(memoryPresets)"))
+        #expect(subjectSource.contains("Array(timeAnchors.enumerated())"))
+        #expect(!subjectSource.contains("List {"))
+    }
+
     @Test("configuration card footer opens the current subject local library")
     func footerPlusOpensLocalLibrary() throws {
         let source = try sourceText(
@@ -43,6 +58,40 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains("Image(systemName: \"plus\")"))
         #expect(source.contains("accessibilityLabel(\"打开当前记忆对象的本地配置库\")"))
         #expect(source.contains("onOpenLocalConfigurationLibrary"))
+    }
+
+    @Test("home explains the development origin before memory objects")
+    func developmentBackgroundAppearsBeforeMemoryObject() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let normalizedSource = source.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+
+        #expect(normalizedSource.contains("为什么开发时光记"))
+        #expect(normalizedSource.contains("很多很多照片"))
+        #expect(normalizedSource.contains("那一天，孩子多大"))
+        #expect(normalizedSource.contains("儿子出生"))
+        #expect(normalizedSource.contains("纪念日"))
+        #expect(normalizedSource.contains("重要日期"))
+        #expect(normalizedSource.contains("时间锚点"))
+        #expect(normalizedSource.contains("未来的重要日期"))
+        #expect(normalizedSource.contains("反馈和建议"))
+        #expect(normalizedSource.contains("小红书等公开渠道"))
+        #expect(normalizedSource.contains("邀请更多人一起参与"))
+
+        let backgroundIndex = try #require(
+            normalizedSource.range(of: "为什么开发时光记")?.lowerBound
+        )
+        let memoryObjectIndex = try #require(
+            normalizedSource.range(
+                of: "V1CardSurface(title: \"记忆对象\")"
+            )?.lowerBound
+        )
+        #expect(backgroundIndex < memoryObjectIndex)
     }
 
     @Test("home surfaces local backup and deletion feedback")

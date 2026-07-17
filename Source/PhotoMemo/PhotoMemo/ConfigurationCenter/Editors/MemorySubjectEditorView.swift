@@ -762,7 +762,7 @@ struct MemorySubjectEditorView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            List {
+            VStack(spacing: 0) {
                 ForEach(
                     Array(timeAnchors.enumerated()),
                     id: \.element.id
@@ -781,24 +781,18 @@ struct MemorySubjectEditorView: View {
                             deleteTimeAnchor(anchor.id)
                         }
                     )
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.visible)
                 }
 
                 if timeAnchors.count < 5 {
                     addTimeAnchorRow
-                        .listRowInsets(EdgeInsets())
                 }
             }
-            .listStyle(.plain)
-            .scrollDisabled(true)
             .frame(
                 height:
                     CGFloat(timeAnchors.count) * 59
                     + (timeAnchors.count < 5 ? 70 : 0)
             )
             .background(Color.white.opacity(0.94))
-            .scrollContentBackground(.hidden)
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: 18,
@@ -1664,7 +1658,7 @@ private struct SubjectTimeAnchorRow: View {
                 allowsFullSwipe: true
             ) {
                 if canDelete {
-                    Button(role: .destructive) {
+                    Button {
                         showsDeleteConfirmation = true
                     } label: {
                         Label("删除", systemImage: "trash")

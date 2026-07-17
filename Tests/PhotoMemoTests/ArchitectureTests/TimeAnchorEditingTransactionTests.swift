@@ -29,6 +29,34 @@ struct TimeAnchorEditingTransactionTests {
         #expect(source.contains("可保留预设名称，也可输入自定义名称"))
     }
 
+    @Test("anchor swipe delete opens confirmation without claiming immediate destruction")
+    func anchorSwipeDeleteOpensConfirmationWithoutClaimingImmediateDestruction() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let normalizedSource = source.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+
+        #expect(
+            normalizedSource.contains(
+                "Button { showsDeleteConfirmation = true"
+            )
+        )
+        #expect(
+            !normalizedSource.contains(
+                "Button(role: .destructive) { showsDeleteConfirmation = true"
+            )
+        )
+        #expect(
+            normalizedSource.contains(
+                "Button(\"删除时间锚点\", role: .destructive)"
+            )
+        )
+    }
+
     @Test("existing anchor transaction preserves the original value and selection")
     func existingAnchorTransactionPreservesOriginalState() {
         let anchor = MemorySubject.TimeAnchor(
@@ -62,6 +90,21 @@ struct TimeAnchorEditingTransactionTests {
         #expect(transaction.anchorID == anchorID)
         #expect(transaction.originalSelectedAnchorID == selectedAnchorID)
         #expect(transaction.isNewAnchor)
+    }
+}
+
+private extension TimeAnchorEditingTransactionTests {
+
+    func sourceText(_ relativePath: String) throws -> String {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(
+            contentsOf: repositoryRoot.appendingPathComponent(relativePath),
+            encoding: .utf8
+        )
     }
 }
 #endif
