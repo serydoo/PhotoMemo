@@ -51,6 +51,179 @@ struct RestoredConfigurationAssets {
     }
 }
 
+enum ConfigurationSubjectAssetMappingError: Error, Equatable {
+
+    case assetOutsideManagedRoot(String)
+    case duplicateAssetPath(String)
+}
+
+struct PortableConfigurationSubjectAssets {
+
+    let subject: MemorySubject
+    let manifest: PortableAssetManifest
+}
+
+struct ConfigurationSubjectAssetMapper {
+
+    let baseDirectoryURL: URL
+
+    init(
+        baseDirectoryURL: URL =
+            PhotoMemoSharedContainer.baseDirectoryURL
+    ) {
+        self.baseDirectoryURL =
+            baseDirectoryURL.standardizedFileURL
+    }
+
+    func makePortable(
+        subject: MemorySubject,
+        manifest: PortableAssetManifest
+    ) throws -> PortableConfigurationSubjectAssets {
+        var portableSubject = subject
+        var portableManifest = manifest
+
+        portableSubject.identity.avatarImagePath =
+            try portablePath(
+                subject.identity.avatarImagePath,
+                role: .subjectAvatar,
+                subjectID: subject.id,
+                manifest: &portableManifest
+            )
+        portableSubject.identity.avatarBadgeImagePath =
+            try portablePath(
+                subject.identity.avatarBadgeImagePath,
+                role: .subjectAvatarBadge,
+                subjectID: subject.id,
+                manifest: &portableManifest
+            )
+        portableSubject.identity.avatarPreviewImagePath =
+            try portablePath(
+                subject.identity.avatarPreviewImagePath,
+                role: .subjectAvatarPreview,
+                subjectID: subject.id,
+                manifest: &portableManifest
+            )
+
+        return PortableConfigurationSubjectAssets(
+            subject: portableSubject,
+            manifest: portableManifest
+        )
+    }
+
+    func makeRuntime(
+        subject: MemorySubject
+    ) -> MemorySubject {
+        var runtimeSubject = subject
+        runtimeSubject.identity.avatarImagePath =
+            makeRuntimePath(subject.identity.avatarImagePath)
+        runtimeSubject.identity.avatarBadgeImagePath =
+            makeRuntimePath(subject.identity.avatarBadgeImagePath)
+        runtimeSubject.identity.avatarPreviewImagePath =
+            makeRuntimePath(subject.identity.avatarPreviewImagePath)
+        return runtimeSubject
+    }
+
+    func makeRuntimePath(
+        _ path: String?
+    ) -> String? {
+        guard let path,
+              PortableAssetReference.isValid(path)
+        else {
+            return path
+        }
+        return baseDirectoryURL
+            .appendingPathComponent(path)
+            .standardizedFileURL
+            .path
+    }
+}
+
+private extension ConfigurationSubjectAssetMapper {
+
+    func portablePath(
+        _ path: String?,
+        role: PortableAssetManifest.Role,
+        subjectID: UUID,
+        manifest: inout PortableAssetManifest
+    ) throws -> String? {
+        let previousEntry = manifest.entries.first {
+            $0.role == role
+        }
+        manifest.entries.removeAll { $0.role == role }
+
+        guard let path else {
+            return nil
+        }
+        let trimmed = path.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        let relativePath: String
+        if PortableAssetReference.isValid(trimmed) {
+            relativePath = trimmed
+        } else {
+            let sourceURL = URL(fileURLWithPath: trimmed)
+                .standardizedFileURL
+            let rootComponents = baseDirectoryURL.pathComponents
+            let sourceComponents = sourceURL.pathComponents
+            guard sourceComponents.count > rootComponents.count,
+                  sourceComponents.starts(with: rootComponents)
+            else {
+                throw ConfigurationSubjectAssetMappingError
+                    .assetOutsideManagedRoot(trimmed)
+            }
+            relativePath = sourceComponents
+                .dropFirst(rootComponents.count)
+                .joined(separator: "/")
+        }
+
+        guard !manifest.entries.contains(where: {
+            $0.reference.relativePath == relativePath
+        }) else {
+            throw ConfigurationSubjectAssetMappingError
+                .duplicateAssetPath(relativePath)
+        }
+        let reference = try PortableAssetReference(
+            relativePath: relativePath
+        )
+        let preservedEntry = previousEntry.flatMap {
+            $0.reference == reference ? $0 : nil
+        }
+        manifest.entries.append(
+            preservedEntry
+            ?? PortableAssetManifest.Entry(
+                id: MemoryConfigurationRecord.deterministicUUID(
+                    basedOn: subjectID,
+                    discriminator: discriminator(for: role)
+                ),
+                role: role,
+                reference: reference,
+                originalFileName:
+                    URL(fileURLWithPath: trimmed).lastPathComponent
+            )
+        )
+        return relativePath
+    }
+
+    func discriminator(
+        for role: PortableAssetManifest.Role
+    ) -> UInt8 {
+        switch role {
+        case .subjectAvatar:
+            return 0xA1
+        case .subjectAvatarBadge:
+            return 0xA2
+        case .subjectAvatarPreview:
+            return 0xA3
+        case .customLogo:
+            return 0xA4
+        }
+    }
+}
+
 struct ConfigurationAssetPackager {
 
     func package(

@@ -83,6 +83,50 @@ struct ProductionConfigurationContractTests {
         }
     }
 
+    @Test("subject avatar logo resolves its managed asset for production")
+    func subjectAvatarLogoResolvesManagedAssetForProduction() throws {
+        let fixture = try Self.makeFixture()
+        let reference = try PortableAssetReference(
+            relativePath: "SubjectAssets/avatar-badge.png"
+        )
+        var aggregate = fixture.aggregate
+        aggregate.subjects[0].subject.identity.avatarBadgeImagePath =
+            reference.relativePath
+        aggregate.subjects[0].assetManifest.entries = [
+            .init(
+                role: .subjectAvatarBadge,
+                reference: reference
+            )
+        ]
+        aggregate.subjects[0].configurations[0]
+            .presentation.logo = .init(
+                mode: .subjectAvatar,
+                badge: .init(
+                    id: UUID(),
+                    name: OptimizedSubjectAvatarAsset
+                        .subjectAvatarBadgeName,
+                    type: .customUpload
+                )
+            )
+
+        let snapshot = try ProductionConfigurationSnapshotFactory.resolve(
+            reference: ProductionConfigurationReference(
+                configurationID: fixture.configuration.id,
+                revision: fixture.configuration.revision
+            ),
+            from: aggregate
+        )
+
+        #expect(snapshot.logoModeRawValue == V1LogoMode.subjectAvatar.rawValue)
+        #expect(snapshot.badge?.name == "对象头像")
+        #expect(
+            snapshot.badge?.imagePath
+            == PhotoMemoSharedContainer.baseDirectoryURL
+                .appendingPathComponent(reference.relativePath)
+                .standardizedFileURL.path
+        )
+    }
+
     @Test("durable resolution rejects an unknown configuration identity")
     func exactResolutionRejectsUnknownConfiguration() throws {
         let fixture = try Self.makeFixture()

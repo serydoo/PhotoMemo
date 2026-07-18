@@ -119,6 +119,12 @@ final class ConfigurationSession: ObservableObject {
         )
     }
 
+    func updateConfigurationLibraryReference(
+        _ aggregate: ConfigurationLibraryRecord
+    ) {
+        editingState.state.configurationLibrary = aggregate
+    }
+
     @discardableResult
     func reconcileConfigurationLibrarySave(
         candidate: V1ConfigurationAggregateCandidate,

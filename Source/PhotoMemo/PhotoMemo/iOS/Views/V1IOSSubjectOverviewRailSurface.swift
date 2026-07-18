@@ -16,12 +16,23 @@ struct V1IOSSubjectOverviewSubjectRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                currentSubjectSummary
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 10) {
+                    currentSubjectSummary
 
-                Spacer(minLength: 0)
+                    Spacer(minLength: 0)
 
-                headerActions
+                    headerActions
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    currentSubjectSummary
+
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        headerActions
+                    }
+                }
             }
 
             if isSwitchingSubject {
@@ -60,66 +71,51 @@ struct V1IOSSubjectOverviewSubjectRail: View {
                 Button {
                     onSaveSubject()
                 } label: {
-                    Label("保存", systemImage: "checkmark")
+                    Image(systemName: "checkmark")
+                        .font(.subheadline.weight(.semibold))
                 }
                 .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
                 .controlSize(.small)
+                .frame(minWidth: 44, minHeight: 44)
                 .accessibilityLabel("保存当前记忆对象信息")
 
                 Button {
                     onBeginSwitch()
                 } label: {
                     Label(
-                        "切换",
+                        "切换对象",
                         systemImage:
                             "arrow.left.arrow.right"
                     )
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                .frame(minHeight: 44)
                 .accessibilityLabel("切换当前对象")
             }
         }
     }
 
     private var currentSubjectSummary: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             if let subject = currentSubject {
-                V1SubjectAvatarView(
-                    imagePath:
-                        subject.identity.avatarImagePath
-                        ?? subject.identity.avatarPreviewImagePath,
-                    size: 38
+                V1IOSHomeStatusBadge(
+                    text:
+                        isSwitchingSubject
+                        ? "选择对象"
+                        : "当前使用",
+                    tone:
+                        isSwitchingSubject
+                        ? .neutral
+                        : .accent
                 )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(subjectDisplayName(subject))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-
-                        V1IOSHomeStatusBadge(
-                            text:
-                                isSwitchingSubject
-                                ? "选择对象"
-                                : "当前使用",
-                            tone:
-                                isSwitchingSubject
-                                ? .neutral
-                                : .accent
-                        )
-                    }
-
-                    Text(
-                        isSwitchingSubject
-                        ? "选择后保存切换生效"
-                        : subjectRelationship(subject)
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(stableSubjectDisplayName(subject))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
-                }
+                    .truncationMode(.tail)
             } else {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("记忆对象")
@@ -131,6 +127,7 @@ struct V1IOSSubjectOverviewSubjectRail: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -221,35 +218,20 @@ struct V1IOSSubjectOverviewSubjectRail: View {
         } ?? subjects.first
     }
 
-    private func subjectDisplayName(
+    private func stableSubjectDisplayName(
         _ subject: MemorySubject
     ) -> String {
-        let shortName =
-            subject.identity.shortName
+        let displayName =
+            subject.identity.displayName
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
 
-        if !shortName.isEmpty {
-            return shortName
-        }
-
-        return subject.identity.displayName
+        return displayName.isEmpty
+        ? "记忆对象"
+        : displayName
     }
 
-    private func subjectRelationship(
-        _ subject: MemorySubject
-    ) -> String {
-        let trimmed =
-            subject.relationship.label
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        return trimmed.isEmpty
-            ? "补充关系信息"
-            : trimmed
-    }
 }
 
 private struct V1IOSSubjectSwitchChip: View {
@@ -331,17 +313,15 @@ private struct V1IOSSubjectSwitchChip: View {
     }
 
     private var subjectDisplayName: String {
-        let shortName =
-            subject.identity.shortName
+        let displayName =
+            subject.identity.displayName
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
 
-        if !shortName.isEmpty {
-            return shortName
-        }
-
-        return subject.identity.displayName
+        return displayName.isEmpty
+        ? "记忆对象"
+        : displayName
     }
 
     private var subjectRelationship: String {

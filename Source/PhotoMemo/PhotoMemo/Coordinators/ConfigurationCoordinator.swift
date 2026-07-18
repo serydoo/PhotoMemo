@@ -109,6 +109,18 @@ final class ConfigurationCoordinator {
         return .success(())
     }
 
+    func saveLocationDisplayConfiguration(
+        _ configuration:
+            ExpressionModuleConfiguration
+    ) -> PhotoMemoResult<Void> {
+
+        settingsRepository
+            .saveLocationDisplayConfiguration(
+                configuration
+            )
+        return .success(())
+    }
+
     func saveV1SubjectLibrary(
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,

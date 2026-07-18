@@ -219,6 +219,101 @@ struct V1LocalConfigurationLibraryPresenterTests {
         #expect(prepared.subjects[0].configurations == [seed])
     }
 
+    @Test("subject-only save keeps the latest avatar without changing configurations")
+    func subjectOnlySaveKeepsLatestAvatarAndConfigurations() throws {
+        let subjectID = UUID(
+            uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+        )!
+        let configurationID = UUID(
+            uuidString: "33333333-3333-3333-3333-333333333333"
+        )!
+        let storedSubject = Self.makeSubject(
+            id: subjectID,
+            name: "小宝"
+        )
+        let assetRootURL = PhotoMemoSharedContainer
+            .baseDirectoryURL
+        let subjectAssetDirectoryURL = assetRootURL
+            .appendingPathComponent(
+                "SubjectAssets",
+                isDirectory: true
+            )
+        var editedSubject = storedSubject
+        editedSubject.identity.avatarImagePath =
+            subjectAssetDirectoryURL
+            .appendingPathComponent("display.png")
+            .path
+        editedSubject.identity.avatarBadgeImagePath =
+            subjectAssetDirectoryURL
+            .appendingPathComponent("badge.png")
+            .path
+        editedSubject.identity.avatarPreviewImagePath =
+            subjectAssetDirectoryURL
+            .appendingPathComponent("preview.png")
+            .path
+        let configuration = Self.makeConfiguration(
+            id: configurationID,
+            title: "成长记录 1"
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 5,
+            subjects: [
+                .init(
+                    subject: storedSubject,
+                    configurations: [configuration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subjectID,
+            activeConfigurationID: configurationID
+        )
+
+        let prepared = try #require(
+            V1LocalConfigurationLibraryPresenter
+                .updatingSubject(
+                    subject: editedSubject,
+                    in: aggregate
+                )
+        )
+
+        #expect(prepared.validationResult == .valid)
+        #expect(prepared.revision == aggregate.revision)
+        #expect(prepared.activeConfigurationID == configurationID)
+        #expect(
+            prepared.subjects[0].configurations
+            == aggregate.subjects[0].configurations
+        )
+        #expect(
+            prepared.subjects[0].subject.identity.avatarImagePath
+            == "SubjectAssets/display.png"
+        )
+        #expect(
+            prepared.subjects[0].subject.identity.avatarBadgeImagePath
+            == "SubjectAssets/badge.png"
+        )
+        #expect(
+            Set(prepared.subjects[0].assetManifest.entries.map(\.role))
+            == Set([
+                .subjectAvatar,
+                .subjectAvatarBadge,
+                .subjectAvatarPreview
+            ])
+        )
+
+        let session = ConfigurationSession()
+        session.restoreConfigurationLibrary(aggregate)
+        session.customMemoryWriteText = "尚未保存的卡片文案"
+        session.updateSelectedSubject(editedSubject)
+        session.updateConfigurationLibraryReference(prepared)
+
+        #expect(session.state.configurationLibrary == prepared)
+        #expect(
+            session.state.selectedSubject?.identity.avatarBadgeImagePath
+            == editedSubject.identity.avatarBadgeImagePath
+        )
+        #expect(session.customMemoryWriteText == "尚未保存的卡片文案")
+    }
+
     @Test("backup is unavailable while configuration apply is running")
     func savingConfigurationCannotBeBackedUp() {
         let currentID = UUID(

@@ -40,6 +40,24 @@ struct V1SettingsExpressionGuideContractTests {
         #expect(source.contains("V1SettingsExpressionGuide()"))
         #expect(source.contains(".presentationDetents([.medium, .large])"))
     }
+
+    @Test("settings keeps the complete product story after Home dismissal")
+    func settingsKeepsCompleteProductStory() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+
+        #expect(source.contains("为什么是时光记"))
+        #expect(source.contains("很多很多照片"))
+        #expect(source.contains("那一天，孩子多大"))
+        #expect(source.contains("儿子出生"))
+        #expect(source.contains("纪念日和未来的重要日期"))
+        #expect(source.contains("时间锚点"))
+        #expect(source.contains("本地完成"))
+        #expect(source.contains("反馈和建议"))
+        #expect(source.contains("小红书等公开渠道"))
+        #expect(source.contains("邀请更多人一起参与"))
+    }
 }
 
 private extension V1SettingsExpressionGuideContractTests {

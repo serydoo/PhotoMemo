@@ -141,7 +141,10 @@ struct ConfigurationPersistenceReconciler {
     ) {
         editingState.state.configurationLibrary = aggregate
         editingState.state.subjects =
-            aggregate.subjects.map(\.subject)
+            aggregate.subjects.map {
+                ConfigurationSubjectAssetMapper()
+                    .makeRuntime(subject: $0.subject)
+            }
         editingState.state.memoryPresets =
             aggregate.subjects.flatMap { subjectRecord in
                 subjectRecord.configurations.map { configuration in

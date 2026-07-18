@@ -74,12 +74,10 @@ struct ConfigurationCenterLocationDisplayPanel:
                 }
                 .labelsHidden()
                 .pickerStyle(.menu)
-                .disabled(locationModule == nil)
             }
 
-            if locationModule != nil,
-               let note = selectedOptionNote {
-                Text(note)
+            if let statusDetail {
+                Text(statusDetail)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -90,13 +88,13 @@ struct ConfigurationCenterLocationDisplayPanel:
     }
 
     private var currentValueText: String {
-        guard let locationModule else {
-            return presentation.unavailableValue
-        }
-
         return LocationDisplayInspectorPresenter
             .selectedValue(
-                from: locationModule
+                fromConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: selectedOptionID
+                    )
             )
     }
 
@@ -113,6 +111,14 @@ struct ConfigurationCenterLocationDisplayPanel:
                 $0.id == selectedOptionID
             }?
             .note
+    }
+
+    private var statusDetail: String? {
+        guard locationModule != nil else {
+            return "当前选择将在插入位置模块后生效。"
+        }
+
+        return selectedOptionNote
     }
 }
 

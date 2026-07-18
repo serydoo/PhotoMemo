@@ -250,5 +250,174 @@ struct V1IOSSubjectOverviewPresenterTests {
             == .shortName
         )
     }
+
+    @Test("subject overview save writes the latest subject to the durable aggregate")
+    func subjectOverviewSaveWritesLatestSubjectToDurableAggregate() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        #expect(source.contains("persistCurrentSubjectChanges"))
+        #expect(source.contains("V1LocalConfigurationLibraryPresenter"))
+        #expect(source.contains(".updatingSubject("))
+        #expect(source.contains(".saveConfigurationLibrary(candidate)"))
+        #expect(source.contains(".updateConfigurationLibraryReference("))
+        #expect(
+            source.contains(
+                "onPersistSubjectChanges: persistCurrentSubjectChanges"
+            )
+        )
+    }
+
+    @Test("subject overview keeps compact current identity actions and uses the object display name")
+    func subjectOverviewKeepsCompactCurrentIdentityActionsAndUsesDisplayName() throws {
+        let railSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewRailSurface.swift"
+        )
+        let normalizedRail = railSource.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+
+        let summaryStart = try #require(
+            railSource.range(of: "private var currentSubjectSummary")
+        )
+        let summaryEnd = try #require(
+            railSource.range(
+                of: "private var switchingLayout",
+                range: summaryStart.upperBound..<railSource.endIndex
+            )
+        )
+        let summarySource = String(
+            railSource[summaryStart.lowerBound..<summaryEnd.lowerBound]
+        )
+
+        #expect(!summarySource.contains("V1SubjectAvatarView"))
+        #expect(!summarySource.contains("subjectRelationship(subject)"))
+        #expect(railSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(
+            normalizedRail.contains(
+                "Image(systemName: \"checkmark\")"
+            )
+        )
+        #expect(!normalizedRail.contains("Label(\"保存\", systemImage: \"checkmark\")"))
+        #expect(
+            normalizedRail.contains(
+                "Label( \"切换对象\", systemImage: \"arrow.left.arrow.right\" )"
+            )
+        )
+
+        let badgeIndex = try #require(
+            summarySource.range(of: "V1IOSHomeStatusBadge")?.lowerBound
+        )
+        let nameIndex = try #require(
+            summarySource.range(of: "Text(stableSubjectDisplayName(subject))")?.lowerBound
+        )
+        #expect(badgeIndex < nameIndex)
+        #expect(!summarySource.contains("subjectDisplayName(subject)"))
+        #expect(railSource.contains("subject.identity.displayName"))
+    }
+
+    @Test("expression subject is one selectable row that explains source and output")
+    func expressionSubjectIsOneSelectableRowThatExplainsSourceAndOutput() throws {
+        let editorSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let expressionSource = try sourceSection(
+            in: editorSource,
+            from: "private var expressionSubjectMenuRow",
+            to: "private var compactIdentityFieldsPanel"
+        )
+        #expect(expressionSource.contains("Menu {"))
+        #expect(expressionSource.contains("Text(\"表达称呼\")"))
+        #expect(expressionSource.contains("Text(expressionSubjectDisplayValue)"))
+        #expect(
+            expressionSource.contains(
+                "Text(\"· 来自“\\(expressionSubjectDisplaySourceTitle)”\")"
+            )
+        )
+        #expect(
+            expressionSource.contains(
+                "expressionSubjectMenuOptionTitle(for: source)"
+            )
+        )
+        #expect(
+            expressionSource.contains(
+                ".disabled(expressionSubjectSourceValue(for: source) == nil)"
+            )
+        )
+        #expect(!expressionSource.contains("expressionSubjectResult"))
+        #expect(!expressionSource.contains("Text(\"主体名称\")"))
+        #expect(!expressionSource.contains("Text(\"当前展示\")"))
+        #expect(
+            editorSource.contains(
+                "MemorySubject.resolveExpressionSubject("
+            )
+        )
+    }
+
+    @Test("compact basic information uses native rows without per-field rounded boxes")
+    func compactBasicInformationUsesNativeRowsWithoutPerFieldRoundedBoxes() throws {
+        let editorSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let panelSource = try sourceSection(
+            in: editorSource,
+            from: "private var compactIdentityFieldsPanel",
+            to: "private func compactLabeledTextField"
+        )
+        let fieldSource = try sourceSection(
+            in: editorSource,
+            from: "private func compactLabeledTextField",
+            to: "private var expressionSubjectDisplayValue"
+        )
+        let normalizedPanel = panelSource.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+
+        #expect(normalizedPanel.contains("compactLabeledTextField( \"对象名称\""))
+        #expect(normalizedPanel.contains("compactLabeledTextField( \"昵称\""))
+        #expect(normalizedPanel.contains("compactLabeledTextField( \"与我的关系\""))
+        #expect(normalizedPanel.contains("compactLabeledTextField( \"专属称呼\""))
+        #expect(!normalizedPanel.contains("compactLabeledTextField( \"显示名称\""))
+        #expect(!normalizedPanel.contains("compactLabeledTextField( \"关系\""))
+        #expect(!normalizedPanel.contains("compactLabeledTextField( \"关系备注\""))
+
+        #expect(fieldSource.contains(".textFieldStyle(.plain)"))
+        #expect(!fieldSource.contains("RoundedRectangle("))
+    }
+}
+
+private extension V1IOSSubjectOverviewPresenterTests {
+
+    func sourceText(_ relativePath: String) throws -> String {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(
+            contentsOf: repositoryRoot.appendingPathComponent(relativePath),
+            encoding: .utf8
+        )
+    }
+
+    func sourceSection(
+        in source: String,
+        from startMarker: String,
+        to endMarker: String
+    ) throws -> String {
+        let start = try #require(source.range(of: startMarker))
+        let end = try #require(
+            source.range(
+                of: endMarker,
+                range: start.upperBound..<source.endIndex
+            )
+        )
+        return String(source[start.lowerBound..<end.lowerBound])
+    }
 }
 #endif

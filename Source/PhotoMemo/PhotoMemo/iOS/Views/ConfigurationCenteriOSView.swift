@@ -25,6 +25,10 @@ struct ConfigurationCenteriOSView: View {
         ConfigurationCenterRegionDraftStore()
 
     @State
+    private var selectedLocationDisplayConfiguration:
+        ExpressionModuleConfiguration?
+
+    @State
     private var showsSettingsSheet = false
 
     @State
@@ -61,6 +65,14 @@ struct ConfigurationCenteriOSView: View {
         runtime: PhotoMemoAppRuntime
     ) {
         self.runtime = runtime
+        _selectedLocationDisplayConfiguration =
+            State(
+                initialValue:
+                    Self
+                    .loadLocationDisplayConfiguration(
+                        from: runtime
+                    )
+            )
         _session = StateObject(
             wrappedValue:
                 ConfigurationSession()
@@ -155,6 +167,12 @@ struct ConfigurationCenteriOSView: View {
                 )
             }
             .toolbar(.hidden, for: .navigationBar)
+        }
+        .onAppear {
+            selectedLocationDisplayConfiguration =
+                Self.loadLocationDisplayConfiguration(
+                    from: runtime
+                )
         }
         .sheet(
             isPresented:
@@ -260,8 +278,6 @@ struct ConfigurationCenteriOSView: View {
                     module: slotCLocationModule,
                     selectedValue: selectedLocationValue
                 ),
-            isLocationSelectable:
-                slotCLocationModule != nil,
             selectedLocationOptionID:
                 locationDisplayOptionBinding(
                     for: .slotC
@@ -294,19 +310,7 @@ struct ConfigurationCenteriOSView: View {
 
     private var savedLocationDisplayConfiguration:
         ExpressionModuleConfiguration? {
-        let configurationCoordinator =
-            runtime
-            .environment
-            .coordinators
-            .configuration
-
-        switch configurationCoordinator
-            .loadV1ConfigurationBootstrapState() {
-        case .success(let state):
-            return state.locationDisplayConfiguration
-        case .failure:
-            return nil
-        }
+        selectedLocationDisplayConfiguration
     }
 
     private func topConfigurationPreview(
@@ -1091,15 +1095,24 @@ struct ConfigurationCenteriOSView: View {
     ) -> Binding<String> {
         Binding(
             get: {
-                LocationDisplayInspectorPresenter
-                    .selectedOptionID(
-                        from: currentLocationModule(
-                            for: region
+                if let module =
+                    currentLocationModule(
+                        for: region
+                    ) {
+                    return LocationDisplayInspectorPresenter
+                        .selectedOptionID(
+                            from: module
                         )
+                }
+
+                return LocationDisplayInspectorPresenter
+                    .selectedOptionID(
+                        fromConfiguration:
+                            selectedLocationDisplayConfiguration
                     )
             },
             set: { optionID in
-                guard let change =
+                let change =
                     ConfigurationCenterLocationDisplaySupport
                     .selectionChange(
                         optionID: optionID,
@@ -1113,14 +1126,22 @@ struct ConfigurationCenteriOSView: View {
                                 for: region
                             )
                     )
-                else {
-                    return
-                }
+                selectedLocationDisplayConfiguration =
+                    change.configuration
+                _ = runtime
+                    .environment
+                    .coordinators
+                    .configuration
+                    .saveLocationDisplayConfiguration(
+                        change.configuration
+                    )
 
-                applyRegionBindingMutation(
-                    change.mutation,
-                    for: change.region
-                )
+                if let mutation = change.mutation {
+                    applyRegionBindingMutation(
+                        mutation,
+                        for: change.region
+                    )
+                }
             }
         )
     }
@@ -1167,10 +1188,9 @@ struct ConfigurationCenteriOSView: View {
             return nil
         }
 
-        return LocationDisplayInspectorPresenter
-            .configuration(
-                for: "legacyDisplay"
-            )
+        return selectedLocationDisplayConfiguration
+        ?? LocationDisplayInspectorPresenter
+            .configuration(for: "legacyDisplay")
     }
 
     private func removeInsertedModule(
@@ -1410,6 +1430,21 @@ struct ConfigurationCenteriOSView: View {
             from: nil,
             for: nil
         )
+    }
+
+    private static func loadLocationDisplayConfiguration(
+        from runtime: PhotoMemoAppRuntime
+    ) -> ExpressionModuleConfiguration? {
+        switch runtime
+            .environment
+            .coordinators
+            .configuration
+            .loadV1ConfigurationBootstrapState() {
+        case .success(let state):
+            return state.locationDisplayConfiguration
+        case .failure:
+            return nil
+        }
     }
 }
 

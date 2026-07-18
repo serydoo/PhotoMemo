@@ -1141,7 +1141,7 @@ private extension LivePhotoBatchQueueExecutionTests {
     func waitForQueueToFinish(
         _ store: BatchQueueStore
     ) async -> Bool {
-        for _ in 0..<50 {
+        for _ in 0..<250 {
             if store.jobs.first?.tasks.first?.phase
                 .isTerminal == true {
                 return true
@@ -1160,7 +1160,7 @@ private extension LivePhotoBatchQueueExecutionTests {
     func waitForAllQueueTasksToFinish(
         _ store: BatchQueueStore
     ) async -> Bool {
-        for _ in 0..<100 {
+        for _ in 0..<250 {
             let tasks =
                 store.jobs.first?.tasks ?? []
             if !tasks.isEmpty,

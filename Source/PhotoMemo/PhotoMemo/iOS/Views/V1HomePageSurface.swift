@@ -5,6 +5,9 @@ import SwiftUI
 
 struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
+    @AppStorage("photomemo.v1.developmentBackgroundDismissed")
+    private var hasDismissedDevelopmentBackground = false
+
     let subjectSummary: V1IOSHomeSubjectSummaryProjection
     let subject: MemorySubject?
     let completedPhotoCount: Int
@@ -62,7 +65,10 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private var topSummaryCluster: some View {
         VStack(spacing: 14) {
-            developmentBackgroundSection
+            if !hasDismissedDevelopmentBackground {
+                developmentBackgroundSection
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             profileSection
                 .background(profileTrackingBackground)
@@ -116,6 +122,33 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.20)) {
+                    hasDismissedDevelopmentBackground = true
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        Circle()
+                            .fill(ConfigurationUI.controlBackground)
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(ConfigurationUI.faintHairline)
+                    )
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+            .padding(.trailing, 4)
+            .accessibilityLabel("关闭开发背景说明")
+            .accessibilityHint("关闭后仍可在设置中重新查看")
         }
     }
 
@@ -394,7 +427,7 @@ private struct V1HomeMemoryPresetRow: View {
         rowContent
             .contentShape(Rectangle())
             .onTapGesture(perform: onSelect)
-            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button {
                     showsDeleteConfirmation = true
                 } label: {
@@ -476,6 +509,28 @@ private struct V1HomeMemoryPresetRow: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("重命名配置")
             }
+
+            Menu {
+                Button(action: onSave) {
+                    Label(
+                        "保存",
+                        systemImage: MemoMarkSymbol.localStorage.name
+                    )
+                }
+                .disabled(isSaveDisabled)
+
+                Button {
+                    showsDeleteConfirmation = true
+                } label: {
+                    Label("删除", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+            }
+            .accessibilityLabel("配置操作")
 
             Spacer(minLength: 6)
 

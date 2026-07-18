@@ -84,6 +84,9 @@ struct MemorySubjectEditorView: View {
     @FocusState
     private var focusedField: SubjectFocusedField?
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     private let avatarOptimizer =
         SubjectAvatarAssetOptimizationService()
 
@@ -133,7 +136,7 @@ struct MemorySubjectEditorView: View {
                     identityOverviewEditor
 
                 case .timeAnchors:
-                    timeWindowEditor
+                    timeAnchorListEditor
                 }
             }
         }
@@ -234,21 +237,25 @@ struct MemorySubjectEditorView: View {
     }
 
     private var adaptiveIdentityOverviewHeader: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: 14) {
-                identityOverviewText
-                compactAvatarPicker
+        VStack(alignment: .leading, spacing: 10) {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 14) {
+                    identityOverviewText
+                    compactAvatarPicker
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    identityOverviewText
+                    compactAvatarPicker
+                }
             }
 
-            VStack(alignment: .leading, spacing: 12) {
-                compactAvatarPicker
-                identityOverviewText
-            }
+            expressionSubjectMenuRow
         }
     }
 
     private var identityOverviewText: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(
                 displayName
                     .trimmingCharacters(
@@ -261,82 +268,109 @@ struct MemorySubjectEditorView: View {
             .font(.title2.weight(.semibold))
             .foregroundStyle(.primary)
             .lineLimit(1)
-
-            expressionSubjectMenuRow
-
-            Text(
-                relationshipLabel
-                    .trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                    )
-                    .isEmpty
-                ? "补充关系备注"
-                : relationshipLabel
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var expressionSubjectMenuRow: some View {
-        HStack(spacing: 10) {
-            Menu {
-                ForEach(
-                    MemorySubjectExpressionSubjectSource.allCases
-                ) { source in
-                    Button {
-                        expressionSubjectSource = source
-                    } label: {
-                        Label(
-                            source.displayTitle,
-                            systemImage:
-                                source == expressionSubjectSource
-                                ? "checkmark"
-                                : "circle"
-                        )
+        Menu {
+            ForEach(
+                MemorySubjectExpressionSubjectSource.allCases
+            ) { source in
+                Button {
+                    expressionSubjectSource = source
+                } label: {
+                    Label(
+                        expressionSubjectMenuOptionTitle(for: source),
+                        systemImage:
+                            source == expressionSubjectResolution.source
+                            ? "checkmark"
+                            : expressionSubjectSourceIcon(for: source)
+                    )
+                }
+                .disabled(expressionSubjectSourceValue(for: source) == nil)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "person.text.rectangle")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        Circle()
+                            .fill(Color.accentColor.opacity(0.11))
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("表达称呼")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+
+                    if dynamicTypeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: 2) {
+                            expressionSubjectValueText
+                            expressionSubjectSourceText
+                        }
+                    } else {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            expressionSubjectValueText
+                            expressionSubjectSourceText
+                        }
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     }
                 }
-            } label: {
-                Label(
-                    "主体名称",
-                    systemImage: "person.text.rectangle"
-                )
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(Color.accentColor.opacity(0.10))
-                )
-            }
-            .buttonStyle(.plain)
 
-            Text(expressionSubjectDisplayValue)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.88))
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, minHeight: 62)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 12,
+                    style: .continuous
                 )
-                .overlay(
-                    Capsule(style: .continuous)
-                        .stroke(ConfigurationUI.faintHairline)
+                .fill(Color.accentColor.opacity(0.07))
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 12,
+                    style: .continuous
                 )
+                .stroke(Color.accentColor.opacity(0.22))
+            )
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(.plain)
+        .accessibilityLabel("选择表达称呼")
+        .accessibilityValue(
+            "\(expressionSubjectDisplayValue)，来自\(expressionSubjectDisplaySourceTitle)"
+        )
+    }
+
+    private var expressionSubjectValueText: some View {
+        Text(expressionSubjectDisplayValue)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+    }
+
+    private var expressionSubjectSourceText: some View {
+        Text("· 来自“\(expressionSubjectDisplaySourceTitle)”")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
     }
 
     private var compactIdentityFieldsPanel: some View {
         VStack(spacing: 0) {
             compactLabeledTextField(
-                "显示名称",
+                "对象名称",
                 text: $displayName,
                 focus: .displayName
             )
@@ -352,7 +386,7 @@ struct MemorySubjectEditorView: View {
             compactDivider
 
             compactLabeledTextField(
-                "关系",
+                "与我的关系",
                 text: $relationshipRole,
                 focus: .relationshipRole
             )
@@ -360,7 +394,7 @@ struct MemorySubjectEditorView: View {
             compactDivider
 
             compactLabeledTextField(
-                "关系备注",
+                "专属称呼",
                 text: $relationshipLabel,
                 focus: .relationshipLabel
             )
@@ -386,81 +420,150 @@ struct MemorySubjectEditorView: View {
         text: Binding<String>,
         focus: SubjectFocusedField
     ) -> some View {
-        HStack(spacing: 10) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 72, alignment: .leading)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.body)
+                        .foregroundStyle(.primary)
 
-            TextField(title, text: text)
-                .textFieldStyle(.plain)
-                .font(.subheadline)
-                .multilineTextAlignment(.trailing)
-                .focused($focusedField, equals: focus)
-                .padding(.horizontal, 10)
-                .frame(height: 34)
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: 10,
-                        style: .continuous
+                    compactIdentityTextField(
+                        title,
+                        text: text,
+                        focus: focus,
+                        alignment: .leading
                     )
-                    .fill(ConfigurationUI.panelBackground)
-                )
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: 10,
-                        style: .continuous
+                }
+                .padding(.vertical, 9)
+            } else {
+                HStack(spacing: 10) {
+                    Text(title)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .frame(width: 88, alignment: .leading)
+
+                    compactIdentityTextField(
+                        title,
+                        text: text,
+                        focus: focus,
+                        alignment: .trailing
                     )
-                    .stroke(
-                        focusedField == focus
-                        ? Color.accentColor.opacity(0.28)
-                        : ConfigurationUI.faintHairline,
-                        lineWidth:
-                            focusedField == focus ? 1 : 0.75
-                    )
-                )
+                }
+            }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 7)
+        .frame(minHeight: 48)
+        .background(
+            focusedField == focus
+            ? Color.accentColor.opacity(0.055)
+            : Color.clear
+        )
+    }
+
+    private func compactIdentityTextField(
+        _ title: String,
+        text: Binding<String>,
+        focus: SubjectFocusedField,
+        alignment: TextAlignment
+    ) -> some View {
+        TextField(title, text: text)
+            .textFieldStyle(.plain)
+            .font(.body)
+            .multilineTextAlignment(alignment)
+            .focused($focusedField, equals: focus)
+            .submitLabel(
+                focus == .relationshipLabel
+                ? .done
+                : .next
+            )
+            .onSubmit {
+                advanceIdentityFocus(from: focus)
+            }
     }
 
     private var expressionSubjectDisplayValue: String {
-        switch expressionSubjectSource {
+        expressionSubjectResolution.text
+    }
+
+    private var expressionSubjectDisplaySourceTitle: String {
+        expressionSubjectResolution.source?.displayTitle
+        ?? "默认称呼"
+    }
+
+    private var expressionSubjectResolution:
+        MemorySubjectExpressionSubjectResolution {
+        MemorySubject.resolveExpressionSubject(
+            source: expressionSubjectSource,
+            displayName: displayName,
+            shortName: shortName,
+            relationshipRole: relationshipRole,
+            relationshipLabel: relationshipLabel
+        )
+    }
+
+    private func expressionSubjectSourceValue(
+        for source: MemorySubjectExpressionSubjectSource
+    ) -> String? {
+        switch source {
         case .displayName:
-            return normalizedInlineValue(
-                displayName,
-                fallback: "显示名称"
-            )
+            return normalizedInlineValue(displayName)
         case .shortName:
-            return normalizedInlineValue(
-                shortName,
-                fallback: "昵称"
-            )
+            return normalizedInlineValue(shortName)
         case .relationshipRole:
-            return normalizedInlineValue(
-                relationshipRole,
-                fallback: "关系"
-            )
+            return normalizedInlineValue(relationshipRole)
         case .relationshipLabel:
-            return normalizedInlineValue(
-                relationshipLabel,
-                fallback: "关系备注"
-            )
+            return normalizedInlineValue(relationshipLabel)
+        }
+    }
+
+    private func expressionSubjectMenuOptionTitle(
+        for source: MemorySubjectExpressionSubjectSource
+    ) -> String {
+        let value = expressionSubjectSourceValue(for: source) ?? "未填写"
+        return "\(source.displayTitle)    \(value)"
+    }
+
+    private func expressionSubjectSourceIcon(
+        for source: MemorySubjectExpressionSubjectSource
+    ) -> String {
+        switch source {
+        case .displayName:
+            return "person"
+        case .shortName:
+            return "text.quote"
+        case .relationshipRole:
+            return "person.2"
+        case .relationshipLabel:
+            return "heart.text.square"
         }
     }
 
     private func normalizedInlineValue(
-        _ text: String,
-        fallback: String
-    ) -> String {
+        _ text: String
+    ) -> String? {
         let trimmed =
             text.trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
 
-        return trimmed.isEmpty
-            ? fallback
-            : trimmed
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func advanceIdentityFocus(
+        from focus: SubjectFocusedField
+    ) {
+        switch focus {
+        case .displayName:
+            focusedField = .shortName
+        case .shortName:
+            focusedField = .relationshipRole
+        case .relationshipRole:
+            focusedField = .relationshipLabel
+        case .relationshipLabel:
+            focusedField = nil
+        default:
+            focusedField = nil
+        }
     }
 
     @ViewBuilder
@@ -719,11 +822,6 @@ struct MemorySubjectEditorView: View {
 
     private var timeWindowEditor: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("左滑锚点可配置或删除。修改会实时刷新预览；取消会恢复原值，且至少保留 1 个锚点。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
             if timeAnchors.isEmpty {
                 Text("暂无时间锚点。")
                     .font(.subheadline)
@@ -731,6 +829,11 @@ struct MemorySubjectEditorView: View {
             } else {
                 timeAnchorSelectionCard
             }
+
+            Text("点击操作按钮，或左滑可配置或删除；最多 5 个，至少保留 1 个。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .sheet(
             isPresented:
@@ -749,26 +852,11 @@ struct MemorySubjectEditorView: View {
         }
     }
 
-    private var timeAnchorSelectionCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("锚点列表")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.primary)
-
-                Text("最多 5 个，至少保留 1 个。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            VStack(spacing: 0) {
-                ForEach(
-                    Array(timeAnchors.enumerated()),
-                    id: \.element.id
-                ) { index, anchor in
+    private var timeAnchorListEditor: some View {
+        List {
+            Section {
+                ForEach(timeAnchors) { anchor in
                     SubjectTimeAnchorRow(
-                        index: index + 1,
                         anchor: anchor,
                         isEditing:
                             anchor.id == editingTimeAnchorID,
@@ -781,34 +869,85 @@ struct MemorySubjectEditorView: View {
                             deleteTimeAnchor(anchor.id)
                         }
                     )
+                    .listRowInsets(
+                        EdgeInsets(
+                            top: 0,
+                            leading: 0,
+                            bottom: 0,
+                            trailing: 0
+                        )
+                    )
                 }
 
                 if timeAnchors.count < 5 {
                     addTimeAnchorRow
+                        .listRowInsets(
+                            EdgeInsets(
+                                top: 0,
+                                leading: 0,
+                                bottom: 0,
+                                trailing: 0
+                            )
+                        )
+                }
+            } footer: {
+                Text("左滑可配置或删除；最多 5 个，至少保留 1 个。")
+            }
+        }
+#if os(iOS)
+        .listStyle(.insetGrouped)
+#else
+        .listStyle(.inset)
+#endif
+        .scrollContentBackground(.hidden)
+        .background(ConfigurationUI.appBackground)
+        .sheet(
+            isPresented:
+                Binding(
+                    get: {
+                        editingTimeAnchorID != nil
+                    },
+                    set: { isPresented in
+                        if !isPresented {
+                            cancelEditingTimeAnchor()
+                        }
+                    }
+                )
+        ) {
+            timeAnchorConfigurationSheet
+        }
+    }
+
+    private var timeAnchorSelectionCard: some View {
+        VStack(spacing: 0) {
+            ForEach(
+                Array(timeAnchors.enumerated()),
+                id: \.element.id
+            ) { index, anchor in
+                SubjectTimeAnchorRow(
+                    anchor: anchor,
+                    isEditing:
+                        anchor.id == editingTimeAnchorID,
+                    canDelete:
+                        timeAnchors.count > 1,
+                    onConfigure: {
+                        openTimeAnchorSheet(anchor.id)
+                    },
+                    onDelete: {
+                        deleteTimeAnchor(anchor.id)
+                    }
+                )
+
+                if index < timeAnchors.count - 1
+                    || timeAnchors.count < 5 {
+                    compactDivider
                 }
             }
-            .frame(
-                height:
-                    CGFloat(timeAnchors.count) * 59
-                    + (timeAnchors.count < 5 ? 70 : 0)
-            )
-            .background(Color.white.opacity(0.94))
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-            )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .stroke(ConfigurationUI.faintHairline)
-            )
+
+            if timeAnchors.count < 5 {
+                addTimeAnchorRow
+            }
         }
-        .padding(12)
-        .configurationPanelChrome(isSelected: true)
     }
 
     private var addTimeAnchorRow: some View {
@@ -862,13 +1001,15 @@ struct MemorySubjectEditorView: View {
         if let anchorBinding {
             NavigationStack {
                 Form {
-                    Section("时间与类别") {
+                    Section("锚点日期") {
                         CompactAnchorDatePicker(
                             selection: anchorBinding.date
                         )
+                    }
 
+                    Section {
                         Picker(
-                            "类型",
+                            "锚点类型",
                             selection: Binding(
                                 get: {
                                     anchorBinding.wrappedValue.resolvedAnchorType
@@ -884,29 +1025,22 @@ struct MemorySubjectEditorView: View {
                                 Text(type.displayName).tag(type)
                             }
                         }
-
                     }
 
                     Section {
                         TextField(
-                            "自定义名称",
+                            "输入锚点名称",
                             text: anchorBinding.title
                         )
                         .focused($focusedField, equals: .timeTitle)
                         .submitLabel(.done)
                     } header: {
-                        Text("锚点名称")
+                        Text("自定义锚点名称")
                     } footer: {
-                        Text("可保留预设名称，也可输入自定义名称；输入会实时显示在预览中，点“完成”后保留。")
-                    }
-
-                    Section {
-                        Text("日期、类型和名称的修改会立即显示在配置中心预览中。")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        Text("修改会实时显示在预览中；完成后保留，取消则恢复原值。")
                     }
                 }
-                .navigationTitle(anchorBinding.wrappedValue.title)
+                .navigationTitle(timeAnchorSheetTitle)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("取消") {
@@ -921,12 +1055,18 @@ struct MemorySubjectEditorView: View {
                     }
                 }
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.fraction(0.70), .large])
             .presentationDragIndicator(.visible)
-            .presentationBackgroundInteraction(.enabled)
+            .presentationBackgroundInteraction(.disabled)
         } else {
             EmptyView()
         }
+    }
+
+    private var timeAnchorSheetTitle: String {
+        timeAnchorEditingTransaction?.isNewAnchor == true
+        ? "新增时间锚点"
+        : "编辑时间锚点"
     }
 
     private func openTimeAnchorSheet(
@@ -1006,26 +1146,12 @@ struct MemorySubjectEditorView: View {
             return
         }
 
-        if let originalAnchor = transaction.originalAnchor,
-           let index = timeAnchors.firstIndex(where: {
-               $0.id == transaction.anchorID
-           }) {
-            timeAnchors[index] = originalAnchor
-        } else {
-            timeAnchors.removeAll { $0.id == transaction.anchorID }
-        }
-
-        if let originalSelectedAnchorID =
-            transaction.originalSelectedAnchorID,
-           timeAnchors.contains(where: {
-               $0.id == originalSelectedAnchorID
-           }) {
-            selectedTimeAnchorID = originalSelectedAnchorID
-        } else if !timeAnchors.contains(where: {
-            $0.id == selectedTimeAnchorID
-        }) {
-            selectedTimeAnchorID = timeAnchors.first?.id
-        }
+        let rollback = transaction.rollback(
+            anchors: timeAnchors,
+            selectedAnchorID: selectedTimeAnchorID
+        )
+        timeAnchors = rollback.anchors
+        selectedTimeAnchorID = rollback.selectedAnchorID
 
         timeAnchorEditingTransaction = nil
         editingTimeAnchorID = nil
@@ -1520,6 +1646,8 @@ private struct CompactAnchorDatePicker: View {
 
     @Binding var selection: Date
 
+    private static let wheelHeight: CGFloat = 144
+
     private let calendar = Calendar(identifier: .gregorian)
     private let years = Array(1900...2100)
 
@@ -1573,8 +1701,7 @@ private struct CompactAnchorDatePicker: View {
             ) { update(day: $0) }
             .frame(width: 84)
         }
-        .frame(height: 52)
-        .clipped()
+        .frame(height: Self.wheelHeight)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("锚点日期")
 #else
@@ -1640,9 +1767,13 @@ private struct CompactAnchorDatePicker: View {
     }
 }
 
+private enum SubjectTimeAnchorMetrics {
+
+    static let rowHeight: CGFloat = 64
+}
+
 private struct SubjectTimeAnchorRow: View {
 
-    let index: Int
     let anchor: MemorySubject.TimeAnchor
     let isEditing: Bool
     let canDelete: Bool
@@ -1651,11 +1782,14 @@ private struct SubjectTimeAnchorRow: View {
 
     @State private var showsDeleteConfirmation = false
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     var body: some View {
         rowContent
             .swipeActions(
                 edge: .trailing,
-                allowsFullSwipe: true
+                allowsFullSwipe: false
             ) {
                 if canDelete {
                     Button {
@@ -1663,6 +1797,7 @@ private struct SubjectTimeAnchorRow: View {
                     } label: {
                         Label("删除", systemImage: "trash")
                     }
+                    .tint(.red)
                 }
 
                 Button(action: onConfigure) {
@@ -1697,8 +1832,8 @@ private struct SubjectTimeAnchorRow: View {
             )
             .frame(width: 36, height: 36)
             .overlay {
-                Text("\(index)")
-                    .font(.caption.weight(.semibold))
+                Image(systemName: anchorTypeIconName)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(
                         isEditing
                         ? Color.accentColor
@@ -1710,30 +1845,60 @@ private struct SubjectTimeAnchorRow: View {
                 Text(anchor.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
                 Text(anchorDateText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+
+                if dynamicTypeSize.isAccessibilitySize {
+                    Text(anchor.resolvedAnchorType.displayName)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
             }
 
             Spacer(minLength: 0)
 
-            Text(anchor.resolvedAnchorType.displayName)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(Color.primary.opacity(0.045))
-                )
+            if !dynamicTypeSize.isAccessibilitySize {
+                Text(anchor.resolvedAnchorType.displayName)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color.primary.opacity(0.045))
+                    )
+            }
+
+            Menu {
+                Button(action: onConfigure) {
+                    Label("配置", systemImage: "slider.horizontal.3")
+                }
+
+                if canDelete {
+                    Button {
+                        showsDeleteConfirmation = true
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+            }
+            .accessibilityLabel("时间锚点操作")
 
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 11)
+        .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 8 : 0)
+        .frame(minHeight: SubjectTimeAnchorMetrics.rowHeight)
         .background(Color.white.opacity(0.94))
     }
 
@@ -1745,6 +1910,21 @@ private struct SubjectTimeAnchorRow: View {
                 .day(.defaultDigits)
                 .locale(Locale(identifier: "zh_CN"))
         )
+    }
+
+    private var anchorTypeIconName: String {
+        switch anchor.resolvedAnchorType {
+        case .birthday:
+            return "birthday.cake.fill"
+        case .relationship:
+            return "heart.fill"
+        case .marriage:
+            return "sparkles"
+        case .exam:
+            return "flag.checkered"
+        case .custom:
+            return "calendar"
+        }
     }
 
 }

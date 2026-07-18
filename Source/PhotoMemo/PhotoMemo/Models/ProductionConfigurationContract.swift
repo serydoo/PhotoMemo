@@ -139,8 +139,8 @@ enum ProductionConfigurationSnapshotFactory {
                 configuration.editor.template
                 .normalizedForEditing,
             badge: badge(
-                from:
-                    configuration.presentation.logo.badge
+                from: configuration.presentation.logo,
+                subject: frozenSubject
             ),
             anchor: legacyAnchor,
             memorySubjectText:
@@ -199,10 +199,28 @@ enum ProductionConfigurationSnapshotFactory {
     }
 
     private static func badge(
-        from descriptor:
-            MemoryConfigurationRecord.Presentation.Logo
-            .BadgeDescriptor?
+        from logo: MemoryConfigurationRecord.Presentation.Logo,
+        subject: MemorySubject
     ) -> Badge? {
+        if logo.mode == .subjectAvatar {
+            let imagePath = ConfigurationSubjectAssetMapper()
+                .makeRuntimePath(
+                    subject.identity.avatarBadgeImagePath
+                    ?? subject.identity.avatarImagePath
+                )
+            guard imagePath != nil else {
+                return nil
+            }
+            return Badge(
+                name: OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                imagePath: imagePath,
+                isSystemDefault: false
+            )
+        }
+
+        let descriptor = logo.badge
         guard let descriptor else {
             return nil
         }
@@ -212,7 +230,10 @@ enum ProductionConfigurationSnapshotFactory {
             type: descriptor.type,
             imageName: descriptor.imageName,
             imagePath:
-                descriptor.assetReference?.relativePath,
+                ConfigurationSubjectAssetMapper()
+                .makeRuntimePath(
+                    descriptor.assetReference?.relativePath
+                ),
             systemSymbol: descriptor.systemSymbol,
             isSystemDefault: descriptor.isSystemDefault
         )

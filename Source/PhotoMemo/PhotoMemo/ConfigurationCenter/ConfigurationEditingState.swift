@@ -930,7 +930,9 @@ struct ConfigurationEditingState {
                     $0.id == configuration.id
                 }
             }) {
-            var restoredSubject = subjectRecord.subject
+            var restoredSubject =
+                ConfigurationSubjectAssetMapper()
+                .makeRuntime(subject: subjectRecord.subject)
             if let anchorID = configuration.selectedTimeAnchorID,
                let anchor = restoredSubject.timeAnchor(id: anchorID) {
                 restoredSubject.activeTimeAnchorID = anchor.id

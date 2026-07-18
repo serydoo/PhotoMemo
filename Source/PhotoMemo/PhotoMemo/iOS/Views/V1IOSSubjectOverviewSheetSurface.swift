@@ -139,98 +139,51 @@ struct V1IOSSubjectOverviewSheet: View {
     }
 
     private var basicInfoSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             MemorySubjectEditorView(
                 session: session,
                 mode: .identityOverview
-            ) {
-                basicInfoNavigationTabs
-            }
+            )
+
+            Divider()
+                .padding(.top, 14)
+
+            timeAnchorNavigationRow
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .v1CardChrome()
     }
 
-    private var basicInfoNavigationTabs: some View {
-        HStack(spacing: 8) {
-            Label(
-                "基本资料",
-                systemImage: "person.text.rectangle"
-            )
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Color.accentColor)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 12,
-                    style: .continuous
-                )
-                .fill(Color.accentColor.opacity(0.10))
-            )
+    private var timeAnchorNavigationRow: some View {
+        NavigationLink {
+            timeAnchorConfigurationPage
+        } label: {
+            HStack(spacing: 10) {
+                Text("时间锚点")
+                    .foregroundStyle(.primary)
 
-            NavigationLink {
-                timeAnchorConfigurationPage
-            } label: {
-                Label(
-                    "锚点维护",
-                    systemImage: "calendar.badge.clock"
-                )
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: 12,
-                        style: .continuous
-                    )
-                    .fill(ConfigurationUI.controlBackground.opacity(0.72))
-                )
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: 12,
-                        style: .continuous
-                    )
-                    .stroke(ConfigurationUI.faintHairline)
-                )
+                Spacer(minLength: 12)
+
+                Text("\(subject?.timeAnchors.count ?? 0) 个")
+                    .foregroundStyle(.secondary)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.plain)
+            .font(.body)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
         }
-        .padding(4)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
-            .fill(Color.white.opacity(0.92))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
+        .buttonStyle(.plain)
     }
 
     private var timeAnchorConfigurationPage: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                V1CardSurface(title: "锚点维护") {
-                    MemorySubjectEditorView(
-                        session: session,
-                        mode: .timeAnchors
-                    )
-                }
-            }
-            .padding(.top, 16)
-            .padding(.bottom, 34)
-            .v1AdaptiveScrollContent(
-                horizontalPadding: 18
-            )
-        }
+        MemorySubjectEditorView(
+            session: session,
+            mode: .timeAnchors
+        )
         .scrollDismissesKeyboard(.interactively)
         .background(
             ConfigurationUI.appBackground

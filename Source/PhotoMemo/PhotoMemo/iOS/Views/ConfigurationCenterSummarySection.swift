@@ -11,7 +11,6 @@ struct ConfigurationCenterSummarySection: View {
         LocationDisplayInspectorPresentation
     let selectedLocationValue: String
     let locationDetail: String
-    let isLocationSelectable: Bool
     let selectedLocationOptionID: Binding<String>
     let selectedMemoryDisplayStyle:
         Binding<MemoryAnchorExpressionStyle>
@@ -189,7 +188,6 @@ struct ConfigurationCenterSummarySection: View {
                 .pickerStyle(.menu)
                 .labelsHidden()
                 .controlSize(.small)
-                .disabled(isLocationSelectable == false)
                 .accessibilityLabel("选择位置显示方式")
             }
 

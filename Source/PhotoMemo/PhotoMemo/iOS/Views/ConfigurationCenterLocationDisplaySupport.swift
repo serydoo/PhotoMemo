@@ -4,7 +4,8 @@ import Foundation
 struct ConfigurationCenterLocationDisplaySelectionChange {
 
     let region: CardRegion
-    let mutation: ConfigurationCenterRegionBindingMutation
+    let configuration: ExpressionModuleConfiguration
+    let mutation: ConfigurationCenterRegionBindingMutation?
 }
 
 enum ConfigurationCenterLocationDisplaySupport {
@@ -28,7 +29,7 @@ enum ConfigurationCenterLocationDisplaySupport {
                 )
         }
 
-        return presentation.unavailableValue
+        return presentation.selectedValue
     }
 
     static func summaryDetail(
@@ -36,7 +37,7 @@ enum ConfigurationCenterLocationDisplaySupport {
         selectedValue: String
     ) -> String {
         guard module != nil else {
-            return "当前生效配置里还没有插入位置模块，可在 C 区加入后再切换展示方式。"
+            return "当前未插入位置模块；已预选 \(selectedValue)，插入后生效。"
         }
 
         return "当前使用 \(selectedValue) 作为位置展示方式。"
@@ -47,19 +48,22 @@ enum ConfigurationCenterLocationDisplaySupport {
         region: CardRegion,
         module: IOSInsertedModule?,
         adapter: ConfigurationCenterRegionBindingAdapter
-    ) -> ConfigurationCenterLocationDisplaySelectionChange? {
-        guard let module else {
-            return nil
-        }
+    ) -> ConfigurationCenterLocationDisplaySelectionChange {
+        let configuration =
+            LocationDisplayInspectorPresenter
+            .configuration(for: optionID)
 
         return ConfigurationCenterLocationDisplaySelectionChange(
             region: region,
-            mutation: adapter.updateInsertedModule(
-                module,
-                expressionConfiguration:
-                    LocationDisplayInspectorPresenter
-                    .configuration(for: optionID)
-            )
+            configuration: configuration,
+            mutation:
+                module.map {
+                    adapter.updateInsertedModule(
+                        $0,
+                        expressionConfiguration:
+                            configuration
+                    )
+                }
         )
     }
 }

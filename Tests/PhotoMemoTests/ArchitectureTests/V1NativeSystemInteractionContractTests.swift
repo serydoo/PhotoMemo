@@ -37,13 +37,14 @@ struct V1NativeSystemInteractionContractTests {
         #expect(source.contains("allowsFullSwipe: false"))
     }
 
-    @Test("configuration unavailable controls expose native disabled states")
+    @Test("configuration controls keep native states while location stays preselectable")
     func configurationUnavailableControlsUseNativeStates() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
         )
 
-        #expect(source.contains(".disabled(!isLocationSelectable)"))
+        #expect(!source.contains(".disabled(!isLocationSelectable)"))
+        #expect(source.contains(".saveLocationDisplayConfiguration("))
         #expect(source.contains("ProgressView()"))
         #expect(source.contains(".buttonStyle(.bordered)"))
     }

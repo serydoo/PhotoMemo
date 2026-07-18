@@ -5,14 +5,14 @@ import Testing
 @Suite("V1 home configuration action contract")
 struct V1HomeConfigurationActionContractTests {
 
-    @Test("configuration rows use native full-swipe delete confirmation")
+    @Test("configuration rows use native non-full-swipe actions")
     func rowSwipeActionsExposeSaveAndDelete() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
         )
 
         #expect(source.contains(".swipeActions("))
-        #expect(source.contains("allowsFullSwipe: true"))
+        #expect(source.contains("allowsFullSwipe: false"))
         let normalizedSource = source.replacingOccurrences(
             of: "\\s+",
             with: " ",
@@ -31,6 +31,8 @@ struct V1HomeConfigurationActionContractTests {
         #expect(!source.contains("V1HomeConfigurationSwipePresenter"))
         #expect(source.contains("accessibilityLabel(\"保存配置到本地库\")"))
         #expect(source.contains("accessibilityLabel(\"删除配置\")"))
+        #expect(source.contains("accessibilityLabel(\"配置操作\")"))
+        #expect(source.contains("Image(systemName: \"ellipsis.circle\")"))
         #expect(source.contains("删除这个配置？"))
     }
 
@@ -42,11 +44,28 @@ struct V1HomeConfigurationActionContractTests {
         let subjectSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
+        let subjectSheetSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
 
         #expect(homeSource.contains("ForEach(memoryPresets)"))
-        #expect(!homeSource.contains("List(memoryPresets)"))
-        #expect(subjectSource.contains("Array(timeAnchors.enumerated())"))
-        #expect(!subjectSource.contains("List {"))
+        #expect(subjectSource.contains("private var timeAnchorListEditor"))
+        #expect(subjectSource.contains("List {"))
+        #expect(
+            homeSource.range(
+                of: #"\bList\s*(?:\{|\()"#,
+                options: .regularExpression
+            ) == nil
+        )
+        let timeAnchorPageStart = try #require(
+            subjectSheetSource.range(
+                of: "private var timeAnchorConfigurationPage"
+            )
+        )
+        let timeAnchorPageSource = String(
+            subjectSheetSource[timeAnchorPageStart.lowerBound...]
+        )
+        #expect(!timeAnchorPageSource.contains("ScrollView"))
     }
 
     @Test("configuration card footer opens the current subject local library")
@@ -92,6 +111,27 @@ struct V1HomeConfigurationActionContractTests {
             )?.lowerBound
         )
         #expect(backgroundIndex < memoryObjectIndex)
+    }
+
+    @Test("home development background can be permanently dismissed")
+    func developmentBackgroundCanBeDismissed() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+
+        #expect(
+            source.contains(
+                "@AppStorage(\"photomemo.v1.developmentBackgroundDismissed\")"
+            )
+        )
+        #expect(source.contains("if !hasDismissedDevelopmentBackground"))
+        #expect(source.contains("hasDismissedDevelopmentBackground = true"))
+        #expect(source.contains("Image(systemName: \"xmark\")"))
+        #expect(source.contains("ConfigurationUI.controlBackground"))
+        #expect(source.contains("ConfigurationUI.faintHairline"))
+        #expect(source.contains(".frame(width: 44, height: 44)"))
+        #expect(source.contains("accessibilityLabel(\"关闭开发背景说明\")"))
+        #expect(source.contains("关闭后仍可在设置中重新查看"))
     }
 
     @Test("home surfaces local backup and deletion feedback")

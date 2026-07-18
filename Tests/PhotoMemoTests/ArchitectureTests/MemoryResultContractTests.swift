@@ -6,6 +6,117 @@ import Testing
 @Suite("MemoryResult contract")
 struct MemoryResultContractTests {
 
+    @Test("Expression subject resolver selects and normalizes each configured source")
+    func expressionSubjectResolverSelectsConfiguredSource() {
+        func resolve(
+            _ source: MemorySubjectExpressionSubjectSource
+        ) -> String {
+            MemorySubject.resolveExpressionSubjectText(
+                source: source,
+                displayName: "  途途  ",
+                shortName: "  宝贝儿子  ",
+                relationshipRole: "  儿子  ",
+                relationshipLabel: "  妈妈眼里的宝宝  "
+            )
+        }
+
+        #expect(resolve(.displayName) == "途途")
+        #expect(resolve(.shortName) == "宝贝儿子")
+        #expect(resolve(.relationshipRole) == "儿子")
+        #expect(resolve(.relationshipLabel) == "妈妈眼里的宝宝")
+    }
+
+    @Test("Expression subject resolver falls back to display name when selected field is empty")
+    func expressionSubjectResolverFallsBackToDisplayName() {
+        let result = MemorySubject.resolveExpressionSubject(
+            source: .relationshipLabel,
+            displayName: "  途途  ",
+            shortName: "宝贝儿子",
+            relationshipRole: "儿子",
+            relationshipLabel: "  \n  "
+        )
+
+        #expect(result.text == "途途")
+        #expect(result.source == .displayName)
+    }
+
+    @Test("Expression subject resolver preserves the existing fallback chain")
+    func expressionSubjectResolverPreservesFallbackChain() {
+        #expect(
+            MemorySubject.resolveExpressionSubjectText(
+                source: .displayName,
+                displayName: "",
+                shortName: "  小宝  ",
+                relationshipRole: "宝宝",
+                relationshipLabel: "专属称呼"
+            ) == "小宝"
+        )
+        #expect(
+            MemorySubject.resolveExpressionSubjectText(
+                source: .shortName,
+                displayName: "",
+                shortName: "",
+                relationshipRole: "  宝宝  ",
+                relationshipLabel: "专属称呼"
+            ) == "宝宝"
+        )
+        #expect(
+            MemorySubject.resolveExpressionSubjectText(
+                source: .relationshipRole,
+                displayName: "",
+                shortName: "",
+                relationshipRole: "",
+                relationshipLabel: "  专属称呼  "
+            ) == "专属称呼"
+        )
+        #expect(
+            MemorySubject.resolveExpressionSubjectText(
+                source: .relationshipLabel,
+                displayName: "  ",
+                shortName: "\n",
+                relationshipRole: "\t",
+                relationshipLabel: ""
+            ) == "记忆对象"
+        )
+    }
+
+    @Test("Memory subject instance delegates expression text resolution to the shared resolver")
+    func memorySubjectInstanceDelegatesExpressionResolution() {
+        let subject = MemorySubject(
+            identity: .init(
+                displayName: "  途途  ",
+                shortName: ""
+            ),
+            relationship: .init(
+                role: "儿子",
+                label: "  "
+            ),
+            referenceDate: Date(timeIntervalSince1970: 0),
+            expressionSubjectSource: .relationshipLabel,
+            behavior: .init(
+                primaryAnchor: "",
+                iconStrategy: .autoMatch,
+                badgeStrategy: .autoMatch,
+                memoryExpression: .init(
+                    title: "",
+                    blocks: []
+                )
+            ),
+            decorations: []
+        )
+
+        let resolvedDraft = MemorySubject.resolveExpressionSubjectText(
+            source: subject.expressionSubjectSource,
+            displayName: subject.identity.displayName,
+            shortName: subject.identity.shortName,
+            relationshipRole: subject.relationship.role,
+            relationshipLabel: subject.relationship.label
+        )
+
+        #expect(subject.resolvedExpressionSubjectText == resolvedDraft)
+        #expect(resolvedDraft == "途途")
+    }
+
     @Test("Configuration session projects MemoryResult through presentation adapter")
     func configurationSessionProjectsMemoryResultThroughPresentationAdapter() throws {
         let source =

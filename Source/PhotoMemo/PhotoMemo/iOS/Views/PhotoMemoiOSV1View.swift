@@ -148,6 +148,9 @@ struct PhotoMemoiOSV1View: View {
     private var shouldSaveSubjectLibrary = true
 
     @State
+    private var isPersistingSubjectChanges = false
+
+    @State
     private var activeConfigurationStatus:
         V1ConfigurationStatus = .idle
 
@@ -787,37 +790,7 @@ struct PhotoMemoiOSV1View: View {
 
                     applySubjectFlowPatch(patch)
                 },
-                onPersistSubjectChanges: {
-                    V1SubjectLibraryPersistenceCoordinator
-                        .persistSubjectLibrary(
-                            subjects: session.state.subjects,
-                            selectedSubjectID:
-                                session.state.selectedSubjectID,
-                            selectedSubject:
-                                session.state.selectedSubject,
-                            memoryPresets:
-                                session.state.memoryPresets,
-                            selectedMemoryPresetID:
-                                session
-                                .state
-                                .selectedMemoryPresetID,
-                            shouldSaveSubjectLibrary:
-                                shouldSaveSubjectLibrary,
-                            configurationCoordinator:
-                                configurationCoordinator
-                        )
-
-                    if let anchor =
-                        session
-                        .state
-                        .selectedSubject?
-                        .primaryTimeAnchor {
-                        birthdayDate = anchor.date
-                    }
-
-                    activeConfigurationStatus = .subjectSynced
-                    refreshDynamicPreview()
-                }
+                onPersistSubjectChanges: persistCurrentSubjectChanges
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
@@ -1409,8 +1382,6 @@ struct PhotoMemoiOSV1View: View {
                     module: locationDisplayModule,
                     selectedValue: selectedLocationValue
                 ),
-            isLocationSelectable:
-                locationDisplayModule != nil,
             selectedLocationOptionID:
                 locationDisplayOptionBinding,
             selectedMemoryDisplayStyle:
@@ -2070,6 +2041,67 @@ struct PhotoMemoiOSV1View: View {
                     from:
                         entryFlowState
                 )
+        }
+    }
+
+    @MainActor
+    private func persistCurrentSubjectChanges() {
+        guard !isPersistingSubjectChanges,
+              let subject = session.state.selectedSubject else {
+            return
+        }
+
+        V1SubjectLibraryPersistenceCoordinator
+            .persistSubjectLibrary(
+                subjects: session.state.subjects,
+                selectedSubjectID: session.state.selectedSubjectID,
+                selectedSubject: subject,
+                memoryPresets: session.state.memoryPresets,
+                selectedMemoryPresetID:
+                    session.state.selectedMemoryPresetID,
+                shouldSaveSubjectLibrary: shouldSaveSubjectLibrary,
+                configurationCoordinator: configurationCoordinator
+            )
+
+        if let anchor = subject.primaryTimeAnchor {
+            birthdayDate = anchor.date
+        }
+        activeConfigurationStatus = .subjectSynced
+        refreshDynamicPreview()
+
+        guard let aggregate = session.state.configurationLibrary,
+              let configurationCoordinator,
+              let candidate = V1LocalConfigurationLibraryPresenter
+                .updatingSubject(
+                    subject: subject,
+                    in: aggregate
+                ),
+              candidate != aggregate else {
+            return
+        }
+
+        isPersistingSubjectChanges = true
+        activeConfigurationStatus = .saving
+        Task { @MainActor in
+            defer {
+                isPersistingSubjectChanges = false
+            }
+
+            do {
+                let receipt = try await configurationCoordinator
+                    .saveConfigurationLibrary(candidate)
+                var durableCandidate = candidate
+                durableCandidate.revision = receipt.revision
+                session.updateConfigurationLibraryReference(
+                    durableCandidate
+                )
+                activeConfigurationStatus = .subjectSynced
+                refreshDynamicPreview()
+            } catch {
+                activeConfigurationStatus = .failure(
+                    message: "记忆对象保存失败，请重试。"
+                )
+            }
         }
     }
 
@@ -3076,10 +3108,16 @@ struct PhotoMemoiOSV1View: View {
                     )
             },
             set: { optionID in
-                locationDisplayConfiguration =
+                let configuration =
                     LocationDisplayInspectorPresenter
                     .configuration(
                         for: optionID
+                    )
+                locationDisplayConfiguration =
+                    configuration
+                _ = configurationCoordinator?
+                    .saveLocationDisplayConfiguration(
+                        configuration
                     )
                 activeConfigurationStatus = .dirty
                 refreshDynamicPreview()
@@ -3865,8 +3903,6 @@ private struct V1ConfigurationOptionList: View {
             }
             .accessibilityLabel(locationPresentation.title)
             .accessibilityValue(selectedLocationValue)
-            .disabled(!isLocationSelectable)
-            .opacity(isLocationSelectable ? 1 : 0.56)
         }
     }
 

@@ -31,6 +31,12 @@ enum MemorySubjectExpressionSubjectSource:
     }
 }
 
+struct MemorySubjectExpressionSubjectResolution: Equatable {
+
+    let text: String
+    let source: MemorySubjectExpressionSubjectSource?
+}
+
 struct MemorySubject:
     Identifiable,
     Codable,
@@ -154,41 +160,88 @@ extension MemorySubject {
     }
 
     var resolvedExpressionSubjectText: String {
+        resolvedExpressionSubject.text
+    }
+
+    var resolvedExpressionSubject:
+        MemorySubjectExpressionSubjectResolution {
+        Self.resolveExpressionSubject(
+            source: expressionSubjectSource,
+            displayName: identity.displayName,
+            shortName: identity.shortName,
+            relationshipRole: relationship.role,
+            relationshipLabel: relationship.label
+        )
+    }
+
+    static func resolveExpressionSubjectText(
+        source: MemorySubjectExpressionSubjectSource,
+        displayName: String,
+        shortName: String,
+        relationshipRole: String,
+        relationshipLabel: String
+    ) -> String {
+        resolveExpressionSubject(
+            source: source,
+            displayName: displayName,
+            shortName: shortName,
+            relationshipRole: relationshipRole,
+            relationshipLabel: relationshipLabel
+        ).text
+    }
+
+    static func resolveExpressionSubject(
+        source: MemorySubjectExpressionSubjectSource,
+        displayName: String,
+        shortName: String,
+        relationshipRole: String,
+        relationshipLabel: String
+    ) -> MemorySubjectExpressionSubjectResolution {
         let candidates: [MemorySubjectExpressionSubjectSource: String] = [
             .displayName:
-                identity.displayName,
+                displayName,
             .shortName:
-                identity.shortName,
+                shortName,
             .relationshipRole:
-                relationship.role,
+                relationshipRole,
             .relationshipLabel:
-                relationship.label
+                relationshipLabel
         ]
 
         let preferred =
             normalizedOptionalText(
                 candidates[
-                    expressionSubjectSource
+                    source
                 ]
             )
 
         if let preferred {
-            return preferred
+            return MemorySubjectExpressionSubjectResolution(
+                text: preferred,
+                source: source
+            )
         }
 
-        return normalizedOptionalText(
-            identity.displayName
+        let fallbackSources: [MemorySubjectExpressionSubjectSource] = [
+            .displayName,
+            .shortName,
+            .relationshipRole,
+            .relationshipLabel
+        ]
+
+        for fallbackSource in fallbackSources {
+            if let text = normalizedOptionalText(candidates[fallbackSource]) {
+                return MemorySubjectExpressionSubjectResolution(
+                    text: text,
+                    source: fallbackSource
+                )
+            }
+        }
+
+        return MemorySubjectExpressionSubjectResolution(
+            text: "记忆对象",
+            source: nil
         )
-        ?? normalizedOptionalText(
-            identity.shortName
-        )
-        ?? normalizedOptionalText(
-            relationship.role
-        )
-        ?? normalizedOptionalText(
-            relationship.label
-        )
-        ?? "记忆对象"
     }
 
     var primaryTimeAnchor: TimeAnchor? {
@@ -221,7 +274,7 @@ extension MemorySubject {
         }
     }
 
-    private func normalizedOptionalText(
+    private static func normalizedOptionalText(
         _ text: String?
     ) -> String? {
         guard let text else {

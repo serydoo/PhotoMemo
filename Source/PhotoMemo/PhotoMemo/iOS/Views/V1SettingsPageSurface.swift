@@ -43,29 +43,42 @@ struct V1SettingsPageSurface: View {
     private var overviewSection: some View {
         V1CardSurface(title: "为什么是时光记") {
             VStack(alignment: .leading, spacing: 12) {
-                Text("保存记忆，不只是添加信息")
+                Text("让照片知道，它位于谁的人生里")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("大多数照片水印 App 的目标是给照片增加时间、地点和相机参数；时光记更关心这些信息在一段人生记忆里代表什么。")
+                Text("陪伴孩子长大的过程中，我们留下了很多很多照片。时光记最初只是想回答一个问题：打开照片时，能不能马上知道那一天，孩子多大？")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("例如，一张孩子的照片不仅有拍摄时间和地点，还可以呈现当时的年龄、距离生日多久，以及所处的成长阶段。不同预设可以采用不同表达，让照片更像一张记忆记录卡，而不是一张带水印的图片。")
+                Text("最初的时间锚点，是儿子出生的那一天。后来我们逐渐发现，纪念日和未来的重要日期，也都可以成为时间锚点。一张照片不只有时间、地点和相机参数，还可以呈现年龄、距离重要日子多久，以及它位于一段人生的什么位置。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("所有计算都在设备本地完成：不上传照片、不依赖云端 AI、不主动降低画质，并尽可能保留原始照片信息。")
+                Text("因此，时光记想做的不是简单添加水印，而是把照片变成更容易读懂的记忆记录。不同预设和表达，可以让同一段时间关系以更自然、更温暖或更简洁的方式出现。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("时光记希望成为一款帮助人们长期整理、保存和回忆生活的影像记录工具，而不只是一个水印工具。")
+                Text("所有核心计算都在设备本地完成：不上传照片、不依赖云端 AI、不修改原图，并尽可能保留原始照片信息。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("希望它能陪大家长期记录生活、享受记忆。欢迎在日常使用中提出反馈和建议，也欢迎在小红书等公开渠道分享体验，邀请更多人一起参与。")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                Label(
+                    "愿大家都能享受这些被时间标记的记忆。",
+                    systemImage: "sparkles"
+                )
+                .font(.caption)
+                .foregroundStyle(Color.accentColor)
+                .fixedSize(horizontal: false, vertical: true)
 
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 8) {

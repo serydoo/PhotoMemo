@@ -83,12 +83,15 @@ enum V1LocalConfigurationLibraryPresenter {
         in aggregate: ConfigurationLibraryRecord?
     ) -> ConfigurationLibraryRecord? {
         if let aggregate,
-           let prepared = preparingCurrentConfiguration(
+           let preparedConfiguration = preparingCurrentConfiguration(
                configurationID,
                subjectID: subject.id,
                in: aggregate
            ) {
-            return prepared
+            return updatingSubject(
+                subject: subject,
+                in: preparedConfiguration
+            )
         }
 
         guard seedConfiguration.id == configurationID else {
@@ -103,20 +106,59 @@ enum V1LocalConfigurationLibraryPresenter {
         if let subjectIndex = candidate.subjects.firstIndex(
             where: { $0.subject.id == subject.id }
         ) {
-            candidate.subjects[subjectIndex].subject = subject
+            guard let mapped = try? ConfigurationSubjectAssetMapper()
+                .makePortable(
+                    subject: subject,
+                    manifest: candidate.subjects[subjectIndex]
+                        .assetManifest
+                ) else {
+                return nil
+            }
+            candidate.subjects[subjectIndex].subject = mapped.subject
+            candidate.subjects[subjectIndex].assetManifest = mapped.manifest
             candidate.subjects[subjectIndex]
                 .configurations.append(seedConfiguration)
         } else {
+            guard let mapped = try? ConfigurationSubjectAssetMapper()
+                .makePortable(
+                    subject: subject,
+                    manifest: .init(entries: [])
+                ) else {
+                return nil
+            }
             candidate.subjects.append(
                 .init(
-                    subject: subject,
+                    subject: mapped.subject,
                     configurations: [seedConfiguration],
-                    assetManifest: .init(entries: [])
+                    assetManifest: mapped.manifest
                 )
             )
         }
         candidate.activeSubjectID = subject.id
         candidate.activeConfigurationID = configurationID
+        return candidate
+    }
+
+    static func updatingSubject(
+        subject: MemorySubject,
+        in aggregate: ConfigurationLibraryRecord
+    ) -> ConfigurationLibraryRecord? {
+        var candidate = aggregate
+        guard let subjectIndex = candidate.subjects.firstIndex(
+            where: { $0.subject.id == subject.id }
+        ) else {
+            return nil
+        }
+        guard let mapped = try? ConfigurationSubjectAssetMapper()
+            .makePortable(
+                subject: subject,
+                manifest: candidate.subjects[subjectIndex].assetManifest
+            ) else {
+            return nil
+        }
+
+        candidate.subjects[subjectIndex].subject = mapped.subject
+        candidate.subjects[subjectIndex].assetManifest = mapped.manifest
         return candidate
     }
 

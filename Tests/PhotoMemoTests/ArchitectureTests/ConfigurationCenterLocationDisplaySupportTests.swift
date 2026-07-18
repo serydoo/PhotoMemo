@@ -6,8 +6,8 @@ import Testing
 @Suite("Configuration center location display support")
 struct ConfigurationCenterLocationDisplaySupportTests {
 
-    @Test("summary value falls back to the unavailable copy when the location module is missing")
-    func summaryValueFallsBackToUnavailableCopy() {
+    @Test("summary value defaults to automatic compatibility before module insertion")
+    func summaryValueDefaultsBeforeModuleInsertion() {
         let presentation =
             LocationDisplayInspectorPresenter.presentation
 
@@ -17,15 +17,15 @@ struct ConfigurationCenterLocationDisplaySupportTests {
                     module: nil,
                     presentation: presentation
                 )
-            == presentation.unavailableValue
+            == presentation.selectedValue
         )
         #expect(
             ConfigurationCenterLocationDisplaySupport
                 .summaryDetail(
                     module: nil,
-                    selectedValue: presentation.unavailableValue
+                    selectedValue: presentation.selectedValue
                 )
-                .contains("还没有插入位置模块")
+                .contains("插入后生效")
         )
     }
 
@@ -52,7 +52,7 @@ struct ConfigurationCenterLocationDisplaySupportTests {
                     module: nil,
                     selectedValue: "城市 · 区县"
                 )
-                .contains("还没有插入位置模块")
+                .contains("插入后生效")
         )
     }
 
@@ -132,7 +132,7 @@ struct ConfigurationCenterLocationDisplaySupportTests {
                     .init(previewHelper: helper)
             )
 
-        let change = try #require(
+        let change =
             ConfigurationCenterLocationDisplaySupport
                 .selectionChange(
                     optionID: "provinceCityDistrict",
@@ -140,18 +140,119 @@ struct ConfigurationCenterLocationDisplaySupportTests {
                     module: insertedModule,
                     adapter: adapter
                 )
-        )
+        let mutation = try #require(change.mutation)
         let updatedModule = try #require(
-            change.mutation.store.modules(for: .slotC).first
+            mutation.store.modules(for: .slotC).first
         )
 
         #expect(change.region == CardRegion.slotC)
         #expect(
-            updatedModule.expressionConfiguration
+            change.configuration
+            == LocationDisplayInspectorPresenter
+                .configuration(for: "provinceCityDistrict")
+        )
+        #expect(
+            mutation.store.modules(for: .slotC)
+                .first?
+                .expressionConfiguration
             == LocationDisplayInspectorPresenter
                 .configuration(for: "provinceCityDistrict")
         )
         #expect(updatedModule.value == "示例省 · 示例市 · 示例区")
+    }
+
+    @Test("selection change preserves a display preselection before the location module is inserted")
+    func selectionChangePreselectsWithoutLocationModule() throws {
+        let subject = ConfigurationCenterState.mock.selectedSubject
+        let helper =
+            ConfigurationCenterPreviewCompositionHelper(
+                context: .init(subject: subject)
+            )
+        let adapter =
+            ConfigurationCenterRegionBindingAdapter(
+                region: .slotC,
+                subject: subject,
+                store: ConfigurationCenterRegionDraftStore(),
+                coordinator:
+                    .init(previewHelper: helper)
+            )
+
+        let change = ConfigurationCenterLocationDisplaySupport
+            .selectionChange(
+                optionID: "cityDistrict",
+                region: .slotC,
+                module: nil,
+                adapter: adapter
+            )
+
+        #expect(change.region == CardRegion.slotC)
+        #expect(
+            change.configuration
+            == LocationDisplayInspectorPresenter
+                .configuration(for: "cityDistrict")
+        )
+        #expect(change.mutation == nil)
+    }
+
+    @Test("configuration center location pickers stay enabled before module insertion")
+    func locationPickersStayEnabledBeforeModuleInsertion() throws {
+        let summarySource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterSummarySection.swift"
+        )
+        let detailSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterDetailSupportPanels.swift"
+        )
+        let centerSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift"
+        )
+        let legacySource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        #expect(!summarySource.contains(".disabled(isLocationSelectable == false)"))
+        #expect(!detailSource.contains(".disabled(locationModule == nil)"))
+        #expect(!legacySource.contains(".disabled(!isLocationSelectable)"))
+        #expect(
+            centerSource.contains(
+                "selectedLocationDisplayConfiguration"
+            )
+        )
+        #expect(
+            centerSource.contains(
+                ".saveLocationDisplayConfiguration("
+            )
+        )
+        #expect(
+            centerSource.contains(
+                ".onAppear {"
+            )
+        )
+        #expect(
+            centerSource.contains(
+                "return selectedLocationDisplayConfiguration"
+            )
+        )
+        #expect(
+            legacySource.contains(
+                ".saveLocationDisplayConfiguration("
+            )
+        )
+    }
+}
+
+private extension ConfigurationCenterLocationDisplaySupportTests {
+
+    func sourceText(_ relativePath: String) throws -> String {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(
+            contentsOf:
+                repositoryRoot.appendingPathComponent(relativePath),
+            encoding: .utf8
+        )
     }
 }
 #endif
