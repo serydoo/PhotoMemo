@@ -347,6 +347,16 @@ struct V1IOSSubjectOverviewPresenterTests {
                 ".disabled(expressionSubjectSourceValue(for: source) == nil)"
             )
         )
+        #expect(
+            expressionSource.contains(
+                "ConfigurationUI.selectedBackground"
+            )
+        )
+        #expect(
+            !expressionSource.contains(
+                ".stroke(Color.accentColor.opacity(0.22))"
+            )
+        )
         #expect(!expressionSource.contains("expressionSubjectResult"))
         #expect(!expressionSource.contains("Text(\"主体名称\")"))
         #expect(!expressionSource.contains("Text(\"当前展示\")"))
@@ -388,6 +398,7 @@ struct V1IOSSubjectOverviewPresenterTests {
 
         #expect(fieldSource.contains(".textFieldStyle(.plain)"))
         #expect(!fieldSource.contains("RoundedRectangle("))
+        #expect(!panelSource.contains("RoundedRectangle("))
     }
 }
 

@@ -413,8 +413,9 @@ Evidence:
   `v1-checkpoint-20260702` checkpoint was merged into it.
 - `main` now also contains the Live Photo main app picker release candidate via
   merge commit `c6b97d99`.
-- Main App Picker Live Photo is release-candidate scope; Share Extension Live
-  Photo remains a known limitation and future production-validation item.
+- Main App Picker and Share Extension Live Photo flows have both succeeded in
+  signed-device validation. Broader production certification remains an
+  evidence-scope task, not a claim that the flow is unavailable.
 - The temporary Live Photo integration worktree and local
   `codex/ios-livephoto-internal-test` branch have been removed after merge.
 - Post-merge release verification has passed from the canonical `main`
@@ -13678,17 +13679,17 @@ device build still reproduces the blocker.
 - 已插入位置模块时仍沿用原区域 mutation、模块表达配置更新和预览刷新链路；Renderer、位置计算和输出语义未修改。
 - TDD 红灯确认旧返回模型无法表达无模块预选；最终位置支持、配置应用、Presenter 和配置迁移聚焦测试通过，iOS Simulator Debug 构建和 git diff --check 通过，最终静态复核无阻断、P1 或 P2。
 
-## 2026-07-18 v1.7.1 真机确认与文件收口
+## 2026-07-18 1.7 (7) 真机确认与文件收口
 
 - 用户已完成 iPhone7 基本真机检查，当前未发现阻断问题；设备内仍为覆盖安装的“时光记 1.7 (7)”，没有清除原有配置数据。
 - 首轮完整 `PhotoMemoTests` 暴露两项 Live Photo 队列等待时序波动；隔离证据确认产品队列仍能完成，失败来自测试辅助函数仅等待约 1 至 2 秒。
 - Live Photo 测试轮询上限统一调整为约 5 秒，不修改产品队列、媒体处理、Renderer、Export 或 Photo Library 行为；该测试组最终 12 项全部通过。
 - 最终完整 `PhotoMemoTests` 共 976 项：975 项通过、0 项失败、1 项既有跳过。
-- 正式更新说明记录在 `Docs/07_Releases/2026-07-18-v1.7.1-home-subject-anchor-and-location.md`。
+- 正式更新说明记录在 `Docs/07_Releases/2026-07-18-1.7-build-7-home-subject-anchor-and-location.md`。
 - BrandMark 继续保持研究态，其资源、机制规格、计划以及研究索引不纳入本次产品候选。
 - 用户已完成真机确认并批准开始 GitHub 同步；仅提交非 BrandMark 产品改动、测试和发布文档。
 
-## 2026-07-18 v1.7.1 提交前审查补强
+## 2026-07-18 1.7 (7) 提交前审查补强
 
 - 多模型只读审查在暂存前发现：对象页保存只更新旧对象库，首页配置行与完整对象编辑器锚点行的操作仍可能依赖不存在的系统 `List` 上下文。
 - 对象页保存现在同步更新 `ConfigurationLibraryRecord` 中的对象快照和头像资产清单，保存成功后恢复最新持久化 revision；内容未变化时跳过重复聚合保存。
@@ -13697,3 +13698,24 @@ device build still reproduces the blocker.
 - 最终完整 `PhotoMemoTests` 共 977 项：976 项通过、0 项失败、1 项既有 ImageIO 手工回归跳过；iOS Simulator Debug 构建通过。
 - 最新修正版完成 iPhone7 签名构建和覆盖安装，未卸载 App、未清除数据；设备解锁后再次自动启动成功。
 - 该补强不修改 Renderer、Metadata、Export、Share Extension、Photo Library 或 Layout Engine。
+
+## 2026-07-18 记忆对象资料区视觉层级收口
+
+- 用户提供的 `IMG_1402.jpeg` 被确认为修改前的当前效果证据，不是目标参考图；本轮不做截图仿制，也不重新设计 IA-002 Configuration Center 架构。
+- 修改范围仅限记忆对象编辑页的资料区视觉层级：移除四行基础资料外层的内嵌白色圆角卡片、描边和裁切，让“对象名称、昵称、与我的关系、专属称呼”直接成为外层对象卡片中的连续原生分组行。
+- “表达称呼”继续保留可选择状态和蓝色语义，但由自定义浅蓝填充加 accent 描边，收敛为统一的 `ConfigurationUI.selectedBackground`，减少重复边界和非原生视觉重量。
+- 未修改 `MemorySubject` 状态、编辑焦点、表达来源解析、头像选择与持久化、时间锚点、配置保存，以及 Renderer、Metadata、Export、Share Extension、Photo Library 和 Layout Engine。
+- `V1IOSSubjectOverviewPresenterTests` 增加结构契约，约束资料区不再引入 `RoundedRectangle`，并约束表达称呼使用统一选中背景且不恢复旧 accent 描边。
+- 第一轮聚焦测试 8 项通过，第一轮 iOS Simulator Debug 构建通过；最终针对 QA iPhone SE 3 的 arm64 Simulator 构建也通过。Xcode 27 中间出现过资源和 SDK 模块准备耗时异常，但没有产生源码编译错误。
+- 最新 arm64 开发签名包已成功构建并覆盖安装到 `iPhone7`，设备确认仍为“时光记 1.7 (7)”，未卸载 App、未清除现有配置数据。自动启动因设备锁屏被拒绝，用户随后完成真机查看并确认整体效果比修改前明显改善。
+- 本轮视觉结果已接受，不再继续做零散属性级微调。以后视觉优化先记录当前证据、目标、完整修改集合和验证计划，再集中完成一个有边界的 UI pass；代码实现仍保持可测试的小步交付。
+
+## 2026-07-19 首页意见反馈模块
+
+- 先记录后实施的产品说明位于
+  `Docs/superpowers/plans/2026-07-19-home-feedback-section.md`；该模块属于当前 TestFlight 反馈阶段的可移除首页联系入口，不改变 IA-002 或生产处理链路。
+- 首页“我的配置”后新增固定的“意见反馈”卡片。卡片默认展开，折叠后仍保留标题和“直接联系开发者”行；折叠状态使用本机 `AppStorage` 持久保存。
+- 展开内容明确提示：在小红书、抖音搜索 `MemoMark` 可联系开发者；QQ 交流群号为 `955680366`；欢迎交流使用体验、反馈问题和提出定制意见。TestFlight 内置反馈继续保留，设置页既有 TestFlight、邮件和 GitHub Issues 渠道未修改。
+- 模块隔离为 `V1HomeFeedbackSection` 并只在 `V1HomePageSurface` 调用一次；未来结束当前阶段时，删除该组件、对应测试和单一调用点即可，不会牵动首页其他状态或服务。
+- TDD 红灯确认新首页契约缺失，绿灯后 `V1HomeConfigurationActionContractTests` 8 项全部通过。验证内容包括位置、单一入口、折叠持久化键、渠道文案、无固定高度、无外链依赖、辅助功能标签和值，以及 TestFlight 共存。
+- `PhotoMemoiOS` iPhone7 arm64 签名构建通过，最新版已覆盖安装且远程启动成功；没有清除设备中的既有 App 数据。仍需用户在真机手动检查展开/折叠的视觉、长文字换行，以及关闭 App 后折叠状态是否符合预期。

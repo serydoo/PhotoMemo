@@ -134,6 +134,57 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains("关闭后仍可在设置中重新查看"))
     }
 
+    @Test("home keeps one collapsible direct feedback card alongside TestFlight feedback")
+    func homeKeepsCollapsibleDirectFeedbackCard() throws {
+        let homeSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let feedbackSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomeFeedbackSection.swift"
+        )
+        let settingsSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let normalizedHome = homeSource.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+
+        let presetIndex = try #require(
+            normalizedHome.range(of: "currentPresetSection")?.lowerBound
+        )
+        let feedbackIndex = try #require(
+            normalizedHome.range(of: "V1HomeFeedbackSection()")?.lowerBound
+        )
+        #expect(presetIndex < feedbackIndex)
+        #expect(
+            normalizedHome.components(
+                separatedBy: "V1HomeFeedbackSection()"
+            ).count - 1 == 1
+        )
+
+        #expect(feedbackSource.contains("V1CardSurface(title: \"意见反馈\")"))
+        #expect(
+            feedbackSource.contains(
+                "@AppStorage(\"photomemo.v1.homeFeedbackExpanded\")"
+            )
+        )
+        #expect(feedbackSource.contains("private var isExpanded = true"))
+        #expect(feedbackSource.contains("isExpanded.toggle()"))
+        #expect(feedbackSource.contains("小红书、抖音"))
+        #expect(feedbackSource.contains("MemoMark"))
+        #expect(feedbackSource.contains("955680366"))
+        #expect(feedbackSource.contains("定制意见"))
+        #expect(feedbackSource.contains("TestFlight"))
+        #expect(feedbackSource.contains(".frame(minHeight: 44)"))
+        #expect(feedbackSource.contains("accessibilityLabel"))
+        #expect(feedbackSource.contains("accessibilityValue"))
+        #expect(!feedbackSource.contains("frame(height:"))
+        #expect(!feedbackSource.contains("openURL"))
+        #expect(settingsSource.contains("TestFlight 反馈"))
+    }
+
     @Test("home surfaces local backup and deletion feedback")
     func homeSurfacesConfigurationActionFeedback() throws {
         let rootSource = try sourceText(

@@ -195,6 +195,30 @@ Preferred workflow for non-trivial changes:
 4. `/test`
 5. `/review`
 
+### UI Change Recording Discipline
+
+For visual polish and interaction refinement, record the complete change set
+before editing code. The record should state the observed current behavior,
+the intended outcome, the files and product boundaries in scope, and the
+verification plan.
+
+Do not drive UI work through a sequence of isolated visual guesses or repeated
+one-property tweaks. Consolidate related observations into one bounded UI pass,
+then implement that pass in testable increments. Incremental implementation is
+still required for engineering safety; the product and visual decisions should
+be settled together before those increments begin.
+
+Close each UI pass with:
+
+- a concise diff summary
+- automated build or test evidence
+- simulator or physical-device evidence when applicable
+- explicit manual acceptance or remaining visual questions
+
+Current screenshots are evidence of the existing product state. They are not
+reference designs to imitate unless the task explicitly identifies them as
+references.
+
 Installed skills available for this workflow:
 
 - `spec-driven-development`

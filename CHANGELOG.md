@@ -1,8 +1,11 @@
 # Changelog
 
-## v1.7.0 (Build 7) - 2026-07-17
+## 1.7 (7) - 2026-07-17
 
 ### Added
+- Added a collapsible Home feedback card for the active TestFlight phase. It
+  keeps Xiaohongshu and Douyin search guidance, QQ group `955680366`, and the
+  existing TestFlight feedback path visible without adding network behavior.
 - Added the beginner-facing Expression Formula Guide inside Settings ->
   Usage & Help. It lists every configured time-anchor category and expression
   style, with separate Before, On Anchor/Day, and After examples.
@@ -17,11 +20,19 @@
 - Added focused responsibility boundaries for the iOS root coordinator, Batch Queue execution, image export, Share Extension intake and presentation, configuration editing, settings persistence, and external-intake storage.
 
 ### Changed
+- Simplified the Memory Subject profile section into continuous native rows and
+  aligned Expression Subject selection with the shared Configuration Center
+  selected-state styling.
+- Standardized current release documentation on the product version identifier
+  `1.7 (7)` and recorded successful signed-device Live Photo flows for both the
+  Main App Picker and Share Extension.
 - Clarified the expression model as Subject + Smart Output + Anchor Result.
   Smart modules continue to provide reusable time results, while users retain
   control over the final sentence wording.
 - Updated Live Photo still output metadata so MemoMark description text is written through stable TIFF/IPTC fields while avoiding corrupted non-ASCII HEIC UserComment readback.
-- Clarified release scope: Main App Picker Live Photo is a release candidate, while Share Extension Live Photo remains a separate production-validation item.
+- Clarified release scope: Main App Picker and Share Extension Live Photo
+  flows have both succeeded in signed-device validation; broader production
+  certification remains tracked separately in the V3 evidence matrix.
 - Reduced the former large coordinator and service facades while preserving persistence keys, Share handoff records, renderer/layout ownership, and the Apple Photos workflow.
 - Replaced repository and runtime demo values with neutral synthetic names, dates, places, coordinates, and device placeholders.
 - Removed personal social contact from Settings while retaining the public support email and GitHub Issues.

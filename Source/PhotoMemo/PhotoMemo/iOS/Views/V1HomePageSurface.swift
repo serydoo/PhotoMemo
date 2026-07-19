@@ -74,6 +74,8 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 .background(profileTrackingBackground)
 
             currentPresetSection
+
+            V1HomeFeedbackSection()
         }
     }
 

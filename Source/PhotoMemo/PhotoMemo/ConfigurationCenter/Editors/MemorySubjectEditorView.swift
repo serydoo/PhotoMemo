@@ -335,14 +335,7 @@ struct MemorySubjectEditorView: View {
                     cornerRadius: 12,
                     style: .continuous
                 )
-                .fill(Color.accentColor.opacity(0.07))
-            )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 12,
-                    style: .continuous
-                )
-                .stroke(Color.accentColor.opacity(0.22))
+                .fill(ConfigurationUI.selectedBackground)
             )
             .contentShape(Rectangle())
         }
@@ -399,20 +392,7 @@ struct MemorySubjectEditorView: View {
                 focus: .relationshipLabel
             )
         }
-        .background(Color.white.opacity(0.94))
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 16,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
+        .padding(.vertical, 2)
     }
 
     private func compactLabeledTextField(
