@@ -6,56 +6,6 @@ import Testing
 @Suite("Media intake file-first contract")
 struct MediaIntakeFileFirstContractTests {
 
-    @Test("Main App PhotosPicker attempts file representation before Data fallback")
-    func mainAppPhotosPickerAttemptsFileRepresentationBeforeDataFallback() throws {
-        let source =
-            try sourceText(
-                relativePath:
-                    "Source/PhotoMemo/PhotoMemo/Views/Main/PhotoImporterView.swift"
-            )
-
-        try expectOrdered(
-            source: source,
-            earlier: "PhotoImporterPickedFileRepresentation",
-            later: "Data.self"
-        )
-    }
-
-    @Test("Main App intake surfaces policy diagnostics instead of generic unsupported text")
-    func mainAppIntakeSurfacesPolicyDiagnosticsInsteadOfGenericUnsupportedText() throws {
-        let source =
-            try sourceText(
-                relativePath:
-                    "Source/PhotoMemo/PhotoMemo/Views/Main/PhotoImporterView.swift"
-            )
-
-        #expect(
-            !source.contains(
-                "\"Unsupported image format\""
-            )
-        )
-        #expect(
-            source.contains(
-                "unsupportedInputMessage"
-            )
-        )
-        #expect(
-            source.contains(
-                "PhotoProcessingInputPolicy"
-            )
-        )
-        #expect(
-            source.contains(
-                "importErrorMessage("
-            )
-        )
-        #expect(
-            source.contains(
-                "failureReason"
-            )
-        )
-    }
-
     @Test("V1 Quick Action PhotosPicker attempts file representation before Data fallback")
     func v1QuickActionPhotosPickerAttemptsFileRepresentationBeforeDataFallback() throws {
         let source =

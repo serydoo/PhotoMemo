@@ -219,7 +219,7 @@ struct RecordCardBuildServiceTests {
                 referenceDate:
                     birthday
             )
-        let configuration =
+        var configuration =
             BatchConfigurationSnapshot(
             template: .classicWhite.normalizedForEditing,
             badge: nil,
@@ -235,6 +235,8 @@ struct RecordCardBuildServiceTests {
                     from: subject
                 )
         )
+        configuration.usesCustomMemoryWriteText = true
+        configuration.customMemoryWriteText = "第一次一起看海"
 
         let card = service.buildCard(
             from: photo,
@@ -258,7 +260,11 @@ struct RecordCardBuildServiceTests {
         )
         #expect(
             blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
-            == "今天小宝9个月14天"
+            == "今天小宝9个月14天\n第一次一起看海"
+        )
+        #expect(
+            card.memoryModule?.renderedText
+            == "今天小宝9个月14天\n第一次一起看海"
         )
         #expect(
             card
@@ -267,7 +273,7 @@ struct RecordCardBuildServiceTests {
                     for: MemoryProvider.memoryToken
                 )?
                 .resolvedText
-            == "今天小宝9个月14天"
+            == "今天小宝9个月14天\n第一次一起看海"
         )
     }
 
@@ -756,6 +762,87 @@ struct RecordCardBuildServiceTests {
 
         #expect(card.exportDescriptionOverride == "My export note")
         #expect(CardVariableProvider.exportDescription(from: card) == "My export note")
+    }
+
+    @Test("Default photo description renders the complete Memory region")
+    func defaultPhotoDescriptionRendersCompleteMemoryRegion() throws {
+        let service = RecordCardBuildService()
+        let captureDate = Date(timeIntervalSince1970: 800_000_000)
+        let anchorDate = Date(timeIntervalSince1970: 736_702_512)
+        let anchor = Anchor(
+            type: .marriage,
+            title: "结婚日子",
+            date: anchorDate,
+            isCountdown: false,
+            expressionStyle: .marriageNatural
+        )
+        let subject = MemorySubjectAdapter.adapt(
+            profile: PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "老公",
+                babyNickname: "亲爱的媳妇"
+            ),
+            anchors: [anchor],
+            selectedAnchorID: anchor.id,
+            referenceDate: anchorDate
+        )
+        let template = Template(
+            preset: .classicWhite,
+            name: "完整写入说明",
+            leftTopArea: .empty,
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: TemplateArea(
+                name: "Memory",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "开头",
+                        value: "两口子"
+                    ),
+                    .memorySummary,
+                    TemplateItem(
+                        type: .text,
+                        name: "结尾",
+                        value: "！"
+                    )
+                ]
+            ),
+            badgeArea: .empty
+        )
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/complete-memory.jpeg"),
+            image: NSImage(size: NSSize(width: 1200, height: 900)),
+            metadata: PhotoMetadata(captureDate: captureDate)
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: anchor,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        .withLegacyPairedFrozenMemoryConfiguration(
+            subject: subject,
+            snapshot: ConfigurationSnapshotBuilder.build(from: subject)
+        )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+        let renderedMemory = try #require(
+            CardTextBlockEngine()
+                .build(from: card)
+                .first(where: { $0.area == .rightBottom })?
+                .value
+        )
+
+        #expect(card.exportDescriptionOverride == renderedMemory)
+        #expect(renderedMemory.hasPrefix("两口子"))
+        #expect(renderedMemory.hasSuffix("！"))
+        #expect(renderedMemory != "两口子")
     }
 
     @Test("Build chain keeps raw anchor expression-style payloads available to downstream output")

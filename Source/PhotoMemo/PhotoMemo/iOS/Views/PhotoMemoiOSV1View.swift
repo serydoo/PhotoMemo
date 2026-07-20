@@ -55,6 +55,10 @@ struct PhotoMemoiOSV1View: View {
         EntryNavigationState()
 
     @State
+    private var memorySourceDisclosureState =
+        V1MemorySourceDisclosureState()
+
+    @State
     private var selectedProcessingItems: [PhotosPickerItem] = []
 
     @State
@@ -923,6 +927,9 @@ struct PhotoMemoiOSV1View: View {
             }
         }
         .onChange(of: session.state.selectedSubject) { _, subject in
+            memorySourceDisclosureState.synchronize(
+                selectedSubjectID: subject?.id
+            )
             let decision =
                 V1SubjectSelectionMutationCoordinator
                 .decision(
@@ -1238,6 +1245,17 @@ struct PhotoMemoiOSV1View: View {
         return V1ConfigurationOptionList(
             subject:
                 session.state.selectedSubject,
+            isMemorySourceExpanded:
+                Binding(
+                    get: {
+                        memorySourceDisclosureState
+                            .isExpanded
+                    },
+                    set: { isExpanded in
+                        memorySourceDisclosureState
+                            .setExpanded(isExpanded)
+                    }
+                ),
             subjectAvatarPreviewImagePath:
                 resolvedSubjectAvatarPreviewImagePath,
             logoMode: $logoMode,
@@ -2021,6 +2039,12 @@ struct PhotoMemoiOSV1View: View {
             shouldSaveSubjectLibrary = true
         }
 
+        if patch.events.contains(
+            .persistActiveConfigurationSelection
+        ) {
+            persistActiveConfigurationSelection()
+        }
+
         activeConfigurationStatus =
             patch.activeConfigurationStatus
 
@@ -2041,6 +2065,36 @@ struct PhotoMemoiOSV1View: View {
                     from:
                         entryFlowState
                 )
+        }
+    }
+
+    private func persistActiveConfigurationSelection() {
+        guard let candidate = session.state.configurationLibrary,
+              let configurationCoordinator else {
+            return
+        }
+        let expectedRevision = candidate.revision
+        let expectedSubjectID = candidate.activeSubjectID
+        let expectedConfigurationID = candidate.activeConfigurationID
+
+        Task { @MainActor in
+            do {
+                let receipt = try await configurationCoordinator
+                    .saveConfigurationLibrary(candidate)
+                guard var current = session.state.configurationLibrary,
+                      current.revision == expectedRevision,
+                      current.activeSubjectID == expectedSubjectID,
+                      current.activeConfigurationID
+                        == expectedConfigurationID else {
+                    return
+                }
+                current.revision = receipt.revision
+                session.updateConfigurationLibraryReference(current)
+            } catch {
+                activeConfigurationStatus = .failure(
+                    message: "当前配置切换保存失败，请重试。"
+                )
+            }
         }
     }
 
@@ -3640,6 +3694,7 @@ private struct V1ConfigurationOptionList: View {
     private var showsDeleteConfigurationConfirmation = false
 
     let subject: MemorySubject?
+    @Binding var isMemorySourceExpanded: Bool
     let subjectAvatarPreviewImagePath: String?
     @Binding var logoMode: V1LogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
@@ -3674,17 +3729,7 @@ private struct V1ConfigurationOptionList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            groupedSection(
-                index: "1.",
-                title: "记忆来源",
-                subtitle: "决定智能模块生成的内容"
-            ) {
-                subjectRow
-                optionDivider
-                timeAnchorRow
-                optionDivider
-                memoryDisplayRow
-            }
+            memorySourceSection
 
             groupedSection(
                 index: "2.",
@@ -3745,6 +3790,108 @@ private struct V1ConfigurationOptionList: View {
         } message: {
             Text("删除当前配置不会删除已经保留在本地配置库中的备份。")
         }
+    }
+
+    private var memorySourceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            memorySourceSectionHeader
+
+            VStack(spacing: 0) {
+                if isMemorySourceExpanded {
+                    subjectRow
+                    optionDivider
+                    timeAnchorRow
+                    optionDivider
+                    memoryDisplayRow
+                } else {
+                    memorySourceSummaryRow
+                }
+            }
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .fill(ConfigurationUI.panelBackground)
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .stroke(ConfigurationUI.faintHairline)
+            )
+        }
+        .padding(14)
+        .v1CardChrome()
+    }
+
+    private var memorySourceSectionHeader: some View {
+        HStack(alignment: .center, spacing: 10) {
+            adaptiveSectionHeader(
+                index: "1.",
+                title: "记忆来源",
+                subtitle: "决定智能模块生成的内容"
+            )
+
+            Spacer(minLength: 8)
+
+            Button {
+                isMemorySourceExpanded.toggle()
+            } label: {
+                Label(
+                    isMemorySourceExpanded ? "收起" : "展开",
+                    systemImage:
+                        isMemorySourceExpanded
+                        ? "chevron.up"
+                        : "chevron.down"
+                )
+                .font(.caption.weight(.semibold))
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(Color.accentColor)
+            .padding(.trailing, 8)
+            .accessibilityLabel(
+                isMemorySourceExpanded
+                ? "收起记忆来源"
+                : "展开记忆来源"
+            )
+        }
+    }
+
+    private var memorySourceSummaryRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+
+            Text(memorySourceSummary)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+
+            Spacer(minLength: 8)
+
+            Text("已生效")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 13)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("当前记忆来源")
+        .accessibilityValue(memorySourceSummary)
+    }
+
+    private var memorySourceSummary: String {
+        [
+            subjectDisplayName,
+            availableTimeAnchors.isEmpty
+                ? "暂无时间锚点"
+                : timeAnchorTitle,
+            memoryDisplayValue
+        ]
+        .joined(separator: " · ")
     }
 
     private var subjectRow: some View {
@@ -4258,12 +4405,15 @@ private struct V1ConfigurationOptionList: View {
                 Text(title)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.primary)
+                    .fixedSize(horizontal: true, vertical: false)
 
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
             }
         }
     }

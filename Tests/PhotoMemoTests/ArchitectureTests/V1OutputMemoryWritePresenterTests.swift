@@ -21,8 +21,8 @@ struct V1ResolvedMemoryWriteTextPresenterTests {
         )
     }
 
-    @Test("falls back to memory expression preview text when custom text is empty")
-    func fallsBackToMemoryExpressionPreviewTextWhenCustomTextIsEmpty() {
+    @Test("appends custom text after the smart module result")
+    func appendsCustomTextAfterSmartModuleResult() {
         let birthday =
             Calendar.current.date(
                 from: DateComponents(
@@ -78,12 +78,13 @@ struct V1ResolvedMemoryWriteTextPresenterTests {
             .resolvedText(
                 subject: subject,
                 usesCustomText: true,
-                customText: "   ",
+                customText: "  第一次一起看海  ",
                 captureDate: captureDate
             )
 
         #expect(
-            resolvedText == "今天小宝18天"
+            resolvedText
+            == "今天小宝18天\n第一次一起看海"
         )
     }
 

@@ -108,6 +108,24 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!source.contains(".fixedSize(horizontal: true, vertical: false)"))
     }
 
+    @Test("subject overview uses the configuration-center card hierarchy")
+    func subjectOverviewUsesConfigurationCenterCardHierarchy() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
+
+        #expect(
+            source.contains(
+                "v1AdaptiveScrollContent(\n                    horizontalPadding: 18"
+            )
+        )
+        #expect(!source.contains("GeometryReader"))
+        #expect(source.contains("private var basicInfoInnerPanel"))
+        #expect(source.contains("V1ConfigurationCardContainer"))
+        #expect(source.contains(".padding(14)"))
+        #expect(source.contains("cornerRadius: 18"))
+    }
+
     @Test("iPhone views do not branch on the physical screen or device model")
     func iPhoneViewsAvoidPhysicalScreenAndDeviceModelBranching() throws {
         let viewsDirectory = repositoryRoot

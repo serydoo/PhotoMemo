@@ -6,7 +6,7 @@ import Testing
 @Suite("Memory write option presenter")
 struct MemoryWriteOptionPresenterTests {
 
-    @Test("uses replacement wording when smart memory write is disabled")
+    @Test("uses supplemental wording when custom content is enabled")
     func customEntryEnabledCopy() {
         let presentation =
             MemoryWriteOptionPresenter
@@ -17,19 +17,19 @@ struct MemoryWriteOptionPresenterTests {
 
         #expect(
             presentation.toggleTitle
-            == "写入记忆信息"
+            == "添加自定义内容"
         )
         #expect(
             presentation.toggleDescription
-            == "关闭后，将使用下方录入内容替换图片说明。"
+            == "开启后，将下方内容补充到智能模块结果之后。"
         )
         #expect(
             presentation.inputPlaceholder
-            == "输入准备替换写入到图片说明框的信息"
+            == "输入补充到智能模块结果后的内容"
         )
         #expect(
             presentation.resolvedTitle
-            == "替换写入"
+            == "完整写入（智能模块 + 自定义）"
         )
         #expect(
             presentation.resolvedDescription
@@ -37,7 +37,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "重新打开后，将恢复写入当前智能模块结果。"
+            == "自定义内容不会覆盖智能模块结果。"
         )
     }
 
@@ -52,11 +52,11 @@ struct MemoryWriteOptionPresenterTests {
 
         #expect(
             presentation.toggleTitle
-            == "写入记忆信息"
+            == "添加自定义内容"
         )
         #expect(
             presentation.toggleDescription
-            == "开启后，默认将当前智能模块结果写入图片说明。"
+            == "默认仅写入当前智能模块结果。"
         )
         #expect(
             presentation.resolvedTitle

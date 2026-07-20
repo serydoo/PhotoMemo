@@ -5,9 +5,6 @@ final class RecordCardBuildService {
     private let anchorEngine =
         AnchorEngine()
 
-    private let templateVariableEngine =
-        TemplateVariableEngine()
-
 #if !PHOTOMEMO_SHARE_EXTENSION
     private let productionMemoryResolver:
         ProductionMemoryResolver
@@ -320,20 +317,23 @@ private extension RecordCardBuildService {
             values.append(locationValue)
         }
 
-        let customMemoryText =
-            configuration.customMemoryWriteText
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-        if configuration.usesCustomMemoryWriteText,
-            !customMemoryText.isEmpty {
+        let smartMemoryText = values.first {
+            $0.token == MemoryProvider.memoryToken
+        }?.resolvedText
+        if let composedMemoryText = MemoryWriteTextComposer.compose(
+            smartText: smartMemoryText,
+            usesCustomText:
+                configuration.usesCustomMemoryWriteText,
+            customText:
+                configuration.customMemoryWriteText
+        ) {
             values.removeAll {
                 $0.token == MemoryProvider.memoryToken
             }
             values.append(
                 ExpressionValue(
                     token: MemoryProvider.memoryToken,
-                    resolvedText: customMemoryText
+                    resolvedText: composedMemoryText
                 )
             )
         }
@@ -401,25 +401,25 @@ private extension RecordCardBuildService {
         from module: MemoryModule?,
         configuration: BatchConfigurationSnapshot
     ) -> MemoryModule? {
-        let customText = configuration.customMemoryWriteText
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-        guard configuration.usesCustomMemoryWriteText,
-            !customText.isEmpty
-        else {
+        guard let composedText = MemoryWriteTextComposer.compose(
+            smartText: module?.renderedText,
+            usesCustomText:
+                configuration.usesCustomMemoryWriteText,
+            customText:
+                configuration.customMemoryWriteText
+        ) else {
             return module
         }
 
         if var module {
-            module.renderedText = customText
+            module.renderedText = composedText
             return module
         }
 
         return MemoryModule(
             title: "Memory",
-            blocks: [.text(customText)],
-            renderedText: customText,
+            blocks: [.text(composedText)],
+            renderedText: composedText,
             sourceAnchor:
                 configuration
                 .canonicalProductionSnapshot?
@@ -447,29 +447,13 @@ private extension RecordCardBuildService {
             return override
         }
 
-        let context =
-            CardVariableProvider.build(
-                from: card
-            )
-
-        return templateVariableEngine
-            .render(
-                rightBottomTemplate(
-                    from: configuration.template
-                ),
-                context: context
-            )
+        return CardTextBlockEngine()
+            .build(from: card)
+            .first(where: { $0.area == .rightBottom })?
+            .value
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
-            )
-    }
-
-    func rightBottomTemplate(
-        from template: Template
-    ) -> String {
-
-        template.rightBottomArea.items.first?.value
-        ?? ""
+            ) ?? ""
     }
 
 #if !PHOTOMEMO_SHARE_EXTENSION

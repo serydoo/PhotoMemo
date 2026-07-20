@@ -1027,6 +1027,98 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.currentTimeAnchorTitle == secondSubject.timeAnchors[1].title)
     }
 
+    @Test("switching memory subjects aligns the durable active configuration without saving")
+    func switchingMemorySubjectsAlignsDurableActiveConfigurationWithoutSaving() throws {
+        var state = Self.makeStateWithSecondSubject()
+        let firstSubject = state.subjects[0]
+        let secondSubject = state.subjects[1]
+        let firstConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "51515151-5151-5151-5151-515151515151")!,
+            title: "对象一配置",
+            templateValue: "对象一智能模块",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "对象一自定义内容",
+            descriptionEnabled: false,
+            descriptionOverride: "",
+            albumIdentifier: "subject-one",
+            albumTitle: "对象一",
+            mediaMode: .staticImage
+        )
+        var secondConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "52525252-5252-5252-5252-525252525252")!,
+            title: "对象二配置",
+            templateValue: "对象二智能模块",
+            locationStyle: "provinceCity",
+            logoMode: .customUpload,
+            badge: .travel,
+            memoryText: "对象二自定义内容",
+            descriptionEnabled: true,
+            descriptionOverride: "对象二说明",
+            albumIdentifier: "subject-two",
+            albumTitle: "对象二",
+            mediaMode: .originalFormat
+        )
+        secondConfiguration.selectedTimeAnchorID =
+            secondSubject.timeAnchors[1].id
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 4,
+            subjects: [
+                .init(
+                    subject: firstSubject,
+                    configurations: [firstConfiguration],
+                    assetManifest: .init(entries: [])
+                ),
+                .init(
+                    subject: secondSubject,
+                    configurations: [secondConfiguration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: firstSubject.id,
+            activeConfigurationID: firstConfiguration.id
+        )
+        state.configurationLibrary = aggregate
+        state.memoryPresets = [
+            MemoryPreset(
+                id: firstConfiguration.id,
+                title: firstConfiguration.title,
+                summary: "",
+                regionTemplateIDs: firstConfiguration.editor.regionTemplateIDs,
+                savedAt: firstConfiguration.savedAt,
+                selectedSubjectID: firstSubject.id,
+                selectedTimeAnchorID: firstSubject.timeAnchors[0].id
+            ),
+            MemoryPreset(
+                id: secondConfiguration.id,
+                title: secondConfiguration.title,
+                summary: "",
+                regionTemplateIDs: secondConfiguration.editor.regionTemplateIDs,
+                savedAt: secondConfiguration.savedAt,
+                selectedSubjectID: secondSubject.id,
+                selectedTimeAnchorID: secondSubject.timeAnchors[1].id
+            )
+        ]
+        state.selectedSubjectID = firstSubject.id
+        state.selectedMemoryPresetID = firstConfiguration.id
+        let session = ConfigurationSession(state: state)
+
+        session.selectSubject(secondSubject)
+
+        #expect(session.state.selectedMemoryPresetID == secondConfiguration.id)
+        #expect(session.state.configurationLibrary?.activeSubjectID == secondSubject.id)
+        #expect(session.state.configurationLibrary?.activeConfigurationID == secondConfiguration.id)
+        #expect(session.selectedMemoryConfiguration == secondConfiguration)
+        let restoredDrafts = V1ConfigurationDraftProjection(
+            configuration: try #require(session.selectedMemoryConfiguration)
+        ).regionDrafts
+        #expect(
+            restoredDrafts[.slotA]?.items.map(\.value)
+            == ["对象二智能模块", "对象二智能模块补充", ""]
+        )
+    }
+
     @Test("switching memory subjects rebuilds region preview text from that subject's configuration")
     func switchingMemorySubjectsRebuildsRegionPreviewTextFromConfiguration() {
         var state = Self.makeStateWithSecondSubject()

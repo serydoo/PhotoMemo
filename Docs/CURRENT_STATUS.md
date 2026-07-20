@@ -1,6 +1,72 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-17
+Last updated: 2026-07-21
+
+## 2026-07-21 Configuration Continuity And UI Closure
+
+The post-`f2b50833` product slice is ready for a non-BrandMark GitHub
+checkpoint. Memory Subject switching now restores the subject-owned durable
+configuration, selected Time Anchor, complete editor content, and preview
+drafts without requiring another save action.
+
+Memory write output now composes Smart Module results with optional custom
+content. The Apple Photos description fallback reads the complete Memory region
+instead of only its first item.
+
+The Memory Source section keeps manual collapse for the current subject and
+expands when the subject changes. The Memory Subject overview now follows the
+Configuration Center's 18pt page margin, 14pt outer-card padding, 18pt radius,
+and bounded-content rules. Physical-device acceptance on iPhone 17 Pro Max is
+complete.
+
+The obsolete `Views/Main` editor path is retired. The next engineering priority
+is `TX-001 Export Commit Protocol`, followed by `BP-001 Execution Budget
+Enforcement`; neither is implemented in this repository checkpoint.
+
+Release note:
+`Docs/07_Releases/2026-07-21-1.7-build-7-configuration-continuity-and-ui-closure.md`.
+
+## 2026-07-20 Legacy MainView Retirement
+
+The obsolete `Views/Main` workspace/editor implementation has been safely
+removed. Runtime routing was already authoritative before deletion:
+`PhotoMemoRootSceneView` uses `ConfigurationCenterView` on macOS and
+`PhotoMemoiOSV1View` on iOS.
+
+The removed subtree included `MainView`, its Composer/Workspace extensions,
+legacy importer UI, presentation panels, and workspace session types. The
+obsolete `EditorProjectionEngineTests` and three source-contract tests that
+read deleted files were removed. The still-valid file-representation copier was
+moved into `Services/PhotoImporterFileRepresentationResolver.swift` and its
+existing RAW-copy test remains active.
+
+Verification passed: full `PhotoMemoTests`, unsigned macOS Debug build, generic
+iOS Simulator Debug build, signed iPhone7 build, `git diff --check`, overwrite
+installation, and successful device launch. Existing app data was preserved.
+
+## 2026-07-18 1.7 (7) TestFlight And Device Delivery Closure
+
+The current delivery line uses one product version identifier: `1.7 (7)`.
+GitHub commit IDs are synchronization baselines only and are not a second
+release-version system.
+
+The 1.7 (7) delivery slice completed the Home, Memory Subject, Time Anchor,
+subject-avatar persistence, and location-preselection fixes. The signed-device
+Share workflow also confirms that static-image and Live Photo processing can
+complete and save successfully. This is a successful functional path; broader
+production certification remains governed by the V3 evidence matrix.
+
+Verification recorded for this delivery:
+
+- full `PhotoMemoTests`: 977 tests, 976 passed, 0 failed, 1 existing ImageIO
+  manual regression skipped;
+- focused pre-review regression group: 34 tests passed;
+- iOS Simulator Debug and arm64 signed-device builds passed;
+- 1.7 (7) was installed over the existing iPhone7 app without clearing data;
+- user device inspection found no blocking issue.
+
+The release note is
+`Docs/07_Releases/2026-07-18-1.7-build-7-home-subject-anchor-and-location.md`.
 
 ## 2026-07-16 Expression Formula Guide And Device Delivery
 

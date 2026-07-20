@@ -275,6 +275,11 @@ struct V1SubjectLibrarySupportTests {
                 .rebootstrapPreviewDrafts
             )
         )
+        #expect(
+            patch.events.contains(
+                .persistActiveConfigurationSelection
+            )
+        )
     }
 
     @Test("legacy demo subject is removed without deleting custom event subjects")

@@ -19,21 +19,21 @@ enum MemoryWriteOptionPresenter {
         resolvedText: String
     ) -> MemoryWriteOptionPresentation {
         MemoryWriteOptionPresentation(
-            toggleTitle: "写入记忆信息",
+            toggleTitle: "添加自定义内容",
             toggleDescription:
                 usesCustomText
-                ? "关闭后，将使用下方录入内容替换图片说明。"
-                : "开启后，默认将当前智能模块结果写入图片说明。",
+                ? "开启后，将下方内容补充到智能模块结果之后。"
+                : "默认仅写入当前智能模块结果。",
             inputPlaceholder:
-                "输入准备替换写入到图片说明框的信息",
+                "输入补充到智能模块结果后的内容",
             resolvedTitle:
                 usesCustomText
-                ? "替换写入"
+                ? "完整写入（智能模块 + 自定义）"
                 : "默认写入（当前智能模块）",
             resolvedDescription: resolvedText,
             fallbackNote:
                 usesCustomText
-                ? "重新打开后，将恢复写入当前智能模块结果。"
+                ? "自定义内容不会覆盖智能模块结果。"
                 : "智能模块会结合拍摄时间、记忆对象和时间锚点生成说明。"
         )
     }

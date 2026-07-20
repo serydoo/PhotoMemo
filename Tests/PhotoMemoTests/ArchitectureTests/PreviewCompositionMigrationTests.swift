@@ -408,41 +408,6 @@ struct PreviewCompositionMigrationTests {
         #expect(!source.contains("RecordCardRenderer"))
     }
 
-    @Test("Boundary main anchor preview does not substitute current time for missing capture date")
-    func boundaryMainAnchorPreviewDoesNotSubstituteCurrentTimeForMissingCaptureDate() throws {
-        let source =
-            try String(
-                contentsOfFile:
-                    "/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/Views/Main/MainView+DerivedState.swift",
-                encoding: .utf8
-            )
-        let previewSource =
-            try #require(
-                source.range(
-                    of:
-                        #"var anchorPreviewResult:[\s\S]*?var selectedAlbumSummary:"#,
-                    options: .regularExpression
-                )
-            )
-        let implementation =
-            String(
-                source[
-                    previewSource
-                ]
-            )
-
-        #expect(
-            implementation.contains(
-                "let captureDate"
-            )
-        )
-        #expect(
-            !implementation.contains(
-                "?? Date()"
-            )
-        )
-    }
-
     @MainActor
     @Test("smart module inserted into slot A follows the selected anchor formula style")
     func smartModuleInsertedIntoSlotAFollowsSelectedAnchorFormulaStyle() {

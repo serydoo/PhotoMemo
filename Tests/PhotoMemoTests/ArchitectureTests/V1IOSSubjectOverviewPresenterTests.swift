@@ -298,10 +298,9 @@ struct V1IOSSubjectOverviewPresenterTests {
         #expect(railSource.contains("ViewThatFits(in: .horizontal)"))
         #expect(
             normalizedRail.contains(
-                "Image(systemName: \"checkmark\")"
+                "Label(\"保存\", systemImage: \"checkmark\")"
             )
         )
-        #expect(!normalizedRail.contains("Label(\"保存\", systemImage: \"checkmark\")"))
         #expect(
             normalizedRail.contains(
                 "Label( \"切换对象\", systemImage: \"arrow.left.arrow.right\" )"
@@ -330,7 +329,7 @@ struct V1IOSSubjectOverviewPresenterTests {
             to: "private var compactIdentityFieldsPanel"
         )
         #expect(expressionSource.contains("Menu {"))
-        #expect(expressionSource.contains("Text(\"表达称呼\")"))
+        #expect(expressionSource.contains("Text(\"锚点内表达主体\")"))
         #expect(expressionSource.contains("Text(expressionSubjectDisplayValue)"))
         #expect(
             expressionSource.contains(
@@ -367,8 +366,8 @@ struct V1IOSSubjectOverviewPresenterTests {
         )
     }
 
-    @Test("compact basic information uses native rows without per-field rounded boxes")
-    func compactBasicInformationUsesNativeRowsWithoutPerFieldRoundedBoxes() throws {
+    @Test("compact basic information uses native rows with semantic icon tiles")
+    func compactBasicInformationUsesNativeRowsWithSemanticIconTiles() throws {
         let editorSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
@@ -387,6 +386,11 @@ struct V1IOSSubjectOverviewPresenterTests {
             with: " ",
             options: .regularExpression
         )
+        let normalizedField = fieldSource.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
 
         #expect(normalizedPanel.contains("compactLabeledTextField( \"对象名称\""))
         #expect(normalizedPanel.contains("compactLabeledTextField( \"昵称\""))
@@ -397,7 +401,14 @@ struct V1IOSSubjectOverviewPresenterTests {
         #expect(!normalizedPanel.contains("compactLabeledTextField( \"关系备注\""))
 
         #expect(fieldSource.contains(".textFieldStyle(.plain)"))
-        #expect(!fieldSource.contains("RoundedRectangle("))
+        #expect(
+            normalizedField.contains(
+                "RoundedRectangle( cornerRadius: 10, style: .continuous )"
+            )
+        )
+        #expect(normalizedField.contains(".fill(tint.opacity(0.11))"))
+        #expect(normalizedField.contains(".frame(width: 34, height: 34)"))
+        #expect(!fieldSource.contains(".clipShape("))
         #expect(!panelSource.contains("RoundedRectangle("))
     }
 }

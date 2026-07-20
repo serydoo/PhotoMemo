@@ -1,5 +1,171 @@
 # MemoMark Handoff
 
+## 2026-07-20 iOS semantic iconography first adoption
+
+- Added the reusable icon reserve in `Research/Iconography/README.md`, covering the Configuration Center's navigation, memory source, subject identity, anchor, output, task, and help titles with SF Symbol, semantic tint, metric, and adoption guidance.
+- Applied the first iconography pass to the Memory Subject basic-information rows and Time Anchor rows: identity fields now use restrained semantic tiles, while anchor types use stable celebratory or category colors instead of neutral gray.
+- Kept the compact identity layout and content-driven expression selector width; no persistence, navigation, or data model behavior changed.
+- Verification passed: `git diff --check`, signed `PhotoMemoiOS` device build, overwrite installation, and successful launch on physical `iPhone7`.
+
+## 2026-07-20 iOS subject hierarchy and configuration polish
+
+- Refined the Memory Subject basic-information card into a compact two-line identity block: the display name remains on the left, the reduced `表达称呼` selector sits directly beneath it, and the avatar remains on the right with the block vertically centered alongside it. The separate page-level current-subject rail remains unchanged.
+- Balanced the divider spacing above the Time Anchor entry and renamed the entry to `时间锚点配置`; its trailing status now reads `已设定锚点数 N 个`.
+- In the Configuration Center, inset the Memory Source disclosure control from the trailing edge and allowed section helper copy such as `配置操作` to retain readable width instead of compressing into an overly narrow single line.
+- Preserved the existing Memory Source disclosure behavior: manual collapse remains stable for the current subject and switching subjects forces the section open.
+- Verification passed: `git diff --check`, required macOS Debug build, signed `PhotoMemoiOS` device build, overwrite installation, and successful launch on physical `iPhone7`.
+
+## 2026-07-20 Legacy MainView safely retired
+
+- Confirmed `MainView` had no runtime caller. `PhotoMemoRootSceneView` routes
+  macOS to `ConfigurationCenterView` and iOS to `PhotoMemoiOSV1View`.
+- Deleted the complete legacy `Source/PhotoMemo/PhotoMemo/Views/Main` subtree,
+  including Workspace, Composer, importer, panel, and session code.
+- Removed the obsolete `EditorProjectionEngineTests` and only the three
+  source-contract tests that directly read deleted legacy files.
+- Full testing exposed one valid shared dependency hidden in the deleted
+  `PhotoImporterView`: `PhotoImporterFileRepresentationResolver`. It now lives
+  in `Services/PhotoImporterFileRepresentationResolver.swift`; its RAW file
+  representation regression test remains active and passes.
+- Verification passed: full `PhotoMemoTests`, macOS Debug, generic iOS
+  Simulator Debug, signed iPhone7 build, `git diff --check`, overwrite install,
+  and successful launch of `com.serydoo.PhotoMemo.iOS` on iPhone7.
+- Repository rules now forbid reintroducing the retired MainView/Workspace
+  workflow. Future editor work belongs to the frozen Configuration Center.
+
+## 2026-07-20 Complete Memory region Photos description fix
+
+- Fixed the remaining `输出 -> 写入与保留` production-path defect found from
+  the physical `iPhone7` configuration data. The second configuration's Memory
+  region was `文字 + {{memory_summary}} + 文字`, while the Apple Photos
+  description fallback read only `items.first`, so only the leading custom
+  field was retained.
+- `RecordCardBuildService` now derives the default Photos description from the
+  same complete right-bottom `CardTextBlockEngine` result used by the rendered
+  Memory Card. Literal fields, Smart Module output, and trailing fields remain
+  in the configured order.
+- Added a production regression using a real three-part Memory region and
+  verified the test fails before the fix and passes after it.
+- Verification passed: complete `RecordCardBuildServiceTests`, required macOS
+  Debug build, generic iOS Simulator Debug build, signed `PhotoMemoiOS` device
+  build, and `git diff --check`.
+- The new build was installed over the existing app on physical `iPhone7`
+  without clearing configuration data. Later physical-device inspection
+  confirmed the complete Memory output and current configuration behavior.
+
+## 2026-07-20 Subject switch persistence and complete memory write output
+
+- Fixed the remaining subject-switch split: selecting a Memory Subject now
+  persists the already-aligned durable active subject/configuration pointers
+  immediately, without requiring `保存当前配置` and without rebuilding or
+  rewriting the saved configuration content.
+- The asynchronous selection receipt is applied only while the same aggregate
+  revision, subject, and configuration remain active, preventing an older
+  switch save from overwriting a newer user action.
+- Reinterpreted the existing custom memory-write option as supplemental content:
+  the Smart Module result remains first and non-empty custom content is appended
+  on a new line. Preview text, production expression context, and the resolved
+  Memory Module now use the same composition rule.
+- Updated `输出 -> 写入与保留` from replacement language to
+  `添加自定义内容` / `完整写入（智能模块 + 自定义）`; the toggle now directly
+  controls supplemental content instead of inversely disabling Smart Modules.
+- Focused regression suites passed: `V1SubjectLibrarySupportTests`,
+  `V1ResolvedMemoryWriteTextPresenterTests`, `MemoryWriteOptionPresenterTests`,
+  `ConfigurationCenterOutputPanelPresenterTests`, and
+  `RecordCardBuildServiceTests`.
+- Verification also passed for the required macOS Debug build, generic iOS
+  Simulator Debug build, signed `PhotoMemoiOS` device build, `git diff --check`,
+  and overwrite installation on physical device `iPhone7`. Later device
+  inspection confirmed the subject-switch and complete-write behavior.
+
+## 2026-07-20 Subject configuration continuity and Memory Source disclosure
+
+- Fixed a V1 Configuration Center state split where switching Memory Subjects
+  selected the subject-owned preset but left the in-memory configuration
+  library active subject/configuration pointers on the previous subject.
+- Subject switching now aligns the selected subject, selected configuration,
+  complete `MemoryConfigurationRecord`, selected Time Anchor, and V1 draft
+  bootstrap before preview refresh. Existing saved configurations no longer
+  require a second `保存当前配置` action merely to become effective.
+- Complete configuration restoration now takes the durable configuration record
+  path when available, preserving the saved Template region items used by Smart
+  Modules together with custom memory text and other presentation/output data.
+- Added a collapsible `记忆来源` section in the V1 Configuration Center:
+  - manual collapse remains while the selected subject is unchanged
+  - leaving and returning to the Configuration Center retains the current
+    session state
+  - switching Memory Subjects forces the section open
+  - collapsed state shows `记忆对象 · 时间锚点 · 记忆显示`
+  - disclosure changes are presentation-only and do not mark configuration
+    state dirty
+- Focused regression coverage:
+  - `ConfigurationSessionConfigurationLifecycleTests`
+  - `V1MemorySourceDisclosureStateTests`
+- Verification passed:
+  - focused configuration lifecycle and disclosure-state tests
+  - required `PhotoMemo` Debug build with isolated DerivedData
+  - `PhotoMemoiOS` generic iOS Simulator Debug build with isolated DerivedData
+- The older `PhotoMemoiOSV1` scheme name referenced in historical plans is no
+  longer present; the current project exposes `PhotoMemoiOS` as the iOS scheme.
+- Physical-device acceptance is complete. The user confirmed subject switching,
+  Memory Source disclosure behavior, complete write output, and the final
+  Memory Subject card hierarchy on iPhone 17 Pro Max.
+
+## 2026-07-20 V4 Expression Style Research Seed
+
+- Archived the initial V4 candidate product direction in
+  `Research/ExpressionStyles/README.md`.
+- The central thesis is preserved as: configure once, then let future photos
+  express memories through the user's chosen expression system.
+- `Preset` remains the user-owned saved configuration. The research seed treats
+  `Expression Style` as presentation grammar inside a Preset, while
+  `MemoryBehavior` continues to own semantic priority such as Baby, Travel,
+  Journal, and Story.
+- Classic, Minimal, Signature, Film, and Magazine are recorded as initial
+  visual-style candidates. Baby, Travel, Journal, and Story are deliberately
+  separated as behavior candidates to prevent template combination explosion.
+- A horizontal real-preview Style Library is recorded as an interaction
+  hypothesis inside the frozen Configuration Center architecture, not as a new
+  Dashboard, Workspace, or marketplace.
+- This is a research seed only: not frozen, not a PDR, and not authorization for
+  Swift, persistence, Layout Engine, Renderer, Export, or UI implementation.
+- MemoMark remains in `V3 Production Quality And Delivery`. The next engineering
+  work remains `TX-001`, followed by `BP-001` and V3 certification closure.
+- Future V4 work should continue with scenario research and measurable style
+  specifications before proposing `PDR-006` or any implementation plan.
+
+## 2026-07-20 V3 Production Reliability Certification
+
+- Completed a V3 production-engineering audit focused on transaction
+  consistency, retry, cancellation, recovery, peak memory, backpressure, and
+  Swift 6 migration readiness.
+- Formal report:
+  `Docs/07_Releases/MemoMark_V3_Production_Reliability_Certification_2026-07-20.md`.
+- Production Certification verdict is `FAIL (Conditional)`. This is not an
+  architectural failure; certification is withheld for two bounded P0 gaps:
+  Export Commit Protocol exactly-once semantics and high-cost-media Execution
+  Budget Enforcement.
+- Current Share intake and Batch Queue processing are serial. No current
+  20-worker rendering problem was found. `MediaMemoryBudget` remains
+  classification/diagnostics rather than enforced Adaptive Scheduling, and
+  single-task peak memory is not certified for true 48MP/RAW workloads.
+- Terminal state is not immutable. Static PhotoKit save can perform the illegal
+  transition `.cancelled -> .completed` after the await returns. Cancellation
+  also does not propagate into active import/render/export/PhotoKit work.
+- Export retry is manual and has no transient/permanent classification,
+  exponential backoff, attempt limit, idempotency identity, or ambiguous-commit
+  reconciliation.
+- Architecture boundaries remain healthy: Renderer does not read persistence or
+  PhotoKit, and Memory Engine remains Foundation-only.
+- Verification passed: unsigned macOS Debug build, serial iOS Simulator builds
+  for `PhotoMemoiOS` and `PhotoMemoShareExtension`, 13 focused queue
+  persistence/recovery/memory-budget tests, and `git diff --check`.
+- A Swift 6 strict-concurrency probe failed at
+  `PhotoProcessingInputPolicy.standard`; this is migration evidence, not a
+  current Swift 5 build failure.
+- Next recommended slice: TX-001 Export Transaction Specification And Failure
+  Tests, followed by BP-001 Enforced Single-Task Memory Contract.
+
 ## 2026-07-16 Post-refactor release verification
 
 - The responsibility-split integration passed the complete Xcode 26.6 test
@@ -13719,3 +13885,21 @@ device build still reproduces the blocker.
 - 模块隔离为 `V1HomeFeedbackSection` 并只在 `V1HomePageSurface` 调用一次；未来结束当前阶段时，删除该组件、对应测试和单一调用点即可，不会牵动首页其他状态或服务。
 - TDD 红灯确认新首页契约缺失，绿灯后 `V1HomeConfigurationActionContractTests` 8 项全部通过。验证内容包括位置、单一入口、折叠持久化键、渠道文案、无固定高度、无外链依赖、辅助功能标签和值，以及 TestFlight 共存。
 - `PhotoMemoiOS` iPhone7 arm64 签名构建通过，最新版已覆盖安装且远程启动成功；没有清除设备中的既有 App 数据。仍需用户在真机手动检查展开/折叠的视觉、长文字换行，以及关闭 App 后折叠状态是否符合预期。
+
+## 2026-07-20 记忆对象卡片层级与宽度规范修订
+
+- 以配置中心为唯一基准确认对象页规格：页面使用
+  `v1AdaptiveScrollContent(horizontalPadding: 18)`，外卡 `padding(14)`，
+  外卡与内面板圆角均为 18pt，编辑行不得反向撑宽页面。
+- 根因是对象页引入了独立 `GeometryReader` 宽度计算，基本资料又叠加了
+  外卡与内层自定义卡片；“锚点内表达主体”还曾设置 300pt 最小宽度，
+  与同排头像共同导致真机横向溢出。
+- 对象页已恢复共享页面列；基本资料改为唯一
+  `V1ConfigurationCardContainer` 外卡和唯一内面板；表达主体菜单取消固定
+  最小宽度，长内容仅在当前面板内压缩、截断或换行。
+- `IPhoneResponsiveLayoutContractTests` 新增对象页层级契约；红灯确认旧结构
+  2 项失败，绿灯后 10/10 通过。`git diff --check`、generic iOS device
+  Debug 构建和 iPhone7 签名构建均通过；本轮未使用模拟器。
+- 最新开发签名包已覆盖安装到 iPhone7，未卸载 App、未清除现有数据。
+  远程启动仅因设备锁屏被系统拒绝；解锁后需人工确认基本资料与可用锚点
+  两张卡片均保留完整 18pt 左右边距、圆角可见，且长字段不再撑宽页面。

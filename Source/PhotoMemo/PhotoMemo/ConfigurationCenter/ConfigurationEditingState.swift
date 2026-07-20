@@ -986,20 +986,51 @@ struct ConfigurationEditingState {
         else {
             state.selectedMemoryPresetID = nil
             appliedMemoryPresetID = nil
+            alignConfigurationLibraryActiveSelection(
+                configurationID: nil
+            )
+            presentationState.draftMemoryConfiguration = nil
             refreshPresetDrivenPreview()
             return
         }
 
         state.selectedMemoryPresetID = preset.id
+        alignConfigurationLibraryActiveSelection(
+            configurationID: preset.id
+        )
 
         guard restoreContext else {
             return
         }
 
-        restoreConfigurationContext(
-            from: preset
-        )
+        if let configuration = Self.configuration(
+            id: preset.id,
+            in: state.configurationLibrary
+        ) {
+            restoreConfigurationContext(
+                from: configuration
+            )
+        } else {
+            restoreConfigurationContext(
+                from: preset
+            )
+        }
         refreshPresetDrivenPreview()
+    }
+
+    private mutating func alignConfigurationLibraryActiveSelection(
+        configurationID: UUID?
+    ) {
+        guard var configurationLibrary =
+            state.configurationLibrary else {
+            return
+        }
+
+        configurationLibrary.activeSubjectID =
+            state.selectedSubjectID
+        configurationLibrary.activeConfigurationID =
+            configurationID
+        state.configurationLibrary = configurationLibrary
     }
 
     static func defaultPreviewText(

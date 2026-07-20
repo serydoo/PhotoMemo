@@ -345,7 +345,7 @@ private struct V1MemoryWriteSection: View {
 
                     V1OutputDivider()
 
-                    Toggle(isOn: writesMemoryInfoBinding) {
+                    Toggle(isOn: $usesCustomMemoryWriteText) {
                         V1OutputRetentionLabel(
                             systemImage: MemoMarkSymbol.memoryContent.name,
                             tint: .green,
@@ -399,16 +399,6 @@ private struct V1MemoryWriteSection: View {
         }
     }
 
-    private var writesMemoryInfoBinding: Binding<Bool> {
-        Binding(
-            get: {
-                !usesCustomMemoryWriteText
-            },
-            set: { newValue in
-                usesCustomMemoryWriteText = !newValue
-            }
-        )
-    }
 }
 
 private struct V1OutputRetentionRow: View {

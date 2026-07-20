@@ -215,7 +215,9 @@ struct V1IOSSubjectAnchorSection: View {
                 style: .continuous
             )
             .fill(
-                Color.primary.opacity(0.045)
+                iconTint(
+                    for: anchor.resolvedAnchorType
+                ).opacity(0.10)
             )
             .frame(width: 38, height: 38)
             .overlay {
@@ -224,7 +226,11 @@ struct V1IOSSubjectAnchorSection: View {
                         iconName(for: anchor.resolvedAnchorType)
                 )
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(
+                    iconTint(
+                        for: anchor.resolvedAnchorType
+                    )
+                )
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -278,6 +284,23 @@ struct V1IOSSubjectAnchorSection: View {
             return "flag.checkered"
         case .custom:
             return "calendar"
+        }
+    }
+
+    private func iconTint(
+        for anchorType: AnchorType
+    ) -> Color {
+        switch anchorType {
+        case .birthday:
+            return .orange
+        case .relationship:
+            return .pink
+        case .marriage:
+            return .purple
+        case .exam:
+            return .green
+        case .custom:
+            return .blue
         }
     }
 }

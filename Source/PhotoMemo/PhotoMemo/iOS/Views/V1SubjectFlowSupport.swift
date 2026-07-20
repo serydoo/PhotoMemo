@@ -6,6 +6,7 @@ enum V1SubjectFlowEvent:
 
     case reopenSubjectLibraryPersistence
     case rebootstrapPreviewDrafts
+    case persistActiveConfigurationSelection
 }
 
 struct V1SubjectFlowPatch {
@@ -202,7 +203,10 @@ enum V1SubjectOverviewActionCoordinator {
             shouldRefreshPreview: false,
             activeConfigurationStatus:
                 .subjectSynced,
-            events: [.rebootstrapPreviewDrafts],
+            events: [
+                .rebootstrapPreviewDrafts,
+                .persistActiveConfigurationSelection
+            ],
             shouldCloseOverview: false,
             flowState: nil
         )

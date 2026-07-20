@@ -73,14 +73,17 @@ struct ConfigurationCenterOutputPanelPresenterTests {
             )
 
         #expect(presentation.storageTitle == "时光记文件夹")
-        #expect(presentation.memoryWriteTitle == "替换写入")
+        #expect(
+            presentation.memoryWriteTitle
+            == "完整写入（智能模块 + 自定义）"
+        )
         #expect(
             presentation.memoryWriteDescription
             == "宝宝周岁纪念说明"
         )
         #expect(
             presentation.memoryWriteNote
-            == "重新打开后，将恢复写入当前智能模块结果。"
+            == "自定义内容不会覆盖智能模块结果。"
         )
     }
 }

@@ -497,8 +497,8 @@ struct ProductionConfigurationContractTests {
         }
     }
 
-    @Test("custom memory copy becomes the final renderer smart text")
-    func customMemoryCopyBecomesRendererSmartText() throws {
+    @Test("custom memory copy appends to the renderer smart text")
+    func customMemoryCopyAppendsToRendererSmartText() throws {
         let fixture = try Self.makeFixture()
         var aggregate = fixture.aggregate
         aggregate.subjects[0].configurations[0]
@@ -532,11 +532,13 @@ struct ProductionConfigurationContractTests {
             )?
             .resolvedText
         let renderedBlocks = CardTextBlockEngine().build(from: card)
+        let expectedSummary =
+            "陪小宝走到1岁1个月17天\n今天是小宝的重要一天"
 
-        #expect(variableSummary == "今天是小宝的重要一天")
-        #expect(expressionSummary == "今天是小宝的重要一天")
+        #expect(variableSummary == expectedSummary)
+        #expect(expressionSummary == expectedSummary)
         #expect(renderedBlocks.contains(where: {
-            $0.value.contains("今天是小宝的重要一天")
+            $0.value.contains(expectedSummary)
         }))
         let blocks = try ProductionRenderHealthCheck.validate(
             card: card,
@@ -546,10 +548,10 @@ struct ProductionConfigurationContractTests {
         #expect(
             CardVariableProvider.build(from: card)[
                 MetadataContext.Key.memorySummary
-            ] == "今天是小宝的重要一天"
+            ] == expectedSummary
         )
         #expect(blocks.contains(where: {
-            $0.value.contains("今天是小宝的重要一天")
+            $0.value.contains(expectedSummary)
         }))
     }
 

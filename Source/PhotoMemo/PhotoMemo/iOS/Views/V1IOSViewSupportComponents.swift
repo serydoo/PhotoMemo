@@ -201,16 +201,36 @@ struct V1CardSurface<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
+        V1ConfigurationCardContainer {
+            VStack(alignment: .leading, spacing: 14) {
+                if !title.isEmpty {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
 
-            content
+                content
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .v1CardChrome()
+    }
+}
+
+struct V1ConfigurationCardContainer<Content: View>: View {
+
+    @ViewBuilder
+    let content: Content
+
+    init(
+        @ViewBuilder content: () -> Content
+    ) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .v1CardChrome()
     }
 }
 

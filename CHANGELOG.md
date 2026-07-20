@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.7 (7) Repository Update - 2026-07-21
+
+### Added
+- Added subject-aware Memory Source disclosure state. Manual collapse remains
+  stable for the current subject, while switching subjects expands the section.
+- Added reusable Configuration Center window/card hierarchy and iOS semantic
+  iconography research specifications.
+- Added the deferred Expression Style System research seed and V3 Production
+  Reliability Certification report.
+
+### Changed
+- Memory Subject switching now restores the subject-owned durable configuration,
+  selected Time Anchor, and editor drafts without requiring another save action.
+- Custom Memory write content now supplements Smart Module output instead of
+  replacing it.
+- The Memory Subject overview now uses the Configuration Center's 18pt page
+  margin, 14pt card padding, 18pt radius, and bounded content rules.
+
+### Fixed
+- Fixed Apple Photos descriptions dropping Smart Module and trailing Memory
+  region fields by resolving the complete `CardTextBlockEngine` result.
+- Fixed stale active configuration pointers after switching Memory Subjects.
+- Fixed Memory Subject fields and anchor cards expanding beyond the page width.
+
+### Removed
+- Removed the retired `Views/Main/MainView*` Workspace/Composer editor path and
+  its obsolete tests. Shared file-representation logic now lives in Services.
+
+### Verification
+- Reused the completed focused regression, macOS/iOS build, signed-device
+  installation, and physical-device acceptance evidence.
+- The latest Memory Subject card hierarchy was accepted on iPhone 17 Pro Max.
+- BrandMark research and integration files are intentionally excluded from this
+  repository update.
+
 ## 1.7 (7) - 2026-07-17
 
 ### Added

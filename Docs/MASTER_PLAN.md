@@ -53,6 +53,30 @@ Close V3 production-quality gaps without reopening frozen V2 architecture:
 6. Preserve the frozen Configuration Center, Memory Engine, Presentation,
    Layout Engine, Renderer, and Export ownership boundaries.
 
+## Deferred V4 Candidate: Expression Style System
+
+MemoMark has archived an initial research seed for a possible future
+`Expression Style System` in `Research/ExpressionStyles/README.md`.
+
+This is not a declaration that V4 has started. The current product stage remains
+`V3 Production Quality And Delivery`, and the proposal is not yet a frozen PDR,
+architecture decision, implementation plan, persistence change, or Renderer
+expansion.
+
+The candidate direction separates:
+
+```text
+Preset
+-> Memory Behavior: what the memory prioritizes
+-> Expression Style: how the memory is presented
+-> Style Variant: a bounded treatment inside one style
+```
+
+Research and product discussion may continue while V3 closes. Production code
+work for this candidate is deferred until the V3 reliability gates are closed,
+beginning with `TX-001` and `BP-001`, and a future Product Design Review
+explicitly approves the product model and verification boundaries.
+
 ## V3 Production Readiness Engineering Loop
 
 Production Readiness is an Engineering Loop inside V3, not a separate product

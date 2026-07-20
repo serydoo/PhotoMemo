@@ -139,20 +139,41 @@ struct V1IOSSubjectOverviewSheet: View {
     }
 
     private var basicInfoSection: some View {
+        V1ConfigurationCardContainer {
+            basicInfoInnerPanel
+        }
+    }
+
+    private var basicInfoInnerPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
             MemorySubjectEditorView(
                 session: session,
                 mode: .identityOverview
             )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
 
             Divider()
-                .padding(.top, 14)
+                .padding(.vertical, 10)
 
             timeAnchorNavigationRow
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .v1CardChrome()
+        .padding(14)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.panelBackground)
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
     }
 
     private var timeAnchorNavigationRow: some View {
@@ -160,12 +181,15 @@ struct V1IOSSubjectOverviewSheet: View {
             timeAnchorConfigurationPage
         } label: {
             HStack(spacing: 10) {
-                Text("时间锚点")
+                Text("时间锚点配置")
                     .foregroundStyle(.primary)
 
                 Spacer(minLength: 12)
 
-                Text("\(subject?.timeAnchors.count ?? 0) 个")
+                Text(
+                    "已设定锚点数 \(subject?.timeAnchors.count ?? 0) 个"
+                )
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
 
                 Image(systemName: "chevron.right")

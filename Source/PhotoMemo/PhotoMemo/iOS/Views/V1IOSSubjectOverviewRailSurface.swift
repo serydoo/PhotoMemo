@@ -16,27 +16,42 @@ struct V1IOSSubjectOverviewSubjectRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .center, spacing: 10) {
-                    currentSubjectSummary
+            if isSwitchingSubject {
+                switchingHeaderLayout
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: 10) {
+                        currentSubjectSummary
 
-                    Spacer(minLength: 0)
-
-                    headerActions
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    currentSubjectSummary
-
-                    HStack(spacing: 0) {
                         Spacer(minLength: 0)
+
                         headerActions
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        currentSubjectSummary
+
+                        HStack(spacing: 0) {
+                            Spacer(minLength: 0)
+                            headerActions
+                        }
                     }
                 }
             }
 
             if isSwitchingSubject {
                 switchingLayout
+            }
+        }
+    }
+
+    private var switchingHeaderLayout: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            currentSubjectSummary
+
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                headerActions
             }
         }
     }
@@ -71,13 +86,12 @@ struct V1IOSSubjectOverviewSubjectRail: View {
                 Button {
                     onSaveSubject()
                 } label: {
-                    Image(systemName: "checkmark")
+                    Label("保存", systemImage: "checkmark")
                         .font(.subheadline.weight(.semibold))
                 }
                 .buttonStyle(.bordered)
-                .buttonBorderShape(.circle)
                 .controlSize(.small)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(minHeight: 44)
                 .accessibilityLabel("保存当前记忆对象信息")
 
                 Button {

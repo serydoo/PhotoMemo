@@ -237,20 +237,14 @@ struct MemorySubjectEditorView: View {
     }
 
     private var adaptiveIdentityOverviewHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .center, spacing: 14) {
-                    identityOverviewText
-                    compactAvatarPicker
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    identityOverviewText
-                    compactAvatarPicker
-                }
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 8) {
+                identityOverviewText
+                expressionSubjectMenuRow
             }
+            .layoutPriority(1)
 
-            expressionSubjectMenuRow
+            compactAvatarPicker
         }
     }
 
@@ -265,11 +259,12 @@ struct MemorySubjectEditorView: View {
                 ? "记忆对象"
                 : displayName
             )
-            .font(.title2.weight(.semibold))
+            .font(.title3.weight(.semibold))
             .foregroundStyle(.primary)
             .lineLimit(1)
+            .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var expressionSubjectMenuRow: some View {
@@ -293,16 +288,16 @@ struct MemorySubjectEditorView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "person.text.rectangle")
-                    .font(.body.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 24, height: 24)
                     .background(
                         Circle()
                             .fill(Color.accentColor.opacity(0.11))
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("表达称呼")
+                    Text("锚点内表达主体")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
 
@@ -327,9 +322,13 @@ struct MemorySubjectEditorView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, minHeight: 62)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: 44,
+                alignment: .leading
+            )
             .background(
                 RoundedRectangle(
                     cornerRadius: 12,
@@ -340,7 +339,7 @@ struct MemorySubjectEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("选择表达称呼")
+        .accessibilityLabel("选择锚点内表达主体")
         .accessibilityValue(
             "\(expressionSubjectDisplayValue)，来自\(expressionSubjectDisplaySourceTitle)"
         )
@@ -365,7 +364,9 @@ struct MemorySubjectEditorView: View {
             compactLabeledTextField(
                 "对象名称",
                 text: $displayName,
-                focus: .displayName
+                focus: .displayName,
+                systemImage: "person.fill",
+                tint: .blue
             )
 
             compactDivider
@@ -373,7 +374,9 @@ struct MemorySubjectEditorView: View {
             compactLabeledTextField(
                 "昵称",
                 text: $shortName,
-                focus: .shortName
+                focus: .shortName,
+                systemImage: "person.text.rectangle",
+                tint: .purple
             )
 
             compactDivider
@@ -381,7 +384,9 @@ struct MemorySubjectEditorView: View {
             compactLabeledTextField(
                 "与我的关系",
                 text: $relationshipRole,
-                focus: .relationshipRole
+                focus: .relationshipRole,
+                systemImage: "person.2.fill",
+                tint: .orange
             )
 
             compactDivider
@@ -389,7 +394,9 @@ struct MemorySubjectEditorView: View {
             compactLabeledTextField(
                 "专属称呼",
                 text: $relationshipLabel,
-                focus: .relationshipLabel
+                focus: .relationshipLabel,
+                systemImage: "heart.fill",
+                tint: .pink
             )
         }
         .padding(.vertical, 2)
@@ -398,36 +405,52 @@ struct MemorySubjectEditorView: View {
     private func compactLabeledTextField(
         _ title: String,
         text: Binding<String>,
-        focus: SubjectFocusedField
+        focus: SubjectFocusedField,
+        systemImage: String,
+        tint: Color
     ) -> some View {
-        Group {
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(title)
-                        .font(.body)
-                        .foregroundStyle(.primary)
+        HStack(spacing: 12) {
+            RoundedRectangle(
+                cornerRadius: 10,
+                style: .continuous
+            )
+            .fill(tint.opacity(0.11))
+            .frame(width: 34, height: 34)
+            .overlay {
+                Image(systemName: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(tint)
+            }
 
-                    compactIdentityTextField(
-                        title,
-                        text: text,
-                        focus: focus,
-                        alignment: .leading
-                    )
-                }
-                .padding(.vertical, 9)
-            } else {
-                HStack(spacing: 10) {
-                    Text(title)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .frame(width: 88, alignment: .leading)
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(title)
+                            .font(.body)
+                            .foregroundStyle(.primary)
 
-                    compactIdentityTextField(
-                        title,
-                        text: text,
-                        focus: focus,
-                        alignment: .trailing
-                    )
+                        compactIdentityTextField(
+                            title,
+                            text: text,
+                            focus: focus,
+                            alignment: .leading
+                        )
+                    }
+                    .padding(.vertical, 9)
+                } else {
+                    HStack(spacing: 10) {
+                        Text(title)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .frame(width: 88, alignment: .leading)
+
+                        compactIdentityTextField(
+                            title,
+                            text: text,
+                            focus: focus,
+                            alignment: .trailing
+                        )
+                    }
                 }
             }
         }
@@ -1522,7 +1545,7 @@ struct MemorySubjectEditorView: View {
         Rectangle()
             .fill(ConfigurationUI.faintHairline)
             .frame(height: 0.5)
-            .padding(.leading, 82)
+            .padding(.leading, 58)
     }
 
     private func normalizedAvatarStatusMessage(
@@ -1807,18 +1830,14 @@ private struct SubjectTimeAnchorRow: View {
             )
             .fill(
                 isEditing
-                ? Color.accentColor.opacity(0.12)
-                : Color.primary.opacity(0.045)
+                ? anchorTypeTint.opacity(0.16)
+                : anchorTypeTint.opacity(0.10)
             )
             .frame(width: 36, height: 36)
             .overlay {
                 Image(systemName: anchorTypeIconName)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(
-                        isEditing
-                        ? Color.accentColor
-                        : Color.secondary
-                    )
+                    .foregroundStyle(anchorTypeTint)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1870,7 +1889,7 @@ private struct SubjectTimeAnchorRow: View {
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.accentColor.opacity(0.78))
                     .frame(width: 32, height: 32)
             }
             .accessibilityLabel("时间锚点操作")
@@ -1904,6 +1923,21 @@ private struct SubjectTimeAnchorRow: View {
             return "flag.checkered"
         case .custom:
             return "calendar"
+        }
+    }
+
+    private var anchorTypeTint: Color {
+        switch anchor.resolvedAnchorType {
+        case .birthday:
+            return .orange
+        case .relationship:
+            return .pink
+        case .marriage:
+            return .purple
+        case .exam:
+            return .green
+        case .custom:
+            return .blue
         }
     }
 

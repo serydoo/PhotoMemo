@@ -79,10 +79,9 @@ At the start of any new session:
 11. Read `AGENTS.md`
 12. Check `git status`
 
-If the task touches the main editor flow, inspect:
-
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift`
-- the latest `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+*.swift` files
+If the task touches the main editor flow, inspect the current Configuration
+Center implementation. Do not restore the retired `Views/Main/MainView*`
+workspace/editor path.
 
 ## Product Guardrails
 
@@ -167,23 +166,17 @@ When working on the Immers-inspired preset:
 - if no custom logo is selected for `immersWhite`, keep the classic Apple mini-logo fallback
 - preserve the horizontal layout refinement already made for tighter title width and denser right-side parameters
 
-## MainView Refactor Rules
+## Retired MainView Rules
 
-`MainView.swift` should keep moving toward a **coordinator** role.
+The legacy `Views/Main/MainView*` and Workspace editor path was removed on
+2026-07-20 after dependency, test, macOS, iOS, and signed-device verification.
 
-Preferred direction:
-
-- state lives in `MainView`
-- persistence and side effects live in `MainView`
-- display-heavy sections move into `MainView+*.swift`
-- do not move business logic into decorative subviews
-
-When refactoring `MainView`, preserve these behaviors:
-
-- insertion must go into the explicitly selected custom region
-- do not restore the old implicit right-bottom insertion fallback
-- preset switch / reset / rename must refresh composer editing state
-- do not break drag-sort and local editor-state synchronization
+- macOS uses `ConfigurationCenterView`
+- iOS uses `PhotoMemoiOSV1View`
+- do not recreate `MainView`, Workspace Session, the legacy Composer editor,
+  or the old photo-import-first workflow
+- shared non-UI utilities must live in their owning service or engine layer,
+  not inside a retired view subtree
 
 ## Development Workflow
 
@@ -288,7 +281,7 @@ When choosing between possible improvements, prefer:
 
 1. Render/export correctness
 2. Metadata retention reliability
-3. MainView decomposition
+3. Configuration Center state-flow clarity
 4. Permission and album-save clarity
 5. iOS-readiness and reduced macOS-only coupling
 
