@@ -1,6 +1,170 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-21
+Last updated: 2026-07-23
+
+## 2026-07-23 1.7 (7) Post-push UI And Reliability Closure
+
+Since the last GitHub synchronization baseline `0b932f34`, the worktree
+completed one bounded product and engineering pass covering Configuration
+Center visual unification, Share Extension presentation, and batch consistency
+hardening.
+
+Completed in this pass:
+
+- Configuration Center metrics, card hierarchy, typography roles, and semantic
+  iconography now provide the visual baseline for the main iOS surfaces.
+- Share Extension v1 is documented and implemented as a compact two-module
+  confirmation flow with Dynamic Type, accessibility, and narrow-width
+  contract coverage.
+- Queue corruption and queue persistence failures are surfaced and block
+  unsafe automatic recovery; queue writes are synchronized and read back.
+- Shared Share requests use a lock-backed read/modify/write path and remain
+  stored until enqueue succeeds or a terminal drop is explicitly recorded.
+- Static and Live Photo saves carry a task-scoped idempotency identity and use
+  a same-process PhotoKit save gate; cancellation no longer deletes in-flight
+  source files.
+
+Verification and delivery evidence:
+
+- unsigned macOS, iOS, and Share Extension Debug builds passed;
+- signed iPhone7 device build passed and was installed over the existing app;
+- app version on the device is `1.7 (7)`; the device named `iPhone7` is an
+  iPhone 17 Pro Max;
+- `git diff --check` passed;
+- retained full-suite evidence is `1,005` passed, `1` skipped, `0` failed;
+- a fresh Xcode beta test invocation was interrupted after the test service
+  stalled at `waiting for workers to materialize`, so it is not counted as a
+  new full-suite result.
+
+Release note:
+`Docs/07_Releases/2026-07-23-1.7-build-7-post-push-ui-and-reliability.md`.
+
+This pass does not close the strict TX-001 PhotoKit commit protocol, the
+Live Photo external-save cancellation semantics, or BP-001 high-cost-media
+budget enforcement. Signed Apple Photos Share lifecycle, forced-termination
+save recovery, and Instruments/Jetsam evidence remain open production
+certification work.
+
+## 2026-07-21 Batch Consistency Hardening
+
+The batch, Share handoff, persistence, cancellation, and PhotoKit recovery
+slice was hardened without reopening the frozen Configuration Center or
+Renderer architecture.
+
+Completed safeguards:
+
+- queue decoding and persistence failures remain explicit; corrupted queue
+  data blocks automatic recovery instead of becoming an empty queue;
+- Share request reads and read-modify-write operations use a process lock and
+  a shared lock file, and requests remain stored until enqueue succeeds;
+- request acknowledgement removes only confirmed request IDs, preserving
+  requests appended after processing; corrupted request payloads are retained
+  instead of being overwritten;
+- still-image and Live Photo writes carry the stable `BatchTask` UUID and
+  reconcile recent PhotoKit resources before creating a duplicate;
+- cancellation is phase-aware: queued sources can be deleted immediately,
+  while in-flight export/save work is allowed to release its source before
+  cleanup; render cancellation is rechecked before export;
+- acknowledgement failures now produce Share diagnostics.
+
+Verification completed:
+
+- full serial `PhotoMemoTests`: 1,005 tests passed, 1 skipped, 0 failed;
+- unsigned Debug macOS `PhotoMemo` build passed;
+- unsigned generic iOS `PhotoMemoiOS` build passed;
+- unsigned generic iOS `PhotoMemoShareExtension` build passed;
+- `git diff --check` passed.
+
+Known verification limits: the current pass did not perform a signed-device
+Apple Photos Share workflow or a real PhotoKit save/recovery exercise. Existing
+`CLGeocoder` and media SDK deprecation warnings remain; they are unrelated to
+this hardening slice. The paired device name `iPhone7` continues to refer to
+the user's iPhone 17 Pro Max.
+
+## 2026-07-21 iPhone7 Signed Build Distribution
+
+The current verified worktree was signed and built as `PhotoMemoiOS.app` for
+the paired physical device named `iPhone7`. The app was installed over the
+existing `com.serydoo.PhotoMemo.iOS` installation without uninstalling the app
+or clearing its local configuration data, then launched successfully.
+
+Device verification confirms:
+
+- app version `1.7 (7)`;
+- main `PhotoMemoiOS` process running;
+- `PhotoMemoWidgetExtension` process running;
+- device connected, paired, and in Developer Mode.
+
+## 2026-07-21 Main App Configuration Center Visual Unification
+
+The main iOS surfaces now use Configuration Center as the visual baseline for
+content bounds, outer-card and inner-panel hierarchy, card chrome, compact
+information-row rhythm, and semantic heading icons. Memory Subject overview,
+Home summaries, Output, Task, Settings, Welcome, and related navigation
+surfaces now reuse the shared `ConfigurationUI` metrics and the centralized
+`MemoMarkSymbol` catalog where their concepts overlap. The Share Extension
+remains on its separately frozen `MemoMark Share Design v1` contract.
+
+The final subject-overview correction replaced the remaining local inner-panel
+padding and corner-radius literals with `ConfigurationUI.innerPanelPadding` and
+`ConfigurationUI.innerPanelCornerRadius`. The UI pass record is
+`Docs/06_Development/2026-07-21-main-app-configuration-center-visual-unification-ui-pass.md`.
+
+Verification completed:
+
+- focused responsive-layout and Home quick-action tests passed;
+- the full unsigned `PhotoMemoTests` suite passed;
+- unsigned macOS `PhotoMemo` and generic iOS `PhotoMemoiOS` Debug builds passed;
+- `git diff --check` passed with no whitespace errors.
+
+Manual iPhone acceptance remains required for default and accessibility text
+sizes, dark mode, and the complete main-app surface sequence. Share Extension
+visual acceptance on a live Apple Photos Share sheet remains separately
+pending; no Share architecture or behavior was changed in this UI pass.
+
+## 2026-07-21 MemoMark Typography Tokens
+
+The typography pass now has a shared contract at
+`Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift`. It follows the
+main program's semantic SwiftUI roles and provides a Dynamic Type-aware UIKit
+adapter for the Share Extension. The first migrated surface uses the Hero,
+section title, value, module title, detail, secondary, brand, caption, and
+button roles without changing `RendererConstants.Typography`, which remains
+owned by the Memory Card renderer.
+
+The token specification is recorded in
+`Docs/04_DesignSystem/MemoMarkTypographyTokens.md`. Share Extension focused
+tests, generic iOS build, signed iPhone7 build, and overwrite installation
+passed.
+
+The Share confirmation structure is now frozen as `MemoMark Share Design v1`:
+two functional Cards, three Summary rows, four Promise rows, one Brand
+Statement, and one Primary Action. The final polish increases summary row
+breathing room and moves the button to a 24pt safe-area inset. Promise icons
+are selected from the `Research/Iconography` semantic reserve, while the
+compact Share rendering keeps them monochrome hierarchical secondary symbols.
+
+The final SE-001 polish keeps the palette monochrome inside the Promise Card,
+reduces the app name to tertiary identity text, shortens dividers, adds brand
+line spacing, and unifies functional Card/button geometry at 24pt continuous
+corners with 24pt Card padding. The Hero now says `N 张照片准备开始记录` to
+avoid repeating the button verb.
+
+## 2026-07-21 Share Extension Module Split
+
+The Share Extension confirmation surface now uses two functional compact
+modules: `本次分享` and `后台处理`. The effect row is now a vertical `配置`
+group showing only the selected Memory Subject, while the processing module
+uses native SF Symbols for its four local-first and background-processing
+assurances. `今天的照片，也是未来的回忆。` is plain secondary text rather than
+another Card. The fixed bottom area keeps the blue `生成时光记录` action
+without a duplicated footer message.
+
+Verification: focused Share Extension and workflow-summary tests passed;
+unsigned generic iOS and automatically signed iPhone7 builds passed; the
+signed app was installed over the existing device app. Launch and manual
+Apple Photos Share UI acceptance remain pending because the connected device
+was locked during launch.
 
 ## 2026-07-21 Configuration Continuity And UI Closure
 

@@ -203,12 +203,27 @@ final class PhotoMemoShareExtensionIntakeService {
     private let diagnostics:
         ShareIntakeDiagnostics
 
-    static let maxSupportedPhotoCount = 20
+    private let commercePersistence:
+        MemoMarkCommercePersistence
+
+    var maxSupportedPhotoCount: Int {
+        let snapshot =
+            commercePersistence
+            .loadSharedSnapshot()
+        return min(
+            snapshot.batchLimit,
+            snapshot.remainingRecords
+                ?? snapshot.batchLimit
+        )
+    }
 
     init(
         intakeStore: ExternalPhotoIntakeStore,
         snapshotService:
-            SharedBatchConfigurationSnapshotService
+            SharedBatchConfigurationSnapshotService,
+        commercePersistence:
+            MemoMarkCommercePersistence =
+                MemoMarkCommercePersistence()
     ) {
         let diagnostics =
             ShareIntakeDiagnostics()
@@ -222,6 +237,8 @@ final class PhotoMemoShareExtensionIntakeService {
         self.intakeStore = intakeStore
         self.snapshotService =
             snapshotService
+        self.commercePersistence =
+            commercePersistence
         self.providerLoader =
             providerLoader
         self.managedFileImporter =
@@ -269,7 +286,8 @@ final class PhotoMemoShareExtensionIntakeService {
                 .noSupportedImages
         }
 
-        guard providers.count <= Self.maxSupportedPhotoCount else {
+        guard providers.count <= maxSupportedPhotoCount,
+              maxSupportedPhotoCount > 0 else {
             let requestID = UUID()
             let failureContext =
                 PhotoMemoShareIntakeOperationSeed(
@@ -288,7 +306,7 @@ final class PhotoMemoShareExtensionIntakeService {
                         PhotoMemoShareIntakeDiagnosticError
                         .make(
                             description:
-                                "Share Extension received \(providers.count) supported image providers; maxSupportedPhotoCount is \(Self.maxSupportedPhotoCount).",
+                                "Share Extension received \(providers.count) supported image providers; maxSupportedPhotoCount is \(maxSupportedPhotoCount).",
                             code: 1010
                         )
                 )
@@ -297,7 +315,7 @@ final class PhotoMemoShareExtensionIntakeService {
                 supportedProviderCount:
                     providers.count,
                 maxSupportedPhotoCount:
-                    Self.maxSupportedPhotoCount,
+                    maxSupportedPhotoCount,
                 requestID: requestID
             )
 

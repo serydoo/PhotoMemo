@@ -10,6 +10,10 @@ struct ConfigurationCenteriOSView: View {
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
+    @ObservedObject
+    private var commerceStore:
+        MemoMarkCommerceStore
+
     @StateObject
     private var session: ConfigurationSession
 
@@ -30,6 +34,13 @@ struct ConfigurationCenteriOSView: View {
 
     @State
     private var showsSettingsSheet = false
+
+    @State
+    private var showsMemoMarkPlus = false
+
+    @State
+    private var commerceMilestone:
+        MemoMarkCommerceMilestone = .none
 
     @State
     private var showsWelcomePage = false
@@ -65,6 +76,11 @@ struct ConfigurationCenteriOSView: View {
         runtime: PhotoMemoAppRuntime
     ) {
         self.runtime = runtime
+        _commerceStore =
+            ObservedObject(
+                wrappedValue:
+                    runtime.commerceStore
+            )
         _selectedLocationDisplayConfiguration =
             State(
                 initialValue:
@@ -182,6 +198,49 @@ struct ConfigurationCenteriOSView: View {
         }
         .sheet(
             isPresented:
+                $showsMemoMarkPlus
+        ) {
+            MemoMarkPlusPurchaseView(
+                store: commerceStore,
+                onDismiss: {
+                    showsMemoMarkPlus = false
+                }
+            )
+        }
+        .alert(
+            commerceMilestoneTitle,
+            isPresented:
+                commerceMilestoneBinding
+        ) {
+            Button("了解 MemoMark+") {
+                showsMemoMarkPlus = true
+            }
+            Button("继续记录", role: .cancel) {}
+        } message: {
+            Text(commerceMilestoneMessage)
+        }
+        .onChange(
+            of:
+                commerceStore.snapshot
+                .successfulRecordCount
+        ) { _, count in
+            let policy =
+                commerceStore.isPlus
+                ? MemoMarkCommercePolicy.plus
+                : MemoMarkCommercePolicy(
+                    isPlus: false,
+                    totalAllowance:
+                        commerceStore.snapshot
+                        .totalAllowance,
+                    batchLimit:
+                        commerceStore.snapshot
+                        .batchLimit
+                )
+            commerceMilestone =
+                policy.milestone(after: count)
+        }
+        .sheet(
+            isPresented:
                 $showsWelcomePage
         ) {
             V1WelcomePageSurface(
@@ -215,6 +274,42 @@ struct ConfigurationCenteriOSView: View {
             compactNavigatorSheet
         }
         .preferredColorScheme(.light)
+    }
+
+    private var commerceMilestoneBinding:
+        Binding<Bool> {
+        Binding(
+            get: {
+                commerceMilestone != .none
+            },
+            set: { isPresented in
+                if !isPresented {
+                    commerceMilestone = .none
+                }
+            }
+        )
+    }
+
+    private var commerceMilestoneTitle: String {
+        switch commerceMilestone {
+        case .none:
+            return "成长记录"
+        case .approaching:
+            return "你已经留下 190 张成长记录"
+        case .allowanceCompleted:
+            return "第 200 张成长记录已保存"
+        }
+    }
+
+    private var commerceMilestoneMessage: String {
+        switch commerceMilestone {
+        case .none:
+            return ""
+        case .approaching(let remaining):
+            return "还有 \(remaining) 张免费成长记录。解锁 MemoMark+，继续记录此后的每一个瞬间。"
+        case .allowanceCompleted:
+            return "照片已完整保存到 Apple Photos。解锁 MemoMark+，无限记录未来的时光。"
+        }
     }
 
     private var sidebar: some View {
@@ -328,6 +423,8 @@ struct ConfigurationCenteriOSView: View {
                 detailPreviewPinProgress,
             showsNavigatorButton:
                 usesCompactLayout,
+            showsMemoMarkPlusBadge:
+                commerceStore.isPlus,
             isRenamingProfile: $isRenamingProfile,
             profileTitle: profileTitleBinding,
             onDismissKeyboard: dismissKeyboard,
@@ -342,6 +439,10 @@ struct ConfigurationCenteriOSView: View {
                 dismissKeyboard()
                 refreshProcessingState()
                 showsSettingsSheet = true
+            },
+            onOpenMemoMarkPlus: {
+                dismissKeyboard()
+                showsMemoMarkPlus = true
             },
             onOpenNavigator: {
                 dismissKeyboard()
@@ -413,6 +514,15 @@ struct ConfigurationCenteriOSView: View {
     private var settingsSheet: some View {
         NavigationStack {
             V1SettingsPageSurface(
+                commerceSnapshot:
+                    commerceStore.snapshot,
+                onOpenMemoMarkPlus: {
+                    showsSettingsSheet = false
+                    Task { @MainActor in
+                        await Task.yield()
+                        showsMemoMarkPlus = true
+                    }
+                },
                 onShowWelcome: {
                     showsSettingsSheet = false
                     showsWelcomePage = true

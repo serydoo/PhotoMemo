@@ -5,6 +5,9 @@ import Combine
 final class PhotoMemoAppRuntime:
     ObservableObject {
 
+    let commerceStore:
+        MemoMarkCommerceStore
+
     let environment:
         AppEnvironment
 
@@ -32,11 +35,22 @@ final class PhotoMemoAppRuntime:
     private let externalIntakeStore:
         ExternalPhotoIntakeStore
 
+    private var cancellables:
+        Set<AnyCancellable> = []
+
     init(
         environment: AppEnvironment
     ) {
         self.environment =
             environment
+        self.commerceStore =
+            MemoMarkCommerceStore(
+                persistence:
+                    MemoMarkCommercePersistence(
+                        defaults:
+                            environment.defaults
+                    )
+            )
         self.batchQueueStore =
             environment.batchQueueStore
         self.backgroundStatusService =
@@ -70,6 +84,43 @@ final class PhotoMemoAppRuntime:
         self.externalIntakeStore =
             environment.services
             .externalIntakeStore
+
+        commerceStore.$snapshot
+            .removeDuplicates()
+            .sink { [weak batchQueueStore] snapshot in
+                batchQueueStore?
+                    .updateCommerceSnapshot(snapshot)
+            }
+            .store(in: &cancellables)
+
+        batchQueueStore.$commerceSnapshot
+            .removeDuplicates()
+            .sink { [weak commerceStore] snapshot in
+                commerceStore?
+                    .adoptSharedSnapshot(snapshot)
+            }
+            .store(in: &cancellables)
+
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+            await self.commerceStore.start()
+            let marketingVersion =
+                Bundle.main.object(
+                    forInfoDictionaryKey:
+                        "CFBundleShortVersionString"
+                ) as? String ?? "1"
+            self.commerceStore
+                .applyMajorVersionGiftIfNeeded(
+                    marketingVersion:
+                        marketingVersion
+                )
+            self.batchQueueStore
+                .updateCommerceSnapshot(
+                    self.commerceStore.snapshot
+                )
+        }
     }
 
     convenience init(

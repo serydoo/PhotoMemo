@@ -13903,3 +13903,25 @@ device build still reproduces the blocker.
 - 最新开发签名包已覆盖安装到 iPhone7，未卸载 App、未清除现有数据。
   远程启动仅因设备锁屏被系统拒绝；解锁后需人工确认基本资料与可用锚点
   两张卡片均保留完整 18pt 左右边距、圆角可见，且长字段不再撑宽页面。
+
+## 2026-07-23 MemoMark+ 首批记录者计划
+
+- 商业与体验规格、分步实施计划、App Store Connect 配置清单分别记录于
+  `Docs/superpowers/specs/2026-07-23-memomark-plus-purchase-experience-design.md`、
+  `Docs/superpowers/plans/2026-07-23-memomark-plus-implementation-plan.md` 与
+  `Docs/07_Releases/2026-07-23-memomark-plus-app-store-connect-setup.md`。
+- 免费用户拥有 200 张成长记录额度，只有成功保存至 Apple Photos 后才计数；
+  失败、取消、预览和重试不计数。免费单批上限 20 张，MemoMark+ 为 40 张。
+- MemoMark+ 使用 StoreKit 2 非消耗型产品
+  `com.serydoo.PhotoMemo.iOS.memomarkplus.lifetime`；购买、恢复购买和 Apple
+  系统兑换码入口共用同一套代码，显示价格始终读取 `Product.displayPrice`。
+- TestFlight Sandbox 与 App Store Production 使用同一 Build，并以交易环境隔离
+  权益、成功记录数和版本赠送。2.x 起免费用户每个大版本一次性获赠 50 张，
+  不重置累计使用量。
+- 设置页顶部新增紧凑的 MemoMark+ 状态卡；购买页保持 Apple 原生层级；完成购买
+  或兑换后首页保留“时光记”，并显示暖香槟金 MemoMark+ / 首批记录者徽章。
+- Renderer、Metadata、Export、Photo Library 与 Layout Engine 未承载商业逻辑；
+  Share Extension 只读取 App Group 中的共享权益快照和可用额度。
+- 新增聚焦测试覆盖策略、环境命名空间、成功保存幂等、版本赠送、购买页文案和
+  徽章边界。真机 StoreKit Sandbox 购买、恢复、兑换及家庭共享仍待 App Store
+  Connect 创建产品并随下一 Build 手工验收。

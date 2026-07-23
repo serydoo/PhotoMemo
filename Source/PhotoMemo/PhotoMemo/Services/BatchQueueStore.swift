@@ -21,6 +21,9 @@ final class BatchQueueStore: ObservableObject {
     @Published private(set) var defaultConfigurationSnapshot:
         BatchConfigurationSnapshot
 
+    @Published private(set) var commerceSnapshot:
+        MemoMarkCommerceSnapshot
+
     private let settingsService:
         SettingsService
 
@@ -35,6 +38,9 @@ final class BatchQueueStore: ObservableObject {
 
     private let notifications:
         BatchQueueNotifications
+
+    private let commercePersistence:
+        MemoMarkCommercePersistence
 
     private var processingTask:
         Task<Void, Never>?
@@ -109,6 +115,13 @@ final class BatchQueueStore: ObservableObject {
                 notificationService:
                     notificationService
             )
+        self.commercePersistence =
+            MemoMarkCommercePersistence(
+                defaults: resolvedDefaults
+            )
+        self.commerceSnapshot =
+            self.commercePersistence
+            .loadSharedSnapshot()
         self.defaultConfigurationSnapshot =
             resolvedSettingsService
             .buildBatchConfigurationSnapshot()
@@ -172,6 +185,38 @@ final class BatchQueueStore: ObservableObject {
         title: String? = nil
     ) -> BatchJob? {
 
+        let reservedRecordCount =
+            jobs.reduce(into: 0) { count, job in
+                count += job.tasks.count {
+                    !$0.phase.isTerminal
+                }
+            }
+        let maximumAdmissionCount =
+            MemoMarkCommercePolicy(
+                isPlus:
+                    commerceSnapshot.isPlus,
+                totalAllowance:
+                    commerceSnapshot.totalAllowance,
+                batchLimit:
+                    commerceSnapshot.batchLimit
+            )
+            .maximumAdmissionCount(
+                after:
+                    commerceSnapshot
+                    .successfulRecordCount,
+                reservedRecordCount:
+                    reservedRecordCount
+            )
+
+        guard payloads.count
+                <= maximumAdmissionCount else {
+            lastErrorMessage =
+                maximumAdmissionCount == 0
+                ? "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
+                : "当前一次最多可以加入 \(maximumAdmissionCount) 张照片。"
+            return nil
+        }
+
         guard let job =
             execution.enqueue(
                 payloads: payloads,
@@ -194,9 +239,63 @@ final class BatchQueueStore: ObservableObject {
         return job
     }
 
+    func updateCommerceSnapshot(
+        _ snapshot: MemoMarkCommerceSnapshot
+    ) {
+        commerceSnapshot = snapshot
+        commercePersistence
+            .saveSharedSnapshot(snapshot)
+    }
+
     func retryFailedTasks(
         in jobID: UUID
     ) {
+
+        guard let job = jobs.first(
+            where: { $0.id == jobID }
+        ) else {
+            return
+        }
+
+        let retryableTaskCount =
+            job.tasks.count {
+                $0.phase == .failed
+                && ($0.failure?.canRetry ?? true)
+            }
+        let reservedRecordCount =
+            jobs.reduce(into: 0) { count, currentJob in
+                count += currentJob.tasks.count {
+                    !$0.phase.isTerminal
+                }
+            }
+        let maximumAdmissionCount =
+            MemoMarkCommercePolicy(
+                isPlus:
+                    commerceSnapshot.isPlus,
+                totalAllowance:
+                    commerceSnapshot.totalAllowance,
+                batchLimit:
+                    commerceSnapshot.batchLimit
+            )
+            .maximumAdmissionCount(
+                after:
+                    commerceSnapshot
+                    .successfulRecordCount,
+                reservedRecordCount:
+                    reservedRecordCount
+            )
+
+        guard retryableTaskCount > 0,
+              retryableTaskCount
+                <= maximumAdmissionCount else {
+            if retryableTaskCount > 0 {
+                lastErrorMessage =
+                    maximumAdmissionCount == 0
+                    ? "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
+                    : "当前剩余额度可重试 \(maximumAdmissionCount) 张照片。"
+            }
+            return
+        }
 
         guard execution.retryFailedTasks(
             in: &jobs,
@@ -528,13 +627,60 @@ extension BatchQueueStore {
         }
 
         var job = jobs[jobIndex]
+        let previousTask =
+            job.tasks[taskIndex]
         mutate(&job.tasks[taskIndex])
+        let updatedTask =
+            job.tasks[taskIndex]
         job.updatedAt = Date()
         job.state =
             execution.derivedJobState(
                 from: job.tasks
             )
         jobs[jobIndex] = job
+
+        if previousTask.phase != .completed,
+           updatedTask.phase == .completed,
+           updatedTask.savedAssetIdentifier != nil,
+           !commerceSnapshot.isPlus,
+           commercePersistence
+            .recordSuccessfulSave(
+                taskID: updatedTask.id,
+                environment:
+                    commerceSnapshot.environment
+            ) {
+            let bonus =
+                commercePersistence
+                .bonusAllowance(
+                    environment:
+                        commerceSnapshot.environment
+                )
+            commerceSnapshot =
+                MemoMarkCommerceSnapshot(
+                    environment:
+                        commerceSnapshot.environment,
+                    isPlus: false,
+                    successfulRecordCount:
+                        commercePersistence
+                        .successfulRecordCount(
+                            environment:
+                                commerceSnapshot.environment
+                        ),
+                    totalAllowance:
+                        MemoMarkCommercePolicy
+                        .baseFreeAllowance
+                        + bonus,
+                    batchLimit:
+                        MemoMarkCommercePolicy
+                        .freeBatchLimit,
+                    firstRecorderDate: nil,
+                    updatedAt: Date()
+                )
+            commercePersistence
+                .saveSharedSnapshot(
+                    commerceSnapshot
+                )
+        }
 
         guard persist else {
             return

@@ -905,7 +905,10 @@ private extension PhotoMemoShareExtensionViewController {
             for: .init(
                 state: state,
                 photoCount: photoCount,
-                configurationIsReady: configurationReadiness.isReady
+                configurationIsReady: configurationReadiness.isReady,
+                maximumPhotoCount:
+                    intakeService
+                    .maxSupportedPhotoCount
             )
         )
         viewState = update.state
@@ -973,17 +976,21 @@ private extension PhotoMemoShareExtensionViewController {
             }
 
             guard sharedPhotoCount <=
-                    PhotoMemoShareExtensionIntakeService
-                    .maxSupportedPhotoCount
+                    intakeService
+                    .maxSupportedPhotoCount,
+                  intakeService
+                    .maxSupportedPhotoCount > 0
             else {
                 PhotoMemoShareDiagnostics.record(
                     stage: .extensionInputTooManyPhotos,
                     message:
-                        "supportedPhotos=\(sharedPhotoCount), max=\(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount)"
+                        "supportedPhotos=\(sharedPhotoCount), max=\(intakeService.maxSupportedPhotoCount)"
                 )
                 cancelExtension(
                     message:
-                        "一次最多处理 \(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount) 张照片。请回到 Apple Photos 分批分享。"
+                        intakeService.maxSupportedPhotoCount == 0
+                        ? "免费成长记录已完成，请打开时光记了解 MemoMark+。"
+                        : "一次最多处理 \(intakeService.maxSupportedPhotoCount) 张照片。请回到 Apple Photos 分批分享。"
                 )
                 return
             }

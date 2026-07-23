@@ -8,6 +8,10 @@ struct V1SettingsPageSurface: View {
     @State
     private var showsExpressionGuide = false
 
+    let commerceSnapshot:
+        MemoMarkCommerceSnapshot
+    let onOpenMemoMarkPlus: () -> Void
+
     let onShowWelcome: () -> Void
     let onShowWorkflow: () -> Void
     let onDismissKeyboard: () -> Void
@@ -15,6 +19,7 @@ struct V1SettingsPageSurface: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
+                memoMarkPlusSection
                 overviewSection
                 guideSection
                 supportSection
@@ -38,6 +43,103 @@ struct V1SettingsPageSurface: View {
         .sheet(isPresented: $showsExpressionGuide) {
             expressionGuideSheet
         }
+    }
+
+    private var memoMarkPlusSection: some View {
+        Button(action: onOpenMemoMarkPlus) {
+            HStack(spacing: 13) {
+                ZStack {
+                    RoundedRectangle(
+                        cornerRadius: 13,
+                        style: .continuous
+                    )
+                    .fill(
+                        Color(
+                            red: 0.98,
+                            green: 0.94,
+                            blue: 0.82
+                        )
+                    )
+
+                    Image(
+                        systemName:
+                            commerceSnapshot.isPlus
+                            ? "checkmark.seal.fill"
+                            : "sparkles"
+                    )
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(warmGold)
+                }
+                .frame(width: 46, height: 46)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("MemoMark+")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.primary)
+
+                    Text(memoMarkPlusDetail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(14)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .fill(ConfigurationUI.panelBackground)
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+                .stroke(
+                    warmGold.opacity(0.18),
+                    lineWidth: 0.75
+                )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(
+            commerceSnapshot.isPlus
+            ? "查看权益与首批记录者纪念印记"
+            : "了解 MemoMark+ 完整记录能力"
+        )
+    }
+
+    private var memoMarkPlusDetail: String {
+        if commerceSnapshot.isPlus {
+            return "首批记录者 · 无限记录\n愿今天留下的时光，在未来仍然清晰而温暖。"
+        }
+
+        if let remaining =
+                commerceSnapshot.remainingRecords,
+           remaining <= 10 {
+            return "还有 \(remaining) 张免费成长记录 · 了解 MemoMark+"
+        }
+
+        return "继续保存那些未来值得回看的瞬间"
+    }
+
+    private var warmGold: Color {
+        Color(
+            red: 0.58,
+            green: 0.40,
+            blue: 0.13
+        )
     }
 
     private var overviewSection: some View {
@@ -232,7 +334,8 @@ struct V1SettingsPageSurface: View {
 
                 settingsInfoRow(
                     title: "每次处理",
-                    headline: "最多 20 张照片",
+                    headline:
+                        "最多 \(commerceSnapshot.batchLimit) 张照片",
                     detail: "较大的分享请分批进行，减少系统扩展内存压力并提高回存稳定性。",
                     systemImage: MemoMarkSymbol.originalPhoto.name,
                     tint: .teal

@@ -13,6 +13,7 @@ struct ConfigurationCenterTopPreviewSection<
     let currentPresetStatusText: String
     let previewPinProgress: CGFloat
     let showsNavigatorButton: Bool
+    let showsMemoMarkPlusBadge: Bool
 
     @Binding
     var isRenamingProfile: Bool
@@ -22,6 +23,7 @@ struct ConfigurationCenterTopPreviewSection<
     let onBeginRename: () -> Void
     let onResetPreset: () -> Void
     let onOpenSettings: () -> Void
+    let onOpenMemoMarkPlus: () -> Void
     let onOpenNavigator: () -> Void
     let onRegionSelection: (CardRegion) -> Void
     let profilePresetControl: ProfilePresetControl
@@ -33,12 +35,14 @@ struct ConfigurationCenterTopPreviewSection<
         currentPresetStatusText: String,
         previewPinProgress: CGFloat,
         showsNavigatorButton: Bool,
+        showsMemoMarkPlusBadge: Bool,
         isRenamingProfile: Binding<Bool>,
         profileTitle: Binding<String>,
         onDismissKeyboard: @escaping () -> Void,
         onBeginRename: @escaping () -> Void,
         onResetPreset: @escaping () -> Void,
         onOpenSettings: @escaping () -> Void,
+        onOpenMemoMarkPlus: @escaping () -> Void,
         onOpenNavigator: @escaping () -> Void,
         onRegionSelection: @escaping (CardRegion) -> Void,
         @ViewBuilder profilePresetControl: () -> ProfilePresetControl
@@ -49,12 +53,16 @@ struct ConfigurationCenterTopPreviewSection<
         self.currentPresetStatusText = currentPresetStatusText
         self.previewPinProgress = previewPinProgress
         self.showsNavigatorButton = showsNavigatorButton
+        self.showsMemoMarkPlusBadge =
+            showsMemoMarkPlusBadge
         _isRenamingProfile = isRenamingProfile
         self.profileTitle = profileTitle
         self.onDismissKeyboard = onDismissKeyboard
         self.onBeginRename = onBeginRename
         self.onResetPreset = onResetPreset
         self.onOpenSettings = onOpenSettings
+        self.onOpenMemoMarkPlus =
+            onOpenMemoMarkPlus
         self.onOpenNavigator = onOpenNavigator
         self.onRegionSelection = onRegionSelection
         self.profilePresetControl = profilePresetControl()
@@ -99,9 +107,32 @@ struct ConfigurationCenterTopPreviewSection<
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("时光记")
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundStyle(.primary)
+                    ViewThatFits(
+                        in: .horizontal
+                    ) {
+                        HStack(spacing: 9) {
+                            productTitle
+                            if showsMemoMarkPlusBadge {
+                                MemoMarkPlusBadge(
+                                    action:
+                                        onOpenMemoMarkPlus
+                                )
+                            }
+                        }
+
+                        VStack(
+                            alignment: .leading,
+                            spacing: 7
+                        ) {
+                            productTitle
+                            if showsMemoMarkPlusBadge {
+                                MemoMarkPlusBadge(
+                                    action:
+                                        onOpenMemoMarkPlus
+                                )
+                            }
+                        }
+                    }
 
                     Text("配置中心")
                         .font(.caption.weight(.semibold))
@@ -145,6 +176,12 @@ struct ConfigurationCenterTopPreviewSection<
         }
         .padding(.horizontal, 6)
         .padding(.top, 2)
+    }
+
+    private var productTitle: some View {
+        Text("时光记")
+            .font(.largeTitle.weight(.bold))
+            .foregroundStyle(.primary)
     }
 
     private var profilePanel: some View {

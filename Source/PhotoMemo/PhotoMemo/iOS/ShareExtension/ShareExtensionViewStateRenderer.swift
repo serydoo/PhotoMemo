@@ -13,6 +13,7 @@ struct ShareExtensionViewStateInput {
     let state: ShareExtensionViewState
     let photoCount: Int
     let configurationIsReady: Bool
+    let maximumPhotoCount: Int
 }
 
 struct ShareExtensionViewStateUpdate {
@@ -307,10 +308,15 @@ final class ShareExtensionViewStateRenderer {
             statusMessage = "请先打开时光记，在配置中心保存当前记忆对象的配置。输出部分默认可不改；如果你改了输出设置，保存后也会并入当前配置。"
             footer = "配置保存完成后，再回到 Apple Photos 重新分享这批照片。"
             buttonTitle = "打开时光记去配置"
+        } else if input.maximumPhotoCount == 0 {
+            statusTitle = "免费成长记录已完成"
+            statusMessage = "请打开时光记了解 MemoMark+，继续记录未来的时光。"
+            footer = "已经生成的照片和配置不会受到影响。"
+            buttonTitle = "打开时光记"
         } else if input.photoCount
-                    > PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount {
+                    > input.maximumPhotoCount {
             statusTitle = "这次的照片有点多"
-            statusMessage = "美好的记忆适合慢慢整理。每次最多分享 \(PhotoMemoShareExtensionIntakeService.maxSupportedPhotoCount) 张，可以分几次完成。"
+            statusMessage = "美好的记忆适合慢慢整理。当前最多分享 \(input.maximumPhotoCount) 张，可以分几次完成。"
             footer = "少量分批处理，也能让每一张照片更稳定地回到 Apple Photos。"
             buttonTitle = "返回分批分享"
         } else if input.photoCount > 0 {
@@ -341,9 +347,9 @@ final class ShareExtensionViewStateRenderer {
             showsProcessingChecklist:
                 input.configurationIsReady
                 && input.photoCount > 0
+                && input.maximumPhotoCount > 0
                 && input.photoCount <=
-                    PhotoMemoShareExtensionIntakeService
-                    .maxSupportedPhotoCount,
+                    input.maximumPhotoCount,
             footer: footer,
             buttonTitle: buttonTitle,
             buttonIsEnabled: true,

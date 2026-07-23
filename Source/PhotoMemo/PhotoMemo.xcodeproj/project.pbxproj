@@ -590,7 +590,7 @@
 				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -604,7 +604,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -625,7 +625,7 @@
 				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -639,7 +639,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -659,7 +659,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "PhotoMemoiOS-Info.plist";
@@ -677,7 +677,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -700,7 +700,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoiOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "PhotoMemoiOS-Info.plist";
@@ -718,7 +718,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -739,7 +739,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ShareExtension-Info.plist";
@@ -749,7 +749,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -772,7 +772,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = PhotoMemo/PhotoMemoShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ShareExtension-Info.plist";
@@ -782,7 +782,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -805,7 +805,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "PhotoMemoWidgetExtension-Info.plist";
@@ -815,7 +815,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -838,7 +838,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "PhotoMemoWidgetExtension-Info.plist";
@@ -848,7 +848,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.7.47;
 				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -871,7 +871,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
@@ -892,7 +892,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;

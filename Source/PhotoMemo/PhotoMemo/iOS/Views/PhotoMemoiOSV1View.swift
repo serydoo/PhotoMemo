@@ -1120,6 +1120,8 @@ struct PhotoMemoiOSV1View: View {
 
     private var settingsPage: some View {
         V1SettingsPageSurface(
+            commerceSnapshot: .initial,
+            onOpenMemoMarkPlus: {},
             onShowWelcome: {
                 entryFlowState =
                     V1EntryFlowCoordinator
