@@ -7,7 +7,11 @@ struct V1HomeFeedbackSection: View {
     private var isExpanded = true
 
     var body: some View {
-        V1CardSurface(title: "意见反馈") {
+        V1CardSurface(
+            title: "意见反馈",
+            systemImage: MemoMarkSymbol.feedback.name,
+            tint: .pink
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 disclosureControl
 

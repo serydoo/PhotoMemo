@@ -29,8 +29,21 @@ struct LivePhotoAssetWriteOperation:
 
     let creationDate: Date?
     let preferredAlbumIdentifier: String?
+    let idempotencyKey: String?
     let resources:
         [LivePhotoAssetResourceWriteRequest]
+
+    init(
+        creationDate: Date?,
+        preferredAlbumIdentifier: String?,
+        resources: [LivePhotoAssetResourceWriteRequest],
+        idempotencyKey: String? = nil
+    ) {
+        self.creationDate = creationDate
+        self.preferredAlbumIdentifier = preferredAlbumIdentifier
+        self.resources = resources
+        self.idempotencyKey = idempotencyKey
+    }
 }
 
 protocol LivePhotoAssetSavePerforming {

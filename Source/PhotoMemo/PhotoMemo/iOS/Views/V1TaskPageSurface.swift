@@ -58,7 +58,7 @@ struct V1TaskPageSurface: View {
                     )
             )
             .v1AdaptiveScrollContent(
-                horizontalPadding: 16
+                horizontalPadding: ConfigurationUI.contentColumnPadding
             )
         }
         .scrollDismissesKeyboard(.interactively)
@@ -411,7 +411,11 @@ struct V1TaskPageSurface: View {
     private var recentTasksSection: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .center, spacing: 12) {
-                V1SectionHeading("最近任务")
+                V1SectionHeading(
+                    "最近任务",
+                    systemImage: MemoMarkSymbol.processing.name,
+                    tint: .blue
+                )
 
                 if presentation.historyRows.count > 2 {
                     Button {

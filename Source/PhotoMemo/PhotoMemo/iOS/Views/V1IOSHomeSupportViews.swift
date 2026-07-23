@@ -25,21 +25,21 @@ struct V1IOSHomeQuickAction:
             title: "处理照片",
             subtitle: "直接从系统图库选择照片并开始处理",
             compactDetail: "从图库开始",
-            systemImage: "photo.on.rectangle.angled"
+            systemImage: MemoMarkSymbol.applePhotos.name
         ),
         .init(
             id: .configurationCenter,
             title: "配置中心",
             subtitle: "继续查看当前生效配置",
             compactDetail: "查看当前配置",
-            systemImage: "slider.horizontal.3"
+            systemImage: MemoMarkSymbol.configurationCenter.name
         ),
         .init(
             id: .timeAnchor,
             title: "时间锚点",
             subtitle: "查看记忆对象与生效锚点",
             compactDetail: "切换生效锚点",
-            systemImage: "calendar.badge.clock"
+            systemImage: MemoMarkSymbol.timeAnchor.name
         ),
         .init(
             id: .usageGuide,
@@ -252,7 +252,7 @@ struct V1IOSHomeRecentProcessingContent: View {
             value: presentation.statusValue,
             detail: presentation.headline,
             systemImage:
-                "circle.dotted.circle"
+                MemoMarkSymbol.processing.name
         )
 
         V1IOSHomeSemanticRow(
@@ -260,7 +260,7 @@ struct V1IOSHomeRecentProcessingContent: View {
             value: presentation.sourceValue,
             detail: presentation.subheadline,
             systemImage:
-                "square.and.arrow.up"
+                MemoMarkSymbol.applePhotos.name
         )
 
         V1IOSHomeSemanticRow(

@@ -331,7 +331,7 @@ struct BatchFixtureCoverageTests {
     }
 
     @MainActor
-    @Test("Cancelling managed fixture batches cleans temporary copies and marks tasks cancelled")
+    @Test("Cancelling managed fixture batches releases queued copies and leases active copies")
     func cancellingManagedFixtureBatchCleansTemporaryCopies() throws {
 
         let context =
@@ -392,12 +392,14 @@ struct BatchFixtureCoverageTests {
             }
         )
         #expect(
-            context.managedURLs.allSatisfy {
-                !FileManager.default
-                    .fileExists(
-                        atPath: $0.path
-                    )
-            }
+            !FileManager.default.fileExists(
+                atPath: context.managedURLs[0].path
+            )
+        )
+        #expect(
+            FileManager.default.fileExists(
+                atPath: context.managedURLs[1].path
+            )
         )
     }
 

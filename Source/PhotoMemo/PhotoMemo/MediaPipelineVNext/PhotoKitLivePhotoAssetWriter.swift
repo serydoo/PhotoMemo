@@ -71,6 +71,15 @@ final class PhotoKitLivePhotoAssetWriter:
                 defaultName:
                     "MemoMark.mov"
             )
+        let resolvedResourceFilenames =
+            idempotentResourceFilenames(
+                idempotencyKey:
+                    request.idempotencyKey,
+                stillFilename:
+                    stillPhotoOriginalFilename,
+                pairedVideoFilename:
+                    pairedVideoOriginalFilename
+            )
 
         guard outputBaseName(
             stillPhotoOriginalFilename
@@ -116,7 +125,7 @@ final class PhotoKitLivePhotoAssetWriter:
                                     request
                                     .stillPhotoFileURL,
                                 originalFilename:
-                                    stillPhotoOriginalFilename
+                                    resolvedResourceFilenames.still
                             ),
                             LivePhotoAssetResourceWriteRequest(
                                 kind: .pairedVideo,
@@ -124,15 +133,46 @@ final class PhotoKitLivePhotoAssetWriter:
                                     request
                                     .pairedVideoFileURL,
                                 originalFilename:
-                                    pairedVideoOriginalFilename
+                                    resolvedResourceFilenames.pairedVideo
                             )
-                        ]
+                        ],
+                        idempotencyKey:
+                            request.idempotencyKey
                     )
             )
     }
 }
 
 private extension PhotoKitLivePhotoAssetWriter {
+
+    func idempotentResourceFilenames(
+        idempotencyKey: String?,
+        stillFilename: String,
+        pairedVideoFilename: String
+    ) -> (still: String, pairedVideo: String) {
+
+        guard let key = idempotencyKey?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !key.isEmpty else {
+            return (stillFilename, pairedVideoFilename)
+        }
+
+        let baseName =
+            "MemoMarkTask-\(key.replacingOccurrences(of: "/", with: "-"))"
+        let stillExtension =
+            URL(fileURLWithPath: stillFilename).pathExtension
+        let pairedVideoExtension =
+            URL(fileURLWithPath: pairedVideoFilename).pathExtension
+
+        return (
+            still: stillExtension.isEmpty
+                ? baseName
+                : "\(baseName).\(stillExtension)",
+            pairedVideo: pairedVideoExtension.isEmpty
+                ? baseName
+                : "\(baseName).\(pairedVideoExtension)"
+        )
+    }
 
     func resolvedOriginalFilename(
         preferred: String?,
@@ -192,74 +232,113 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 .unauthorized
         }
 
-        let album =
-            try await resolvedAlbum(
-                operation
-                .preferredAlbumIdentifier
+        return try await PhotoLibrarySaveGate.shared.run { [self] in
+            let album =
+                try await resolvedAlbum(
+                    operation
+                    .preferredAlbumIdentifier
+                )
+
+            if let idempotencyKey = operation.idempotencyKey,
+               let existingAsset = existingAsset(for: idempotencyKey) {
+                return PhotoLibrarySaveResult(
+                    albumTitle: album?.localizedTitle ?? "",
+                    assetLocalIdentifier: existingAsset.localIdentifier
+                )
+            }
+
+            var placeholderIdentifier: String?
+
+            try await performChanges {
+                let assetRequest =
+                    PHAssetCreationRequest.forAsset()
+
+                assetRequest.creationDate =
+                    operation.creationDate
+
+                for resource in operation.resources {
+                    let options =
+                        PHAssetResourceCreationOptions()
+                    options.shouldMoveFile = false
+                    options.originalFilename =
+                        resource.originalFilename
+
+                    assetRequest.addResource(
+                        with:
+                            resource.kind
+                            .photoKitResourceType,
+                        fileURL:
+                            resource.fileURL,
+                        options: options
+                    )
+                }
+
+                guard let placeholder =
+                    assetRequest.placeholderForCreatedAsset
+                else {
+                    return
+                }
+
+                placeholderIdentifier =
+                    placeholder.localIdentifier
+
+                if let album,
+                   let albumChangeRequest =
+                    PHAssetCollectionChangeRequest(
+                        for: album
+                    ) {
+                    albumChangeRequest.addAssets(
+                        [placeholder] as NSArray
+                    )
+                }
+            }
+
+            guard let placeholderIdentifier else {
+                throw LivePhotoAssetWritingError
+                    .assetSaveFailed
+            }
+
+            return PhotoLibrarySaveResult(
+                albumTitle:
+                    album?.localizedTitle
+                    ?? "",
+                assetLocalIdentifier:
+                    placeholderIdentifier
             )
-
-        var placeholderIdentifier: String?
-
-        try await performChanges {
-            let assetRequest =
-                PHAssetCreationRequest.forAsset()
-
-            assetRequest.creationDate =
-                operation.creationDate
-
-            for resource in operation.resources {
-                let options =
-                    PHAssetResourceCreationOptions()
-                options.shouldMoveFile = false
-                options.originalFilename =
-                    resource.originalFilename
-
-                assetRequest.addResource(
-                    with:
-                        resource.kind
-                        .photoKitResourceType,
-                    fileURL:
-                        resource.fileURL,
-                    options: options
-                )
-            }
-
-            guard let placeholder =
-                assetRequest.placeholderForCreatedAsset
-            else {
-                return
-            }
-
-            placeholderIdentifier =
-                placeholder.localIdentifier
-
-            if let album,
-               let albumChangeRequest =
-                PHAssetCollectionChangeRequest(
-                    for: album
-                ) {
-                albumChangeRequest.addAssets(
-                    [placeholder] as NSArray
-                )
-            }
         }
-
-        guard let placeholderIdentifier else {
-            throw LivePhotoAssetWritingError
-                .assetSaveFailed
-        }
-
-        return PhotoLibrarySaveResult(
-            albumTitle:
-                album?.localizedTitle
-                ?? "",
-            assetLocalIdentifier:
-                placeholderIdentifier
-        )
     }
 }
 
 private extension PhotoKitLivePhotoAssetSavePerformer {
+
+    func existingAsset(
+        for idempotencyKey: String
+    ) -> PHAsset? {
+
+        let token =
+            "MemoMarkTask-\(idempotencyKey.replacingOccurrences(of: "/", with: "-"))"
+        let options = PHFetchOptions()
+        options.sortDescriptors = [
+            NSSortDescriptor(
+                key: "creationDate",
+                ascending: false
+            )
+        ]
+        let assets = PHAsset.fetchAssets(with: options)
+        var matchedAsset: PHAsset?
+        assets.enumerateObjects { asset, _, stop in
+            guard PHAssetResource
+                .assetResources(for: asset)
+                .contains(where: {
+                    $0.originalFilename.contains(token)
+                }) else {
+                return
+            }
+            matchedAsset = asset
+            stop.pointee = true
+        }
+        return matchedAsset
+    }
 
     func isAuthorized(
         _ status: PHAuthorizationStatus

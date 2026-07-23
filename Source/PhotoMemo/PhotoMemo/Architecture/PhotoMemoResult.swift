@@ -44,14 +44,16 @@ struct PhotoMemoError:
     static func wrapped(
         _ error: Error,
         code: PhotoMemoErrorCode,
-        message: String
+        message: String,
+        underlyingDescription: String? = nil
     ) -> Self {
 
         Self(
             code: code,
             message: message,
             underlyingDescription:
-                String(
+                underlyingDescription
+                ?? String(
                     describing: error
                 )
         )

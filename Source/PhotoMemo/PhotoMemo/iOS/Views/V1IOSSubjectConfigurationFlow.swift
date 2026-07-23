@@ -29,7 +29,7 @@ struct V1IOSSubjectConfigurationFlow: View {
                 .padding(.top, 16)
                 .padding(.bottom, 34)
                 .v1AdaptiveScrollContent(
-                    horizontalPadding: 18
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
                 )
             }
             .scrollDismissesKeyboard(.interactively)
@@ -64,7 +64,11 @@ struct V1IOSSubjectConfigurationFlow: View {
     }
 
     private var subjectConfigurationIntro: some View {
-        V1CardSurface(title: "记忆对象配置") {
+        V1CardSurface(
+            title: "记忆对象配置",
+            systemImage: MemoMarkSymbol.memorySubject.name,
+            tint: .blue
+        ) {
             Text("这里专门维护对象头像、名称、关系与时间锚点。当前生效锚点切换已经收拢到配置中心摘要区，这里只负责对象本身的长期资料与锚点内容。")
                 .font(.caption)
                 .foregroundStyle(.secondary)

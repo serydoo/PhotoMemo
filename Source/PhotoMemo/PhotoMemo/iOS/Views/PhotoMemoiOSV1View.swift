@@ -682,7 +682,7 @@ struct PhotoMemoiOSV1View: View {
                         .padding(.top, 16)
                         .padding(.bottom, 28)
                         .v1AdaptiveScrollContent(
-                            horizontalPadding: 16
+                            horizontalPadding: ConfigurationUI.contentColumnPadding
                         )
                 }
                 .scrollDismissesKeyboard(.interactively)
@@ -1049,25 +1049,28 @@ struct PhotoMemoiOSV1View: View {
             TabView(selection: entryBinding(\.selectedTab)) {
                 homePage
                     .tabItem {
-                        Label("首页", systemImage: "house.fill")
+                        Label("首页", systemImage: MemoMarkSymbol.home.name)
                     }
                     .tag(V1EntryTab.home)
 
                 editorPage
                     .tabItem {
-                        Label("配置中心", systemImage: "slider.horizontal.3")
+                        Label(
+                            "配置中心",
+                            systemImage: MemoMarkSymbol.configurationCenter.name
+                        )
                     }
                     .tag(V1EntryTab.editor)
 
                 outputPage
                     .tabItem {
-                        Label("输出", systemImage: "square.and.arrow.down")
+                        Label("输出", systemImage: MemoMarkSymbol.output.name)
                     }
                     .tag(V1EntryTab.output)
 
                 tasksPage
                     .tabItem {
-                        Label("任务", systemImage: "checklist")
+                        Label("任务", systemImage: MemoMarkSymbol.task.name)
                     }
                     .tag(V1EntryTab.tasks)
             }
@@ -2270,7 +2273,7 @@ struct PhotoMemoiOSV1View: View {
             configurationSectionHeader(
                 title: "头像与标识",
                 subtitle: "配置输出卡片左侧 Logo 标识，可使用系统标识、自选图片或当前对象头像。",
-                systemImage: "seal.fill"
+                systemImage: MemoMarkSymbol.memorySubject.name
             )
 
             V1AccessoryEntrySection(
@@ -3975,7 +3978,7 @@ private struct V1ConfigurationOptionList: View {
 
     private var timeAnchorRow: some View {
         configurationRow(
-            systemImage: "calendar.badge.clock",
+                systemImage: MemoMarkSymbol.timeAnchor.name,
             tint: .blue,
             title: "时间锚点",
             subtitle: "定义时间参考，计算年龄与天数",
@@ -4055,7 +4058,7 @@ private struct V1ConfigurationOptionList: View {
 
     private var memoryDisplayRow: some View {
         configurationRow(
-            systemImage: "heart",
+            systemImage: MemoMarkSymbol.memoryContent.name,
             tint: .pink,
             title: "记忆显示",
             subtitle: "自定义表达方式与记忆内容",
@@ -4098,7 +4101,7 @@ private struct V1ConfigurationOptionList: View {
 
     private var borderStyleRow: some View {
         configurationRow(
-            systemImage: "paintpalette",
+            systemImage: MemoMarkSymbol.borderStyle.name,
             tint: .orange,
             title: "边框样式",
             subtitle: "当前公开边框样式",
@@ -4113,7 +4116,7 @@ private struct V1ConfigurationOptionList: View {
     private var regionContentRow: some View {
         Button(action: onOpenRegionContent) {
             configurationRow(
-                systemImage: "square.grid.2x2",
+                systemImage: MemoMarkSymbol.module.name,
                 tint: .blue,
                 title: "区域内容设置",
                 subtitle: "编辑卡片四个区域的模块与文字",

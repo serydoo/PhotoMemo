@@ -87,7 +87,7 @@ struct V1IOSSubjectOverviewSheet: View {
                 .padding(.top, 16)
                 .padding(.bottom, 34)
                 .v1AdaptiveScrollContent(
-                    horizontalPadding: 18
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
                 )
             }
             .background(
@@ -159,17 +159,17 @@ struct V1IOSSubjectOverviewSheet: View {
             timeAnchorNavigationRow
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(ConfigurationUI.innerPanelPadding)
         .background(
             RoundedRectangle(
-                cornerRadius: 18,
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
                 style: .continuous
             )
             .fill(ConfigurationUI.panelBackground)
         )
         .overlay(
             RoundedRectangle(
-                cornerRadius: 18,
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
                 style: .continuous
             )
             .stroke(ConfigurationUI.faintHairline)
@@ -181,6 +181,11 @@ struct V1IOSSubjectOverviewSheet: View {
             timeAnchorConfigurationPage
         } label: {
             HStack(spacing: 10) {
+                V1CompactHeadingIcon(
+                    systemImage: MemoMarkSymbol.timeAnchor.name,
+                    tint: .blue
+                )
+
                 Text("时间锚点配置")
                     .foregroundStyle(.primary)
 

@@ -37,10 +37,10 @@ struct V1PageHeader: View {
 
 enum V1CompactInformationRowMetrics {
 
-    static let iconSize: CGFloat = 36
-    static let iconCornerRadius: CGFloat = 11
-    static let horizontalPadding: CGFloat = 12
-    static let verticalPadding: CGFloat = 9
+    static let iconSize = ConfigurationUI.compactIconSize
+    static let iconCornerRadius = ConfigurationUI.compactIconCornerRadius
+    static let horizontalPadding: CGFloat = ConfigurationUI.innerPanelPadding
+    static let verticalPadding = ConfigurationUI.compactRowVerticalPadding
     static let contentSpacing: CGFloat = 12
 }
 
@@ -48,28 +48,45 @@ struct V1SectionHeading: View {
 
     let title: String
     let subtitle: String?
+    let systemImage: String?
+    let tint: Color
 
     init(
         _ title: String,
-        subtitle: String? = nil
+        subtitle: String? = nil,
+        systemImage: String? = nil,
+        tint: Color = .accentColor
     ) {
         self.title = title
         self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.tint = tint
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.primary)
-
-            if let subtitle,
-               !subtitle.isEmpty {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .top, spacing: 10) {
+            if let systemImage {
+                V1CompactHeadingIcon(
+                    systemImage: systemImage,
+                    tint: tint
+                )
             }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                if let subtitle,
+                   !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -108,7 +125,7 @@ struct V1CardChrome: ViewModifier {
 extension View {
 
     func v1CardChrome(
-        cornerRadius: CGFloat = 18,
+        cornerRadius: CGFloat = ConfigurationUI.cardCornerRadius,
         shadowRadius: CGFloat = 8,
         shadowY: CGFloat = 3
     ) -> some View {
@@ -190,13 +207,19 @@ extension View {
 struct V1CardSurface<Content: View>: View {
 
     let title: String
+    let systemImage: String?
+    let tint: Color
     @ViewBuilder var content: Content
 
     init(
         title: String,
+        systemImage: String? = nil,
+        tint: Color = .accentColor,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
+        self.systemImage = systemImage
+        self.tint = tint
         self.content = content()
     }
 
@@ -204,14 +227,50 @@ struct V1CardSurface<Content: View>: View {
         V1ConfigurationCardContainer {
             VStack(alignment: .leading, spacing: 14) {
                 if !title.isEmpty {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                    HStack(spacing: 10) {
+                        if let systemImage {
+                            V1CompactHeadingIcon(
+                                systemImage: systemImage,
+                                tint: tint
+                            )
+                        }
+
+                        Text(title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+
+                        Spacer(minLength: 0)
+                    }
                 }
 
                 content
             }
         }
+    }
+}
+
+struct V1CompactHeadingIcon: View {
+
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(tint)
+            .frame(
+                width: V1CompactInformationRowMetrics.iconSize,
+                height: V1CompactInformationRowMetrics.iconSize
+            )
+            .background(
+                RoundedRectangle(
+                    cornerRadius:
+                        V1CompactInformationRowMetrics.iconCornerRadius,
+                    style: .continuous
+                )
+                .fill(tint.opacity(0.11))
+            )
+            .accessibilityHidden(true)
     }
 }
 
@@ -229,7 +288,7 @@ struct V1ConfigurationCardContainer<Content: View>: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
+            .padding(ConfigurationUI.cardPadding)
             .v1CardChrome()
     }
 }

@@ -479,7 +479,8 @@ private extension LivePhotoBatchTaskProcessor {
                 preferredAlbumIdentifier:
                     preferredAlbumIdentifier(
                         from: configuration
-                    )
+                    ),
+                idempotencyKey: task.id.uuidString
             )
 
         return LivePhotoBatchTaskResult(
@@ -704,7 +705,9 @@ private extension LivePhotoBatchTaskProcessor {
                         stillPhotoOriginalFilename:
                             stillPhotoOriginalFilename,
                         pairedVideoOriginalFilename:
-                            pairedVideoOriginalFilename
+                            pairedVideoOriginalFilename,
+                        idempotencyKey:
+                            task.id.uuidString
                     )
                 )
 

@@ -309,6 +309,43 @@ struct BatchQueueExecutionContractTests {
     }
 
     @MainActor
+    @Test("Cancellation during render health validation remains terminal")
+    func cancellationDuringRenderHealthValidationRemainsTerminal() async throws {
+        let probe = BatchQueueStoreCancellationProbe()
+        let context = try makeStoreContext(
+            livePhotoProcessor: FailingLivePhotoProcessor(),
+            renderHealthValidator: { _, _ in
+                if let store = probe.store,
+                   let jobID = probe.jobID {
+                    store.cancelJob(jobID)
+                }
+                return []
+            }
+        )
+        defer { cleanup(context) }
+        probe.store = context.store
+
+        let job = try #require(
+            context.store.enqueue(
+                payloads: [
+                    BatchTaskIntakePayload(
+                        sourceURL:
+                            try SyntheticFixtureLibrary.fixtureURL(.portraitJPEG)
+                    )
+                ],
+                configuration: makeConfiguration(),
+                launchSource: .shareExtension
+            )
+        )
+        probe.jobID = job.id
+
+        let task = try await terminalTask(in: context.store)
+
+        #expect(task.phase == .cancelled)
+        #expect(task.failure == nil)
+    }
+
+    @MainActor
     @Test("Retryable managed-source failure preserves its source file")
     func retryableManagedSourceFailurePreservesSource() throws {
         let suiteName =
@@ -659,6 +696,12 @@ private final class FailingLivePhotoProcessor:
 
 private enum ContractTestTimeout: Error {
     case terminalTask
+}
+
+@MainActor
+private final class BatchQueueStoreCancellationProbe {
+    var store: BatchQueueStore?
+    var jobID: UUID?
 }
 
 private enum RenderHealthRejection: Error {

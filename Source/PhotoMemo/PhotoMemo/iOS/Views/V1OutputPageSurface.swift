@@ -57,7 +57,7 @@ struct V1OutputPageSurface: View {
             .padding(.top, 10)
             .padding(.bottom, 76)
             .v1AdaptiveScrollContent(
-                horizontalPadding: 16
+                horizontalPadding: ConfigurationUI.contentColumnPadding
             )
         }
         .scrollDismissesKeyboard(.interactively)
@@ -187,7 +187,11 @@ private struct V1OutputSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            V1OutputCompactCard(title: "输出目标") {
+            V1OutputCompactCard(
+                title: "输出目标",
+                systemImage: MemoMarkSymbol.output.name,
+                tint: .green
+            ) {
                 VStack(alignment: .leading, spacing: 10) {
                     Picker(
                         "输出目标",
@@ -323,9 +327,17 @@ private struct V1MemoryWriteSection: View {
         )
 
         VStack(alignment: .leading, spacing: 8) {
-            V1SectionHeading("写入与保留")
+            V1SectionHeading(
+                "写入与保留",
+                systemImage: MemoMarkSymbol.retention.name,
+                tint: .green
+            )
 
-            V1OutputCompactCard(title: "保存选项") {
+            V1OutputCompactCard(
+                title: "保存选项",
+                systemImage: MemoMarkSymbol.retention.name,
+                tint: .green
+            ) {
                 VStack(alignment: .leading, spacing: 0) {
                     V1OutputRetentionRow(
                         systemImage: MemoMarkSymbol.photoMetadata.name,
@@ -485,7 +497,7 @@ private struct V1MemoryWriteExplanation: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "info.circle.fill")
+            Image(systemName: MemoMarkSymbol.writingDescription.name)
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Color.blue)
                 .frame(width: 22)
@@ -516,21 +528,38 @@ private struct V1MemoryWriteExplanation: View {
 private struct V1OutputCompactCard<Content: View>: View {
 
     let title: String
+    let systemImage: String?
+    let tint: Color
     @ViewBuilder var content: Content
 
     init(
         title: String,
+        systemImage: String? = nil,
+        tint: Color = .accentColor,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
+        self.systemImage = systemImage
+        self.tint = tint
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
+            HStack(spacing: 10) {
+                if let systemImage {
+                    V1CompactHeadingIcon(
+                        systemImage: systemImage,
+                        tint: tint
+                    )
+                }
+
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Spacer(minLength: 0)
+            }
 
             content
         }

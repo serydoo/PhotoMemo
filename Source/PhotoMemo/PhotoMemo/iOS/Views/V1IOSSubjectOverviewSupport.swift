@@ -260,7 +260,7 @@ struct V1SubjectAvatarView: View {
                     .scaledToFill()
                     .clipShape(Circle())
             } else {
-                Image(systemName: "person.crop.circle.fill")
+                Image(systemName: MemoMarkSymbol.memorySubject.name)
                     .font(.system(size: size * 0.36, weight: .medium))
                     .foregroundStyle(Color.accentColor)
             }

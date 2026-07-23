@@ -15,6 +15,9 @@ final class BatchQueueStore: ObservableObject {
 
     @Published private(set) var lastErrorMessage = ""
 
+    @Published private(set) var startupPersistenceError:
+        PhotoMemoError?
+
     @Published private(set) var defaultConfigurationSnapshot:
         BatchConfigurationSnapshot
 
@@ -35,6 +38,8 @@ final class BatchQueueStore: ObservableObject {
 
     private var processingTask:
         Task<Void, Never>?
+
+    private var persistenceBlocked = false
 
     init(
         defaults: UserDefaults? = nil,
@@ -108,9 +113,22 @@ final class BatchQueueStore: ObservableObject {
             resolvedSettingsService
             .buildBatchConfigurationSnapshot()
 
-        jobs =
-            persistence
-            .loadPersistedJobs()
+        self.startupPersistenceError = nil
+
+        switch persistence.loadPersistedJobsResult() {
+        case .success(let loadedJobs):
+            jobs = loadedJobs
+        case .failure(let error):
+            jobs = []
+            startupPersistenceError = error
+            lastErrorMessage = error.message
+            persistenceBlocked = true
+        }
+
+        guard !persistenceBlocked else {
+            return
+        }
+
         normalizeJobsForResume()
         startProcessingIfNeeded()
     }
@@ -207,6 +225,10 @@ final class BatchQueueStore: ObservableObject {
 
     func startProcessingIfNeeded() {
 
+        guard !persistenceBlocked else {
+            return
+        }
+
         guard processingTask == nil else {
             return
         }
@@ -221,6 +243,30 @@ final class BatchQueueStore: ObservableObject {
                 .processingLoop(
                     in: self
                 )
+        }
+    }
+
+    func retryPersistence() {
+
+        guard persistenceBlocked else {
+            return
+        }
+
+        switch persistence.loadPersistedJobsResult() {
+        case .success:
+            if let error = persistence.persistJobs(jobs).error {
+                startupPersistenceError = error
+                lastErrorMessage = error.message
+                return
+            }
+
+            persistenceBlocked = false
+            startupPersistenceError = nil
+            lastErrorMessage = ""
+            startProcessingIfNeeded()
+        case .failure(let error):
+            startupPersistenceError = error
+            lastErrorMessage = error.message
         }
     }
 
@@ -340,10 +386,18 @@ extension BatchQueueStore {
 
     func persistJobs() {
 
+        guard !persistenceBlocked else {
+            return
+        }
+
         history.trimTerminalJobHistoryIfNeeded(
             &jobs
         )
-        persistence.persistJobs(jobs)
+
+        if let error = persistence.persistJobs(jobs).error {
+            lastErrorMessage = error.message
+            persistenceBlocked = true
+        }
     }
 
     func scheduleStartNotificationIfNeeded(

@@ -5,6 +5,59 @@ import Testing
 @Suite("Batch queue store persistence")
 struct BatchQueueStorePersistenceTests {
 
+    @Test("Corrupted queue payload is surfaced instead of becoming an empty successful load")
+    func corruptedQueuePayloadIsSurfaced() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.CorruptedLoad.\(UUID().uuidString)"
+        let defaults =
+            try #require(UserDefaults(suiteName: suiteName))
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        defaults.set(
+            Data("corrupted-queue".utf8),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+
+        let result = BatchQueuePersistence(defaults: defaults)
+            .loadPersistedJobsResult()
+
+        switch result {
+        case .success:
+            Issue.record("Expected corrupted queue payload to fail loading")
+        case .failure(let error):
+            #expect(error.code == .persistenceReadFailed)
+            #expect(error.underlyingDescription?.contains("photomemo.batchQueue.jobs") == true)
+        }
+    }
+
+    @MainActor
+    @Test("Batch queue startup surfaces corrupted persistence and does not start processing")
+    func startupSurfacesCorruptedPersistence() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.CorruptedStartup.\(UUID().uuidString)"
+        let defaults =
+            try #require(UserDefaults(suiteName: suiteName))
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        defaults.set(
+            Data("corrupted-queue".utf8),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults)
+        )
+
+        #expect(store.jobs.isEmpty)
+        #expect(store.isProcessing == false)
+        #expect(store.lastErrorMessage.isEmpty == false)
+    }
+
     @Test("encoded batch job keeps frozen configuration after aggregate update and deletion")
     func encodedBatchJobKeepsFrozenConfigurationIdentityAndContent() throws {
         let subject = try #require(
@@ -94,6 +147,25 @@ struct BatchQueueStorePersistenceTests {
 
     private struct SaveFailure:
         Error {}
+
+    private struct ReadBackMismatchBackend:
+        BatchQueuePersistenceBackend {
+
+        func loadData(
+            forKey key: String
+        ) throws -> Data? {
+
+            nil
+        }
+
+        func saveData(
+            _ data: Data,
+            forKey key: String
+        ) throws {
+
+            // Simulates a backend that reports success without retaining the payload.
+        }
+    }
 
     private struct FailingSaveBackend:
         BatchQueuePersistenceBackend {
@@ -484,6 +556,27 @@ struct BatchQueueStorePersistenceTests {
             #expect(
                 error.underlyingDescription?
                 .contains("SaveFailure") == true
+            )
+        }
+    }
+
+    @Test("Batch queue persistence reports a successful write that fails read-back verification")
+    func batchQueuePersistenceReportsReadBackVerificationFailures() throws {
+
+        let persistence = BatchQueuePersistence(
+            backend: ReadBackMismatchBackend()
+        )
+
+        let result = persistence.persistJobs([])
+
+        switch result {
+        case .success:
+            Issue.record("Expected read-back verification failure")
+        case .failure(let error):
+            #expect(error.code == .persistenceWriteFailed)
+            #expect(
+                error.underlyingDescription?
+                    .contains("readBack") == true
             )
         }
     }

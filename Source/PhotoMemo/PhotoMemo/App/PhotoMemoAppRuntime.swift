@@ -111,6 +111,14 @@ final class PhotoMemoAppRuntime:
             message: "drainedRequests=\(requests.count)"
         )
 
+        if let failure = externalIntakeCenter.intakePersistenceError {
+            PhotoMemoShareDiagnostics.record(
+                stage: .appDrain,
+                message:
+                    "requestPersistenceReadFailed storageKey=\(failure.storageKey) bytes=\(failure.payloadByteCount) reason=\(failure.underlyingDescription)"
+            )
+        }
+
         guard !requests.isEmpty else {
             return
         }
@@ -152,6 +160,14 @@ final class PhotoMemoAppRuntime:
                         requestID:
                             receipt.requestID
                     )
+                    recordAcknowledgementResult(
+                        externalIntakeCenter
+                            .acknowledgeProcessedRequests(
+                                [request]
+                            ),
+                        requestID:
+                            request.id
+                    )
                     continue
                 }
 
@@ -170,6 +186,14 @@ final class PhotoMemoAppRuntime:
                     requestID:
                         receipt.requestID
                 )
+                recordAcknowledgementResult(
+                    externalIntakeCenter
+                        .acknowledgeProcessedRequests(
+                            [request]
+                        ),
+                    requestID:
+                        request.id
+                )
             case .failure(let error):
                 PhotoMemoShareDiagnostics.record(
                     stage: .appEnqueueFailed,
@@ -184,6 +208,26 @@ final class PhotoMemoAppRuntime:
         externalIntakeCenter.updateDefaultConfiguration(
             batchQueueStore
                 .defaultConfigurationSnapshot
+        )
+    }
+
+    private func recordAcknowledgementResult(
+        _ result:
+            PhotoMemoSharedDefaultsWriteResult,
+        requestID: UUID
+    ) {
+
+        guard case .encodingFailed(let failure) = result else {
+            return
+        }
+
+        PhotoMemoShareDiagnostics.record(
+            stage:
+                .appRequestAcknowledgementFailed,
+            message:
+                "storageKey=\(failure.storageKey) reason=\(failure.underlyingDescription)",
+            requestID:
+                requestID
         )
     }
 

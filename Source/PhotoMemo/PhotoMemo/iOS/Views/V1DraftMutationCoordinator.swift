@@ -42,7 +42,7 @@ struct V1DraftMutationItem: Identifiable, Hashable {
             kind: .text,
             title: "文字",
             value: value,
-            systemImage: "textformat"
+            systemImage: MemoMarkSymbol.expressionFormula.name
         )
     }
 

@@ -4,6 +4,8 @@ struct PhotoMemoShareWorkflowSummary: Hashable {
 
     let styleTitle: String
 
+    let memorySubjectTitle: String?
+
     let outputTitle: String
 
     let memoryDateTitle: String?
@@ -44,6 +46,10 @@ struct PhotoMemoShareWorkflowSummaryBuilder {
                 resolvedConfigurationTitle(
                     from: snapshot.template
                 ),
+            memorySubjectTitle:
+                resolvedMemorySubjectTitle(
+                    from: snapshot.memorySubjectText
+                ),
             outputTitle:
                 resolvedOutputTitle(
                     from: snapshot.selectedAlbumIdentifier
@@ -70,6 +76,24 @@ private extension PhotoMemoShareWorkflowSummaryBuilder {
         }
 
         return trimmedName
+    }
+
+    func resolvedMemorySubjectTitle(
+        from text: String?
+    ) -> String? {
+
+        guard let text else {
+            return nil
+        }
+
+        let trimmedText =
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmedText.isEmpty
+            ? nil
+            : trimmedText
     }
 
 #if !PHOTOMEMO_SHARE_EXTENSION
@@ -172,7 +196,7 @@ private extension PhotoMemoShareWorkflowSummaryBuilder {
                 in: .whitespacesAndNewlines
             ),
            !resolvedAlbumTitle.isEmpty {
-            return "“\(resolvedAlbumTitle)”相册"
+            return resolvedAlbumTitle
         }
 
         return "当前选定相册"

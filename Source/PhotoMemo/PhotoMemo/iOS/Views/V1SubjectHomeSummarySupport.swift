@@ -133,7 +133,7 @@ struct V1SubjectHomeSummaryView: View {
                         presentation
                         .relationshipSummary,
                     systemImage:
-                        "person.crop.circle.fill"
+                        MemoMarkSymbol.memorySubject.name
                 )
 
                 V1IOSHomeSemanticRow(
@@ -142,7 +142,7 @@ struct V1SubjectHomeSummaryView: View {
                         presentation
                         .anchorSummary,
                     systemImage:
-                        "clock.badge.checkmark"
+                        MemoMarkSymbol.timeAnchor.name
                 )
 
                 V1IOSHomeSemanticRow(
@@ -151,7 +151,7 @@ struct V1SubjectHomeSummaryView: View {
                     detail:
                         presentation
                         .description,
-                    systemImage: "text.quote",
+                    systemImage: MemoMarkSymbol.memoryContent.name,
                     showsDivider: false
                 )
             }

@@ -191,7 +191,7 @@ struct V1ContentItem: Identifiable, Hashable {
             title: "文字",
             value: value,
             savedValue: value,
-            systemImage: "textformat"
+            systemImage: MemoMarkSymbol.expressionFormula.name
         )
     }
 

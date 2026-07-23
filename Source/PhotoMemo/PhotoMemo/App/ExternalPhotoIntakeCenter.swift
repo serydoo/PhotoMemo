@@ -12,6 +12,9 @@ final class ExternalPhotoIntakeCenter:
     @Published private(set) var revision =
         UUID()
 
+    @Published private(set) var intakePersistenceError:
+        PhotoMemoSharedDefaultsReadFailure?
+
     @Published private(set) var defaultConfigurationSnapshot:
         BatchConfigurationSnapshot
 
@@ -29,6 +32,7 @@ final class ExternalPhotoIntakeCenter:
         self.defaultConfigurationSnapshot =
             SettingsService()
             .buildBatchConfigurationSnapshot()
+        self.intakePersistenceError = nil
     }
 
     init(
@@ -44,6 +48,7 @@ final class ExternalPhotoIntakeCenter:
         self.defaultConfigurationSnapshot =
             settingsService
             .buildBatchConfigurationSnapshot()
+        self.intakePersistenceError = nil
     }
 
     func updateDefaultConfiguration(
@@ -181,8 +186,18 @@ final class ExternalPhotoIntakeCenter:
 
     func drainPendingRequests() -> [ExternalPhotoIntakeRequest] {
 
-        let persistedRequests =
-            intakeStore.drainRequests()
+        let persistedRequests: [ExternalPhotoIntakeRequest]
+        switch intakeStore.loadRequestsForProcessingResult() {
+        case .success(let requests):
+            intakePersistenceError = nil
+            persistedRequests = requests
+        case .noValue:
+            intakePersistenceError = nil
+            persistedRequests = []
+        case .decodingFailed(let failure):
+            intakePersistenceError = failure
+            persistedRequests = []
+        }
 
         var requests = pendingRequests
 
@@ -202,8 +217,25 @@ final class ExternalPhotoIntakeCenter:
             )
         }
 
-        pendingRequests.removeAll()
         return requests
+    }
+
+    func acknowledgeProcessedRequests(
+        _ requests: [ExternalPhotoIntakeRequest]
+    ) -> PhotoMemoSharedDefaultsWriteResult {
+
+        let requestIDs = Set(requests.map(\.id))
+        let result = intakeStore.acknowledgeRequests(requestIDs)
+
+        guard case .success = result else {
+            return result
+        }
+
+        pendingRequests.removeAll {
+            requestIDs.contains($0.id)
+        }
+        revision = UUID()
+        return result
     }
 }
 

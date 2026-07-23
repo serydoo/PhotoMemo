@@ -23,7 +23,7 @@ struct V1AccessoryEntrySection: View {
                 subtitle: "Apple 标识 / 自选标识 / 使用对象头像",
                 value: logoMode.title,
                 detail: logoRowDetail,
-                systemImage: "seal.fill",
+                systemImage: MemoMarkSymbol.memorySubject.name,
                 isExpanded: logoExpanded
             ) {
                 logoEditorContent

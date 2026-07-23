@@ -3116,6 +3116,13 @@ struct RecordCardBuildServiceTests {
                 for: URL(fileURLWithPath: "/tmp/ ")
             ) == "MemoMark.jpg"
         )
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/IMG_1234.jpg"),
+                idempotencyKey: "task-123"
+            ) == "MemoMarkTask-task-123.jpg"
+        )
     }
 }
 

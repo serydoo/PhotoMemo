@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.7 (7) Post-push UI And Reliability Closure - 2026-07-23
+
+### Added
+- Added shared MemoMark design tokens and semantic iconography contracts for
+  the Configuration Center visual baseline.
+- Added the `MemoMark Share Design v1` specification and compact Share
+  Extension module structure.
+- Added queue persistence, Share handoff, cancellation, and PhotoKit
+  consistency regression coverage.
+
+### Changed
+- Unified main-app content bounds, card hierarchy, inner panels, typography,
+  and semantic icons around the Configuration Center.
+- Changed Share request acknowledgement to occur after successful enqueue or
+  an explicit terminal drop decision.
+- Added read-back verification and surfaced persistence failures instead of
+  silently continuing with uncertain queue state.
+- Added task-scoped PhotoKit save identities and same-process save
+  serialization for static images and Live Photos.
+
+### Verification
+- macOS, iOS, and Share Extension unsigned Debug builds passed.
+- Signed `1.7 (7)` device build installed and launched on `iPhone7` (iPhone 17
+  Pro Max) without clearing existing app data.
+- Existing full-suite evidence remains `1,005` passed, `1` skipped, `0`
+  failed; a fresh Xcode beta test run stalled in the test service and was
+  interrupted.
+- Strict PhotoKit commit recovery, high-cost-media budget enforcement, and
+  forced-termination Apple Photos evidence remain open V3 certification work.
+
 ## 1.7 (7) Repository Update - 2026-07-21
 
 ### Added

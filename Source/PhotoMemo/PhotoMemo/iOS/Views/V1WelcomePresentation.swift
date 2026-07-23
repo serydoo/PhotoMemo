@@ -47,13 +47,13 @@ struct V1WelcomePresentation: Equatable {
                     id: "keep-original",
                     title: "保留原图",
                     detail: "生成新图输出，不改动系统相册里的原始照片。",
-                    systemImage: "photo.stack.fill"
+                    systemImage: MemoMarkSymbol.originalPhoto.name
                 ),
                 .init(
                     id: "time-anchor",
                     title: "时间锚点",
                     detail: "让照片回到人生时间线中的具体位置。",
-                    systemImage: "calendar.badge.clock"
+                    systemImage: MemoMarkSymbol.timeAnchor.name
                 ),
                 .init(
                     id: "configure-once",
@@ -108,7 +108,11 @@ struct V1WelcomePageSurface: View {
                         presentation: presentation
                     )
 
-                    V1CardSurface(title: "初次打开你会用到") {
+                    V1CardSurface(
+                        title: "初次打开你会用到",
+                        systemImage: MemoMarkSymbol.welcome.name,
+                        tint: .orange
+                    ) {
                         Text(presentation.message)
                             .font(.body)
                             .foregroundStyle(.secondary)
@@ -121,7 +125,11 @@ struct V1WelcomePageSurface: View {
                         }
                     }
 
-                    V1CardSurface(title: "推荐流程") {
+                    V1CardSurface(
+                        title: "推荐流程",
+                        systemImage: MemoMarkSymbol.workflow.name,
+                        tint: .purple
+                    ) {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Apple Photos -> 分享 -> 时光记 -> 处理 -> Apple Photos")
                                 .font(.subheadline.weight(.semibold))
@@ -301,7 +309,11 @@ struct V1WorkflowGuideSurface: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    V1CardSurface(title: "使用流程") {
+                    V1CardSurface(
+                        title: "使用流程",
+                        systemImage: MemoMarkSymbol.workflow.name,
+                        tint: .purple
+                    ) {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("推荐日常路径保持在 Apple Photos 内：选择照片，分享给时光记，后台处理完成后再回到系统相册继续阅读。")
                                 .font(.subheadline)
@@ -336,7 +348,7 @@ struct V1WorkflowGuideSurface: View {
                 .padding(.top, 16)
                 .padding(.bottom, 34)
                 .v1AdaptiveScrollContent(
-                    horizontalPadding: 18
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
                 )
             }
             .background(

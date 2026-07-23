@@ -32,7 +32,12 @@ final class ExternalPhotoIntakeStore {
     ) {
         self.requestStore =
             ExternalIntakeRequestStore(
-                defaults: defaults
+                defaults: defaults,
+                lockURL:
+                    intakeDirectoryURL
+                    .appendingPathComponent(
+                        ".external-intake-requests.lock"
+                    )
             )
         self.managedFileStore =
             ManagedIntakeFileStore(
@@ -278,6 +283,38 @@ final class ExternalPhotoIntakeStore {
 
         drainRequestsResult()
             .requests
+    }
+
+    func loadRequestsForProcessing()
+    -> [ExternalPhotoIntakeRequest] {
+
+        requestStore
+            .loadRequestsForProcessing()
+    }
+
+    func loadRequestsForProcessingResult()
+    -> PhotoMemoSharedDefaultsReadResult<
+        [ExternalPhotoIntakeRequest]
+    > {
+
+        requestStore
+            .loadRequestsForProcessingResult()
+    }
+
+    func acknowledgeRequests(
+        _ requestIDs: Set<UUID>,
+        encode:
+            ([ExternalPhotoIntakeRequest]) throws
+            -> Data = {
+                try JSONEncoder().encode($0)
+            }
+    ) -> PhotoMemoSharedDefaultsWriteResult {
+
+        requestStore
+            .acknowledgeRequests(
+                requestIDs,
+                encode: encode
+            )
     }
 
     func drainRequestsResult(

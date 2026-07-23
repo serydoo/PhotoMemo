@@ -30,6 +30,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
                 ),
                 badge: nil,
                 anchor: nil,
+                memorySubjectText: "小宝",
                 shouldWritePhotoDescription: true,
                 photoDescriptionOverride: "",
                 selectedAlbumIdentifier: ""
@@ -39,6 +40,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
             builder.build(from: snapshot)
 
         #expect(summary.styleTitle == "宝宝成长卡")
+        #expect(summary.memorySubjectTitle == "小宝")
         #expect(summary.memoryDateTitle == nil)
         #expect(summary.outputTitle == "时光记相册")
     }
@@ -112,7 +114,7 @@ struct PhotoMemoShareWorkflowSummaryTests {
             builder.build(from: snapshot)
 
         #expect(summary.memoryDateTitle == "高考 · 倒计时")
-        #expect(summary.outputTitle == "“家庭相册”相册")
+        #expect(summary.outputTitle == "家庭相册")
     }
 
     @Test("Prefers frozen configuration anchor over legacy batch anchor")

@@ -7,7 +7,11 @@ struct V1IOSSubjectOverviewCard: View {
         V1IOSSubjectOverviewPresentation
 
     var body: some View {
-        V1CardSurface(title: "概览") {
+        V1CardSurface(
+            title: "概览",
+            systemImage: MemoMarkSymbol.configuration.name,
+            tint: .blue
+        ) {
             VStack(alignment: .leading, spacing: 10) {
                 overviewRow(
                     title: "主体身份",
@@ -39,7 +43,7 @@ struct V1IOSSubjectOverviewCard: View {
         .padding(12)
         .background(
             RoundedRectangle(
-                cornerRadius: 12,
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
                 style: .continuous
             )
             .fill(Color.accentColor.opacity(0.08))
@@ -82,7 +86,11 @@ struct V1IOSSubjectIdentitySection: View {
     let subject: MemorySubject?
 
     var body: some View {
-        V1CardSurface(title: "基本资料") {
+        V1CardSurface(
+            title: "基本资料",
+            systemImage: MemoMarkSymbol.memorySubject.name,
+            tint: .blue
+        ) {
             VStack(alignment: .leading, spacing: 10) {
                 identityRow(
                     title: "显示名称",
@@ -156,7 +164,11 @@ struct V1IOSSubjectAnchorSection: View {
     let subject: MemorySubject?
 
     var body: some View {
-        V1CardSurface(title: "可用时间锚点") {
+        V1CardSurface(
+            title: "可用时间锚点",
+            systemImage: MemoMarkSymbol.timeAnchor.name,
+            tint: .blue
+        ) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("展示当前记忆对象下可用于配置的全部时间锚点；具体使用哪个锚点，由配置中心的当前配置决定。")
                     .font(.caption)
@@ -180,13 +192,15 @@ struct V1IOSSubjectAnchorSection: View {
                     .background(Color.white.opacity(0.94))
                     .clipShape(
                         RoundedRectangle(
-                            cornerRadius: 18,
+                            cornerRadius:
+                                ConfigurationUI.innerPanelCornerRadius,
                             style: .continuous
                         )
                     )
                     .overlay(
                         RoundedRectangle(
-                            cornerRadius: 18,
+                            cornerRadius:
+                                ConfigurationUI.innerPanelCornerRadius,
                             style: .continuous
                         )
                         .stroke(ConfigurationUI.faintHairline)
@@ -211,7 +225,8 @@ struct V1IOSSubjectAnchorSection: View {
 
         return HStack(alignment: .center, spacing: 12) {
             RoundedRectangle(
-                cornerRadius: 12,
+                cornerRadius:
+                    ConfigurationUI.compactIconCornerRadius,
                 style: .continuous
             )
             .fill(
@@ -219,7 +234,10 @@ struct V1IOSSubjectAnchorSection: View {
                     for: anchor.resolvedAnchorType
                 ).opacity(0.10)
             )
-            .frame(width: 38, height: 38)
+            .frame(
+                width: ConfigurationUI.compactIconSize,
+                height: ConfigurationUI.compactIconSize
+            )
             .overlay {
                 Image(
                     systemName:

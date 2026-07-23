@@ -96,6 +96,38 @@ final class PhotoLibraryRepository {
     func saveRenderedPhoto(
         at fileURL: URL,
         metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?,
+        idempotencyKey: String
+    ) async -> PhotoMemoResult<PhotoLibrarySaveResult> {
+
+        do {
+            return .success(
+                try await photoLibraryExportService
+                    .saveImageResult(
+                        at: fileURL,
+                        metadata: metadata,
+                        preferredAlbumIdentifier:
+                            normalizedAlbumIdentifier(
+                                preferredAlbumIdentifier
+                            ),
+                        idempotencyKey: idempotencyKey
+                    )
+            )
+        } catch {
+            return .failure(
+                .wrapped(
+                    error,
+                    code: .photoLibrarySaveFailed,
+                    message:
+                        "Unable to save the rendered photo to the system photo library."
+                )
+            )
+        }
+    }
+
+    func saveRenderedPhoto(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
         preferredAlbumIdentifier: String
     ) async -> PhotoMemoResult<
         PhotoLibrarySaveResult

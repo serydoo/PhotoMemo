@@ -138,7 +138,10 @@ final class BatchTaskProcessor {
 
             guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
                 currentPhase: store.currentTaskPhase(at: reference)
-            ) else { return }
+            ) else {
+                resourceLifecycle.cleanupManagedSourceIfNeeded(at: task.sourceURL)
+                return
+            }
 
             store.updateTask(at: reference, persist: false) { task in
                 task.captureDate = importedPhoto.metadata.captureDate
@@ -184,6 +187,18 @@ final class BatchTaskProcessor {
                 throw error
             }
 
+            guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
+                currentPhase:
+                    store.currentTaskPhase(
+                        at: reference
+                    )
+            ) else {
+                resourceLifecycle.cleanupManagedSourceIfNeeded(
+                    at: task.sourceURL
+                )
+                return
+            }
+
             store.updateTask(at: reference, persist: false) { task in
                 task.phase = .previewReady
                 task.progress = BatchTaskProgress(
@@ -221,6 +236,7 @@ final class BatchTaskProcessor {
                 currentPhase: store.currentTaskPhase(at: reference)
             ) else {
                 resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
+                resourceLifecycle.cleanupManagedSourceIfNeeded(at: task.sourceURL)
                 return
             }
 
@@ -252,7 +268,8 @@ final class BatchTaskProcessor {
                         fileURL: exportedFileURL,
                         metadata: importedPhoto.metadata,
                         preferredAlbumIdentifier: configuration.selectedAlbumIdentifier,
-                        coordinator: exportCoordinator
+                        coordinator: exportCoordinator,
+                        idempotencyKey: task.id.uuidString
                     ).execute()
                 )
             }
@@ -297,6 +314,9 @@ final class BatchTaskProcessor {
                 currentPhase: store.currentTaskPhase(at: reference)
             ) {
                 resourceLifecycle.cleanupTemporaryFile(at: temporaryFileURL)
+                resourceLifecycle.cleanupManagedSourceIfNeeded(
+                    at: store.currentTask(at: reference)?.sourceURL
+                )
                 if let jobID = store.currentJobID(at: reference) {
                     await store.deliverFinalNotificationIfNeeded(for: jobID)
                 }
@@ -371,6 +391,7 @@ final class BatchTaskProcessor {
             currentPhase: store.currentTaskPhase(at: reference)
         ) else {
             resourceLifecycle.cleanupTemporaryFiles(result.temporaryFileURLs)
+            resourceLifecycle.cleanupManagedSourceIfNeeded(at: task.sourceURL)
             return
         }
         let notificationAttachmentURL = result.notificationSourceURL.flatMap {

@@ -496,7 +496,7 @@ private struct ConfigurationCenterSubjectAvatarView: View {
                     .scaledToFill()
                     .clipShape(Circle())
             } else {
-                Image(systemName: "person.crop.circle.fill")
+                Image(systemName: MemoMarkSymbol.memorySubject.name)
                     .font(.title3.weight(.medium))
                     .foregroundStyle(Color.accentColor)
             }

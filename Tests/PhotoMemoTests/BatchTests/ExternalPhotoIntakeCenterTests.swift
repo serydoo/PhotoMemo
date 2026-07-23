@@ -178,5 +178,56 @@ struct ExternalPhotoIntakeCenterTests {
             == livePhotoType.identifier
         )
     }
+
+    @MainActor
+    @Test("In-memory fallback requests remain until processing is acknowledged")
+    func inMemoryFallbackRequestsRemainUntilAcknowledged() throws {
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeCenterTests.PendingFallback.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let intakeDirectoryURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(suiteName, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: intakeDirectoryURL)
+        }
+
+        defaults.set(
+            Data("corrupted-intake".utf8),
+            forKey: ExternalIntakeRequestStore.storageKey
+        )
+        let center = ExternalPhotoIntakeCenter(
+            intakeStore:
+                ExternalPhotoIntakeStore(
+                    defaults: defaults,
+                    intakeDirectoryURL: intakeDirectoryURL
+                ),
+            settingsService:
+                SettingsService(defaults: defaults)
+        )
+        center.submit(
+            urls: [URL(fileURLWithPath: "/tmp/fallback.jpg")],
+            source: .quickAction
+        )
+
+        let firstDrain = try #require(
+            center.drainPendingRequests().first
+        )
+        let retryDrain = try #require(
+            center.drainPendingRequests().first
+        )
+
+        #expect(retryDrain.id == firstDrain.id)
+        switch center.acknowledgeProcessedRequests([firstDrain]) {
+        case .success:
+            break
+        case .encodingFailed:
+            Issue.record("Expected fallback acknowledgement to succeed")
+        }
+        #expect(center.drainPendingRequests().isEmpty)
+    }
 }
 #endif

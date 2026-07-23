@@ -101,6 +101,89 @@ struct ExternalIntakeResponsibilityLayerTests {
         )
     }
 
+    @Test("Acknowledging one request preserves requests appended after the drain")
+    func acknowledgingOneRequestPreservesLaterRequests() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalIntakeResponsibilityLayerTests.Ack.\(UUID().uuidString)"
+        let defaults =
+            try #require(UserDefaults(suiteName: suiteName))
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let store = ExternalIntakeRequestStore(defaults: defaults)
+        let firstRequest = ExternalPhotoIntakeRequest(
+            id: UUID(),
+            launchSource: .shareExtension,
+            urls: [URL(fileURLWithPath: "/tmp/first.jpg")],
+            configurationSnapshot: Self.configurationSnapshot
+        )
+        let laterRequest = ExternalPhotoIntakeRequest(
+            id: UUID(),
+            launchSource: .shareExtension,
+            urls: [URL(fileURLWithPath: "/tmp/later.jpg")],
+            configurationSnapshot: Self.configurationSnapshot
+        )
+
+        #expect(
+            store.persistRequest(firstRequest, diagnosticsSeed: .init()) == nil
+        )
+        _ = store.loadRequestsForProcessing()
+        #expect(
+            store.persistRequest(laterRequest, diagnosticsSeed: .init()) == nil
+        )
+
+        switch store.acknowledgeRequests(Set([firstRequest.id])) {
+        case .success:
+            break
+        case .encodingFailed:
+            Issue.record("Expected request acknowledgement to persist")
+        }
+
+        switch store.loadRequestsResult() {
+        case .success(let requests):
+            #expect(requests == [laterRequest])
+        case .noValue, .decodingFailed:
+            Issue.record("Expected the later request to remain persisted")
+        }
+    }
+
+    @Test("Persisting a new request does not overwrite a corrupted request payload")
+    func persistingRequestPreservesCorruptedPayload() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalIntakeResponsibilityLayerTests.CorruptedAppend.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let corruptedPayload = Data("corrupted-intake".utf8)
+        defaults.set(
+            corruptedPayload,
+            forKey: ExternalIntakeRequestStore.storageKey
+        )
+        let store = ExternalIntakeRequestStore(defaults: defaults)
+        let request = ExternalPhotoIntakeRequest(
+            launchSource: .shareExtension,
+            urls: [URL(fileURLWithPath: "/tmp/new-request.jpg")],
+            configurationSnapshot: Self.configurationSnapshot
+        )
+
+        let failure = store.persistRequest(
+            request,
+            diagnosticsSeed: .init()
+        )
+
+        #expect(failure != nil)
+        #expect(
+            defaults.data(
+                forKey: ExternalIntakeRequestStore.storageKey
+            ) == corruptedPayload
+        )
+    }
+
     @Test("Managed file store keeps already-managed identity and deduplicates normalized inputs")
     func managedFileStorePreservesManagedIdentityAndDeduplication() throws {
 
@@ -295,6 +378,45 @@ struct ExternalIntakeResponsibilityLayerTests {
 
         try? FileManager.default.removeItem(
             at: rootDirectoryURL
+        )
+    }
+
+    @Test("Request store keeps intake unacknowledged when the shared lock cannot be acquired")
+    func requestStoreReportsLockFailureWithoutPersistingOrDroppingTheRequest() throws {
+
+        let suiteName =
+            "PhotoMemo.ExternalIntakeResponsibilityLayerTests.LockFailure.\(UUID().uuidString)"
+        let defaults =
+            try #require(UserDefaults(suiteName: suiteName))
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let blockerURL =
+            FileManager.default.temporaryDirectory
+                .appendingPathComponent(suiteName)
+        try Data("lock-parent-is-a-file".utf8).write(to: blockerURL)
+        defer {
+            try? FileManager.default.removeItem(at: blockerURL)
+        }
+
+        let request = ExternalPhotoIntakeRequest(
+            id: UUID(),
+            launchSource: .shareExtension,
+            urls: [URL(fileURLWithPath: "/tmp/managed-lock-failure.jpg")],
+            configurationSnapshot: Self.configurationSnapshot
+        )
+        let store = ExternalIntakeRequestStore(
+            defaults: defaults,
+            lockURL: blockerURL.appendingPathComponent("requests.lock")
+        )
+
+        let failure = store.persistRequest(request, diagnosticsSeed: .init())
+
+        #expect(failure != nil)
+        #expect(
+            defaults.data(forKey: ExternalIntakeRequestStore.storageKey)
+            == nil
         )
     }
 }

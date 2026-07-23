@@ -42,7 +42,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             .padding(.top, 16)
             .padding(.bottom, 104)
             .v1AdaptiveScrollContent(
-                horizontalPadding: 18
+                horizontalPadding: ConfigurationUI.contentColumnPadding
             )
         }
         .scrollDismissesKeyboard(.interactively)
@@ -80,7 +80,11 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var developmentBackgroundSection: some View {
-        V1CardSurface(title: "为什么开发时光记") {
+        V1CardSurface(
+            title: "为什么开发时光记",
+            systemImage: MemoMarkSymbol.memoryContent.name,
+            tint: .pink
+        ) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "heart.fill")
@@ -219,7 +223,11 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var profileSection: some View {
-        V1CardSurface(title: "记忆对象") {
+        V1CardSurface(
+            title: "记忆对象",
+            systemImage: MemoMarkSymbol.memorySubject.name,
+            tint: .blue
+        ) {
             V1IOSSubjectHomeEntryContent(
                 subjectSummary: subjectSummary,
                 subject: subject,
@@ -247,7 +255,9 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     private var currentPresetSection: some View {
         V1HomeConfigurationCard(
             title: "我的配置",
-            note: "勾选生效"
+            note: "勾选生效",
+            systemImage: MemoMarkSymbol.configuration.name,
+            tint: .blue
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 if memoryPresets.isEmpty {
@@ -386,11 +396,18 @@ private struct V1HomeConfigurationCard<Content: View>: View {
 
     let title: String
     let note: String
+    let systemImage: String
+    let tint: Color
     @ViewBuilder var content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
+                V1CompactHeadingIcon(
+                    systemImage: systemImage,
+                    tint: tint
+                )
+
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -669,13 +686,13 @@ private struct V1HomeMemoryPresetRow: View {
     private var anchorTint: Color {
         switch anchorType {
         case .birthday:
-            return .pink
+            return .orange
         case .relationship:
-            return .red
+            return .pink
         case .marriage:
             return .purple
         case .exam:
-            return .orange
+            return .green
         case .custom:
             return .blue
         }

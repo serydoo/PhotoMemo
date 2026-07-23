@@ -5,6 +5,14 @@ enum ConfigurationUI {
 
     static let cornerRadius: CGFloat = 12
     static let smallCornerRadius: CGFloat = 10
+    static let cardCornerRadius: CGFloat = 18
+    static let cardPadding: CGFloat = 14
+    static let contentColumnPadding: CGFloat = 16
+    static let innerPanelCornerRadius: CGFloat = 18
+    static let innerPanelPadding: CGFloat = 12
+    static let compactIconSize: CGFloat = 36
+    static let compactIconCornerRadius: CGFloat = 11
+    static let compactRowVerticalPadding: CGFloat = 9
     static let contentSpacing: CGFloat = 16
     static let sectionSpacing: CGFloat = 20
 

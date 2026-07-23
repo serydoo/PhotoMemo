@@ -36,6 +36,50 @@ struct UserDefaultsBatchQueuePersistenceBackend:
             data,
             forKey: key
         )
+
+        guard defaults.synchronize() else {
+            throw UserDefaultsBatchQueuePersistenceError
+                .synchronizeFailed(
+                    key: key
+                )
+        }
+
+        guard defaults.data(forKey: key) == data else {
+            throw UserDefaultsBatchQueuePersistenceError
+                .readBackMismatch(
+                    key: key
+                )
+        }
+    }
+}
+
+private enum UserDefaultsBatchQueuePersistenceError:
+    LocalizedError {
+
+    case synchronizeFailed(key: String)
+
+    case readBackMismatch(key: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .synchronizeFailed(let key):
+            return "UserDefaults synchronize failed for key \(key)."
+        case .readBackMismatch(let key):
+            return "UserDefaults read-back verification failed for key \(key)."
+        }
+    }
+}
+
+private enum BatchQueuePersistenceVerificationError:
+    LocalizedError {
+
+    case readBackMismatch(key: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .readBackMismatch(let key):
+            return "Batch queue persistence read-back verification failed for key \(key)."
+        }
     }
 }
 
@@ -82,23 +126,48 @@ struct BatchQueuePersistence {
             encodeJobs
     }
 
-    func loadPersistedJobs() -> [BatchJob] {
+    func loadPersistedJobsResult()
+    -> PhotoMemoResult<[BatchJob]> {
 
-        guard
-            let data =
-                try? backend.loadData(
-                forKey: storageKey
-            ),
-            let decodedJobs =
-                try? JSONDecoder().decode(
+        let data: Data?
+        do {
+            data = try backend.loadData(forKey: storageKey)
+        } catch {
+            return .failure(
+                PhotoMemoError.wrapped(
+                    error,
+                    code: .persistenceReadFailed,
+                    message: "无法读取批处理队列。",
+                    underlyingDescription: "photomemo.batchQueue.jobs: \(String(describing: error))"
+                )
+            )
+        }
+
+        guard let data else {
+            return .success([])
+        }
+
+        do {
+            return .success(
+                try JSONDecoder().decode(
                     [BatchJob].self,
                     from: data
                 )
-        else {
-            return []
+            )
+        } catch {
+            return .failure(
+                PhotoMemoError.wrapped(
+                    error,
+                    code: .persistenceReadFailed,
+                    message: "批处理队列数据已损坏，已停止自动恢复。",
+                    underlyingDescription: "photomemo.batchQueue.jobs: \(String(describing: error))"
+                )
+            )
         }
+    }
 
-        return decodedJobs
+    func loadPersistedJobs() -> [BatchJob] {
+        loadPersistedJobsResult().value ?? []
     }
 
     func normalizeJobsForResume(
@@ -208,6 +277,14 @@ struct BatchQueuePersistence {
                 data,
                 forKey: storageKey
             )
+
+            guard try backend.loadData(forKey: storageKey) == data else {
+                throw BatchQueuePersistenceVerificationError
+                    .readBackMismatch(
+                        key: storageKey
+                    )
+            }
+
             return .success(())
         } catch {
             return .failure(

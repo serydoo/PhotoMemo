@@ -114,6 +114,9 @@ final class PhotoMemoShareExtensionViewController:
     private var firstPreviewTask:
         Task<Void, Never>?
 
+    private var completionTask:
+        Task<Void, Never>?
+
     private var pendingHandoffPhotoCount = 0
 
     private var viewState: ShareExtensionViewState = .confirming
@@ -123,7 +126,7 @@ final class PhotoMemoShareExtensionViewController:
         preferredContentSize =
             CGSize(
                 width: 0,
-                height: 680
+                height: 440
             )
         configureView()
         loadInputItems()
@@ -131,8 +134,18 @@ final class PhotoMemoShareExtensionViewController:
         applyConfirmingState()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        preferredContentSize =
+            CGSize(
+                width: 0,
+                height: 440
+            )
+    }
+
     override func viewDidDisappear(_ animated: Bool) {
         firstPreviewTask?.cancel()
+        completionTask?.cancel()
         progressObserver.stopIntakeDiagnosticMonitoring()
         super.viewDidDisappear(animated)
     }
@@ -171,11 +184,15 @@ private extension PhotoMemoShareExtensionViewController {
         summarySectionView =
             summaryCard
 
+        let statusStack =
+            makeStatusStack()
         let statusCard =
             makeCardContainer(
-                contentView:
-                    makeStatusStack()
+                contentView: statusStack
             )
+
+        let quoteStack =
+            makeQuoteStack()
 
         contentStack.addArrangedSubview(
             brandLabel
@@ -192,9 +209,8 @@ private extension PhotoMemoShareExtensionViewController {
         contentStack.addArrangedSubview(
             summaryCard
         )
-        contentStack.addArrangedSubview(
-            statusCard
-        )
+        contentStack.addArrangedSubview(statusCard)
+        contentStack.addArrangedSubview(quoteStack)
 
         view.addSubview(
             scrollView
@@ -212,28 +228,28 @@ private extension PhotoMemoShareExtensionViewController {
                     equalTo:
                         view.safeAreaLayoutGuide
                         .topAnchor,
-                    constant: 52
+                    constant: 36
                 ),
             scrollView.leadingAnchor
                 .constraint(
                     equalTo:
                         view.safeAreaLayoutGuide
                         .leadingAnchor,
-                    constant: 20
+                    constant: 16
                 ),
             scrollView.trailingAnchor
                 .constraint(
                     equalTo:
                         view.safeAreaLayoutGuide
                         .trailingAnchor,
-                    constant: -20
+                    constant: -16
                 ),
             scrollView.bottomAnchor
                 .constraint(
                     equalTo:
                         bottomActionStack
                         .topAnchor,
-                    constant: -18
+                    constant: -12
                 ),
             contentStack.topAnchor.constraint(
                 equalTo:
@@ -265,14 +281,14 @@ private extension PhotoMemoShareExtensionViewController {
                     equalTo:
                         view.safeAreaLayoutGuide
                         .leadingAnchor,
-                    constant: 20
+                    constant: 16
                 ),
             bottomActionStack.trailingAnchor
                 .constraint(
                     equalTo:
                         view.safeAreaLayoutGuide
                         .trailingAnchor,
-                    constant: -20
+                    constant: -16
                 ),
             bottomActionStack.bottomAnchor
                 .constraint(
@@ -305,7 +321,7 @@ private extension PhotoMemoShareExtensionViewController {
         contentStack.translatesAutoresizingMaskIntoConstraints =
             false
         contentStack.axis = .vertical
-        contentStack.spacing = 16
+        contentStack.spacing = 12
         contentStack.alignment = .fill
     }
 
@@ -316,7 +332,7 @@ private extension PhotoMemoShareExtensionViewController {
         bottomActionStack.axis =
             .vertical
         bottomActionStack.spacing =
-            12
+            8
         bottomActionStack.alignment =
             .fill
         bottomActionStack.addArrangedSubview(
@@ -330,28 +346,23 @@ private extension PhotoMemoShareExtensionViewController {
     func configureHeaderLabels() {
 
         brandLabel.font =
-            .preferredFont(
-                forTextStyle: .caption1
-            )
+            MemoMarkDesignTokens.Typography.brand.uiFont()
         brandLabel.textColor =
-            .secondaryLabel
+            .tertiaryLabel
         brandLabel.text =
             "时光记"
+        brandLabel.textAlignment = .center
         brandLabel.adjustsFontForContentSizeCategory = true
         brandLabel.accessibilityTraits = .header
 
         titleLabel.font =
-            .preferredFont(
-                forTextStyle: .title2
-            )
+            MemoMarkDesignTokens.Typography.hero.uiFont()
         titleLabel.adjustsFontForContentSizeCategory =
             true
         titleLabel.numberOfLines = 0
 
         subtitleLabel.font =
-            .preferredFont(
-                forTextStyle: .body
-            )
+            MemoMarkDesignTokens.Typography.heroSubtitle.uiFont()
         subtitleLabel.textColor =
             .secondaryLabel
         subtitleLabel.numberOfLines = 0
@@ -366,17 +377,13 @@ private extension PhotoMemoShareExtensionViewController {
             true
 
         statusTitleLabel.font =
-            .preferredFont(
-                forTextStyle: .headline
-            )
+            MemoMarkDesignTokens.Typography.moduleTitle.uiFont()
         statusTitleLabel.numberOfLines = 0
         statusTitleLabel.adjustsFontForContentSizeCategory = true
         statusTitleLabel.accessibilityTraits = .header
 
         statusMessageLabel.font =
-            .preferredFont(
-                forTextStyle: .subheadline
-            )
+            MemoMarkDesignTokens.Typography.detail.uiFont()
         statusMessageLabel.textColor =
             .secondaryLabel
         statusMessageLabel.numberOfLines = 0
@@ -412,9 +419,7 @@ private extension PhotoMemoShareExtensionViewController {
         previewCardStack.spacing = 8
 
         previewCaptionLabel.font =
-            .preferredFont(
-                forTextStyle: .caption1
-            )
+            MemoMarkDesignTokens.Typography.caption.uiFont()
         previewCaptionLabel.textColor =
             .secondaryLabel
         previewCaptionLabel.numberOfLines = 0
@@ -426,9 +431,7 @@ private extension PhotoMemoShareExtensionViewController {
     func configureFooterLabel() {
 
         footerLabel.font =
-            .preferredFont(
-                forTextStyle: .footnote
-            )
+            MemoMarkDesignTokens.Typography.secondary.uiFont()
         footerLabel.textColor =
             .secondaryLabel
         footerLabel.numberOfLines = 0
@@ -442,9 +445,25 @@ private extension PhotoMemoShareExtensionViewController {
         primaryButton.configuration?.cornerStyle =
             .large
         primaryButton.configuration?.baseBackgroundColor =
-            .label
+            .systemBlue
         primaryButton.configuration?.baseForegroundColor =
-            .systemBackground
+            .white
+        primaryButton.configuration?.cornerStyle =
+            .fixed
+        primaryButton.layer.cornerRadius =
+            MemoMarkDesignTokens.Layout.cardCornerRadius
+        primaryButton.layer.cornerCurve =
+            .continuous
+        primaryButton.configuration?.titleTextAttributesTransformer =
+            UIConfigurationTextAttributesTransformer { incoming in
+                var outgoing = incoming
+                outgoing.font =
+                    MemoMarkDesignTokens
+                    .Typography
+                    .button
+                    .uiFont()
+                return outgoing
+            }
         primaryButton.titleLabel?.adjustsFontForContentSizeCategory = true
         primaryButton.accessibilityTraits.insert(.button)
         primaryButton.addTarget(
@@ -461,14 +480,12 @@ private extension PhotoMemoShareExtensionViewController {
         stack.translatesAutoresizingMaskIntoConstraints =
             false
         stack.axis = .vertical
-        stack.spacing = 12
+        stack.spacing = 16
 
         let headerLabel =
             UILabel()
         headerLabel.font =
-            .preferredFont(
-                forTextStyle: .headline
-            )
+            MemoMarkDesignTokens.Typography.sectionTitle.uiFont()
         headerLabel.text =
             "处理队列"
 
@@ -564,7 +581,7 @@ private extension PhotoMemoShareExtensionViewController {
                 forTextStyle: .headline
             )
         headerLabel.text =
-            "这次会如何处理"
+            "本次分享"
 
         stack.addArrangedSubview(
             headerLabel
@@ -572,22 +589,22 @@ private extension PhotoMemoShareExtensionViewController {
         stack.addArrangedSubview(
             makeSummaryRow(
                 title: "照片",
-                valueLabel:
-                    sharedCountValueLabel
+                valueLabel: sharedCountValueLabel,
+                addsDivider: true
             )
         )
         stack.addArrangedSubview(
             makeSummaryRow(
-                title: "默认风格",
-                valueLabel:
-                    currentStyleValueLabel
+                title: "配置",
+                valueLabel: currentStyleValueLabel,
+                addsDivider: true
             )
         )
         stack.addArrangedSubview(
             makeSummaryRow(
-                title: "结果去向",
-                valueLabel:
-                    outputValueLabel
+                title: "相册",
+                valueLabel: outputValueLabel,
+                addsDivider: false
             )
         )
 
@@ -601,7 +618,7 @@ private extension PhotoMemoShareExtensionViewController {
         stack.translatesAutoresizingMaskIntoConstraints =
             false
         stack.axis = .vertical
-        stack.spacing = 12
+        stack.spacing = 6
 
         let headerStack =
             UIStackView()
@@ -625,26 +642,66 @@ private extension PhotoMemoShareExtensionViewController {
         return stack
     }
 
+    func makeQuoteStack() -> UIStackView {
+
+        let stack =
+            UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints =
+            false
+        stack.axis = .vertical
+        stack.alignment = .fill
+
+        let quoteLabel =
+            UILabel()
+        quoteLabel.font =
+            MemoMarkDesignTokens.Typography.brand.uiFont()
+        quoteLabel.textColor =
+            .secondaryLabel
+        quoteLabel.textAlignment = .left
+        quoteLabel.numberOfLines = 0
+        quoteLabel.adjustsFontForContentSizeCategory = true
+        let quoteParagraphStyle =
+            NSMutableParagraphStyle()
+        quoteParagraphStyle.lineSpacing =
+            MemoMarkDesignTokens.Layout.brandLineSpacing
+        quoteLabel.attributedText =
+            NSAttributedString(
+                string: "今天的照片，\n也是未来的回忆。",
+                attributes: [
+                    .font:
+                        MemoMarkDesignTokens
+                        .Typography
+                        .brand
+                        .uiFont(),
+                    .foregroundColor: UIColor.secondaryLabel,
+                    .paragraphStyle: quoteParagraphStyle
+                ]
+            )
+
+        stack.addArrangedSubview(
+            quoteLabel
+        )
+
+        return stack
+    }
+
     func makeSummaryRow(
         title: String,
-        valueLabel: UILabel
+        valueLabel: UILabel,
+        addsDivider: Bool
     ) -> UIStackView {
 
         let titleLabel =
             UILabel()
         titleLabel.font =
-            .preferredFont(
-                forTextStyle: .caption1
-            )
+            MemoMarkDesignTokens.Typography.caption.uiFont()
         titleLabel.textColor =
             .secondaryLabel
         titleLabel.text =
             title
 
         valueLabel.font =
-            .preferredFont(
-                forTextStyle: .body
-            )
+            MemoMarkDesignTokens.Typography.value.uiFont()
         valueLabel.numberOfLines = 0
 
         let stack =
@@ -655,7 +712,28 @@ private extension PhotoMemoShareExtensionViewController {
                 ]
             )
         stack.axis = .vertical
-        stack.spacing = 4
+        stack.alignment = .fill
+        stack.spacing = 8
+        valueLabel.textAlignment = .left
+
+        if addsDivider {
+            let divider = UIView()
+            divider.translatesAutoresizingMaskIntoConstraints = false
+            divider.backgroundColor = .separator
+            stack.addArrangedSubview(divider)
+            divider.leadingAnchor.constraint(
+                equalTo: stack.leadingAnchor,
+                constant: MemoMarkDesignTokens.Layout.dividerInset
+            ).isActive = true
+            divider.trailingAnchor.constraint(
+                equalTo: stack.trailingAnchor,
+                constant: -MemoMarkDesignTokens.Layout.dividerInset
+            ).isActive = true
+            divider.heightAnchor.constraint(
+                equalToConstant: 1 / UIScreen.main.scale
+            ).isActive = true
+        }
+
         return stack
     }
 
@@ -669,7 +747,8 @@ private extension PhotoMemoShareExtensionViewController {
             false
         container.backgroundColor =
             .secondarySystemBackground
-        container.layer.cornerRadius = 18
+        container.layer.cornerRadius =
+            MemoMarkDesignTokens.Layout.cardCornerRadius
         container.layer.cornerCurve = .continuous
         container.addSubview(
             contentView
@@ -679,22 +758,26 @@ private extension PhotoMemoShareExtensionViewController {
             contentView.topAnchor.constraint(
                 equalTo:
                     container.topAnchor,
-                constant: 16
+                constant:
+                    MemoMarkDesignTokens.Layout.cardPadding
             ),
             contentView.leadingAnchor.constraint(
                 equalTo:
                     container.leadingAnchor,
-                constant: 16
+                constant:
+                    MemoMarkDesignTokens.Layout.cardPadding
             ),
             contentView.trailingAnchor.constraint(
                 equalTo:
                     container.trailingAnchor,
-                constant: -16
+                constant:
+                    -MemoMarkDesignTokens.Layout.cardPadding
             ),
             contentView.bottomAnchor.constraint(
                 equalTo:
                     container.bottomAnchor,
-                constant: -16
+                constant:
+                    -MemoMarkDesignTokens.Layout.cardPadding
             )
         ])
 
@@ -721,7 +804,7 @@ private extension PhotoMemoShareExtensionViewController {
 
         sharedCountValueLabel.text =
             sharedPhotoCount > 0
-            ? "\(sharedPhotoCount) 张可处理照片"
+            ? "\(sharedPhotoCount) 张"
             : "未识别到可处理照片"
 
         previewSectionView?.isHidden = true
@@ -744,10 +827,13 @@ private extension PhotoMemoShareExtensionViewController {
             )
 
         if configurationReadiness.isReady {
-            currentStyleValueLabel.text =
+            let configurationTitle =
                 configurationReadiness
                 .presetTitle
                 ?? summary.styleTitle
+            currentStyleValueLabel.text =
+                summary.memorySubjectTitle
+                ?? configurationTitle
             outputValueLabel.text =
                 summary.outputTitle
         } else {
@@ -979,6 +1065,7 @@ private extension PhotoMemoShareExtensionViewController {
                 .received,
                 photoCount: importResult.importedCount
             )
+            scheduleSuccessfulDismissal()
         case .handoffFailed(let importResult):
             pendingHandoffPhotoCount =
                 importResult.importedCount
@@ -1018,6 +1105,25 @@ private extension PhotoMemoShareExtensionViewController {
             .handoffFailed,
             photoCount: pendingHandoffPhotoCount
         )
+    }
+
+    @MainActor
+    func scheduleSuccessfulDismissal() {
+
+        completionTask?.cancel()
+        completionTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(
+                nanoseconds: 700_000_000
+            )
+            guard !Task.isCancelled,
+                  let self else {
+                return
+            }
+            self.extensionContext?
+                .completeRequest(
+                    returningItems: nil
+                )
+        }
     }
 
     func loadFirstPreviewIfNeeded() {

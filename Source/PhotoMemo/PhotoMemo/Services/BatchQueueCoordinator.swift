@@ -104,8 +104,13 @@ final class BatchQueueCoordinator {
     func cancelJob(in jobs: inout [BatchJob], jobID: UUID) -> Bool {
         guard let jobIndex = jobs.firstIndex(where: { $0.id == jobID }) else { return false }
         var job = jobs[jobIndex]
+        var didCancelTask = false
         for index in job.tasks.indices {
             guard !job.tasks[index].phase.isTerminal else { continue }
+            let phase = job.tasks[index].phase
+            guard phase != .savingToPhotoLibrary else {
+                continue
+            }
             let sourceURL = job.tasks[index].sourceURL
             job.tasks[index].phase = .cancelled
             job.tasks[index].progress = BatchTaskProgress(
@@ -113,10 +118,14 @@ final class BatchQueueCoordinator {
                 totalUnits: 1,
                 statusMessage: "已取消"
             )
-            resourceLifecycle.cleanupManagedSourceIfNeeded(at: sourceURL)
+            if phase == .queued {
+                resourceLifecycle.cleanupManagedSourceIfNeeded(at: sourceURL)
+            }
+            didCancelTask = true
         }
+        guard didCancelTask else { return false }
         job.updatedAt = Date()
-        job.state = .cancelled
+        job.state = derivedJobState(from: job.tasks)
         jobs[jobIndex] = job
         return true
     }

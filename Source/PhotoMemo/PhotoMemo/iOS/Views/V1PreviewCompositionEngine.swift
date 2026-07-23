@@ -136,7 +136,7 @@ struct V1PreviewDraftItem:
             title: "文字",
             value: value,
             savedValue: value,
-            systemImage: "textformat"
+            systemImage: MemoMarkSymbol.expressionFormula.name
         )
     }
 

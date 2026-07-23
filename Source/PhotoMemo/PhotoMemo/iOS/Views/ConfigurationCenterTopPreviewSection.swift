@@ -120,7 +120,7 @@ struct ConfigurationCenterTopPreviewSection<
                         if showsNavigatorButton {
                             topIconButton(
                                 title: "配置导航",
-                                systemImage: "square.grid.2x2",
+                                systemImage: MemoMarkSymbol.module.name,
                                 action: onOpenNavigator
                             )
                         }

@@ -34,6 +34,8 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "app.request.dropped")
     nonisolated static let appRequestValidated =
         Self(rawValue: "app.request.validated")
+    nonisolated static let appRequestAcknowledgementFailed =
+        Self(rawValue: "app.request.acknowledgement.failed")
     nonisolated static let appSharedContainerReadiness =
         Self(rawValue: "app.sharedContainerReadiness")
     nonisolated static let appEnqueueTaskRoute =

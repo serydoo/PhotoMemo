@@ -1,6 +1,18 @@
 import Foundation
 import Photos
 
+actor PhotoLibrarySaveGate {
+
+    static let shared = PhotoLibrarySaveGate()
+
+    func run<Result>(
+        _ operation: () async throws -> Result
+    ) async rethrows -> Result {
+
+        try await operation()
+    }
+}
+
 protocol PhotoLibraryExporting {
 
     func fetchAlbumOptions() async throws -> [PhotoAlbumOption]
@@ -14,6 +26,30 @@ protocol PhotoLibraryExporting {
         metadata: PhotoMetadata,
         preferredAlbumIdentifier: String?
     ) async throws -> PhotoLibrarySaveResult
+
+    func saveImageResult(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?,
+        idempotencyKey: String?
+    ) async throws -> PhotoLibrarySaveResult
+}
+
+extension PhotoLibraryExporting {
+
+    func saveImageResult(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?,
+        idempotencyKey: String?
+    ) async throws -> PhotoLibrarySaveResult {
+
+        try await saveImageResult(
+            at: fileURL,
+            metadata: metadata,
+            preferredAlbumIdentifier: preferredAlbumIdentifier
+        )
+    }
 }
 
 struct PhotoLibrarySaveResult: Hashable {
@@ -195,79 +231,122 @@ final class PhotoLibraryExportService:
         preferredAlbumIdentifier: String?
     ) async throws -> PhotoLibrarySaveResult {
 
+        try await saveImageResult(
+            at: fileURL,
+            metadata: metadata,
+            preferredAlbumIdentifier: preferredAlbumIdentifier,
+            idempotencyKey: nil
+        )
+    }
+
+    func saveImageResult(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?,
+        idempotencyKey: String?
+    ) async throws -> PhotoLibrarySaveResult {
+
         let status = await requestAuthorizationIfNeeded()
 
         guard isAuthorized(status) else {
             throw PhotoLibraryExportError.unauthorized
         }
 
-        let album =
-            try await resolvedAlbum(
-                preferredAlbumIdentifier
-            )
-
-        var placeholderIdentifier: String?
-
-        try await performChanges {
-
-            let assetRequest =
-                PHAssetCreationRequest.forAsset()
-
-            assetRequest.creationDate =
-                metadata.captureDate
-
-            let resourceOptions =
-                PHAssetResourceCreationOptions()
-
-            resourceOptions.shouldMoveFile = false
-            resourceOptions.originalFilename =
-                self.assetOriginalFilename(
-                    for: fileURL
+        return try await PhotoLibrarySaveGate.shared.run { [self] in
+            let album =
+                try await resolvedAlbum(
+                    preferredAlbumIdentifier
                 )
 
-            assetRequest.addResource(
-                with: .photo,
-                fileURL: fileURL,
-                options: resourceOptions
-            )
-
-            guard let placeholder =
-                assetRequest.placeholderForCreatedAsset
-            else {
-                return
-            }
-
-            placeholderIdentifier =
-                placeholder.localIdentifier
-
-            if let album,
-               let albumChangeRequest =
-                PHAssetCollectionChangeRequest(
-                    for: album
-                ) {
-
-                albumChangeRequest.addAssets(
-                    [placeholder] as NSArray
+            if let idempotencyKey,
+               let existingAsset =
+                existingAsset(for: idempotencyKey) {
+                return PhotoLibrarySaveResult(
+                    albumTitle:
+                        album?.localizedTitle
+                        ?? "",
+                    assetLocalIdentifier:
+                        existingAsset.localIdentifier
                 )
             }
-        }
 
-        guard placeholderIdentifier != nil else {
-            throw PhotoLibraryExportError.assetSaveFailed
-        }
+            var placeholderIdentifier: String?
 
-        return PhotoLibrarySaveResult(
-            albumTitle:
-                album?.localizedTitle
-                ?? "",
-            assetLocalIdentifier:
-                placeholderIdentifier ?? ""
-        )
+            try await performChanges {
+
+                let assetRequest =
+                    PHAssetCreationRequest.forAsset()
+
+                assetRequest.creationDate =
+                    metadata.captureDate
+
+                let resourceOptions =
+                    PHAssetResourceCreationOptions()
+
+                resourceOptions.shouldMoveFile = false
+                resourceOptions.originalFilename =
+                    self.assetOriginalFilename(
+                        for: fileURL,
+                        idempotencyKey: idempotencyKey
+                    )
+
+                assetRequest.addResource(
+                    with: .photo,
+                    fileURL: fileURL,
+                    options: resourceOptions
+                )
+
+                guard let placeholder =
+                    assetRequest.placeholderForCreatedAsset
+                else {
+                    return
+                }
+
+                placeholderIdentifier =
+                    placeholder.localIdentifier
+
+                if let album,
+                   let albumChangeRequest =
+                    PHAssetCollectionChangeRequest(
+                        for: album
+                    ) {
+
+                    albumChangeRequest.addAssets(
+                        [placeholder] as NSArray
+                    )
+                }
+            }
+
+            guard placeholderIdentifier != nil else {
+                throw PhotoLibraryExportError.assetSaveFailed
+            }
+
+            return PhotoLibrarySaveResult(
+                albumTitle:
+                    album?.localizedTitle
+                    ?? "",
+                assetLocalIdentifier:
+                    placeholderIdentifier ?? ""
+            )
+        }
     }
 
     func assetOriginalFilename(
-        for fileURL: URL
+        for fileURL: URL,
+        idempotencyKey: String? = nil
     ) -> String {
+
+        if let idempotencyKey =
+            normalizedIdempotencyKey(idempotencyKey) {
+            let pathExtension =
+                fileURL.pathExtension
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+            return pathExtension.isEmpty
+                ? "MemoMarkTask-\(idempotencyKey)"
+                : "MemoMarkTask-\(idempotencyKey).\(pathExtension)"
+        }
 
         let fileName =
             fileURL.lastPathComponent
@@ -313,6 +392,55 @@ final class PhotoLibraryExportService:
 }
 
 private extension PhotoLibraryExportService {
+
+    func normalizedIdempotencyKey(
+        _ key: String?
+    ) -> String? {
+
+        guard let key = key?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !key.isEmpty else {
+            return nil
+        }
+
+        return key.replacingOccurrences(
+            of: "/",
+            with: "-"
+        )
+    }
+
+    func existingAsset(
+        for idempotencyKey: String
+    ) -> PHAsset? {
+
+        let token =
+            "MemoMarkTask-\(normalizedIdempotencyKey(idempotencyKey) ?? idempotencyKey)"
+        let options = PHFetchOptions()
+        options.sortDescriptors = [
+            NSSortDescriptor(
+                key: "creationDate",
+                ascending: false
+            )
+        ]
+        let assets = PHAsset.fetchAssets(
+            with: options
+        )
+        var matchedAsset: PHAsset?
+        assets.enumerateObjects { asset, _, stop in
+            let hasMatchingResource =
+                PHAssetResource
+                .assetResources(for: asset)
+                .contains {
+                    $0.originalFilename
+                        .contains(token)
+                }
+            guard hasMatchingResource else {
+                return
+            }
+            matchedAsset = asset
+            stop.pointee = true
+        }
+        return matchedAsset
+    }
 
     func isAuthorized(
         _ status: PHAuthorizationStatus

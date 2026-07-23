@@ -42,9 +42,9 @@ struct V1IOSHomeQuickActionsTests {
         #expect(
             actions.map(\.systemImage)
             == [
-                "photo.on.rectangle.angled",
-                "slider.horizontal.3",
-                "calendar.badge.clock",
+                MemoMarkSymbol.applePhotos.name,
+                MemoMarkSymbol.configurationCenter.name,
+                MemoMarkSymbol.timeAnchor.name,
                 "book.pages"
             ]
         )

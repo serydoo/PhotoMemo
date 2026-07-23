@@ -116,14 +116,14 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(
             source.contains(
-                "v1AdaptiveScrollContent(\n                    horizontalPadding: 18"
+                "v1AdaptiveScrollContent(\n                    horizontalPadding: ConfigurationUI.contentColumnPadding"
             )
         )
         #expect(!source.contains("GeometryReader"))
         #expect(source.contains("private var basicInfoInnerPanel"))
         #expect(source.contains("V1ConfigurationCardContainer"))
-        #expect(source.contains(".padding(14)"))
-        #expect(source.contains("cornerRadius: 18"))
+        #expect(source.contains(".padding(ConfigurationUI.innerPanelPadding)"))
+        #expect(source.contains("ConfigurationUI.innerPanelCornerRadius"))
     }
 
     @Test("iPhone views do not branch on the physical screen or device model")

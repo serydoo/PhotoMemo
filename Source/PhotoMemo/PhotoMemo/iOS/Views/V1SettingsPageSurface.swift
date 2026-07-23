@@ -25,7 +25,7 @@ struct V1SettingsPageSurface: View {
             .padding(.top, 16)
             .padding(.bottom, 34)
             .v1AdaptiveScrollContent(
-                horizontalPadding: 18
+                horizontalPadding: ConfigurationUI.contentColumnPadding
             )
         }
         .scrollDismissesKeyboard(.interactively)
@@ -41,7 +41,11 @@ struct V1SettingsPageSurface: View {
     }
 
     private var overviewSection: some View {
-        V1CardSurface(title: "为什么是时光记") {
+        V1CardSurface(
+            title: "为什么是时光记",
+            systemImage: MemoMarkSymbol.memoryContent.name,
+            tint: .pink
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("让照片知道，它位于谁的人生里")
                     .font(.headline.weight(.semibold))
@@ -98,7 +102,11 @@ struct V1SettingsPageSurface: View {
     }
 
     private var guideSection: some View {
-        V1CardSurface(title: "使用与帮助") {
+        V1CardSurface(
+            title: "使用与帮助",
+            systemImage: MemoMarkSymbol.help.name,
+            tint: .blue
+        ) {
             VStack(spacing: 12) {
                 Button(action: onShowWelcome) {
                     settingsActionRow(
@@ -146,13 +154,14 @@ struct V1SettingsPageSurface: View {
                     settingsActionRow(
                         title: "查看表达公式说明",
                         detail: "按时间锚点查看主体、智能输出和锚点结果的组合方式。",
-                        systemImage: "textformat",
+                        systemImage:
+                            MemoMarkSymbol.expressionFormula.name,
                         accent: .orange,
                         thumbnail: {
                             settingsThumbnailStack(
                                 accent: .orange,
                                 symbols: [
-                                    "textformat",
+                                    MemoMarkSymbol.expressionFormula.name,
                                     "calendar.badge.clock",
                                     "paintpalette.fill"
                                 ]
@@ -172,7 +181,7 @@ struct V1SettingsPageSurface: View {
                     .padding(.top, 16)
                     .padding(.bottom, 34)
                     .v1AdaptiveScrollContent(
-                        horizontalPadding: 18
+                        horizontalPadding: ConfigurationUI.contentColumnPadding
                     )
             }
             .background(
@@ -187,7 +196,11 @@ struct V1SettingsPageSurface: View {
     }
 
     private var releaseSection: some View {
-        V1CardSurface(title: "版本信息") {
+        V1CardSurface(
+            title: "版本信息",
+            systemImage: MemoMarkSymbol.information.name,
+            tint: .blue
+        ) {
             VStack(spacing: 0) {
                 settingsInfoRow(
                     title: "当前版本",
@@ -203,7 +216,11 @@ struct V1SettingsPageSurface: View {
     }
 
     private var supportSection: some View {
-        V1CardSurface(title: "能力与边界") {
+        V1CardSurface(
+            title: "能力与边界",
+            systemImage: MemoMarkSymbol.capability.name,
+            tint: .orange
+        ) {
             VStack(spacing: 0) {
                 settingsInfoRow(
                     title: "照片输入",
@@ -217,7 +234,7 @@ struct V1SettingsPageSurface: View {
                     title: "每次处理",
                     headline: "最多 20 张照片",
                     detail: "较大的分享请分批进行，减少系统扩展内存压力并提高回存稳定性。",
-                    systemImage: "photo.stack.fill",
+                    systemImage: MemoMarkSymbol.originalPhoto.name,
                     tint: .teal
                 )
 
@@ -235,7 +252,11 @@ struct V1SettingsPageSurface: View {
     }
 
     private var feedbackSection: some View {
-        V1CardSurface(title: "反馈渠道") {
+        V1CardSurface(
+            title: "反馈渠道",
+            systemImage: MemoMarkSymbol.feedback.name,
+            tint: .pink
+        ) {
             VStack(spacing: 0) {
                 settingsLinkRow(
                     title: "TestFlight 反馈",
@@ -274,7 +295,11 @@ struct V1SettingsPageSurface: View {
     }
 
     private var principleSection: some View {
-        V1CardSurface(title: "隐私与数据") {
+        V1CardSurface(
+            title: "隐私与数据",
+            systemImage: MemoMarkSymbol.privacy.name,
+            tint: .green
+        ) {
             VStack(alignment: .leading, spacing: 10) {
                 settingsPrinciple(
                     title: "照片处理在设备本地完成，不会上传照片。",

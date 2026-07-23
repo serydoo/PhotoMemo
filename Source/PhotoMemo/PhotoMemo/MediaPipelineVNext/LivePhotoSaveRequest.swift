@@ -10,6 +10,25 @@ struct LivePhotoSaveRequest:
     let preferredAlbumIdentifier: String?
     let stillPhotoOriginalFilename: String?
     let pairedVideoOriginalFilename: String?
+    let idempotencyKey: String?
+
+    init(
+        stillPhotoFileURL: URL,
+        pairedVideoFileURL: URL,
+        captureDate: Date?,
+        preferredAlbumIdentifier: String?,
+        stillPhotoOriginalFilename: String?,
+        pairedVideoOriginalFilename: String?,
+        idempotencyKey: String? = nil
+    ) {
+        self.stillPhotoFileURL = stillPhotoFileURL
+        self.pairedVideoFileURL = pairedVideoFileURL
+        self.captureDate = captureDate
+        self.preferredAlbumIdentifier = preferredAlbumIdentifier
+        self.stillPhotoOriginalFilename = stillPhotoOriginalFilename
+        self.pairedVideoOriginalFilename = pairedVideoOriginalFilename
+        self.idempotencyKey = idempotencyKey
+    }
 }
 
 enum LivePhotoAssetWritingError:

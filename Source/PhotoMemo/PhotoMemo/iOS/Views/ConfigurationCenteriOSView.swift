@@ -237,7 +237,7 @@ struct ConfigurationCenteriOSView: View {
             }
             .padding(.vertical, 16)
             .v1AdaptiveScrollContent(
-                horizontalPadding: 16
+                horizontalPadding: ConfigurationUI.contentColumnPadding
             )
         }
         .scrollDismissesKeyboard(.interactively)
@@ -853,7 +853,7 @@ struct ConfigurationCenteriOSView: View {
             ConfigurationCenterSidebarItem(
                 title: "输出",
                 subtitle: "处理过的图片",
-                systemImage: "square.and.arrow.down",
+                systemImage: MemoMarkSymbol.output.name,
                 isSelected:
                     selectedPanel == .output,
                 action: {
@@ -872,7 +872,7 @@ struct ConfigurationCenteriOSView: View {
             ConfigurationCenterSidebarItem(
                 title: "配置说明",
                 subtitle: "对象、锚点与输出原则",
-                systemImage: "questionmark.circle",
+                systemImage: MemoMarkSymbol.help.name,
                 isSelected:
                     selectedPanel == .configurationGuide,
                 action: {

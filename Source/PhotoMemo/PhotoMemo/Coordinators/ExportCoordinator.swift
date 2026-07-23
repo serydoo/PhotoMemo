@@ -64,6 +64,23 @@ final class ExportCoordinator {
             )
     }
 
+    func saveRenderedPhoto(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String,
+        idempotencyKey: String
+    ) async -> PhotoMemoResult<PhotoLibrarySaveResult> {
+
+        await photoLibraryRepository
+            .saveRenderedPhoto(
+                at: fileURL,
+                metadata: metadata,
+                preferredAlbumIdentifier:
+                    preferredAlbumIdentifier,
+                idempotencyKey: idempotencyKey
+            )
+    }
+
     func fetchAlbumOptions()
     async -> PhotoMemoResult<
         [PhotoAlbumOption]

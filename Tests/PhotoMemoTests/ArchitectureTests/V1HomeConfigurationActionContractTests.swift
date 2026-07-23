@@ -107,7 +107,7 @@ struct V1HomeConfigurationActionContractTests {
         )
         let memoryObjectIndex = try #require(
             normalizedSource.range(
-                of: "V1CardSurface(title: \"记忆对象\")"
+                of: "title: \"记忆对象\""
             )?.lowerBound
         )
         #expect(backgroundIndex < memoryObjectIndex)
@@ -164,7 +164,11 @@ struct V1HomeConfigurationActionContractTests {
             ).count - 1 == 1
         )
 
-        #expect(feedbackSource.contains("V1CardSurface(title: \"意见反馈\")"))
+        #expect(feedbackSource.contains("V1CardSurface("))
+        #expect(feedbackSource.contains("title: \"意见反馈\""))
+        #expect(
+            feedbackSource.contains("MemoMarkSymbol.feedback.name")
+        )
         #expect(
             feedbackSource.contains(
                 "@AppStorage(\"photomemo.v1.homeFeedbackExpanded\")"

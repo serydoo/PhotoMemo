@@ -123,7 +123,7 @@ struct V1EditorPageSurface<
         .padding(.top, 10)
         .padding(.bottom, 10)
         .v1AdaptivePageContent(
-            horizontalPadding: 16
+            horizontalPadding: ConfigurationUI.contentColumnPadding
         )
         .background(
             ConfigurationUI.appBackground
@@ -150,7 +150,7 @@ struct V1EditorPageSurface<
                     )
             )
             .v1AdaptiveScrollContent(
-                horizontalPadding: 16
+                horizontalPadding: ConfigurationUI.contentColumnPadding
             )
         }
         .scrollDismissesKeyboard(.interactively)

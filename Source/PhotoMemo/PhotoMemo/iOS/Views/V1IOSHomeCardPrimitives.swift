@@ -17,7 +17,7 @@ struct V1IOSHomeInsetGroup<Content: View>: View {
         }
         .background(
             RoundedRectangle(
-                cornerRadius: ConfigurationUI.cornerRadius,
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
                 style: .continuous
             )
             .fill(
@@ -28,7 +28,7 @@ struct V1IOSHomeInsetGroup<Content: View>: View {
         )
         .overlay(
             RoundedRectangle(
-                cornerRadius: ConfigurationUI.cornerRadius,
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
                 style: .continuous
             )
             .stroke(ConfigurationUI.faintHairline)
@@ -136,8 +136,14 @@ struct V1IOSHomeSemanticRow: View {
                         vertical: true
                     )
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 13)
+            .padding(
+                .horizontal,
+                ConfigurationUI.innerPanelPadding
+            )
+            .padding(
+                .vertical,
+                ConfigurationUI.compactRowVerticalPadding
+            )
 
             if showsDivider {
                 Rectangle()

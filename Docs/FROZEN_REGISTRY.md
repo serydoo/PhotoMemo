@@ -1,6 +1,28 @@
 # Frozen Registry
 
-Last updated: 2026-06-24
+Last updated: 2026-07-21
+
+## MemoMark Share Design v1
+
+Status:
+
+```text
+Frozen
+```
+
+Primary source:
+
+- `Docs/04_DesignSystem/MemoMarkShareDesignV1.md`
+
+Frozen areas:
+
+- Hero -> Summary Card -> Promise Card -> Brand Statement -> Primary Action
+- Summary Card's fixed three rows: `照片`, `配置`, `相册`
+- Promise Card's fixed four-row assurance contract
+- One plain Brand Statement
+- One primary button
+- MemoMark shared typography token ownership
+- 8pt spacing rhythm and 24pt button-to-safe-area spacing
 
 ## PM-003
 

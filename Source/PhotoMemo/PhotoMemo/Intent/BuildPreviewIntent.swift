@@ -54,8 +54,24 @@ struct SaveRenderedPhotoIntent:
     let preferredAlbumIdentifier:
         String
 
+    let idempotencyKey: String?
+
     let coordinator:
         ExportCoordinator
+
+    init(
+        fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String,
+        coordinator: ExportCoordinator,
+        idempotencyKey: String? = nil
+    ) {
+        self.fileURL = fileURL
+        self.metadata = metadata
+        self.preferredAlbumIdentifier = preferredAlbumIdentifier
+        self.coordinator = coordinator
+        self.idempotencyKey = idempotencyKey
+    }
 
     func execute()
     async -> PhotoMemoResult<
@@ -67,7 +83,9 @@ struct SaveRenderedPhotoIntent:
                 at: fileURL,
                 metadata: metadata,
                 preferredAlbumIdentifier:
-                    preferredAlbumIdentifier
+                    preferredAlbumIdentifier,
+                idempotencyKey:
+                    idempotencyKey ?? ""
             )
     }
 }

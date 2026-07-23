@@ -478,7 +478,7 @@ private extension V1ConfigurationDraftProjection {
                 title: item.name,
                 value: item.value,
                 savedValue: item.value,
-                systemImage: "textformat"
+                systemImage: MemoMarkSymbol.expressionFormula.name
             )
         case .variable:
             let module = module(for: item)
