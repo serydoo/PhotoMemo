@@ -96,7 +96,9 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshot:
     static func load(
         defaults: UserDefaults =
             PhotoMemoSharedContainer
-            .sharedUserDefaults
+            .sharedUserDefaults,
+        externalIntakeStore:
+            ExternalPhotoIntakeStore? = nil
     ) -> Self {
 
         let diagnosticsResult =
@@ -110,8 +112,11 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshot:
             )
             .loadJobsResult()
         let intakeResult =
-            ExternalPhotoIntakeStore(
-                defaults: defaults
+            (
+                externalIntakeStore
+                ?? ExternalPhotoIntakeStore(
+                    defaults: defaults
+                )
             )
             .loadRequestsResult()
 

@@ -45,9 +45,15 @@ final class RecordCardExportService {
 
     private let pipeline: RecordCardExportPipeline
 
-    init() {
+    init(
+        outputFilenameSequenceStore:
+            LivePhotoOutputFilenameSequenceStore? = nil
+    ) {
         let namingResolver =
-            OutputFileNamingResolver()
+            OutputFileNamingResolver(
+                outputFilenameSequenceStore:
+                    outputFilenameSequenceStore
+            )
         self.namingResolver = namingResolver
         self.pipeline =
             RecordCardExportPipeline(
@@ -84,27 +90,31 @@ final class RecordCardExportService {
     ) throws -> URL {
 
         let folderURL =
-            FileManager.default.temporaryDirectory
-            .appendingPathComponent(
-                "MemoMarkExports",
-                isDirectory: true
-            )
-
-        do {
-
-            try FileManager.default.createDirectory(
-                at: folderURL,
-                withIntermediateDirectories: true
-            )
-
-        } catch {
-
-            throw RecordCardExportError
-                .temporaryFileCreateFailed
-        }
+            try temporaryExportFolderURL()
 
         let fileURL =
-            namingResolver.uniqueTemporaryURL(
+            try namingResolver.uniqueTemporaryURL(
+                in: folderURL,
+                for: photo
+            )
+
+        return try pipeline.export(
+            photo: photo,
+            card: card,
+            to: fileURL
+        )
+    }
+
+    func exportIntermediateToTemporaryFile(
+        photo: SelectedPhoto,
+        card: RecordCard
+    ) throws -> URL {
+
+        let folderURL =
+            try temporaryExportFolderURL()
+        let fileURL =
+            namingResolver
+            .uniqueIntermediateTemporaryURL(
                 in: folderURL,
                 for: photo
             )
@@ -118,6 +128,28 @@ final class RecordCardExportService {
 }
 
 private extension RecordCardExportService {
+
+    func temporaryExportFolderURL() throws -> URL {
+
+        let folderURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "MemoMarkExports",
+                isDirectory: true
+            )
+
+        do {
+            try FileManager.default.createDirectory(
+                at: folderURL,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            throw RecordCardExportError
+                .temporaryFileCreateFailed
+        }
+
+        return folderURL
+    }
 
 #if os(macOS)
     func chooseSaveURL(

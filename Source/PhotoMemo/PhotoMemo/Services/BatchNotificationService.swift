@@ -512,7 +512,9 @@ private extension BatchNotificationService {
     ) -> String {
 
         let templateName =
-            job.configuration.template.name
+            job.configuration.template.displayName(
+                for: job.configuration.language
+            )
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )

@@ -73,7 +73,8 @@ private extension MemoryResultPresentationAdapter {
                 relativeSnapshot:
                     anchorResult
                     .elapsed
-                    .relativeSnapshot
+                    .relativeSnapshot,
+                language: context.language
             )
     }
 
@@ -102,6 +103,7 @@ private extension MemoryResultPresentationAdapter {
                         .year()
                         .month()
                         .day()
+                        .locale(context.language.locale)
                 )
             return "\(subjectName) · \(formattedDate)"
         }

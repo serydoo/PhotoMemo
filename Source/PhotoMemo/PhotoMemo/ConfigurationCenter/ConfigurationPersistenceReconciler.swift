@@ -166,7 +166,9 @@ struct ConfigurationPersistenceReconciler {
                                 .usesCustomText,
                         customMemoryWriteText:
                             configuration.editor.memoryCopy
-                                .customText
+                                .customText,
+                        language:
+                            configuration.language
                     )
                 }
             }
@@ -233,6 +235,7 @@ struct ConfigurationPersistenceReconciler {
             editingState.selectedStorageOption
         updatedPreset.logoMode =
             logoMode ?? preset.logoMode
+        updatedPreset.language = MemoMarkLanguage.stored
         updatedPreset.usesCustomMemoryWriteText =
             editingState.usesCustomMemoryWriteText
         updatedPreset.customMemoryWriteText =
@@ -277,6 +280,7 @@ struct ConfigurationPersistenceReconciler {
                     savedAt: candidate.savedAt,
                     selectedTimeAnchorID:
                         candidate.selectedTimeAnchorID,
+                    language: candidate.language,
                     editor: candidate.editor,
                     presentation: candidate.presentation,
                     output: candidate.output

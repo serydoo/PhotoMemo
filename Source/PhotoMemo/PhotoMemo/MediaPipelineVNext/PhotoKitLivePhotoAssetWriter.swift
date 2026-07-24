@@ -71,16 +71,6 @@ final class PhotoKitLivePhotoAssetWriter:
                 defaultName:
                     "MemoMark.mov"
             )
-        let resolvedResourceFilenames =
-            idempotentResourceFilenames(
-                idempotencyKey:
-                    request.idempotencyKey,
-                stillFilename:
-                    stillPhotoOriginalFilename,
-                pairedVideoFilename:
-                    pairedVideoOriginalFilename
-            )
-
         guard outputBaseName(
             stillPhotoOriginalFilename
         ) == outputBaseName(
@@ -125,7 +115,7 @@ final class PhotoKitLivePhotoAssetWriter:
                                     request
                                     .stillPhotoFileURL,
                                 originalFilename:
-                                    resolvedResourceFilenames.still
+                                    stillPhotoOriginalFilename
                             ),
                             LivePhotoAssetResourceWriteRequest(
                                 kind: .pairedVideo,
@@ -133,7 +123,7 @@ final class PhotoKitLivePhotoAssetWriter:
                                     request
                                     .pairedVideoFileURL,
                                 originalFilename:
-                                    resolvedResourceFilenames.pairedVideo
+                                    pairedVideoOriginalFilename
                             )
                         ],
                         idempotencyKey:
@@ -144,35 +134,6 @@ final class PhotoKitLivePhotoAssetWriter:
 }
 
 private extension PhotoKitLivePhotoAssetWriter {
-
-    func idempotentResourceFilenames(
-        idempotencyKey: String?,
-        stillFilename: String,
-        pairedVideoFilename: String
-    ) -> (still: String, pairedVideo: String) {
-
-        guard let key = idempotencyKey?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-              !key.isEmpty else {
-            return (stillFilename, pairedVideoFilename)
-        }
-
-        let baseName =
-            "MemoMarkTask-\(key.replacingOccurrences(of: "/", with: "-"))"
-        let stillExtension =
-            URL(fileURLWithPath: stillFilename).pathExtension
-        let pairedVideoExtension =
-            URL(fileURLWithPath: pairedVideoFilename).pathExtension
-
-        return (
-            still: stillExtension.isEmpty
-                ? baseName
-                : "\(baseName).\(stillExtension)",
-            pairedVideo: pairedVideoExtension.isEmpty
-                ? baseName
-                : "\(baseName).\(pairedVideoExtension)"
-        )
-    }
 
     func resolvedOriginalFilename(
         preferred: String?,
@@ -219,6 +180,8 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
     private let defaultAlbumTitle =
         PhotoMemoAlbumSelection
         .defaultAlbumTitle
+    private let receiptStore =
+        PhotoLibrarySaveReceiptStore()
 
     func save(
         operation: LivePhotoAssetWriteOperation
@@ -298,6 +261,15 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                     .assetSaveFailed
             }
 
+            if let idempotencyKey =
+                    operation.idempotencyKey {
+                receiptStore.record(
+                    assetIdentifier:
+                        placeholderIdentifier,
+                    for: idempotencyKey
+                )
+            }
+
             return PhotoLibrarySaveResult(
                 albumTitle:
                     album?.localizedTitle
@@ -314,30 +286,29 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
     func existingAsset(
         for idempotencyKey: String
     ) -> PHAsset? {
-
-        let token =
-            "MemoMarkTask-\(idempotencyKey.replacingOccurrences(of: "/", with: "-"))"
-        let options = PHFetchOptions()
-        options.sortDescriptors = [
-            NSSortDescriptor(
-                key: "creationDate",
-                ascending: false
-            )
-        ]
-        let assets = PHAsset.fetchAssets(with: options)
-        var matchedAsset: PHAsset?
-        assets.enumerateObjects { asset, _, stop in
-            guard PHAssetResource
-                .assetResources(for: asset)
-                .contains(where: {
-                    $0.originalFilename.contains(token)
-                }) else {
-                return
-            }
-            matchedAsset = asset
-            stop.pointee = true
+        guard let assetIdentifier =
+                receiptStore.assetIdentifier(
+                    for: idempotencyKey
+                ) else {
+            return nil
         }
-        return matchedAsset
+
+        let asset =
+            PHAsset.fetchAssets(
+                withLocalIdentifiers: [
+                    assetIdentifier
+                ],
+                options: nil
+            )
+            .firstObject
+
+        if asset == nil {
+            receiptStore.removeReceipt(
+                for: idempotencyKey
+            )
+        }
+
+        return asset
     }
 
     func isAuthorized(

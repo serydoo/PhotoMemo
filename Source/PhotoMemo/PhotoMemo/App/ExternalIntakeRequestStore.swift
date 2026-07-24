@@ -11,14 +11,20 @@ final class ExternalIntakeRequestStore {
 
     private let lockURL: URL?
 
+    private let synchronizeDefaults: () -> Bool
+
     private static let processLock = NSLock()
 
     init(
         defaults: UserDefaults,
-        lockURL: URL? = nil
+        lockURL: URL? = nil,
+        synchronizeDefaults: (() -> Bool)? = nil
     ) {
         self.defaults = defaults
         self.lockURL = lockURL
+        self.synchronizeDefaults =
+            synchronizeDefaults
+            ?? defaults.synchronize
     }
 
     func persistRequest(
@@ -444,15 +450,7 @@ private extension ExternalIntakeRequestStore {
             forKey: Self.storageKey
         )
 
-        guard defaults.synchronize() else {
-            return .encodingFailed(
-                PhotoMemoSharedDefaultsWriteFailure(
-                    storageKey: Self.storageKey,
-                    underlyingDescription:
-                        "UserDefaults synchronize returned false."
-                )
-            )
-        }
+        _ = synchronizeDefaults()
 
         guard defaults.data(forKey: Self.storageKey) == data else {
             return .encodingFailed(

@@ -1,5 +1,59 @@
 # MemoMark Handoff
 
+## 2026-07-24 MemoMark 2.0 App Store release preparation
+
+- 全部产品目标的 `MARKETING_VERSION` 已从 `1.7` 升级为 `2.0`，主 App、
+  Share Extension 与 Widget Extension 保持相同版本。
+- `CURRENT_PROJECT_VERSION` 保持 `47`，不重置或手动重排 Xcode Cloud 的构建
+  序列；下一次 Cloud 归档继续使用其递增的 Build `48`。
+- 设置页继续只从安装包读取版本字段，因此新包会显示 `时光记 2.0.47`，Cloud
+  归档生成的 App Store 候选包会显示对应的 `2.0.48`。
+- Xcode 26.6 generic iOS Simulator Debug 构建通过；产物主 App、分享扩展与
+  小组件均验证为 `CFBundleShortVersionString = 2.0`、`CFBundleVersion = 47`。
+
+## 2026-07-24 设置版本号与反馈渠道收口
+
+- 工程版本字段统一为产品版本 `1.7` 与构建号 `47`；设置页从当前安装包读取
+  两个字段并组合显示为 `时光记 1.7.47`，辅助文字分别标明产品版本与
+  Xcode Cloud 构建号。下一次云端构建继续由 Xcode Cloud 递增为 `48`。
+- 设置页反馈渠道按“小红书、抖音 -> QQ 群 `955680366` -> TestFlight ->
+  邮件 -> GitHub Issues”排列；社交平台与 QQ 信息支持文本选择，邮件和
+  GitHub 保持可点击，首页 `V1HomeFeedbackSection` 未发生任何改动。
+- 版本卡与完整反馈卡补齐简体中文、英文语义资源，界面语言切换时不再在
+  同一卡片中出现新增英文与既有固定中文混排。
+- 设置与 Commerce UI 聚焦契约共 9 项通过；`git diff --check`、Xcode 26.6
+  generic iOS Simulator Debug 构建、主 App/Share Extension/Widget Extension
+  的 `1.7 / 47` 安装包字段检查均通过。
+- Xcode 26.6 arm64 开发签名包已构建并通过嵌入扩展与 `codesign --deep`
+  校验，随后成功覆盖安装到 iPhone7，未卸载 App、未清除现有数据。设备应用
+  清单确认“时光记 `1.7 (47)`”；两次远程启动仅因设备锁定被 SpringBoard
+  拒绝，解锁后需手动打开或再次执行启动确认。
+
+## 2026-07-24 TestFlight Share 2002 hotfix
+
+- The deployed baseline could show `serialization · PhotoMemoShareIntake / 2002`
+  even after successfully writing the shared intake request.
+- Root cause was treating `UserDefaults.synchronize() == false` as definitive
+  write failure. Synchronization is now best-effort; exact read-back remains the
+  commit proof.
+- A focused regression reproduces the device condition and passes after the
+  fix. Physical Apple Photos Share acceptance is still required on the next
+  signed build.
+
+## 2026-07-24 commerce hardening pending device acceptance
+
+- Commerce access now distinguishes Free, temporary TestFlight, and verified
+  MemoMark+ states; legacy shared snapshots migrate without losing counts.
+- Unverified App transaction environment resolves to Production Free, closing
+  the TestFlight-to-App-Store temporary entitlement leak.
+- TestFlight users can explicitly exit temporary access and retest the Free
+  allowance flow.
+- Apple Offer Code terminology and the system redemption path are aligned with
+  current non-consumable support; physical Sandbox redemption remains a release
+  verification requirement.
+- Commercial UI, queue-limit messages, milestone alerts, and badge accessibility
+  copy now use the interface-language resources.
+
 ## 2026-07-20 iOS semantic iconography first adoption
 
 - Added the reusable icon reserve in `Research/Iconography/README.md`, covering the Configuration Center's navigation, memory source, subject identity, anchor, output, task, and help titles with SF Symbol, semantic tint, metric, and adoption guidance.
@@ -13916,8 +13970,9 @@ device build still reproduces the blocker.
   `com.serydoo.PhotoMemo.iOS.memomarkplus.lifetime`；购买、恢复购买和 Apple
   系统兑换码入口共用同一套代码，显示价格始终读取 `Product.displayPrice`。
 - TestFlight Sandbox 与 App Store Production 使用同一 Build，并以交易环境隔离
-  权益、成功记录数和版本赠送。2.x 起免费用户每个大版本一次性获赠 50 张，
-  不重置累计使用量。
+  权益、成功记录数和版本赠送。Sandbox 用户可主动激活临时 MemoMark+ 无限体验，
+  但不获得首批记录者身份且不进入 Production。2.x 起免费用户每个大版本一次性
+  获赠 100 张，不重置累计使用量。
 - 设置页顶部新增紧凑的 MemoMark+ 状态卡；购买页保持 Apple 原生层级；完成购买
   或兑换后首页保留“时光记”，并显示暖香槟金 MemoMark+ / 首批记录者徽章。
 - Renderer、Metadata、Export、Photo Library 与 Layout Engine 未承载商业逻辑；
@@ -13925,3 +13980,100 @@ device build still reproduces the blocker.
 - 新增聚焦测试覆盖策略、环境命名空间、成功保存幂等、版本赠送、购买页文案和
   徽章边界。真机 StoreKit Sandbox 购买、恢复、兑换及家庭共享仍待 App Store
   Connect 创建产品并随下一 Build 手工验收。
+
+## 2026-07-24 Apple 托管商业方案与 TestFlight 临时体验
+
+- 当前商业架构冻结为 Apple 托管：免费用户初始 200 张，唯一付费商品为
+  MemoMark+ ¥48 永久买断；首批用户通过 Apple Promo Code 获得完整版。次数包、
+  自建兑换服务器、运营后台和外部结账不进入当前阶段。
+- 大版本成长礼从 MemoMark 2.0 起每个主版本追加 100 张一次；小版本不赠送，
+  不重置累计使用量，同一 `major-N` 礼物保持环境隔离与幂等。
+- Sandbox 用户可在购买页主动激活 MemoMark+ TestFlight 临时体验，获得无限记录
+  与 40 张单批上限。临时体验不授予首批记录者身份、不写入 Production；真实
+  Sandbox 购买、Apple 代码与恢复购买入口仍保留用于验证。
+- 购买页、Commerce 错误、设置页 MemoMark+ 状态已迁移到语义本地化键，并补齐
+  简体中文与英文资源；设置页“应用界面语言”模块移动到“版本信息”之前。
+- `MemoMarkCommercePersistenceTests`、`MemoMarkCommercePolicyTests` 与
+  `MemoMarkCommerceUIContractTests` 共 14 项通过；`PhotoMemoTests` Debug 目标编译
+  通过。下午用户确认后再进行 signed iPhone7 覆盖安装，本轮尚未推送真机。
+
+## 2026-07-24 Commerce 发布风险收口
+
+- App、Batch Queue 与 Share Extension 读取共享 Commerce 快照前都会校验当前
+  安装渠道；Production 遇到旧 Sandbox/TestFlight 临时快照时回退到 Production
+  免费策略与独立计数，不再继承无限记录或 40 张上限。
+- Batch Queue 的 UserDefaults 提交不再把 `synchronize() == false` 视为失败；
+  与 Share 2002 热修复保持一致，只以写入后的字节读回作为提交证据。
+- 首批记录者身份已从 MemoMark+ 权益中独立持久化。计划开关关闭后不再授予新
+  身份，既有身份继续保留；家庭共享接收者获得 Plus 权益但不自动获得首批身份。
+- 简体中文与英文 `Localizable.strings` 键集合已经补齐，并新增对称性契约测试。
+  本轮专项测试 31/31、Share Extension 与 PhotoMemoiOS generic iOS Debug 构建、
+  两份 strings 校验和 `git diff --check` 均通过。
+- 当前同步渠道识别仍使用系统 receipt URL 的 Sandbox 文件名作为 Share Extension
+  同步判据；该 API 在 iOS 18 后已标记 deprecated，但扩展的同步 admission 尚无
+  等价同步 AppTransaction API。提交前必须在同一 Build 上真机验证 TestFlight
+  临时体验、覆盖安装 Production 后未启动主 App 直接分享、购买恢复与兑换。
+
+## 2026-07-24 PhotoKit 99% Watchdog 热修复
+
+- iPhone7 新装 `1.7.47 (8)` 后，静态照片任务停在 99%“正在写入系统图库”，
+  随后新增任务保持 queued。设备现场显示主程序在 15:54、15:55、15:56 等时间
+  连续收到 `0x8BADF00D scene-update watchdog` 终止，并非相册权限拒绝。
+- 崩溃栈指向 `PhotoLibraryExportService.existingAsset(for:)`：旧幂等检查在
+  `@MainActor` 上遍历完整 `PHAsset` 图库，并对每个资产同步读取
+  `PHAssetResource.assetResources`。大图库下超过系统 10 秒 scene-update 时限。
+- 静态照片和 Live Photo 保存现改用 App Group 本地回执
+  `idempotencyKey -> assetLocalIdentifier`，重试时只通过
+  `fetchAssets(withLocalIdentifiers:)` 做 O(1) 直接查询；失效回执会自动清除，
+  两处完整图库扫描均已删除。
+- TDD 红灯确认回执类型缺失，绿灯后保存回执、Live Photo Writer、队列恢复和
+  执行契约共 23/23 通过；iPhone7 签名构建成功并覆盖安装，未清除故障现场数据。
+- 覆盖启动后，原 99% Share 任务在 0.827 秒内完成，后续 queued 任务在
+  0.539 秒内完成，两项均取得 Photos asset identifier；主进程保持运行，修复后
+  未出现新的 watchdog 崩溃。
+
+## 2026-07-24 输出文件名与后台稳定性收口
+
+- 静态照片与 Live Photo 正式输出恢复 Apple 风格副本命名：
+  `IMG_1642 (1)`、`IMG_1642 (2)`、`IMG_1642 (3)`；已带数字后缀的来源会在
+  原编号基础上继续递增，不产生嵌套括号。
+- 正式编号由 App Group 中的持久序列统一分配，跨临时文件清理、批次与 App
+  重启保留；静态照片和 Live Photo 使用同一编号规则。
+- Live Photo 生成遮罩 JPEG 时改用不消耗正式编号的中间临时导出，避免首个
+  正式 Live Photo 从 `(2)` 开始；保存到 Photos 的 HEIC/MOV 配对名称保持一致。
+- 测试中的编号存储全部注入独立临时目录，消除共享 App Group 状态造成的顺序
+  依赖；Fixture Export、Classic White、队列与诊断快照也完成同类权限隔离。
+- Share Extension 选择上限契约统一为免费 20 张、MemoMark+ 40 张；移除与动态
+  权益冲突的固定“最多 20 张”恢复文案。失败、取消、预览和保存失败仍不计额度。
+- Xcode 27 串行完整测试 1030/1030 通过；Xcode 26.6 的 macOS App、iOS
+  Simulator 与 Share Extension 三目标构建通过。Xcode 26.6 真机签名包也已通过
+  主 App、Share Extension 与 Widget Extension 的签名和嵌入校验。
+- iPhone7 已完整卸载旧版并安装新包，设备信息确认“时光记 1.7.47 (8)”。远程
+  启动因设备锁屏被 SpringBoard 拒绝，不是 App 崩溃；解锁后仍需人工验证连续
+  重做同一照片、Live Photo 配对命名、任务续跑及中英文界面。
+
+## 2026-07-24 App Store 截图与 App Preview 草稿交付
+
+- 已按“结果价值 -> 成长时间线 -> 配置 -> 横竖结果 -> 原图不变 -> 本地隐私 ->
+  Apple Photos 生命周期”完成七张简体中文 6.9 英寸竖屏视觉草稿。
+- 七张静态稿均为 `1320 × 2868`、sRGB、不透明且无 EXIF；第 1 张底部 Memory
+  Card 完整，第 4 张纵图在上、横图在下、无重叠且两个底部边框完整。
+- 26 秒动效分镜原型为 `886 × 1920`、H.264、30 fps，并配有独立海报帧；原型
+  明确标记 `DRAFT-NOT-FOR-UPLOAD`，不可替代真实 App 操作录屏。
+- 私有素材、生成器、交付稿、验证报告与九镜头重拍清单仅位于
+  `/Users/rui/Desktop/PhotoMemoLaunchAssets/`，未进入 Git 仓库。
+- 最终提交仍需以发行候选版本重拍 Home、Memory Subject、Configuration Center、
+  Output、展开的 Privacy、Apple Photos Share、Processing -> Completed、保存回
+  Apple Photos，以及覆盖完整 26 秒叙事的连续真实录屏。
+
+## 2026-07-24 MemoMark 2.0 发布候选同步
+
+- 项目版本已统一为 `2.0 (47)`；下一次 Xcode Cloud 归档预计自动递增为 build
+  `48`。
+- Xcode 26.6 macOS 串行完整回归通过 `1032/1032`，共 182 个测试套件；Live
+  Photo 队列路由测试改为注入确定性的图库保存边界，避免真实 PhotoKit 时序造成
+  5 秒假失败，不改变产品 PhotoKit 保存实现或既有真机证据。
+- 简体中文与英文 strings 均通过 `plutil -lint`，`git diff --check` 通过。
+- 本次 GitHub 候选包含 Commerce、多语言、PhotoKit watchdog、持久输出命名、
+  队列稳定性、设置与反馈、测试及发布文档。BrandMark 机制规格、实施计划、研究
+  索引与候选资源继续留在本地研究区，不进入本次提交。

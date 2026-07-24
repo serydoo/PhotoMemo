@@ -5,6 +5,13 @@ struct PhotoMemoRootSceneView: View {
     @Environment(\.scenePhase)
     private var scenePhase
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
@@ -12,6 +19,10 @@ struct PhotoMemoRootSceneView: View {
 
         rootConfigurationCenter
             .preferredColorScheme(.light)
+            .environment(
+                \.locale,
+                interfaceLanguagePreference.resolvedLanguage.locale
+            )
             .onOpenURL { url in
                 if let deepLink =
                     PhotoMemoDeepLink(
@@ -57,6 +68,13 @@ struct PhotoMemoRootSceneView: View {
 
                 runtime.refreshExternalIntakeState()
             }
+    }
+
+    private var interfaceLanguagePreference:
+        MemoMarkInterfaceLanguagePreference {
+        MemoMarkInterfaceLanguagePreference(
+            rawValue: interfaceLanguagePreferenceRawValue
+        ) ?? .system
     }
 
     @ViewBuilder

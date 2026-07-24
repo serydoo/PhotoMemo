@@ -7,6 +7,13 @@ struct ConfigurationCenterView: View {
     private var session =
         ConfigurationSession()
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     var body: some View {
         NavigationSplitView {
             MemorySubjectListView(
@@ -42,6 +49,37 @@ struct ConfigurationCenterView: View {
             )
         }
         .background(ConfigurationUI.appBackground)
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Picker(
+                    "应用界面语言",
+                    selection: interfaceLanguageBinding
+                ) {
+                    ForEach(
+                        MemoMarkInterfaceLanguagePreference.allCases,
+                        id: \.self
+                    ) { preference in
+                        Text(preference.displayTitle)
+                            .tag(preference)
+                    }
+                }
+                .frame(width: 210)
+            }
+        }
+    }
+
+    private var interfaceLanguageBinding:
+        Binding<MemoMarkInterfaceLanguagePreference> {
+        Binding(
+            get: {
+                MemoMarkInterfaceLanguagePreference(
+                    rawValue: interfaceLanguagePreferenceRawValue
+                ) ?? .system
+            },
+            set: { preference in
+                interfaceLanguagePreferenceRawValue = preference.rawValue
+            }
+        )
     }
 }
 

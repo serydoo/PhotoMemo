@@ -70,7 +70,9 @@ struct LivePhotoAssetWriterContractTests {
                     stillPhotoOriginalFilename:
                         nil,
                     pairedVideoOriginalFilename:
-                        nil
+                        nil,
+                    idempotencyKey:
+                        "task-123"
                 )
             )
 

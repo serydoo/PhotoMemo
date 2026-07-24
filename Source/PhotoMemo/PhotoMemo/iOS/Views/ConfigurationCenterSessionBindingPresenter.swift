@@ -10,15 +10,16 @@ enum ConfigurationCenterSessionBindingPresenter {
     static let customMemoryWritePlaceholder =
         "输入要单独写入图库说明的文字"
 
-    private static let presetStatusFormatter:
-        DateFormatter = {
-            let formatter = DateFormatter()
-            formatter.locale =
-                Locale(identifier: "zh_CN")
-            formatter.dateFormat =
-                "yyyy年M月d日 HH:mm"
-            return formatter
-        }()
+    private static func presetStatusFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale =
+            MemoMarkLanguage.interfaceStored.locale
+        formatter.dateFormat =
+            MemoMarkLanguage.interfaceStored == .english
+            ? "MMM d, yyyy HH:mm"
+            : "yyyy年M月d日 HH:mm"
+        return formatter
+    }
 
     static func profileTitle(
         session: ConfigurationSession
@@ -103,7 +104,7 @@ enum ConfigurationCenterSessionBindingPresenter {
 
         let formattedSavedAt =
             savedAtFormatter?(savedAt)
-            ?? presetStatusFormatter.string(
+            ?? presetStatusFormatter().string(
                 from: savedAt
             )
 

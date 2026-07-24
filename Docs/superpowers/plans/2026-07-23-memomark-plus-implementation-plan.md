@@ -34,7 +34,7 @@
 
 - [ ] **Step 1: Write failing policy tests**
 
-Cover free allowance 200, free batch 20, Plus batch 40, record 190/200 milestones, paid unlimited behavior, and a configured `major-2` gift of 50 records.
+Cover free allowance 200, free batch 20, Plus batch 40, progressive milestones, paid unlimited behavior, and a configured `major-2` gift of 100 records.
 
 ```swift
 @Test func freeAndPlusPoliciesStayDistinct() {
@@ -183,6 +183,13 @@ Use champagne-gold foreground, pale fill, fine border, sparkle and `MemoMark+` t
 - [ ] **Step 5: Run UI contract tests**
 
 Expected: all MemoMark+ copy and boundary checks pass.
+
+- [ ] **Step 6: Add explicit TestFlight temporary activation**
+
+Expose Sandbox-only activation and exit actions that grant temporary unlimited access
+and the 40-photo batch limit without creating a Production entitlement or
+First Recorder identity. Preserve the real Sandbox purchase, Apple-code, and
+restore controls for deliberate StoreKit validation.
 
 ### Task 6: Settings And Configuration Center Integration
 

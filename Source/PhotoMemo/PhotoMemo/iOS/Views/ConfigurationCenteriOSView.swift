@@ -4,6 +4,13 @@ import UIKit
 
 struct ConfigurationCenteriOSView: View {
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
 
@@ -212,10 +219,21 @@ struct ConfigurationCenteriOSView: View {
             isPresented:
                 commerceMilestoneBinding
         ) {
-            Button("了解 MemoMark+") {
+            Button(
+                commerceLocalized(
+                    "commerce.milestone.learn_plus",
+                    fallback: "了解 MemoMark+"
+                )
+            ) {
                 showsMemoMarkPlus = true
             }
-            Button("继续记录", role: .cancel) {}
+            Button(
+                commerceLocalized(
+                    "commerce.milestone.continue",
+                    fallback: "继续记录"
+                ),
+                role: .cancel
+            ) {}
         } message: {
             Text(commerceMilestoneMessage)
         }
@@ -293,11 +311,28 @@ struct ConfigurationCenteriOSView: View {
     private var commerceMilestoneTitle: String {
         switch commerceMilestone {
         case .none:
-            return "成长记录"
+            return commerceLocalized(
+                "commerce.milestone.title",
+                fallback: "成长记录"
+            )
         case .approaching:
-            return "你已经留下 190 张成长记录"
+            return commerceFormatted(
+                "commerce.milestone.approaching_title_format",
+                fallback: "你已经留下 %lld 张成长记录",
+                Int64(
+                    commerceStore.snapshot
+                        .successfulRecordCount
+                )
+            )
         case .allowanceCompleted:
-            return "第 200 张成长记录已保存"
+            return commerceFormatted(
+                "commerce.milestone.completed_title_format",
+                fallback: "第 %lld 张成长记录已保存",
+                Int64(
+                    commerceStore.snapshot
+                        .successfulRecordCount
+                )
+            )
         }
     }
 
@@ -306,10 +341,49 @@ struct ConfigurationCenteriOSView: View {
         case .none:
             return ""
         case .approaching(let remaining):
-            return "还有 \(remaining) 张免费成长记录。解锁 MemoMark+，继续记录此后的每一个瞬间。"
+            return commerceFormatted(
+                "commerce.milestone.approaching_message_format",
+                fallback: "还有 %lld 张免费成长记录。解锁 MemoMark+，继续记录此后的每一个瞬间。",
+                Int64(remaining)
+            )
         case .allowanceCompleted:
-            return "照片已完整保存到 Apple Photos。解锁 MemoMark+，无限记录未来的时光。"
+            return commerceLocalized(
+                "commerce.milestone.completed_message",
+                fallback: "照片已完整保存到 Apple Photos。解锁 MemoMark+，无限记录未来的时光。"
+            )
         }
+    }
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        MemoMarkInterfaceLanguagePreference(
+            rawValue: interfaceLanguagePreferenceRawValue
+        )?.resolvedLanguage
+        ?? MemoMarkLanguage.interfaceStored
+    }
+
+    private func commerceLocalized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
+    private func commerceFormatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: commerceLocalized(
+                key,
+                fallback: fallback
+            ),
+            locale: interfaceLanguage.locale,
+            arguments: arguments
+        )
     }
 
     private var sidebar: some View {
@@ -328,6 +402,7 @@ struct ConfigurationCenteriOSView: View {
             VStack(alignment: .leading, spacing: 14) {
                 detailScrollOffsetReader
                 configurationSummarySection
+                languageSection
                 detailContent
             }
             .padding(.vertical, 16)
@@ -400,6 +475,37 @@ struct ConfigurationCenteriOSView: View {
                         .showCard(region: region)
                 )
             }
+        )
+    }
+
+    private var languageSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("输出语言")
+                .font(.headline.weight(.semibold))
+
+            Picker(
+                "智能模块与输出语言",
+                selection: Binding(
+                    get: { session.languagePreference },
+                    set: { session.languagePreference = $0 }
+                )
+            ) {
+                ForEach(MemoMarkLanguagePreference.allCases, id: \.self) { preference in
+                    Text(preference.displayTitle)
+                        .tag(preference)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Text("只影响系统生成的智能模块和日期表达；你填写的名称、句子与照片原始信息不会被翻译。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(ConfigurationUI.controlBackground.opacity(0.72))
         )
     }
 

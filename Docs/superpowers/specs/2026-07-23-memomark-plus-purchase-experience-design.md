@@ -364,7 +364,7 @@ Existing locally cached verified entitlement may continue according to the Store
 
 ### 10.8 TestFlight
 
-TestFlight builds are treated as unlimited for product evaluation and do not show production allowance blocking. StoreKit sandbox and offer-code test surfaces may be enabled only in deliberate test scenarios. The exact build switch belongs to implementation and release planning.
+In the verified Sandbox environment, Free users may explicitly activate temporary MemoMark+ TestFlight access. It grants unlimited records and the 40-photo batch limit for product evaluation, but does not grant First Recorder identity or write a Production entitlement. Real Sandbox purchase, Apple-code redemption, and restore surfaces remain available for deliberate testing. The same binary ignores the temporary authorization automatically when its verified App transaction environment is Production.
 
 ## 11. Data And Ownership Boundaries
 

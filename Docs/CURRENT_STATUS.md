@@ -1,6 +1,64 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-23
+Last updated: 2026-07-24
+
+## 2026-07-24 Share Intake 2002 Hotfix
+
+- Diagnosed the TestFlight Share failure `PhotoMemoShareIntake / 2002` as a
+  false persistence failure: shared request data could be written and read back
+  correctly while the deprecated `UserDefaults.synchronize()` call returned
+  `false`.
+- Shared intake persistence now treats synchronization as best-effort and keeps
+  immediate byte-for-byte read-back verification as the actual commit check.
+- Added a regression that forces synchronization to report `false` while
+  preserving a successful write; the request must remain acknowledged and
+  readable.
+- The fix is scoped to shared request persistence. Renderer, metadata, export,
+  PhotoKit save behavior, configuration content, and commerce are unchanged.
+
+## 2026-07-24 Commerce Release-Boundary Hardening
+
+- Replaced the ambiguous persisted `isPlus` source with explicit Free,
+  TestFlight temporary, and Apple-verified MemoMark+ access sources while
+  retaining backward decoding for existing shared snapshots.
+- App transaction verification failure now uses a Production Free safe default;
+  a persisted Sandbox environment can no longer carry temporary TestFlight
+  access into an App Store launch.
+- Added a Sandbox-only exit action so testers can return to the Free allowance
+  path without deleting the app container.
+- Confirmed against current Apple guidance that Offer Codes support
+  non-consumable purchases on the app's iOS 18+ deployment range and continue
+  through Apple's system redemption sheet.
+- Localized purchase, allowance milestone, queue admission, and MemoMark+
+  accessibility copy in Simplified Chinese and English. Milestone titles now
+  derive their record number instead of assuming a permanent 200-record total.
+
+## 2026-07-24 V3 Localization Foundation
+
+- Separated the global App interface language from the configuration output
+  language. The interface language now has an independent App Group preference,
+  follows the system by default, and supports Simplified Chinese/English
+  overrides.
+- Added the interface-language picker at the top of iOS Settings and to the
+  macOS Configuration Center toolbar. The root SwiftUI scene injects the
+  selected locale, while Share Extension and UI-only date/status presenters use
+  the interface language.
+- Kept the Configuration Center output-language picker and Snapshot language
+  transport independent, so generated Preset/module text remains stable from
+  preview through export.
+- Added an App-level language preference with a Follow System default and
+  explicit Simplified Chinese/English overrides.
+- Added stable token-based variable IDs and localized built-in Classic White
+  Preset and variable titles without changing configuration identity.
+- Persisted `language` in `MemoryPreset`, `MemoryConfigurationRecord`, the
+  canonical `ConfigurationSnapshot`, and the batch transport so restored
+  configurations keep preview/export language consistent.
+- Legacy Codable Presets and configurations without a language field still
+  fall back to Simplified Chinese; Arabic and Hebrew remain blocked until the
+  Layout Engine supports directional layout.
+- Focused localization tests passed; unsigned macOS, iOS Simulator, and Share
+  Extension Debug builds passed. Localization resources are present in the app
+  and Share Extension bundles.
 
 ## 2026-07-23 1.7 (7) Post-push UI And Reliability Closure
 
@@ -231,6 +289,52 @@ Verification recorded for this delivery:
 
 The release note is
 `Docs/07_Releases/2026-07-18-1.7-build-7-home-subject-anchor-and-location.md`.
+
+## 2026-07-17 Brand Mark Resource Library Prepared
+
+MemoMark completed the research-only Brand Mark resource preparation needed
+for later approved integration. The package keeps neutral `BrandMark` naming
+and remains outside Swift source, `Assets.xcassets`, and the Xcode project.
+
+The canonical catalog now covers 23 identities. The local resource library
+contains 21 independently sourced original SVG candidates and 11 pinned
+monochrome candidates from `simple-icons@16.26.0`. The existing Apple SF
+Symbol fallback is recorded as a platform resource, while XMAGE remains
+explicitly unavailable because no official or independently traceable SVG
+passed the provenance and rights gate.
+
+`brand-mark-resource-manifest.json` is now the file-level source of truth for
+all 32 local variants. Each record includes a stable resource and variant ID,
+source revision, local SHA-256, original-versus-monochrome role, alpha-visible
+geometry, rendering intent, compact/wide evidence, copyright label, trademark
+restriction, distribution status, source-complexity flags, Asset Catalog
+normalization requirements, and integration blockers.
+
+The geometry audit confirmed that SVG canvas shape cannot drive layout. Nikon,
+Samsung, and Panasonic monochrome files use square view boxes but remain wide
+wordmarks; Huawei's one-color icon is compact. Wide resources remain blocked
+until the Layout Engine owns a measured wide slot. No third-party candidate is
+approved for automatic matching or shipping.
+
+Verification:
+
+- both research JSON files are valid with 23 unique identity IDs and 32 unique
+  local variant IDs;
+- all 32 SVG files pass XML validation and match their manifest SHA-256;
+- no SVG contains script, event-handler, embedded-bitmap, foreign-object, or
+  remote/data `href` content;
+- nine source-faithful originals have DTD, entity, text-node, or internal-use
+  complexity recorded as mandatory Asset Catalog normalization work;
+- all 32 resources produced Quick Look thumbnails and non-empty 1024 px fitted
+  renders for visible-bounds measurement;
+- all third-party variants remain `researchOnly`, and zero entries are enabled
+  for automatic manufacturer matching;
+- no resource, manifest, Simple Icons source, or Commons URL is referenced by
+  app source, `Assets.xcassets`, or `project.pbxproj`;
+- the unsigned macOS `PhotoMemo` Debug build completed successfully.
+
+No Swift source, schema, Renderer, Layout Engine, preview, export, or runtime
+behavior changed in this resource-preparation slice.
 
 ## 2026-07-16 Expression Formula Guide And Device Delivery
 
@@ -18486,3 +18590,76 @@ Fresh verification:
 The broad `V1` naming migration remains intentionally deferred to a separate
 iOS-only compatibility plan. Physical-device interaction and end-to-end manual
 backup/restore UI verification were not performed in this refactor session.
+
+## 2026-07-24 Bilingual Localization Delivery Slice
+
+Completed the first production localization slice for global launch:
+
+- Added the supported language model zh-Hans / en, persisted through the App
+  Group language preference and selectable in the iOS Configuration Center.
+- Added language to ConfigurationSnapshot and BatchConfigurationSnapshot; old
+  Codable payloads without language default to Simplified Chinese.
+- Propagated the language from configuration context through Memory Engine,
+  semantic display text, the production presentation adapter, preview, and
+  Share Extension transport.
+- Added natural English smart-memory phrasing for birthday, relationship,
+  marriage, exam, and custom anchor styles. User-entered names and sentences
+  remain unchanged.
+- Added English/Simplified Chinese localized resources for active UI surfaces
+  and bundled them into the macOS app, iOS app, and Share Extension.
+- Updated active date/status presenters to use the selected language locale.
+
+Verification passed:
+
+- Focused localization tests: 4/4
+- Memory Engine and Configuration Snapshot Builder tests: passed
+- Unsigned macOS Debug PhotoMemo build: passed
+- Generic iOS Simulator PhotoMemoiOS Debug build: passed
+- Generic iOS Simulator PhotoMemoShareExtension Debug build: passed
+- App, iOS app, and Share Extension bundles contain en.lproj and
+  zh-Hans.lproj resources
+- git diff --check: passed
+
+Remaining verification is manual: visual review of long English strings and
+exported cards on simulator/physical device, native-speaking copy review, and
+the App Store Connect metadata/screenshots content pass. The existing
+CLGeocoder SDK deprecation warnings remain unrelated.
+
+## 2026-07-24 Durable Output Naming And Queue Regression Closure
+
+- Restored Apple-style output copy names for still photos and Live Photos:
+  `IMG_1642 (1)`, `(2)`, `(3)`. Existing numeric source suffixes continue from
+  the detected value without nested parentheses.
+- Moved formal output numbering to one App Group-backed persistent sequence.
+  Numbering now survives temporary-file cleanup, later batches, and app
+  relaunches while remaining independently injectable in tests.
+- Split Live Photo mask rendering into a non-numbered intermediate export so
+  temporary JPEG creation cannot consume a formal HEIC/MOV output number.
+- Preserved the stability-first queue contract: serial task advancement,
+  serial PhotoKit writes, receipt-based idempotency, and no full-library scan.
+  Failed, cancelled, preview-only, or unsuccessful Photo Library operations do
+  not consume commercial record allowance.
+- Final serial Xcode 27 regression run completed 1030/1030 tests. Xcode 26.6
+  builds passed for the macOS app, iOS Simulator app, Share Extension, and a
+  signed physical-device package with both embedded extensions validated.
+- The previous iPhone7 installation was removed and `1.7.47 (8)` was installed
+  cleanly. Device inventory confirms the expected bundle and version. Remote
+  launch was denied only because the phone remained locked, so unlocked-device
+  processing and visual acceptance remain the final manual gate.
+
+## 2026-07-24 MemoMark 2.0 Release Candidate Sync
+
+- The release candidate now uses marketing version `2.0` and repository build
+  number `47`; the next Xcode Cloud archive is expected to allocate build `48`.
+- The complete Xcode 26.6 macOS regression passed `1032/1032` tests across 182
+  suites. Live Photo queue routing tests now inject a deterministic photo-save
+  boundary, preventing unrelated PhotoKit timing from causing false 5-second
+  queue failures while dedicated PhotoKit and physical-device evidence remains
+  unchanged.
+- Simplified Chinese and English localization files pass `plutil -lint`, and
+  `git diff --check` passes.
+- The GitHub release candidate includes the Commerce, localization, PhotoKit
+  watchdog, durable output naming, queue stability, Settings, feedback, tests,
+  and release documentation slices. BrandMark mechanism documents, plans,
+  research indexes, and candidate assets remain local and excluded because
+  that research is not yet frozen.

@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.0 (47) Release Candidate - 2026-07-24
+
+### Added
+- Added the Apple-managed MemoMark+ lifetime purchase, restore, redemption,
+  first-recorder identity, local credit ledger, and TestFlight experience flow.
+- Added Simplified Chinese and English localization for commerce, settings,
+  usage status, transaction feedback, and Memory Anchor presentation.
+- Added App Store Connect setup guidance and screenshot/App Preview release
+  specifications.
+
+### Changed
+- Free users receive 200 initial successful-record credits and a 20-photo batch
+  limit; MemoMark+ unlocks unlimited records and a 40-photo batch limit.
+- Major-version gifts append credits once per major version instead of resetting
+  the user's existing balance.
+- Settings now places Language before version information, expands feedback
+  channels, and reads the displayed version directly from the app bundle.
+- Output naming again follows the original asset name and persistently advances
+  duplicate suffixes such as `IMG_1642 (1)` and `IMG_1642 (2)`.
+
+### Fixed
+- Removed the main-thread full-library scan that could leave PhotoKit work at
+  99%, replacing it with local save receipts and identifier-scoped lookups.
+- Strengthened queue recovery, duplicate completion handling, static/Live Photo
+  save consistency, and deterministic Live Photo regression testing.
+- Isolated Production, Sandbox, and local Xcode commerce state so TestFlight
+  activity cannot grant or consume Production entitlements and credits.
+
+### Verification
+- Passed the complete Xcode 26.6 regression: `1,032/1,032` tests across 182
+  suites.
+- Passed build, property-list validation, and whitespace checks for the 2.0
+  release candidate.
+- See `Docs/07_Releases/2026-07-24-2.0-upgrade-summary.md` for the full three-
+  synchronization upgrade and release-risk summary.
+
 ## 1.7 (7) Post-push UI And Reliability Closure - 2026-07-23
 
 ### Added

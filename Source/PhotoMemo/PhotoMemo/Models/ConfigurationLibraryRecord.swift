@@ -477,6 +477,7 @@ extension ConfigurationLibraryRecord {
             savedAt: preset.savedAt ?? savedAt,
             selectedTimeAnchorID:
                 preset.selectedTimeAnchorID,
+            language: preset.language,
             editor: .init(
                 template: template,
                 regionTemplateIDs:

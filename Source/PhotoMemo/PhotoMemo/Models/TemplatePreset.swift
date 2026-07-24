@@ -18,13 +18,29 @@ extension TemplatePreset {
     }
 
     var displayName: String {
+        displayName(for: .stored)
+    }
 
-        "Classic White"
+    func displayName(
+        for language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: "preset.classicWhite.name",
+            fallback: "Classic White"
+        )
     }
 
     var summary: String {
+        summary(for: .stored)
+    }
 
-        "当前主界面固定使用 Classic White，不再暴露其他预设切换入口。"
+    func summary(
+        for language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: "preset.classicWhite.summary",
+            fallback: "当前主界面固定使用 Classic White，不再暴露其他预设切换入口。"
+        )
     }
 
     static func infer(

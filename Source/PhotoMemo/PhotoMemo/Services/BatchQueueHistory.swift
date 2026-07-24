@@ -58,11 +58,14 @@ struct BatchQueueHistory {
                 continue
             }
 
+            let templateName = job.configuration.template.displayName(
+                for: job.configuration.language
+            )
             templateCounts[
-                job.configuration.template.name
+                templateName
             ] = (
                 templateCounts[
-                    job.configuration.template.name
+                    templateName
                 ] ?? 0
             ) + completedCount
 
@@ -209,7 +212,9 @@ struct BatchQueueHistory {
             .map { job in
 
                 let trimmedTemplateName =
-                    job.configuration.template.name
+                    job.configuration.template.displayName(
+                        for: job.configuration.language
+                    )
                     .trimmingCharacters(
                         in: .whitespacesAndNewlines
                     )
@@ -217,7 +222,9 @@ struct BatchQueueHistory {
                 let templateName =
                     trimmedTemplateName.isEmpty
                     ? job.configuration
-                        .template.preset.displayName
+                        .template.displayName(
+                            for: job.configuration.language
+                        )
                     : trimmedTemplateName
 
                 return ExternalIntakeSummary(

@@ -8,6 +8,10 @@ struct MemoryExpressionContext {
     let captureDate: Date?
     let captureCalendar: Calendar
 
+    var language: MemoMarkLanguage {
+        snapshot.language
+    }
+
     init(
         subject: MemorySubject,
         snapshot: ConfigurationSnapshot,

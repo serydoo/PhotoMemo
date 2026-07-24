@@ -88,6 +88,101 @@ nonisolated final class MemoMarkCommercePersistence:
         }
     }
 
+    func firstRecorderDate(
+        environment:
+            MemoMarkCommerceEnvironment
+    ) -> Date? {
+        lock.withLock {
+            defaults.object(
+                forKey:
+                    firstRecorderDateKey(
+                        environment
+                    )
+            ) as? Date
+        }
+    }
+
+    @discardableResult
+    func grantFirstRecorderIdentityIfNeeded(
+        date: Date,
+        environment:
+            MemoMarkCommerceEnvironment
+    ) -> Bool {
+        lock.withLock {
+            let key =
+                firstRecorderDateKey(
+                    environment
+                )
+            guard defaults.object(
+                forKey: key
+            ) == nil else {
+                return false
+            }
+
+            defaults.set(date, forKey: key)
+            return true
+        }
+    }
+
+    func isTestFlightExperienceActive(
+        environment:
+            MemoMarkCommerceEnvironment
+    ) -> Bool {
+        guard environment == .sandbox else {
+            return false
+        }
+
+        return lock.withLock {
+            defaults.bool(
+                forKey:
+                    testFlightExperienceKey(
+                        environment
+                    )
+            )
+        }
+    }
+
+    @discardableResult
+    func activateTestFlightExperience(
+        environment:
+            MemoMarkCommerceEnvironment
+    ) -> Bool {
+        guard environment == .sandbox else {
+            return false
+        }
+
+        lock.withLock {
+            defaults.set(
+                true,
+                forKey:
+                    testFlightExperienceKey(
+                        environment
+                    )
+            )
+        }
+        return true
+    }
+
+    @discardableResult
+    func deactivateTestFlightExperience(
+        environment:
+            MemoMarkCommerceEnvironment
+    ) -> Bool {
+        guard environment == .sandbox else {
+            return false
+        }
+
+        lock.withLock {
+            defaults.removeObject(
+                forKey:
+                    testFlightExperienceKey(
+                        environment
+                    )
+            )
+        }
+        return true
+    }
+
     @discardableResult
     func applyAllowanceGift(
         id: String,
@@ -177,6 +272,39 @@ nonisolated final class MemoMarkCommercePersistence:
         }
     }
 
+    func loadSharedSnapshot(
+        compatibleWith environment:
+            MemoMarkCommerceEnvironment
+    ) -> MemoMarkCommerceSnapshot {
+        let snapshot = loadSharedSnapshot()
+
+        guard snapshot.environment
+                == environment else {
+            let policy =
+                MemoMarkCommercePolicy.free(
+                    bonusAllowance:
+                        bonusAllowance(
+                            environment: environment
+                        )
+                )
+            return MemoMarkCommerceSnapshot(
+                environment: environment,
+                accessSource: .free,
+                successfulRecordCount:
+                    successfulRecordCount(
+                        environment: environment
+                    ),
+                totalAllowance:
+                    policy.totalAllowance,
+                batchLimit: policy.batchLimit,
+                firstRecorderDate: nil,
+                updatedAt: .distantPast
+            )
+        }
+
+        return snapshot
+    }
+
     private func countKey(
         _ environment:
             MemoMarkCommerceEnvironment
@@ -203,5 +331,19 @@ nonisolated final class MemoMarkCommercePersistence:
             MemoMarkCommerceEnvironment
     ) -> String {
         "\(Key.prefix).\(environment.rawValue).appliedGiftIDs"
+    }
+
+    private func testFlightExperienceKey(
+        _ environment:
+            MemoMarkCommerceEnvironment
+    ) -> String {
+        "\(Key.prefix).\(environment.rawValue).testFlightExperience"
+    }
+
+    private func firstRecorderDateKey(
+        _ environment:
+            MemoMarkCommerceEnvironment
+    ) -> String {
+        "\(Key.prefix).\(environment.rawValue).firstRecorderDate"
     }
 }

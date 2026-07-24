@@ -246,8 +246,11 @@ private extension AnchorEngine {
     ) -> String {
 
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "yyyy.MM.dd HH:mm"
+        formatter.locale = MemoMarkLanguage.stored.locale
+        formatter.dateFormat =
+            MemoMarkLanguage.stored == .english
+            ? "MMM d, yyyy HH:mm"
+            : "yyyy.MM.dd HH:mm"
 
         return formatter.string(from: date)
     }

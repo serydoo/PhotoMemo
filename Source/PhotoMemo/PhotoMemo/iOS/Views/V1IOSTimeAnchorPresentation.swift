@@ -5,25 +5,34 @@ enum V1UserFacingDateFormatter {
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = MemoMarkLanguage.interfaceStored.locale
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "yyyy年M月d日"
+        formatter.dateFormat =
+            MemoMarkLanguage.interfaceStored == .english
+            ? "MMM d, yyyy"
+            : "yyyy年M月d日"
         return formatter
     }()
 
     private static let dateTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = MemoMarkLanguage.interfaceStored.locale
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "yyyy年M月d日 HH:mm"
+        formatter.dateFormat =
+            MemoMarkLanguage.interfaceStored == .english
+            ? "MMM d, yyyy HH:mm"
+            : "yyyy年M月d日 HH:mm"
         return formatter
     }()
 
     private static let compactDateTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = MemoMarkLanguage.interfaceStored.locale
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "M月d日 HH:mm"
+        formatter.dateFormat =
+            MemoMarkLanguage.interfaceStored == .english
+            ? "MMM d HH:mm"
+            : "M月d日 HH:mm"
         return formatter
     }()
 

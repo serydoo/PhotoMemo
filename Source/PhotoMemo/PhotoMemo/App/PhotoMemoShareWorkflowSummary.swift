@@ -44,7 +44,8 @@ struct PhotoMemoShareWorkflowSummaryBuilder {
         return PhotoMemoShareWorkflowSummary(
             styleTitle:
                 resolvedConfigurationTitle(
-                    from: snapshot.template
+                    from: snapshot.template,
+                    language: snapshot.language
                 ),
             memorySubjectTitle:
                 resolvedMemorySubjectTitle(
@@ -63,16 +64,17 @@ struct PhotoMemoShareWorkflowSummaryBuilder {
 private extension PhotoMemoShareWorkflowSummaryBuilder {
 
     func resolvedConfigurationTitle(
-        from template: Template
+        from template: Template,
+        language: MemoMarkLanguage
     ) -> String {
 
         let trimmedName =
-            template.name.trimmingCharacters(
+            template.displayName(for: language).trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
 
         if trimmedName.isEmpty {
-            return template.preset.displayName
+            return template.preset.displayName(for: language)
         }
 
         return trimmedName

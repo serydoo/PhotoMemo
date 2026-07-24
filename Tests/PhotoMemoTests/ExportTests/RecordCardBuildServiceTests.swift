@@ -2908,11 +2908,21 @@ struct RecordCardBuildServiceTests {
 
         let firstURL =
             exportFolder.appendingPathComponent(
-                "PhotoMemoNamingFixture(1).jpg"
+                "PhotoMemoNamingFixture (1).jpg"
             )
         let secondURL =
             exportFolder.appendingPathComponent(
-                "PhotoMemoNamingFixture(2).jpg"
+                "PhotoMemoNamingFixture (2).jpg"
+            )
+        let sequenceRootURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoNamingSequenceTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        let sequenceStorageURL =
+            sequenceRootURL.appendingPathComponent(
+                "OutputFilenameSequence.json"
             )
 
         clearTemporaryExportFolder()
@@ -2920,28 +2930,67 @@ struct RecordCardBuildServiceTests {
         defer {
             try? FileManager.default.removeItem(at: firstURL)
             try? FileManager.default.removeItem(at: secondURL)
+            try? FileManager.default.removeItem(
+                at: sequenceRootURL
+            )
         }
 
-        let exportService = RecordCardExportService()
+        let firstExportService =
+            RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceStorageURL
+                    )
+            )
 
-        let exportedFirstURL =
-            try exportService.exportToTemporaryFile(
+        let intermediateURL =
+            try firstExportService
+            .exportIntermediateToTemporaryFile(
                 photo: photo,
                 card: card
             )
+
+        #expect(
+            intermediateURL.lastPathComponent
+            == "PhotoMemoNamingFixture.jpg"
+        )
+
+        try FileManager.default.removeItem(
+            at: intermediateURL
+        )
+
+        let exportedFirstURL =
+            try firstExportService.exportToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        try FileManager.default.removeItem(
+            at: exportedFirstURL
+        )
+
+        let restartedExportService =
+            RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceStorageURL
+                    )
+            )
         let exportedSecondURL =
-            try exportService.exportToTemporaryFile(
+            try restartedExportService.exportToTemporaryFile(
                 photo: photo,
                 card: card
             )
 
         #expect(
             exportedFirstURL.lastPathComponent
-            == "PhotoMemoNamingFixture(1).jpg"
+            == "PhotoMemoNamingFixture (1).jpg"
         )
         #expect(
             exportedSecondURL.lastPathComponent
-            == "PhotoMemoNamingFixture(2).jpg"
+            == "PhotoMemoNamingFixture (2).jpg"
         )
     }
 
@@ -2980,20 +3029,38 @@ struct RecordCardBuildServiceTests {
 
         let exportFolder =
             temporaryExportFolder()
+        let sequenceRootURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoImportedNameSequenceTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
 
         let expectedURL =
             exportFolder.appendingPathComponent(
-                "IMG_7581(1).jpg"
+                "IMG_7581 (1).jpg"
             )
 
         clearTemporaryExportFolder()
 
         defer {
             try? FileManager.default.removeItem(at: expectedURL)
+            try? FileManager.default.removeItem(
+                at: sequenceRootURL
+            )
         }
 
         let exportedURL =
-            try RecordCardExportService()
+            try RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceRootURL
+                            .appendingPathComponent(
+                                "OutputFilenameSequence.json"
+                            )
+                    )
+            )
             .exportToTemporaryFile(
                 photo: photo,
                 card: card
@@ -3001,7 +3068,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             exportedURL.lastPathComponent
-            == "IMG_7581(1).jpg"
+            == "IMG_7581 (1).jpg"
         )
     }
 
@@ -3065,10 +3132,16 @@ struct RecordCardBuildServiceTests {
 
         let exportFolder =
             temporaryExportFolder()
+        let sequenceRootURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoFallbackNameSequenceTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
 
         let expectedURL =
             exportFolder.appendingPathComponent(
-                "IMG_20260620_090819(1).jpg"
+                "IMG_20260620_090819 (1).jpg"
             )
 
         clearTemporaryExportFolder()
@@ -3077,10 +3150,22 @@ struct RecordCardBuildServiceTests {
             try? FileManager.default.removeItem(
                 at: expectedURL
             )
+            try? FileManager.default.removeItem(
+                at: sequenceRootURL
+            )
         }
 
         let exportedURL =
-            try RecordCardExportService()
+            try RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceRootURL
+                            .appendingPathComponent(
+                                "OutputFilenameSequence.json"
+                            )
+                    )
+            )
             .exportToTemporaryFile(
                 photo: photo,
                 card: card
@@ -3088,7 +3173,7 @@ struct RecordCardBuildServiceTests {
 
         #expect(
             exportedURL.lastPathComponent
-            == "IMG_20260620_090819(1).jpg"
+            == "IMG_20260620_090819 (1).jpg"
         )
     }
 
@@ -3121,7 +3206,7 @@ struct RecordCardBuildServiceTests {
             service.assetOriginalFilename(
                 for: URL(fileURLWithPath: "/tmp/IMG_1234.jpg"),
                 idempotencyKey: "task-123"
-            ) == "MemoMarkTask-task-123.jpg"
+            ) == "IMG_1234.jpg"
         )
     }
 }

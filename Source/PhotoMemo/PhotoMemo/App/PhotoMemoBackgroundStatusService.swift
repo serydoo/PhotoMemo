@@ -16,7 +16,7 @@ enum PhotoMemoQueueDisplayFormatter {
         let formatter =
             DateFormatter()
         formatter.locale =
-            Locale(identifier: "zh_CN")
+            MemoMarkLanguage.interfaceStored.locale
 
         let calendar =
             Calendar.current

@@ -3,6 +3,13 @@ import SwiftUI
 
 struct MemoMarkPlusPurchaseView: View {
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     @ObservedObject
     var store: MemoMarkCommerceStore
 
@@ -29,13 +36,24 @@ struct MemoMarkPlusPurchaseView: View {
                 ConfigurationUI.appBackground
                     .ignoresSafeArea()
             )
-            .navigationTitle("MemoMark+")
+            .navigationTitle(
+                localized(
+                    "commerce.title",
+                    fallback: "MemoMark+"
+                )
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(
                     placement: .topBarTrailing
                 ) {
-                    Button("完成", action: onDismiss)
+                    Button(
+                        localized(
+                            "commerce.done",
+                            fallback: "完成"
+                        ),
+                        action: onDismiss
+                    )
                         .font(.caption.weight(.semibold))
                 }
             }
@@ -65,24 +83,42 @@ struct MemoMarkPlusPurchaseView: View {
             .frame(width: 68, height: 68)
 
             Text(
-                store.isPlus
-                ? "感谢你成为 MemoMark 首批记录者"
-                : "让未来的时光，继续被记录"
+                heroTitle
             )
             .font(.title2.weight(.bold))
             .multilineTextAlignment(.center)
 
-            if store.isPlus {
+            if store.hasFirstRecorderIdentity {
                 Text(firstRecorderDateText)
                     .font(.headline.monospacedDigit())
                     .foregroundStyle(warmGold)
 
-                Text("愿今天认真留下的时光，\n在未来仍然清晰而温暖。")
+                Text(
+                    localized(
+                        "commerce.purchase.hero.first_recorder_message",
+                        fallback: "愿今天认真留下的时光，\n在未来仍然清晰而温暖。"
+                    )
+                )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+            } else if store.isTestFlightExperienceActive {
+                Text(
+                    localized(
+                        "commerce.purchase.hero.testflight_message",
+                        fallback: "当前 TestFlight 版本可无限创建成长记录。\n正式版权益仍由 Apple 购买或兑换决定。"
+                    )
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
             } else {
-                Text("一次购买，继续完整记录此后的每一张照片。")
+                Text(
+                    localized(
+                        "commerce.purchase.hero.free_message",
+                        fallback: "一次购买，继续完整记录此后的每一张照片。"
+                    )
+                )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -94,27 +130,86 @@ struct MemoMarkPlusPurchaseView: View {
 
     private var benefitSection: some View {
         V1CardSurface(
-            title: "完整记录能力",
+            title: localized(
+                "commerce.purchase.benefits.title",
+                fallback: "完整记录能力"
+            ),
             systemImage: "heart.text.square.fill",
             tint: .pink
         ) {
             VStack(spacing: 13) {
-                benefit("无限创建成长记录", "infinity")
-                benefit("单次最多处理 40 张照片", "rectangle.stack.fill")
-                benefit("支持家庭共享", "person.2.fill")
-                benefit("基础 Preset 与核心能力持续更新", "sparkles.rectangle.stack")
+                benefit(
+                    localized(
+                        "commerce.purchase.benefit.unlimited_records",
+                        fallback: "无限创建成长记录"
+                    ),
+                    "infinity"
+                )
+                benefit(
+                    localized(
+                        "commerce.purchase.benefit.batch_40",
+                        fallback: "单次最多处理 40 张照片"
+                    ),
+                    "rectangle.stack.fill"
+                )
+                benefit(
+                    localized(
+                        "commerce.purchase.benefit.family_sharing",
+                        fallback: "支持家庭共享"
+                    ),
+                    "person.2.fill"
+                )
+                benefit(
+                    localized(
+                        "commerce.purchase.benefit.core_updates",
+                        fallback: "基础 Preset 与核心能力持续更新"
+                    ),
+                    "sparkles.rectangle.stack"
+                )
             }
         }
     }
 
     private var actionSection: some View {
         VStack(spacing: 12) {
-            if !store.isPlus {
+            if store.canActivateTestFlightExperience {
+                Button {
+                    store.activateTestFlightExperience()
+                } label: {
+                    Text(
+                        localized(
+                            "commerce.purchase.testflight.activate",
+                            fallback: "激活 MemoMark+ TestFlight 体验"
+                        )
+                    )
+                    .font(.headline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 50)
+                }
+                .buttonStyle(.borderedProminent)
+
+                Text(
+                    localized(
+                        "commerce.purchase.testflight.activate_note",
+                        fallback: "仅在 TestFlight / Sandbox 中生效，不会转移到 App Store 正式版。"
+                    )
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+                sandboxPurchaseButton
+            } else if !store.isPlus {
                 VStack(spacing: 4) {
                     Text(store.displayPrice)
                         .font(.largeTitle.weight(.bold))
                         .monospacedDigit()
-                    Text("首批记录者感谢价 · 一次购买，永久使用")
+                    Text(
+                        localized(
+                            "commerce.purchase.price_note",
+                            fallback: "首批记录者感谢价 · 一次购买，永久使用"
+                        )
+                    )
                         .font(.caption)
                         .foregroundStyle(warmGold)
                 }
@@ -142,6 +237,19 @@ struct MemoMarkPlusPurchaseView: View {
                     || store.purchaseState
                         == .purchasing
                 )
+            } else if store.isTestFlightExperienceActive {
+                sandboxPurchaseButton
+
+                Button(
+                    localized(
+                        "commerce.purchase.testflight.deactivate",
+                        fallback: "退出 TestFlight 临时体验"
+                    ),
+                    role: .destructive
+                ) {
+                    store.deactivateTestFlightExperience()
+                }
+                .font(.subheadline)
             }
 
             if case .failed(let message) =
@@ -151,13 +259,23 @@ struct MemoMarkPlusPurchaseView: View {
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
             } else if store.purchaseState == .pending {
-                Text("购买正在等待确认，完成后会自动解锁。")
+                Text(
+                    localized(
+                        "commerce.purchase.pending",
+                        fallback: "购买正在等待确认，完成后会自动解锁。"
+                    )
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            if !store.isPlus {
-                Button("兑换 MemoMark+ 代码") {
+            if !store.hasVerifiedPlusEntitlement {
+                Button(
+                    localized(
+                        "commerce.purchase.apple_code",
+                        fallback: "兑换 MemoMark+ 代码"
+                    )
+                ) {
                     Task {
                         await store.redeemOfferCode()
                     }
@@ -165,7 +283,12 @@ struct MemoMarkPlusPurchaseView: View {
                 .font(.subheadline.weight(.semibold))
             }
 
-            Button("恢复购买") {
+            Button(
+                localized(
+                    "commerce.purchase.restore",
+                    fallback: "恢复购买"
+                )
+            ) {
                 Task {
                     await store.restorePurchases()
                 }
@@ -178,21 +301,39 @@ struct MemoMarkPlusPurchaseView: View {
     private var trustSection: some View {
         VStack(spacing: 8) {
             Label(
-                "所有照片仍在设备本地处理",
+                localized(
+                    "commerce.purchase.trust.local_processing",
+                    fallback: "所有照片仍在设备本地处理"
+                ),
                 systemImage: "lock.shield.fill"
             )
             .font(.subheadline.weight(.semibold))
 
-            Text("完整画质 · 无广告 · 不修改原始照片")
+            Text(
+                localized(
+                    "commerce.purchase.trust.quality",
+                    fallback: "完整画质 · 无广告 · 不修改原始照片"
+                )
+            )
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Text("部分未来联名 Preset 可能单独提供")
+            Text(
+                localized(
+                    "commerce.purchase.trust.future_presets",
+                    fallback: "部分未来联名 Preset 可能单独提供"
+                )
+            )
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
 
             if store.environment == .sandbox {
-                Text("当前为 TestFlight / Sandbox 测试交易，不会产生实际费用，也不会转移到 App Store 正式版。")
+                Text(
+                    localized(
+                        "commerce.purchase.testflight.sandbox_notice",
+                        fallback: "当前为 TestFlight / Sandbox 环境，不会产生实际费用，也不会转移到 App Store 正式版。"
+                    )
+                )
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -222,15 +363,74 @@ struct MemoMarkPlusPurchaseView: View {
 
     private var primaryButtonTitle: String {
         store.displayPrice == "—"
-        ? "正在连接 App Store"
-        : "成为首批记录者 · \(store.displayPrice)"
+        ? localized(
+            "commerce.purchase.connecting",
+            fallback: "正在连接 App Store"
+        )
+        : formatted(
+            "commerce.purchase.primary_format",
+            fallback: "成为首批记录者 · %@",
+            store.displayPrice
+        )
+    }
+
+    private var heroTitle: String {
+        if store.hasFirstRecorderIdentity {
+            return localized(
+                "commerce.purchase.hero.first_recorder",
+                fallback: "感谢你成为 MemoMark 首批记录者"
+            )
+        }
+
+        if store.hasVerifiedPlusEntitlement {
+            return localized(
+                "commerce.purchase.hero.plus",
+                fallback: "MemoMark+ 已永久解锁"
+            )
+        }
+
+        if store.isTestFlightExperienceActive {
+            return localized(
+                "commerce.purchase.hero.testflight",
+                fallback: "MemoMark+ TestFlight 体验已激活"
+            )
+        }
+
+        return localized(
+            "commerce.purchase.hero.continuity",
+            fallback: "让未来的时光，继续被记录"
+        )
+    }
+
+    private var sandboxPurchaseButton: some View {
+        Button {
+            Task {
+                await store.purchasePlus()
+            }
+        } label: {
+            Text(
+                localized(
+                    "commerce.purchase.testflight.purchase",
+                    fallback: "测试 Sandbox 购买流程"
+                )
+            )
+            .font(.subheadline.weight(.semibold))
+        }
+        .buttonStyle(.bordered)
+        .disabled(
+            store.product == nil
+            || store.purchaseState == .purchasing
+        )
     }
 
     private var firstRecorderDateText: String {
         guard let date =
                 store.snapshot
                 .firstRecorderDate else {
-            return "首批记录者"
+            return localized(
+                "commerce.purchase.first_recorder_label",
+                fallback: "首批记录者"
+            )
         }
 
         return date.formatted(
@@ -239,7 +439,7 @@ struct MemoMarkPlusPurchaseView: View {
             .month(.twoDigits)
             .day(.twoDigits)
             .locale(
-                Locale(identifier: "zh_CN")
+                interfaceLanguage.locale
             )
         )
     }
@@ -250,6 +450,40 @@ struct MemoMarkPlusPurchaseView: View {
             green: 0.40,
             blue: 0.13
         )
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage
+            .localized(
+                key: key,
+                fallback: fallback
+            )
+    }
+
+    private func formatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: localized(
+                key,
+                fallback: fallback
+            ),
+            locale:
+                interfaceLanguage.locale,
+            arguments: arguments
+        )
+    }
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        MemoMarkInterfaceLanguagePreference(
+            rawValue: interfaceLanguagePreferenceRawValue
+        )?.resolvedLanguage
+        ?? MemoMarkLanguage.interfaceStored
     }
 }
 #endif

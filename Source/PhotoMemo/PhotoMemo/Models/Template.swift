@@ -43,7 +43,7 @@ extension Template {
 
     static let classicWhite = Template(
         preset: .classicWhite,
-        name: "模板 1",
+        name: TemplatePreset.classicWhite.rawValue,
         leftTopArea: .leftTop,
         leftBottomArea: .leftBottom,
         rightTopArea: TemplateArea(
@@ -60,6 +60,24 @@ extension Template {
         ),
         badgeArea: .badge
     )
+
+    var displayName: String {
+        displayName(for: .stored)
+    }
+
+    func displayName(
+        for language: MemoMarkLanguage
+    ) -> String {
+        let trimmedName = name.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        if trimmedName.isEmpty
+            || trimmedName == preset.rawValue
+            || trimmedName == "模板 1" {
+            return preset.displayName(for: language)
+        }
+        return name
+    }
 
     var normalizedForEditing: Template {
 

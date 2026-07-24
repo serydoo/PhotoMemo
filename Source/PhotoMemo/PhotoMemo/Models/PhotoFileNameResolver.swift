@@ -137,7 +137,7 @@ enum PhotoFileNameResolver {
             ? "MemoMark"
             : trimmedBaseName
 
-        return "\(safeBaseName)(\(max(index, 1)))"
+        return "\(safeBaseName) (\(max(index, 1)))"
     }
 
     nonisolated static func nextOutputCopyBaseName(
@@ -173,6 +173,15 @@ enum PhotoFileNameResolver {
         parsedOutputCopyBaseName(
             proposedBaseName
         ).root
+    }
+
+    nonisolated static func outputCopyIndex(
+        _ proposedBaseName: String
+    ) -> Int? {
+
+        parsedOutputCopyBaseName(
+            proposedBaseName
+        ).index
     }
 
     nonisolated static func isPhotoKitInternalResourceFileName(
@@ -351,16 +360,26 @@ final class LivePhotoOutputFilenameSequenceStore {
                 captureDate: captureDate,
                 timeZone: timeZone
             )
+        return try nextOutputBaseName(
+            from: resolvedBaseName
+        )
+    }
+
+    func nextOutputBaseName(
+        from proposedBaseName: String
+    ) throws -> String {
         let rootBaseName =
             PhotoFileNameResolver.rootOutputBaseName(
-                resolvedBaseName
+                proposedBaseName
             )
         let sequenceKey =
             rootBaseName.lowercased()
         var sequences = try loadSequences()
         let previousIndex = max(
             sequences[sequenceKey] ?? 0,
-            0
+            PhotoFileNameResolver.outputCopyIndex(
+                proposedBaseName
+            ) ?? 0
         )
         let nextIndex = previousIndex < Int.max
             ? previousIndex + 1

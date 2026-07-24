@@ -252,6 +252,8 @@ struct BatchConfigurationSnapshot:
 
     var livePhotoPolicyRawValue: String?
 
+    var language: MemoMarkLanguage
+
     init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
@@ -272,7 +274,8 @@ struct BatchConfigurationSnapshot:
         photoDescriptionOverride: String,
         selectedAlbumIdentifier: String,
         mediaOutputModeRawValue: String? = nil,
-        livePhotoPolicyRawValue: String? = nil
+        livePhotoPolicyRawValue: String? = nil,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -306,6 +309,7 @@ struct BatchConfigurationSnapshot:
             mediaOutputModeRawValue
         self.livePhotoPolicyRawValue =
             livePhotoPolicyRawValue
+        self.language = language
     }
 }
 
@@ -335,6 +339,7 @@ extension BatchConfigurationSnapshot {
         case selectedAlbumIdentifier
         case mediaOutputModeRawValue
         case livePhotoPolicyRawValue
+        case language
     }
 
     init(from decoder: Decoder) throws {
@@ -424,6 +429,10 @@ extension BatchConfigurationSnapshot {
             String.self,
             forKey: .livePhotoPolicyRawValue
         )
+        language = try container.decodeIfPresent(
+            MemoMarkLanguage.self,
+            forKey: .language
+        ) ?? .simplifiedChinese
     }
 
     func encode(to encoder: Encoder) throws {
@@ -501,6 +510,7 @@ extension BatchConfigurationSnapshot {
             livePhotoPolicyRawValue,
             forKey: .livePhotoPolicyRawValue
         )
+        try container.encode(language, forKey: .language)
     }
 }
 

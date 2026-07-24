@@ -5,6 +5,18 @@ import Photos
 
 struct OutputFileNamingResolver {
 
+    private let outputFilenameSequenceStore:
+        LivePhotoOutputFilenameSequenceStore
+
+    init(
+        outputFilenameSequenceStore:
+            LivePhotoOutputFilenameSequenceStore? = nil
+    ) {
+        self.outputFilenameSequenceStore =
+            outputFilenameSequenceStore
+            ?? LivePhotoOutputFilenameSequenceStore()
+    }
+
     func defaultFileName(
         for photo: SelectedPhoto
     ) -> String {
@@ -24,32 +36,55 @@ struct OutputFileNamingResolver {
     func uniqueTemporaryURL(
         in folderURL: URL,
         for photo: SelectedPhoto
-    ) -> URL {
+    ) throws -> URL {
 
         let originalBaseName =
             resolvedOutputBaseName(
                 for: photo
             )
 
-        let baseName =
-            PhotoFileNameResolver
-            .nextOutputCopyBaseName(
+        var baseName =
+            try outputFilenameSequenceStore
+            .nextOutputBaseName(
                 from: originalBaseName
-            ) { candidate in
-                FileManager.default.fileExists(
-                    atPath:
-                        folderURL
-                        .appendingPathComponent(candidate)
-                        .appendingPathExtension("jpg")
-                        .path
+            )
+
+        while FileManager.default.fileExists(
+            atPath:
+                folderURL
+                .appendingPathComponent(baseName)
+                .appendingPathExtension("jpg")
+                .path
+        ) {
+            baseName =
+                try outputFilenameSequenceStore
+                .nextOutputBaseName(
+                    from: originalBaseName
                 )
-            }
+        }
 
         return folderURL
             .appendingPathComponent(
                 baseName
             )
             .appendingPathExtension("jpg")
+    }
+
+    func uniqueIntermediateTemporaryURL(
+        in folderURL: URL,
+        for photo: SelectedPhoto
+    ) -> URL {
+
+        uniqueOutputURL(
+            for:
+                folderURL
+                .appendingPathComponent(
+                    resolvedOutputBaseName(
+                        for: photo
+                    )
+                )
+                .appendingPathExtension("jpg")
+        )
     }
 
     private func resolvedOutputBaseName(

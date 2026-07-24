@@ -21,7 +21,8 @@ struct ConfiguredAnchorExpressionProvider:
                     anchor.expressionStyle,
                 relativeSnapshot:
                     semanticResult
-                    .relativeSnapshot
+                    .relativeSnapshot,
+                language: context.language
             )
     }
 }

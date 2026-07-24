@@ -3,6 +3,13 @@ import SwiftUI
 
 struct MemoMarkPlusBadge: View {
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     let action: () -> Void
 
     var body: some View {
@@ -48,10 +55,30 @@ struct MemoMarkPlusBadge: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(
-            "MemoMark+，已解锁，首批记录者"
+            localized(
+                "commerce.badge.accessibility.label",
+                fallback: "MemoMark+ 已解锁"
+            )
         )
         .accessibilityHint(
-            "查看权益与首批记录者纪念印记"
+            localized(
+                "commerce.badge.accessibility.hint",
+                fallback: "查看 MemoMark+ 权益"
+            )
+        )
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        let language = MemoMarkInterfaceLanguagePreference(
+            rawValue: interfaceLanguagePreferenceRawValue
+        )?.resolvedLanguage
+        ?? MemoMarkLanguage.interfaceStored
+        return language.localized(
+            key: key,
+            fallback: fallback
         )
     }
 }

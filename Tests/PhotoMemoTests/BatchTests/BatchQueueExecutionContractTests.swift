@@ -7,6 +7,30 @@ import UniformTypeIdentifiers
 @Suite("Batch queue execution contracts", .serialized)
 struct BatchQueueExecutionContractTests {
 
+    @Test("Batch URL imports use the off-main-thread importer")
+    func batchURLImportsUseOffMainThreadImporter() throws {
+        let repositoryRoot =
+            URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf:
+                repositoryRoot
+                .appendingPathComponent(
+                    "Source/PhotoMemo/PhotoMemo/Repositories/PhotoRepository.swift"
+                ),
+            encoding: .utf8
+        )
+
+        #expect(
+            source.contains(
+                ".importPhotoOffMainThread("
+            )
+        )
+    }
+
     @MainActor
     @Test("Task processor context keeps immutable execution inputs")
     func taskProcessorContextKeepsExecutionInputs() {

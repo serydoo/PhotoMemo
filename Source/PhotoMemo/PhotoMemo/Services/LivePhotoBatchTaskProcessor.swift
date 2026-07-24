@@ -290,6 +290,9 @@ final class LivePhotoBatchTaskProcessor:
                     isDirectory: true
                 )
     ) {
+        let resolvedOutputFilenameSequenceStore =
+            outputFilenameSequenceStore
+            ?? LivePhotoOutputFilenameSequenceStore()
         self.planner =
             planner
             ?? MediaProcessingPlanner(
@@ -321,7 +324,10 @@ final class LivePhotoBatchTaskProcessor:
             ?? RecordCardBuildService()
         self.exportService =
             exportService
-            ?? RecordCardExportService()
+            ?? RecordCardExportService(
+                outputFilenameSequenceStore:
+                    resolvedOutputFilenameSequenceStore
+            )
         self.photoLibraryExportService =
             photoLibraryExportService
             ?? PhotoLibraryExportService()
@@ -332,8 +338,7 @@ final class LivePhotoBatchTaskProcessor:
         self.diagnosticsDefaults =
             diagnosticsDefaults
         self.outputFilenameSequenceStore =
-            outputFilenameSequenceStore
-            ?? LivePhotoOutputFilenameSequenceStore()
+            resolvedOutputFilenameSequenceStore
     }
 
     func process(
@@ -570,7 +575,8 @@ private extension LivePhotoBatchTaskProcessor {
                 task: task
             )
             let renderedFileURL =
-                try exportService.exportToTemporaryFile(
+                try exportService
+                .exportIntermediateToTemporaryFile(
                     photo: importedPhoto,
                     card: card
                 )

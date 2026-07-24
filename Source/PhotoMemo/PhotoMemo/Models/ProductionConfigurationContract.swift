@@ -117,7 +117,8 @@ enum ProductionConfigurationSnapshotFactory {
 
         var canonicalSnapshot =
             ConfigurationSnapshotBuilder.build(
-                from: frozenSubject
+                from: frozenSubject,
+                language: configuration.language
             )
         canonicalSnapshot.configurationID = configuration.id
         canonicalSnapshot.configurationRevision =
@@ -172,7 +173,8 @@ enum ProductionConfigurationSnapshotFactory {
             mediaOutputModeRawValue:
                 configuration.output.mediaMode.rawValue,
             livePhotoPolicyRawValue:
-                configuration.output.livePhotoPolicy.rawValue
+                configuration.output.livePhotoPolicy.rawValue,
+            language: configuration.language
         )
         .withCanonicalProductionSnapshot(
             canonicalSnapshot

@@ -49,21 +49,21 @@ struct MemoMarkCommercePersistenceTests {
         #expect(
             persistence.applyAllowanceGift(
                 id: "major-2",
-                amount: 50,
+                amount: 100,
                 environment: .production
             )
         )
         #expect(
             !persistence.applyAllowanceGift(
                 id: "major-2",
-                amount: 50,
+                amount: 100,
                 environment: .production
             )
         )
         #expect(
             persistence.bonusAllowance(
                 environment: .production
-            ) == 50
+            ) == 100
         )
     }
 
@@ -77,7 +77,7 @@ struct MemoMarkCommercePersistenceTests {
         let snapshot =
             MemoMarkCommerceSnapshot(
                 environment: .sandbox,
-                isPlus: true,
+                accessSource: .verifiedPlus,
                 successfulRecordCount: 200,
                 totalAllowance: nil,
                 batchLimit: 40,
@@ -94,6 +94,175 @@ struct MemoMarkCommercePersistenceTests {
         #expect(persistence.loadSharedSnapshot() == snapshot)
     }
 
+    @Test("Production ignores a persisted TestFlight temporary snapshot")
+    func productionRejectsTestFlightTemporarySnapshot() throws {
+        let defaults = try makeDefaults()
+        let persistence =
+            MemoMarkCommercePersistence(
+                defaults: defaults
+            )
+        persistence.saveSharedSnapshot(
+            MemoMarkCommerceSnapshot(
+                environment: .sandbox,
+                accessSource: .testFlightTemporary,
+                successfulRecordCount: 18,
+                totalAllowance: nil,
+                batchLimit: 40,
+                firstRecorderDate: nil,
+                updatedAt: Date()
+            )
+        )
+
+        let snapshot = persistence.loadSharedSnapshot(
+            compatibleWith: .production
+        )
+
+        #expect(snapshot.environment == .production)
+        #expect(snapshot.accessSource == .free)
+        #expect(snapshot.batchLimit == 20)
+        #expect(snapshot.totalAllowance == 200)
+    }
+
+    @Test("receipt identity resolves the current distribution environment")
+    func receiptIdentityResolvesEnvironment() {
+        #expect(
+            MemoMarkCommerceEnvironment.runtime(
+                receiptURL: URL(fileURLWithPath: "/StoreKit/sandboxReceipt"),
+                isDebugBuild: false
+            ) == .sandbox
+        )
+        #expect(
+            MemoMarkCommerceEnvironment.runtime(
+                receiptURL: URL(fileURLWithPath: "/StoreKit/receipt"),
+                isDebugBuild: false
+            ) == .production
+        )
+        #expect(
+            MemoMarkCommerceEnvironment.runtime(
+                receiptURL: nil,
+                isDebugBuild: false
+            ) == .production
+        )
+        #expect(
+            MemoMarkCommerceEnvironment.runtime(
+                receiptURL: nil,
+                isDebugBuild: true
+            ) == .xcode
+        )
+    }
+
+    @Test("legacy Plus snapshot migrates to an explicit access source")
+    func legacySnapshotMigratesAccessSource() throws {
+        let legacy = LegacySnapshot(
+            environment: .sandbox,
+            isPlus: true,
+            successfulRecordCount: 12,
+            totalAllowance: nil,
+            batchLimit: 40,
+            firstRecorderDate: nil,
+            updatedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        let decoded = try JSONDecoder().decode(
+            MemoMarkCommerceSnapshot.self,
+            from: JSONEncoder().encode(legacy)
+        )
+
+        #expect(decoded.accessSource == .testFlightTemporary)
+        #expect(decoded.isPlus)
+        #expect(decoded.successfulRecordCount == 12)
+    }
+
+    @Test("TestFlight experience is durable and Sandbox-only")
+    func testFlightExperienceIsSandboxOnly() throws {
+        let defaults = try makeDefaults()
+        let persistence =
+            MemoMarkCommercePersistence(
+                defaults: defaults
+            )
+
+        #expect(
+            persistence.activateTestFlightExperience(
+                environment: .sandbox
+            )
+        )
+        #expect(
+            persistence.isTestFlightExperienceActive(
+                environment: .sandbox
+            )
+        )
+        #expect(
+            !persistence.isTestFlightExperienceActive(
+                environment: .production
+            )
+        )
+        #expect(
+            !persistence.activateTestFlightExperience(
+                environment: .production
+            )
+        )
+
+        let reloaded =
+            MemoMarkCommercePersistence(
+                defaults: defaults
+            )
+        #expect(
+            reloaded.isTestFlightExperienceActive(
+                environment: .sandbox
+            )
+        )
+
+        #expect(
+            reloaded.deactivateTestFlightExperience(
+                environment: .sandbox
+            )
+        )
+        #expect(
+            !reloaded.isTestFlightExperienceActive(
+                environment: .sandbox
+            )
+        )
+        #expect(
+            !reloaded.deactivateTestFlightExperience(
+                environment: .production
+            )
+        )
+    }
+
+    @Test("First Recorder identity is granted once and remains independent from Plus")
+    func firstRecorderIdentityIsDurable() throws {
+        let defaults = try makeDefaults()
+        let persistence =
+            MemoMarkCommercePersistence(
+                defaults: defaults
+            )
+        let firstDate = Date(timeIntervalSince1970: 100)
+        let laterDate = Date(timeIntervalSince1970: 200)
+
+        #expect(
+            persistence.grantFirstRecorderIdentityIfNeeded(
+                date: firstDate,
+                environment: .production
+            )
+        )
+        #expect(
+            !persistence.grantFirstRecorderIdentityIfNeeded(
+                date: laterDate,
+                environment: .production
+            )
+        )
+        #expect(
+            persistence.firstRecorderDate(
+                environment: .production
+            ) == firstDate
+        )
+        #expect(
+            persistence.firstRecorderDate(
+                environment: .sandbox
+            ) == nil
+        )
+    }
+
     private func makeDefaults() throws -> UserDefaults {
         let suiteName =
             "MemoMarkCommercePersistenceTests.\(UUID().uuidString)"
@@ -104,5 +273,15 @@ struct MemoMarkCommercePersistenceTests {
             forName: suiteName
         )
         return defaults
+    }
+
+    private struct LegacySnapshot: Codable {
+        let environment: MemoMarkCommerceEnvironment
+        let isPlus: Bool
+        let successfulRecordCount: Int
+        let totalAllowance: Int?
+        let batchLimit: Int
+        let firstRecorderDate: Date?
+        let updatedAt: Date
     }
 }

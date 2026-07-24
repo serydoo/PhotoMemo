@@ -580,6 +580,35 @@ struct BatchQueueStorePersistenceTests {
             )
         }
     }
+
+    @Test("UserDefaults persistence trusts verified read-back when synchronize reports false")
+    func userDefaultsPersistenceUsesReadBackAsCommitEvidence() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.SynchronizeFalse.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let backend =
+            UserDefaultsBatchQueuePersistenceBackend(
+                defaults: defaults,
+                synchronize: { false }
+            )
+        let payload = Data("verified-write".utf8)
+
+        try backend.saveData(
+            payload,
+            forKey: "verified-key"
+        )
+
+        #expect(
+            try backend.loadData(forKey: "verified-key")
+            == payload
+        )
+    }
 }
 
 private extension Template {
