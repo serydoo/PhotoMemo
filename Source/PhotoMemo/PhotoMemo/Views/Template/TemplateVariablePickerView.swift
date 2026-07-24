@@ -67,7 +67,7 @@ struct TemplateVariablePickerView: View {
 
             HStack {
 
-                Text(variable.title)
+                Text(variable.title(for: MemoMarkLanguage.interfaceStored))
 
                 Spacer()
 

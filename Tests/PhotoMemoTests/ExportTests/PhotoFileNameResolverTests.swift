@@ -128,15 +128,15 @@ struct PhotoFileNameResolverTests {
         )
     }
 
-    @Test("Builds MemoMark output copy names without spaces")
-    func buildsMemoMarkOutputCopyNamesWithoutSpaces() {
+    @Test("Builds MemoMark output copy names with Apple-style spacing")
+    func buildsMemoMarkOutputCopyNamesWithAppleStyleSpacing() {
 
         #expect(
             PhotoFileNameResolver
             .outputCopyBaseName(
                 from: "IMG_1234",
                 index: 1
-            ) == "IMG_1234(1)"
+            ) == "IMG_1234 (1)"
         )
 
         #expect(
@@ -144,7 +144,7 @@ struct PhotoFileNameResolverTests {
             .outputCopyBaseName(
                 from: " IMG_1234 ",
                 index: 2
-            ) == "IMG_1234(2)"
+            ) == "IMG_1234 (2)"
         )
 
         #expect(
@@ -152,7 +152,7 @@ struct PhotoFileNameResolverTests {
             .outputCopyBaseName(
                 from: "",
                 index: 0
-            ) == "MemoMark(1)"
+            ) == "MemoMark (1)"
         )
     }
 
@@ -160,8 +160,8 @@ struct PhotoFileNameResolverTests {
     func findsNextMemoMarkOutputCopyName() {
 
         let existingNames: Set<String> = [
-            "IMG_1234(1)",
-            "IMG_1234(2)"
+            "IMG_1234 (1)",
+            "IMG_1234 (2)"
         ]
 
         #expect(
@@ -169,7 +169,7 @@ struct PhotoFileNameResolverTests {
             .nextOutputCopyBaseName(
                 from: "IMG_1234",
                 exists: existingNames.contains
-            ) == "IMG_1234(3)"
+            ) == "IMG_1234 (3)"
         )
     }
 
@@ -177,7 +177,7 @@ struct PhotoFileNameResolverTests {
     func continuesMemoMarkOutputCopyNamesWithoutNestingSuffixes() {
 
         let existingNames: Set<String> = [
-            "IMG_1234(1)"
+            "IMG_1234 (1)"
         ]
 
         #expect(
@@ -185,7 +185,7 @@ struct PhotoFileNameResolverTests {
             .nextOutputCopyBaseName(
                 from: "IMG_1234(1)",
                 exists: existingNames.contains
-            ) == "IMG_1234(2)"
+            ) == "IMG_1234 (2)"
         )
     }
 
@@ -213,13 +213,13 @@ struct PhotoFileNameResolverTests {
             try firstStore.nextOutputBaseName(
                 preferredOriginalFileName: "IMG_1164.jpg",
                 assetOriginalFileName: "FullSizeRender.jpeg"
-            ) == "IMG_1164(1)"
+            ) == "IMG_1164 (1)"
         )
         #expect(
             try firstStore.nextOutputBaseName(
                 preferredOriginalFileName: "IMG_1164.jpg",
                 assetOriginalFileName: "FullSizeRender.jpeg"
-            ) == "IMG_1164(2)"
+            ) == "IMG_1164 (2)"
         )
 
         let restartedStore =
@@ -231,7 +231,7 @@ struct PhotoFileNameResolverTests {
             try restartedStore.nextOutputBaseName(
                 preferredOriginalFileName: "IMG_1164.jpg",
                 assetOriginalFileName: "FullSizeRender.jpeg"
-            ) == "IMG_1164(3)"
+            ) == "IMG_1164 (3)"
         )
     }
 
@@ -264,5 +264,32 @@ struct PhotoFileNameResolverTests {
                 preferredOriginalFileName: "IMG_1164.jpg"
             )
         }
+    }
+
+    @MainActor
+    @Test("Continues after a copy suffix already present in the source name")
+    func continuesAfterExistingSourceCopySuffix() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.ExistingCopySuffixTests.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        let storageURL = rootURL.appendingPathComponent(
+            "OutputFilenameSequence.json"
+        )
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let store = LivePhotoOutputFilenameSequenceStore(
+            storageURL: storageURL
+        )
+
+        #expect(
+            try store.nextOutputBaseName(
+                preferredOriginalFileName:
+                    "IMG_1164 (4).jpg"
+            ) == "IMG_1164 (5)"
+        )
     }
 }

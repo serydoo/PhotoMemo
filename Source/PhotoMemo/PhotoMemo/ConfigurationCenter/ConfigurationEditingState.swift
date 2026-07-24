@@ -962,6 +962,8 @@ struct ConfigurationEditingState {
             state.memoryPresets[presetIndex]
                 .customMemoryWriteText =
                 configuration.editor.memoryCopy.customText
+            state.memoryPresets[presetIndex].language =
+                configuration.language
         }
     }
 

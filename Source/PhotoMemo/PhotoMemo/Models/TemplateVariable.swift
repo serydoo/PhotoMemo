@@ -10,24 +10,37 @@ import Foundation
 
 struct TemplateVariable: Identifiable, Hashable {
 
-    let id: UUID
-
     let category: TemplateVariableCategory
-
-    let title: String
 
     let token: String
 
+    var id: String {
+        token
+    }
+
+    var title: String {
+        title(for: .stored)
+    }
+
+    func title(
+        for language: MemoMarkLanguage = .stored
+    ) -> String {
+        language.localized(
+            key: "variable.\(token.dropFirst(2).dropLast(2))",
+            fallback: fallbackTitle
+        )
+    }
+
+    private let fallbackTitle: String
+
     init(
-        id: UUID = UUID(),
         category: TemplateVariableCategory,
         title: String,
         token: String
     ) {
-        self.id = id
         self.category = category
-        self.title = title
         self.token = token
+        self.fallbackTitle = title
     }
 }
 

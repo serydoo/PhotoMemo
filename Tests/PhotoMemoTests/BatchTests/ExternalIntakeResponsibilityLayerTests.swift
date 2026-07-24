@@ -419,6 +419,41 @@ struct ExternalIntakeResponsibilityLayerTests {
             == nil
         )
     }
+
+    @Test("Request persistence trusts verified read-back when synchronize reports false")
+    func requestStoreDoesNotTreatSynchronizeFalseAsWriteFailure() throws {
+        let suiteName =
+            "PhotoMemo.ExternalIntakeResponsibilityLayerTests.SynchronizeFalse.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let request = ExternalPhotoIntakeRequest(
+            launchSource: .shareExtension,
+            urls: [URL(fileURLWithPath: "/tmp/managed-synchronize-false.jpg")],
+            configurationSnapshot: Self.configurationSnapshot
+        )
+        let store = ExternalIntakeRequestStore(
+            defaults: defaults,
+            synchronizeDefaults: { false }
+        )
+
+        let failure = store.persistRequest(
+            request,
+            diagnosticsSeed: .init()
+        )
+
+        #expect(failure == nil)
+        switch store.loadRequestsResult() {
+        case .success(let requests):
+            #expect(requests == [request])
+        case .noValue,
+             .decodingFailed:
+            Issue.record("Expected persisted request after verified read-back")
+        }
+    }
 }
 
 private extension ExternalIntakeResponsibilityLayerTests {

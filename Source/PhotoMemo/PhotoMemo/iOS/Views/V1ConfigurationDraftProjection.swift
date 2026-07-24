@@ -24,6 +24,7 @@ struct V1ConfigurationDraftProjection: Hashable {
         MemoryConfigurationRecord.Output.LivePhotoPolicy
     let route: MemoryConfigurationRecord.Presentation.Route
     let selectedTimeAnchorID: UUID?
+    let language: MemoMarkLanguage
 
     var regionDrafts: [CardRegion: V1EditorDraft] {
         [
@@ -70,6 +71,7 @@ struct V1ConfigurationDraftProjection: Hashable {
         route = configuration.presentation.route
         selectedTimeAnchorID =
             configuration.selectedTimeAnchorID
+        language = configuration.language
     }
 }
 
@@ -93,6 +95,7 @@ struct V1ConfigurationAggregateDraft: Hashable {
         MemoryConfigurationRecord.Output.LivePhotoPolicy
     let selectedTimeAnchorID: UUID?
     let savedAt: Date
+    let language: MemoMarkLanguage
 
     init(
         title: String,
@@ -112,7 +115,8 @@ struct V1ConfigurationAggregateDraft: Hashable {
         livePhotoPolicy:
             MemoryConfigurationRecord.Output.LivePhotoPolicy,
         selectedTimeAnchorID: UUID?,
-        savedAt: Date
+        savedAt: Date,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) {
         self.title = title
         self.regionDrafts = regionDrafts
@@ -135,6 +139,7 @@ struct V1ConfigurationAggregateDraft: Hashable {
         self.livePhotoPolicy = livePhotoPolicy
         self.selectedTimeAnchorID = selectedTimeAnchorID
         self.savedAt = savedAt
+        self.language = language
     }
 
 }
@@ -198,6 +203,7 @@ enum V1ConfigurationAggregateCandidateBuilder {
             revision: 0,
             savedAt: draft.savedAt,
             selectedTimeAnchorID: draft.selectedTimeAnchorID,
+            language: draft.language,
             editor: .init(
                 template: template(
                     basedOn: Template(
@@ -278,6 +284,7 @@ enum V1ConfigurationAggregateCandidateBuilder {
             revision: previous.revision + 1,
             savedAt: draft.savedAt,
             selectedTimeAnchorID: draft.selectedTimeAnchorID,
+            language: draft.language,
             editor: .init(
                 template: template(
                     basedOn: previous.editor.template,

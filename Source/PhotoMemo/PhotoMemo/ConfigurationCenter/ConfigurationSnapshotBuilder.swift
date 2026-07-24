@@ -16,13 +16,15 @@ enum ConfigurationSnapshotBuilder {
         return build(
             from: subject,
             smartModuleCarrierRegion:
-                session.smartModuleCarrierRegion
+                session.smartModuleCarrierRegion,
+            language: session.language
         )
     }
 
     static func build(
         from subject: MemorySubject,
-        smartModuleCarrierRegion: CardRegion = .slotD
+        smartModuleCarrierRegion: CardRegion = .slotD,
+        language: MemoMarkLanguage = .stored
     ) -> ConfigurationSnapshot {
         ConfigurationSnapshot(
             subjectID: subject.id,
@@ -35,7 +37,8 @@ enum ConfigurationSnapshotBuilder {
                     from: subject.primaryTimeAnchor
                 ),
             smartModuleCarrierRegion:
-                smartModuleCarrierRegion
+                smartModuleCarrierRegion,
+            language: language
         )
     }
 }

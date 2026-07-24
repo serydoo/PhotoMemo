@@ -37,7 +37,9 @@ struct RelativeTimeMemoryCalculator:
                 .semanticDisplayText(
                     anchorType: anchorType,
                     relativeSnapshot:
-                        relativeSnapshot
+                        relativeSnapshot,
+                    language:
+                        context.language
                 ),
             relativeSnapshot:
                 relativeSnapshot

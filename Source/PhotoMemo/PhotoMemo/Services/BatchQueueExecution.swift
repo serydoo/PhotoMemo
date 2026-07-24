@@ -14,6 +14,8 @@ final class BatchQueueExecution {
         previewCoordinator: PreviewCoordinator? = nil,
         exportCoordinator: ExportCoordinator? = nil,
         livePhotoProcessor: (any LivePhotoBatchTaskProcessing)? = nil,
+        outputFilenameSequenceStore:
+            LivePhotoOutputFilenameSequenceStore? = nil,
         diagnosticsDefaults: UserDefaults = PhotoMemoSharedContainer.sharedUserDefaults,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
@@ -32,8 +34,15 @@ final class BatchQueueExecution {
         let resolvedPreviewCoordinator = previewCoordinator ?? PreviewCoordinator(
             buildService: RecordCardBuildService()
         )
+        let resolvedOutputFilenameSequenceStore =
+            outputFilenameSequenceStore
+            ?? LivePhotoOutputFilenameSequenceStore()
         let resolvedExportCoordinator = exportCoordinator ?? ExportCoordinator(
-            exportService: RecordCardExportService(),
+            exportService:
+                RecordCardExportService(
+                    outputFilenameSequenceStore:
+                        resolvedOutputFilenameSequenceStore
+                ),
             photoLibraryRepository: resolvedPhotoLibraryRepository
         )
         let resolvedExternalIntakeStore = externalIntakeStore ?? .shared
@@ -43,7 +52,9 @@ final class BatchQueueExecution {
             externalIntakeStore: resolvedExternalIntakeStore
         )
         let resolvedLivePhotoProcessor = livePhotoProcessor ?? LivePhotoBatchTaskProcessor(
-            diagnosticsDefaults: diagnosticsDefaults
+            diagnosticsDefaults: diagnosticsDefaults,
+            outputFilenameSequenceStore:
+                resolvedOutputFilenameSequenceStore
         )
         let taskProcessor = BatchTaskProcessor(
             photoRepository: resolvedPhotoRepository,

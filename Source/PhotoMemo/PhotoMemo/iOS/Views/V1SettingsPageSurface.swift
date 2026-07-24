@@ -3,10 +3,31 @@ import SwiftUI
 
 struct V1SettingsPageSurface: View {
 
+    private enum SettingsSection: Hashable, CaseIterable {
+        case overview
+        case guide
+        case support
+        case principle
+        case feedback
+        case release
+    }
+
     @Environment(\.openURL) private var openURL
+
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
 
     @State
     private var showsExpressionGuide = false
+
+    @State
+    private var expandedSections:
+        Set<SettingsSection> =
+        Set(SettingsSection.allCases)
 
     let commerceSnapshot:
         MemoMarkCommerceSnapshot
@@ -25,6 +46,7 @@ struct V1SettingsPageSurface: View {
                 supportSection
                 principleSection
                 feedbackSection
+                interfaceLanguageSection
                 releaseSection
             }
             .padding(.top, 16)
@@ -43,6 +65,62 @@ struct V1SettingsPageSurface: View {
         .sheet(isPresented: $showsExpressionGuide) {
             expressionGuideSheet
         }
+    }
+
+    private var interfaceLanguageSection: some View {
+        V1ConfigurationCardContainer {
+            VStack(alignment: .leading, spacing: 12) {
+                Label(
+                    localized(
+                        "应用界面语言",
+                        fallback: "应用界面语言"
+                    ),
+                    systemImage: "character"
+                )
+                .font(.headline.weight(.semibold))
+
+                Picker(
+                    localized(
+                        "应用界面语言",
+                        fallback: "应用界面语言"
+                    ),
+                    selection: interfaceLanguageBinding
+                ) {
+                    ForEach(
+                        MemoMarkInterfaceLanguagePreference.allCases,
+                        id: \.self
+                    ) { preference in
+                        Text(preference.displayTitle)
+                            .tag(preference)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Text(
+                    localized(
+                        "控制时光记的菜单、设置、帮助与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。",
+                        fallback: "控制时光记的菜单、设置、帮助与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。"
+                    )
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var interfaceLanguageBinding:
+        Binding<MemoMarkInterfaceLanguagePreference> {
+        Binding(
+            get: {
+                MemoMarkInterfaceLanguagePreference(
+                    rawValue: interfaceLanguagePreferenceRawValue
+                ) ?? .system
+            },
+            set: { preference in
+                interfaceLanguagePreferenceRawValue = preference.rawValue
+            }
+        )
     }
 
     private var memoMarkPlusSection: some View {
@@ -114,24 +192,79 @@ struct V1SettingsPageSurface: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(
-            commerceSnapshot.isPlus
-            ? "查看权益与首批记录者纪念印记"
-            : "了解 MemoMark+ 完整记录能力"
+            memoMarkPlusAccessibilityHint
         )
     }
 
     private var memoMarkPlusDetail: String {
+        if isTestFlightExperienceActive {
+            return localized(
+                "commerce.settings.testflight",
+                fallback: "TestFlight 体验 · 无限记录\n正式版权益仍由 Apple 购买或兑换决定。"
+            )
+        }
+
+        if commerceSnapshot.firstRecorderDate != nil {
+            return localized(
+                "commerce.settings.first_recorder",
+                fallback: "首批记录者 · 无限记录\n愿今天留下的时光，在未来仍然清晰而温暖。"
+            )
+        }
+
         if commerceSnapshot.isPlus {
-            return "首批记录者 · 无限记录\n愿今天留下的时光，在未来仍然清晰而温暖。"
+            return localized(
+                "commerce.settings.plus",
+                fallback: "MemoMark+ · 无限记录\n永久权益由 Apple 管理并可恢复购买。"
+            )
         }
 
         if let remaining =
                 commerceSnapshot.remainingRecords,
            remaining <= 10 {
-            return "还有 \(remaining) 张免费成长记录 · 了解 MemoMark+"
+            return formatted(
+                "commerce.settings.remaining",
+                fallback: "还有 %lld 张免费成长记录 · 了解 MemoMark+",
+                Int64(remaining)
+            )
         }
 
-        return "继续保存那些未来值得回看的瞬间"
+        return localized(
+            "commerce.settings.continuity",
+            fallback: "继续保存那些未来值得回看的瞬间"
+        )
+    }
+
+    private var memoMarkPlusAccessibilityHint: String {
+        if isTestFlightExperienceActive {
+            return localized(
+                "commerce.settings.accessibility.testflight",
+                fallback: "查看 TestFlight 临时体验权益"
+            )
+        }
+
+        if commerceSnapshot.firstRecorderDate != nil {
+            return localized(
+                "commerce.settings.accessibility.plus",
+                fallback: "查看权益与首批记录者纪念印记"
+            )
+        }
+
+        if commerceSnapshot.isPlus {
+            return localized(
+                "commerce.settings.accessibility.plus_standard",
+                fallback: "查看 MemoMark+ 永久权益"
+            )
+        }
+
+        return localized(
+            "commerce.settings.accessibility.free",
+            fallback: "了解 MemoMark+ 完整记录能力"
+        )
+    }
+
+    private var isTestFlightExperienceActive: Bool {
+        commerceSnapshot.accessSource
+            == .testFlightTemporary
     }
 
     private var warmGold: Color {
@@ -142,8 +275,76 @@ struct V1SettingsPageSurface: View {
         )
     }
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        MemoMarkInterfaceLanguagePreference(
+            rawValue:
+                interfaceLanguagePreferenceRawValue
+        )?
+        .resolvedLanguage
+        ?? MemoMarkLanguage.interfaceStored
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
+    private func formatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: localized(
+                key,
+                fallback: fallback
+            ),
+            locale: interfaceLanguage.locale,
+            arguments: arguments
+        )
+    }
+
+    private func settingsDisclosureSection<Content: View>(
+        section: SettingsSection,
+        title: String,
+        systemImage: String,
+        tint: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        V1SettingsDisclosureSection(
+            title: title,
+            systemImage: systemImage,
+            tint: tint,
+            isExpanded: expansionBinding(for: section),
+            content: content
+        )
+    }
+
+    private func expansionBinding(
+        for section: SettingsSection
+    ) -> Binding<Bool> {
+        Binding(
+            get: {
+                expandedSections.contains(section)
+            },
+            set: { isExpanded in
+                if isExpanded {
+                    expandedSections.insert(section)
+                } else {
+                    expandedSections.remove(section)
+                }
+            }
+        )
+    }
+
     private var overviewSection: some View {
-        V1CardSurface(
+        settingsDisclosureSection(
+            section: .overview,
             title: "为什么是时光记",
             systemImage: MemoMarkSymbol.memoryContent.name,
             tint: .pink
@@ -204,7 +405,8 @@ struct V1SettingsPageSurface: View {
     }
 
     private var guideSection: some View {
-        V1CardSurface(
+        settingsDisclosureSection(
+            section: .guide,
             title: "使用与帮助",
             systemImage: MemoMarkSymbol.help.name,
             tint: .blue
@@ -298,16 +500,32 @@ struct V1SettingsPageSurface: View {
     }
 
     private var releaseSection: some View {
-        V1CardSurface(
-            title: "版本信息",
+        settingsDisclosureSection(
+            section: .release,
+            title: localized(
+                "settings.version.section_title",
+                fallback: "版本信息"
+            ),
             systemImage: MemoMarkSymbol.information.name,
             tint: .blue
         ) {
             VStack(spacing: 0) {
                 settingsInfoRow(
-                    title: "当前版本",
-                    headline: "时光记 \(appVersion)",
-                    detail: "构建版本 \(appBuild)。版本信息由当前安装包自动读取。",
+                    title: localized(
+                        "settings.version.row_title",
+                        fallback: "当前版本"
+                    ),
+                    headline: formatted(
+                        "settings.version.headline_format",
+                        fallback: "时光记 %@",
+                        combinedAppVersion
+                    ),
+                    detail: formatted(
+                        "settings.version.detail_format",
+                        fallback: "产品版本 %@ · Xcode Cloud 构建 %@。信息来自当前安装包。",
+                        appVersion,
+                        appBuild
+                    ),
                     systemImage: "number.circle.fill",
                     tint: .blue,
                     showsDivider: false
@@ -318,7 +536,8 @@ struct V1SettingsPageSurface: View {
     }
 
     private var supportSection: some View {
-        V1CardSurface(
+        settingsDisclosureSection(
+            section: .support,
             title: "能力与边界",
             systemImage: MemoMarkSymbol.capability.name,
             tint: .orange
@@ -355,50 +574,122 @@ struct V1SettingsPageSurface: View {
     }
 
     private var feedbackSection: some View {
-        V1CardSurface(
-            title: "反馈渠道",
+        settingsDisclosureSection(
+            section: .feedback,
+            title: localized(
+                "settings.feedback.section_title",
+                fallback: "反馈渠道"
+            ),
             systemImage: MemoMarkSymbol.feedback.name,
             tint: .pink
         ) {
-            VStack(spacing: 0) {
-                settingsLinkRow(
-                    title: "TestFlight 反馈",
-                    headline: "适合闪退、截图和录屏",
-                    detail:
-                        "优先使用系统内置反馈，方便带上设备和崩溃上下文。",
-                    systemImage: "paperplane.fill",
-                    tint: .blue
+            VStack(alignment: .leading, spacing: 8) {
+                VStack(spacing: 0) {
+                    settingsInfoRow(
+                        title: localized(
+                            "settings.feedback.social.title",
+                            fallback: "小红书、抖音"
+                        ),
+                        headline: localized(
+                            "settings.feedback.social.headline",
+                            fallback: "搜索 MemoMark"
+                        ),
+                        detail: localized(
+                            "settings.feedback.social.detail",
+                            fallback: "欢迎通过公开账号联系开发者，分享使用体验与建议。"
+                        ),
+                        systemImage: "magnifyingglass.circle.fill",
+                        tint: .pink
+                    )
+                    .textSelection(.enabled)
+
+                    settingsInfoRow(
+                        title: localized(
+                            "settings.feedback.qq.title",
+                            fallback: "QQ 交流群"
+                        ),
+                        headline: "955680366",
+                        detail: localized(
+                            "settings.feedback.qq.detail",
+                            fallback: "适合交流使用问题、产品想法与个性化需求。"
+                        ),
+                        systemImage: "person.2.fill",
+                        tint: .cyan
+                    )
+                    .textSelection(.enabled)
+
+                    settingsLinkRow(
+                        title: localized(
+                            "settings.feedback.testflight.title",
+                            fallback: "TestFlight 反馈"
+                        ),
+                        headline: localized(
+                            "settings.feedback.testflight.headline",
+                            fallback: "适合闪退、截图和录屏"
+                        ),
+                        detail: localized(
+                            "settings.feedback.testflight.detail",
+                            fallback: "优先使用系统内置反馈，方便带上设备和崩溃上下文。"
+                        ),
+                        systemImage: "paperplane.fill",
+                        tint: .blue
+                    )
+
+                    settingsLinkRow(
+                        title: localized(
+                            "settings.feedback.email.title",
+                            fallback: "邮件反馈"
+                        ),
+                        headline: "serydoo@gmail.com",
+                        detail: localized(
+                            "settings.feedback.email.detail",
+                            fallback: "适合描述复现步骤、预期结果、实际结果和 iOS 版本。"
+                        ),
+                        systemImage: "envelope.fill",
+                        tint: .teal
+                    ) {
+                        openMailFeedback()
+                    }
+
+                    settingsLinkRow(
+                        title: localized(
+                            "settings.feedback.github.title",
+                            fallback: "GitHub Issues"
+                        ),
+                        headline: localized(
+                            "settings.feedback.github.headline",
+                            fallback: "公开可复现问题"
+                        ),
+                        detail: localized(
+                            "settings.feedback.github.detail",
+                            fallback: "适合记录稳定复现的缺陷和后续开发讨论。"
+                        ),
+                        systemImage: "curlybraces.square.fill",
+                        tint: .indigo,
+                        showsDivider: false
+                    ) {
+                        openGitHubIssues()
+                    }
+                }
+                .background(settingsInsetBackground)
+
+                Text(
+                    localized(
+                        "settings.feedback.closing",
+                        fallback: "欢迎告诉我们你的真实体验、遇到的问题，以及希望加入的个性化能力。"
+                    )
                 )
-
-                settingsLinkRow(
-                    title: "邮件反馈",
-                    headline: "serydoo@gmail.com",
-                    detail:
-                        "适合描述复现步骤、预期结果、实际结果和 iOS 版本。",
-                    systemImage: "envelope.fill",
-                    tint: .teal
-                ) {
-                    openMailFeedback()
-                }
-
-                settingsLinkRow(
-                    title: "GitHub Issues",
-                    headline: "公开可复现问题",
-                    detail:
-                        "适合记录稳定复现的缺陷和后续开发讨论。",
-                    systemImage: "curlybraces.square.fill",
-                    tint: .indigo,
-                    showsDivider: false
-                ) {
-                    openGitHubIssues()
-                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 4)
             }
-            .background(settingsInsetBackground)
         }
     }
 
     private var principleSection: some View {
-        V1CardSurface(
+        settingsDisclosureSection(
+            section: .principle,
             title: "隐私与数据",
             systemImage: MemoMarkSymbol.privacy.name,
             tint: .green
@@ -709,6 +1000,10 @@ struct V1SettingsPageSurface: View {
         ) as? String ?? "—"
     }
 
+    private var combinedAppVersion: String {
+        "\(appVersion).\(appBuild)"
+    }
+
     private func openGitHubIssues() {
         guard let url =
             URL(
@@ -753,6 +1048,62 @@ struct V1SettingsPageSurface: View {
             }
         }
         .frame(width: 58, height: 62)
+    }
+}
+
+private struct V1SettingsDisclosureSection<Content: View>: View {
+
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    @Binding
+    var isExpanded: Bool
+
+    @ViewBuilder
+    let content: Content
+
+    var body: some View {
+        V1ConfigurationCardContainer {
+            VStack(alignment: .leading, spacing: 14) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        V1CompactHeadingIcon(
+                            systemImage: systemImage,
+                            tint: tint
+                        )
+
+                        Text(title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(
+                                .degrees(isExpanded ? 90 : 0)
+                            )
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(title)
+                .accessibilityValue(
+                    isExpanded ? "已展开" : "已收起"
+                )
+                .accessibilityHint("点击展开或收起")
+
+                if isExpanded {
+                    content
+                }
+            }
+        }
     }
 }
 #endif

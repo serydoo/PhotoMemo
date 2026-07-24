@@ -101,14 +101,14 @@ final class ShareExtensionViewStateRenderer {
                 hidesPreview: true,
                 hidesSummary: input.photoCount == 0,
                 resetsContentPresentation: false,
-                title: "正在准备照片",
-                subtitle: "这次分享会在后台继续处理。",
-                statusTitle: "正在接收照片",
-                statusMessage: "原图不会被修改。",
+                title: localized("正在准备照片", english: "Preparing Photos"),
+                subtitle: localized("这次分享会在后台继续处理。", english: "This share will continue in the background."),
+                statusTitle: localized("正在接收照片", english: "Receiving Photos"),
+                statusMessage: localized("原图不会被修改。", english: "The original photo will not be modified."),
                 statusColor: .secondaryLabel,
                 showsProcessingChecklist: false,
-                footer: "完成后会发送通知。",
-                buttonTitle: "正在处理",
+                footer: localized("完成后会发送通知。", english: "You will receive a notification when it is complete."),
+                buttonTitle: localized("正在处理", english: "Processing"),
                 buttonIsEnabled: false,
                 accessibilityAnnouncement: "正在接收照片并准备后台处理"
             )
@@ -119,14 +119,14 @@ final class ShareExtensionViewStateRenderer {
                 hidesPreview: true,
                 hidesSummary: input.photoCount == 0,
                 resetsContentPresentation: false,
-                title: "已开始处理",
-                subtitle: "时光记会在后台继续处理这次分享。",
-                statusTitle: "可以返回照片",
-                statusMessage: "你可以继续分享下一批。",
+                title: localized("已开始处理", english: "Processing Started"),
+                subtitle: localized("时光记会在后台继续处理这次分享。", english: "MemoMark will continue processing this share in the background."),
+                statusTitle: localized("可以返回照片", english: "You Can Return to Photos"),
+                statusMessage: localized("你可以继续分享下一批。", english: "You can share another batch."),
                 statusColor: .secondaryLabel,
                 showsProcessingChecklist: false,
-                footer: "完成后会发送通知。",
-                buttonTitle: "已开始处理",
+                footer: localized("完成后会发送通知。", english: "You will receive a notification when it is complete."),
+                buttonTitle: localized("已开始处理", english: "Processing Started"),
                 buttonIsEnabled: false,
                 accessibilityAnnouncement: "已开始处理"
             )
@@ -137,14 +137,14 @@ final class ShareExtensionViewStateRenderer {
                 hidesPreview: true,
                 hidesSummary: input.photoCount == 0,
                 resetsContentPresentation: false,
-                title: "这次交接没有完成",
-                subtitle: "可以直接重试；如果仍失败，再回到时光记查看。",
+                title: localized("这次交接没有完成", english: "Handoff Did Not Finish"),
+                subtitle: localized("可以直接重试；如果仍失败，再回到时光记查看。", english: "Retry now. If it still fails, open MemoMark to check the handoff."),
                 statusTitle: title,
                 statusMessage: message,
                 statusColor: .systemOrange,
                 showsProcessingChecklist: false,
                 footer: suggestion,
-                buttonTitle: "重新尝试",
+                buttonTitle: localized("重新尝试", english: "Try Again"),
                 buttonIsEnabled: true,
                 accessibilityAnnouncement: "\(title)。\(message)"
             )
@@ -155,14 +155,14 @@ final class ShareExtensionViewStateRenderer {
                 hidesPreview: true,
                 hidesSummary: input.photoCount == 0,
                 resetsContentPresentation: true,
-                title: "照片已经接收",
-                subtitle: "但这次没有顺利继续交给时光记。",
-                statusTitle: "重新交给时光记",
-                statusMessage: "请点下面按钮再试一次；如果仍失败，请直接打开时光记，它会继续检查待处理照片。",
+                title: localized("照片已经接收", english: "Photos Received"),
+                subtitle: localized("但这次没有顺利继续交给时光记。", english: "This batch was not handed off to MemoMark successfully."),
+                statusTitle: localized("重新交给时光记", english: "Hand Off to MemoMark Again"),
+                statusMessage: localized("请点下面按钮再试一次；如果仍失败，请直接打开时光记，它会继续检查待处理照片。", english: "Tap below to try again. If it still fails, open MemoMark to check pending photos."),
                 statusColor: .secondaryLabel,
                 showsProcessingChecklist: false,
-                footer: "原图已经接收，原始照片不会被修改。",
-                buttonTitle: "重新交给时光记",
+                footer: localized("原图已经接收，原始照片不会被修改。", english: "The originals were received and will not be modified."),
+                buttonTitle: localized("重新交给时光记", english: "Hand Off to MemoMark Again"),
                 buttonIsEnabled: true,
                 accessibilityAnnouncement: nil
             )
@@ -176,34 +176,55 @@ final class ShareExtensionViewStateRenderer {
         switch update {
         case .preparingSource:
             bindings.titleLabel.text =
-                "正在准备原图"
+                localized("正在准备原图", english: "Preparing Original")
             bindings.subtitleLabel.text =
-                "系统正在把 iCloud 原图准备到本地。"
+                localized("系统正在把 iCloud 原图准备到本地。", english: "iCloud is preparing the original locally.")
             bindings.statusTitleLabel.text =
-                "正在读取 iCloud 原图"
+                localized("正在读取 iCloud 原图", english: "Reading iCloud Original")
             bindings.statusMessageLabel.attributedText = nil
             bindings.statusMessageLabel.text =
-                "原图准备好后会继续后台处理。"
+                localized("原图准备好后会继续后台处理。", english: "Background processing will continue when the original is ready.")
             bindings.primaryButton.configuration?.title =
-                "正在准备"
+                localized("正在准备", english: "Preparing")
         case .sourceReady:
             bindings.titleLabel.text =
-                "原图已可读取"
+                localized("原图已可读取", english: "Original is Ready")
             bindings.subtitleLabel.text =
-                "正在准备后台处理。"
+                localized("正在准备后台处理。", english: "Preparing background processing.")
             bindings.statusTitleLabel.text =
-                "正在继续处理"
+                localized("正在继续处理", english: "Continuing Processing")
             bindings.statusMessageLabel.attributedText = nil
             bindings.statusMessageLabel.text =
-                "照片已经可处理，完成后会发送通知。"
+                localized("照片已经可处理，完成后会发送通知。", english: "The photo is ready to process. You will receive a notification when it is complete.")
             bindings.primaryButton.configuration?.title =
-                "正在处理"
+                localized("正在处理", english: "Processing")
         }
     }
 
     func successMessage(
         for result: PhotoMemoShareExtensionImportResult
     ) -> String {
+        if MemoMarkLanguage.interfaceStored == .english {
+            if result.hasWarnings {
+                var summaryParts = [
+                    "Received \(result.importedCount) of \(result.requestedCount)"
+                ]
+                if result.skippedCount > 0 {
+                    summaryParts.append("\(result.skippedCount) skipped")
+                }
+                if result.failedCount > 0 {
+                    summaryParts.append("\(result.failedCount) not received")
+                }
+                if result.livePhotoStaticFallbackCount > 0 {
+                    summaryParts.append(
+                        "\(result.livePhotoStaticFallbackCount) Live Photos received as still images"
+                    )
+                }
+                return "\(summaryParts.joined(separator: ", ")). MemoMark will explain any remaining items."
+            }
+            return "Received \(result.requestedCount) photos. Processing in the background."
+        }
+
         if result.hasWarnings {
             var summaryParts = [
                 "已接收 \(result.importedCount) / \(result.requestedCount) 张"
@@ -226,10 +247,10 @@ final class ShareExtensionViewStateRenderer {
 
     private func processingChecklistAttributedText() -> NSAttributedString {
         let items = [
-            ("photo.stack.fill", "原图保持不变"),
-            ("doc.badge.gearshape", "保留拍摄信息"),
-            ("bell.fill", "完成后发送通知"),
-            ("arrow.right.circle.fill", "可以继续分享下一批")
+            ("photo.stack.fill", localized("原图保持不变", english: "Original stays unchanged")),
+            ("doc.badge.gearshape", localized("保留拍摄信息", english: "Capture information preserved")),
+            ("bell.fill", localized("完成后发送通知", english: "Notification when complete")),
+            ("arrow.right.circle.fill", localized("可以继续分享下一批", english: "You can share another batch"))
         ]
         let font =
             MemoMarkDesignTokens
@@ -291,46 +312,55 @@ final class ShareExtensionViewStateRenderer {
         _ input: ShareExtensionViewStateInput
     ) -> ShareExtensionViewStateUpdate {
         let title = input.photoCount > 0
-            ? "已准备好"
-            : "这次分享里没有可处理照片"
+            ? localized("已准备好", english: "Ready")
+            : localized("这次分享里没有可处理照片", english: "No Processable Photos")
         let subtitle = input.configurationIsReady
             ? (input.photoCount > 0
-                ? "\(input.photoCount) 张照片准备开始记录"
-                : "当前内容里没有可直接处理的照片。")
-            : "首次处理前，需要先在时光记里保存一个配置。"
+                ? (MemoMarkLanguage.interfaceStored == .english
+                    ? "\(input.photoCount) photos are ready to process"
+                    : "\(input.photoCount) 张照片准备开始记录")
+                : localized("当前内容里没有可直接处理的照片。", english: "There are no photos ready to process."))
+            : localized("首次处理前，需要先在时光记里保存一个配置。", english: "Save a configuration in MemoMark before processing for the first time.")
 
         let statusTitle: String
         let statusMessage: String
         let footer: String
         let buttonTitle: String
         if !input.configurationIsReady {
-            statusTitle = "需要先完成配置"
-            statusMessage = "请先打开时光记，在配置中心保存当前记忆对象的配置。输出部分默认可不改；如果你改了输出设置，保存后也会并入当前配置。"
-            footer = "配置保存完成后，再回到 Apple Photos 重新分享这批照片。"
-            buttonTitle = "打开时光记去配置"
+            statusTitle = localized("需要先完成配置", english: "Configuration Required")
+            statusMessage = localized("请先打开时光记，在配置中心保存当前记忆对象的配置。输出部分默认可不改；如果你改了输出设置，保存后也会并入当前配置。", english: "Open MemoMark and save the current memory configuration in Configuration Center. Output settings can stay as they are unless you want to change them.")
+            footer = localized("配置保存完成后，再回到 Apple Photos 重新分享这批照片。", english: "Return to Apple Photos and share these photos again after saving.")
+            buttonTitle = localized("打开时光记去配置", english: "Open MemoMark to Configure")
         } else if input.maximumPhotoCount == 0 {
-            statusTitle = "免费成长记录已完成"
-            statusMessage = "请打开时光记了解 MemoMark+，继续记录未来的时光。"
-            footer = "已经生成的照片和配置不会受到影响。"
-            buttonTitle = "打开时光记"
+            statusTitle = localized("免费成长记录已完成", english: "Free Records Completed")
+            statusMessage = localized("请打开时光记了解 MemoMark+，继续记录未来的时光。", english: "Open MemoMark to learn about MemoMark+ and keep recording future memories.")
+            footer = localized("已经生成的照片和配置不会受到影响。", english: "Existing photos and configurations are not affected.")
+            buttonTitle = localized("打开时光记", english: "Open MemoMark")
         } else if input.photoCount
                     > input.maximumPhotoCount {
-            statusTitle = "这次的照片有点多"
-            statusMessage = "美好的记忆适合慢慢整理。当前最多分享 \(input.maximumPhotoCount) 张，可以分几次完成。"
-            footer = "少量分批处理，也能让每一张照片更稳定地回到 Apple Photos。"
-            buttonTitle = "返回分批分享"
+            statusTitle = localized("这次的照片有点多", english: "This Batch Is Too Large")
+            statusMessage = MemoMarkLanguage.interfaceStored == .english
+                ? "Good memories are easier to organize in smaller batches. You can share up to \(input.maximumPhotoCount) photos at a time."
+                : "美好的记忆适合慢慢整理。当前最多分享 \(input.maximumPhotoCount) 张，可以分几次完成。"
+            footer = localized("少量分批处理，也能让每一张照片更稳定地回到 Apple Photos。", english: "Smaller batches help each photo return to Apple Photos reliably.")
+            buttonTitle = localized("返回分批分享", english: "Share in Smaller Batches")
         } else if input.photoCount > 0 {
-            statusTitle = "后台处理"
-            statusMessage = "原图保持不变\n保留拍摄信息\n完成后发送通知\n可以继续分享下一批"
+            statusTitle = localized("后台处理", english: "Background Processing")
+            statusMessage = [
+                localized("原图保持不变", english: "Original stays unchanged"),
+                localized("保留拍摄信息", english: "Capture information preserved"),
+                localized("完成后发送通知", english: "Notification when complete"),
+                localized("可以继续分享下一批", english: "You can share another batch")
+            ].joined(separator: "\n")
             footer = ""
-            buttonTitle = "生成时光记录"
+            buttonTitle = localized("生成时光记录", english: "Create Memory Record")
         } else {
-            statusTitle = "暂不支持这类内容"
+            statusTitle = localized("暂不支持这类内容", english: "This Content Is Not Supported")
             statusMessage = PhotoMemoShareExtensionError.noSupportedImages
-                .errorDescription ?? "没有可处理的照片。"
+                .errorDescription ?? localized("没有可处理的照片。", english: "There are no processable photos.")
             footer = PhotoMemoShareExtensionError.noSupportedImages
                 .recoverySuggestion
-            buttonTitle = "关闭"
+            buttonTitle = localized("关闭", english: "Close")
         }
 
         return .init(
@@ -355,6 +385,15 @@ final class ShareExtensionViewStateRenderer {
             buttonIsEnabled: true,
             accessibilityAnnouncement: nil
         )
+    }
+
+    private func localized(
+        _ simplifiedChinese: String,
+        english: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored == .english
+            ? english
+            : simplifiedChinese
     }
 }
 #endif

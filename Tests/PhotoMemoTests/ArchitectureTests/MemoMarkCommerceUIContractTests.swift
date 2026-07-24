@@ -4,23 +4,33 @@ import Testing
 @Suite("MemoMark commerce UI contract")
 struct MemoMarkCommerceUIContractTests {
 
-    @Test("purchase page preserves approved value and trust language")
+    @Test("purchase page uses localized value and trust language")
     func purchasePageCopyMatchesDesign() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/MemoMarkPlusPurchaseView.swift"
         )
+        let simplifiedChinese = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings"
+        )
+        let english = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings"
+        )
 
-        for requiredText in [
-            "无限创建成长记录",
-            "单次最多处理 40 张照片",
-            "支持家庭共享",
-            "兑换 MemoMark+ 代码",
-            "恢复购买",
-            "所有照片仍在设备本地处理",
-            "部分未来联名 Preset 可能单独提供",
-            "TestFlight / Sandbox 测试交易"
+        for key in [
+            "commerce.purchase.benefit.unlimited_records",
+            "commerce.purchase.benefit.batch_40",
+            "commerce.purchase.benefit.family_sharing",
+            "commerce.purchase.apple_code",
+            "commerce.purchase.restore",
+            "commerce.purchase.trust.local_processing",
+            "commerce.purchase.trust.future_presets",
+            "commerce.purchase.testflight.sandbox_notice",
+            "commerce.purchase.testflight.activate",
+            "commerce.purchase.testflight.deactivate"
         ] {
-            #expect(source.contains(requiredText))
+            #expect(source.contains(key))
+            #expect(simplifiedChinese.contains("\"\(key)\""))
+            #expect(english.contains("\"\(key)\""))
         }
 
         #expect(!source.contains("VIP"))
@@ -43,6 +53,9 @@ struct MemoMarkCommerceUIContractTests {
         #expect(source.contains("case .verified"))
         #expect(source.contains("AppTransaction.shared"))
         #expect(source.contains("presentOfferCodeRedeemSheet"))
+        #expect(source.contains("activateTestFlightExperience"))
+        #expect(source.contains("isTestFlightExperienceActive"))
+        #expect(source.contains("amount: 100"))
     }
 
     @Test("warm-gold badge remains app chrome")
@@ -65,11 +78,42 @@ struct MemoMarkCommerceUIContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
         )
 
-        #expect(source.contains("继续保存那些未来值得回看的瞬间"))
+        #expect(source.contains("commerce.settings.continuity"))
         #expect(source.contains("remaining <= 10"))
-        #expect(source.contains("还有 \\(remaining) 张免费成长记录"))
+        #expect(source.contains("commerce.settings.remaining"))
         #expect(!source.contains("已创建 \\(commerceSnapshot.successfulRecordCount) /"))
-        #expect(source.contains("愿今天留下的时光，在未来仍然清晰而温暖"))
+        #expect(source.contains("commerce.settings.first_recorder"))
+        #expect(source.contains("accessSource"))
+    }
+
+    @Test("interface language appears immediately before version information")
+    func interfaceLanguagePrecedesVersionInformation() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let languagePosition = try #require(
+            source.range(of: "interfaceLanguageSection")?.lowerBound
+        )
+        let releasePosition = try #require(
+            source.range(of: "releaseSection")?.lowerBound
+        )
+
+        #expect(languagePosition < releasePosition)
+    }
+
+    @Test("English and Simplified Chinese resources expose the same keys")
+    func localizedResourceKeysStaySymmetric() throws {
+        let simplifiedChinese = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings"
+        )
+        let english = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings"
+        )
+
+        #expect(
+            localizationKeys(in: simplifiedChinese)
+            == localizationKeys(in: english)
+        )
     }
 
     private func sourceText(
@@ -82,6 +126,29 @@ struct MemoMarkCommerceUIContractTests {
                     relativePath
                 ),
             encoding: .utf8
+        )
+    }
+
+    private func localizationKeys(
+        in source: String
+    ) -> Set<String> {
+        Set(
+            source.split(separator: "\n")
+                .compactMap { line in
+                    guard line.first == "\"",
+                          let closingQuote =
+                            line.dropFirst()
+                            .firstIndex(of: "\"") else {
+                        return nil
+                    }
+                    let keyStart =
+                        line.index(
+                            after: line.startIndex
+                        )
+                    return String(
+                        line[keyStart..<closingQuote]
+                    )
+                }
         )
     }
 

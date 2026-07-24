@@ -13,6 +13,94 @@ actor PhotoLibrarySaveGate {
     }
 }
 
+nonisolated final class PhotoLibrarySaveReceiptStore:
+    @unchecked Sendable {
+
+    private let defaults: UserDefaults
+    private let lock = NSLock()
+    private let keyPrefix =
+        "photomemo.photoLibrarySaveReceipt.v1"
+
+    init(
+        defaults: UserDefaults =
+            PhotoMemoSharedContainer
+            .sharedUserDefaults
+    ) {
+        self.defaults = defaults
+    }
+
+    func assetIdentifier(
+        for idempotencyKey: String
+    ) -> String? {
+        guard let key = storageKey(
+            for: idempotencyKey
+        ) else {
+            return nil
+        }
+
+        return lock.withLock {
+            defaults.string(forKey: key)
+        }
+    }
+
+    func record(
+        assetIdentifier: String,
+        for idempotencyKey: String
+    ) {
+        let normalizedIdentifier =
+            assetIdentifier
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        guard !normalizedIdentifier.isEmpty,
+              let key = storageKey(
+                for: idempotencyKey
+              ) else {
+            return
+        }
+
+        lock.withLock {
+            defaults.set(
+                normalizedIdentifier,
+                forKey: key
+            )
+        }
+    }
+
+    func removeReceipt(
+        for idempotencyKey: String
+    ) {
+        guard let key = storageKey(
+            for: idempotencyKey
+        ) else {
+            return
+        }
+
+        lock.withLock {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
+    private func storageKey(
+        for idempotencyKey: String
+    ) -> String? {
+        let normalizedKey =
+            idempotencyKey
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            .replacingOccurrences(
+                of: "/",
+                with: "-"
+            )
+        guard !normalizedKey.isEmpty else {
+            return nil
+        }
+
+        return "\(keyPrefix).\(normalizedKey)"
+    }
+}
+
 protocol PhotoLibraryExporting {
 
     func fetchAlbumOptions() async throws -> [PhotoAlbumOption]
@@ -117,6 +205,16 @@ final class PhotoLibraryExportService:
 
     private let metadataReader =
         PhotoMetadataReader()
+    private let receiptStore:
+        PhotoLibrarySaveReceiptStore
+
+    init(
+        receiptStore:
+            PhotoLibrarySaveReceiptStore =
+                PhotoLibrarySaveReceiptStore()
+    ) {
+        self.receiptStore = receiptStore
+    }
 
     func fetchAlbumOptions() async throws -> [PhotoAlbumOption] {
 
@@ -321,6 +419,15 @@ final class PhotoLibraryExportService:
                 throw PhotoLibraryExportError.assetSaveFailed
             }
 
+            if let idempotencyKey,
+               let placeholderIdentifier {
+                receiptStore.record(
+                    assetIdentifier:
+                        placeholderIdentifier,
+                    for: idempotencyKey
+                )
+            }
+
             return PhotoLibrarySaveResult(
                 albumTitle:
                     album?.localizedTitle
@@ -333,20 +440,8 @@ final class PhotoLibraryExportService:
 
     func assetOriginalFilename(
         for fileURL: URL,
-        idempotencyKey: String? = nil
+        idempotencyKey _: String? = nil
     ) -> String {
-
-        if let idempotencyKey =
-            normalizedIdempotencyKey(idempotencyKey) {
-            let pathExtension =
-                fileURL.pathExtension
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                )
-            return pathExtension.isEmpty
-                ? "MemoMarkTask-\(idempotencyKey)"
-                : "MemoMarkTask-\(idempotencyKey).\(pathExtension)"
-        }
 
         let fileName =
             fileURL.lastPathComponent
@@ -393,53 +488,32 @@ final class PhotoLibraryExportService:
 
 private extension PhotoLibraryExportService {
 
-    func normalizedIdempotencyKey(
-        _ key: String?
-    ) -> String? {
-
-        guard let key = key?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !key.isEmpty else {
-            return nil
-        }
-
-        return key.replacingOccurrences(
-            of: "/",
-            with: "-"
-        )
-    }
-
     func existingAsset(
         for idempotencyKey: String
     ) -> PHAsset? {
-
-        let token =
-            "MemoMarkTask-\(normalizedIdempotencyKey(idempotencyKey) ?? idempotencyKey)"
-        let options = PHFetchOptions()
-        options.sortDescriptors = [
-            NSSortDescriptor(
-                key: "creationDate",
-                ascending: false
-            )
-        ]
-        let assets = PHAsset.fetchAssets(
-            with: options
-        )
-        var matchedAsset: PHAsset?
-        assets.enumerateObjects { asset, _, stop in
-            let hasMatchingResource =
-                PHAssetResource
-                .assetResources(for: asset)
-                .contains {
-                    $0.originalFilename
-                        .contains(token)
-                }
-            guard hasMatchingResource else {
-                return
-            }
-            matchedAsset = asset
-            stop.pointee = true
+        guard let assetIdentifier =
+                receiptStore.assetIdentifier(
+                    for: idempotencyKey
+                ) else {
+            return nil
         }
-        return matchedAsset
+
+        let asset =
+            PHAsset.fetchAssets(
+                withLocalIdentifiers: [
+                    assetIdentifier
+                ],
+                options: nil
+            )
+            .firstObject
+
+        if asset == nil {
+            receiptStore.removeReceipt(
+                for: idempotencyKey
+            )
+        }
+
+        return asset
     }
 
     func isAuthorized(

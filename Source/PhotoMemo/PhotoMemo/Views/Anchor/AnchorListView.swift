@@ -170,7 +170,7 @@ struct AnchorListView: View {
                 .year(.defaultDigits)
                 .month(.defaultDigits)
                 .day(.defaultDigits)
-                .locale(Locale(identifier: "zh_CN"))
+                .locale(MemoMarkLanguage.interfaceStored.locale)
         )
     }
 

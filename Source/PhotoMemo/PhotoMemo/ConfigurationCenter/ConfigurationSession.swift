@@ -68,6 +68,33 @@ final class ConfigurationSession: ObservableObject {
         editingState.selectedMemoryConfiguration
     }
 
+    var language: MemoMarkLanguage {
+        get {
+            MemoMarkLanguage.stored
+        }
+        set {
+            MemoMarkLanguage.persist(newValue)
+            objectWillChange.send()
+        }
+    }
+
+    var languagePreference: MemoMarkLanguagePreference {
+        get {
+            MemoMarkLanguage.preference
+        }
+        set {
+            switch newValue {
+            case .system:
+                MemoMarkLanguage.persistSystemDefault()
+            case .simplifiedChinese:
+                MemoMarkLanguage.persist(.simplifiedChinese)
+            case .english:
+                MemoMarkLanguage.persist(.english)
+            }
+            objectWillChange.send()
+        }
+    }
+
     func selectSubject(_ subject: MemorySubject) {
         editingState.selectSubject(subject)
     }

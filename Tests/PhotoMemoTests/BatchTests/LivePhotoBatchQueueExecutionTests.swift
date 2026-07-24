@@ -568,6 +568,14 @@ struct LivePhotoBatchQueueExecutionTests {
             )
         let processor =
             RecordingLivePhotoBatchTaskProcessor()
+        let outputFilenameSequenceStore =
+            LivePhotoOutputFilenameSequenceStore(
+                storageURL:
+                    intakeDirectoryURL
+                    .appendingPathComponent(
+                        "OutputFilenameSequence.json"
+                    )
+            )
         let store =
             BatchQueueStore(
                 defaults: defaults,
@@ -581,8 +589,15 @@ struct LivePhotoBatchQueueExecutionTests {
                         intakeDirectoryURL:
                             intakeDirectoryURL
                     ),
+                exportCoordinator:
+                    makeExportCoordinator(
+                        outputFilenameSequenceStore:
+                            outputFilenameSequenceStore
+                    ),
                 livePhotoProcessor:
-                    processor
+                    processor,
+                outputFilenameSequenceStore:
+                    outputFilenameSequenceStore
             )
         let configuration =
             makeConfiguration(
@@ -675,6 +690,14 @@ struct LivePhotoBatchQueueExecutionTests {
             )
         let processor =
             RecordingLivePhotoBatchTaskProcessor()
+        let outputFilenameSequenceStore =
+            LivePhotoOutputFilenameSequenceStore(
+                storageURL:
+                    intakeDirectoryURL
+                    .appendingPathComponent(
+                        "OutputFilenameSequence.json"
+                    )
+            )
         let store =
             BatchQueueStore(
                 defaults: defaults,
@@ -688,8 +711,15 @@ struct LivePhotoBatchQueueExecutionTests {
                         intakeDirectoryURL:
                             intakeDirectoryURL
                     ),
+                exportCoordinator:
+                    makeExportCoordinator(
+                        outputFilenameSequenceStore:
+                            outputFilenameSequenceStore
+                    ),
                 livePhotoProcessor:
-                    processor
+                    processor,
+                outputFilenameSequenceStore:
+                    outputFilenameSequenceStore
             )
         let configuration =
             makeConfiguration(
@@ -787,6 +817,14 @@ struct LivePhotoBatchQueueExecutionTests {
 
         let processor =
             RecordingLivePhotoBatchTaskProcessor()
+        let outputFilenameSequenceStore =
+            LivePhotoOutputFilenameSequenceStore(
+                storageURL:
+                    intakeDirectoryURL
+                    .appendingPathComponent(
+                        "OutputFilenameSequence.json"
+                    )
+            )
         let store =
             BatchQueueStore(
                 defaults: defaults,
@@ -800,8 +838,15 @@ struct LivePhotoBatchQueueExecutionTests {
                         intakeDirectoryURL:
                             intakeDirectoryURL
                     ),
+                exportCoordinator:
+                    makeExportCoordinator(
+                        outputFilenameSequenceStore:
+                            outputFilenameSequenceStore
+                    ),
                 livePhotoProcessor:
-                    processor
+                    processor,
+                outputFilenameSequenceStore:
+                    outputFilenameSequenceStore
             )
         let configuration =
             makeConfiguration(
@@ -902,6 +947,14 @@ struct LivePhotoBatchQueueExecutionTests {
 
         let processor =
             RecordingLivePhotoBatchTaskProcessor()
+        let outputFilenameSequenceStore =
+            LivePhotoOutputFilenameSequenceStore(
+                storageURL:
+                    intakeDirectoryURL
+                    .appendingPathComponent(
+                        "OutputFilenameSequence.json"
+                    )
+            )
         let store =
             BatchQueueStore(
                 defaults: defaults,
@@ -915,8 +968,15 @@ struct LivePhotoBatchQueueExecutionTests {
                         intakeDirectoryURL:
                             intakeDirectoryURL
                     ),
+                exportCoordinator:
+                    makeExportCoordinator(
+                        outputFilenameSequenceStore:
+                            outputFilenameSequenceStore
+                    ),
                 livePhotoProcessor:
-                    processor
+                    processor,
+                outputFilenameSequenceStore:
+                    outputFilenameSequenceStore
             )
         let configuration =
             makeConfiguration(
@@ -1106,11 +1166,11 @@ struct LivePhotoBatchQueueExecutionTests {
             )
         #expect(
             saveRequest.stillPhotoOriginalFilename
-            == "IMG_6093(1).heic"
+            == "IMG_6093 (1).heic"
         )
         #expect(
             saveRequest.pairedVideoOriginalFilename
-            == "IMG_6093(1).mov"
+            == "IMG_6093 (1).mov"
         )
     }
 }
@@ -1181,6 +1241,57 @@ private extension LivePhotoBatchQueueExecutionTests {
             && tasks.allSatisfy {
                 $0.phase.isTerminal
             }
+    }
+
+    @MainActor
+    func makeExportCoordinator(
+        outputFilenameSequenceStore:
+            LivePhotoOutputFilenameSequenceStore
+    ) -> ExportCoordinator {
+        ExportCoordinator(
+            exportService:
+                RecordCardExportService(
+                    outputFilenameSequenceStore:
+                        outputFilenameSequenceStore
+                ),
+            photoLibraryRepository:
+                PhotoLibraryRepository(
+                    photoLibraryExportService:
+                        SuccessfulPhotoLibraryExportService()
+                )
+        )
+    }
+}
+
+@MainActor
+private final class SuccessfulPhotoLibraryExportService:
+    PhotoLibraryExporting {
+
+    func fetchAlbumOptions() async throws
+    -> [PhotoAlbumOption] {
+        [.automatic]
+    }
+
+    func ensureAlbum(
+        named title: String
+    ) async throws -> PhotoAlbumOption {
+        PhotoAlbumOption(
+            id: "test-album",
+            title: title,
+            localIdentifier: "test-album"
+        )
+    }
+
+    func saveImageResult(
+        at _: URL,
+        metadata _: PhotoMetadata,
+        preferredAlbumIdentifier _: String?
+    ) async throws -> PhotoLibrarySaveResult {
+        PhotoLibrarySaveResult(
+            albumTitle: "MemoMark",
+            assetLocalIdentifier:
+                "rendered-static-photo-asset"
+        )
     }
 }
 

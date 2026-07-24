@@ -19,10 +19,29 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshotTests {
         defaults.removePersistentDomain(
             forName: suiteName
         )
+        let intakeDirectoryURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let externalIntakeStore =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL:
+                    intakeDirectoryURL
+            )
+        defer {
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+        }
 
         let emptySnapshot =
             PhotoMemoiOSProcessingDiagnosticsSnapshot.load(
-                defaults: defaults
+                defaults: defaults,
+                externalIntakeStore:
+                    externalIntakeStore
             )
 
         #expect(
@@ -53,7 +72,9 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshotTests {
 
         let corruptedSnapshot =
             PhotoMemoiOSProcessingDiagnosticsSnapshot.load(
-                defaults: defaults
+                defaults: defaults,
+                externalIntakeStore:
+                    externalIntakeStore
             )
 
         #expect(
@@ -95,6 +116,23 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshotTests {
         defaults.removePersistentDomain(
             forName: suiteName
         )
+        let intakeDirectoryURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let externalIntakeStore =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL:
+                    intakeDirectoryURL
+            )
+        defer {
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+        }
 
         let events = [
             PhotoMemoShareDiagnosticEvent(
@@ -116,7 +154,9 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshotTests {
 
         let snapshot =
             PhotoMemoiOSProcessingDiagnosticsSnapshot.load(
-                defaults: defaults
+                defaults: defaults,
+                externalIntakeStore:
+                    externalIntakeStore
             )
 
         #expect(
@@ -153,6 +193,23 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshotTests {
         defaults.removePersistentDomain(
             forName: suiteName
         )
+        let intakeDirectoryURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let externalIntakeStore =
+            ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL:
+                    intakeDirectoryURL
+            )
+        defer {
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+        }
 
         defaults.set(
             Data("bad-intake".utf8),
@@ -162,7 +219,9 @@ struct PhotoMemoiOSProcessingDiagnosticsSnapshotTests {
 
         let snapshot =
             PhotoMemoiOSProcessingDiagnosticsSnapshot.load(
-                defaults: defaults
+                defaults: defaults,
+                externalIntakeStore:
+                    externalIntakeStore
             )
 
         #expect(

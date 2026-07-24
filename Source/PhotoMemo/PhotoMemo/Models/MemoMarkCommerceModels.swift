@@ -9,6 +9,39 @@ nonisolated enum MemoMarkCommerceEnvironment:
     case xcode
     case sandbox
     case production
+
+    static func resolved(
+        verified: MemoMarkCommerceEnvironment?
+    ) -> MemoMarkCommerceEnvironment {
+        verified ?? .production
+    }
+
+    static func runtime(
+        receiptURL: URL?,
+        isDebugBuild: Bool
+    ) -> MemoMarkCommerceEnvironment {
+        if receiptURL?.lastPathComponent
+            == "sandboxReceipt" {
+            return .sandbox
+        }
+
+        if isDebugBuild,
+           receiptURL == nil {
+            return .xcode
+        }
+
+        return .production
+    }
+
+    static var currentRuntime:
+        MemoMarkCommerceEnvironment {
+        runtime(
+            receiptURL:
+                Bundle.main.appStoreReceiptURL,
+            isDebugBuild:
+                _isDebugAssertConfiguration()
+        )
+    }
 }
 
 nonisolated enum MemoMarkCommerceMilestone:
@@ -18,6 +51,16 @@ nonisolated enum MemoMarkCommerceMilestone:
     case none
     case approaching(remaining: Int)
     case allowanceCompleted
+}
+
+nonisolated enum MemoMarkCommerceAccessSource:
+    String,
+    Codable,
+    Sendable {
+
+    case free
+    case testFlightTemporary
+    case verifiedPlus
 }
 
 nonisolated enum MemoMarkPurchaseState:
@@ -40,6 +83,7 @@ nonisolated struct MemoMarkCommercePolicy:
     static let baseFreeAllowance = 200
     static let freeBatchLimit = 20
     static let plusBatchLimit = 40
+    static let firstRecorderProgramActive = true
 
     let isPlus: Bool
     let totalAllowance: Int?
@@ -64,6 +108,13 @@ nonisolated struct MemoMarkCommercePolicy:
                 + max(bonusAllowance, 0),
             batchLimit: freeBatchLimit
         )
+    }
+
+    static func shouldGrantFirstRecorderIdentity(
+        isProgramActive: Bool,
+        isFamilyShared: Bool
+    ) -> Bool {
+        isProgramActive && !isFamilyShared
     }
 
     func remainingRecords(
@@ -132,12 +183,116 @@ nonisolated struct MemoMarkCommerceSnapshot:
 
     let environment:
         MemoMarkCommerceEnvironment
-    let isPlus: Bool
+    let accessSource:
+        MemoMarkCommerceAccessSource
     let successfulRecordCount: Int
     let totalAllowance: Int?
     let batchLimit: Int
     let firstRecorderDate: Date?
     let updatedAt: Date
+
+    init(
+        environment: MemoMarkCommerceEnvironment,
+        accessSource: MemoMarkCommerceAccessSource,
+        successfulRecordCount: Int,
+        totalAllowance: Int?,
+        batchLimit: Int,
+        firstRecorderDate: Date?,
+        updatedAt: Date
+    ) {
+        self.environment = environment
+        self.accessSource = accessSource
+        self.successfulRecordCount = successfulRecordCount
+        self.totalAllowance = totalAllowance
+        self.batchLimit = batchLimit
+        self.firstRecorderDate = firstRecorderDate
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case environment
+        case accessSource
+        case isPlus
+        case successfulRecordCount
+        case totalAllowance
+        case batchLimit
+        case firstRecorderDate
+        case updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(
+            keyedBy: CodingKeys.self
+        )
+        environment = try container.decode(
+            MemoMarkCommerceEnvironment.self,
+            forKey: .environment
+        )
+        successfulRecordCount = try container.decode(
+            Int.self,
+            forKey: .successfulRecordCount
+        )
+        totalAllowance = try container.decodeIfPresent(
+            Int.self,
+            forKey: .totalAllowance
+        )
+        batchLimit = try container.decode(
+            Int.self,
+            forKey: .batchLimit
+        )
+        firstRecorderDate = try container.decodeIfPresent(
+            Date.self,
+            forKey: .firstRecorderDate
+        )
+        updatedAt = try container.decode(
+            Date.self,
+            forKey: .updatedAt
+        )
+
+        if let source = try container.decodeIfPresent(
+            MemoMarkCommerceAccessSource.self,
+            forKey: .accessSource
+        ) {
+            accessSource = source
+        } else if try container.decodeIfPresent(
+            Bool.self,
+            forKey: .isPlus
+        ) == true {
+            accessSource = firstRecorderDate == nil
+                && environment == .sandbox
+                ? .testFlightTemporary
+                : .verifiedPlus
+        } else {
+            accessSource = .free
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(
+            keyedBy: CodingKeys.self
+        )
+        try container.encode(environment, forKey: .environment)
+        try container.encode(accessSource, forKey: .accessSource)
+        try container.encode(isPlus, forKey: .isPlus)
+        try container.encode(
+            successfulRecordCount,
+            forKey: .successfulRecordCount
+        )
+        try container.encodeIfPresent(
+            totalAllowance,
+            forKey: .totalAllowance
+        )
+        try container.encode(batchLimit, forKey: .batchLimit)
+        try container.encodeIfPresent(
+            firstRecorderDate,
+            forKey: .firstRecorderDate
+        )
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
+
+    var isPlus: Bool {
+        accessSource != .free
+    }
 
     var remainingRecords: Int? {
         guard let totalAllowance else {
@@ -154,7 +309,7 @@ nonisolated struct MemoMarkCommerceSnapshot:
     static let initial =
         MemoMarkCommerceSnapshot(
             environment: .production,
-            isPlus: false,
+            accessSource: .free,
             successfulRecordCount: 0,
             totalAllowance:
                 MemoMarkCommercePolicy

@@ -31,7 +31,10 @@ final class MemoMarkCommerceStore:
     ) {
         self.persistence = persistence
         self.snapshot =
-            persistence.loadSharedSnapshot()
+            persistence.loadSharedSnapshot(
+                compatibleWith:
+                    .currentRuntime
+            )
     }
 
     deinit {
@@ -40,6 +43,28 @@ final class MemoMarkCommerceStore:
 
     var isPlus: Bool {
         snapshot.isPlus
+    }
+
+    var hasVerifiedPlusEntitlement: Bool {
+        snapshot.accessSource == .verifiedPlus
+    }
+
+    var hasFirstRecorderIdentity: Bool {
+        snapshot.firstRecorderDate != nil
+    }
+
+    var isTestFlightExperienceActive: Bool {
+        snapshot.accessSource
+            == .testFlightTemporary
+        && persistence
+            .isTestFlightExperienceActive(
+                environment: .sandbox
+            )
+    }
+
+    var canActivateTestFlightExperience: Bool {
+        snapshot.environment == .sandbox
+        && !snapshot.isPlus
     }
 
     var displayPrice: String {
@@ -120,7 +145,10 @@ final class MemoMarkCommerceStore:
         guard let product else {
             purchaseState =
                 .failed(
-                    "暂时无法连接 App Store，请稍后重试。"
+                    localized(
+                        "commerce.error.store_unavailable",
+                        fallback: "暂时无法连接 App Store，请稍后重试。"
+                    )
                 )
             return
         }
@@ -142,7 +170,10 @@ final class MemoMarkCommerceStore:
             @unknown default:
                 purchaseState =
                     .failed(
-                        "购买状态暂时无法确认，请稍后恢复购买。"
+                        localized(
+                            "commerce.error.unknown_purchase_state",
+                            fallback: "购买状态暂时无法确认，请稍后恢复购买。"
+                        )
                     )
             }
         } catch {
@@ -163,6 +194,40 @@ final class MemoMarkCommerceStore:
         }
     }
 
+    @discardableResult
+    func activateTestFlightExperience() -> Bool {
+        guard canActivateTestFlightExperience,
+              persistence
+                .activateTestFlightExperience(
+                    environment: .sandbox
+                ) else {
+            return false
+        }
+
+        publishSnapshot(
+            environment: .sandbox,
+            plusTransaction: nil
+        )
+        return true
+    }
+
+    @discardableResult
+    func deactivateTestFlightExperience() -> Bool {
+        guard isTestFlightExperienceActive,
+              persistence
+                .deactivateTestFlightExperience(
+                    environment: .sandbox
+                ) else {
+            return false
+        }
+
+        publishSnapshot(
+            environment: .sandbox,
+            plusTransaction: nil
+        )
+        return true
+    }
+
 #if os(iOS)
     func redeemOfferCode() async {
         guard let scene =
@@ -175,7 +240,10 @@ final class MemoMarkCommerceStore:
                 }) else {
             purchaseState =
                 .failed(
-                    "暂时无法打开兑换页面，请稍后重试。"
+                    localized(
+                        "commerce.error.redemption_unavailable",
+                        fallback: "暂时无法打开兑换页面，请稍后重试。"
+                    )
                 )
             return
         }
@@ -228,7 +296,7 @@ final class MemoMarkCommerceStore:
 
         guard persistence.applyAllowanceGift(
             id: "major-\(major)",
-            amount: 50,
+            amount: 100,
             environment: snapshot.environment
         ) else {
             return
@@ -262,7 +330,10 @@ final class MemoMarkCommerceStore:
                 result else {
             purchaseState =
                 .failed(
-                    "App Store 无法验证这笔交易。"
+                    localized(
+                        "commerce.error.unverified_transaction",
+                        fallback: "App Store 无法验证这笔交易。"
+                    )
                 )
             return
         }
@@ -293,18 +364,24 @@ final class MemoMarkCommerceStore:
 
     private func resolvedEnvironment() async
     -> MemoMarkCommerceEnvironment {
+        let verifiedEnvironment:
+            MemoMarkCommerceEnvironment?
+
         do {
             switch try await AppTransaction.shared {
             case .verified(let transaction):
-                return commerceEnvironment(
+                verifiedEnvironment = commerceEnvironment(
                     transaction.environment
                 )
             case .unverified:
-                return snapshot.environment
+                verifiedEnvironment = nil
             }
         } catch {
-            return snapshot.environment
+            verifiedEnvironment = nil
         }
+
+        return MemoMarkCommerceEnvironment
+            .resolved(verified: verifiedEnvironment)
     }
 
     private func commerceEnvironment(
@@ -319,7 +396,7 @@ final class MemoMarkCommerceStore:
         case .xcode:
             return .xcode
         default:
-            return .sandbox
+            return .production
         }
     }
 
@@ -328,7 +405,51 @@ final class MemoMarkCommerceStore:
             MemoMarkCommerceEnvironment,
         plusTransaction: Transaction?
     ) {
-        let isPlus = plusTransaction != nil
+        if snapshot.environment == environment,
+           let existingDate =
+                snapshot.firstRecorderDate {
+            persistence
+                .grantFirstRecorderIdentityIfNeeded(
+                    date: existingDate,
+                    environment: environment
+                )
+        }
+
+        if let plusTransaction,
+           MemoMarkCommercePolicy
+            .shouldGrantFirstRecorderIdentity(
+                isProgramActive:
+                    MemoMarkCommercePolicy
+                    .firstRecorderProgramActive,
+                isFamilyShared:
+                    plusTransaction.ownershipType
+                    == .familyShared
+            ) {
+            persistence
+                .grantFirstRecorderIdentityIfNeeded(
+                    date:
+                        plusTransaction
+                        .originalPurchaseDate,
+                    environment: environment
+                )
+        }
+
+        let isTestFlightExperienceActive =
+            plusTransaction == nil
+            && persistence
+                .isTestFlightExperienceActive(
+                    environment: environment
+                )
+        let isPlus =
+            plusTransaction != nil
+            || isTestFlightExperienceActive
+        let accessSource:
+            MemoMarkCommerceAccessSource =
+            plusTransaction != nil
+            ? .verifiedPlus
+            : isTestFlightExperienceActive
+                ? .testFlightTemporary
+                : .free
         let bonus =
             persistence.bonusAllowance(
                 environment: environment
@@ -342,7 +463,7 @@ final class MemoMarkCommerceStore:
         let nextSnapshot =
             MemoMarkCommerceSnapshot(
                 environment: environment,
-                isPlus: isPlus,
+                accessSource: accessSource,
                 successfulRecordCount:
                     persistence
                     .successfulRecordCount(
@@ -353,8 +474,10 @@ final class MemoMarkCommerceStore:
                 batchLimit:
                     policy.batchLimit,
                 firstRecorderDate:
-                    plusTransaction?
-                    .originalPurchaseDate,
+                    persistence
+                    .firstRecorderDate(
+                        environment: environment
+                    ),
                 updatedAt: Date()
             )
 
@@ -362,6 +485,17 @@ final class MemoMarkCommerceStore:
         persistence.saveSharedSnapshot(
             nextSnapshot
         )
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored
+            .localized(
+                key: key,
+                fallback: fallback
+            )
     }
 }
 #endif

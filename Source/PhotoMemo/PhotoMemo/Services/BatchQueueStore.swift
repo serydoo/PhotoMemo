@@ -64,6 +64,8 @@ final class BatchQueueStore: ObservableObject {
             ExportCoordinator? = nil,
         livePhotoProcessor:
             (any LivePhotoBatchTaskProcessing)? = nil,
+        outputFilenameSequenceStore:
+            LivePhotoOutputFilenameSequenceStore? = nil,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
                 ProductionRenderHealthCheck.validate
@@ -96,6 +98,8 @@ final class BatchQueueStore: ObservableObject {
                     exportCoordinator,
                 livePhotoProcessor:
                     livePhotoProcessor,
+                outputFilenameSequenceStore:
+                    outputFilenameSequenceStore,
                 diagnosticsDefaults:
                     resolvedDefaults,
                 renderHealthValidator:
@@ -121,7 +125,10 @@ final class BatchQueueStore: ObservableObject {
             )
         self.commerceSnapshot =
             self.commercePersistence
-            .loadSharedSnapshot()
+            .loadSharedSnapshot(
+                compatibleWith:
+                    .currentRuntime
+            )
         self.defaultConfigurationSnapshot =
             resolvedSettingsService
             .buildBatchConfigurationSnapshot()
@@ -212,8 +219,15 @@ final class BatchQueueStore: ObservableObject {
                 <= maximumAdmissionCount else {
             lastErrorMessage =
                 maximumAdmissionCount == 0
-                ? "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
-                : "当前一次最多可以加入 \(maximumAdmissionCount) 张照片。"
+                ? commerceLocalized(
+                    "commerce.queue.allowance_completed",
+                    fallback: "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
+                )
+                : commerceFormatted(
+                    "commerce.queue.maximum_admission_format",
+                    fallback: "当前一次最多可以加入 %lld 张照片。",
+                    Int64(maximumAdmissionCount)
+                )
             return nil
         }
 
@@ -291,8 +305,15 @@ final class BatchQueueStore: ObservableObject {
             if retryableTaskCount > 0 {
                 lastErrorMessage =
                     maximumAdmissionCount == 0
-                    ? "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
-                    : "当前剩余额度可重试 \(maximumAdmissionCount) 张照片。"
+                    ? commerceLocalized(
+                        "commerce.queue.allowance_completed",
+                        fallback: "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
+                    )
+                    : commerceFormatted(
+                        "commerce.queue.retry_available_format",
+                        fallback: "当前剩余额度可重试 %lld 张照片。",
+                        Int64(maximumAdmissionCount)
+                    )
             }
             return
         }
@@ -659,7 +680,7 @@ extension BatchQueueStore {
                 MemoMarkCommerceSnapshot(
                     environment:
                         commerceSnapshot.environment,
-                    isPlus: false,
+                    accessSource: .free,
                     successfulRecordCount:
                         commercePersistence
                         .successfulRecordCount(
@@ -753,6 +774,32 @@ extension BatchQueueStore {
             .lastProgressNotificationStage =
             stage
         persistJobs()
+    }
+
+    private func commerceLocalized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
+    private func commerceFormatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        let language = MemoMarkLanguage.interfaceStored
+        return String(
+            format: language.localized(
+                key: key,
+                fallback: fallback
+            ),
+            locale: language.locale,
+            arguments: arguments
+        )
     }
 }
 #endif

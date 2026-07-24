@@ -71,6 +71,7 @@ struct BatchConfigurationSnapshotProvider {
 
         static let productionConfigurationReference =
             "photomemo.productionConfigurationReference"
+
     }
 
     init(
@@ -121,7 +122,8 @@ struct BatchConfigurationSnapshotProvider {
                 defaults.string(
                     forKey:
                         Keys.mediaOutputMode
-                )
+                ),
+            language: loadLanguage()
         )
 
         guard let reference =
@@ -243,7 +245,8 @@ struct BatchConfigurationSnapshotProvider {
         selectedAlbumIdentifier: String,
         locationDisplayConfiguration:
             ExpressionModuleConfiguration? = nil,
-        mediaOutputModeRawValue: String? = nil
+        mediaOutputModeRawValue: String? = nil,
+        language: MemoMarkLanguage = .stored
     ) -> BatchConfigurationSnapshot {
         let resolvedAnchor =
             resolvedAnchor(
@@ -260,7 +263,10 @@ struct BatchConfigurationSnapshotProvider {
             )
         let frozenConfigurationSnapshot =
             ConfigurationSnapshotBuilder
-            .build(from: frozenMemorySubject)
+            .build(
+                from: frozenMemorySubject,
+                language: language
+            )
         let resolvedMemorySubjectText =
             frozenMemorySubject
             .resolvedExpressionSubjectText
@@ -294,7 +300,8 @@ struct BatchConfigurationSnapshotProvider {
                     selectedAlbumIdentifier
                 ),
             mediaOutputModeRawValue:
-                mediaOutputModeRawValue
+                mediaOutputModeRawValue,
+            language: language
         )
 
 #if !PHOTOMEMO_SHARE_EXTENSION
@@ -305,6 +312,38 @@ struct BatchConfigurationSnapshotProvider {
 #else
         return snapshot
 #endif
+    }
+
+    func loadLanguage() -> MemoMarkLanguage {
+        if let rawPreference = defaults.string(
+            forKey: MemoMarkLanguage.preferenceStorageKey
+        ),
+        let preference = MemoMarkLanguagePreference(
+            rawValue: rawPreference
+        ) {
+            return preference.resolvedLanguage
+        }
+
+        guard
+            let rawValue = defaults.string(
+                forKey: MemoMarkLanguage.storageKey
+            ),
+            let language = MemoMarkLanguage(rawValue: rawValue)
+        else {
+            let identifier = Locale.preferredLanguages.first
+                ?? Locale.current.identifier
+            return MemoMarkLanguage.resolved(
+                from: Locale(identifier: identifier)
+            )
+        }
+        return language
+    }
+
+    func saveLanguage(_ language: MemoMarkLanguage) {
+        defaults.set(
+            language.rawValue,
+            forKey: MemoMarkLanguage.storageKey
+        )
     }
 
     func normalizedAlbumIdentifier(

@@ -5,6 +5,49 @@ import Testing
 @Suite("MemoMark commerce policy")
 struct MemoMarkCommercePolicyTests {
 
+    @Test("unverified App transaction falls back to Production")
+    func unverifiedEnvironmentUsesProductionSafeDefault() {
+        #expect(
+            MemoMarkCommerceEnvironment.resolved(
+                verified: nil
+            ) == .production
+        )
+    }
+
+    @Test("verified App transaction selects its environment")
+    func verifiedEnvironmentWins() {
+        #expect(
+            MemoMarkCommerceEnvironment.resolved(
+                verified: .sandbox
+            ) == .sandbox
+        )
+    }
+
+    @Test("First Recorder identity excludes Family Sharing recipients")
+    func firstRecorderIdentityRequiresDirectOwnership() {
+        #expect(
+            MemoMarkCommercePolicy
+                .shouldGrantFirstRecorderIdentity(
+                    isProgramActive: true,
+                    isFamilyShared: false
+                )
+        )
+        #expect(
+            !MemoMarkCommercePolicy
+                .shouldGrantFirstRecorderIdentity(
+                    isProgramActive: true,
+                    isFamilyShared: true
+                )
+        )
+        #expect(
+            !MemoMarkCommercePolicy
+                .shouldGrantFirstRecorderIdentity(
+                    isProgramActive: false,
+                    isFamilyShared: false
+                )
+        )
+    }
+
     @Test("free and Plus policies keep distinct allowance and batch limits")
     func freeAndPlusPoliciesStayDistinct() {
         #expect(MemoMarkCommercePolicy.free.batchLimit == 20)

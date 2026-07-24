@@ -17,6 +17,17 @@ struct UserDefaultsBatchQueuePersistenceBackend:
     BatchQueuePersistenceBackend {
 
     let defaults: UserDefaults
+    let synchronize: () -> Bool
+
+    init(
+        defaults: UserDefaults,
+        synchronize: (() -> Bool)? = nil
+    ) {
+        self.defaults = defaults
+        self.synchronize =
+            synchronize
+            ?? { defaults.synchronize() }
+    }
 
     func loadData(
         forKey key: String
@@ -37,12 +48,7 @@ struct UserDefaultsBatchQueuePersistenceBackend:
             forKey: key
         )
 
-        guard defaults.synchronize() else {
-            throw UserDefaultsBatchQueuePersistenceError
-                .synchronizeFailed(
-                    key: key
-                )
-        }
+        _ = synchronize()
 
         guard defaults.data(forKey: key) == data else {
             throw UserDefaultsBatchQueuePersistenceError
@@ -56,14 +62,10 @@ struct UserDefaultsBatchQueuePersistenceBackend:
 private enum UserDefaultsBatchQueuePersistenceError:
     LocalizedError {
 
-    case synchronizeFailed(key: String)
-
     case readBackMismatch(key: String)
 
     var errorDescription: String? {
         switch self {
-        case .synchronizeFailed(let key):
-            return "UserDefaults synchronize failed for key \(key)."
         case .readBackMismatch(let key):
             return "UserDefaults read-back verification failed for key \(key)."
         }

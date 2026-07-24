@@ -31,7 +31,7 @@ final class PhotoRepository {
         do {
             return .success(
                 try await importService
-                .importPhoto(
+                .importPhotoOffMainThread(
                     from: url,
                     sourceInfo: sourceInfo
                 )

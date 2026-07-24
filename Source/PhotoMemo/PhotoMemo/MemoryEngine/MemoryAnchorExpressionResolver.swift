@@ -249,22 +249,23 @@ enum MemoryAnchorExpressionResolver {
     static func semanticDisplayText(
         anchorType: AnchorType,
         relativeSnapshot:
-            MemoryAnchorRelativeSnapshot
+            MemoryAnchorRelativeSnapshot,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
         if relativeSnapshot.isFutureRelative {
             return relativeSnapshot
-                .countdownText
+                .countdownText(language: language)
         }
 
         switch anchorType {
         case .birthday:
-            return relativeSnapshot.ageText
+            return relativeSnapshot.ageText(language: language)
         case .relationship,
              .marriage,
              .exam,
              .custom:
             return relativeSnapshot
-                .durationText
+                .durationText(language: language)
         }
     }
 
@@ -279,8 +280,21 @@ enum MemoryAnchorExpressionResolver {
         annualOccurrence:
             MemoryAnchorAnnualOccurrence? = nil,
         prefersAnnualOccurrence:
-            Bool = false
+            Bool = false,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
+        if language == .english {
+            return englishRenderedText(
+                subjectText: subjectText,
+                anchorTitle: anchorTitle,
+                anchorType: anchorType,
+                expressionStyle: expressionStyle,
+                relativeSnapshot: relativeSnapshot,
+                annualOccurrence: annualOccurrence,
+                prefersAnnualOccurrence: prefersAnnualOccurrence
+            )
+        }
+
         let resolvedStyle =
             MemoryAnchorExpressionStyle
             .resolvedStyle(
@@ -507,6 +521,224 @@ enum MemoryAnchorExpressionResolver {
 }
 
 private extension MemoryAnchorExpressionResolver {
+
+    static func englishRenderedText(
+        subjectText: String,
+        anchorTitle: String,
+        anchorType: AnchorType,
+        expressionStyle: MemoryAnchorExpressionStyle?,
+        relativeSnapshot: MemoryAnchorRelativeSnapshot,
+        annualOccurrence: MemoryAnchorAnnualOccurrence?,
+        prefersAnnualOccurrence: Bool
+    ) -> String {
+        let resolvedStyle = MemoryAnchorExpressionStyle.resolvedStyle(
+            for: anchorType,
+            candidate: expressionStyle
+        )
+        let subject = normalizedText(subjectText) ?? normalizedText(anchorTitle) ?? "this memory"
+        let title = normalizedText(anchorTitle) ?? anchorType.suggestedTitle
+
+        if prefersAnnualOccurrence,
+           !relativeSnapshot.isFutureRelative,
+           let annualOccurrence {
+            switch anchorType {
+            case .birthday:
+                return englishBirthdayAnnualText(
+                    subjectText: subject,
+                    style: resolvedStyle,
+                    occurrence: annualOccurrence
+                )
+            case .marriage:
+                return englishMarriageAnnualText(
+                    style: resolvedStyle,
+                    occurrence: annualOccurrence
+                )
+            case .relationship:
+                return englishRelationshipAnnualText(
+                    anchorTitle: title,
+                    style: resolvedStyle,
+                    occurrence: annualOccurrence
+                )
+            case .exam, .custom:
+                break
+            }
+        }
+
+        let duration = relativeSnapshot.durationText(language: .english)
+        let age = relativeSnapshot.ageText(language: .english)
+        let countdown = relativeSnapshot.countdownValueText(language: .english)
+
+        switch resolvedStyle {
+        case .birthdayNatural:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(subject) arrives"
+                : "\(subject) is \(age) old today"
+        case .birthdayCeremonial:
+            return relativeSnapshot.isFutureRelative
+                ? "In \(countdown), \(subject) will arrive"
+                : "Today, \(subject) is \(age) old"
+        case .birthdayGrowth:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until we first meet"
+                : "\(subject) has grown to \(age)"
+        case .birthdayWarm:
+            return relativeSnapshot.isFutureRelative
+                ? "Waiting for \(subject), \(countdown) to go"
+                : "With \(subject) for \(age)"
+        case .birthdayMinimal:
+            return relativeSnapshot.isFutureRelative
+                ? "\(subject) arrives in \(countdown)"
+                : "\(subject) | \(age)"
+        case .marriageNatural:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until we get married"
+                : "Married for \(duration)"
+        case .marriageCeremonial:
+            return relativeSnapshot.isFutureRelative
+                ? "In \(countdown), we get married"
+                : "Today marks \(duration) of marriage"
+        case .marriageWarm:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until we say I do"
+                : "Together for \(duration)"
+        case .marriageMinimal:
+            return relativeSnapshot.isFutureRelative
+                ? "Wedding in \(countdown)"
+                : "Married \(duration)"
+        case .marriageMemory:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until that day"
+                : "\(duration) since that day"
+        case .relationshipNatural:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(title)"
+                : "\(title) has been \(duration)"
+        case .relationshipCeremonial:
+            return relativeSnapshot.isFutureRelative
+                ? "In \(countdown), it will be \(title)"
+                : "Today marks \(duration) with \(title)"
+        case .relationshipMemory:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(title)"
+                : "\(duration) since \(title)"
+        case .relationshipWarm:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(title)"
+                : "The story of \(title), \(duration)"
+        case .relationshipMinimal:
+            return relativeSnapshot.isFutureRelative
+                ? "\(title) in \(countdown)"
+                : "\(title) | \(duration)"
+        case .examNatural:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(title)"
+                : "\(title) was \(duration) ago"
+        case .examCeremonial:
+            return relativeSnapshot.isFutureRelative
+                ? "In \(countdown), it will be \(title)"
+                : "\(duration) since \(title)"
+        case .examMotivational:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) to \(title)"
+                : "\(duration) since \(title)"
+        case .examMinimal:
+            return relativeSnapshot.isFutureRelative
+                ? "Countdown: \(countdown)"
+                : "\(duration) passed"
+        case .examRecord:
+            return relativeSnapshot.isFutureRelative
+                ? "\(title) in \(countdown)"
+                : "\(duration) since \(title)"
+        case .customNatural:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(title)"
+                : "\(duration) since \(title)"
+        case .customCeremonial:
+            return relativeSnapshot.isFutureRelative
+                ? "In \(countdown), it will be \(title)"
+                : "Today marks \(duration) with \(title)"
+        case .customMemory:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(title)"
+                : "\(duration) since \(title)"
+        case .customWarm:
+            return relativeSnapshot.isFutureRelative
+                ? "\(countdown) until \(title)"
+                : "The story of \(title), \(duration)"
+        case .customMinimal:
+            return relativeSnapshot.isFutureRelative
+                ? "\(title) in \(countdown)"
+                : "\(title) | \(duration)"
+        }
+    }
+
+    static func englishBirthdayAnnualText(
+        subjectText: String,
+        style: MemoryAnchorExpressionStyle,
+        occurrence: MemoryAnchorAnnualOccurrence
+    ) -> String {
+        let countdown = occurrence.englishCountdownValueText
+        let birthday = occurrence.englishBirthdayText
+        switch style {
+        case .birthdayNatural:
+            return "\(countdown) until \(subjectText)'s \(birthday)"
+        case .birthdayCeremonial:
+            return "In \(countdown), \(subjectText) turns \(occurrence.yearsAtOccurrence)"
+        case .birthdayGrowth:
+            return "\(subjectText) turns \(occurrence.yearsAtOccurrence) in \(countdown)"
+        case .birthdayWarm:
+            return "\(countdown) until \(subjectText) turns \(occurrence.yearsAtOccurrence)"
+        case .birthdayMinimal:
+            return "\(subjectText)'s \(birthday) in \(countdown)"
+        default:
+            return "\(countdown) until \(subjectText)'s \(birthday)"
+        }
+    }
+
+    static func englishMarriageAnnualText(
+        style: MemoryAnchorExpressionStyle,
+        occurrence: MemoryAnchorAnnualOccurrence
+    ) -> String {
+        let countdown = occurrence.englishCountdownValueText
+        let anniversary = occurrence.englishAnniversaryText
+        switch style {
+        case .marriageNatural:
+            return "\(countdown) until our \(anniversary)"
+        case .marriageCeremonial:
+            return "In \(countdown), we celebrate our \(anniversary)"
+        case .marriageWarm:
+            return "\(countdown) until we reach our \(anniversary)"
+        case .marriageMinimal:
+            return "Our \(anniversary) in \(countdown)"
+        case .marriageMemory:
+            return "\(countdown) until our anniversary"
+        default:
+            return "\(countdown) until our \(anniversary)"
+        }
+    }
+
+    static func englishRelationshipAnnualText(
+        anchorTitle: String,
+        style: MemoryAnchorExpressionStyle,
+        occurrence: MemoryAnchorAnnualOccurrence
+    ) -> String {
+        let countdown = occurrence.englishCountdownValueText
+        let anniversary = occurrence.englishAnniversaryText
+        switch style {
+        case .relationshipNatural:
+            return "\(countdown) until \(anchorTitle)'s \(anniversary)"
+        case .relationshipCeremonial:
+            return "In \(countdown), we celebrate \(anchorTitle)'s \(anniversary)"
+        case .relationshipMemory:
+            return "\(countdown) until \(anchorTitle)'s day"
+        case .relationshipWarm:
+            return "\(countdown) until \(anchorTitle)'s \(anniversary)"
+        case .relationshipMinimal:
+            return "\(anchorTitle)'s \(anniversary) in \(countdown)"
+        default:
+            return "\(countdown) until \(anchorTitle)'s \(anniversary)"
+        }
+    }
 
     static func normalizedText(
         _ text: String

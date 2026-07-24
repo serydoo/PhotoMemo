@@ -68,7 +68,9 @@ struct WorkspaceConfigurationSlot:
     var isCustomized: Bool { snapshot != nil }
 
     var resolvedDisplayName: String {
-        guard let trimmedName = snapshot?.template.name
+        guard let trimmedName = snapshot?.template.displayName(
+            for: snapshot?.language ?? .stored
+        )
             .trimmingCharacters(in: .whitespacesAndNewlines),
               !trimmedName.isEmpty
         else {

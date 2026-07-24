@@ -33,8 +33,7 @@ struct FixtureExportReadbackTests {
             )
 
         let exportURL =
-            try RecordCardExportService()
-            .exportToTemporaryFile(
+            try exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -256,8 +255,7 @@ struct FixtureExportReadbackTests {
                     )
             )
         let exportURL =
-            try RecordCardExportService()
-            .exportToTemporaryFile(
+            try exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -326,8 +324,7 @@ struct FixtureExportReadbackTests {
             )
 
         let exportURL =
-            try RecordCardExportService()
-            .exportToTemporaryFile(
+            try exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -444,8 +441,7 @@ struct FixtureExportReadbackTests {
             )
 
         let exportURL =
-            try RecordCardExportService()
-            .exportToTemporaryFile(
+            try exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -596,8 +592,7 @@ struct FixtureExportReadbackTests {
                     )
             )
         let exportURL =
-            try RecordCardExportService()
-            .exportToTemporaryFile(
+            try exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -631,6 +626,39 @@ struct FixtureExportReadbackTests {
 }
 
 private extension FixtureExportReadbackTests {
+
+    @MainActor
+    func exportFixture(
+        photo: SelectedPhoto,
+        card: RecordCard
+    ) throws -> URL {
+        let sequenceRootURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemoFixtureExportSequence-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        defer {
+            try? FileManager.default.removeItem(
+                at: sequenceRootURL
+            )
+        }
+
+        return try RecordCardExportService(
+            outputFilenameSequenceStore:
+                LivePhotoOutputFilenameSequenceStore(
+                    storageURL:
+                        sequenceRootURL
+                        .appendingPathComponent(
+                            "OutputFilenameSequence.json"
+                        )
+                )
+        )
+        .exportToTemporaryFile(
+            photo: photo,
+            card: card
+        )
+    }
 
     func makeConfiguration(
         shouldWriteDescription: Bool,

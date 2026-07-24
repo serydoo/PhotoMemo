@@ -138,7 +138,7 @@ enum ClassicWhiteRenderer {
                     || !slot3.isEmpty,
                 styleID: card.template.preset.rawValue,
                 styleName:
-                    card.template.preset.displayName,
+                    card.template.displayName,
                 logoName: visibleBadgeName(
                     from: card.badge
                 )

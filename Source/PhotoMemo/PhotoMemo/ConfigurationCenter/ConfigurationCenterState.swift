@@ -73,6 +73,7 @@ struct MemoryPreset:
     var customMemoryWriteText: String
     var savedOutputConfiguration:
         V1SavedOutputConfiguration?
+    var language: MemoMarkLanguage
 
     init(
         id: UUID = UUID(),
@@ -88,7 +89,8 @@ struct MemoryPreset:
         usesCustomMemoryWriteText: Bool = false,
         customMemoryWriteText: String = "",
         savedOutputConfiguration:
-            V1SavedOutputConfiguration? = nil
+            V1SavedOutputConfiguration? = nil,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) {
         self.id = id
         self.title = title
@@ -104,6 +106,7 @@ struct MemoryPreset:
         self.customMemoryWriteText = customMemoryWriteText
         self.savedOutputConfiguration =
             savedOutputConfiguration
+        self.language = language
     }
 
     func templateID(
@@ -131,8 +134,62 @@ struct MemoryPreset:
             customMemoryWriteText:
                 customMemoryWriteText,
             savedOutputConfiguration:
-                savedOutputConfiguration
+                savedOutputConfiguration,
+            language: language
         )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case summary
+        case regionTemplateIDs
+        case savedAt
+        case selectedSubjectID
+        case selectedTimeAnchorID
+        case outputOption
+        case storageOption
+        case logoMode
+        case usesCustomMemoryWriteText
+        case customMemoryWriteText
+        case savedOutputConfiguration
+        case language
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        summary = try container.decode(String.self, forKey: .summary)
+        regionTemplateIDs = try container.decode([CardRegion: String].self, forKey: .regionTemplateIDs)
+        savedAt = try container.decodeIfPresent(Date.self, forKey: .savedAt)
+        selectedSubjectID = try container.decodeIfPresent(MemorySubject.ID.self, forKey: .selectedSubjectID)
+        selectedTimeAnchorID = try container.decodeIfPresent(UUID.self, forKey: .selectedTimeAnchorID)
+        outputOption = try container.decode(ConfigurationOutputOption.self, forKey: .outputOption)
+        storageOption = try container.decode(ConfigurationStorageOption.self, forKey: .storageOption)
+        logoMode = try container.decode(V1LogoMode.self, forKey: .logoMode)
+        usesCustomMemoryWriteText = try container.decode(Bool.self, forKey: .usesCustomMemoryWriteText)
+        customMemoryWriteText = try container.decode(String.self, forKey: .customMemoryWriteText)
+        savedOutputConfiguration = try container.decodeIfPresent(V1SavedOutputConfiguration.self, forKey: .savedOutputConfiguration)
+        language = try container.decodeIfPresent(MemoMarkLanguage.self, forKey: .language) ?? .simplifiedChinese
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(summary, forKey: .summary)
+        try container.encode(regionTemplateIDs, forKey: .regionTemplateIDs)
+        try container.encodeIfPresent(savedAt, forKey: .savedAt)
+        try container.encodeIfPresent(selectedSubjectID, forKey: .selectedSubjectID)
+        try container.encodeIfPresent(selectedTimeAnchorID, forKey: .selectedTimeAnchorID)
+        try container.encode(outputOption, forKey: .outputOption)
+        try container.encode(storageOption, forKey: .storageOption)
+        try container.encode(logoMode, forKey: .logoMode)
+        try container.encode(usesCustomMemoryWriteText, forKey: .usesCustomMemoryWriteText)
+        try container.encode(customMemoryWriteText, forKey: .customMemoryWriteText)
+        try container.encodeIfPresent(savedOutputConfiguration, forKey: .savedOutputConfiguration)
+        try container.encode(language, forKey: .language)
     }
 }
 

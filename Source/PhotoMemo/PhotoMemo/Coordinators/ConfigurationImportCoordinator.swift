@@ -524,6 +524,7 @@ private extension ConfigurationImportCoordinator {
             savedAt: configuration.savedAt,
             selectedTimeAnchorID:
                 configuration.selectedTimeAnchorID,
+            language: configuration.language,
             editor: configuration.editor,
             presentation: configuration.presentation,
             output: configuration.output

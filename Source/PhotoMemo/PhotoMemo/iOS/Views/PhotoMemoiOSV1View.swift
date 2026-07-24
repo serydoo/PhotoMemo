@@ -2833,7 +2833,8 @@ struct PhotoMemoiOSV1View: View {
                 livePhotoPolicy: livePhotoPolicy,
                 selectedTimeAnchorID:
                     session.selectedTimeAnchorID,
-                savedAt: Date()
+                savedAt: Date(),
+                language: session.language
             )
         let configurationLibraryForApply: ConfigurationLibraryRecord?
         if let configurationID = session.state.selectedMemoryPresetID,

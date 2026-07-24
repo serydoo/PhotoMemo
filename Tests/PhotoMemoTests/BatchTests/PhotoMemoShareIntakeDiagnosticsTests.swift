@@ -158,7 +158,19 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         #expect(
             intakeSource
             .contains(
-                "static let maxSupportedPhotoCount = 20"
+                "var maxSupportedPhotoCount: Int"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "snapshot.batchLimit"
+            )
+        )
+        #expect(
+            intakeSource
+            .contains(
+                "snapshot.remainingRecords"
             )
         )
         #expect(
@@ -170,7 +182,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         #expect(
             intakeSource
             .contains(
-                "guard providers.count <= Self.maxSupportedPhotoCount"
+                "guard providers.count <= maxSupportedPhotoCount"
             )
         )
         #expect(
@@ -193,7 +205,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         )
         #expect(
             intakeSource.contains(
-                "美好的记忆适合慢慢整理。每次最多分享 20 张，可以分几次完成，也能让处理过程更稳定。"
+                "请减少本次分享数量，可以分几次完成，也能让处理过程更稳定。"
             )
         )
         #expect(

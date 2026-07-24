@@ -231,6 +231,7 @@ struct MemoryConfigurationRecord:
     var revision: Int
     var savedAt: Date
     var selectedTimeAnchorID: UUID?
+    var language: MemoMarkLanguage
     var editor: Editor
     var presentation: Presentation
     var output: Output
@@ -241,6 +242,7 @@ struct MemoryConfigurationRecord:
         revision: Int,
         savedAt: Date,
         selectedTimeAnchorID: UUID?,
+        language: MemoMarkLanguage = .simplifiedChinese,
         editor: Editor,
         presentation: Presentation,
         output: Output
@@ -250,6 +252,7 @@ struct MemoryConfigurationRecord:
         self.revision = revision
         self.savedAt = savedAt
         self.selectedTimeAnchorID = selectedTimeAnchorID
+        self.language = language
         self.editor = editor
         self.presentation = presentation
         self.output = output
@@ -279,6 +282,7 @@ struct MemoryConfigurationRecord:
         case revision
         case savedAt
         case selectedTimeAnchorID
+        case language
         case editor
         case presentation
         case output
@@ -318,6 +322,10 @@ struct MemoryConfigurationRecord:
                 UUID.self,
                 forKey: .selectedTimeAnchorID
             )
+        self.language = try container.decodeIfPresent(
+            MemoMarkLanguage.self,
+            forKey: .language
+        ) ?? .simplifiedChinese
         self.editor = try container.decode(
             Editor.self,
             forKey: .editor
@@ -354,6 +362,7 @@ struct MemoryConfigurationRecord:
             selectedTimeAnchorID,
             forKey: .selectedTimeAnchorID
         )
+        try container.encode(language, forKey: .language)
         try container.encode(editor, forKey: .editor)
         try container.encode(
             presentation,

@@ -73,7 +73,16 @@ struct ClassicWhiteExportBottomEdgeTests {
             badge: .appleClassic,
             title: "JPEG edge readback"
         )
-        let exportURL = try RecordCardExportService()
+        let exportURL = try RecordCardExportService(
+            outputFilenameSequenceStore:
+                LivePhotoOutputFilenameSequenceStore(
+                    storageURL:
+                        folderURL
+                        .appendingPathComponent(
+                            "OutputFilenameSequence.json"
+                        )
+                )
+        )
             .exportToTemporaryFile(
                 photo: photo,
                 card: card

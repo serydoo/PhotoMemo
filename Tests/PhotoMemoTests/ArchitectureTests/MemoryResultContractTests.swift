@@ -557,7 +557,8 @@ struct MemoryResultContractTests {
                 "photoDescriptionOverride",
                 "selectedAlbumIdentifier",
                 "mediaOutputModeRawValue",
-                "livePhotoPolicyRawValue"
+                "livePhotoPolicyRawValue",
+                "language"
             ]
         )
     }

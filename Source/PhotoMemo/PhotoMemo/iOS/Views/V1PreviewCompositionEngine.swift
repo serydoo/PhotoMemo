@@ -795,7 +795,7 @@ struct V1PreviewCompositionEngine {
     private var captureDateFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale =
-            Locale(identifier: "zh_CN")
+            MemoMarkLanguage.stored.locale
         formatter.dateFormat = "yyyy.MM.dd"
         return formatter
     }
@@ -803,7 +803,7 @@ struct V1PreviewCompositionEngine {
     private var captureTimeFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale =
-            Locale(identifier: "zh_CN")
+            MemoMarkLanguage.stored.locale
         formatter.dateFormat = "HH:mm:ss"
         return formatter
     }

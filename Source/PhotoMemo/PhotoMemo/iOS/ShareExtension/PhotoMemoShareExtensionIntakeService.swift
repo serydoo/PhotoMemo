@@ -124,7 +124,7 @@ struct PhotoMemoShareExtensionError:
             return "请尽量从系统相册直接分享原始照片；如果来自其他 App，请确认分享的是原图而不是预览图。"
 
         case .tooManySharedItems:
-            return "美好的记忆适合慢慢整理。每次最多分享 20 张，可以分几次完成，也能让处理过程更稳定。"
+            return "请减少本次分享数量，可以分几次完成，也能让处理过程更稳定。"
 
         case .allImportsFailed:
             return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开时光记检查默认风格。"
@@ -209,7 +209,10 @@ final class PhotoMemoShareExtensionIntakeService {
     var maxSupportedPhotoCount: Int {
         let snapshot =
             commercePersistence
-            .loadSharedSnapshot()
+            .loadSharedSnapshot(
+                compatibleWith:
+                    .currentRuntime
+            )
         return min(
             snapshot.batchLimit,
             snapshot.remainingRecords

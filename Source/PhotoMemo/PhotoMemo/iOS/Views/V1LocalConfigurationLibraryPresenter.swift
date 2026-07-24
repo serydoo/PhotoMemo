@@ -66,6 +66,7 @@ enum V1LocalConfigurationLibraryPresenter {
             revision: 0,
             savedAt: source.savedAt,
             selectedTimeAnchorID: source.selectedTimeAnchorID,
+            language: source.language,
             editor: source.editor,
             presentation: source.presentation,
             output: source.output
