@@ -141,9 +141,9 @@ extension View {
 
 enum V1CompactBottomActionMetrics {
 
-    static let width: CGFloat = 184
-    static let height: CGFloat = 40
-    static let cornerRadius: CGFloat = 12
+    static let width = MemoMarkDesignTokens.Layout.compactPrimaryActionWidth
+    static let height = MemoMarkDesignTokens.Layout.compactPrimaryActionHeight
+    static let cornerRadius = MemoMarkDesignTokens.Layout.compactPrimaryActionCornerRadius
 }
 
 struct V1CompactPrimaryActionButtonStyle:
@@ -635,7 +635,7 @@ struct V1RegionEditorCard: View {
     var body: some View {
         IOSCompactEntryDisclosureRow(
             title: region.displayTitle,
-            subtitle: region.semanticTitle,
+            subtitle: "默认\(region.semanticTitle)",
             value: rowValueText,
             detail: rowDetailText,
             systemImage: region.systemImage,

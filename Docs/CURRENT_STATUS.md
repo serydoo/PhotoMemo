@@ -1,6 +1,24 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-24
+Last updated: 2026-07-25
+
+## 2026-07-25 Configuration And Share Action Unification
+
+- Moved Configuration Center save state, secondary actions, and the primary
+  save action into one safe-area footer. The primary action remains centered
+  at the same position as Home and Output, while status and secondary actions
+  stay in the left support area and reflow for accessibility text sizes.
+- Clarified that every Memory Card region supports custom phrases combined
+  with smart modules, and accurately describes optional lower-right result
+  writing to the generated photo description for Apple Photos search.
+- Added `默认` context to all four region summaries without changing region or
+  Renderer semantics.
+- Froze the compact primary-action dimensions as shared design tokens and
+  applied the same `184 x 40` size and `12pt` corner radius to Share Extension.
+- Thirty-three focused architecture/UI contracts passed. A signed iOS build,
+  including Share Extension and Widget validation, succeeded and installed on
+  the physical `iPhone7`; the app launched successfully after the device was
+  unlocked.
 
 ## 2026-07-24 Share Intake 2002 Hotfix
 

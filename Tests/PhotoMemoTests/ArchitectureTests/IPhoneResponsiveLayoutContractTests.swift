@@ -87,15 +87,15 @@ struct IPhoneResponsiveLayoutContractTests {
 
     @Test("configuration controls reflow for accessibility text sizes")
     func configurationControlsReflowForAccessibilityText() throws {
-        let source = try sourceText(
+        let optionListSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
 
-        #expect(source.contains("@Environment(\\.dynamicTypeSize)"))
-        #expect(source.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(source.contains("VStack(alignment: .leading, spacing: 10)"))
-        #expect(source.contains("更多配置操作"))
-        #expect(source.contains("adaptiveSectionHeader"))
+        #expect(optionListSource.contains("@Environment(\\.dynamicTypeSize)"))
+        #expect(optionListSource.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(optionListSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(optionListSource.contains("更多配置操作"))
+        #expect(optionListSource.contains("adaptiveSectionHeader"))
     }
 
     @Test("subject identity overview does not force intrinsic horizontal width")

@@ -8,12 +8,6 @@ struct V1ConfigurationOptionList: View {
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
-    @State
-    private var showsResetConfigurationConfirmation = false
-
-    @State
-    private var showsDeleteConfigurationConfirmation = false
-
     let subject: MemorySubject?
     @Binding var isMemorySourceExpanded: Bool
     let subjectAvatarPreviewImagePath: String?
@@ -40,13 +34,7 @@ struct V1ConfigurationOptionList: View {
     let selectedMemoryDisplayStyle:
         Binding<MemoryAnchorExpressionStyle>
     let borderStyleName: String
-    let configurationStatus: V1ConfigurationStatus
-    let isSavingConfiguration: Bool
     let onOpenRegionContent: () -> Void
-    let onSaveCurrentConfiguration: () -> Void
-    let onCreateConfiguration: () -> Void
-    let onResetConfiguration: () -> Void
-    let onDeleteConfiguration: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -74,45 +62,6 @@ struct V1ConfigurationOptionList: View {
                 regionContentRow
             }
 
-            groupedSection(
-                title: "保存配置",
-                subtitle: "保存当前表达，或管理配置副本"
-            ) {
-                configurationActionGrid
-
-                Label(
-                    configurationStatusMessage,
-                    systemImage:
-                        configurationStatusSystemImage
-                )
-                .font(.caption)
-                .foregroundStyle(configurationStatusColor)
-                .padding(.top, 2)
-            }
-        }
-        .alert(
-            "恢复默认配置？",
-            isPresented:
-                $showsResetConfigurationConfirmation
-        ) {
-            Button("取消", role: .cancel) {}
-            Button("恢复默认", role: .destructive) {
-                onResetConfiguration()
-            }
-        } message: {
-            Text("当前未保存的修改会被默认内容替换。此操作无法撤销。")
-        }
-        .alert(
-            "删除当前配置？",
-            isPresented:
-                $showsDeleteConfigurationConfirmation
-        ) {
-            Button("取消", role: .cancel) {}
-            Button("删除配置", role: .destructive) {
-                onDeleteConfiguration()
-            }
-        } message: {
-            Text("本地配置库中的备份会保留。此操作无法撤销。")
         }
     }
 
@@ -464,174 +413,6 @@ struct V1ConfigurationOptionList: View {
         .accessibilityHint("编辑卡片四个区域的模块与文字")
     }
 
-    private var configurationActionGrid: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            actionButton(
-                title: saveActionTitle,
-                systemImage: saveActionSystemImage,
-                tint: .blue,
-                isProminent: true,
-                action: onSaveCurrentConfiguration
-            )
-
-            Menu {
-                Button("另存为新配置", systemImage: "plus.square") {
-                    onCreateConfiguration()
-                }
-
-                Button("恢复默认", systemImage: "arrow.counterclockwise") {
-                    showsResetConfigurationConfirmation = true
-                }
-
-                Button(
-                    "删除当前配置",
-                    systemImage: "trash",
-                    role: .destructive
-                ) {
-                    showsDeleteConfigurationConfirmation = true
-                }
-            } label: {
-                Label("更多配置操作", systemImage: "ellipsis.circle")
-                    .font(.subheadline.weight(.medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 8)
-            }
-            .foregroundStyle(.secondary)
-        }
-        .disabled(isSavingConfiguration)
-    }
-
-    private var saveActionTitle: String {
-        if isSavingConfiguration {
-            return "正在保存"
-        }
-
-        switch configurationStatus {
-        case .saved:
-            return "已保存"
-        case .failure:
-            return "重新保存"
-        case .idle,
-             .dirty,
-             .saving,
-             .subjectSynced:
-            return "保存当前配置"
-        }
-    }
-
-    private var saveActionSystemImage: String {
-        if isSavingConfiguration {
-            return "hourglass"
-        }
-
-        switch configurationStatus {
-        case .saved:
-            return "checkmark.circle.fill"
-        case .failure:
-            return "arrow.clockwise.circle.fill"
-        case .idle,
-             .dirty,
-             .saving,
-             .subjectSynced:
-            return "tray.and.arrow.down"
-        }
-    }
-
-    private var configurationStatusMessage: String {
-        switch configurationStatus {
-        case .idle:
-            return "保存后，配置会应用于后续所有处理任务。"
-        case .dirty:
-            return "有未保存修改。"
-        case .saving:
-            return "正在保存当前配置。"
-        case .saved:
-            return "已保存，将应用于后续处理任务。"
-        case .subjectSynced:
-            return "记忆对象已同步，保存后应用于后续任务。"
-        case .failure(let message):
-            return message
-        }
-    }
-
-    private var configurationStatusSystemImage: String {
-        switch configurationStatus {
-        case .idle:
-            return "info.circle"
-        case .dirty:
-            return "pencil.circle.fill"
-        case .saving:
-            return "hourglass"
-        case .saved:
-            return "checkmark.circle.fill"
-        case .subjectSynced:
-            return "person.crop.circle.badge.checkmark"
-        case .failure:
-            return "exclamationmark.triangle.fill"
-        }
-    }
-
-    private var configurationStatusColor: Color {
-        switch configurationStatus {
-        case .saved,
-             .subjectSynced:
-            return Color.accentColor
-        case .dirty,
-             .failure:
-            return Color.orange
-        case .idle,
-             .saving:
-            return Color.secondary
-        }
-    }
-
-    private func actionButton(
-        title: String,
-        systemImage: String,
-        tint: Color,
-        isProminent: Bool = false,
-        role: ButtonRole? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(role: role, action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .frame(maxWidth: .infinity)
-                .frame(height: 40)
-                .foregroundStyle(
-                    isProminent
-                    ? Color.white
-                    : tint
-                )
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: 12,
-                        style: .continuous
-                    )
-                    .fill(
-                        isProminent
-                        ? tint
-                        : ConfigurationUI.controlBackground
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: 12,
-                        style: .continuous
-                    )
-                    .stroke(
-                        isProminent
-                        ? tint
-                        : ConfigurationUI.faintHairline
-                    )
-                )
-        }
-        .buttonStyle(V1ConfigurationActionButtonStyle())
-    }
-
     private func groupedSection<Content: View>(
         title: String,
         subtitle: String,
@@ -960,6 +741,181 @@ struct V1ConfigurationOptionList: View {
         }
     }
 
+}
+
+struct V1ConfigurationActionFooter: View {
+
+    @State
+    private var showsResetConfigurationConfirmation = false
+
+    @State
+    private var showsDeleteConfigurationConfirmation = false
+
+    let configurationStatus: V1ConfigurationStatus
+    let isSavingConfiguration: Bool
+    let onSaveCurrentConfiguration: () -> Void
+    let onCreateConfiguration: () -> Void
+    let onResetConfiguration: () -> Void
+    let onDeleteConfiguration: () -> Void
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            configurationActionRow
+
+            VStack(spacing: 8) {
+                configurationSupportRow
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                centeredPrimaryAction
+            }
+        }
+        .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
+        .background(
+            ConfigurationUI.appBackground
+                .opacity(0.96)
+                .ignoresSafeArea()
+        )
+        .alert(
+            "恢复默认配置？",
+            isPresented: $showsResetConfigurationConfirmation
+        ) {
+            Button("取消", role: .cancel) {}
+            Button("恢复默认", role: .destructive) {
+                onResetConfiguration()
+            }
+        } message: {
+            Text("当前未保存的修改会被默认内容替换。此操作无法撤销。")
+        }
+        .alert(
+            "删除当前配置？",
+            isPresented: $showsDeleteConfigurationConfirmation
+        ) {
+            Button("取消", role: .cancel) {}
+            Button("删除配置", role: .destructive) {
+                onDeleteConfiguration()
+            }
+        } message: {
+            Text("本地配置库中的备份会保留。此操作无法撤销。")
+        }
+    }
+
+    private var configurationActionRow: some View {
+        ZStack(alignment: .bottom) {
+            HStack {
+                configurationSupportRow
+                    .frame(width: 84, alignment: .leading)
+
+                Spacer(minLength: 0)
+            }
+
+            centeredPrimaryAction
+        }
+        .frame(minWidth: 350)
+    }
+
+    private var configurationSupportRow: some View {
+        HStack(alignment: .center, spacing: 4) {
+            configurationStatusLabel
+
+            moreActionsMenu
+        }
+    }
+
+    private var centeredPrimaryAction: some View {
+        Button(action: onSaveCurrentConfiguration) {
+            Label(saveActionTitle, systemImage: saveActionSystemImage)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .v1CompactBottomPrimaryAction()
+        }
+        .buttonStyle(V1CompactPrimaryActionButtonStyle())
+        .disabled(isSavingConfiguration)
+    }
+
+    private var moreActionsMenu: some View {
+        Menu {
+            Button("另存为新配置", systemImage: "plus.square") {
+                onCreateConfiguration()
+            }
+            Button("恢复默认", systemImage: "arrow.counterclockwise") {
+                showsResetConfigurationConfirmation = true
+            }
+            Button("删除当前配置", systemImage: "trash", role: .destructive) {
+                showsDeleteConfigurationConfirmation = true
+            }
+        } label: {
+            Label("更多配置操作", systemImage: "ellipsis.circle")
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .frame(width: 40, height: 40)
+                .background(
+                    Circle().fill(ConfigurationUI.controlBackground)
+                )
+        }
+        .accessibilityLabel("更多配置操作")
+    }
+
+    private var configurationStatusLabel: some View {
+        Label(configurationStatusMessage, systemImage: configurationStatusSystemImage)
+            .font(.caption2)
+            .foregroundStyle(configurationStatusColor)
+            .lineLimit(2)
+            .minimumScaleFactor(0.78)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var saveActionTitle: String {
+        if isSavingConfiguration { return "正在保存" }
+        switch configurationStatus {
+        case .saved: return "已保存"
+        case .failure: return "重新保存"
+        default: return "保存当前配置"
+        }
+    }
+
+    private var saveActionSystemImage: String {
+        if isSavingConfiguration { return "hourglass" }
+        switch configurationStatus {
+        case .saved: return "checkmark.circle.fill"
+        case .failure: return "arrow.clockwise.circle.fill"
+        default: return "tray.and.arrow.down"
+        }
+    }
+
+    private var configurationStatusMessage: String {
+        switch configurationStatus {
+        case .idle: return "保存后应用于后续任务"
+        case .dirty: return "有未保存修改"
+        case .saving: return "正在保存当前配置"
+        case .saved: return "已保存"
+        case .subjectSynced: return "记忆对象已同步，等待保存"
+        case .failure(let message): return message
+        }
+    }
+
+    private var configurationStatusSystemImage: String {
+        switch configurationStatus {
+        case .idle: return "info.circle"
+        case .dirty: return "pencil.circle.fill"
+        case .saving: return "hourglass"
+        case .saved: return "checkmark.circle.fill"
+        case .subjectSynced: return "person.crop.circle.badge.checkmark"
+        case .failure: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var configurationStatusColor: Color {
+        switch configurationStatus {
+        case .saved, .subjectSynced: return Color.accentColor
+        case .dirty, .failure: return Color.orange
+        case .idle, .saving: return Color.secondary
+        }
+    }
 }
 
 private struct V1ConfigurationActionButtonStyle:

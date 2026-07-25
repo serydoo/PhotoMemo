@@ -63,6 +63,12 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(typography.contains("size: 20"))
         #expect(typography.contains("size: 15"))
         #expect(typography.contains("size: 14"))
+        #expect(typography.contains("compactPrimaryActionWidth: CGFloat = 184"))
+        #expect(typography.contains("compactPrimaryActionHeight: CGFloat = 40"))
+        #expect(typography.contains("compactPrimaryActionCornerRadius: CGFloat = 12"))
+        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionWidth"))
+        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionHeight"))
+        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionCornerRadius"))
     }
 
     @Test("Share Extension summary dividers use symmetric native hairlines")

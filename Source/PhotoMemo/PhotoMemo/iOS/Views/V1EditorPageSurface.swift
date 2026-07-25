@@ -67,6 +67,9 @@ struct V1EditorPageSurface<
                     .ignoresSafeArea()
             )
             .coordinateSpace(name: "v1-scroll")
+            .safeAreaInset(edge: .bottom) {
+                accessoryContent
+            }
         }
     }
 
@@ -134,8 +137,6 @@ struct V1EditorPageSurface<
         ScrollView {
             VStack(spacing: 14) {
                 editorContent
-
-                accessoryContent
             }
             .padding(.top, 8)
             .padding(

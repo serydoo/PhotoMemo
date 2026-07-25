@@ -1280,7 +1280,26 @@ struct PhotoMemoiOSV1View: View {
         } editorContent: {
             configurationOptionList
         } accessoryContent: {
-            EmptyView()
+            V1ConfigurationActionFooter(
+                configurationStatus: activeConfigurationStatus,
+                isSavingConfiguration: isSavingConfiguration,
+                onSaveCurrentConfiguration: {
+                    performConfigurationLibraryAction(.saveCurrent)
+                },
+                onCreateConfiguration: {
+                    performConfigurationLibraryAction(.create)
+                },
+                onResetConfiguration: {
+                    performConfigurationLibraryAction(.reset)
+                },
+                onDeleteConfiguration: {
+                    guard let selectedPreset =
+                        session.state.selectedMemoryPreset else {
+                        return
+                    }
+                    deleteHomePreset(selectedPreset)
+                }
+            )
         }
         .navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
@@ -1356,29 +1375,8 @@ struct PhotoMemoiOSV1View: View {
                 selectedMemoryDisplayStyleBinding,
             borderStyleName:
                 currentBorderStyleName,
-            configurationStatus:
-                activeConfigurationStatus,
-            isSavingConfiguration:
-                isSavingConfiguration,
             onOpenRegionContent: {
                 showsRegionContentSheet = true
-            },
-            onSaveCurrentConfiguration:
-                {
-                    performConfigurationLibraryAction(.saveCurrent)
-                },
-            onCreateConfiguration: {
-                performConfigurationLibraryAction(.create)
-            },
-            onResetConfiguration: {
-                performConfigurationLibraryAction(.reset)
-            },
-            onDeleteConfiguration: {
-                guard let selectedPreset =
-                    session.state.selectedMemoryPreset else {
-                    return
-                }
-                deleteHomePreset(selectedPreset)
             }
         )
     }
@@ -2283,9 +2281,10 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var editorCluster: some View {
-        IOSCompactEntryListGroup {
-            ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
-                V1RegionEditorCard(
+        VStack(alignment: .leading, spacing: 12) {
+            IOSCompactEntryListGroup {
+                ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
+                    V1RegionEditorCard(
                     region: region,
                     isExpanded:
                         expansionBinding(
@@ -2356,9 +2355,30 @@ struct PhotoMemoiOSV1View: View {
                                 )
                         )
                     }
-                )
+                    )
+                }
             }
+
+            regionConfigurationGuide
         }
+    }
+
+    private var regionConfigurationGuide: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("配置说明", systemImage: "info.circle")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text("以上四个位置均可自定义，可自由组合自定义短语与智能模块。智能模块会结合照片拍摄信息、记忆对象和时间锚点生成真实内容；开启说明写入后，右下角的组合结果也可写入生成照片的说明，便于在 Apple Photos 中检索和回看。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(ConfigurationUI.controlBackground)
+        )
     }
 
     private var accessoryEntryCluster: some View {

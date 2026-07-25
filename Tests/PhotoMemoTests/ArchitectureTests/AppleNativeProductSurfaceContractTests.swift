@@ -130,7 +130,7 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterTopPreviewSection.swift"
         )
 
-        #expect(options.contains("保存配置"))
+        #expect(options.contains("保存当前配置"))
         #expect(options.contains("更多配置操作"))
         #expect(options.contains("编辑卡片内容"))
         #expect(!options.contains("index: \"1.\""))

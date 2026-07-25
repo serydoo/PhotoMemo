@@ -278,18 +278,23 @@ private extension PhotoMemoShareExtensionViewController {
             ),
             bottomActionStack.leadingAnchor
                 .constraint(
-                    equalTo:
-                        view.safeAreaLayoutGuide
-                        .leadingAnchor,
+                    greaterThanOrEqualTo:
+                        view.safeAreaLayoutGuide.leadingAnchor,
                     constant: 16
                 ),
             bottomActionStack.trailingAnchor
                 .constraint(
-                    equalTo:
-                        view.safeAreaLayoutGuide
-                        .trailingAnchor,
+                    lessThanOrEqualTo:
+                        view.safeAreaLayoutGuide.trailingAnchor,
                     constant: -16
                 ),
+            bottomActionStack.centerXAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.centerXAnchor
+            ),
+            bottomActionStack.widthAnchor.constraint(
+                equalToConstant:
+                    MemoMarkDesignTokens.Layout.compactPrimaryActionWidth
+            ),
             bottomActionStack.bottomAnchor
                 .constraint(
                     equalTo:
@@ -299,7 +304,8 @@ private extension PhotoMemoShareExtensionViewController {
                 ),
             primaryButton.heightAnchor
                 .constraint(
-                    equalToConstant: 52
+                    equalToConstant:
+                        MemoMarkDesignTokens.Layout.compactPrimaryActionHeight
                 )
         ])
     }
@@ -451,7 +457,7 @@ private extension PhotoMemoShareExtensionViewController {
         primaryButton.configuration?.cornerStyle =
             .fixed
         primaryButton.layer.cornerRadius =
-            MemoMarkDesignTokens.Layout.cardCornerRadius
+            MemoMarkDesignTokens.Layout.compactPrimaryActionCornerRadius
         primaryButton.layer.cornerCurve =
             .continuous
         primaryButton.configuration?.titleTextAttributesTransformer =
