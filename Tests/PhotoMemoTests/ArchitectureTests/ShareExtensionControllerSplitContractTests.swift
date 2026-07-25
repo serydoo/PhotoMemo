@@ -65,6 +65,22 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(typography.contains("size: 14"))
     }
 
+    @Test("Share Extension summary dividers use symmetric native hairlines")
+    func shareExtensionSummaryDividersUseSymmetricNativeHairlines() throws {
+        let controller = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+        )
+        let tokens = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift"
+        )
+
+        #expect(controller.contains("divider.backgroundColor = .separator"))
+        #expect(controller.contains("equalToConstant: 1 / UIScreen.main.scale"))
+        #expect(controller.contains("constant: MemoMarkDesignTokens.Layout.dividerInset"))
+        #expect(controller.contains("constant: -MemoMarkDesignTokens.Layout.dividerInset"))
+        #expect(tokens.contains("static let dividerInset: CGFloat = 12"))
+    }
+
     @Test("Share Extension owns focused lifecycle collaborators")
     func shareExtensionOwnsFocusedLifecycleCollaborators() throws {
         let controller = try sourceText(
