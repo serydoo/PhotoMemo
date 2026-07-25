@@ -277,8 +277,7 @@ struct V1TaskPageSurface: View {
                 pipelineRow(step)
 
                 if step.id != presentation.currentTask.stepRows.last?.id {
-                    Divider()
-                        .padding(.leading, 28)
+                    V1HorizontalDivider(horizontalInset: 10)
                 }
             }
         }
@@ -373,8 +372,11 @@ struct V1TaskPageSurface: View {
                         recentTaskRow(row)
 
                         if row.id != presentation.historyRows.prefix(2).last?.id {
-                            Divider()
-                                .padding(.leading, 86)
+                            V1HorizontalDivider(
+                                horizontalInset:
+                                    V1CompactInformationRowMetrics
+                                    .horizontalPadding
+                            )
                         }
                     }
                 }

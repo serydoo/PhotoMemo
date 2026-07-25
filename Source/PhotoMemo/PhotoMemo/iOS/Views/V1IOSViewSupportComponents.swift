@@ -760,7 +760,7 @@ struct V1RegionEditorCard: View {
                 )
 
                 if !resolvedText.isEmpty {
-                    Divider()
+                    V1HorizontalDivider()
 
                     VStack(alignment: .leading, spacing: 3) {
                         Label(

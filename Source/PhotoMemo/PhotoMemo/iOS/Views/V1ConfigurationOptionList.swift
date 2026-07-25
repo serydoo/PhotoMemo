@@ -57,11 +57,20 @@ struct V1ConfigurationOptionList: View {
                 subtitle: "决定卡片各区域的内容与显示形式"
             ) {
                 logoRow
-                optionDivider
+                V1HorizontalDivider(
+                    horizontalInset:
+                        V1CompactInformationRowMetrics.horizontalPadding
+                )
                 borderStyleRow
-                optionDivider
+                V1HorizontalDivider(
+                    horizontalInset:
+                        V1CompactInformationRowMetrics.horizontalPadding
+                )
                 locationRow
-                optionDivider
+                V1HorizontalDivider(
+                    horizontalInset:
+                        V1CompactInformationRowMetrics.horizontalPadding
+                )
                 regionContentRow
             }
 
@@ -114,9 +123,15 @@ struct V1ConfigurationOptionList: View {
             VStack(spacing: 0) {
                 if isMemorySourceExpanded {
                     subjectRow
-                    optionDivider
+                    V1HorizontalDivider(
+                        horizontalInset:
+                            V1CompactInformationRowMetrics.horizontalPadding
+                    )
                     timeAnchorRow
-                    optionDivider
+                    V1HorizontalDivider(
+                        horizontalInset:
+                            V1CompactInformationRowMetrics.horizontalPadding
+                    )
                     memoryDisplayRow
                 } else {
                     memorySourceSummaryRow
@@ -982,17 +997,6 @@ struct V1ConfigurationOptionList: View {
         )
     }
 
-    private var optionDivider: some View {
-        Rectangle()
-            .fill(ConfigurationUI.faintHairline)
-            .frame(height: 0.5)
-            .padding(
-                .leading,
-                V1CompactInformationRowMetrics.horizontalPadding
-                + V1CompactInformationRowMetrics.iconSize
-                + V1CompactInformationRowMetrics.contentSpacing
-            )
-    }
 }
 
 private struct V1ConfigurationActionButtonStyle:

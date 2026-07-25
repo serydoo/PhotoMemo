@@ -57,6 +57,23 @@ enum ConfigurationUI {
 
 }
 
+struct V1HorizontalDivider: View {
+
+    let horizontalInset: CGFloat
+
+    init(horizontalInset: CGFloat = 0) {
+        self.horizontalInset = horizontalInset
+    }
+
+    var body: some View {
+        Rectangle()
+            .fill(ConfigurationUI.faintHairline)
+            .frame(height: 0.5)
+            .padding(.horizontal, horizontalInset)
+            .accessibilityHidden(true)
+    }
+}
+
 struct InspectorSectionView<Content: View>: View {
 
     let title: String

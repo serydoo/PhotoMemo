@@ -946,10 +946,7 @@ struct V1SettingsPageSurface: View {
             .padding(.vertical, 12)
 
             if showsDivider {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, 60)
+                V1HorizontalDivider(horizontalInset: 12)
             }
         }
     }

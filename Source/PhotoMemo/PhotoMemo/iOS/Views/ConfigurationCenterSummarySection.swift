@@ -473,10 +473,7 @@ struct ConfigurationCenterSummarySection: View {
     }
 
     private var summaryDivider: some View {
-        Rectangle()
-            .fill(ConfigurationUI.faintHairline)
-            .frame(height: 0.5)
-            .padding(.leading, 66)
+        V1HorizontalDivider(horizontalInset: 14)
     }
 }
 

@@ -114,6 +114,27 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!processing.contains(".frame(height: 78)"))
     }
 
+    @Test("card row separators use one symmetric semantic hairline")
+    func cardRowSeparatorsUseSharedSymmetricHairline() throws {
+        let support = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Components/InspectorSectionView.swift"
+        )
+        let configuration = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let output = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
+        )
+
+        #expect(support.contains("struct V1HorizontalDivider"))
+        #expect(support.contains("ConfigurationUI.faintHairline"))
+        #expect(configuration.contains("V1HorizontalDivider("))
+        #expect(!configuration.contains("private var optionDivider"))
+        #expect(!configuration.contains(".padding(\n                .leading,"))
+        #expect(output.contains("V1HorizontalDivider()"))
+        #expect(!output.contains("private struct V1OutputDivider"))
+    }
+
     @Test("memory subject detail separates reading from basic information editing")
     func memorySubjectDetailSeparatesReadingFromEditing() throws {
         let detail = try sourceText(

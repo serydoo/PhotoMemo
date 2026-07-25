@@ -346,7 +346,7 @@ private struct V1MemoryWriteSection: View {
                         subtitle: "保留 EXIF 拍摄参数与元数据"
                     )
 
-                    V1OutputDivider()
+                    V1HorizontalDivider()
 
                     V1OutputRetentionRow(
                         systemImage: "livephoto",
@@ -355,7 +355,7 @@ private struct V1MemoryWriteSection: View {
                         subtitle: "原格式输出时保留动态效果"
                     )
 
-                    V1OutputDivider()
+                    V1HorizontalDivider()
 
                     Toggle(isOn: $usesCustomMemoryWriteText) {
                         V1OutputRetentionLabel(
@@ -476,20 +476,6 @@ private struct V1OutputRetentionLabel: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-    }
-}
-
-private struct V1OutputDivider: View {
-
-    var body: some View {
-        Rectangle()
-            .fill(ConfigurationUI.faintHairline)
-            .frame(height: 0.5)
-            .padding(
-                .leading,
-                V1CompactInformationRowMetrics.iconSize
-                + V1CompactInformationRowMetrics.contentSpacing
-            )
     }
 }
 

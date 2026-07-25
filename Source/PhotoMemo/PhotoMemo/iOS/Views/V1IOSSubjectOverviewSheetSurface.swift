@@ -182,7 +182,7 @@ struct V1IOSSubjectOverviewSheet: View {
                     if let shortName = normalized(
                         subject.identity.shortName
                     ) {
-                        Divider()
+                        V1HorizontalDivider()
                         V1IOSSubjectFactRow(
                             title: "昵称",
                             value: shortName
@@ -192,7 +192,7 @@ struct V1IOSSubjectOverviewSheet: View {
                     if let relationshipLabel = normalized(
                         subject.relationship.label
                     ) {
-                        Divider()
+                        V1HorizontalDivider()
                         V1IOSSubjectFactRow(
                             title: "专属称呼",
                             value: relationshipLabel
@@ -202,7 +202,7 @@ struct V1IOSSubjectOverviewSheet: View {
                     if let relationship = normalized(
                         subject.relationship.role
                     ) {
-                        Divider()
+                        V1HorizontalDivider()
                         V1IOSSubjectFactRow(
                             title: "与我关系",
                             value: relationship

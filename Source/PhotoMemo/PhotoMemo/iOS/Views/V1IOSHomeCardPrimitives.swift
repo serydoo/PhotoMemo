@@ -146,10 +146,10 @@ struct V1IOSHomeSemanticRow: View {
             )
 
             if showsDivider {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, 60)
+                V1HorizontalDivider(
+                    horizontalInset:
+                        ConfigurationUI.innerPanelPadding
+                )
             }
         }
     }
@@ -210,10 +210,7 @@ struct V1IOSHomeNavigationRowButton: View {
             .buttonStyle(.plain)
 
             if showsDivider {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, 60)
+                V1HorizontalDivider(horizontalInset: 14)
             }
         }
     }

@@ -140,10 +140,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
             )
 
             if isExpanded {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, 50)
+                V1HorizontalDivider(horizontalInset: 14)
 
                 VStack(alignment: .leading, spacing: 12) {
                     content
@@ -153,10 +150,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
             }
 
             if showsDivider {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, 50)
+                V1HorizontalDivider(horizontalInset: 14)
             }
         }
     }

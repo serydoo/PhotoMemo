@@ -383,10 +383,7 @@ private struct V1IOSHomeLinkRow: View {
             .buttonStyle(.plain)
 
             if showsDivider {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, 50)
+                V1HorizontalDivider(horizontalInset: 14)
             }
         }
     }

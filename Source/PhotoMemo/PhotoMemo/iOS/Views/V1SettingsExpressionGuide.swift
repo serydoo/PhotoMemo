@@ -14,7 +14,7 @@ struct V1SettingsExpressionGuide: View {
             formulaOverview
             colorLegend
 
-            Divider()
+            V1HorizontalDivider()
 
             Text("按时间锚点查看每一种预设表达。点开分类后，右侧是对应的表达名称。")
                 .font(.caption)
@@ -26,7 +26,7 @@ struct V1SettingsExpressionGuide: View {
                     anchorTypeSection(anchorType)
 
                     if anchorType.rawValue != AnchorType.allCases.last?.rawValue {
-                        Divider()
+                        V1HorizontalDivider()
                     }
                 }
             }
@@ -135,8 +135,7 @@ struct V1SettingsExpressionGuide: View {
                     expressionStyleRow(style)
 
                     if style.id != styles.last?.id {
-                        Divider()
-                            .padding(.leading, 66)
+                        V1HorizontalDivider(horizontalInset: 12)
                     }
                 }
             }

@@ -71,7 +71,7 @@ struct V1HomeFeedbackSection: View {
 
     private var expandedChannels: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Divider()
+            V1HorizontalDivider()
 
             feedbackRow(
                 title: "小红书、抖音",

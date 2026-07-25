@@ -182,10 +182,9 @@ struct V1IOSSubjectAnchorSection: View {
                             anchorRow(anchor)
 
                             if anchor.id != subject.timeAnchors.last?.id {
-                                Rectangle()
-                                    .fill(ConfigurationUI.faintHairline)
-                                    .frame(height: 0.5)
-                                    .padding(.leading, 52)
+                                V1HorizontalDivider(
+                                    horizontalInset: 12
+                                )
                             }
                         }
                     }

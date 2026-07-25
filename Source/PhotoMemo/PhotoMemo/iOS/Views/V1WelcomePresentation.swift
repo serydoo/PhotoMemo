@@ -498,10 +498,7 @@ private struct V1WelcomeWorkflowPreviewRow: View {
             .padding(.vertical, 2)
 
             if showsDivider {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(height: 0.5)
-                    .padding(.leading, 46)
+                V1HorizontalDivider()
                     .padding(.top, 8)
             }
         }
