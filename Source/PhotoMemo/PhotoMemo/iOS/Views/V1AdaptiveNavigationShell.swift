@@ -45,7 +45,7 @@ extension V1EntryTab {
         case .output:
             return "输出"
         case .tasks:
-            return "任务"
+            return "处理"
         case .settings:
             return "设置"
         }

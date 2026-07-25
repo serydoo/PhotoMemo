@@ -25,9 +25,7 @@ struct V1SettingsPageSurface: View {
     private var showsExpressionGuide = false
 
     @State
-    private var expandedSections:
-        Set<SettingsSection> =
-        Set(SettingsSection.allCases)
+    private var expandedSections: Set<SettingsSection> = []
 
     let commerceSnapshot:
         MemoMarkCommerceSnapshot
@@ -1053,6 +1051,9 @@ struct V1SettingsPageSurface: View {
 
 private struct V1SettingsDisclosureSection<Content: View>: View {
 
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
+
     let title: String
     let systemImage: String
     let tint: Color
@@ -1067,7 +1068,7 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
         V1ConfigurationCardContainer {
             VStack(alignment: .leading, spacing: 14) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(disclosureAnimation) {
                         isExpanded.toggle()
                     }
                 } label: {
@@ -1104,6 +1105,12 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
                 }
             }
         }
+    }
+
+    private var disclosureAnimation: Animation? {
+        accessibilityReduceMotion
+            ? nil
+            : .easeInOut(duration: 0.2)
     }
 }
 #endif

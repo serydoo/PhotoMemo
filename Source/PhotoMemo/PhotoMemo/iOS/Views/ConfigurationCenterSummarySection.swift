@@ -54,7 +54,7 @@ struct ConfigurationCenterSummarySection: View {
                 .padding(.vertical, 6)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.88))
+                        .fill(ConfigurationUI.panelBackground)
                 )
                 .padding(.leading, 12)
                 .padding(.top, -10)
@@ -266,7 +266,7 @@ struct ConfigurationCenterSummarySection: View {
                                         .fill(
                                             selectedRegion == region
                                             ? Color.accentColor.opacity(0.12)
-                                            : Color.white.opacity(0.86)
+                                            : ConfigurationUI.controlBackground
                                         )
                                 )
                                 .overlay(
@@ -283,7 +283,7 @@ struct ConfigurationCenterSummarySection: View {
                 }
             }
         }
-        .background(Color.white.opacity(0.94))
+        .background(ConfigurationUI.panelBackground)
         .clipShape(
             RoundedRectangle(
                 cornerRadius: 20,

@@ -83,8 +83,8 @@ struct V1NativeSystemInteractionContractTests {
 
         #expect(rootSource.contains("configurationStatus: activeConfigurationStatus"))
         #expect(outputSource.contains("let configurationStatus: V1ConfigurationStatus"))
-        #expect(outputSource.contains("\"已保存\""))
-        #expect(outputSource.contains("\"重新保存\""))
+        #expect(outputSource.contains("\"输出设置已保存\""))
+        #expect(outputSource.contains("\"重新保存输出设置\""))
         #expect(homeSource.contains("V1CompactPrimaryActionButtonStyle()"))
         #expect(outputSource.contains("V1CompactPrimaryActionButtonStyle()"))
         #expect(supportSource.contains("struct V1CompactPrimaryActionButtonStyle"))

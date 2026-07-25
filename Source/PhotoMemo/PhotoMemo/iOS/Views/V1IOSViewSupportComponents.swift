@@ -126,8 +126,8 @@ extension View {
 
     func v1CardChrome(
         cornerRadius: CGFloat = ConfigurationUI.cardCornerRadius,
-        shadowRadius: CGFloat = 8,
-        shadowY: CGFloat = 3
+        shadowRadius: CGFloat = 4,
+        shadowY: CGFloat = 1
     ) -> some View {
         modifier(
             V1CardChrome(

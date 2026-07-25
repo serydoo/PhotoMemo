@@ -1280,7 +1280,7 @@ private extension PhotoMemoBackgroundStatusService {
         if !job.tasks.allSatisfy({
             $0.phase.isTerminal
         }) {
-            return "\(job.completedTaskCount)/\(job.totalTaskCount) · \(remainingTimeText(for: job))"
+            return "已完成 \(job.completedTaskCount)/\(job.totalTaskCount)"
         }
 
         return "\(job.completedTaskCount)/\(job.totalTaskCount)"
@@ -1312,7 +1312,7 @@ private extension PhotoMemoBackgroundStatusService {
             return "1 张"
         }
 
-        return "\(singlePhotoPhaseText(activeTask)) · \(remainingTimeText(for: job))"
+        return singlePhotoPhaseText(activeTask)
     }
 
     func singlePhotoPhaseText(
@@ -1369,73 +1369,5 @@ private extension PhotoMemoBackgroundStatusService {
         }
     }
 
-    func remainingTimeText(
-        for job: BatchJob
-    ) -> String {
-
-        let remainingTasks =
-            job.tasks.filter {
-                !$0.phase.isTerminal
-            }
-        let remainingCount =
-            remainingTasks.count
-
-        guard remainingCount > 0 else {
-            return "即将完成"
-        }
-
-        let totalEstimatedSeconds =
-            remainingTasks.reduce(
-                0
-            ) { partialResult, task in
-                partialResult
-                    + estimatedSeconds(
-                        for: task
-                    )
-            }
-
-        if totalEstimatedSeconds < 60 {
-            return "约 \(totalEstimatedSeconds) 秒"
-        }
-
-        let minutes =
-            max(
-                Int(
-                        ceil(
-                            Double(totalEstimatedSeconds) / 60
-                        )
-                ),
-                1
-            )
-
-        return "约 \(minutes) 分钟"
-    }
-
-    func estimatedSeconds(
-        for task: BatchTask
-    ) -> Int {
-
-        if taskUsesRAWDisplayRepresentation(
-            task
-        ) {
-            return 75
-        }
-
-        return 14
-    }
-
-    func taskUsesRAWDisplayRepresentation(
-        _ task: BatchTask
-    ) -> Bool {
-
-        let contentType =
-            task.contentTypeIdentifier
-            .flatMap(UTType.init)
-
-        return PhotoProcessingInputPolicy
-            .isRawContentType(contentType)
-            || PhotoProcessingInputPolicy
-            .isRawFileURL(task.sourceURL)
-    }
 }
 #endif

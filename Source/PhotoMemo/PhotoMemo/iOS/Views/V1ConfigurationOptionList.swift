@@ -53,7 +53,6 @@ struct V1ConfigurationOptionList: View {
             memorySourceSection
 
             groupedSection(
-                index: "2.",
                 title: "卡片布局与内容",
                 subtitle: "决定卡片各区域的内容与显示形式"
             ) {
@@ -67,9 +66,8 @@ struct V1ConfigurationOptionList: View {
             }
 
             groupedSection(
-                index: "3.",
-                title: "配置操作",
-                subtitle: "保存或管理当前配置"
+                title: "保存配置",
+                subtitle: "保存当前表达，或管理配置副本"
             ) {
                 configurationActionGrid
 
@@ -150,7 +148,6 @@ struct V1ConfigurationOptionList: View {
     private var memorySourceSectionHeader: some View {
         HStack(alignment: .center, spacing: 10) {
             adaptiveSectionHeader(
-                index: "1.",
                 title: "记忆来源",
                 subtitle: "决定智能模块生成的内容"
             )
@@ -436,14 +433,14 @@ struct V1ConfigurationOptionList: View {
             configurationRow(
                 systemImage: MemoMarkSymbol.module.name,
                 tint: .blue,
-                title: "区域内容设置",
+                title: "卡片内容",
                 subtitle: "编辑卡片四个区域的模块与文字",
-                value: "进入设置",
+                value: "编辑",
                 detail: "",
                 showsTrailingChevron: false
             ) {
                 HStack(spacing: 5) {
-                    Text("进入设置")
+                    Text("编辑")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
 
@@ -462,15 +459,12 @@ struct V1ConfigurationOptionList: View {
         .buttonStyle(
             V1ConfigurationNavigationRowButtonStyle()
         )
-        .accessibilityLabel("区域内容设置")
+        .accessibilityLabel("编辑卡片内容")
         .accessibilityHint("编辑卡片四个区域的模块与文字")
     }
 
     private var configurationActionGrid: some View {
-        LazyVGrid(
-            columns: configurationActionColumns,
-            spacing: 10
-        ) {
+        VStack(alignment: .leading, spacing: 10) {
             actionButton(
                 title: saveActionTitle,
                 systemImage: saveActionSystemImage,
@@ -479,45 +473,32 @@ struct V1ConfigurationOptionList: View {
                 action: onSaveCurrentConfiguration
             )
 
-            actionButton(
-                title: "另存为新配置",
-                systemImage: "plus.square.fill",
-                tint: .green,
-                action: onCreateConfiguration
-            )
+            Menu {
+                Button("另存为新配置", systemImage: "plus.square") {
+                    onCreateConfiguration()
+                }
 
-            actionButton(
-                title: "恢复默认",
-                systemImage: "arrow.counterclockwise.circle.fill",
-                tint: .orange,
-                role: .destructive,
-                action: {
+                Button("恢复默认", systemImage: "arrow.counterclockwise") {
                     showsResetConfigurationConfirmation = true
                 }
-            )
 
-            actionButton(
-                title: "删除当前配置",
-                systemImage: "trash.fill",
-                tint: .red,
-                role: .destructive,
-                action: {
+                Button(
+                    "删除当前配置",
+                    systemImage: "trash",
+                    role: .destructive
+                ) {
                     showsDeleteConfigurationConfirmation = true
                 }
-            )
+            } label: {
+                Label("更多配置操作", systemImage: "ellipsis.circle")
+                    .font(.subheadline.weight(.medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 8)
+            }
+            .foregroundStyle(.secondary)
         }
         .disabled(isSavingConfiguration)
-    }
-
-    private var configurationActionColumns: [GridItem] {
-        if dynamicTypeSize.isAccessibilitySize {
-            return [GridItem(.flexible())]
-        }
-
-        return [
-            GridItem(.flexible(), spacing: 10),
-            GridItem(.flexible(), spacing: 10)
-        ]
     }
 
     private var saveActionTitle: String {
@@ -651,14 +632,12 @@ struct V1ConfigurationOptionList: View {
     }
 
     private func groupedSection<Content: View>(
-        index: String,
         title: String,
         subtitle: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             adaptiveSectionHeader(
-                index: index,
                 title: title,
                 subtitle: subtitle
             )
@@ -687,24 +666,14 @@ struct V1ConfigurationOptionList: View {
 
     @ViewBuilder
     private func adaptiveSectionHeader(
-        index: String,
         title: String,
         subtitle: String
     ) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 4) {
-                HStack(
-                    alignment: .firstTextBaseline,
-                    spacing: 8
-                ) {
-                    Text(index)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    Text(title)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                }
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
 
                 Text(subtitle)
                     .font(.caption)
@@ -719,12 +688,8 @@ struct V1ConfigurationOptionList: View {
                 alignment: .firstTextBaseline,
                 spacing: 8
             ) {
-                Text(index)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.primary)
-
                 Text(title)
-                    .font(.title3.weight(.semibold))
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: true, vertical: false)
 
