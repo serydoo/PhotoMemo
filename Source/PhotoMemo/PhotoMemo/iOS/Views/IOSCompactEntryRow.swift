@@ -41,7 +41,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
     let subtitle: String
     let value: String
     let detail: String?
-    let systemImage: String
+    let systemImage: String?
     let showsDivider: Bool
 
     @Binding var isExpanded: Bool
@@ -52,7 +52,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
         subtitle: String,
         value: String,
         detail: String? = nil,
-        systemImage: String,
+        systemImage: String?,
         showsDivider: Bool = true,
         isExpanded: Binding<Bool>,
         @ViewBuilder content: () -> Content
@@ -83,7 +83,9 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
                 }
             } label: {
                 HStack(alignment: .center, spacing: 12) {
-                    leadingIcon
+                    if let systemImage {
+                        leadingIcon(systemImage)
+                    }
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(title)
@@ -155,7 +157,9 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
         }
     }
 
-    private var leadingIcon: some View {
+    private func leadingIcon(
+        _ systemImage: String
+    ) -> some View {
         ZStack {
             RoundedRectangle(
                 cornerRadius: 10,

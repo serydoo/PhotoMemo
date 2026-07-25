@@ -327,21 +327,11 @@ private struct V1MemoryWriteSection: View {
         )
 
         VStack(alignment: .leading, spacing: 8) {
-            V1SectionHeading(
-                "写入与保留",
-                systemImage: MemoMarkSymbol.retention.name,
-                tint: .green
-            )
-
             V1OutputCompactCard(
-                title: "保存选项",
-                systemImage: MemoMarkSymbol.retention.name,
-                tint: .green
+                title: "写入与保留"
             ) {
                 VStack(alignment: .leading, spacing: 0) {
                     V1OutputRetentionRow(
-                        systemImage: MemoMarkSymbol.photoMetadata.name,
-                        tint: .blue,
                         title: "保留拍摄信息",
                         subtitle: "保留 EXIF 拍摄参数与元数据"
                     )
@@ -349,8 +339,6 @@ private struct V1MemoryWriteSection: View {
                     V1HorizontalDivider()
 
                     V1OutputRetentionRow(
-                        systemImage: "livephoto",
-                        tint: .pink,
                         title: "保留 Live Photo",
                         subtitle: "原格式输出时保留动态效果"
                     )
@@ -359,8 +347,6 @@ private struct V1MemoryWriteSection: View {
 
                     Toggle(isOn: $usesCustomMemoryWriteText) {
                         V1OutputRetentionLabel(
-                            systemImage: MemoMarkSymbol.memoryContent.name,
-                            tint: .green,
                             title: presentation.toggleTitle,
                             subtitle: presentation.toggleDescription
                         )
@@ -404,8 +390,6 @@ private struct V1MemoryWriteSection: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    V1MemoryWriteExplanation()
-                        .padding(.top, 8)
                 }
             }
         }
@@ -415,15 +399,11 @@ private struct V1MemoryWriteSection: View {
 
 private struct V1OutputRetentionRow: View {
 
-    let systemImage: String
-    let tint: Color
     let title: String
     let subtitle: String
 
     var body: some View {
         V1OutputRetentionLabel(
-            systemImage: systemImage,
-            tint: tint,
             title: title,
             subtitle: subtitle
         )
@@ -436,78 +416,20 @@ private struct V1OutputRetentionRow: View {
 
 private struct V1OutputRetentionLabel: View {
 
-    let systemImage: String
-    let tint: Color
     let title: String
     let subtitle: String
 
     var body: some View {
-        HStack(
-            alignment: .center,
-            spacing:
-                V1CompactInformationRowMetrics
-                .contentSpacing
-        ) {
-            Image(systemName: systemImage)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(tint)
-                .frame(
-                    width: V1CompactInformationRowMetrics.iconSize,
-                    height: V1CompactInformationRowMetrics.iconSize
-                )
-                .background(
-                    RoundedRectangle(
-                        cornerRadius:
-                            V1CompactInformationRowMetrics
-                            .iconCornerRadius,
-                        style: .continuous
-                    )
-                    .fill(tint.opacity(0.11))
-                )
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
-    }
-}
-
-private struct V1MemoryWriteExplanation: View {
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: MemoMarkSymbol.writingDescription.name)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color.blue)
-                .frame(width: 22)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("写入图片说明")
-                    .font(.callout.weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text("开启使用智能模块结果；关闭后使用手动录入内容。示例：记录于｜2026.07.01｜1岁2个月18天。")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(10)
-        .background(
-            RoundedRectangle(
-                cornerRadius: ConfigurationUI.cornerRadius,
-                style: .continuous
-            )
-            .fill(Color.blue.opacity(0.10))
-        )
     }
 }
 

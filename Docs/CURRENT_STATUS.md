@@ -2,6 +2,20 @@
 
 Last updated: 2026-07-25
 
+## 2026-07-25 Design System V1 Subtractive Completion Pass
+
+- Reduced Processing completion color to one primary green status pill:
+  completed steps and the completed progress bar use secondary hierarchy, the
+  redundant `100%` is hidden, and active processing retains progress feedback.
+- Simplified Output and Region Content to typography-first secondary rows,
+  removed duplicate headings and decorative row icons, and retained all
+  toggles, values, custom phrases, smart-module composition, and result-writing
+  behavior.
+- Thirty-two focused UI and architecture contracts passed, followed by a
+  successful signed physical-device build and installation on `iPhone7`.
+  Automated launch was blocked only by the locked device; visual acceptance
+  remains pending after unlock.
+
 ## 2026-07-25 Configuration And Share Action Unification
 
 - Moved Configuration Center save state, secondary actions, and the primary

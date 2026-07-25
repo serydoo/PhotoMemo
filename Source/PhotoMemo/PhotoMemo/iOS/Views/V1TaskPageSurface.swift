@@ -131,10 +131,6 @@ struct V1TaskPageSurface: View {
     private var currentTaskActiveCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Circle()
-                    .fill(presentation.currentTask.tint.color)
-                    .frame(width: 7, height: 7)
-
                 Text("当前任务")
                     .font(.subheadline.weight(.semibold))
 
@@ -241,7 +237,8 @@ struct V1TaskPageSurface: View {
                 Spacer(minLength: 0)
 
                 if let progressFraction =
-                    presentation.currentTask.progressFraction {
+                    presentation.currentTask.progressFraction,
+                   showsProgressPercentage(progressFraction) {
                     Text(progressPercentText(progressFraction))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(
@@ -255,7 +252,7 @@ struct V1TaskPageSurface: View {
                 presentation.currentTask.progressFraction {
                 ProgressView(value: progressFraction)
                     .progressViewStyle(.linear)
-                    .tint(presentation.currentTask.tint.color)
+                    .tint(progressBarTint(progressFraction))
                     .accessibilityLabel("当前任务进度")
                     .accessibilityValue(
                         progressPercentText(progressFraction)
@@ -593,6 +590,22 @@ struct V1TaskPageSurface: View {
         _ fraction: Double
     ) -> String {
         "\(Int((fraction * 100).rounded()))%"
+    }
+
+    private func showsProgressPercentage(
+        _ progressFraction: Double
+    ) -> Bool {
+        progressFraction < 1
+    }
+
+    private func progressBarTint(
+        _ progressFraction: Double
+    ) -> Color {
+        guard progressFraction < 1 else {
+            return .secondary
+        }
+
+        return presentation.currentTask.tint.color
     }
 
     private func taskStatusPill(

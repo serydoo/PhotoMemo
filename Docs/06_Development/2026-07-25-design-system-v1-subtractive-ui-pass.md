@@ -33,3 +33,32 @@
 - The generic iOS Simulator Debug build for `PhotoMemoiOS` passed with code signing disabled.
 - `git diff --check` passed, and the final source review found no state-flow, accessibility-label, or architecture ownership changes.
 - Manual simulator or physical-device visual acceptance was not completed; visual fidelity remains an explicit acceptance item.
+
+## Continuation: Processing, Output, And Region Content
+
+- Observed behavior: Processing completion repeats green through the task dot,
+  status pill, percentage, progress bar, and step states. Output repeats section
+  titles and uses blue, pink, and green icons across secondary rows. Region
+  Content still presents four secondary-row icons and a separate explanation
+  card after the editable list.
+- Intended outcome: Preserve one clear completion signal, keep percentage while
+  work is active but remove redundant `100%` at completion, and make Output and
+  Region Content typography-first without weakening controls or state meaning.
+- Scope: `V1TaskPageSurface`, `V1OutputPageSurface`, `V1RegionEditorCard`, the
+  Region Content sheet composition, and focused source-contract tests.
+- Product boundaries: Processing state, configuration drafts, smart-module
+  composition, description-writing policy, Renderer, Export, PhotoKit, and
+  Share behavior remain unchanged.
+- Verification: Add failing source contracts first, run focused contract suites,
+  build the signed iOS app including extensions, install and launch on `iPhone7`,
+  then leave final visual acceptance to the user.
+
+### Continuation Verification Result
+
+- The combined Processing, Output, Region Content, configuration option, and
+  symbol-contract selection passed all 32 focused tests.
+- `git diff --check` passed. The signed `PhotoMemoiOS` Debug build, including
+  Share Extension and Widget validation, succeeded for physical `iPhone7`.
+- Installation on `iPhone7` succeeded. Automated launch was denied only because
+  the device was locked; final unlocked-device visual acceptance remains with
+  the user.

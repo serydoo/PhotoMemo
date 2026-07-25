@@ -696,7 +696,7 @@ private extension V1SettingsPagePresenter {
         case .active:
             return .blue
         case .completed:
-            return .green
+            return .secondary
         case .needsAttention:
             return .orange
         }

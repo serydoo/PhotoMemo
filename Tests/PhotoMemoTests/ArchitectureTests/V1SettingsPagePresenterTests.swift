@@ -113,6 +113,14 @@ struct V1SettingsPagePresenterTests {
             ]
         )
         #expect(
+            presentation.currentTask.stepRows.map(\.tint)
+            == [
+                .secondary,
+                .blue,
+                .secondary
+            ]
+        )
+        #expect(
             presentation.historyRows.count
             == 2
         )

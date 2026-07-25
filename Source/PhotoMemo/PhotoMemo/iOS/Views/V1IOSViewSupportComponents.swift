@@ -638,7 +638,7 @@ struct V1RegionEditorCard: View {
             subtitle: "默认\(region.semanticTitle)",
             value: rowValueText,
             detail: rowDetailText,
-            systemImage: region.systemImage,
+            systemImage: nil,
             showsDivider: showsDivider,
             isExpanded: $isExpanded
         ) {

@@ -45,6 +45,42 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(processing.contains(".stroke(ConfigurationUI.faintHairline)"))
     }
 
+    @Test("processing completion keeps one calm success hierarchy")
+    func processingCompletionKeepsOneCalmSuccessHierarchy() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
+        )
+
+        #expect(!source.contains("Circle()\n                    .fill(presentation.currentTask.tint.color)"))
+        #expect(source.contains("private func showsProgressPercentage"))
+        #expect(source.contains("progressFraction < 1"))
+        #expect(source.contains("private func progressBarTint"))
+        #expect(source.contains("return .secondary"))
+        #expect(source.contains("progressPercentText(progressFraction)"))
+    }
+
+    @Test("output and region editors use typography before secondary icons")
+    func outputAndRegionEditorsUseTypographyBeforeSecondaryIcons() throws {
+        let output = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
+        )
+        let root = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+        let support = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+
+        #expect(!output.contains("V1SectionHeading(\n                \"写入与保留\""))
+        #expect(output.contains("title: \"写入与保留\""))
+        #expect(!output.contains("private struct V1MemoryWriteExplanation"))
+        #expect(!output.contains("let tint: Color\n    let title: String\n    let subtitle: String"))
+        #expect(support.contains("systemImage: nil"))
+        #expect(root.contains("Text(\"配置说明\")"))
+        #expect(!root.contains("Label(\"配置说明\", systemImage: \"info.circle\")"))
+        #expect(root.contains("regionConfigurationGuide\n                .padding(.horizontal, 4)"))
+    }
+
     @Test("processing surface avoids dashboard and import-first language")
     func processingSurfaceAvoidsDashboardLanguage() throws {
         let source = try sourceText(

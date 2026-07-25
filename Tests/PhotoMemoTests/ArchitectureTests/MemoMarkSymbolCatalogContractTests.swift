@@ -77,8 +77,6 @@ struct MemoMarkSymbolCatalogContractTests {
             ("iOS/Views/V1HomePageSurface.swift", "记忆对象", "MemoMarkSymbol.memorySubject.name"),
             ("iOS/Views/V1HomeFeedbackSection.swift", "意见反馈", "MemoMarkSymbol.feedback.name"),
             ("iOS/Views/V1OutputPageSurface.swift", "输出目标", "MemoMarkSymbol.output.name"),
-            ("iOS/Views/V1OutputPageSurface.swift", "写入与保留", "MemoMarkSymbol.retention.name"),
-            ("iOS/Views/V1OutputPageSurface.swift", "保存选项", "MemoMarkSymbol.retention.name"),
             ("iOS/Views/V1TaskPageSurface.swift", "最近任务", "MemoMarkSymbol.processing.name"),
             ("iOS/Views/V1SettingsPageSurface.swift", "为什么是时光记", "MemoMarkSymbol.memoryContent.name"),
             ("iOS/Views/V1SettingsPageSurface.swift", "使用与帮助", "MemoMarkSymbol.help.name"),
@@ -115,7 +113,6 @@ struct MemoMarkSymbolCatalogContractTests {
         for symbol in [
             "MemoMarkSymbol.memorySubject.name",
             "MemoMarkSymbol.memoryContent.name",
-            "MemoMarkSymbol.borderStyle.name",
             "MemoMarkSymbol.timeAnchor.name",
             "MemoMarkSymbol.help.name"
         ] {

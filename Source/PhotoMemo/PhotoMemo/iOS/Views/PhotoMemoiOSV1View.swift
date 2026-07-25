@@ -2360,12 +2360,13 @@ struct PhotoMemoiOSV1View: View {
             }
 
             regionConfigurationGuide
+                .padding(.horizontal, 4)
         }
     }
 
     private var regionConfigurationGuide: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("配置说明", systemImage: "info.circle")
+            Text("配置说明")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
@@ -2374,11 +2375,6 @@ struct PhotoMemoiOSV1View: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(ConfigurationUI.controlBackground)
-        )
     }
 
     private var accessoryEntryCluster: some View {
