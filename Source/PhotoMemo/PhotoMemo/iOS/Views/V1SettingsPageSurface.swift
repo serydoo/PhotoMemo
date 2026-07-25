@@ -377,12 +377,9 @@ struct V1SettingsPageSurface: View {
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Label(
-                    "愿大家都能享受这些被时间标记的记忆。",
-                    systemImage: "sparkles"
-                )
+                Text("愿大家都能享受这些被时间标记的记忆。")
                 .font(.caption)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
                 ViewThatFits(in: .horizontal) {
@@ -413,19 +410,7 @@ struct V1SettingsPageSurface: View {
                 Button(action: onShowWelcome) {
                     settingsActionRow(
                         title: "重新查看欢迎说明",
-                        detail: "回看首次使用说明、核心能力与基础引导。",
-                        systemImage: "sparkles",
-                        accent: .blue,
-                        thumbnail: {
-                            settingsThumbnailStack(
-                                accent: .blue,
-                                symbols: [
-                                    "sparkles.rectangle.stack",
-                                    "hand.wave.fill",
-                                    "text.badge.star"
-                                ]
-                            )
-                        }
+                        detail: "回看首次使用说明、核心能力与基础引导。"
                     )
                 }
                 .buttonStyle(.plain)
@@ -433,19 +418,7 @@ struct V1SettingsPageSurface: View {
                 Button(action: onShowWorkflow) {
                     settingsActionRow(
                         title: "查看使用流程",
-                        detail: "按 Apple Photos -> Share -> 时光记的真实路径回看处理方式。",
-                        systemImage: MemoMarkSymbol.help.name,
-                        accent: .teal,
-                        thumbnail: {
-                            settingsThumbnailStack(
-                                accent: .teal,
-                                symbols: [
-                                    "photo.on.rectangle.angled",
-                                    "square.and.arrow.up",
-                                    "checkmark.rectangle.stack.fill"
-                                ]
-                            )
-                        }
+                        detail: "按 Apple Photos -> Share -> 时光记的真实路径回看处理方式。"
                     )
                 }
                 .buttonStyle(.plain)
@@ -455,20 +428,7 @@ struct V1SettingsPageSurface: View {
                 } label: {
                     settingsActionRow(
                         title: "查看表达公式说明",
-                        detail: "按时间锚点查看主体、智能输出和锚点结果的组合方式。",
-                        systemImage:
-                            MemoMarkSymbol.expressionFormula.name,
-                        accent: .orange,
-                        thumbnail: {
-                            settingsThumbnailStack(
-                                accent: .orange,
-                                symbols: [
-                                    MemoMarkSymbol.expressionFormula.name,
-                                    "calendar.badge.clock",
-                                    "paintpalette.fill"
-                                ]
-                            )
-                        }
+                        detail: "按时间锚点查看主体、智能输出和锚点结果的组合方式。"
                     )
                 }
                 .buttonStyle(.plain)
@@ -524,8 +484,6 @@ struct V1SettingsPageSurface: View {
                         appVersion,
                         appBuild
                     ),
-                    systemImage: "number.circle.fill",
-                    tint: .blue,
                     showsDivider: false
                 )
             }
@@ -545,8 +503,7 @@ struct V1SettingsPageSurface: View {
                     title: "照片输入",
                     headline: "静态照片、Live Photo 与 RAW / DNG",
                     detail: "可从主程序或 Apple Photos 分享进入；Live Photo 与 RAW / DNG 路径仍会持续进行真机兼容性验证。",
-                    systemImage: MemoMarkSymbol.applePhotos.name,
-                    tint: .blue
+                    showsDivider: true
                 )
 
                 settingsInfoRow(
@@ -554,16 +511,13 @@ struct V1SettingsPageSurface: View {
                     headline:
                         "最多 \(commerceSnapshot.batchLimit) 张照片",
                     detail: "较大的分享请分批进行，减少系统扩展内存压力并提高回存稳定性。",
-                    systemImage: MemoMarkSymbol.originalPhoto.name,
-                    tint: .teal
+                    showsDivider: true
                 )
 
                 settingsInfoRow(
                     title: "处理结果",
                     headline: "生成新文件并保存回 Apple Photos",
                     detail: "时光记不会覆盖原图。Live Photo 是否保留动态效果由当前输出配置与实际输入决定。",
-                    systemImage: MemoMarkSymbol.output.name,
-                    tint: .indigo,
                     showsDivider: false
                 )
             }
@@ -595,9 +549,7 @@ struct V1SettingsPageSurface: View {
                         detail: localized(
                             "settings.feedback.social.detail",
                             fallback: "欢迎通过公开账号联系开发者，分享使用体验与建议。"
-                        ),
-                        systemImage: "magnifyingglass.circle.fill",
-                        tint: .pink
+                        )
                     )
                     .textSelection(.enabled)
 
@@ -610,9 +562,7 @@ struct V1SettingsPageSurface: View {
                         detail: localized(
                             "settings.feedback.qq.detail",
                             fallback: "适合交流使用问题、产品想法与个性化需求。"
-                        ),
-                        systemImage: "person.2.fill",
-                        tint: .cyan
+                        )
                     )
                     .textSelection(.enabled)
 
@@ -628,9 +578,7 @@ struct V1SettingsPageSurface: View {
                         detail: localized(
                             "settings.feedback.testflight.detail",
                             fallback: "优先使用系统内置反馈，方便带上设备和崩溃上下文。"
-                        ),
-                        systemImage: "paperplane.fill",
-                        tint: .blue
+                        )
                     )
 
                     settingsLinkRow(
@@ -642,9 +590,7 @@ struct V1SettingsPageSurface: View {
                         detail: localized(
                             "settings.feedback.email.detail",
                             fallback: "适合描述复现步骤、预期结果、实际结果和 iOS 版本。"
-                        ),
-                        systemImage: "envelope.fill",
-                        tint: .teal
+                        )
                     ) {
                         openMailFeedback()
                     }
@@ -662,8 +608,6 @@ struct V1SettingsPageSurface: View {
                             "settings.feedback.github.detail",
                             fallback: "适合记录稳定复现的缺陷和后续开发讨论。"
                         ),
-                        systemImage: "curlybraces.square.fill",
-                        tint: .indigo,
                         showsDivider: false
                     ) {
                         openGitHubIssues()
@@ -694,23 +638,19 @@ struct V1SettingsPageSurface: View {
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 settingsPrinciple(
-                    title: "照片处理在设备本地完成，不会上传照片。",
-                    tint: .blue
+                    title: "照片处理在设备本地完成，不会上传照片。"
                 )
 
                 settingsPrinciple(
-                    title: "时光记生成新文件，不修改 Apple Photos 中的原始照片。",
-                    tint: .teal
+                    title: "时光记生成新文件，不修改 Apple Photos 中的原始照片。"
                 )
 
                 settingsPrinciple(
-                    title: "记忆对象、时间锚点、配置与任务记录保存在本机应用容器中。",
-                    tint: .indigo
+                    title: "记忆对象、时间锚点、配置与任务记录保存在本机应用容器中。"
                 )
 
                 settingsPrinciple(
-                    title: "删除应用可能同时移除尚未单独备份的本地配置与记录。",
-                    tint: .orange
+                    title: "删除应用可能同时移除尚未单独备份的本地配置与记录。"
                 )
             }
         }
@@ -731,26 +671,15 @@ struct V1SettingsPageSurface: View {
         )
     }
 
-    private func settingsActionRow<Thumbnail: View>(
+    private func settingsActionRow(
         title: String,
-        detail: String,
-        systemImage: String,
-        accent: Color,
-        @ViewBuilder thumbnail: () -> Thumbnail
+        detail: String
     ) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            thumbnail()
-
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    Image(systemName: systemImage)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(accent)
-                }
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
 
                 Text(detail)
                     .font(.caption)
@@ -778,70 +707,48 @@ struct V1SettingsPageSurface: View {
                 cornerRadius: 14,
                 style: .continuous
             )
-            .stroke(accent.opacity(0.10))
+            .stroke(ConfigurationUI.faintHairline)
         )
     }
 
     private func settingsTag(
-        title: String,
-        systemImage: String
+        title: String
     ) -> some View {
-        Label(title, systemImage: systemImage)
+        Text(title)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Color.blue)
+            .foregroundStyle(.secondary)
             .lineLimit(1)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.blue.opacity(0.08))
+                    .fill(ConfigurationUI.controlBackground)
             )
     }
 
     private var privacyTag: some View {
         settingsTag(
-            title: "本地优先",
-            systemImage: MemoMarkSymbol.privacy.name
+            title: "本地优先"
         )
     }
 
     private var memoryTag: some View {
         settingsTag(
-            title: "保存记忆",
-            systemImage: MemoMarkSymbol.memoryContent.name
+            title: "保存记忆"
         )
     }
 
     private var originalPhotoTag: some View {
         settingsTag(
-            title: "不改原图",
-            systemImage: MemoMarkSymbol.applePhotos.name
+            title: "不改原图"
         )
     }
 
-    private func settingsPrinciple(
-        title: String,
-        tint: Color
-    ) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            ZStack {
-                RoundedRectangle(
-                    cornerRadius: 10,
-                    style: .continuous
-                )
-                .fill(tint.opacity(0.10))
-
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(tint)
-            }
-            .frame(width: 28, height: 28)
-
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+    private func settingsPrinciple(title: String) -> some View {
+        Text(title)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 2)
     }
@@ -850,16 +757,12 @@ struct V1SettingsPageSurface: View {
         title: String,
         headline: String,
         detail: String,
-        systemImage: String,
-        tint: Color,
         showsDivider: Bool = true
     ) -> some View {
         settingsContentRow(
             title: title,
             headline: headline,
             detail: detail,
-            systemImage: systemImage,
-            tint: tint,
             showsDivider: showsDivider
         )
     }
@@ -869,8 +772,6 @@ struct V1SettingsPageSurface: View {
         title: String,
         headline: String,
         detail: String,
-        systemImage: String,
-        tint: Color,
         showsDivider: Bool = true,
         action: (() -> Void)? = nil
     ) -> some View {
@@ -880,8 +781,6 @@ struct V1SettingsPageSurface: View {
                     title: title,
                     headline: headline,
                     detail: detail,
-                    systemImage: systemImage,
-                    tint: tint,
                     showsDivider: showsDivider,
                     accessory: "chevron.right"
                 )
@@ -892,8 +791,6 @@ struct V1SettingsPageSurface: View {
                 title: title,
                 headline: headline,
                 detail: detail,
-                systemImage: systemImage,
-                tint: tint,
                 showsDivider: showsDivider
             )
         }
@@ -903,22 +800,15 @@ struct V1SettingsPageSurface: View {
         title: String,
         headline: String,
         detail: String,
-        systemImage: String,
-        tint: Color,
         showsDivider: Bool,
         accessory: String? = nil
     ) -> some View {
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
-                settingsTonalIcon(
-                    systemImage: systemImage,
-                    tint: tint
-                )
-
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(tint)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Text(headline)
@@ -949,25 +839,6 @@ struct V1SettingsPageSurface: View {
                 V1HorizontalDivider(horizontalInset: 12)
             }
         }
-    }
-
-    private func settingsTonalIcon(
-        systemImage: String,
-        tint: Color
-    ) -> some View {
-        ZStack {
-            RoundedRectangle(
-                cornerRadius: 10,
-                style: .continuous
-            )
-            .fill(tint.opacity(0.10))
-
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(tint)
-                .symbolRenderingMode(.hierarchical)
-        }
-        .frame(width: 36, height: 36)
     }
 
     private func openMailFeedback() {
@@ -1012,38 +883,6 @@ struct V1SettingsPageSurface: View {
         openURL(url)
     }
 
-    private func settingsThumbnailStack(
-        accent: Color,
-        symbols: [String]
-    ) -> some View {
-        ZStack {
-            ForEach(Array(symbols.enumerated()), id: \.offset) { index, symbol in
-                RoundedRectangle(
-                    cornerRadius: 12,
-                    style: .continuous
-                )
-                .fill(Color.white.opacity(0.92))
-                .frame(width: 44, height: 54)
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: 12,
-                        style: .continuous
-                    )
-                    .stroke(accent.opacity(0.10))
-                )
-                .overlay(
-                    Image(systemName: symbol)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(accent)
-                )
-                .offset(
-                    x: CGFloat(index) * 7,
-                    y: CGFloat(index) * 4
-                )
-            }
-        }
-        .frame(width: 58, height: 62)
-    }
 }
 
 private struct V1SettingsDisclosureSection<Content: View>: View {

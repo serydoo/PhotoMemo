@@ -65,7 +65,7 @@ struct ConfigurationCenterDetailPresenterTests {
             )
 
         #expect(presentation.content == .regionComposer)
-        #expect(presentation.title == "区域 D 配置")
+        #expect(presentation.title == "右下配置")
         #expect(
             presentation.systemImage
             == MemoMarkSymbol.memoryContent.name

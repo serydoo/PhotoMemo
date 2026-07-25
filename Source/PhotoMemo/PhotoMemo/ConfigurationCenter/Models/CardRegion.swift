@@ -42,13 +42,13 @@ extension CardRegion {
         case .subject:
             return "记忆对象"
         case .slotA:
-            return "区域 A"
+            return "左上"
         case .slotB:
-            return "区域 B"
+            return "左下"
         case .slotC:
-            return "区域 C"
+            return "右上"
         case .slotD:
-            return "区域 D"
+            return "右下"
         case .icon:
             return "图标"
         case .badge:
@@ -72,6 +72,23 @@ extension CardRegion {
             return "拍摄参数"
         case .slotD:
             return "记忆"
+        }
+    }
+
+    var defaultContentSummary: String {
+        switch self {
+        case .slotA:
+            return "默认动作 + 设备信息"
+        case .slotB:
+            return "默认时间线信息"
+        case .slotC:
+            return "默认拍摄参数信息"
+        case .slotD:
+            return "默认智能模块输出信息"
+        case .subject,
+             .icon,
+             .badge:
+            return semanticTitle
         }
     }
 

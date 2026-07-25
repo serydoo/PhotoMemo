@@ -187,11 +187,12 @@ private struct V1OutputSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            V1OutputCompactCard(
-                title: "输出目标",
-                systemImage: MemoMarkSymbol.output.name,
-                tint: .green
-            ) {
+            V1SectionHeading(
+                "输出目标",
+                subtitle: "选择生成照片保存到 Apple Photos、已有相册或新相册。"
+            )
+
+            V1OutputContentCard {
                 VStack(alignment: .leading, spacing: 10) {
                     Picker(
                         "输出目标",
@@ -327,9 +328,12 @@ private struct V1MemoryWriteSection: View {
         )
 
         VStack(alignment: .leading, spacing: 8) {
-            V1OutputCompactCard(
-                title: "写入与保留"
-            ) {
+            V1SectionHeading(
+                "写入与保留",
+                subtitle: "决定生成结果保留哪些原始信息，以及是否将组合内容写入照片说明。"
+            )
+
+            V1OutputContentCard {
                 VStack(alignment: .leading, spacing: 0) {
                     V1OutputRetentionRow(
                         title: "保留拍摄信息",
@@ -433,44 +437,12 @@ private struct V1OutputRetentionLabel: View {
     }
 }
 
-private struct V1OutputCompactCard<Content: View>: View {
+private struct V1OutputContentCard<Content: View>: View {
 
-    let title: String
-    let systemImage: String?
-    let tint: Color
     @ViewBuilder var content: Content
 
-    init(
-        title: String,
-        systemImage: String? = nil,
-        tint: Color = .accentColor,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.title = title
-        self.systemImage = systemImage
-        self.tint = tint
-        self.content = content()
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                if let systemImage {
-                    V1CompactHeadingIcon(
-                        systemImage: systemImage,
-                        tint: tint
-                    )
-                }
-
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Spacer(minLength: 0)
-            }
-
-            content
-        }
+        content
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .v1CardChrome()

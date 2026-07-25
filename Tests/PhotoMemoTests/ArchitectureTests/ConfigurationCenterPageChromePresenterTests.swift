@@ -19,7 +19,7 @@ struct ConfigurationCenterPageChromePresenterTests {
                 session: session
             )
 
-        #expect(presentation.sectionTitle == "区域 D 配置")
+        #expect(presentation.sectionTitle == "右下配置")
         #expect(
             presentation.statusText
             == "当前配置改动尚未生效"

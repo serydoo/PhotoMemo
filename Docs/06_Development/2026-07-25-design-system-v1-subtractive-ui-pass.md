@@ -62,3 +62,32 @@
 - Installation on `iPhone7` succeeded. Automated launch was denied only because
   the device was locked; final unlocked-device visual acceptance remains with
   the user.
+
+## Directional Region, Footer, Output, And Settings Correction
+
+- Observed behavior: Region Content still exposed engineering labels `区域 A–D`
+  and generic semantic summaries. The Configuration footer grouped status and
+  more actions on the left. Output kept both section titles inside their cards,
+  while Settings repeated thumbnails, tonal row icons, colored labels, and
+  checkmarks beneath its section-level icons.
+- Intended outcome: Name card positions `左上、左下、右上、右下`; describe the
+  left-top default as action plus device information and the right-bottom
+  default as smart-module output. Keep status left, save centered, and more
+  actions right. Promote Output titles and explanations outside their cards,
+  and make Settings content typography-first while preserving the MemoMark+
+  entry and one icon per top-level disclosure section.
+- Scope and ownership: User-facing SwiftUI presentation and presenter copy only.
+  Region identity, configuration persistence, module composition, Renderer,
+  Export, PhotoKit, commerce behavior, and Share lifecycle remain unchanged.
+- Verification plan: Run focused presentation and source contracts, a signed
+  physical-device build including extensions, install and launch on `iPhone7`,
+  and leave final visual acceptance to the user.
+
+### Correction Verification Result
+
+- Thirty-nine focused presentation, settings, symbol, and Design System
+  contracts passed after the final dead-parameter cleanup.
+- `git diff --check` passed. The signed `PhotoMemoiOS` Debug build succeeded,
+  including Share Extension and Widget embedded-binary validation.
+- Installation and automated launch on physical `iPhone7` both succeeded.
+  Final visual acceptance remains with the user on the running device.

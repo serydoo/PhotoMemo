@@ -2,6 +2,24 @@
 
 Last updated: 2026-07-25
 
+## 2026-07-25 Directional Configuration And Settings Hierarchy
+
+- Replaced user-facing card region labels `区域 A–D` with positional names
+  `左上、左下、右上、右下`. Region summaries now state the actual defaults,
+  including left-top action plus device information and right-bottom smart
+  module output.
+- Rebuilt the Configuration footer as a stable three-part composition: status
+  on the left, save centered, and more actions on the right, with a compact
+  accessibility fallback retained.
+- Promoted Output Target and Write And Retain to section-level headings with
+  explanatory copy outside their content cards and removed the redundant
+  Output Target heading icon.
+- Preserved the MemoMark+ entry and top-level Settings section icons while
+  removing secondary thumbnails, tonal row icons, colored field labels, and
+  repeated checkmark decoration from expanded content.
+- Thirty-nine focused contracts passed. A signed build including both embedded
+  extensions succeeded, installed, and launched on physical `iPhone7`.
+
 ## 2026-07-25 Design System V1 Subtractive Completion Pass
 
 - Reduced Processing completion color to one primary green status pill:

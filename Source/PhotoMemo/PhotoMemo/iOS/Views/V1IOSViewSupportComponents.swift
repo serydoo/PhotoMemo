@@ -635,7 +635,7 @@ struct V1RegionEditorCard: View {
     var body: some View {
         IOSCompactEntryDisclosureRow(
             title: region.displayTitle,
-            subtitle: "默认\(region.semanticTitle)",
+            subtitle: region.defaultContentSummary,
             value: rowValueText,
             detail: rowDetailText,
             systemImage: nil,

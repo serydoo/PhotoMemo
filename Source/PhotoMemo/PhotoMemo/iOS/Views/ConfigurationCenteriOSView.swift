@@ -1019,25 +1019,25 @@ struct ConfigurationCenteriOSView: View {
             ),
             sidebarCardItem(
                 title: "记录",
-                subtitle: "卡片区域 A",
+                subtitle: "卡片左上",
                 systemImage: "camera.fill",
                 region: .slotA
             ),
             sidebarCardItem(
                 title: "时间",
-                subtitle: "卡片区域 B",
+                subtitle: "卡片左下",
                 systemImage: "calendar",
                 region: .slotB
             ),
             sidebarCardItem(
                 title: "拍摄信息",
-                subtitle: "卡片区域 C",
+                subtitle: "卡片右上",
                 systemImage: "scope",
                 region: .slotC
             ),
             sidebarCardItem(
                 title: "记忆内容",
-                subtitle: "卡片区域 D · 默认承载",
+                subtitle: "卡片右下 · 默认承载",
                 systemImage: "text.quote",
                 region: .slotD
             )

@@ -71,8 +71,11 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
         )
 
-        #expect(!output.contains("V1SectionHeading(\n                \"写入与保留\""))
-        #expect(output.contains("title: \"写入与保留\""))
+        #expect(output.contains("V1SectionHeading(\n                \"输出目标\""))
+        #expect(output.contains("V1SectionHeading(\n                \"写入与保留\""))
+        #expect(output.contains("private struct V1OutputContentCard"))
+        #expect(!output.contains("private struct V1OutputCompactCard"))
+        #expect(!output.contains("title: \"输出目标\",\n                systemImage:"))
         #expect(!output.contains("private struct V1MemoryWriteExplanation"))
         #expect(!output.contains("let tint: Color\n    let title: String\n    let subtitle: String"))
         #expect(support.contains("systemImage: nil"))
@@ -137,6 +140,10 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         #expect(source.contains("expandedSections: Set<SettingsSection> = []"))
+        #expect(source.contains("private var memoMarkPlusSection"))
+        #expect(!source.contains("private func settingsTonalIcon"))
+        #expect(!source.contains("private func settingsThumbnailStack"))
+        #expect(!source.contains("Image(systemName: \"checkmark.circle.fill\")"))
     }
 
     @Test("interactive surfaces respect reduced motion")
@@ -171,7 +178,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(options.contains("编辑卡片内容"))
         #expect(!options.contains("index: \"1.\""))
         #expect(center.contains("title: \"拍摄信息\""))
-        #expect(center.contains("subtitle: \"卡片区域 C\""))
+        #expect(center.contains("subtitle: \"卡片右上\""))
         #expect(!preview.contains("Apple Photos -> Share"))
         #expect(!preview.contains("workflowChips"))
     }

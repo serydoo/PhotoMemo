@@ -763,10 +763,15 @@ struct V1ConfigurationActionFooter: View {
             configurationActionRow
 
             VStack(spacing: 8) {
-                configurationSupportRow
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
                 centeredPrimaryAction
+
+                HStack {
+                    configurationStatusLabel
+
+                    Spacer(minLength: 12)
+
+                    moreActionsMenu
+                }
             }
         }
         .padding(.horizontal, ConfigurationUI.contentColumnPadding)
@@ -805,23 +810,18 @@ struct V1ConfigurationActionFooter: View {
     private var configurationActionRow: some View {
         ZStack(alignment: .bottom) {
             HStack {
-                configurationSupportRow
+                configurationStatusLabel
                     .frame(width: 84, alignment: .leading)
 
                 Spacer(minLength: 0)
+
+                moreActionsMenu
+                    .frame(width: 84, alignment: .trailing)
             }
 
             centeredPrimaryAction
         }
         .frame(minWidth: 350)
-    }
-
-    private var configurationSupportRow: some View {
-        HStack(alignment: .center, spacing: 4) {
-            configurationStatusLabel
-
-            moreActionsMenu
-        }
     }
 
     private var centeredPrimaryAction: some View {

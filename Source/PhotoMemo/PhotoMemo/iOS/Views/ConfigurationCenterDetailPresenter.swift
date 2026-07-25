@@ -109,28 +109,28 @@ struct ConfigurationCenterDetailPresenter {
         case .slotA:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
-                title: "区域 A 配置",
+                title: "左上配置",
                 systemImage: MemoMarkSymbol.configuration.name
             )
 
         case .slotB:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
-                title: "区域 B 配置",
+                title: "左下配置",
                 systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
         case .slotC:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
-                title: "区域 C 配置",
+                title: "右上配置",
                 systemImage: MemoMarkSymbol.photoMetadata.name
             )
 
         case .slotD:
             return ConfigurationCenterRegionEditorPresentation(
                 content: .regionComposer,
-                title: "区域 D 配置",
+                title: "右下配置",
                 systemImage: MemoMarkSymbol.memoryContent.name
             )
         }
