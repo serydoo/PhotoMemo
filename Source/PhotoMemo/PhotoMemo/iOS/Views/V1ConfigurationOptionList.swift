@@ -81,33 +81,29 @@ struct V1ConfigurationOptionList: View {
                 .padding(.top, 2)
             }
         }
-        .confirmationDialog(
+        .alert(
             "恢复默认配置？",
             isPresented:
-                $showsResetConfigurationConfirmation,
-            titleVisibility: .visible
+                $showsResetConfigurationConfirmation
         ) {
+            Button("取消", role: .cancel) {}
             Button("恢复默认", role: .destructive) {
                 onResetConfiguration()
             }
-
-            Button("取消", role: .cancel) {}
         } message: {
-            Text("当前未保存的配置修改会被默认内容替换。")
+            Text("当前未保存的修改会被默认内容替换。此操作无法撤销。")
         }
-        .confirmationDialog(
+        .alert(
             "删除当前配置？",
             isPresented:
-                $showsDeleteConfigurationConfirmation,
-            titleVisibility: .visible
+                $showsDeleteConfigurationConfirmation
         ) {
+            Button("取消", role: .cancel) {}
             Button("删除配置", role: .destructive) {
                 onDeleteConfiguration()
             }
-
-            Button("取消", role: .cancel) {}
         } message: {
-            Text("删除当前配置不会删除已经保留在本地配置库中的备份。")
+            Text("本地配置库中的备份会保留。此操作无法撤销。")
         }
     }
 

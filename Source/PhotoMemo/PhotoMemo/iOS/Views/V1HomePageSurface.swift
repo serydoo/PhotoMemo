@@ -379,17 +379,16 @@ private struct V1HomeMemoryPresetRow: View {
                 .disabled(isSaveDisabled)
                 .accessibilityLabel("保存配置到本地库")
             }
-            .confirmationDialog(
-                "删除这个配置？",
-                isPresented: $showsDeleteConfirmation,
-                titleVisibility: .visible
+            .alert(
+                "删除“\(preset.title)”配置？",
+                isPresented: $showsDeleteConfirmation
             ) {
+                Button("取消", role: .cancel) {}
                 Button("删除配置", role: .destructive) {
                     onDelete()
                 }
-                Button("取消", role: .cancel) {}
             } message: {
-                Text("删除当前配置不会删除已经保留在本地配置库中的备份。")
+                Text("本地配置库中的备份会保留。此操作无法撤销。")
             }
     }
 

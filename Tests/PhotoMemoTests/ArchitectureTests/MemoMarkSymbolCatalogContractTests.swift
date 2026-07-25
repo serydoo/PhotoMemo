@@ -88,9 +88,7 @@ struct MemoMarkSymbolCatalogContractTests {
             ("iOS/Views/V1SettingsPageSurface.swift", "隐私与数据", "MemoMarkSymbol.privacy.name"),
             ("iOS/Views/V1WelcomePresentation.swift", "初次打开你会用到", "MemoMarkSymbol.welcome.name"),
             ("iOS/Views/V1WelcomePresentation.swift", "推荐流程", "MemoMarkSymbol.workflow.name"),
-            ("iOS/Views/V1WelcomePresentation.swift", "使用流程", "MemoMarkSymbol.workflow.name"),
-            ("iOS/Views/V1IOSSubjectConfigurationFlow.swift", "记忆对象配置", "MemoMarkSymbol.memorySubject.name"),
-            ("iOS/Views/V1IOSSubjectOverviewSheetSurface.swift", "时间锚点配置", "MemoMarkSymbol.timeAnchor.name")
+            ("iOS/Views/V1WelcomePresentation.swift", "使用流程", "MemoMarkSymbol.workflow.name")
         ]
 
         for (path, title, symbol) in expectations {

@@ -225,7 +225,7 @@ struct MemorySubjectEditorView: View {
     }
 
     private var identityOverviewEditor: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 4) {
             adaptiveIdentityOverviewHeader
 
             if let identityOverviewAccessory {
@@ -325,7 +325,7 @@ struct MemorySubjectEditorView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .frame(
-                maxWidth: .infinity,
+                maxWidth: 300,
                 minHeight: 44,
                 alignment: .leading
             )
@@ -409,53 +409,21 @@ struct MemorySubjectEditorView: View {
         systemImage: String,
         tint: Color
     ) -> some View {
-        HStack(spacing: 12) {
-            RoundedRectangle(
-                cornerRadius: 10,
-                style: .continuous
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            compactIdentityTextField(
+                title,
+                text: text,
+                focus: focus,
+                alignment: .leading
             )
-            .fill(tint.opacity(0.11))
-            .frame(width: 34, height: 34)
-            .overlay {
-                Image(systemName: systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(tint)
-            }
-
-            Group {
-                if dynamicTypeSize.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(title)
-                            .font(.body)
-                            .foregroundStyle(.primary)
-
-                        compactIdentityTextField(
-                            title,
-                            text: text,
-                            focus: focus,
-                            alignment: .leading
-                        )
-                    }
-                    .padding(.vertical, 9)
-                } else {
-                    HStack(spacing: 10) {
-                        Text(title)
-                            .font(.body)
-                            .foregroundStyle(.primary)
-                            .frame(width: 88, alignment: .leading)
-
-                        compactIdentityTextField(
-                            title,
-                            text: text,
-                            focus: focus,
-                            alignment: .trailing
-                        )
-                    }
-                }
-            }
+            .font(.body)
         }
         .padding(.horizontal, 12)
-        .frame(minHeight: 48)
+        .padding(.vertical, 7)
         .background(
             focusedField == focus
             ? Color.accentColor.opacity(0.055)
@@ -588,7 +556,8 @@ struct MemorySubjectEditorView: View {
 
     private var compactAvatarContent: some View {
         subjectAvatarPreview
-            .frame(width: 96, height: 96)
+            .scaleEffect(130.0 / 64.0)
+            .frame(width: 130, height: 130)
             .overlay(alignment: .bottomTrailing) {
                 Image(
                     systemName:
@@ -598,16 +567,17 @@ struct MemorySubjectEditorView: View {
                 )
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.white)
-                .frame(width: 24, height: 24)
+                .frame(width: 30, height: 30)
                 .background(
                     Circle()
-                        .fill(Color.black.opacity(0.82))
+                        .fill(Color.black.opacity(0.78))
                 )
                 .overlay(
                     Circle()
                         .stroke(Color.white, lineWidth: 2)
                 )
-                .offset(x: 4, y: 4)
+                .padding(0)
+                .accessibilityHidden(true)
             }
     }
 
@@ -1808,17 +1778,16 @@ private struct SubjectTimeAnchorRow: View {
                 }
                 .tint(.blue)
             }
-            .confirmationDialog(
-                "删除这个时间锚点？",
-                isPresented: $showsDeleteConfirmation,
-                titleVisibility: .visible
+            .alert(
+                "删除“\(anchor.title)”？",
+                isPresented: $showsDeleteConfirmation
             ) {
-                Button("删除时间锚点", role: .destructive) {
+                Button("取消", role: .cancel) {}
+                Button("删除锚点", role: .destructive) {
                     onDelete()
                 }
-                Button("取消", role: .cancel) {}
             } message: {
-                Text("删除后会立即切换到仍然保留的时间锚点，并同步刷新配置中心预览。")
+                Text("配置中心会切换到仍然保留的锚点。此操作无法撤销。")
             }
     }
 

@@ -33,7 +33,7 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains("accessibilityLabel(\"删除配置\")"))
         #expect(source.contains("accessibilityLabel(\"配置操作\")"))
         #expect(source.contains("Image(systemName: \"ellipsis.circle\")"))
-        #expect(source.contains("删除这个配置？"))
+        #expect(source.contains("删除“\\(preset.title)”配置？"))
     }
 
     @Test("swipe-action rows avoid nested collection-view lists")
@@ -57,15 +57,12 @@ struct V1HomeConfigurationActionContractTests {
                 options: .regularExpression
             ) == nil
         )
-        let timeAnchorPageStart = try #require(
-            subjectSheetSource.range(
-                of: "private var timeAnchorConfigurationPage"
+        #expect(
+            subjectSheetSource.contains(
+                "V1IOSSubjectAnchorDetailSection("
             )
         )
-        let timeAnchorPageSource = String(
-            subjectSheetSource[timeAnchorPageStart.lowerBound...]
-        )
-        #expect(!timeAnchorPageSource.contains("ScrollView"))
+        #expect(!subjectSheetSource.contains("List {"))
     }
 
     @Test("configuration card footer opens the current subject local library")
@@ -79,7 +76,7 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains("onOpenLocalConfigurationLibrary"))
     }
 
-    @Test("home surfaces local backup and deletion feedback")
+    @Test("home separates blocking failures from non-modal success feedback")
     func homeSurfacesConfigurationActionFeedback() throws {
         let rootSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
@@ -88,8 +85,11 @@ struct V1HomeConfigurationActionContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationLibraryActions.swift"
         )
 
-        #expect(rootSource.contains("showsHomeConfigurationActionFeedback"))
-        #expect(rootSource.contains(".alert("))
+        #expect(rootSource.contains("homeConfigurationActionFeedback"))
+        #expect(rootSource.contains("homeConfigurationStatusBanner"))
+        #expect(rootSource.contains("showsHomeConfigurationFailureAlert"))
+        #expect(!rootSource.contains("\"配置操作\""))
+        #expect(!rootSource.contains("Button(\"知道了\""))
         #expect(rootSource.contains("presentHomeConfigurationActionFeedback"))
         #expect(rootSource.contains("configurationLibraryActions.decide"))
         #expect(actionSource.contains("case applyCurrentThenDelete"))

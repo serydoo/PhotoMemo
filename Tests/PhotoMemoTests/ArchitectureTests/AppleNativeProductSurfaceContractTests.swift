@@ -113,6 +113,112 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(processing.contains(".frame(minHeight: 78)"))
         #expect(!processing.contains(".frame(height: 78)"))
     }
+
+    @Test("memory subject detail separates reading from basic information editing")
+    func memorySubjectDetailSeparatesReadingFromEditing() throws {
+        let detail = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
+        let editor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+        )
+
+        #expect(detail.contains("subjectIdentityHeader"))
+        #expect(detail.contains("subjectBasicInformation"))
+        #expect(detail.contains("ToolbarItem(placement: .topBarLeading)"))
+        #expect(detail.contains("ToolbarItem(placement: .topBarTrailing)"))
+        #expect(detail.contains("Button(\"编辑\")"))
+        #expect(!detail.contains("onSaveSubject"))
+        #expect(!detail.contains("当前使用"))
+        #expect(!detail.contains("mode: .identityOverview"))
+        #expect(editor.contains("mode: .identityOverview"))
+        #expect(editor.contains("删除记忆对象"))
+    }
+
+    @Test("memory subject detail presents anchors as ordered long press modules")
+    func memorySubjectDetailPresentsAnchorModules() throws {
+        let detail = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
+        let anchors = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let source = detail + anchors
+
+        #expect(source.contains("ForEach(subject.timeAnchors)"))
+        #expect(source.contains("V1IOSSubjectAnchorDetailModule"))
+        #expect(source.contains("contextMenu"))
+        #expect(source.contains("添加锚点"))
+        #expect(source.contains("最多保留 5 个时间锚点"))
+        #expect(source.contains("至少保留一个时间锚点"))
+        #expect(source.contains("accessibilityAction(named: \"配置锚点\")"))
+        #expect(source.contains("accessibilityAction(named: \"删除锚点\")"))
+        #expect(!source.contains("时间锚点配置"))
+    }
+
+    @Test("single destructive decisions use centered alerts")
+    func destructiveDecisionsUseCenteredAlerts() throws {
+        let paths = [
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+        ]
+
+        for path in paths {
+            let source = try sourceText(path)
+            #expect(source.contains(".alert("))
+            #expect(!source.contains(".confirmationDialog("))
+        }
+    }
+
+    @Test("time anchor dialog copy names the consequence")
+    func timeAnchorDialogCopyNamesTheConsequence() throws {
+        let detail = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let editor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+
+        #expect(detail.contains("此操作无法撤销。"))
+        #expect(editor.contains("此操作无法撤销。"))
+        #expect(detail.contains("至少保留一个时间锚点"))
+        #expect(detail.contains("新增另一个锚点后，才能删除当前锚点。"))
+    }
+
+    @Test("time anchor deletion validates the current session state")
+    func timeAnchorDeletionUsesCurrentSessionState() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+
+        #expect(source.contains("session.state.selectedSubject?.timeAnchors.count"))
+        #expect(
+            !source.contains(
+                "guard (subject?.timeAnchors.count ?? 0) > 1"
+            )
+        )
+    }
+
+    @Test("memory subject editor separates cancel save and delete outcomes")
+    func memorySubjectEditorSeparatesCompletionOutcomes() throws {
+        let editor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+        )
+        let root = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        #expect(editor.contains("onCancel:"))
+        #expect(editor.contains("onSave:"))
+        #expect(editor.contains("Button(\"取消\") {\n                        onCancel()"))
+        #expect(editor.contains("flowState.saveChanges()"))
+        #expect(editor.contains("onSave()"))
+        #expect(root.contains("nextState.showsSubjectOverview = true"))
+    }
 }
 
 private extension AppleNativeProductSurfaceContractTests {

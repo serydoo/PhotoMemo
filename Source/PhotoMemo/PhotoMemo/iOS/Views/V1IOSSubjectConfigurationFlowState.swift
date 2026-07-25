@@ -29,16 +29,45 @@ final class V1IOSSubjectConfigurationFlowState:
         self.draftSession.selectSubject(selectedSubject)
     }
 
-    func saveChanges() {
+    var canSaveChanges: Bool {
         guard let updatedSubject =
-            draftSession.state.selectedSubject,
-            updatedSubject.id == sourceSubjectID
-        else {
-            return
+            draftSession.state.selectedSubject else {
+            return false
         }
 
-        liveSession.updateSelectedSubject(updatedSubject)
-        persistSubject?(updatedSubject)
+        return !updatedSubject.identity.displayName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
+    }
+
+    @discardableResult
+    func saveChanges() -> Bool {
+        guard let updatedSubject =
+            draftSession.state.selectedSubject,
+            updatedSubject.id == sourceSubjectID,
+            canSaveChanges
+        else {
+            return false
+        }
+
+        guard var committedSubject = liveSession.state.selectedSubject,
+              committedSubject.id == sourceSubjectID else {
+            return false
+        }
+
+        committedSubject.identity = updatedSubject.identity
+        committedSubject.relationship = updatedSubject.relationship
+        committedSubject.definition = updatedSubject.definition
+        committedSubject.expressionSubjectSource =
+            updatedSubject.expressionSubjectSource
+        committedSubject.decorations = updatedSubject.decorations
+        committedSubject.timeAnchors = updatedSubject.timeAnchors
+        committedSubject.referenceDate = updatedSubject.referenceDate
+        committedSubject.behavior = updatedSubject.behavior
+
+        liveSession.updateSelectedSubject(committedSubject)
+        persistSubject?(committedSubject)
+        return true
     }
 }
 #endif

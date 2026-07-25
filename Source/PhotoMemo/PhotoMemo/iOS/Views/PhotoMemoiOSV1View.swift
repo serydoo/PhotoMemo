@@ -192,7 +192,10 @@ struct PhotoMemoiOSV1View: View {
     private var isWorkingWithLocalConfigurationLibrary = false
 
     @State
-    private var showsHomeConfigurationActionFeedback = false
+    private var homeConfigurationActionFeedback: String?
+
+    @State
+    private var showsHomeConfigurationFailureAlert = false
 
     @FocusState
     private var memoryPresetTitleFieldFocused: Bool
@@ -557,13 +560,16 @@ struct PhotoMemoiOSV1View: View {
     var body: some View {
         rootNavigation
         .preferredColorScheme(.light)
+        .overlay(alignment: .bottom) {
+            homeConfigurationStatusBanner
+        }
         .alert(
-            "配置操作",
-            isPresented: $showsHomeConfigurationActionFeedback
+            "无法完成配置操作",
+            isPresented: $showsHomeConfigurationFailureAlert
         ) {
-            Button("知道了", role: .cancel) {}
+            Button("好", role: .cancel) {}
         } message: {
-            Text(localConfigurationLibraryStatus ?? "操作已完成。")
+            Text(localConfigurationLibraryStatus ?? "操作未完成，请稍后重试。")
         }
         .task {
             await loadAlbumOptions()
@@ -734,8 +740,6 @@ struct PhotoMemoiOSV1View: View {
             isPresented: entryBinding(\.showsSubjectOverview)
         ) {
             V1IOSSubjectOverviewSheet(
-                presentation:
-                    subjectOverviewPresentation,
                 subjects: session.state.subjects,
                 subject:
                     session.state.selectedSubject,
@@ -779,6 +783,21 @@ struct PhotoMemoiOSV1View: View {
                         )
                     applySubjectFlowPatch(patch)
                 },
+                onEditSubject: {
+                    V1SubjectOverviewActionCoordinator
+                        .makeConfigurationFlowState(
+                            from: session,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
+                            configurationCoordinator:
+                                configurationCoordinator,
+                            savedStatus: .subjectSynced,
+                            onPersistedSubject: {
+                                patch in
+                                applySubjectFlowPatch(patch)
+                            }
+                        )
+                },
                 onDeleteCurrentSubject: {
                     guard let patch =
                         V1SubjectOverviewActionCoordinator
@@ -804,13 +823,45 @@ struct PhotoMemoiOSV1View: View {
         ) { flowState in
             V1IOSSubjectConfigurationFlow(
                 flowState: flowState,
-                onClose: {
-                    entryFlowState =
+                onDeleteSubject: {
+                    guard let patch =
+                        V1SubjectOverviewActionCoordinator
+                        .deleteCurrentSubject(
+                            from: session,
+                            shouldSaveSubjectLibrary:
+                                shouldSaveSubjectLibrary,
+                            configurationCoordinator:
+                                configurationCoordinator
+                        ) else {
+                        return
+                    }
+
+                    applySubjectFlowPatch(patch)
+                    var nextState =
                         V1EntryFlowCoordinator
                         .closeSubjectConfiguration(
-                            from:
-                                entryFlowState
+                            from: entryFlowState
                         )
+                    nextState.showsSubjectOverview = false
+                    entryFlowState = nextState
+                },
+                onCancel: {
+                    var nextState =
+                        V1EntryFlowCoordinator
+                        .closeSubjectConfiguration(
+                            from: entryFlowState
+                        )
+                    nextState.showsSubjectOverview = true
+                    entryFlowState = nextState
+                },
+                onSave: {
+                    var nextState =
+                        V1EntryFlowCoordinator
+                        .closeSubjectConfiguration(
+                            from: entryFlowState
+                        )
+                    nextState.showsSubjectOverview = true
+                    entryFlowState = nextState
                 }
             )
         }
@@ -1670,7 +1721,8 @@ struct PhotoMemoiOSV1View: View {
             bootstrapDrafts()
             activeConfigurationStatus = .saved
             presentHomeConfigurationActionFeedback(
-                "已删除“\(result.deletedPreset.title)”。本地备份仍会保留。"
+                "已删除“\(result.deletedPreset.title)”。本地备份仍会保留。",
+                isBlocking: false
             )
         } catch {
             activeConfigurationStatus = .dirty
@@ -1856,15 +1908,57 @@ struct PhotoMemoiOSV1View: View {
             )
         localConfigurationBackups = result.backups
         if case .replace(let message) = result.status {
-            presentHomeConfigurationActionFeedback(message)
+            presentHomeConfigurationActionFeedback(
+                message,
+                isBlocking: !result.succeeded
+            )
         }
     }
 
     private func presentHomeConfigurationActionFeedback(
-        _ message: String
+        _ message: String,
+        isBlocking: Bool = true
     ) {
         localConfigurationLibraryStatus = message
-        showsHomeConfigurationActionFeedback = true
+        if isBlocking {
+            homeConfigurationActionFeedback = nil
+            showsHomeConfigurationFailureAlert = true
+            return
+        }
+
+        homeConfigurationActionFeedback = message
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            if homeConfigurationActionFeedback == message {
+                homeConfigurationActionFeedback = nil
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var homeConfigurationStatusBanner: some View {
+        if let homeConfigurationActionFeedback {
+            Label(
+                homeConfigurationActionFeedback,
+                systemImage: "checkmark.circle.fill"
+            )
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(.leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: 420, alignment: .leading)
+            .background(
+                .regularMaterial,
+                in: RoundedRectangle(
+                    cornerRadius: 16,
+                    style: .continuous
+                )
+            )
+            .padding(.horizontal, 20)
+            .padding(.bottom, 88)
+            .accessibilityElement(children: .combine)
+        }
     }
 
     private func refreshLocalConfigurationLibrary() {

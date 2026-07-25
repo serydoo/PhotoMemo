@@ -251,6 +251,104 @@ struct V1IOSSubjectOverviewPresenterTests {
         )
     }
 
+    @Test("configuration flow rejects an empty object name")
+    func configurationFlowRejectsEmptyObjectName() throws {
+        let anchor = MemorySubject.TimeAnchor(
+            title: "生日",
+            date: Date(timeIntervalSince1970: 0),
+            note: "原始说明",
+            anchorType: .birthday
+        )
+        let subject = MemorySubject(
+            identity: .init(displayName: "原名称", shortName: "小宝"),
+            relationship: .init(role: "family", label: "成长记录"),
+            definition: "围绕成长阶段持续记录。",
+            referenceDate: anchor.date,
+            timeAnchors: [anchor],
+            behavior: .init(
+                primaryAnchor: anchor.title,
+                iconStrategy: .autoMatch,
+                badgeStrategy: .fixed,
+                memoryExpression: .init(title: "默认表达", blocks: [])
+            ),
+            decorations: []
+        )
+        let liveSession = ConfigurationSession(
+            state: ConfigurationCenterState(
+                subjects: [subject],
+                selectedSubjectID: subject.id,
+                memoryPresets: [],
+                selectedMemoryPresetID: nil,
+                cardSelection: .init(selectedRegion: .subject),
+                selectedBlockID: nil,
+                tokenLibrary: .init(),
+                availableDecorations: [],
+                regionPreviewTexts: [:]
+            )
+        )
+        let flow = try #require(
+            V1IOSSubjectConfigurationFlowState(liveSession: liveSession)
+        )
+        var draft = try #require(flow.draftSession.state.selectedSubject)
+        draft.identity.displayName = " \n\t"
+        flow.draftSession.updateSelectedSubject(draft)
+
+        #expect(flow.canSaveChanges == false)
+        #expect(flow.saveChanges() == false)
+        #expect(
+            liveSession.state.selectedSubject?.identity.displayName == "原名称"
+        )
+    }
+
+    @Test("configuration flow commits identity and time anchor edits together")
+    func configurationFlowCommitsIdentityAndTimeAnchorEdits() throws {
+        let anchor = MemorySubject.TimeAnchor(
+            title: "生日",
+            date: Date(timeIntervalSince1970: 0),
+            note: "原始说明",
+            anchorType: .birthday
+        )
+        let subject = MemorySubject(
+            identity: .init(displayName: "原名称", shortName: "小宝"),
+            relationship: .init(role: "family", label: "成长记录"),
+            definition: "围绕成长阶段持续记录。",
+            referenceDate: anchor.date,
+            timeAnchors: [anchor],
+            behavior: .init(
+                primaryAnchor: anchor.title,
+                iconStrategy: .autoMatch,
+                badgeStrategy: .fixed,
+                memoryExpression: .init(title: "默认表达", blocks: [])
+            ),
+            decorations: []
+        )
+        let liveSession = ConfigurationSession(
+            state: ConfigurationCenterState(
+                subjects: [subject],
+                selectedSubjectID: subject.id,
+                memoryPresets: [],
+                selectedMemoryPresetID: nil,
+                cardSelection: .init(selectedRegion: .subject),
+                selectedBlockID: nil,
+                tokenLibrary: .init(),
+                availableDecorations: [],
+                regionPreviewTexts: [:]
+            )
+        )
+        let flow = try #require(
+            V1IOSSubjectConfigurationFlowState(liveSession: liveSession)
+        )
+        var draft = try #require(flow.draftSession.state.selectedSubject)
+        draft.identity.displayName = "新名称"
+        draft.timeAnchors[0].title = "被误改的锚点"
+        flow.draftSession.updateSelectedSubject(draft)
+
+        #expect(flow.saveChanges() == true)
+        let saved = try #require(liveSession.state.selectedSubject)
+        #expect(saved.identity.displayName == "新名称")
+        #expect(saved.timeAnchors[0].title == "被误改的锚点")
+    }
+
     @Test("subject overview save writes the latest subject to the durable aggregate")
     func subjectOverviewSaveWritesLatestSubjectToDurableAggregate() throws {
         let source = try sourceText(
@@ -279,43 +377,10 @@ struct V1IOSSubjectOverviewPresenterTests {
             with: " ",
             options: .regularExpression
         )
-
-        let summaryStart = try #require(
-            railSource.range(of: "private var currentSubjectSummary")
-        )
-        let summaryEnd = try #require(
-            railSource.range(
-                of: "private var switchingLayout",
-                range: summaryStart.upperBound..<railSource.endIndex
-            )
-        )
-        let summarySource = String(
-            railSource[summaryStart.lowerBound..<summaryEnd.lowerBound]
-        )
-
-        #expect(!summarySource.contains("V1SubjectAvatarView"))
-        #expect(!summarySource.contains("subjectRelationship(subject)"))
-        #expect(railSource.contains("ViewThatFits(in: .horizontal)"))
-        #expect(
-            normalizedRail.contains(
-                "Label(\"保存\", systemImage: \"checkmark\")"
-            )
-        )
-        #expect(
-            normalizedRail.contains(
-                "Label( \"切换对象\", systemImage: \"arrow.left.arrow.right\" )"
-            )
-        )
-
-        let badgeIndex = try #require(
-            summarySource.range(of: "V1IOSHomeStatusBadge")?.lowerBound
-        )
-        let nameIndex = try #require(
-            summarySource.range(of: "Text(stableSubjectDisplayName(subject))")?.lowerBound
-        )
-        #expect(badgeIndex < nameIndex)
-        #expect(!summarySource.contains("subjectDisplayName(subject)"))
-        #expect(railSource.contains("subject.identity.displayName"))
+        #expect(railSource.contains("V1IOSSubjectOverviewSubjectRail"))
+        #expect(railSource.contains("accessibilityLabel(\"切换到"))
+        #expect(!normalizedRail.contains("保存"))
+        #expect(!normalizedRail.contains("当前使用"))
     }
 
     @Test("expression subject is one selectable row that explains source and output")
@@ -366,8 +431,8 @@ struct V1IOSSubjectOverviewPresenterTests {
         )
     }
 
-    @Test("compact basic information uses native rows with semantic icon tiles")
-    func compactBasicInformationUsesNativeRowsWithSemanticIconTiles() throws {
+    @Test("compact basic information uses lightweight native vertical fields")
+    func compactBasicInformationUsesLightweightNativeVerticalFields() throws {
         let editorSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
@@ -401,13 +466,12 @@ struct V1IOSSubjectOverviewPresenterTests {
         #expect(!normalizedPanel.contains("compactLabeledTextField( \"关系备注\""))
 
         #expect(fieldSource.contains(".textFieldStyle(.plain)"))
-        #expect(
-            normalizedField.contains(
-                "RoundedRectangle( cornerRadius: 10, style: .continuous )"
-            )
-        )
-        #expect(normalizedField.contains(".fill(tint.opacity(0.11))"))
-        #expect(normalizedField.contains(".frame(width: 34, height: 34)"))
+        #expect(normalizedField.contains("VStack(alignment: .leading, spacing: 4)"))
+        #expect(normalizedField.contains("Text(title) .font(.subheadline)"))
+        #expect(normalizedField.contains("alignment: .leading"))
+        #expect(!normalizedField.contains("RoundedRectangle("))
+        #expect(!normalizedField.contains(".fill(tint.opacity(0.11))"))
+        #expect(!normalizedField.contains(".frame(width: 34, height: 34)"))
         #expect(!fieldSource.contains(".clipShape("))
         #expect(!panelSource.contains("RoundedRectangle("))
     }

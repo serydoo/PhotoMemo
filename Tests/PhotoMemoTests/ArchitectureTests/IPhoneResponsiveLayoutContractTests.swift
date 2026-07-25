@@ -115,16 +115,14 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
         )
 
-        #expect(
-            source.contains(
-                "v1AdaptiveScrollContent(\n                    horizontalPadding: ConfigurationUI.contentColumnPadding"
-            )
-        )
+        #expect(source.contains("v1AdaptiveScrollContent("))
+        #expect(source.contains("ConfigurationUI.contentColumnPadding"))
         #expect(!source.contains("GeometryReader"))
-        #expect(source.contains("private var basicInfoInnerPanel"))
-        #expect(source.contains("V1ConfigurationCardContainer"))
-        #expect(source.contains(".padding(ConfigurationUI.innerPanelPadding)"))
-        #expect(source.contains("ConfigurationUI.innerPanelCornerRadius"))
+        #expect(source.contains("subjectIdentityHeader"))
+        #expect(source.contains("subjectBasicInformation"))
+        #expect(source.contains("V1CardSurface("))
+        #expect(source.contains("V1IOSSubjectAnchorDetailSection("))
+        #expect(!source.contains("V1ConfigurationCardContainer"))
     }
 
     @Test("iPhone views do not branch on the physical screen or device model")

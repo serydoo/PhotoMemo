@@ -80,24 +80,24 @@ struct V1LocalConfigurationLibrarySheet: View {
                     .accessibilityLabel("刷新本地配置库")
                 }
             }
-            .confirmationDialog(
-                "删除这个本地备份？",
+            .alert(
+                pendingDeleteBackup.map { "删除“\($0.title)”备份？" }
+                    ?? "删除本地备份？",
                 isPresented: Binding(
                     get: { pendingDeleteBackup != nil },
                     set: { if !$0 { pendingDeleteBackup = nil } }
-                ),
-                titleVisibility: .visible
+                )
             ) {
+                Button("取消", role: .cancel) {
+                    pendingDeleteBackup = nil
+                }
                 Button("删除本地备份", role: .destructive) {
                     guard let backup = pendingDeleteBackup else { return }
                     pendingDeleteBackup = nil
                     onDelete(backup)
                 }
-                Button("取消", role: .cancel) {
-                    pendingDeleteBackup = nil
-                }
             } message: {
-                Text("这只会删除本地备份，不会删除当前正在使用的配置。")
+                Text("当前正在使用的配置不会被删除。此操作无法撤销。")
             }
         }
     }

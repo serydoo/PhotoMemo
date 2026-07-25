@@ -144,7 +144,7 @@ struct TimeAnchorEditingTransactionTests {
         )
         #expect(
             normalizedSource.contains(
-                "Button(\"删除时间锚点\", role: .destructive)"
+                "Button(\"删除锚点\", role: .destructive)"
             )
         )
     }

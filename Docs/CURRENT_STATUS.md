@@ -18884,3 +18884,46 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   Xcode Beta's build service stalled during post-build cleanup. It was
   interrupted and is not counted as a passing build; the earlier recorded iOS
   build remains the valid automated build evidence for this UI pass.
+
+## 2026-07-25 Memory Subject Apple Native Detail/Edit Pass
+
+- Memory Subject now separates a read-only detail surface from a draft-based
+  basic-information editor. The detail surface centers the existing avatar,
+  hides empty optional facts, keeps subject switching and editing in the
+  navigation chrome, and presents all time anchors as independent modules.
+- Basic-information editing uses the existing identity editor in
+  `.identityOverview` mode, keeps avatar editing inside the editor, validates a
+  required object name, commits only identity/relationship/definition fields,
+  and exposes a standalone destructive delete action at the bottom.
+- Time anchors support insertion-order modules, compact category/date/custom
+  name editing, long-press configuration/deletion with VoiceOver actions,
+  final-anchor protection, deletion confirmation, and automatic commit on
+  dismissal. Active-anchor selection remains owned by Configuration Center.
+- Added source contracts and flow tests for read/edit separation, anchor module
+  presentation, empty-name rejection, and atomic identity/time-anchor draft
+  saves. The review follow-up now validates deletion against the latest session
+  state, gives cancel/save/delete distinct completion paths, and aligns stale
+  UI contracts with the accepted detail/edit design. All 29 focused subject,
+  dialog, and Home action tests pass. Persistence rollback and invalid-anchor
+  admission remain bounded follow-up risks outside this UI pass.
+
+## 2026-07-25 iOS Global Dialog System Pass
+
+- Audited the 12 explicit `Alert` and `confirmationDialog` entry points across
+  Memory Subject, Configuration Center, Home, and local configuration backup
+  surfaces.
+- Defined four semantic presentation styles: centered destructive confirmation,
+  centered blocking guidance, bottom action choice, and content sheet. The
+  styles preserve SwiftUI's native adaptation, Dynamic Type, VoiceOver, and
+  semantic button roles.
+- Converted all single destructive confirmations to centered alerts with
+  object-specific titles and concise irreversible-action consequences. The
+  Time Anchor final-item guard and required object-name validation now use
+  blocking guidance copy.
+- Routine successful configuration operations now use a short-lived bottom
+  status banner; failures remain blocking alerts. Delete/reset/persistence
+  ownership and behavior are unchanged.
+- The iOS device Debug build and installation passed. Launch was not manually
+  completed because the connected device was locked and SpringBoard denied the
+  launch request. The two stale Home contract assertions were aligned during
+  the follow-up review and now pass with the complete 29-test focused group.
