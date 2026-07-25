@@ -118,11 +118,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(
-                            isExpanded
-                            ? Color.accentColor
-                            : Color.secondary.opacity(0.55)
-                        )
+                        .foregroundStyle(Color.accentColor)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
                 .contentShape(Rectangle())

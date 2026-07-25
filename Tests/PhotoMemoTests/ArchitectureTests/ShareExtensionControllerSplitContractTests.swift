@@ -69,6 +69,12 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionWidth"))
         #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionHeight"))
         #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionCornerRadius"))
+        #expect(controller.contains("UIImage(systemName: \"sparkles\")"))
+        #expect(controller.contains("primaryButton.configuration?.imagePadding =\n            8"))
+        #expect(controller.contains("makeTitledCardContainer("))
+        #expect(controller.contains("makeInnerCardContainer("))
+        #expect(controller.contains("makeInsetDivider()"))
+        #expect(controller.contains("stack.alignment = .fill"))
     }
 
     @Test("Share Extension summary dividers use symmetric native hairlines")
@@ -80,7 +86,7 @@ struct ShareExtensionControllerSplitContractTests {
             "Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift"
         )
 
-        #expect(controller.contains("divider.backgroundColor = .separator"))
+        #expect(controller.contains("divider.backgroundColor =\n            .separator"))
         #expect(controller.contains("equalToConstant: 1 / UIScreen.main.scale"))
         #expect(controller.contains("constant: MemoMarkDesignTokens.Layout.dividerInset"))
         #expect(controller.contains("constant: -MemoMarkDesignTokens.Layout.dividerInset"))

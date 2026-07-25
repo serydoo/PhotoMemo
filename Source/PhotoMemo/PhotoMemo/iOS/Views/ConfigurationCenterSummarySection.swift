@@ -447,7 +447,7 @@ struct ConfigurationCenterSummarySection: View {
 
                 Image(systemName: "chevron.right")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.accentColor)
             }
             .padding(.leading, 6)
         }

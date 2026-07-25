@@ -137,7 +137,7 @@ private struct V1IOSSubjectPrimaryCard: View {
     private var disclosureIndicator: some View {
         Image(systemName: "chevron.right")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(Color.accentColor)
             .frame(width: 12)
     }
 
@@ -374,7 +374,7 @@ private struct V1IOSHomeLinkRow: View {
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .contentShape(Rectangle())
                 .padding(.horizontal, 14)

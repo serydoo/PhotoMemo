@@ -12,7 +12,8 @@ struct ConfigurationCenterOutputPanelPresenterTests {
             MemoryWriteOptionPresenter
             .presentation(
                 usesCustomText: false,
-                resolvedText: "记录于｜2026.07.01｜还有 86 天"
+                resolvedText: "记录于｜2026.07.01｜还有 86 天",
+                language: .simplifiedChinese
             )
 
         let presentation =
@@ -38,7 +39,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteTitle
-            == "默认写入（当前智能模块）"
+            == "写入预览"
         )
         #expect(
             presentation.memoryWriteDescription
@@ -46,7 +47,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteNote
-            == "智能模块会结合拍摄时间、记忆对象和时间锚点生成说明。"
+            == "由当前智能模块根据拍摄时间、记忆对象和时间锚点生成。"
         )
         #expect(
             presentation.memoryWriteActionTitle
@@ -60,7 +61,8 @@ struct ConfigurationCenterOutputPanelPresenterTests {
             MemoryWriteOptionPresenter
             .presentation(
                 usesCustomText: true,
-                resolvedText: "宝宝周岁纪念说明"
+                resolvedText: "宝宝周岁纪念说明",
+                language: .simplifiedChinese
             )
 
         let presentation =
@@ -75,7 +77,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         #expect(presentation.storageTitle == "时光记文件夹")
         #expect(
             presentation.memoryWriteTitle
-            == "完整写入（智能模块 + 自定义）"
+            == "写入预览"
         )
         #expect(
             presentation.memoryWriteDescription
@@ -83,7 +85,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteNote
-            == "自定义内容不会覆盖智能模块结果。"
+            == "包含当前智能模块输出与自定义内容。"
         )
     }
 }

@@ -2,6 +2,25 @@
 
 Last updated: 2026-07-25
 
+## 2026-07-25 Output Localization And Destructive Action Closure
+
+- Moved the Output Memory Write titles, descriptions, placeholder, preview
+  label, and supporting notes into stable Simplified Chinese and English
+  resources governed by the interface-language preference. Smart-module output
+  and user-entered content remain unchanged and are never translated.
+- Completed the Design System destructive-action audit across Home,
+  Configuration Center, Memory Subject, Time Anchor, local configuration
+  backups, Processing, and Share. User-facing delete entry points use native
+  destructive or semantic-red treatment, final mutations retain confirmation,
+  and neutral copy states the real data consequence.
+- Physical-device visual acceptance for the consolidated UI pass is treated as
+  substantially passed by the product owner; additional edge-case capture is
+  deferred. BrandMark research remains local and excluded from synchronization.
+- Thirty-nine focused UI and presenter contracts passed, followed by the full
+  `PhotoMemoTests` run with 1,077 passing and one environment-gated skip. A
+  generic iOS Debug build of `PhotoMemoiOS`, including the embedded Share
+  Extension and Widget, completed successfully with code signing disabled.
+
 ## 2026-07-25 Directional Configuration And Settings Hierarchy
 
 - Replaced user-facing card region labels `区域 A–D` with positional names

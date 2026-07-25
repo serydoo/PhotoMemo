@@ -201,7 +201,7 @@ struct V1IOSHomeNavigationRowButton: View {
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .contentShape(Rectangle())
                 .padding(.horizontal, 14)

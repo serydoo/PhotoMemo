@@ -26,7 +26,11 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains(".tint(.blue)"))
         #expect(source.contains("Label(\"删除\", systemImage: \"trash\")"))
         #expect(source.contains(".tint(.red)"))
-        #expect(!source.contains("Button(role: .destructive)"))
+        #expect(
+            source.contains(
+                "Button(role: .destructive) {\n                        showsDeleteConfirmation = true"
+            )
+        )
         #expect(!source.contains("DragGesture(minimumDistance: 12)"))
         #expect(!source.contains("V1HomeConfigurationSwipePresenter"))
         #expect(source.contains("accessibilityLabel(\"保存配置到本地库\")"))

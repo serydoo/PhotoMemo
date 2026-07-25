@@ -293,6 +293,102 @@ struct V1ConfigurationCardContainer<Content: View>: View {
     }
 }
 
+struct V1TitledSectionCard<
+    TrailingAccessory: View,
+    Content: View
+>: View {
+
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    let title: String
+    let subtitle: String?
+
+    @ViewBuilder
+    let trailingAccessory: TrailingAccessory
+
+    @ViewBuilder
+    let content: Content
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder trailingAccessory: () -> TrailingAccessory,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.trailingAccessory = trailingAccessory()
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 12) {
+                titleGroup
+
+                Spacer(minLength: 0)
+
+                trailingAccessory
+            }
+
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .v1CardChrome()
+    }
+
+    @ViewBuilder
+    private var titleGroup: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 3) {
+                titleText
+                subtitleText
+            }
+        } else {
+            HStack(alignment: .center, spacing: 8) {
+                titleText
+                subtitleText
+            }
+        }
+    }
+
+    private var titleText: some View {
+        Text(title)
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(.primary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private var subtitleText: some View {
+        if let subtitle,
+           !subtitle.isEmpty {
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+extension V1TitledSectionCard where TrailingAccessory == EmptyView {
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(
+            title: title,
+            subtitle: subtitle,
+            trailingAccessory: { EmptyView() },
+            content: content
+        )
+    }
+}
+
 struct V1PreviewCard: View {
 
     let logoMode: V1LogoMode

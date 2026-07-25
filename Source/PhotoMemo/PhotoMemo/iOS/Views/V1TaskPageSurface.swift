@@ -96,61 +96,56 @@ struct V1TaskPageSurface: View {
     }
 
     private var currentTaskEmptyState: some View {
-        VStack(alignment: .center, spacing: 12) {
-            ZStack {
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .fill(Color.accentColor.opacity(0.10))
+        V1TitledSectionCard(
+            title: "当前任务",
+            subtitle: "确认当前处理进度与结果。"
+        ) {
+            VStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    RoundedRectangle(
+                        cornerRadius: 18,
+                        style: .continuous
+                    )
+                    .fill(Color.accentColor.opacity(0.10))
 
-                Image(systemName: MemoMarkSymbol.processing.name)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
+                    Image(systemName: MemoMarkSymbol.processing.name)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .frame(width: 58, height: 58)
+
+                VStack(spacing: 4) {
+                    Text("当前没有正在处理的照片")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text("从 Apple Photos 分享照片后，进度会显示在这里。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            .frame(width: 58, height: 58)
-
-            VStack(spacing: 4) {
-                Text("当前没有正在处理的照片")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text("从 Apple Photos 分享照片后，进度会显示在这里。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 8)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 22)
-        .v1CardChrome()
     }
 
     private var currentTaskActiveCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Text("当前任务")
-                    .font(.subheadline.weight(.semibold))
-
-                Spacer(minLength: 0)
-
-                taskStatusPill(
-                    title:
-                        presentation.currentTask.statusText,
-                    tint:
-                        presentation.currentTask.tint
-                )
-            }
-
+        V1TitledSectionCard(
+            title: "当前任务",
+            subtitle: "确认当前处理进度与结果。"
+        ) {
+            taskStatusPill(
+                title: presentation.currentTask.statusText,
+                tint: presentation.currentTask.tint
+            )
+        } content: {
             currentTaskSummary
-
             pipelineRows
             photoLibraryLinkRow
         }
-        .padding(14)
-        .v1CardChrome()
     }
 
     private var currentTaskSummary: some View {
@@ -329,36 +324,26 @@ struct V1TaskPageSurface: View {
     }
 
     private var recentTasksSection: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(alignment: .center, spacing: 12) {
-                V1SectionHeading(
-                    "最近任务",
-                    systemImage: MemoMarkSymbol.processing.name,
-                    tint: .blue
-                )
-
-                if presentation.historyRows.count > 2 {
-                    Button {
-                        isRecentTasksSheetPresented = true
-                    } label: {
-                        Text("…")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 34, height: 30)
-                            .background(
-                                Capsule(style: .continuous)
-                                    .fill(ConfigurationUI.controlBackground)
-                            )
-                            .overlay(
-                                Capsule(style: .continuous)
-                                    .stroke(ConfigurationUI.faintHairline)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("查看更多最近任务")
+        V1TitledSectionCard(
+            title: "最近任务",
+            subtitle: "保留最近完成的处理记录。"
+        ) {
+            if presentation.historyRows.count > 2 {
+                Button {
+                    isRecentTasksSheetPresented = true
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle().fill(ConfigurationUI.controlBackground)
+                        )
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("查看更多最近任务")
             }
-
+        } content: {
             if presentation.historyRows.isEmpty {
                 emptyRecentState
             } else {
@@ -564,7 +549,7 @@ struct V1TaskPageSurface: View {
 
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.accentColor)
         }
         .padding(.horizontal, 12)
         .frame(minHeight: 78)

@@ -1,5 +1,6 @@
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
+import UIKit
 
 struct V1OutputPageSurface: View {
 
@@ -186,12 +187,10 @@ private struct V1OutputSection: View {
     let onReloadAlbums: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            V1SectionHeading(
-                "输出目标",
-                subtitle: "选择生成照片保存到 Apple Photos、已有相册或新相册。"
-            )
-
+        V1TitledSectionCard(
+            title: "输出目标",
+            subtitle: "选择生成照片保存到 Apple Photos、已有相册或新相册。"
+        ) {
             V1OutputContentCard {
                 VStack(alignment: .leading, spacing: 10) {
                     Picker(
@@ -238,38 +237,11 @@ private struct V1OutputSection: View {
 
         case .existingAlbum:
             VStack(alignment: .leading, spacing: 7) {
-                HStack(spacing: 10) {
-                    Text("选择已有相册")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    Spacer(minLength: 0)
-
-                    Button(
-                        isLoadingAlbums
-                        ? "读取中"
-                        : "刷新相册"
-                    ) {
-                        onReloadAlbums()
-                    }
+                Text("选择已有相册")
                     .font(.caption.weight(.semibold))
-                    .disabled(isLoadingAlbums)
-                }
+                    .foregroundStyle(.secondary)
 
-                Picker(
-                    "已有相册",
-                    selection: $selectedExistingAlbumIdentifier
-                ) {
-                    if availableAlbums.isEmpty {
-                        Text("暂无可用相册").tag("")
-                    } else {
-                        ForEach(availableAlbums) { album in
-                            Text(album.title).tag(album.id)
-                        }
-                    }
-                }
-                .pickerStyle(.menu)
-                .disabled(availableAlbums.isEmpty)
+                existingAlbumControlRow
 
                 Text("读取当前系统相册，只显示可直接加入结果图的相册。")
                     .font(.caption2)
@@ -293,6 +265,56 @@ private struct V1OutputSection: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    private var existingAlbumControlRow: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Picker(
+                "已有相册",
+                selection: $selectedExistingAlbumIdentifier
+            ) {
+                if availableAlbums.isEmpty {
+                    Text("暂无可用相册").tag("")
+                } else {
+                    ForEach(availableAlbums) { album in
+                        Text(album.title).tag(album.id)
+                    }
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(availableAlbums.isEmpty)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: onReloadAlbums) {
+                Group {
+                    if isLoadingAlbums {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(Color(uiColor: .secondarySystemFill))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(ConfigurationUI.faintHairline)
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(isLoadingAlbums)
+            .accessibilityLabel(
+                isLoadingAlbums
+                ? "正在刷新相册"
+                : "刷新相册"
+            )
+            .accessibilityHint("重新读取可用于保存结果的系统相册")
         }
     }
 
@@ -327,12 +349,10 @@ private struct V1MemoryWriteSection: View {
             resolvedText: resolvedMemoryWriteText
         )
 
-        VStack(alignment: .leading, spacing: 8) {
-            V1SectionHeading(
-                "写入与保留",
-                subtitle: "决定生成结果保留哪些原始信息，以及是否将组合内容写入照片说明。"
-            )
-
+        V1TitledSectionCard(
+            title: "写入与保留",
+            subtitle: "决定生成结果保留哪些原始信息，以及是否将组合内容写入照片说明。"
+        ) {
             V1OutputContentCard {
                 VStack(alignment: .leading, spacing: 0) {
                     V1OutputRetentionRow(
@@ -349,32 +369,12 @@ private struct V1MemoryWriteSection: View {
 
                     V1HorizontalDivider()
 
-                    Toggle(isOn: $usesCustomMemoryWriteText) {
-                        V1OutputRetentionLabel(
-                            title: presentation.toggleTitle,
-                            subtitle: presentation.toggleDescription
-                        )
-                    }
-                    .toggleStyle(.switch)
-                    .padding(
-                        .vertical,
-                        V1CompactInformationRowMetrics
-                        .verticalPadding
+                    V1OutputRetentionRow(
+                        title: presentation.defaultContentTitle,
+                        subtitle: presentation.defaultContentDescription
                     )
 
-                    if usesCustomMemoryWriteText {
-                        TextField(
-                            presentation.inputPlaceholder,
-                            text: $customMemoryWriteText,
-                            axis: .vertical
-                        )
-                        .textFieldStyle(.plain)
-                        .font(.subheadline)
-                        .lineLimit(1...3)
-                        .submitLabel(.done)
-                        .configurationFieldChrome(isActive: true)
-                        .padding(.bottom, 8)
-                    }
+                    V1HorizontalDivider()
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(presentation.resolvedTitle)
@@ -392,6 +392,36 @@ private struct V1MemoryWriteSection: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 8)
+
+                    V1HorizontalDivider()
+
+                    Toggle(isOn: $usesCustomMemoryWriteText) {
+                        V1OutputRetentionLabel(
+                            title: presentation.toggleTitle,
+                            subtitle: presentation.toggleDescription
+                        )
+                    }
+                    .toggleStyle(.switch)
+                    .padding(
+                        .vertical,
+                        V1CompactInformationRowMetrics
+                        .verticalPadding / 2
+                    )
+
+                    if usesCustomMemoryWriteText {
+                        TextField(
+                            presentation.inputPlaceholder,
+                            text: $customMemoryWriteText,
+                            axis: .vertical
+                        )
+                        .textFieldStyle(.plain)
+                        .font(.subheadline)
+                        .lineLimit(1...3)
+                        .submitLabel(.done)
+                        .configurationFieldChrome(isActive: true)
+                        .padding(.bottom, 8)
                     }
 
                 }

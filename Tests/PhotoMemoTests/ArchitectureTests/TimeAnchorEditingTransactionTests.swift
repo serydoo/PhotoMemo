@@ -131,14 +131,27 @@ struct TimeAnchorEditingTransactionTests {
             with: " ",
             options: .regularExpression
         )
+        let normalizedSwipeSource = source
+            .components(separatedBy: ".alert(")
+            .first?
+            .replacingOccurrences(
+                of: "\\s+",
+                with: " ",
+                options: .regularExpression
+            ) ?? ""
 
         #expect(
-            normalizedSource.contains(
+            normalizedSwipeSource.contains(
                 "Button { showsDeleteConfirmation = true"
             )
         )
         #expect(
-            !normalizedSource.contains(
+            !normalizedSwipeSource.contains(
+                "Button(role: .destructive) { showsDeleteConfirmation = true"
+            )
+        )
+        #expect(
+            normalizedSource.contains(
                 "Button(role: .destructive) { showsDeleteConfirmation = true"
             )
         )

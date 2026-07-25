@@ -9,6 +9,7 @@ struct V1SettingsPageSurface: View {
         case support
         case principle
         case feedback
+        case interfaceLanguage
         case release
     }
 
@@ -66,17 +67,17 @@ struct V1SettingsPageSurface: View {
     }
 
     private var interfaceLanguageSection: some View {
-        V1ConfigurationCardContainer {
+        settingsDisclosureSection(
+            section: .interfaceLanguage,
+            title: localized(
+                "应用界面语言",
+                fallback: "应用界面语言"
+            ),
+            systemImage: "character",
+            tint: .blue,
+            trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle
+        ) {
             VStack(alignment: .leading, spacing: 12) {
-                Label(
-                    localized(
-                        "应用界面语言",
-                        fallback: "应用界面语言"
-                    ),
-                    systemImage: "character"
-                )
-                .font(.headline.weight(.semibold))
-
                 Picker(
                     localized(
                         "应用界面语言",
@@ -166,7 +167,7 @@ struct V1SettingsPageSurface: View {
 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.accentColor)
             }
             .frame(maxWidth: .infinity)
             .padding(14)
@@ -312,12 +313,14 @@ struct V1SettingsPageSurface: View {
         title: String,
         systemImage: String,
         tint: Color,
+        trailingValue: String? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
         V1SettingsDisclosureSection(
             title: title,
             systemImage: systemImage,
             tint: tint,
+            trailingValue: trailingValue,
             isExpanded: expansionBinding(for: section),
             content: content
         )
@@ -691,7 +694,7 @@ struct V1SettingsPageSurface: View {
 
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.accentColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -893,6 +896,7 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
     let title: String
     let systemImage: String
     let tint: Color
+    let trailingValue: String?
 
     @Binding
     var isExpanded: Bool
@@ -920,9 +924,17 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
 
                         Spacer(minLength: 0)
 
+                        if let trailingValue,
+                           !isExpanded {
+                            Text(trailingValue)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.accentColor)
                             .rotationEffect(
                                 .degrees(isExpanded ? 90 : 0)
                             )

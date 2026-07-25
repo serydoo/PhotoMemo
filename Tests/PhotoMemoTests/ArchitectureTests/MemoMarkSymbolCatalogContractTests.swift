@@ -76,7 +76,6 @@ struct MemoMarkSymbolCatalogContractTests {
             ("iOS/Views/V1HomePageSurface.swift", "我的配置", "MemoMarkSymbol.configuration.name"),
             ("iOS/Views/V1HomePageSurface.swift", "记忆对象", "MemoMarkSymbol.memorySubject.name"),
             ("iOS/Views/V1HomeFeedbackSection.swift", "意见反馈", "MemoMarkSymbol.feedback.name"),
-            ("iOS/Views/V1TaskPageSurface.swift", "最近任务", "MemoMarkSymbol.processing.name"),
             ("iOS/Views/V1SettingsPageSurface.swift", "为什么是时光记", "MemoMarkSymbol.memoryContent.name"),
             ("iOS/Views/V1SettingsPageSurface.swift", "使用与帮助", "MemoMarkSymbol.help.name"),
             ("iOS/Views/V1SettingsPageSurface.swift", "版本信息", "MemoMarkSymbol.information.name"),

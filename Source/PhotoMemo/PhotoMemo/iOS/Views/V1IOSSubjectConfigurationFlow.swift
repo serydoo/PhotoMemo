@@ -33,42 +33,20 @@ struct V1IOSSubjectConfigurationFlow: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    V1CardSurface(
-                        title: "",
-                        tint: .blue
+                    V1TitledSectionCard(
+                        title: "基础资料",
+                        subtitle: "编辑对象身份与关系信息"
                     ) {
-                        HStack(alignment: .firstTextBaseline, spacing: 10) {
-                            Text("基础资料")
-                                .font(.subheadline.weight(.semibold))
-                            Text("编辑对象身份与关系信息")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                            Spacer(minLength: 0)
-                        }
-
                         MemorySubjectEditorView(
                             session: flowState.draftSession,
                             mode: .identityOverview
                         )
                     }
 
-                    V1CardSurface(
-                        title: "",
-                        tint: .blue
+                    V1TitledSectionCard(
+                        title: "时间锚点",
+                        subtitle: "管理用于计算的时间参考"
                     ) {
-                        HStack(alignment: .firstTextBaseline, spacing: 10) {
-                            Text("时间锚点")
-                                .font(.subheadline.weight(.semibold))
-                            Text("管理用于计算的时间参考")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                            Spacer(minLength: 0)
-                        }
-
                         V1IOSSubjectAnchorDetailSection(
                             session: flowState.draftSession,
                             subject: flowState.draftSession.state.selectedSubject,

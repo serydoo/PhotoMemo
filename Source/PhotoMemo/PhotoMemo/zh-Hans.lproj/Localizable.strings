@@ -165,6 +165,14 @@
 "commerce.milestone.completed_title_format" = "第 %lld 张成长记录已保存";
 "commerce.milestone.approaching_message_format" = "还有 %lld 张免费成长记录。解锁 MemoMark+，继续记录此后的每一个瞬间。";
 "commerce.milestone.completed_message" = "照片已完整保存到 Apple Photos。解锁 MemoMark+，无限记录未来的时光。";
+"output.memory_write.custom.title" = "添加自定义内容";
+"output.memory_write.custom.description" = "开启后，将用户自定义内容追加写入生成照片的说明文本，不会覆盖智能模块输出。";
+"output.memory_write.default.title" = "默认写入内容";
+"output.memory_write.default.description" = "将当前智能模块输出写入生成照片的说明文本，便于在 Apple Photos 中检索。";
+"output.memory_write.custom.placeholder" = "输入补充到智能模块结果后的内容";
+"output.memory_write.preview.title" = "写入预览";
+"output.memory_write.preview.custom_note" = "包含当前智能模块输出与自定义内容。";
+"output.memory_write.preview.default_note" = "由当前智能模块根据拍摄时间、记忆对象和时间锚点生成。";
 
 "但这次没有顺利继续交给时光记。" = "但这次没有顺利继续交给时光记。";
 "你可以继续分享下一批。" = "你可以继续分享下一批。";

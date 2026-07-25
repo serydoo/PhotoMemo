@@ -118,9 +118,9 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("v1AdaptiveScrollContent("))
         #expect(source.contains("ConfigurationUI.contentColumnPadding"))
         #expect(!source.contains("GeometryReader"))
-        #expect(source.contains("subjectIdentityHeader"))
+        #expect(source.contains("subjectIdentitySummary"))
         #expect(source.contains("subjectBasicInformation"))
-        #expect(source.contains("V1CardSurface("))
+        #expect(source.contains("V1TitledSectionCard("))
         #expect(source.contains("V1IOSSubjectAnchorDetailSection("))
         #expect(!source.contains("V1ConfigurationCardContainer"))
     }

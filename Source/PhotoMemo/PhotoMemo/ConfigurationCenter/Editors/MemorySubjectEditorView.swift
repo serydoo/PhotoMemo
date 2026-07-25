@@ -225,14 +225,17 @@ struct MemorySubjectEditorView: View {
     }
 
     private var identityOverviewEditor: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 12) {
             adaptiveIdentityOverviewHeader
+                .padding(12)
+                .subjectIdentityInnerCardChrome()
 
             if let identityOverviewAccessory {
                 identityOverviewAccessory
             }
 
             compactIdentityFieldsPanel
+                .subjectIdentityInnerCardChrome()
         }
     }
 
@@ -262,9 +265,9 @@ struct MemorySubjectEditorView: View {
             .font(.title3.weight(.semibold))
             .foregroundStyle(.primary)
             .lineLimit(1)
-            .multilineTextAlignment(.center)
+            .multilineTextAlignment(.leading)
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var expressionSubjectMenuRow: some View {
@@ -1849,7 +1852,7 @@ private struct SubjectTimeAnchorRow: View {
                 }
 
                 if canDelete {
-                    Button {
+                    Button(role: .destructive) {
                         showsDeleteConfirmation = true
                     } label: {
                         Label("删除", systemImage: "trash")
@@ -2000,6 +2003,26 @@ private extension DecorationStrategy {
         case .overrideCurrentExport:
             return "覆盖当前输出"
         }
+    }
+}
+
+private extension View {
+
+    func subjectIdentityInnerCardChrome() -> some View {
+        background(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cardCornerRadius,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.panelBackground)
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cardCornerRadius,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
     }
 }
 #endif

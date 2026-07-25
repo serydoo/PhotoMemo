@@ -177,18 +177,23 @@ private extension PhotoMemoShareExtensionViewController {
             previewCard
 
         let summaryCard =
-            makeCardContainer(
+            makeTitledCardContainer(
+                title: "本次分享",
                 contentView:
-                    makeSummaryStack()
+                    makeInnerCardContainer(
+                        contentView: makeSummaryStack()
+                    )
             )
         summarySectionView =
             summaryCard
 
-        let statusStack =
-            makeStatusStack()
         let statusCard =
-            makeCardContainer(
-                contentView: statusStack
+            makeTitledCardContainer(
+                headerView: makeStatusHeaderStack(),
+                contentView:
+                    makeInnerCardContainer(
+                        contentView: makeStatusStack()
+                    )
             )
 
         let quoteStack =
@@ -454,6 +459,17 @@ private extension PhotoMemoShareExtensionViewController {
             .systemBlue
         primaryButton.configuration?.baseForegroundColor =
             .white
+        primaryButton.configuration?.image =
+            UIImage(systemName: "sparkles")
+        primaryButton.configuration?.imagePlacement =
+            .leading
+        primaryButton.configuration?.imagePadding =
+            8
+        primaryButton.configuration?.preferredSymbolConfigurationForImage =
+            UIImage.SymbolConfiguration(
+                pointSize: 15,
+                weight: .semibold
+            )
         primaryButton.configuration?.cornerStyle =
             .fixed
         primaryButton.layer.cornerRadius =
@@ -578,20 +594,8 @@ private extension PhotoMemoShareExtensionViewController {
         stack.translatesAutoresizingMaskIntoConstraints =
             false
         stack.axis = .vertical
+        stack.alignment = .fill
         stack.spacing = 12
-
-        let headerLabel =
-            UILabel()
-        headerLabel.font =
-            .preferredFont(
-                forTextStyle: .headline
-            )
-        headerLabel.text =
-            "本次分享"
-
-        stack.addArrangedSubview(
-            headerLabel
-        )
         stack.addArrangedSubview(
             makeSummaryRow(
                 title: "照片",
@@ -624,25 +628,28 @@ private extension PhotoMemoShareExtensionViewController {
         stack.translatesAutoresizingMaskIntoConstraints =
             false
         stack.axis = .vertical
-        stack.spacing = 6
-
-        let headerStack =
-            UIStackView()
-        headerStack.axis = .horizontal
-        headerStack.alignment = .center
-        headerStack.spacing = 10
-        headerStack.addArrangedSubview(
-            activityIndicator
-        )
-        headerStack.addArrangedSubview(
-            statusTitleLabel
-        )
-
-        stack.addArrangedSubview(
-            headerStack
-        )
+        stack.alignment = .fill
         stack.addArrangedSubview(
             statusMessageLabel
+        )
+
+        return stack
+    }
+
+    func makeStatusHeaderStack() -> UIStackView {
+
+        let stack =
+            UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints =
+            false
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 10
+        stack.addArrangedSubview(
+            activityIndicator
+        )
+        stack.addArrangedSubview(
+            statusTitleLabel
         )
 
         return stack
@@ -723,28 +730,146 @@ private extension PhotoMemoShareExtensionViewController {
         valueLabel.textAlignment = .left
 
         if addsDivider {
-            let divider = UIView()
-            divider.translatesAutoresizingMaskIntoConstraints = false
-            divider.backgroundColor = .separator
-            stack.addArrangedSubview(divider)
-            divider.leadingAnchor.constraint(
-                equalTo: stack.leadingAnchor,
-                constant: MemoMarkDesignTokens.Layout.dividerInset
-            ).isActive = true
-            divider.trailingAnchor.constraint(
-                equalTo: stack.trailingAnchor,
-                constant: -MemoMarkDesignTokens.Layout.dividerInset
-            ).isActive = true
-            divider.heightAnchor.constraint(
-                equalToConstant: 1 / UIScreen.main.scale
-            ).isActive = true
+            stack.addArrangedSubview(
+                makeInsetDivider()
+            )
         }
 
         return stack
     }
 
-    func makeCardContainer(
+    func makeInsetDivider() -> UIView {
+
+        let container =
+            UIView()
+        container.translatesAutoresizingMaskIntoConstraints =
+            false
+
+        let divider =
+            UIView()
+        divider.translatesAutoresizingMaskIntoConstraints =
+            false
+        divider.backgroundColor =
+            .separator
+        container.addSubview(divider)
+
+        NSLayoutConstraint.activate([
+            divider.topAnchor.constraint(equalTo: container.topAnchor),
+            divider.leadingAnchor.constraint(
+                equalTo: container.leadingAnchor,
+                constant: MemoMarkDesignTokens.Layout.dividerInset
+            ),
+            divider.trailingAnchor.constraint(
+                equalTo: container.trailingAnchor,
+                constant: -MemoMarkDesignTokens.Layout.dividerInset
+            ),
+            divider.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            divider.heightAnchor.constraint(
+                equalToConstant: 1 / UIScreen.main.scale
+            )
+        ])
+
+        return container
+    }
+
+    func makeTitledCardContainer(
+        title: String,
         contentView: UIView
+    ) -> UIView {
+
+        let titleLabel =
+            UILabel()
+        titleLabel.font =
+            MemoMarkDesignTokens.Typography.moduleTitle.uiFont()
+        titleLabel.adjustsFontForContentSizeCategory =
+            true
+        titleLabel.numberOfLines =
+            0
+        titleLabel.text =
+            title
+        titleLabel.accessibilityTraits =
+            .header
+
+        return makeTitledCardContainer(
+            headerView: titleLabel,
+            contentView: contentView
+        )
+    }
+
+    func makeTitledCardContainer(
+        headerView: UIView,
+        contentView: UIView
+    ) -> UIView {
+
+        let stack =
+            UIStackView(
+                arrangedSubviews: [
+                    headerView,
+                    contentView
+                ]
+            )
+        stack.translatesAutoresizingMaskIntoConstraints =
+            false
+        stack.axis =
+            .vertical
+        stack.alignment =
+            .fill
+        stack.spacing =
+            12
+
+        return makeCardContainer(
+            contentView: stack,
+            padding: 14
+        )
+    }
+
+    func makeInnerCardContainer(
+        contentView: UIView
+    ) -> UIView {
+
+        let container =
+            UIView()
+        container.translatesAutoresizingMaskIntoConstraints =
+            false
+        container.backgroundColor =
+            .tertiarySystemGroupedBackground
+        container.layer.cornerRadius =
+            18
+        container.layer.cornerCurve =
+            .continuous
+        container.layer.borderColor =
+            UIColor.separator.withAlphaComponent(0.35).cgColor
+        container.layer.borderWidth =
+            1 / UIScreen.main.scale
+        container.addSubview(
+            contentView
+        )
+
+        NSLayoutConstraint.activate([
+            contentView.topAnchor.constraint(
+                equalTo: container.topAnchor,
+                constant: 12
+            ),
+            contentView.leadingAnchor.constraint(
+                equalTo: container.leadingAnchor,
+                constant: 12
+            ),
+            contentView.trailingAnchor.constraint(
+                equalTo: container.trailingAnchor,
+                constant: -12
+            ),
+            contentView.bottomAnchor.constraint(
+                equalTo: container.bottomAnchor,
+                constant: -12
+            )
+        ])
+
+        return container
+    }
+
+    func makeCardContainer(
+        contentView: UIView,
+        padding: CGFloat = MemoMarkDesignTokens.Layout.cardPadding
     ) -> UIView {
 
         let container =
@@ -764,26 +889,22 @@ private extension PhotoMemoShareExtensionViewController {
             contentView.topAnchor.constraint(
                 equalTo:
                     container.topAnchor,
-                constant:
-                    MemoMarkDesignTokens.Layout.cardPadding
+                constant: padding
             ),
             contentView.leadingAnchor.constraint(
                 equalTo:
                     container.leadingAnchor,
-                constant:
-                    MemoMarkDesignTokens.Layout.cardPadding
+                constant: padding
             ),
             contentView.trailingAnchor.constraint(
                 equalTo:
                     container.trailingAnchor,
-                constant:
-                    -MemoMarkDesignTokens.Layout.cardPadding
+                constant: -padding
             ),
             contentView.bottomAnchor.constraint(
                 equalTo:
                     container.bottomAnchor,
-                constant:
-                    -MemoMarkDesignTokens.Layout.cardPadding
+                constant: -padding
             )
         ])
 

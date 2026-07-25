@@ -396,7 +396,7 @@ struct V1ConfigurationOptionList: View {
 
                     Image(systemName: "chevron.right")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.accentColor)
                         .accessibilityHidden(true)
                 }
                 .lineLimit(1)
@@ -658,7 +658,7 @@ struct V1ConfigurationOptionList: View {
                 if showsTrailingChevron {
                     Image(systemName: "chevron.right")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
             .frame(

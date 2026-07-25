@@ -34,29 +34,20 @@ struct V1IOSSubjectOverviewSheet: View {
                         subjectSwitcher
                     }
 
-                    subjectIdentityHeader
-
-                    V1CardSurface(
-                        title: "",
-                        tint: .blue
+                    V1TitledSectionCard(
+                        title: "基础资料",
+                        subtitle: "对象身份与关系信息",
+                        trailingAccessory: {
+                            editSubjectButton
+                        }
                     ) {
-                        subjectModuleHeader(
-                            title: "基础资料",
-                            explanation: "对象身份与关系信息"
-                        )
-
                         subjectBasicInformation
                     }
 
-                    V1CardSurface(
-                        title: "",
-                        tint: .blue
+                    V1TitledSectionCard(
+                        title: "时间锚点",
+                        subtitle: "用于计算记忆对象的时间参考"
                     ) {
-                        subjectModuleHeader(
-                            title: "时间锚点",
-                            explanation: "用于计算记忆对象的时间参考"
-                        )
-
                         V1IOSSubjectAnchorDetailSection(
                             session: session,
                             subject: subject,
@@ -86,13 +77,6 @@ struct V1IOSSubjectOverviewSheet: View {
                         Image(systemName: "arrow.left.arrow.right")
                     }
                     .accessibilityLabel("切换记忆对象")
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("编辑") {
-                        configurationFlowState = onEditSubject()
-                    }
-                    .fontWeight(.semibold)
                 }
             }
         }
@@ -151,87 +135,95 @@ struct V1IOSSubjectOverviewSheet: View {
         }
     }
 
-    private var subjectIdentityHeader: some View {
-        VStack(spacing: 10) {
-            V1SubjectAvatarView(
-                imagePath:
-                    subject?.identity.avatarPreviewImagePath
-                    ?? subject?.identity.avatarImagePath,
-                size: 112
-            )
+    private var editSubjectButton: some View {
+        Button {
+            configurationFlowState = onEditSubject()
+        } label: {
+            HStack(spacing: 5) {
+                Text("编辑")
+                    .font(.subheadline.weight(.semibold))
 
-            Text(subjectDisplayName)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(Color.accentColor)
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+        .buttonStyle(.plain)
+        .accessibilityLabel("编辑记忆对象")
+        .accessibilityHint("编辑对象身份、关系与时间锚点")
     }
 
     @ViewBuilder
     private var subjectBasicInformation: some View {
         if let subject {
             VStack(spacing: 0) {
+                subjectIdentitySummary
+
+                if let shortName = normalized(
+                    subject.identity.shortName
+                ) {
+                    V1HorizontalDivider(horizontalInset: 14)
                     V1IOSSubjectFactRow(
-                        title: "对象名称",
-                        value: subjectDisplayName
+                        title: "昵称",
+                        value: shortName
                     )
-
-                    if let shortName = normalized(
-                        subject.identity.shortName
-                    ) {
-                        V1HorizontalDivider()
-                        V1IOSSubjectFactRow(
-                            title: "昵称",
-                            value: shortName
-                        )
-                    }
-
-                    if let relationshipLabel = normalized(
-                        subject.relationship.label
-                    ) {
-                        V1HorizontalDivider()
-                        V1IOSSubjectFactRow(
-                            title: "专属称呼",
-                            value: relationshipLabel
-                        )
-                    }
-
-                    if let relationship = normalized(
-                        subject.relationship.role
-                    ) {
-                        V1HorizontalDivider()
-                        V1IOSSubjectFactRow(
-                            title: "与我关系",
-                            value: relationship
-                        )
-                    }
                 }
-                .padding(.horizontal, 16)
+
+                if let relationship = normalized(
+                    subject.relationship.role
+                ) {
+                    V1HorizontalDivider(horizontalInset: 14)
+                    V1IOSSubjectFactRow(
+                        title: "与我关系",
+                        value: relationship
+                    )
+                }
+
+                if let relationshipLabel = normalized(
+                    subject.relationship.label
+                ) {
+                    V1HorizontalDivider(horizontalInset: 14)
+                    V1IOSSubjectFactRow(
+                        title: "专属称呼",
+                        value: relationshipLabel
+                    )
+                }
             }
+            .v1CardChrome()
         }
+    }
+
+    private var subjectIdentitySummary: some View {
+        HStack(spacing: 14) {
+            V1SubjectAvatarView(
+                imagePath:
+                    subject?.identity.avatarPreviewImagePath
+                    ?? subject?.identity.avatarImagePath,
+                size: 68
+            )
+
+            VStack(alignment: .center, spacing: 4) {
+                Text(subjectDisplayName)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+
+                Text("当前生效的记忆主体")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .padding(12)
+        .accessibilityElement(children: .combine)
+    }
 
     private var subjectDisplayName: String {
         normalized(subject?.identity.displayName)
         ?? "记忆对象"
-    }
-
-    private func subjectModuleHeader(
-        title: String,
-        explanation: String
-    ) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            Text(explanation)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            Spacer(minLength: 0)
-        }
     }
 
     private func normalized(_ value: String?) -> String? {
@@ -271,7 +263,8 @@ private struct V1IOSSubjectFactRow: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
         .accessibilityElement(children: .combine)
     }
 }

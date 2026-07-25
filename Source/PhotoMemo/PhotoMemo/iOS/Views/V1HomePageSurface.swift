@@ -134,10 +134,9 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var profileSection: some View {
-        V1CardSurface(
+        V1TitledSectionCard(
             title: "记忆对象",
-            systemImage: MemoMarkSymbol.memorySubject.name,
-            tint: .blue
+            subtitle: "查看当前对象与时间锚点"
         ) {
             V1IOSSubjectHomeEntryContent(
                 subjectSummary: subjectSummary,
@@ -164,11 +163,14 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var currentPresetSection: some View {
-        V1HomeConfigurationCard(
+        V1TitledSectionCard(
             title: "我的配置",
-            note: "勾选生效",
-            systemImage: MemoMarkSymbol.configuration.name,
-            tint: .blue
+            subtitle: "选择当前生效的记录方式",
+            trailingAccessory: {
+                Text("勾选生效")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 if memoryPresets.isEmpty {
@@ -306,41 +308,6 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 }
 
-private struct V1HomeConfigurationCard<Content: View>: View {
-
-    let title: String
-    let note: String
-    let systemImage: String
-    let tint: Color
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                V1CompactHeadingIcon(
-                    systemImage: systemImage,
-                    tint: tint
-                )
-
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Spacer(minLength: 0)
-
-                Text(note)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            content
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .v1CardChrome()
-    }
-}
-
 private struct V1HomeMemoryPresetRow: View {
 
     let preset: MemoryPreset
@@ -413,71 +380,72 @@ private struct V1HomeMemoryPresetRow: View {
                     .lineLimit(1)
             }
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 4)
 
-            if isSelected {
-                Button(action: onRename) {
-                    Text("重命名")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                        .lineLimit(1)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: 10,
-                                style: .continuous
+            HStack(spacing: 2) {
+                if isSelected {
+                    Button(action: onRename) {
+                        Text("重命名")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .lineLimit(1)
+                            .padding(.horizontal, 8)
+                            .frame(height: 30)
+                            .background(
+                                RoundedRectangle(
+                                    cornerRadius: 10,
+                                    style: .continuous
+                                )
+                                .fill(ConfigurationUI.controlBackground)
                             )
-                            .fill(ConfigurationUI.controlBackground)
-                        )
-                        .overlay(
-                            RoundedRectangle(
-                                cornerRadius: 10,
-                                style: .continuous
+                            .overlay(
+                                RoundedRectangle(
+                                    cornerRadius: 10,
+                                    style: .continuous
+                                )
+                                .stroke(ConfigurationUI.faintHairline)
                             )
-                            .stroke(ConfigurationUI.faintHairline)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("重命名配置")
+                }
+
+                Menu {
+                    Button(action: onSave) {
+                        Label(
+                            "保存",
+                            systemImage: MemoMarkSymbol.localStorage.name
                         )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("重命名配置")
-            }
+                    }
+                    .disabled(isSaveDisabled)
 
-            Menu {
-                Button(action: onSave) {
-                    Label(
-                        "保存",
-                        systemImage: MemoMarkSymbol.localStorage.name
-                    )
-                }
-                .disabled(isSaveDisabled)
-
-                Button {
-                    showsDeleteConfirmation = true
+                    Button(role: .destructive) {
+                        showsDeleteConfirmation = true
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
                 } label: {
-                    Label("删除", systemImage: "trash")
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 30, height: 30)
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
-            }
-            .accessibilityLabel("配置操作")
+                .accessibilityLabel("配置操作")
 
-            Spacer(minLength: 6)
-
-            Image(
-                systemName:
+                Image(
+                    systemName:
+                        isSelected
+                        ? "checkmark.circle.fill"
+                        : "circle"
+                )
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(
                     isSelected
-                    ? "checkmark.circle.fill"
-                    : "circle"
-            )
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(
-                isSelected
-                ? Color.accentColor
-                : Color.secondary.opacity(0.58)
-            )
+                    ? Color.accentColor
+                    : Color.secondary.opacity(0.58)
+                )
+                .frame(width: 26, height: 30)
+            }
         }
         .padding(10)
         .background(

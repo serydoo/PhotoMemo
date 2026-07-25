@@ -12,7 +12,8 @@ struct MemoryWriteOptionPresenterTests {
             MemoryWriteOptionPresenter
             .presentation(
                 usesCustomText: true,
-                resolvedText: "宝宝已经 1 岁 2 个月"
+                resolvedText: "宝宝已经 1 岁 2 个月",
+                language: .simplifiedChinese
             )
 
         #expect(
@@ -21,7 +22,12 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.toggleDescription
-            == "开启后，将下方内容补充到智能模块结果之后。"
+            == "开启后，将用户自定义内容追加写入生成照片的说明文本，不会覆盖智能模块输出。"
+        )
+        #expect(presentation.defaultContentTitle == "默认写入内容")
+        #expect(
+            presentation.defaultContentDescription
+            == "将当前智能模块输出写入生成照片的说明文本，便于在 Apple Photos 中检索。"
         )
         #expect(
             presentation.inputPlaceholder
@@ -29,7 +35,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.resolvedTitle
-            == "完整写入（智能模块 + 自定义）"
+            == "写入预览"
         )
         #expect(
             presentation.resolvedDescription
@@ -37,7 +43,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "自定义内容不会覆盖智能模块结果。"
+            == "包含当前智能模块输出与自定义内容。"
         )
     }
 
@@ -47,7 +53,8 @@ struct MemoryWriteOptionPresenterTests {
             MemoryWriteOptionPresenter
             .presentation(
                 usesCustomText: false,
-                resolvedText: "记录于｜2026.07.01｜还有 86 天"
+                resolvedText: "记录于｜2026.07.01｜还有 86 天",
+                language: .simplifiedChinese
             )
 
         #expect(
@@ -56,11 +63,16 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.toggleDescription
-            == "默认仅写入当前智能模块结果。"
+            == "开启后，将用户自定义内容追加写入生成照片的说明文本，不会覆盖智能模块输出。"
+        )
+        #expect(presentation.defaultContentTitle == "默认写入内容")
+        #expect(
+            presentation.defaultContentDescription
+            == "将当前智能模块输出写入生成照片的说明文本，便于在 Apple Photos 中检索。"
         )
         #expect(
             presentation.resolvedTitle
-            == "默认写入（当前智能模块）"
+            == "写入预览"
         )
         #expect(
             presentation.resolvedDescription
@@ -68,7 +80,26 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "智能模块会结合拍摄时间、记忆对象和时间锚点生成说明。"
+            == "由当前智能模块根据拍摄时间、记忆对象和时间锚点生成。"
+        )
+    }
+
+    @Test("localizes interface copy without translating resolved content")
+    func englishInterfaceCopy() {
+        let resolvedText = "宝宝已经 1 岁 2 个月"
+        let presentation = MemoryWriteOptionPresenter.presentation(
+            usesCustomText: true,
+            resolvedText: resolvedText,
+            language: .english
+        )
+
+        #expect(presentation.toggleTitle == "Add Custom Text")
+        #expect(presentation.defaultContentTitle == "Default Content")
+        #expect(presentation.resolvedTitle == "Description Preview")
+        #expect(presentation.resolvedDescription == resolvedText)
+        #expect(
+            presentation.fallbackNote
+            == "Includes the current smart-module output and your custom text."
         )
     }
 }

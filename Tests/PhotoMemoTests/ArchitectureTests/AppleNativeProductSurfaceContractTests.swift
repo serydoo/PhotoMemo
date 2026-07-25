@@ -71,8 +71,9 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
         )
 
-        #expect(output.contains("V1SectionHeading(\n                \"输出目标\""))
-        #expect(output.contains("V1SectionHeading(\n                \"写入与保留\""))
+        #expect(output.contains("V1TitledSectionCard(\n            title: \"输出目标\""))
+        #expect(output.contains("V1TitledSectionCard(\n            title: \"写入与保留\""))
+        #expect(output.contains(".verticalPadding / 2"))
         #expect(output.contains("private struct V1OutputContentCard"))
         #expect(!output.contains("private struct V1OutputCompactCard"))
         #expect(!output.contains("title: \"输出目标\",\n                systemImage:"))
@@ -82,6 +83,122 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(root.contains("Text(\"配置说明\")"))
         #expect(!root.contains("Label(\"配置说明\", systemImage: \"info.circle\")"))
         #expect(root.contains("regionConfigurationGuide\n                .padding(.horizontal, 4)"))
+    }
+
+    @Test("processing and output share titled card hierarchy")
+    func processingAndOutputShareTitledCardHierarchy() throws {
+        let processing = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
+        )
+        let output = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
+        )
+        let support = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+        let configuration = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+
+        #expect(support.contains("struct V1TitledSectionCard"))
+        #expect(support.contains("HStack(alignment: .center, spacing: 8)"))
+        #expect(configuration.contains(".font(.headline.weight(.semibold))"))
+        #expect(configuration.contains(".font(.caption)"))
+        #expect(support.contains(".font(.headline.weight(.semibold))"))
+        #expect(support.contains(".font(.caption)"))
+        #expect(processing.contains("title: \"当前任务\""))
+        #expect(processing.contains("title: \"最近任务\""))
+        #expect(processing.contains("taskStatusPill("))
+        #expect(processing.contains("isRecentTasksSheetPresented = true"))
+        #expect(processing.contains("Image(systemName: \"ellipsis.circle\")"))
+        #expect(processing.contains(".frame(width: 40, height: 40)"))
+        #expect(processing.contains("Circle().fill(ConfigurationUI.controlBackground)"))
+        #expect(processing.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(!processing.contains("Text(\"…\")"))
+        #expect(!processing.contains("V1SectionHeading(\n                    \"最近任务\""))
+        #expect(!processing.contains("systemImage: MemoMarkSymbol.processing.name,\n                    tint: .blue"))
+        #expect(output.contains("private var existingAlbumControlRow"))
+        #expect(output.contains(".frame(width: 36, height: 36)"))
+        #expect(output.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(output.contains(".accessibilityLabel(\n                isLoadingAlbums\n                ? \"正在刷新相册\"\n                : \"刷新相册\""))
+    }
+
+    @Test("home summary cards follow configuration heading hierarchy")
+    func homeSummaryCardsFollowConfigurationHeadingHierarchy() throws {
+        let home = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+
+        #expect(home.contains("title: \"记忆对象\",\n            subtitle: \"查看当前对象与时间锚点\""))
+        #expect(home.contains("title: \"我的配置\",\n            subtitle: \"选择当前生效的记录方式\""))
+        #expect(home.contains("Text(\"勾选生效\")"))
+        #expect(!home.contains("private struct V1HomeConfigurationCard"))
+        #expect(!home.contains("systemImage: MemoMarkSymbol.memorySubject.name"))
+        #expect(!home.contains("systemImage: MemoMarkSymbol.configuration.name"))
+        #expect(home.contains("HStack(spacing: 2)"))
+        #expect(home.contains(".frame(width: 30, height: 30)"))
+        #expect(home.contains(".frame(width: 26, height: 30)"))
+    }
+
+    @Test("functional navigation accessories use the shared accent color")
+    func functionalNavigationAccessoriesUseSharedAccentColor() throws {
+        let sourcePaths = [
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSHomeCardPrimitives.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterSummarySection.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/IOSCompactEntryRow.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+        ]
+
+        for sourcePath in sourcePaths {
+            let source = try sourceText(sourcePath)
+            let chevronSegments = source.components(
+                separatedBy: "Image(systemName: \"chevron.right\")"
+            ).dropFirst()
+
+            for segment in chevronSegments {
+                #expect(
+                    segment.prefix(240).contains(
+                        ".foregroundStyle(Color.accentColor)"
+                    ),
+                    "Expected accent chevron in \(sourcePath)"
+                )
+            }
+        }
+    }
+
+    @Test("memory subject cards and language settings use nested disclosure hierarchy")
+    func memorySubjectCardsAndLanguageSettingsUseNestedHierarchy() throws {
+        let overview = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
+        let editorFlow = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+        )
+        let editor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let settings = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+
+        #expect(overview.contains("title: \"基础资料\""))
+        #expect(overview.contains("title: \"时间锚点\""))
+        #expect(overview.contains("subjectBasicInformation"))
+        #expect(overview.contains(".v1CardChrome()"))
+        #expect(overview.contains(".frame(maxWidth: .infinity, alignment: .center)"))
+        #expect(overview.contains(".padding(.vertical, 7)"))
+        #expect(editorFlow.contains("title: \"基础资料\""))
+        #expect(editorFlow.contains("title: \"时间锚点\""))
+        #expect(editor.contains("adaptiveIdentityOverviewHeader\n                .padding(12)\n                .subjectIdentityInnerCardChrome()"))
+        #expect(editor.contains("compactIdentityFieldsPanel\n                .subjectIdentityInnerCardChrome()"))
+        #expect(editor.contains("func subjectIdentityInnerCardChrome()"))
+        #expect(settings.contains("case interfaceLanguage"))
+        #expect(settings.contains("section: .interfaceLanguage"))
+        #expect(settings.contains("trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle"))
+        #expect(settings.contains("if let trailingValue,\n                           !isExpanded"))
     }
 
     @Test("processing surface avoids dashboard and import-first language")
@@ -227,15 +344,19 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
         )
 
-        #expect(detail.contains("subjectIdentityHeader"))
+        #expect(detail.contains("subjectIdentitySummary"))
         #expect(detail.contains("subjectBasicInformation"))
         #expect(detail.contains("ToolbarItem(placement: .topBarLeading)"))
-        #expect(detail.contains("ToolbarItem(placement: .topBarTrailing)"))
-        #expect(detail.contains("Button(\"编辑\")"))
+        #expect(!detail.contains("ToolbarItem(placement: .topBarTrailing)"))
+        #expect(detail.contains("private var editSubjectButton"))
+        #expect(detail.contains("Text(\"编辑\")"))
+        #expect(detail.contains("Image(systemName: \"chevron.right\")"))
+        #expect(detail.contains("V1TitledSectionCard("))
         #expect(!detail.contains("onSaveSubject"))
         #expect(!detail.contains("当前使用"))
         #expect(!detail.contains("mode: .identityOverview"))
         #expect(editor.contains("mode: .identityOverview"))
+        #expect(editor.contains("V1TitledSectionCard("))
         #expect(editor.contains("删除记忆对象"))
     }
 
@@ -276,6 +397,40 @@ struct AppleNativeProductSurfaceContractTests {
             #expect(source.contains(".alert("))
             #expect(!source.contains(".confirmationDialog("))
         }
+    }
+
+    @Test("destructive entry points use native red semantics")
+    func destructiveEntryPointsUseNativeSemantics() throws {
+        let home = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let configuration = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let subjectEditor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let anchors = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let subject = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+        )
+        let backups = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+        )
+
+        for source in [home, configuration, subjectEditor, anchors, subject, backups] {
+            #expect(source.contains("role: .destructive"))
+        }
+        #expect(home.contains(".tint(.red)"))
+        #expect(subjectEditor.contains(".tint(.red)"))
+        #expect(anchors.contains(".tint(.red)"))
+        #expect(backups.contains(".tint(.red)"))
+        #expect(home.contains("本地配置库中的备份会保留。此操作无法撤销。"))
+        #expect(configuration.contains("当前未保存的修改会被默认内容替换。此操作无法撤销。"))
+        #expect(subject.contains("对象的基础资料和时间锚点都会被删除。此操作无法撤销。"))
+        #expect(backups.contains("当前正在使用的配置不会被删除。此操作无法撤销。"))
     }
 
     @Test("time anchor dialog copy names the consequence")
