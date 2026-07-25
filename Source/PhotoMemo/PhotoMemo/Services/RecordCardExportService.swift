@@ -64,7 +64,7 @@ final class RecordCardExportService {
     func export(
         photo: SelectedPhoto,
         card: RecordCard
-    ) throws -> URL {
+    ) async throws -> URL {
 
 #if os(macOS)
         let saveURL = try chooseSaveURL(
@@ -77,7 +77,7 @@ final class RecordCardExportService {
             to: saveURL
         )
 #else
-        return try exportToTemporaryFile(
+        return try await exportToTemporaryFile(
             photo: photo,
             card: card
         )
@@ -87,13 +87,13 @@ final class RecordCardExportService {
     func exportToTemporaryFile(
         photo: SelectedPhoto,
         card: RecordCard
-    ) throws -> URL {
+    ) async throws -> URL {
 
         let folderURL =
             try temporaryExportFolderURL()
 
         let fileURL =
-            try namingResolver.uniqueTemporaryURL(
+            try await namingResolver.uniqueTemporaryURL(
                 in: folderURL,
                 for: photo
             )

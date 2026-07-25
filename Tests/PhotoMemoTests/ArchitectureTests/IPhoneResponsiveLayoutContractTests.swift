@@ -88,7 +88,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("configuration controls reflow for accessibility text sizes")
     func configurationControlsReflowForAccessibilityText() throws {
         let source = try sourceText(
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
 
         #expect(source.contains("@Environment(\\.dynamicTypeSize)"))

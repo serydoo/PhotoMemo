@@ -105,9 +105,11 @@
 "commerce.purchase.benefit.batch_40" = "单次最多处理 40 张照片";
 "commerce.purchase.benefit.family_sharing" = "支持家庭共享";
 "commerce.purchase.benefit.core_updates" = "基础 Preset 与核心能力持续更新";
-"commerce.purchase.price_note" = "首批记录者感谢价 · 一次购买，永久使用";
+"commerce.purchase.price_note.launch" = "首发优惠 · 一次购买，永久使用";
+"commerce.purchase.price_note.standard" = "一次购买，永久使用";
 "commerce.purchase.connecting" = "正在连接 App Store";
-"commerce.purchase.primary_format" = "成为首批记录者 · %@";
+"commerce.purchase.primary_format.launch" = "成为首批记录者 · %@";
+"commerce.purchase.primary_format.standard" = "永久解锁 · %@";
 "commerce.purchase.pending" = "购买正在等待确认，完成后会自动解锁。";
 "commerce.purchase.apple_code" = "兑换 MemoMark+ 优惠代码";
 "commerce.purchase.restore" = "恢复购买";

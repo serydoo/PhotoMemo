@@ -107,6 +107,7 @@ struct MemoMarkSymbolCatalogContractTests {
     func existingConfigurationRowsUseTheSameIconographyVocabulary() throws {
         let sources = try [
             "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AccessoryEntrySection.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SubjectHomeSummarySupport.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift"

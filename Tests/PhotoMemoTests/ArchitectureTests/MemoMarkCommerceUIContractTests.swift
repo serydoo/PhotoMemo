@@ -26,7 +26,11 @@ struct MemoMarkCommerceUIContractTests {
             "commerce.purchase.trust.future_presets",
             "commerce.purchase.testflight.sandbox_notice",
             "commerce.purchase.testflight.activate",
-            "commerce.purchase.testflight.deactivate"
+            "commerce.purchase.testflight.deactivate",
+            "commerce.purchase.price_note.launch",
+            "commerce.purchase.price_note.standard",
+            "commerce.purchase.primary_format.launch",
+            "commerce.purchase.primary_format.standard"
         ] {
             #expect(source.contains(key))
             #expect(simplifiedChinese.contains("\"\(key)\""))
@@ -35,6 +39,7 @@ struct MemoMarkCommerceUIContractTests {
 
         #expect(!source.contains("VIP"))
         #expect(!source.contains("crown"))
+        #expect(source.contains("isFirstRecorderCampaignOpen"))
     }
 
     @Test("StoreKit service uses one verified product path")

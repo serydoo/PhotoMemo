@@ -36,7 +36,7 @@ final class BatchQueueExecution {
         )
         let resolvedOutputFilenameSequenceStore =
             outputFilenameSequenceStore
-            ?? LivePhotoOutputFilenameSequenceStore()
+            ?? .shared
         let resolvedExportCoordinator = exportCoordinator ?? ExportCoordinator(
             exportService:
                 RecordCardExportService(

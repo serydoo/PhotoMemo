@@ -25,11 +25,11 @@ final class ExportCoordinator {
     func exportCard(
         photo: SelectedPhoto,
         card: RecordCard
-    ) -> PhotoMemoResult<URL> {
+    ) async -> PhotoMemoResult<URL> {
 
         do {
             return .success(
-                try exportService
+                try await exportService
                 .exportToTemporaryFile(
                     photo: photo,
                     card: card

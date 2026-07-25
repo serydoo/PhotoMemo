@@ -191,7 +191,7 @@ struct PhotoFileNameResolverTests {
 
     @MainActor
     @Test("Allocates durable Live Photo copy names from the source base")
-    func allocatesDurableLivePhotoCopyNamesFromSourceBase() throws {
+    func allocatesDurableLivePhotoCopyNamesFromSourceBase() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(
                 "PhotoMemo.PhotoFileNameResolverTests.\(UUID().uuidString)",
@@ -210,13 +210,13 @@ struct PhotoFileNameResolverTests {
             )
 
         #expect(
-            try firstStore.nextOutputBaseName(
+            try await firstStore.nextOutputBaseName(
                 preferredOriginalFileName: "IMG_1164.jpg",
                 assetOriginalFileName: "FullSizeRender.jpeg"
             ) == "IMG_1164 (1)"
         )
         #expect(
-            try firstStore.nextOutputBaseName(
+            try await firstStore.nextOutputBaseName(
                 preferredOriginalFileName: "IMG_1164.jpg",
                 assetOriginalFileName: "FullSizeRender.jpeg"
             ) == "IMG_1164 (2)"
@@ -228,7 +228,7 @@ struct PhotoFileNameResolverTests {
             )
 
         #expect(
-            try restartedStore.nextOutputBaseName(
+            try await restartedStore.nextOutputBaseName(
                 preferredOriginalFileName: "IMG_1164.jpg",
                 assetOriginalFileName: "FullSizeRender.jpeg"
             ) == "IMG_1164 (3)"
@@ -237,7 +237,7 @@ struct PhotoFileNameResolverTests {
 
     @MainActor
     @Test("Rejects a corrupt Live Photo filename sequence without reusing names")
-    func rejectsCorruptLivePhotoFilenameSequence() throws {
+    func rejectsCorruptLivePhotoFilenameSequence() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(
                 "PhotoMemo.PhotoFileNameResolverCorruptTests.\(UUID().uuidString)",
@@ -259,16 +259,158 @@ struct PhotoFileNameResolverTests {
             storageURL: storageURL
         )
 
-        #expect(throws: LivePhotoOutputFilenameSequenceError.self) {
-            _ = try store.nextOutputBaseName(
+        await #expect(throws: LivePhotoOutputFilenameSequenceError.self) {
+            _ = try await store.nextOutputBaseName(
                 preferredOriginalFileName: "IMG_1164.jpg"
             )
         }
     }
 
+    @Test("Retains only the most recently used durable filename sequences")
+    func reclaimsLeastRecentlyUsedFilenameSequences() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.FilenameSequenceCapacityTests.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        let storageURL = rootURL.appendingPathComponent(
+            "LivePhotoOutputFilenameSequence.json"
+        )
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let store = LivePhotoOutputFilenameSequenceStore(
+            storageURL: storageURL,
+            maximumEntryCount: 2
+        )
+
+        #expect(
+            try await store.nextOutputBaseName(
+                from: "IMG_A"
+            ) == "IMG_A (1)"
+        )
+        #expect(
+            try await store.nextOutputBaseName(
+                from: "IMG_B"
+            ) == "IMG_B (1)"
+        )
+        #expect(
+            try await store.nextOutputBaseName(
+                from: "IMG_A"
+            ) == "IMG_A (2)"
+        )
+        #expect(
+            try await store.nextOutputBaseName(
+                from: "IMG_C"
+            ) == "IMG_C (1)"
+        )
+
+        let reloadedStore = LivePhotoOutputFilenameSequenceStore(
+            storageURL: storageURL,
+            maximumEntryCount: 2
+        )
+
+        #expect(
+            try await reloadedStore.nextOutputBaseName(
+                from: "IMG_A"
+            ) == "IMG_A (3)"
+        )
+        #expect(
+            try await reloadedStore.nextOutputBaseName(
+                from: "IMG_B"
+            ) == "IMG_B (1)"
+        )
+    }
+
+    @Test("Migrates legacy filename sequence dictionaries without resetting names")
+    func migratesLegacyFilenameSequenceDictionary() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.FilenameSequenceMigrationTests.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        let storageURL = rootURL.appendingPathComponent(
+            "LivePhotoOutputFilenameSequence.json"
+        )
+        try FileManager.default.createDirectory(
+            at: rootURL,
+            withIntermediateDirectories: true
+        )
+        try JSONEncoder().encode(
+            ["img_1164": 4]
+        ).write(to: storageURL)
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let store = LivePhotoOutputFilenameSequenceStore(
+            storageURL: storageURL
+        )
+
+        #expect(
+            try await store.nextOutputBaseName(
+                from: "IMG_1164"
+            ) == "IMG_1164 (5)"
+        )
+
+        let persistedObject = try #require(
+            JSONSerialization.jsonObject(
+                with: Data(contentsOf: storageURL)
+            ) as? [String: Any]
+        )
+        #expect(persistedObject["version"] as? Int == 2)
+    }
+
+    @Test("Serializes concurrent filename allocations without reusing a suffix")
+    func serializesConcurrentFilenameAllocations() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.FilenameSequenceConcurrencyTests.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let store = LivePhotoOutputFilenameSequenceStore(
+            storageURL: rootURL.appendingPathComponent(
+                "LivePhotoOutputFilenameSequence.json"
+            )
+        )
+        let allocatedNames = try await withThrowingTaskGroup(
+            of: String.self,
+            returning: [String].self
+        ) { group in
+            for _ in 0..<32 {
+                group.addTask {
+                    try await store.nextOutputBaseName(
+                        from: "IMG_Concurrent"
+                    )
+                }
+            }
+
+            var names: [String] = []
+            for try await name in group {
+                names.append(name)
+            }
+            return names
+        }
+
+        #expect(Set(allocatedNames).count == 32)
+        #expect(
+            Set(allocatedNames)
+            == Set(
+                (1...32).map {
+                    "IMG_Concurrent (\($0))"
+                }
+            )
+        )
+    }
+
     @MainActor
     @Test("Continues after a copy suffix already present in the source name")
-    func continuesAfterExistingSourceCopySuffix() throws {
+    func continuesAfterExistingSourceCopySuffix() async throws {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(
                 "PhotoMemo.ExistingCopySuffixTests.\(UUID().uuidString)",
@@ -286,7 +428,7 @@ struct PhotoFileNameResolverTests {
         )
 
         #expect(
-            try store.nextOutputBaseName(
+            try await store.nextOutputBaseName(
                 preferredOriginalFileName:
                     "IMG_1164 (4).jpg"
             ) == "IMG_1164 (5)"

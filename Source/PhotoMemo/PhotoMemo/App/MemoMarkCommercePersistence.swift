@@ -8,6 +8,29 @@ nonisolated final class MemoMarkCommercePersistence:
             "memomark.commerce.v1"
         static let sharedSnapshot =
             "memomark.commerce.v1.sharedSnapshot"
+        static let preVersionTwoUsageEvidence = [
+            "photomemo.personalProfile.firstRunCompleted",
+            "photomemo.v1.welcomeSeen",
+            "photomemo.selectedTemplate",
+            "photomemo.v1.subjectLibrary"
+        ]
+
+        static func lastLaunchedMajorVersion(
+            _ environment: MemoMarkCommerceEnvironment
+        ) -> String {
+            "\(prefix).\(environment.rawValue).lastLaunchedMajorVersion"
+        }
+
+        static func allowanceLedger(
+            _ environment: MemoMarkCommerceEnvironment
+        ) -> String {
+            "\(prefix).\(environment.rawValue).allowanceLedger"
+        }
+    }
+
+    private struct AllowanceLedger: Codable {
+        var appliedGiftIDs: [String]
+        var bonusAllowance: Int
     }
 
     private let defaults: UserDefaults
@@ -79,12 +102,84 @@ nonisolated final class MemoMarkCommercePersistence:
             MemoMarkCommerceEnvironment
     ) -> Int {
         lock.withLock {
-            defaults.integer(
-                forKey:
-                    bonusAllowanceKey(
-                        environment
-                    )
+            allowanceLedger(
+                for: environment
+            ).bonusAllowance
+        }
+    }
+
+    @discardableResult
+    func applyMajorVersionGiftIfEligible(
+        marketingVersion: String,
+        amount: Int,
+        environment: MemoMarkCommerceEnvironment
+    ) -> Bool {
+        guard let majorVersion = Int(
+            marketingVersion
+                .split(separator: ".")
+                .first ?? ""
+        ), majorVersion >= 2,
+          amount > 0 else {
+            return false
+        }
+
+        return lock.withLock {
+            let previousMajorVersion =
+                defaults.object(
+                    forKey:
+                        Key.lastLaunchedMajorVersion(
+                            environment
+                        )
+                ) as? Int
+            let isExistingInstallation: Bool
+
+            if let previousMajorVersion {
+                isExistingInstallation =
+                    majorVersion > previousMajorVersion
+            } else {
+                isExistingInstallation =
+                    Key.preVersionTwoUsageEvidence
+                    .contains {
+                        defaults.object(forKey: $0) != nil
+                    }
+            }
+
+            guard isExistingInstallation else {
+                recordMajorVersion(
+                    majorVersion,
+                    after: previousMajorVersion,
+                    environment: environment
+                )
+                return false
+            }
+
+            let giftID = "major-\(majorVersion)"
+            var ledger = allowanceLedger(
+                for: environment
             )
+            let wasAlreadyGranted = ledger.appliedGiftIDs.contains(
+                giftID
+            )
+
+            if !wasAlreadyGranted {
+                ledger.appliedGiftIDs.append(giftID)
+                ledger.appliedGiftIDs.sort()
+                ledger.bonusAllowance += amount
+                guard saveAllowanceLedger(
+                    ledger,
+                    environment: environment
+                ) else {
+                    return false
+                }
+            }
+
+            recordMajorVersion(
+                majorVersion,
+                after: previousMajorVersion,
+                environment: environment
+            )
+
+            return !wasAlreadyGranted
         }
     }
 
@@ -201,40 +296,23 @@ nonisolated final class MemoMarkCommercePersistence:
         }
 
         return lock.withLock {
-            let appliedKey =
-                appliedGiftIDsKey(
-                    environment
-                )
-            var appliedIDs =
-                Set(
-                    defaults.stringArray(
-                        forKey: appliedKey
-                    ) ?? []
-                )
+            var ledger = allowanceLedger(
+                for: environment
+            )
 
-            guard appliedIDs.insert(
+            guard !ledger.appliedGiftIDs.contains(
                 normalizedID
-            ).inserted else {
+            ) else {
                 return false
             }
 
-            defaults.set(
-                appliedIDs.sorted(),
-                forKey: appliedKey
+            ledger.appliedGiftIDs.append(normalizedID)
+            ledger.appliedGiftIDs.sort()
+            ledger.bonusAllowance += amount
+            return saveAllowanceLedger(
+                ledger,
+                environment: environment
             )
-            defaults.set(
-                defaults.integer(
-                    forKey:
-                        bonusAllowanceKey(
-                            environment
-                        )
-                ) + amount,
-                forKey:
-                    bonusAllowanceKey(
-                        environment
-                    )
-            )
-            return true
         }
     }
 
@@ -303,6 +381,70 @@ nonisolated final class MemoMarkCommercePersistence:
         }
 
         return snapshot
+    }
+
+    private func recordMajorVersion(
+        _ majorVersion: Int,
+        after previousMajorVersion: Int?,
+        environment: MemoMarkCommerceEnvironment
+    ) {
+        if previousMajorVersion.map({
+            majorVersion > $0
+        }) ?? true {
+            defaults.set(
+                majorVersion,
+                forKey:
+                    Key.lastLaunchedMajorVersion(
+                        environment
+                    )
+            )
+        }
+    }
+
+    private func allowanceLedger(
+        for environment: MemoMarkCommerceEnvironment
+    ) -> AllowanceLedger {
+        guard let data = defaults.data(
+            forKey: Key.allowanceLedger(environment)
+        ),
+        let ledger = try? JSONDecoder().decode(
+            AllowanceLedger.self,
+            from: data
+        ) else {
+            return AllowanceLedger(
+                appliedGiftIDs:
+                    defaults.stringArray(
+                        forKey:
+                            appliedGiftIDsKey(
+                                environment
+                            )
+                    ) ?? [],
+                bonusAllowance:
+                    defaults.integer(
+                        forKey:
+                            bonusAllowanceKey(
+                                environment
+                            )
+                    )
+            )
+        }
+
+        return ledger
+    }
+
+    private func saveAllowanceLedger(
+        _ ledger: AllowanceLedger,
+        environment: MemoMarkCommerceEnvironment
+    ) -> Bool {
+        guard let data = try? JSONEncoder().encode(ledger) else {
+            return false
+        }
+
+        defaults.set(
+            data,
+            forKey: Key.allowanceLedger(environment)
+        )
+        return true
     }
 
     private func countKey(

@@ -14,7 +14,7 @@ struct OutputFileNamingResolver {
     ) {
         self.outputFilenameSequenceStore =
             outputFilenameSequenceStore
-            ?? LivePhotoOutputFilenameSequenceStore()
+            ?? .shared
     }
 
     func defaultFileName(
@@ -36,7 +36,7 @@ struct OutputFileNamingResolver {
     func uniqueTemporaryURL(
         in folderURL: URL,
         for photo: SelectedPhoto
-    ) throws -> URL {
+    ) async throws -> URL {
 
         let originalBaseName =
             resolvedOutputBaseName(
@@ -44,7 +44,7 @@ struct OutputFileNamingResolver {
             )
 
         var baseName =
-            try outputFilenameSequenceStore
+            try await outputFilenameSequenceStore
             .nextOutputBaseName(
                 from: originalBaseName
             )
@@ -57,7 +57,7 @@ struct OutputFileNamingResolver {
                 .path
         ) {
             baseName =
-                try outputFilenameSequenceStore
+                try await outputFilenameSequenceStore
                 .nextOutputBaseName(
                     from: originalBaseName
                 )

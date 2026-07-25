@@ -18,7 +18,7 @@ struct BatchQueueHistoryTests {
             }
         let originalJobs = jobs
 
-        history.trimTerminalJobHistoryIfNeeded(
+        _ = history.trimTerminalJobHistoryIfNeeded(
             &jobs
         )
 
@@ -36,14 +36,20 @@ struct BatchQueueHistoryTests {
                     title: "Job \($0)"
                 )
             }
+        let expectedRemovedTaskIDs = Set(
+            jobs.last?.tasks.map {
+                $0.id.uuidString
+            } ?? []
+        )
 
-        history.trimTerminalJobHistoryIfNeeded(
+        let removedTaskIDs = history.trimTerminalJobHistoryIfNeeded(
             &jobs
         )
 
         #expect(jobs.count == 120)
         #expect(jobs.map(\.title).first == "Job 0")
         #expect(jobs.map(\.title).last == "Job 119")
+        #expect(removedTaskIDs == expectedRemovedTaskIDs)
     }
 
     @Test("Usage snapshot prefers frozen configuration anchor over legacy batch anchor")

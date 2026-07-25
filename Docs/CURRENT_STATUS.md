@@ -18663,3 +18663,185 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   and release documentation slices. BrandMark mechanism documents, plans,
   research indexes, and candidate assets remain local and excluded because
   that research is not yet frozen.
+
+## 2026-07-24 MemoMark+ Family-First Commerce Closure
+
+- MemoMark+ remains optional long-term support for a family's own use, not a
+  growth system that requires market operations. This work adds no account,
+  cloud allowance, redemption server, or behavioral tracking.
+- Fresh 2.0 installations receive the specified 200 free Growth Records. The
+  `major-2` 100-record gift applies only once to an installation with durable
+  pre-2.0 usage evidence; later major-version gifts apply only once when an
+  existing installation crosses into that major version. Registration is also
+  isolated by Sandbox, Production, and Xcode Commerce environments. This
+  removes the former 300-record fresh-install conflict with the 190/200
+  product journey without allowing test state to consume a Production gift.
+- First Recorder eligibility now derives from verified original purchase date,
+  an explicit optional campaign end date, and Family Sharing ownership. When
+  the campaign closes, new purchases use standard lifetime-unlock copy while
+  existing commemorative identity remains durable and restorable.
+- CNY 48 is the initial launch price, not a code constant. It may later become
+  CNY 58, CNY 68, or remain unchanged through App Store Connect; the app always
+  presents `Product.displayPrice`, so price and First Recorder identity stay
+  independent.
+- The free allowance intentionally remains local and soft after reinstall. The
+  project does not trade local-first privacy for an account, server, upload, or
+  cross-device promise merely to harden that limit.
+- TDD red confirmed the new Commerce APIs were absent. The focused Policy and
+  Persistence suites now pass 21 tests, including environment isolation. Both
+  Xcode beta and Xcode 26.6 macOS hosts can stall while launching the
+  source-only UI contract suite through LaunchServices; source/resource
+  compilation, localization-key symmetry, and the required unsigned Debug build
+  pass, but UI contracts and complete regression still require a clean test-host
+  rerun before release.
+
+## 2026-07-25 V1 Configuration Option List Responsibility Split
+
+- Continued the established incremental responsibility-split pattern without
+  reopening IA-002 or changing Configuration Center behavior.
+- Moved the 1,100-line `V1ConfigurationOptionList` implementation and its two
+  private button styles from `PhotoMemoiOSV1View.swift` into
+  `V1ConfigurationOptionList.swift`. The runtime root dropped from 4,845 to
+  3,744 lines.
+- `PhotoMemoiOSV1View` remains the only owner of `ConfigurationSession`, draft
+  synchronization, persistence, navigation, and side-effect ordering. The
+  extracted SwiftUI surface still receives the same values, bindings, and
+  callbacks and retains all existing copy, confirmations, accessibility,
+  Dynamic Type, and reduced-motion behavior.
+- Added a source contract that prevents the Option List and its private styles
+  from returning to the runtime root. Existing responsive-layout, native
+  interaction, and symbol-catalog contracts now follow the new file boundary.
+- TDD red first proved the extracted file was absent. The focused architecture
+  set then passed 18/18 tests, the complete macOS suite passed 1037 tests with
+  one skipped test, the required unsigned Debug build passed, and
+  `git diff --check` passed.
+- No simulator or physical-device visual pass was repeated because this slice
+  is a source-identical physical move. Renderer, Export, Metadata, Photo
+  Library, Layout Engine, and Commerce behavior were not changed.
+
+## 2026-07-25 Production Reliability Closure Slices
+
+- Closed the PhotoKit idempotency timing window for still photos and Live
+  Photos. The local idempotency receipt is now written after PhotoKit creates
+  its placeholder but before the `performChanges` transaction can commit. A
+  failed transaction leaves only a stale receipt, which the existing direct
+  local-identifier lookup clears before a retry; a successful transaction can
+  no longer finish before its receipt is recorded.
+- Kept the previous watchdog fix intact: no complete-library fallback scan was
+  restored. Reintroducing an original-filename scan whenever a receipt is
+  absent would also scan the library for ordinary first-time tasks and recreate
+  the large-library scene-update risk.
+- Restoring a saved iOS configuration now also restores its persisted output
+  language into `ConfigurationSession`. This prevents a later save from
+  silently replacing an English configuration with the current global
+  language.
+- Major-version Commerce gifts now use one persisted allowance ledger instead
+  of separately committing applied IDs and the allowance total. Upgrade
+  eligibility writes the ledger before it advances the per-environment major
+  version marker; if the process stops between those steps, the next launch
+  completes the version marker without granting the same 100 records twice.
+  Existing legacy allowance keys remain a migration source.
+- TDD red/green evidence: PhotoKit receipt ordering and saved-language restore
+  contracts first failed then passed; the Commerce persistence tests first
+  failed to compile against the missing transactional API, then passed.
+  Focused PhotoKit/language tests passed 4/4, Commerce policy/persistence/UI
+  tests passed 28/28, and the full macOS `PhotoMemoTests` suite passed 1,040
+  tests with 1 existing skip and 0 failures. The required unsigned macOS Debug
+  build and `git diff --check` both passed.
+- Deferred as its own output-language slice: the `MemoryResult` branch in
+  `CardVariableProvider` still formats several anchor variables directly in
+  Simplified Chinese. Correcting it requires carrying the frozen configuration
+  language through `RecordCard` into the variable projection and verifying
+  English card output end to end.
+
+## 2026-07-25 English Anchor Variable Projection Closure
+
+- `RecordCard` now carries the frozen batch language from
+  `RecordCardBuildService`, so output-variable projection uses the same
+  language as the configuration snapshot and Memory Engine presentation path.
+- The `MemoryResult` projection now reuses the established multilingual
+  relative-time formatter for age, duration, and countdown values. Its
+  remaining time-result variables now preserve the selected language for raw
+  days, elapsed days, day index, weeks, month age, and `{{baby_age}}`.
+- No time calculation, Renderer, Layout Engine, export behavior, or
+  user-authored text changed. The legacy default remains Simplified Chinese for
+  direct `RecordCard` construction and older tests.
+- TDD red first reproduced the issue with a frozen English configuration,
+  producing `1岁2个月3天` where `1 year, 2 months, and 3 days` was required.
+  The end-to-end regression now covers both past birthday and future countdown
+  variables.
+- The complete macOS `PhotoMemoTests` suite passed 1,041 tests with 1 existing
+  skip and 0 failures; the required unsigned macOS Debug build and
+  `git diff --check` passed. Existing fixture QoS and test-host UTType runtime
+  warnings remain unrelated.
+
+## 2026-07-25 MemoryResult Variable Projection Responsibility Split
+
+- Split the former MemoryResult variable branch out of
+  CardVariableProvider without changing variables, defaults, or output
+  behavior. CardVariableProvider now owns base metadata, legacy anchor
+  compatibility, and summary orchestration only.
+- MemoryResultVariableProjector owns context mutation and mutually exclusive
+  anchor-value cleanup. MemoryAnchorVariableTextFormatter owns derived
+  localized anchor text. This keeps Presentation-facing text formatting
+  separate from variable-projection state transitions.
+- CardVariableProvider dropped from 1,011 to 493 lines. The projector entry
+  point is now 47 lines with complexity 5; the remaining grouped writers are
+  intentionally kept together by their shared context-mutation responsibility.
+- Added a source-boundary contract. Its red phase first failed because the two
+  extracted files did not exist; it now protects the explicit projector and
+  formatter boundary. The existing English frozen-configuration regression
+  continued to pass through the new path.
+- The full macOS PhotoMemoTests suite passed 1,042 tests with 1 existing skip
+  and 0 failures. The required unsigned macOS Debug build and git diff --check
+  passed. No simulator or physical-device pass was needed because this is a
+  source-identical responsibility move.
+
+## 2026-07-25 Production Health Review And Swift 6 Closure
+
+- Reviewed current complexity candidates by ownership, state flow, recovery,
+  and bounded runtime cost instead of file length. No further extraction is
+  justified in this pass: ConfigurationSession is the frozen Configuration
+  Center facade; BatchQueueStore delegates execution, persistence, history,
+  and notifications; and the preview and anchor-expression switches are
+  bounded source-of-truth catalogs rather than mixed orchestration.
+- Confirmed the completed V1ConfigurationOptionList extraction is a valid
+  boundary: the runtime root retains session, persistence, navigation, and
+  side-effect order, while the extracted view owns only option-list rendering,
+  bindings, confirmations, accessibility, and callbacks.
+- Made the still-photo PhotoKit receipt-store capture explicit inside the
+  performChanges closure. This removes the Swift 6 implicit-capture warning
+  without changing receipt timing, idempotency lookup, or export behavior.
+- The background-status projection remains intentionally colocated with its
+  Combine observer for now. Terminal history is capped at 120 jobs, recent
+  summaries at 10 jobs, and existing tests cover latest-job selection and
+  summary bounds; a projector extraction should wait until another display
+  surface or localization path needs the same projection.
+- Verification: unsigned macOS Debug build and generic iOS Debug build passed;
+  PhotoMemoTests passed 1,042 tests with 1 existing skip and 0 failures; and
+  git diff --check passed. Existing fixture QoS and test-host ProRAW/Live
+  Photo UTType warnings remain unrelated.
+
+## 2026-07-25 Bounded Output Naming And Receipt Lifecycle Closure
+
+- The output filename sequence is now a shared, lazy-loading actor. It keeps
+  a 512-entry LRU ledger in memory, performs JSON I/O outside MainActor, and
+  atomically persists every allocated suffix. Static still export and Live
+  Photo output both use the same default actor, preventing separate cached
+  instances from allocating the same suffix.
+- The old `[String: Int]` filename JSON remains readable and is migrated on
+  its next successful allocation. Corrupt data still fails closed. The ledger
+  is intentionally a bounded recent-name aid, not a permanent global
+  uniqueness registry: an evicted source root may begin from `(1)` again, and
+  Apple Photos continues to permit duplicate original filenames.
+- Photo Library save receipts are now retained exactly while their task UUID
+  remains in the durable batch queue. Queue startup removes only orphaned
+  legacy receipts after a successful load; terminal-history cleanup queues
+  precise receipt removals and performs them only after the new queue payload
+  has been saved and read back successfully. Failed writes and corrupt queue
+  data leave every receipt untouched so crash recovery remains idempotent.
+- Added regressions for filename capacity, legacy migration, actor
+  concurrency, receipt reconciliation, successful history cleanup, failed
+  persistence, and corrupted queue recovery. Focused suites passed, followed
+  by the full macOS `PhotoMemoTests` suite, unsigned macOS Debug build, generic
+  iOS Debug build, and `git diff --check`.

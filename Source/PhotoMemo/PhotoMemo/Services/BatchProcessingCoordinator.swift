@@ -79,9 +79,9 @@ final class BatchProcessingCoordinator {
     func exportCard(
         photo: SelectedPhoto,
         card: RecordCard
-    ) throws -> URL {
+    ) async throws -> URL {
 
-        try exportService.exportToTemporaryFile(
+        try await exportService.exportToTemporaryFile(
             photo: photo,
             card: card
         )

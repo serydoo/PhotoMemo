@@ -81,6 +81,44 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         }
     }
 
+    func removeReceipts(
+        for idempotencyKeys: Set<String>
+    ) {
+        let keys = idempotencyKeys.compactMap {
+            storageKey(for: $0)
+        }
+
+        lock.withLock {
+            for key in keys {
+                defaults.removeObject(forKey: key)
+            }
+        }
+    }
+
+    func pruneReceipts(
+        retaining idempotencyKeys: Set<String>
+    ) {
+        let retainedStorageKeys = Set(
+            idempotencyKeys.compactMap {
+                storageKey(for: $0)
+            }
+        )
+
+        lock.withLock {
+            let staleStorageKeys = defaults
+                .dictionaryRepresentation()
+                .keys
+                .filter {
+                    $0.hasPrefix(keyPrefix + ".")
+                    && !retainedStorageKeys.contains($0)
+                }
+
+            for key in staleStorageKeys {
+                defaults.removeObject(forKey: key)
+            }
+        }
+    }
+
     private func storageKey(
         for idempotencyKey: String
     ) -> String? {
@@ -403,6 +441,14 @@ final class PhotoLibraryExportService:
                 placeholderIdentifier =
                     placeholder.localIdentifier
 
+                if let idempotencyKey {
+                    self.receiptStore.record(
+                        assetIdentifier:
+                            placeholder.localIdentifier,
+                        for: idempotencyKey
+                    )
+                }
+
                 if let album,
                    let albumChangeRequest =
                     PHAssetCollectionChangeRequest(
@@ -417,15 +463,6 @@ final class PhotoLibraryExportService:
 
             guard placeholderIdentifier != nil else {
                 throw PhotoLibraryExportError.assetSaveFailed
-            }
-
-            if let idempotencyKey,
-               let placeholderIdentifier {
-                receiptStore.record(
-                    assetIdentifier:
-                        placeholderIdentifier,
-                    for: idempotencyKey
-                )
             }
 
             return PhotoLibrarySaveResult(

@@ -205,10 +205,7 @@ struct MemoMarkPlusPurchaseView: View {
                         .font(.largeTitle.weight(.bold))
                         .monospacedDigit()
                     Text(
-                        localized(
-                            "commerce.purchase.price_note",
-                            fallback: "首批记录者感谢价 · 一次购买，永久使用"
-                        )
+                        purchasePriceNote
                     )
                         .font(.caption)
                         .foregroundStyle(warmGold)
@@ -362,15 +359,39 @@ struct MemoMarkPlusPurchaseView: View {
     }
 
     private var primaryButtonTitle: String {
-        store.displayPrice == "—"
-        ? localized(
-            "commerce.purchase.connecting",
-            fallback: "正在连接 App Store"
-        )
-        : formatted(
-            "commerce.purchase.primary_format",
-            fallback: "成为首批记录者 · %@",
+        guard store.displayPrice != "—" else {
+            return localized(
+                "commerce.purchase.connecting",
+                fallback: "正在连接 App Store"
+            )
+        }
+
+        if store.isFirstRecorderCampaignOpen {
+            return formatted(
+                "commerce.purchase.primary_format.launch",
+                fallback: "成为首批记录者 · %@",
+                store.displayPrice
+            )
+        }
+
+        return formatted(
+            "commerce.purchase.primary_format.standard",
+            fallback: "永久解锁 · %@",
             store.displayPrice
+        )
+    }
+
+    private var purchasePriceNote: String {
+        if store.isFirstRecorderCampaignOpen {
+            return localized(
+                "commerce.purchase.price_note.launch",
+                fallback: "首发优惠 · 一次购买，永久使用"
+            )
+        }
+
+        return localized(
+            "commerce.purchase.price_note.standard",
+            fallback: "一次购买，永久使用"
         )
     }
 

@@ -67,6 +67,38 @@ The MemoMark+ page must state:
 
 This statement protects the boundary between the core lifetime unlock and future design collaborations. It must remain secondary and must not distract from the current MemoMark+ value.
 
+### 2.4 V3 launch-commerce refinement
+
+Date: 2026-07-24
+
+Observed behavior before this refinement:
+
+- every free installation running 2.0 received the `major-2` 100-record gift, so a new 2.0 user effectively received 300 records instead of the specified 200;
+- First Recorder identity and purchase copy were both controlled by one permanently active Boolean;
+- the initial CNY 48 launch price was correctly loaded from StoreKit, but launch-price wording was not independently closable.
+
+Intended outcome:
+
+- a fresh installation starts with 200 free growth records;
+- the `major-2` 100-record gift is granted once only to an installation with durable pre-2.0 usage evidence;
+- later major-version gifts are granted once only when an existing installation crosses into that major version;
+- the First Recorder campaign is evaluated from verified original purchase date, Family Sharing ownership, and an explicit optional campaign end date so restoration remains deterministic;
+- launch-price wording, First Recorder identity, and StoreKit price are separate concerns;
+- the initial China storefront price is CNY 48, while a later CNY 58 or CNY 68 price, or retaining CNY 48, remains an App Store Connect release decision; the app always displays `Product.displayPrice`;
+- the free allowance remains an intentionally local soft allowance. Reinstall-reset resistance does not justify adding an account, server, photo upload, or cross-device promise for the current family-first product.
+
+Scope:
+
+- Commerce policy, persistence, runtime launch registration, purchase presentation copy, focused tests, and repository status documentation;
+- no Renderer, Metadata, Export, Share Extension intake, Photo Library, Layout Engine, or Apple Photos save behavior changes.
+
+Verification:
+
+- prove fresh-install, legacy-upgrade, repeated-launch, and later-major-version gift behavior;
+- prove open, closed, before-deadline, after-deadline, and Family Sharing First Recorder behavior;
+- prove launch and standard purchase copy both use the StoreKit localized display price;
+- run focused Commerce tests, the complete test suite, and the preferred Debug build before release handoff.
+
 ## 3. Counting Contract
 
 A free record is consumed only after a generated output is successfully written back to Apple Photos.
