@@ -22,6 +22,29 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!designSystem.contains("If two cards can become one, merge them."))
     }
 
+    @Test("configuration and processing apply subtractive visual hierarchy")
+    func configurationAndProcessingApplySubtractiveVisualHierarchy() throws {
+        let configuration = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let processing = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
+        )
+
+        let textFirstRowCount =
+            configuration.components(
+                separatedBy: "configurationTextRow("
+            ).count - 1
+
+        #expect(textFirstRowCount == 5)
+        #expect(configuration.contains("Text(detail)"))
+        #expect(configuration.contains(".foregroundStyle(.secondary)"))
+        #expect(!processing.contains(".fill(Color.accentColor)"))
+        #expect(!processing.contains("Color.accentColor.opacity(0.16)"))
+        #expect(processing.contains(".fill(ConfigurationUI.controlBackground)"))
+        #expect(processing.contains(".stroke(ConfigurationUI.faintHairline)"))
+    }
+
     @Test("processing surface avoids dashboard and import-first language")
     func processingSurfaceAvoidsDashboardLanguage() throws {
         let source = try sourceText(

@@ -487,9 +487,9 @@ struct V1TaskPageSurface: View {
 
                     Image(systemName: "arrow.up.forward")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.white.opacity(0.82))
+                        .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.accentColor)
                 .padding(.horizontal, 12)
                 .frame(width: 178)
                 .frame(height: 44)
@@ -498,12 +498,14 @@ struct V1TaskPageSurface: View {
                         cornerRadius: 14,
                         style: .continuous
                     )
-                    .fill(Color.accentColor)
+                    .fill(ConfigurationUI.controlBackground)
                 )
-                .shadow(
-                    color: Color.accentColor.opacity(0.16),
-                    radius: 10,
-                    y: 4
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: 14,
+                        style: .continuous
+                    )
+                    .stroke(ConfigurationUI.faintHairline)
                 )
             }
             .buttonStyle(.plain)

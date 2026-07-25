@@ -18944,3 +18944,21 @@ CLGeocoder SDK deprecation warnings remain unrelated.
 - Added a repository PR checklist and a lightweight source contract so future
   changes must state design-system, accessibility, verification, and ownership
   impact before approval.
+
+## 2026-07-25 Design System V1 Subtractive UI Pass
+
+- Applied a bounded P2 consistency pass without changing IA-002, navigation,
+  configuration state, Renderer, Layout, Export, PhotoKit, or Share lifecycle
+  ownership.
+- Configuration Center now presents Time Anchor, Memory Display, Border Style,
+  Location Display, and Card Content as typography-first rows without
+  decorative leading icons. Real identity imagery such as the Memory Subject
+  avatar and Logo preview remains unchanged.
+- Supporting values and chevrons use secondary hierarchy, and Processing's
+  `查看相册` action is now a secondary system control instead of a competing
+  solid-blue primary action. Home, Share Extension, and Memory Subject required
+  no code changes in this pass.
+- All 17 focused Apple-native surface contracts passed, the generic iOS
+  Simulator Debug build passed, and `git diff --check` passed. Manual simulator
+  or physical-device visual acceptance remains outstanding and is not inferred
+  from build evidence.

@@ -303,9 +303,7 @@ struct V1ConfigurationOptionList: View {
     }
 
     private var timeAnchorRow: some View {
-        configurationRow(
-                systemImage: MemoMarkSymbol.timeAnchor.name,
-            tint: .blue,
+        configurationTextRow(
             title: "时间锚点",
             subtitle: "定义时间参考，计算年龄与天数",
             value:
@@ -347,9 +345,7 @@ struct V1ConfigurationOptionList: View {
     }
 
     private var locationRow: some View {
-        configurationRow(
-            systemImage: locationPresentation.systemImage,
-            tint: .cyan,
+        configurationTextRow(
             title: locationPresentation.title,
             subtitle: "控制位置信息的显示内容",
             value: selectedLocationValue,
@@ -383,9 +379,7 @@ struct V1ConfigurationOptionList: View {
     }
 
     private var memoryDisplayRow: some View {
-        configurationRow(
-            systemImage: MemoMarkSymbol.memoryContent.name,
-            tint: .pink,
+        configurationTextRow(
             title: "记忆显示",
             subtitle: "自定义表达方式与记忆内容",
             value: memoryDisplayValue,
@@ -426,9 +420,7 @@ struct V1ConfigurationOptionList: View {
     }
 
     private var borderStyleRow: some View {
-        configurationRow(
-            systemImage: MemoMarkSymbol.borderStyle.name,
-            tint: .orange,
+        configurationTextRow(
             title: "边框样式",
             subtitle: "当前公开边框样式",
             value: borderStyleName,
@@ -441,9 +433,7 @@ struct V1ConfigurationOptionList: View {
 
     private var regionContentRow: some View {
         Button(action: onOpenRegionContent) {
-            configurationRow(
-                systemImage: MemoMarkSymbol.module.name,
-                tint: .blue,
+            configurationTextRow(
                 title: "卡片内容",
                 subtitle: "编辑卡片四个区域的模块与文字",
                 value: "编辑",
@@ -816,9 +806,7 @@ struct V1ConfigurationOptionList: View {
         ?? "当前展示方式"
     }
 
-    private func configurationRow<Trailing: View>(
-        systemImage: String,
-        tint: Color,
+    private func configurationTextRow<Trailing: View>(
         title: String,
         subtitle: String,
         value: String,
@@ -827,11 +815,7 @@ struct V1ConfigurationOptionList: View {
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         configurationRow(
-            icon:
-                rowIcon(
-                    systemImage: systemImage,
-                    tint: tint
-                ),
+            icon: Optional<EmptyView>.none,
             title: title,
             subtitle: subtitle,
             value: value,
@@ -843,7 +827,7 @@ struct V1ConfigurationOptionList: View {
     }
 
     private func configurationRow<Icon: View, Trailing: View>(
-        icon: Icon,
+        icon: Icon?,
         title: String,
         subtitle: String,
         value: String,
@@ -860,7 +844,9 @@ struct V1ConfigurationOptionList: View {
             alignment: .center,
             spacing: V1CompactInformationRowMetrics.contentSpacing
         ) {
-            icon
+            if let icon {
+                icon
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -883,7 +869,7 @@ struct V1ConfigurationOptionList: View {
                 if !detail.isEmpty {
                     Text(detail)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
                 }
@@ -939,7 +925,7 @@ struct V1ConfigurationOptionList: View {
 
             Image(systemName: "chevron.down")
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 6)
@@ -972,29 +958,6 @@ struct V1ConfigurationOptionList: View {
         } else {
             Text(title)
         }
-    }
-
-    private func rowIcon(
-        systemImage: String,
-        tint: Color
-    ) -> some View {
-        ZStack {
-            RoundedRectangle(
-                cornerRadius:
-                    V1CompactInformationRowMetrics.iconCornerRadius,
-                style: .continuous
-            )
-            .fill(tint.opacity(0.11))
-
-            Image(systemName: systemImage)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(tint)
-                .symbolRenderingMode(.hierarchical)
-        }
-        .frame(
-            width: V1CompactInformationRowMetrics.iconSize,
-            height: V1CompactInformationRowMetrics.iconSize
-        )
     }
 
 }
