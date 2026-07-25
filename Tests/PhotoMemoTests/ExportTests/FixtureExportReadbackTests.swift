@@ -33,7 +33,7 @@ struct FixtureExportReadbackTests {
             )
 
         let exportURL =
-            try exportFixture(
+            try await exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -255,7 +255,7 @@ struct FixtureExportReadbackTests {
                     )
             )
         let exportURL =
-            try exportFixture(
+            try await exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -324,7 +324,7 @@ struct FixtureExportReadbackTests {
             )
 
         let exportURL =
-            try exportFixture(
+            try await exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -441,7 +441,7 @@ struct FixtureExportReadbackTests {
             )
 
         let exportURL =
-            try exportFixture(
+            try await exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -592,7 +592,7 @@ struct FixtureExportReadbackTests {
                     )
             )
         let exportURL =
-            try exportFixture(
+            try await exportFixture(
                 photo: importedPhoto,
                 card: card
             )
@@ -631,7 +631,7 @@ private extension FixtureExportReadbackTests {
     func exportFixture(
         photo: SelectedPhoto,
         card: RecordCard
-    ) throws -> URL {
+    ) async throws -> URL {
         let sequenceRootURL =
             FileManager.default.temporaryDirectory
             .appendingPathComponent(
@@ -644,7 +644,7 @@ private extension FixtureExportReadbackTests {
             )
         }
 
-        return try RecordCardExportService(
+        return try await RecordCardExportService(
             outputFilenameSequenceStore:
                 LivePhotoOutputFilenameSequenceStore(
                     storageURL:

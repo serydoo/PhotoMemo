@@ -67,6 +67,148 @@ struct MemoMarkCommercePersistenceTests {
         )
     }
 
+    @Test("fresh 2.0 installation records the launch without receiving an upgrade gift")
+    func freshVersionTwoInstallDoesNotReceiveGift() throws {
+        let defaults = try makeDefaults()
+        let persistence = MemoMarkCommercePersistence(defaults: defaults)
+
+        #expect(
+            !persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            persistence.bonusAllowance(
+                environment: .production
+            ) == 0
+        )
+    }
+
+    @Test("pre-2.0 usage receives the version two gift once")
+    func legacyInstallationReceivesVersionTwoGiftOnce() throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "photomemo.v1.welcomeSeen")
+        let persistence = MemoMarkCommercePersistence(defaults: defaults)
+
+        #expect(
+            persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            !persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0.1",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            persistence.bonusAllowance(
+                environment: .production
+            ) == 100
+        )
+    }
+
+    @Test("existing installation receives each later major-version gift once")
+    func laterMajorVersionGiftRequiresUpgrade() throws {
+        let defaults = try makeDefaults()
+        let persistence = MemoMarkCommercePersistence(defaults: defaults)
+
+        #expect(
+            !persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "3.0",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            !persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "3.1",
+                amount: 100,
+                environment: .production
+            )
+        )
+    }
+
+    @Test("major-version gifts remain isolated by StoreKit environment")
+    func majorVersionGiftRegistrationIsEnvironmentScoped() throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "photomemo.v1.welcomeSeen")
+        let persistence = MemoMarkCommercePersistence(defaults: defaults)
+
+        #expect(
+            persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0",
+                amount: 100,
+                environment: .sandbox
+            )
+        )
+        #expect(
+            persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            !persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0.1",
+                amount: 100,
+                environment: .sandbox
+            )
+        )
+    }
+
+    @Test("a durable gift ledger completes an interrupted major-version registration")
+    func majorVersionGiftRegistrationRecoversWithoutDoubleGranting() throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "photomemo.v1.welcomeSeen")
+        let persistence = MemoMarkCommercePersistence(defaults: defaults)
+
+        #expect(
+            persistence.applyAllowanceGift(
+                id: "major-2",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            !persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "2.0",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            persistence.bonusAllowance(
+                environment: .production
+            ) == 100
+        )
+        #expect(
+            persistence.applyMajorVersionGiftIfEligible(
+                marketingVersion: "3.0",
+                amount: 100,
+                environment: .production
+            )
+        )
+        #expect(
+            persistence.bonusAllowance(
+                environment: .production
+            ) == 200
+        )
+    }
+
     @Test("shared snapshot round trips for the Share Extension")
     func sharedSnapshotRoundTrips() throws {
         let defaults = try makeDefaults()

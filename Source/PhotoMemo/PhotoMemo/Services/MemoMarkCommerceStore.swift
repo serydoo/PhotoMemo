@@ -80,6 +80,16 @@ final class MemoMarkCommerceStore:
         snapshot.environment
     }
 
+    var isFirstRecorderCampaignOpen: Bool {
+        MemoMarkCommercePolicy
+            .isFirstRecorderCampaignOpen(
+                at: Date(),
+                campaignEndDate:
+                    MemoMarkCommercePolicy
+                    .firstRecorderCampaignEndDate
+            )
+    }
+
     func start() async {
         guard transactionListener == nil else {
             return
@@ -285,20 +295,12 @@ final class MemoMarkCommerceStore:
         marketingVersion: String
     ) {
         guard !snapshot.isPlus,
-              let major = Int(
-                marketingVersion
-                    .split(separator: ".")
-                    .first ?? ""
-              ),
-              major >= 2 else {
-            return
-        }
-
-        guard persistence.applyAllowanceGift(
-            id: "major-\(major)",
-            amount: 100,
-            environment: snapshot.environment
-        ) else {
+              persistence
+                .applyMajorVersionGiftIfEligible(
+                    marketingVersion: marketingVersion,
+                    amount: 100,
+                    environment: snapshot.environment
+                ) else {
             return
         }
 
@@ -418,9 +420,12 @@ final class MemoMarkCommerceStore:
         if let plusTransaction,
            MemoMarkCommercePolicy
             .shouldGrantFirstRecorderIdentity(
-                isProgramActive:
+                originalPurchaseDate:
+                    plusTransaction
+                    .originalPurchaseDate,
+                campaignEndDate:
                     MemoMarkCommercePolicy
-                    .firstRecorderProgramActive,
+                    .firstRecorderCampaignEndDate,
                 isFamilyShared:
                     plusTransaction.ownershipType
                     == .familyShared

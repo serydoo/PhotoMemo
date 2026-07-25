@@ -127,6 +127,7 @@ private extension RecordCardBuildService {
             template: configuration.template,
             metadata: selectedPhoto.metadata,
             context: context,
+            language: configuration.language,
             anchor: anchor,
             anchorResult: anchorResult,
             badge: configuration.badge,

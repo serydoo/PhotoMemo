@@ -42,10 +42,15 @@ final class BatchQueueStore: ObservableObject {
     private let commercePersistence:
         MemoMarkCommercePersistence
 
+    private let saveReceiptStore:
+        PhotoLibrarySaveReceiptStore
+
     private var processingTask:
         Task<Void, Never>?
 
     private var persistenceBlocked = false
+
+    private var pendingSaveReceiptRemovalKeys = Set<String>()
 
     init(
         defaults: UserDefaults? = nil,
@@ -66,6 +71,9 @@ final class BatchQueueStore: ObservableObject {
             (any LivePhotoBatchTaskProcessing)? = nil,
         outputFilenameSequenceStore:
             LivePhotoOutputFilenameSequenceStore? = nil,
+        persistence: BatchQueuePersistence? = nil,
+        saveReceiptStore:
+            PhotoLibrarySaveReceiptStore? = nil,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
                 ProductionRenderHealthCheck.validate
@@ -106,7 +114,8 @@ final class BatchQueueStore: ObservableObject {
                     renderHealthValidator
             )
         self.persistence =
-            BatchQueuePersistence(
+            persistence
+            ?? BatchQueuePersistence(
                 defaults: resolvedDefaults
             )
         self.history =
@@ -123,6 +132,11 @@ final class BatchQueueStore: ObservableObject {
             MemoMarkCommercePersistence(
                 defaults: resolvedDefaults
             )
+        self.saveReceiptStore =
+            saveReceiptStore
+            ?? PhotoLibrarySaveReceiptStore(
+                defaults: resolvedDefaults
+            )
         self.commerceSnapshot =
             self.commercePersistence
             .loadSharedSnapshot(
@@ -135,7 +149,7 @@ final class BatchQueueStore: ObservableObject {
 
         self.startupPersistenceError = nil
 
-        switch persistence.loadPersistedJobsResult() {
+        switch self.persistence.loadPersistedJobsResult() {
         case .success(let loadedJobs):
             jobs = loadedJobs
         case .failure(let error):
@@ -150,6 +164,10 @@ final class BatchQueueStore: ObservableObject {
         }
 
         normalizeJobsForResume()
+        guard !persistenceBlocked else {
+            return
+        }
+        reconcileSaveReceiptsWithPersistedJobs()
         startProcessingIfNeeded()
     }
 
@@ -383,6 +401,8 @@ final class BatchQueueStore: ObservableObject {
             persistenceBlocked = false
             startupPersistenceError = nil
             lastErrorMessage = ""
+            removePendingSaveReceipts()
+            reconcileSaveReceiptsWithPersistedJobs()
             startProcessingIfNeeded()
         case .failure(let error):
             startupPersistenceError = error
@@ -449,8 +469,8 @@ final class BatchQueueStore: ObservableObject {
         preserving preservedJobID: UUID?
     ) {
 
-        let originalCount =
-            jobs.count
+        let originalJobs = jobs
+        let originalCount = originalJobs.count
 
         jobs =
             jobs.filter { job in
@@ -475,6 +495,17 @@ final class BatchQueueStore: ObservableObject {
             return
         }
 
+        let retainedJobIDs = Set(jobs.map(\.id))
+        pendingSaveReceiptRemovalKeys.formUnion(
+            originalJobs
+            .filter {
+                !retainedJobIDs.contains($0.id)
+            }
+            .flatMap(\.tasks)
+            .map {
+                $0.id.uuidString
+            }
+        )
         persistJobs()
     }
 }
@@ -510,14 +541,37 @@ extension BatchQueueStore {
             return
         }
 
-        history.trimTerminalJobHistoryIfNeeded(
-            &jobs
+        pendingSaveReceiptRemovalKeys.formUnion(
+            history.trimTerminalJobHistoryIfNeeded(
+                &jobs
+            )
         )
 
         if let error = persistence.persistJobs(jobs).error {
             lastErrorMessage = error.message
             persistenceBlocked = true
+        } else {
+            removePendingSaveReceipts()
         }
+    }
+
+    func removePendingSaveReceipts() {
+        saveReceiptStore.removeReceipts(
+            for: pendingSaveReceiptRemovalKeys
+        )
+        pendingSaveReceiptRemovalKeys.removeAll()
+    }
+
+    func reconcileSaveReceiptsWithPersistedJobs() {
+        saveReceiptStore.pruneReceipts(
+            retaining: Set(
+                jobs
+                .flatMap(\.tasks)
+                .map {
+                    $0.id.uuidString
+                }
+            )
+        )
     }
 
     func scheduleStartNotificationIfNeeded(

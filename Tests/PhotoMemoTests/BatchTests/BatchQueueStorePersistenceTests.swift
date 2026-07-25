@@ -58,6 +58,183 @@ struct BatchQueueStorePersistenceTests {
         #expect(store.lastErrorMessage.isEmpty == false)
     }
 
+    @MainActor
+    @Test("Queue startup preserves persisted task receipts while pruning orphaned receipts")
+    func startupReconcilesReceiptsAgainstLoadedQueueTasks() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptStartup.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode(
+                [terminalExternalJob(taskID: taskID)]
+            ),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        let orphanedTaskID = UUID().uuidString
+        receiptStore.record(
+            assetIdentifier: "asset-retained",
+            for: taskID.uuidString
+        )
+        receiptStore.record(
+            assetIdentifier: "asset-orphaned",
+            for: orphanedTaskID
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore
+        )
+
+        #expect(store.jobs.count == 1)
+        #expect(
+            receiptStore.assetIdentifier(for: taskID.uuidString)
+            == "asset-retained"
+        )
+        #expect(
+            receiptStore.assetIdentifier(for: orphanedTaskID)
+            == nil
+        )
+    }
+
+    @MainActor
+    @Test("Clearing persisted terminal history removes only its durable receipt")
+    func clearingTerminalHistoryRemovesReceiptAfterQueuePersistence() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptClear.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode(
+                [terminalExternalJob(taskID: taskID)]
+            ),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "asset-cleared",
+            for: taskID.uuidString
+        )
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore
+        )
+
+        store.clearTerminalExternalJobHistory(
+            preserving: nil
+        )
+
+        #expect(store.jobs.isEmpty)
+        #expect(
+            receiptStore.assetIdentifier(for: taskID.uuidString)
+            == nil
+        )
+    }
+
+    @MainActor
+    @Test("Failed queue persistence retains receipts for removed terminal history")
+    func failedTerminalHistoryPersistenceRetainsReceipt() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptFailure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        let payload = try JSONEncoder().encode(
+            [terminalExternalJob(taskID: taskID)]
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "asset-retained-after-failure",
+            for: taskID.uuidString
+        )
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            persistence: BatchQueuePersistence(
+                backend: SaveRejectingBackend(
+                    persistedData: payload
+                )
+            ),
+            saveReceiptStore: receiptStore
+        )
+
+        store.clearTerminalExternalJobHistory(
+            preserving: nil
+        )
+
+        #expect(
+            receiptStore.assetIdentifier(for: taskID.uuidString)
+            == "asset-retained-after-failure"
+        )
+    }
+
+    @MainActor
+    @Test("Corrupted queue data never triggers receipt pruning")
+    func corruptedQueueDataRetainsReceipts() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptCorruption.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        defaults.set(
+            Data("corrupted-queue".utf8),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let taskID = UUID().uuidString
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "asset-preserved",
+            for: taskID
+        )
+
+        _ = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore
+        )
+
+        #expect(
+            receiptStore.assetIdentifier(for: taskID)
+            == "asset-preserved"
+        )
+    }
+
     @Test("encoded batch job keeps frozen configuration after aggregate update and deletion")
     func encodedBatchJobKeepsFrozenConfigurationIdentityAndContent() throws {
         let subject = try #require(
@@ -184,6 +361,51 @@ struct BatchQueueStorePersistenceTests {
 
             throw SaveFailure()
         }
+    }
+
+    private struct SaveRejectingBackend:
+        BatchQueuePersistenceBackend {
+
+        let persistedData: Data
+
+        func loadData(
+            forKey key: String
+        ) throws -> Data? {
+            persistedData
+        }
+
+        func saveData(
+            _ data: Data,
+            forKey key: String
+        ) throws {
+            throw SaveFailure()
+        }
+    }
+
+    private func terminalExternalJob(
+        taskID: UUID
+    ) -> BatchJob {
+        BatchJob(
+            title: "Receipt history",
+            launchSource: .shareExtension,
+            configuration: BatchConfigurationSnapshot(
+                template: .classicWhite,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            ),
+            tasks: [
+                BatchTask(
+                    id: taskID,
+                    sourceURL: URL(
+                        fileURLWithPath: "/tmp/receipt-history.jpg"
+                    ),
+                    phase: .completed
+                )
+            ]
+        )
     }
 
     @MainActor

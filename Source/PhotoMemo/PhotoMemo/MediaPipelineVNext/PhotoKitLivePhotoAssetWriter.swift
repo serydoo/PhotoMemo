@@ -245,6 +245,15 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 placeholderIdentifier =
                     placeholder.localIdentifier
 
+                if let idempotencyKey =
+                    operation.idempotencyKey {
+                    self.receiptStore.record(
+                        assetIdentifier:
+                            placeholder.localIdentifier,
+                        for: idempotencyKey
+                    )
+                }
+
                 if let album,
                    let albumChangeRequest =
                     PHAssetCollectionChangeRequest(
@@ -259,15 +268,6 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
             guard let placeholderIdentifier else {
                 throw LivePhotoAssetWritingError
                     .assetSaveFailed
-            }
-
-            if let idempotencyKey =
-                    operation.idempotencyKey {
-                receiptStore.record(
-                    assetIdentifier:
-                        placeholderIdentifier,
-                    for: idempotencyKey
-                )
             }
 
             return PhotoLibrarySaveResult(

@@ -10,6 +10,8 @@ struct RecordCard: Identifiable, Hashable {
 
     var context: MetadataContext
 
+    var language: MemoMarkLanguage
+
     var anchor: Anchor?
 
     var anchorResult: AnchorResult?
@@ -39,6 +41,7 @@ struct RecordCard: Identifiable, Hashable {
         template: Template = .classicWhite,
         metadata: PhotoMetadata,
         context: MetadataContext,
+        language: MemoMarkLanguage = .simplifiedChinese,
         anchor: Anchor? = nil,
         anchorResult: AnchorResult? = nil,
         badge: Badge? = nil,
@@ -52,6 +55,7 @@ struct RecordCard: Identifiable, Hashable {
         self.template = template
         self.metadata = metadata
         self.context = context
+        self.language = language
         self.anchor = anchor
         self.anchorResult = anchorResult
         self.badge = badge

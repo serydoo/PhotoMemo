@@ -83,7 +83,7 @@ nonisolated struct MemoMarkCommercePolicy:
     static let baseFreeAllowance = 200
     static let freeBatchLimit = 20
     static let plusBatchLimit = 40
-    static let firstRecorderProgramActive = true
+    static let firstRecorderCampaignEndDate: Date? = nil
 
     let isPlus: Bool
     let totalAllowance: Int?
@@ -111,10 +111,30 @@ nonisolated struct MemoMarkCommercePolicy:
     }
 
     static func shouldGrantFirstRecorderIdentity(
-        isProgramActive: Bool,
+        originalPurchaseDate: Date,
+        campaignEndDate: Date?,
         isFamilyShared: Bool
     ) -> Bool {
-        isProgramActive && !isFamilyShared
+        guard !isFamilyShared else {
+            return false
+        }
+
+        guard let campaignEndDate else {
+            return true
+        }
+
+        return originalPurchaseDate <= campaignEndDate
+    }
+
+    static func isFirstRecorderCampaignOpen(
+        at date: Date,
+        campaignEndDate: Date?
+    ) -> Bool {
+        guard let campaignEndDate else {
+            return true
+        }
+
+        return date <= campaignEndDate
     }
 
     func remainingRecords(

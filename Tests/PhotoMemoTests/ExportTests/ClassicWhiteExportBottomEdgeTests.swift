@@ -27,7 +27,7 @@ struct ClassicWhiteExportBottomEdgeTests {
     )
     func jpegExportReadbackHasExpectedBottomEdge(
         exportCase: ExportCase
-    ) throws {
+    ) async throws {
         let folderURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(
                 "ClassicWhiteExportBottomEdgeTests-\(UUID().uuidString)",
@@ -73,7 +73,7 @@ struct ClassicWhiteExportBottomEdgeTests {
             badge: .appleClassic,
             title: "JPEG edge readback"
         )
-        let exportURL = try RecordCardExportService(
+        let exportURL = try await RecordCardExportService(
             outputFilenameSequenceStore:
                 LivePhotoOutputFilenameSequenceStore(
                     storageURL:

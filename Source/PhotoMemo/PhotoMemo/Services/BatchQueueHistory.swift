@@ -263,14 +263,15 @@ struct BatchQueueHistory {
 
     func trimTerminalJobHistoryIfNeeded(
         _ jobs: inout [BatchJob]
-    ) {
+    ) -> Set<String> {
 
         guard jobs.count
             > maxRetainedTerminalJobs else {
-            return
+            return []
         }
 
         var retainedTerminalCount = 0
+        var removedTaskIDStrings = Set<String>()
 
         jobs = jobs.filter { job in
 
@@ -291,6 +292,9 @@ struct BatchQueueHistory {
             }
 
             for task in job.tasks {
+                removedTaskIDStrings.insert(
+                    task.id.uuidString
+                )
                 externalIntakeStore
                     .cleanupManagedSourceIfNeeded(
                         at: task.sourceURL
@@ -299,6 +303,8 @@ struct BatchQueueHistory {
 
             return false
         }
+
+        return removedTaskIDStrings
     }
 }
 #endif

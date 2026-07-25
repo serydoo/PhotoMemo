@@ -277,6 +277,149 @@ struct RecordCardBuildServiceTests {
         )
     }
 
+    @Test("English frozen configuration projects English anchor variables")
+    func englishFrozenConfigurationProjectsEnglishAnchorVariables() throws {
+
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let birthdayAnchor =
+            Anchor(
+                type: .birthday,
+                title: "Birthday",
+                date: birthday,
+                isCountdown: false
+            )
+        let pastPhoto =
+            selectedPhoto(
+                captureDate:
+                    try #require(
+                        calendar.date(
+                            from: DateComponents(
+                                year: 2026,
+                                month: 3,
+                                day: 4
+                            )
+                        )
+                    )
+            )
+
+        let pastContext =
+            CardVariableProvider.build(
+                from:
+                    RecordCardBuildService()
+                    .buildCard(
+                        from: pastPhoto,
+                        configuration:
+                            englishFrozenConfiguration(
+                                anchor: birthdayAnchor
+                            )
+                    )
+            )
+
+        #expect(
+            pastContext[MetadataContext.Key.anchorAgeText]
+            == "1 year, 2 months, and 3 days"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorDurationText]
+            == "1 year, 2 months, and 3 days"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorTotalDaysText]
+            == "427 days"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorElapsedText]
+            == "427 days elapsed"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorDayIndexText]
+            == "Day 427"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorWeekText]
+            == "61 weeks"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorMonthAgeText]
+            == "14 months"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.babyAge]
+            == "1 year, 2 months, and 3 days"
+        )
+
+        let futureAnchor =
+            Anchor(
+                type: .custom,
+                title: "Future date",
+                date:
+                    try #require(
+                        calendar.date(
+                            from: DateComponents(
+                                year: 2026,
+                                month: 6,
+                                day: 1
+                            )
+                        )
+                    ),
+                isCountdown: true
+            )
+        let futurePhoto =
+            selectedPhoto(
+                captureDate:
+                    try #require(
+                        calendar.date(
+                            from: DateComponents(
+                                year: 2026,
+                                month: 3,
+                                day: 7
+                            )
+                        )
+                    )
+            )
+
+        let futureContext =
+            CardVariableProvider.build(
+                from:
+                    RecordCardBuildService()
+                    .buildCard(
+                        from: futurePhoto,
+                        configuration:
+                            englishFrozenConfiguration(
+                                anchor: futureAnchor
+                            )
+                    )
+            )
+
+        #expect(
+            futureContext[MetadataContext.Key.anchorCountdownText]
+            == "86 days left"
+        )
+        #expect(
+            futureContext[MetadataContext.Key.anchorDurationText]
+            == "86 days"
+        )
+        #expect(
+            futureContext[MetadataContext.Key.anchorTotalDaysText]
+            == "86 days"
+        )
+        #expect(
+            futureContext[MetadataContext.Key.anchorSmartText]
+            == "86 days left"
+        )
+    }
+
     @Test("Frozen ConfigurationSnapshot relationship label wins over legacy fallback")
     func frozenConfigurationSnapshotRelationshipLabelWinsOverLegacyFallback() throws {
 
@@ -2877,7 +3020,7 @@ struct RecordCardBuildServiceTests {
 
     @MainActor
     @Test("Keeps original base filename and appends copy suffixes for repeated exports")
-    func keepsOriginalBaseFilenameAndAppendsCopySuffixesForRepeatedExports() throws {
+    func keepsOriginalBaseFilenameAndAppendsCopySuffixesForRepeatedExports() async throws {
 
         let photo = SelectedPhoto(
             sourceURL: URL(fileURLWithPath: "/tmp/PhotoMemoNamingFixture.HEIC"),
@@ -2961,7 +3104,7 @@ struct RecordCardBuildServiceTests {
         )
 
         let exportedFirstURL =
-            try firstExportService.exportToTemporaryFile(
+            try await firstExportService.exportToTemporaryFile(
                 photo: photo,
                 card: card
             )
@@ -2979,7 +3122,7 @@ struct RecordCardBuildServiceTests {
                     )
             )
         let exportedSecondURL =
-            try restartedExportService.exportToTemporaryFile(
+            try await restartedExportService.exportToTemporaryFile(
                 photo: photo,
                 card: card
             )
@@ -2996,7 +3139,7 @@ struct RecordCardBuildServiceTests {
 
     @MainActor
     @Test("Export naming prefers the imported original file name over the temporary source URL")
-    func exportNamingPrefersImportedOriginalFileName() throws {
+    func exportNamingPrefersImportedOriginalFileName() async throws {
 
         let photo = SelectedPhoto(
             sourceURL: URL(fileURLWithPath: "/tmp/ManagedShareCopy.jpg"),
@@ -3051,7 +3194,7 @@ struct RecordCardBuildServiceTests {
         }
 
         let exportedURL =
-            try RecordCardExportService(
+            try await RecordCardExportService(
                 outputFilenameSequenceStore:
                     LivePhotoOutputFilenameSequenceStore(
                         storageURL:
@@ -3074,7 +3217,7 @@ struct RecordCardBuildServiceTests {
 
     @MainActor
     @Test("Export naming falls back from placeholder names to a capture-date filename")
-    func exportNamingFallsBackFromPlaceholderNamesToCaptureDateFilename() throws {
+    func exportNamingFallsBackFromPlaceholderNamesToCaptureDateFilename() async throws {
 
         var calendar =
             Calendar(identifier: .gregorian)
@@ -3156,7 +3299,7 @@ struct RecordCardBuildServiceTests {
         }
 
         let exportedURL =
-            try RecordCardExportService(
+            try await RecordCardExportService(
                 outputFilenameSequenceStore:
                     LivePhotoOutputFilenameSequenceStore(
                         storageURL:
@@ -3212,6 +3355,59 @@ struct RecordCardBuildServiceTests {
 }
 
 private extension RecordCardBuildServiceTests {
+
+    func selectedPhoto(
+        captureDate: Date
+    ) -> SelectedPhoto {
+
+        SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/anchor-language.jpeg"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+    }
+
+    func englishFrozenConfiguration(
+        anchor: Anchor
+    ) -> BatchConfigurationSnapshot {
+
+        let subject =
+            MemorySubjectAdapter.adapt(
+                profile:
+                    PersonalProfile(
+                        relationshipRole: .custom,
+                        customRelationshipLabel: "Family",
+                        babyNickname: "Alex"
+                    ),
+                anchors: [anchor],
+                selectedAnchorID: anchor.id,
+                referenceDate: anchor.date
+            )
+
+        return BatchConfigurationSnapshot(
+            template: .classicWhite.normalizedForEditing,
+            badge: nil,
+            anchor: anchor,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: "",
+            language: .english
+        )
+        .withLegacyPairedFrozenMemoryConfiguration(
+            subject: subject,
+            snapshot:
+                ConfigurationSnapshotBuilder.build(
+                    from: subject,
+                    language: .english
+                )
+        )
+    }
 
     func temporaryExportFolder() -> URL {
 

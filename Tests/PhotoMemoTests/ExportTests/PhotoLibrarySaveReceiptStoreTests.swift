@@ -44,6 +44,46 @@ struct PhotoLibrarySaveReceiptStoreTests {
         )
     }
 
+    @Test("receipt pruning preserves queued task receipts and removes only orphaned receipts")
+    func pruningReceiptsUsesPersistedTaskIdentity() throws {
+        let suiteName =
+            "PhotoLibrarySaveReceiptStoreTests.Pruning.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let retainedTaskID = UUID().uuidString
+        let orphanedTaskID = UUID().uuidString
+        let store = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        store.record(
+            assetIdentifier: "asset-retained",
+            for: retainedTaskID
+        )
+        store.record(
+            assetIdentifier: "asset-orphaned",
+            for: orphanedTaskID
+        )
+
+        store.pruneReceipts(
+            retaining: [retainedTaskID]
+        )
+
+        #expect(
+            store.assetIdentifier(for: retainedTaskID)
+            == "asset-retained"
+        )
+        #expect(
+            store.assetIdentifier(for: orphanedTaskID)
+            == nil
+        )
+    }
+
     @Test("photo save idempotency never scans the complete library")
     func idempotencyUsesDirectAssetLookup() throws {
         let exportSource = try sourceText(
@@ -72,6 +112,44 @@ struct PhotoLibrarySaveReceiptStoreTests {
             livePhotoSource.contains(
                 "fetchAssets(\n                withLocalIdentifiers:"
             )
+        )
+    }
+
+    @Test("PhotoKit saves persist idempotency receipts before committing asset changes")
+    func receiptsAreRecordedInsideBothPhotoKitChangeTransactions() throws {
+        let exportSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/Services/PhotoLibraryExportService.swift"
+        )
+        let livePhotoSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/MediaPipelineVNext/PhotoKitLivePhotoAssetWriter.swift"
+        )
+
+        try assertReceiptIsRecordedBeforeChangeCommit(
+            in: exportSource
+        )
+        try assertReceiptIsRecordedBeforeChangeCommit(
+            in: livePhotoSource
+        )
+    }
+
+    private func assertReceiptIsRecordedBeforeChangeCommit(
+        in source: String
+    ) throws {
+        let transactionStart = try #require(
+            source.range(
+                of: "try await performChanges {"
+            )
+        )
+        let transaction = source[transactionStart.lowerBound...]
+        let commitBoundary = try #require(
+            transaction.range(
+                of: "\n            }\n\n            guard"
+            )
+        )
+
+        #expect(
+            transaction[..<commitBoundary.lowerBound]
+                .contains("receiptStore.record(")
         )
     }
 

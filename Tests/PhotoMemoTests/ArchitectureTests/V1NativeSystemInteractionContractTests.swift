@@ -39,20 +39,23 @@ struct V1NativeSystemInteractionContractTests {
 
     @Test("configuration controls keep native states while location stays preselectable")
     func configurationUnavailableControlsUseNativeStates() throws {
-        let source = try sourceText(
+        let rootSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
         )
+        let optionListSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
 
-        #expect(!source.contains(".disabled(!isLocationSelectable)"))
-        #expect(source.contains(".saveLocationDisplayConfiguration("))
-        #expect(source.contains("ProgressView()"))
-        #expect(source.contains(".buttonStyle(.bordered)"))
+        #expect(!rootSource.contains(".disabled(!isLocationSelectable)"))
+        #expect(rootSource.contains(".saveLocationDisplayConfiguration("))
+        #expect(optionListSource.contains("ProgressView()"))
+        #expect(optionListSource.contains(".buttonStyle(.bordered)"))
     }
 
     @Test("configuration destructive actions require confirmation")
     func configurationDestructiveActionsRequireConfirmation() throws {
         let source = try sourceText(
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
 
         #expect(source.contains("showsResetConfigurationConfirmation"))

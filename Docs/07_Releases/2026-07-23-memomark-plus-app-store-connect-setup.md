@@ -10,12 +10,19 @@ This checklist configures the StoreKit product used by the single MemoMark iOS b
 - Type: Non-Consumable
 - Reference name: `MemoMark+ Lifetime`
 - Product ID: `com.serydoo.PhotoMemo.iOS.memomarkplus.lifetime`
-- Initial China storefront price: CNY 48 price tier
+- Initial China storefront price: CNY 48 launch price tier
 - Family Sharing: Enabled
 - Chinese display name: `MemoMark+ 永久解锁`
 - Chinese description: `无限创建成长记录，单次最多处理 40 张照片。`
 
 The app reads `Product.displayPrice`; do not hard-code the localized price in release UI.
+
+The launch price may later change to CNY 58, CNY 68, or remain CNY 48 based on
+the product's real family-use feedback. Change the App Store Connect price
+tier first. The app automatically presents the updated localized StoreKit
+price. If that change also ends the First Recorder campaign, set the explicit
+campaign end date in the next app release so restored original purchase dates
+continue to determine commemorative eligibility correctly.
 
 ## Submission
 

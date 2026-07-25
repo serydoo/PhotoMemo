@@ -37,7 +37,7 @@ struct ExportRecordCardIntent:
     func execute()
     async -> PhotoMemoResult<URL> {
 
-        coordinator.exportCard(
+        await coordinator.exportCard(
             photo: photo,
             card: card
         )

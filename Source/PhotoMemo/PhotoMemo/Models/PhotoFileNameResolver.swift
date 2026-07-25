@@ -322,11 +322,13 @@ enum PhotoFileNameResolver {
     }
 }
 
-@MainActor
-final class LivePhotoOutputFilenameSequenceStore {
+actor LivePhotoOutputFilenameSequenceStore {
 
     private let storageURL: URL
-    private let fileManager: FileManager
+    private let maximumEntryCount: Int
+    private var ledger: FilenameSequenceLedger?
+
+    static let shared = LivePhotoOutputFilenameSequenceStore()
 
     init(
         storageURL: URL =
@@ -334,10 +336,10 @@ final class LivePhotoOutputFilenameSequenceStore {
             .appendingPathComponent(
                 "LivePhotoOutputFilenameSequence.v1.json"
             ),
-        fileManager: FileManager = .default
+        maximumEntryCount: Int = 512
     ) {
         self.storageURL = storageURL
-        self.fileManager = fileManager
+        self.maximumEntryCount = max(maximumEntryCount, 1)
     }
 
     func nextOutputBaseName(
@@ -345,7 +347,7 @@ final class LivePhotoOutputFilenameSequenceStore {
         assetOriginalFileName: String? = nil,
         captureDate: Date? = nil,
         timeZone: TimeZone? = nil
-    ) throws -> String {
+    ) async throws -> String {
         let resolvedBaseName =
             PhotoFileNameResolver.outputBaseName(
                 preferredOriginalFileName:
@@ -360,23 +362,23 @@ final class LivePhotoOutputFilenameSequenceStore {
                 captureDate: captureDate,
                 timeZone: timeZone
             )
-        return try nextOutputBaseName(
+        return try await nextOutputBaseName(
             from: resolvedBaseName
         )
     }
 
     func nextOutputBaseName(
         from proposedBaseName: String
-    ) throws -> String {
+    ) async throws -> String {
         let rootBaseName =
             PhotoFileNameResolver.rootOutputBaseName(
                 proposedBaseName
             )
         let sequenceKey =
             rootBaseName.lowercased()
-        var sequences = try loadSequences()
+        var updatedLedger = try loadLedgerIfNeeded()
         let previousIndex = max(
-            sequences[sequenceKey] ?? 0,
+            updatedLedger.entries[sequenceKey]?.lastIndex ?? 0,
             PhotoFileNameResolver.outputCopyIndex(
                 proposedBaseName
             ) ?? 0
@@ -384,8 +386,21 @@ final class LivePhotoOutputFilenameSequenceStore {
         let nextIndex = previousIndex < Int.max
             ? previousIndex + 1
             : Int.max
-        sequences[sequenceKey] = nextIndex
-        try persist(sequences)
+        updatedLedger.lastAccessOrdinal =
+            updatedLedger.lastAccessOrdinal < Int.max
+            ? updatedLedger.lastAccessOrdinal + 1
+            : Int.max
+        updatedLedger.entries[sequenceKey] =
+            FilenameSequenceEntry(
+                lastIndex: nextIndex,
+                lastAccessOrdinal:
+                    updatedLedger.lastAccessOrdinal
+            )
+        updatedLedger.trimToMaximumEntryCount(
+            maximumEntryCount
+        )
+        try persist(updatedLedger)
+        ledger = updatedLedger
 
         return PhotoFileNameResolver.outputCopyBaseName(
             from: rootBaseName,
@@ -393,21 +408,61 @@ final class LivePhotoOutputFilenameSequenceStore {
         )
     }
 
-    private func loadSequences() throws -> [String: Int] {
-        guard fileManager.fileExists(
+    private func loadLedgerIfNeeded() throws
+    -> FilenameSequenceLedger {
+
+        if let ledger {
+            return ledger
+        }
+
+        let loadedLedger = try loadLedger()
+        ledger = loadedLedger
+        return loadedLedger
+    }
+
+    private func loadLedger() throws
+    -> FilenameSequenceLedger {
+
+        guard FileManager.default.fileExists(
             atPath: storageURL.path
         ) else {
-            return [:]
+            return FilenameSequenceLedger()
         }
         do {
             let data = try Data(contentsOf: storageURL)
-            return try JSONDecoder().decode(
+            if let ledger = try? JSONDecoder().decode(
+                FilenameSequenceLedger.self,
+                from: data
+            ) {
+                guard ledger.version
+                    == FilenameSequenceLedger.currentVersion
+                else {
+                    throw LivePhotoOutputFilenameSequenceError
+                        .invalidData(
+                            "Unsupported filename sequence version."
+                        )
+                }
+
+                var normalizedLedger = ledger
+                normalizedLedger.trimToMaximumEntryCount(
+                    maximumEntryCount
+                )
+                return normalizedLedger
+            }
+
+            let legacySequences = try JSONDecoder().decode(
                 [String: Int].self,
                 from: data
+            )
+            return FilenameSequenceLedger(
+                legacySequences: legacySequences,
+                maximumEntryCount: maximumEntryCount
             )
         } catch let error as DecodingError {
             throw LivePhotoOutputFilenameSequenceError
                 .invalidData(String(describing: error))
+        } catch let error as LivePhotoOutputFilenameSequenceError {
+            throw error
         } catch {
             throw LivePhotoOutputFilenameSequenceError
                 .readFailed(String(describing: error))
@@ -415,20 +470,86 @@ final class LivePhotoOutputFilenameSequenceStore {
     }
 
     private func persist(
-        _ sequences: [String: Int]
+        _ ledger: FilenameSequenceLedger
     ) throws {
         do {
-            try fileManager.createDirectory(
+            try FileManager.default.createDirectory(
                 at: storageURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            let data = try JSONEncoder().encode(sequences)
+            let data = try JSONEncoder().encode(ledger)
             try data.write(to: storageURL, options: .atomic)
         } catch {
             throw LivePhotoOutputFilenameSequenceError
                 .writeFailed(String(describing: error))
         }
     }
+}
+
+private nonisolated struct FilenameSequenceLedger: Codable, Sendable {
+
+    static let currentVersion = 2
+
+    let version: Int
+    var lastAccessOrdinal: Int
+    var entries: [String: FilenameSequenceEntry]
+
+    init() {
+        version = Self.currentVersion
+        lastAccessOrdinal = 0
+        entries = [:]
+    }
+
+    init(
+        legacySequences: [String: Int],
+        maximumEntryCount: Int
+    ) {
+        version = Self.currentVersion
+        let sortedSequences = legacySequences
+            .sorted { lhs, rhs in
+                lhs.key.localizedStandardCompare(rhs.key)
+                == .orderedAscending
+            }
+            .suffix(maximumEntryCount)
+
+        entries = Dictionary(
+            uniqueKeysWithValues:
+                sortedSequences.enumerated().map { offset, sequence in
+                    (
+                        sequence.key,
+                        FilenameSequenceEntry(
+                            lastIndex: max(sequence.value, 0),
+                            lastAccessOrdinal: offset + 1
+                        )
+                    )
+                }
+        )
+        lastAccessOrdinal = entries.count
+    }
+
+    mutating func trimToMaximumEntryCount(
+        _ maximumEntryCount: Int
+    ) {
+        while entries.count > maximumEntryCount,
+              let leastRecentlyUsedKey = entries.min(
+                by: { lhs, rhs in
+                    if lhs.value.lastAccessOrdinal
+                        == rhs.value.lastAccessOrdinal {
+                        return lhs.key < rhs.key
+                    }
+                    return lhs.value.lastAccessOrdinal
+                        < rhs.value.lastAccessOrdinal
+                }
+              )?.key {
+            entries.removeValue(forKey: leastRecentlyUsedKey)
+        }
+    }
+}
+
+private nonisolated struct FilenameSequenceEntry: Codable, Sendable {
+
+    let lastIndex: Int
+    let lastAccessOrdinal: Int
 }
 
 enum LivePhotoOutputFilenameSequenceError:

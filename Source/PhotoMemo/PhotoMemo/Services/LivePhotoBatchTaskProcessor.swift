@@ -292,7 +292,7 @@ final class LivePhotoBatchTaskProcessor:
     ) {
         let resolvedOutputFilenameSequenceStore =
             outputFilenameSequenceStore
-            ?? LivePhotoOutputFilenameSequenceStore()
+            ?? .shared
         self.planner =
             planner
             ?? MediaProcessingPlanner(
@@ -472,7 +472,7 @@ private extension LivePhotoBatchTaskProcessor {
             task: task
         )
         let renderedFileURL =
-            try exportService.exportToTemporaryFile(
+            try await exportService.exportToTemporaryFile(
                 photo: importedPhoto,
                 card: card
             )
@@ -645,7 +645,7 @@ private extension LivePhotoBatchTaskProcessor {
                 )
             let outputBaseName: String
             do {
-                outputBaseName = try outputFilenameSequenceStore
+                outputBaseName = try await outputFilenameSequenceStore
                     .nextOutputBaseName(
                         preferredOriginalFileName:
                             sourceOriginalFilename,

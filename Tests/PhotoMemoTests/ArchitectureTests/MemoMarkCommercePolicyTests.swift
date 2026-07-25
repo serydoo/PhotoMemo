@@ -23,27 +23,71 @@ struct MemoMarkCommercePolicyTests {
         )
     }
 
-    @Test("First Recorder identity excludes Family Sharing recipients")
-    func firstRecorderIdentityRequiresDirectOwnership() {
+    @Test("First Recorder identity follows purchase date and direct ownership")
+    func firstRecorderIdentityUsesCampaignBoundary() {
+        let deadline = Date(timeIntervalSince1970: 200)
+
         #expect(
             MemoMarkCommercePolicy
                 .shouldGrantFirstRecorderIdentity(
-                    isProgramActive: true,
+                    originalPurchaseDate:
+                        Date(timeIntervalSince1970: 100),
+                    campaignEndDate: deadline,
                     isFamilyShared: false
                 )
         )
         #expect(
             !MemoMarkCommercePolicy
                 .shouldGrantFirstRecorderIdentity(
-                    isProgramActive: true,
+                    originalPurchaseDate:
+                        Date(timeIntervalSince1970: 100),
+                    campaignEndDate: deadline,
                     isFamilyShared: true
                 )
         )
         #expect(
             !MemoMarkCommercePolicy
                 .shouldGrantFirstRecorderIdentity(
-                    isProgramActive: false,
+                    originalPurchaseDate:
+                        Date(timeIntervalSince1970: 201),
+                    campaignEndDate: deadline,
                     isFamilyShared: false
+                )
+        )
+        #expect(
+            MemoMarkCommercePolicy
+                .shouldGrantFirstRecorderIdentity(
+                    originalPurchaseDate:
+                        Date(timeIntervalSince1970: 10_000),
+                    campaignEndDate: nil,
+                    isFamilyShared: false
+                )
+        )
+    }
+
+    @Test("First Recorder purchase copy closes at the campaign boundary")
+    func firstRecorderCampaignOpenStateUsesCurrentDate() {
+        let deadline = Date(timeIntervalSince1970: 200)
+
+        #expect(
+            MemoMarkCommercePolicy
+                .isFirstRecorderCampaignOpen(
+                    at: Date(timeIntervalSince1970: 200),
+                    campaignEndDate: deadline
+                )
+        )
+        #expect(
+            !MemoMarkCommercePolicy
+                .isFirstRecorderCampaignOpen(
+                    at: Date(timeIntervalSince1970: 201),
+                    campaignEndDate: deadline
+                )
+        )
+        #expect(
+            MemoMarkCommercePolicy
+                .isFirstRecorderCampaignOpen(
+                    at: Date(timeIntervalSince1970: 10_000),
+                    campaignEndDate: nil
                 )
         )
     }

@@ -143,9 +143,11 @@
 "commerce.purchase.benefit.batch_40" = "Process up to 40 photos at once";
 "commerce.purchase.benefit.family_sharing" = "Family Sharing supported";
 "commerce.purchase.benefit.core_updates" = "Core features and included Presets continue to evolve";
-"commerce.purchase.price_note" = "First Recorder thank-you price · One purchase, lifetime access";
+"commerce.purchase.price_note.launch" = "Launch offer · One purchase, lifetime access";
+"commerce.purchase.price_note.standard" = "One purchase, lifetime access";
 "commerce.purchase.connecting" = "Connecting to the App Store";
-"commerce.purchase.primary_format" = "Become a First Recorder · %@";
+"commerce.purchase.primary_format.launch" = "Become a First Recorder · %@";
+"commerce.purchase.primary_format.standard" = "Unlock Forever · %@";
 "commerce.purchase.pending" = "This purchase is awaiting approval and will unlock automatically when complete.";
 "commerce.purchase.apple_code" = "Redeem a MemoMark+ Offer Code";
 "commerce.purchase.restore" = "Restore Purchases";
