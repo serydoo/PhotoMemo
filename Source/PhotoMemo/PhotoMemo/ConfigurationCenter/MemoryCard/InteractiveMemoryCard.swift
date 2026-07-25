@@ -3,6 +3,9 @@ import SwiftUI
 
 struct InteractiveMemoryCard: View {
 
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
+
     @ObservedObject
     var session: ConfigurationSession
 
@@ -38,21 +41,27 @@ struct InteractiveMemoryCard: View {
             memoryPresetTitle: memoryPresetTitleBinding,
             isRenamingMemoryPreset: $isRenamingMemoryPreset,
             onReset: {
-                withAnimation(.easeInOut(duration: 0.16)) {
+                withAnimation(configurationAnimation) {
                     session.resetSelectedMemoryPreset()
                 }
             },
             onSave: {
-                withAnimation(.easeInOut(duration: 0.16)) {
+                withAnimation(configurationAnimation) {
                     session.saveCurrentMemoryPreset()
                 }
             },
             onCreate: {
-                withAnimation(.easeInOut(duration: 0.16)) {
+                withAnimation(configurationAnimation) {
                     session.createMemoryPresetFromCurrent()
                 }
             }
         )
+    }
+
+    private var configurationAnimation: Animation? {
+        accessibilityReduceMotion
+            ? nil
+            : .easeInOut(duration: 0.16)
     }
 
     private var cardSurface: some View {

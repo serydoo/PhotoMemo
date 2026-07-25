@@ -18845,3 +18845,42 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   persistence, and corrupted queue recovery. Focused suites passed, followed
   by the full macOS `PhotoMemoTests` suite, unsigned macOS Debug build, generic
   iOS Debug build, and `git diff --check`.
+
+## 2026-07-25 Apple Native Product Surface Convergence
+
+- Completed a screenshot-evidence UI pass across Home, Configuration Center,
+  Output, Processing, and Settings without reopening IA-002 or changing
+  Renderer, Layout, Metadata, Export, PhotoKit, Share Extension, commerce, or
+  persistence contracts.
+- Home now centers the current Memory Subject and Preset; Processing is a
+  status and recovery surface rather than a task dashboard; Output explicitly
+  distinguishes output-setting persistence from Photo Library save success.
+- Configuration Center preserves `Library -> Interactive Memory Card -> Object
+  Inspector`, while user-facing regions are translated to record, time,
+  capture information, and memory content. Save is the single primary action;
+  create, reset, and delete remain available through a secondary native menu.
+- Settings starts with supporting explanations collapsed. Common surfaces use
+  system semantic backgrounds, default card shadows are quieter, Launch Screen
+  follows system appearance, and Interactive Memory Card transitions honor
+  Reduce Motion.
+- Focused source contracts, the iOS simulator build, the required unsigned
+  macOS Debug build, and `git diff --check` passed. The complete macOS suite
+  passed 1,054 tests with 1 existing skip and 0 failures. CoreSimulator
+  stalled during LaunchServices/Data Migration on both iOS 27 and iOS 26.5,
+  so light/dark, large-text, VoiceOver, iPad, physical-device, and Apple Photos
+  Share visual acceptance remain explicit evidence items rather than inferred
+  claims.
+- A continued simulator attempt completed device migration but exposed a
+  CoreSimulator/SpringBoard boot failure before MemoMark installation. Static
+  accessibility inspection then found and removed Home's fixed Preset-list
+  height and changed Processing history rows from fixed to minimum height.
+  Focused Dynamic Type, narrow-width, iPad adaptive-navigation, Reduce Motion,
+  VoiceOver-label, Share lifecycle, and file-first intake contracts passed.
+  Actual Dark Mode, maximum text-size, VoiceOver traversal, iPad rendering,
+  and Apple Photos Share acceptance remain physical-device or healthy-simulator
+  evidence items.
+
+- The final generic iOS simulator build regenerated `PhotoMemoiOS.app`, then
+  Xcode Beta's build service stalled during post-build cleanup. It was
+  interrupted and is not counted as a passing build; the earlier recorded iOS
+  build remains the valid automated build evidence for this UI pass.

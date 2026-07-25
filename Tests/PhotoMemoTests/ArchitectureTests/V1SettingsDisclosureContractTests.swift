@@ -12,7 +12,7 @@ struct V1SettingsDisclosureContractTests {
 
         #expect(source.contains("private enum SettingsSection"))
         #expect(source.contains("@State\n    private var expandedSections"))
-        #expect(source.contains("SettingsSection.allCases"))
+        #expect(source.contains("expandedSections: Set<SettingsSection> = []"))
         #expect(source.contains("private func settingsDisclosureSection"))
         #expect(source.contains("chevron.right"))
         #expect(source.contains("accessibilityValue"))

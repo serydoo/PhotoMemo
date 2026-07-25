@@ -80,8 +80,8 @@ struct V1OutputPageSurface: View {
 
     private var pageHeader: some View {
         V1PageHeader(
-            "输出",
-            subtitle: "选择结果图的保存位置，并管理写入图片说明。"
+            "保存与说明",
+            subtitle: "选择照片保存位置，并决定写入哪些说明。"
         )
     }
 
@@ -133,19 +133,19 @@ private struct V1OutputSaveConfigurationButton: View {
 
     private var title: String {
         if isSaving {
-            return "正在保存"
+            return "正在保存输出设置"
         }
 
         switch configurationStatus {
         case .saved:
-            return "已保存"
+            return "输出设置已保存"
         case .failure:
-            return "重新保存"
+            return "重新保存输出设置"
         case .idle,
              .dirty,
              .saving,
              .subjectSynced:
-            return "保存到当前配置"
+            return "保存输出设置"
         }
     }
 
@@ -342,8 +342,8 @@ private struct V1MemoryWriteSection: View {
                     V1OutputRetentionRow(
                         systemImage: MemoMarkSymbol.photoMetadata.name,
                         tint: .blue,
-                        title: "保留 EXIF 信息",
-                        subtitle: "保留拍摄参数与元数据"
+                        title: "保留拍摄信息",
+                        subtitle: "保留 EXIF 拍摄参数与元数据"
                     )
 
                     V1OutputDivider()

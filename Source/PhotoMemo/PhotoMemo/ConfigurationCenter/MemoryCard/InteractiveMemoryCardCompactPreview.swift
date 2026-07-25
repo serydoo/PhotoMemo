@@ -3,6 +3,9 @@ import SwiftUI
 
 struct InteractiveMemoryCardCompactPreview: View {
 
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
+
     let leftPrimaryText: String
     let leftSecondaryText: String
     let rightPrimaryText: String
@@ -56,11 +59,15 @@ struct InteractiveMemoryCardCompactPreview: View {
                 y: 4
             )
             .animation(
-                .easeInOut(duration: 0.16),
+                accessibilityReduceMotion
+                    ? nil
+                    : .easeInOut(duration: 0.16),
                 value: selectedRegion
             )
             .animation(
-                .easeInOut(duration: 0.12),
+                accessibilityReduceMotion
+                    ? nil
+                    : .easeInOut(duration: 0.12),
                 value: hoveredRegion
             )
     }

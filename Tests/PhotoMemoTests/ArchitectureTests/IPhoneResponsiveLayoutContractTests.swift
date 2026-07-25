@@ -93,7 +93,8 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(source.contains("@Environment(\\.dynamicTypeSize)"))
         #expect(source.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(source.contains("configurationActionColumns"))
+        #expect(source.contains("VStack(alignment: .leading, spacing: 10)"))
+        #expect(source.contains("更多配置操作"))
         #expect(source.contains("adaptiveSectionHeader"))
     }
 

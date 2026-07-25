@@ -1070,7 +1070,7 @@ struct PhotoMemoiOSV1View: View {
 
                 tasksPage
                     .tabItem {
-                        Label("任务", systemImage: MemoMarkSymbol.task.name)
+                        Label("处理", systemImage: MemoMarkSymbol.task.name)
                     }
                     .tag(V1EntryTab.tasks)
             }
@@ -1473,9 +1473,6 @@ struct PhotoMemoiOSV1View: View {
                 session.currentMemoryPresetTitle,
             onOpenPhotoLibrary:
                 openPhotoLibrary,
-            onStartProcessing: {
-                beginPhotoProcessingFlow()
-            },
             onDismissKeyboard: dismissKeyboard
         )
     }

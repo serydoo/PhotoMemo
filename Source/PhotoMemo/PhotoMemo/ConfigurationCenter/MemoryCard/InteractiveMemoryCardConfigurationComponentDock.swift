@@ -3,6 +3,9 @@ import SwiftUI
 
 struct InteractiveMemoryCardConfigurationComponentDock: View {
 
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
+
     let isModuleLibraryExpanded: Binding<Bool>
     let visibleInsertableModules: [CenterInsertableModule]
     let selectedRegionSemanticTitle: String
@@ -67,7 +70,7 @@ struct InteractiveMemoryCardConfigurationComponentDock: View {
         }
         .frame(width: 590, alignment: .leading)
         .padding(12)
-        .background(Color.white.opacity(0.74))
+        .background(ConfigurationUI.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -85,7 +88,7 @@ struct InteractiveMemoryCardConfigurationComponentDock: View {
                 Spacer(minLength: 0)
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.16)) {
+                    withAnimation(moduleLibraryAnimation) {
                         isModuleLibraryExpanded.wrappedValue.toggle()
                     }
                 } label: {
@@ -128,6 +131,12 @@ struct InteractiveMemoryCardConfigurationComponentDock: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var moduleLibraryAnimation: Animation? {
+        accessibilityReduceMotion
+            ? nil
+            : .easeInOut(duration: 0.16)
     }
 
     private var currentConfigurationPreview: some View {

@@ -34,7 +34,7 @@ struct InteractiveMemoryCardRegionStrip: View {
         }
         .padding(4)
         .frame(width: 590)
-        .background(Color.white.opacity(0.86))
+        .background(ConfigurationUI.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)

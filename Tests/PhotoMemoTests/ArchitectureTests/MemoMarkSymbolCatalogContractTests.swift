@@ -75,7 +75,6 @@ struct MemoMarkSymbolCatalogContractTests {
         let expectations = [
             ("iOS/Views/V1HomePageSurface.swift", "我的配置", "MemoMarkSymbol.configuration.name"),
             ("iOS/Views/V1HomePageSurface.swift", "记忆对象", "MemoMarkSymbol.memorySubject.name"),
-            ("iOS/Views/V1HomePageSurface.swift", "为什么开发时光记", "MemoMarkSymbol.memoryContent.name"),
             ("iOS/Views/V1HomeFeedbackSection.swift", "意见反馈", "MemoMarkSymbol.feedback.name"),
             ("iOS/Views/V1OutputPageSurface.swift", "输出目标", "MemoMarkSymbol.output.name"),
             ("iOS/Views/V1OutputPageSurface.swift", "写入与保留", "MemoMarkSymbol.retention.name"),

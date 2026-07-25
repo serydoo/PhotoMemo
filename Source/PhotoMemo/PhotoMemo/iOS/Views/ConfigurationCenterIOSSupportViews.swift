@@ -364,7 +364,7 @@ struct IOSDetailPanel<Content: View>: View {
             content
         }
         .padding(14)
-        .background(Color.white.opacity(0.82))
+        .background(ConfigurationUI.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -427,7 +427,7 @@ struct IOSRegionComposer: View {
             }
         }
         .padding(10)
-        .background(Color.white.opacity(0.84))
+        .background(ConfigurationUI.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)

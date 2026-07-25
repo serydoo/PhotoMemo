@@ -134,11 +134,7 @@ struct ConfigurationCenterTopPreviewSection<
                         }
                     }
 
-                    Text("配置中心")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    Text("这里负责长期配置记忆对象、时间锚点与输出行为，顶部预览会保持锁定，原始照片不会被修改。")
+                    Text("调整记忆表达，并实时确认最终卡片。")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -167,12 +163,6 @@ struct ConfigurationCenterTopPreviewSection<
                 }
             }
 
-            workflowChips
-
-            Text("Apple Photos -> Share -> MemoMark -> Processing -> Apple Photos")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 2)
         }
         .padding(.horizontal, 6)
         .padding(.top, 2)
@@ -325,7 +315,7 @@ struct ConfigurationCenterTopPreviewSection<
                     .padding(.vertical, 8)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.86))
+                            .fill(ConfigurationUI.panelBackground)
                     )
                     .overlay(
                         Capsule(style: .continuous)
@@ -438,62 +428,6 @@ struct ConfigurationCenterTopPreviewSection<
                 .stroke(ConfigurationUI.faintHairline)
         )
         .help(title)
-    }
-
-    private func topWorkflowChip(
-        title: String,
-        systemImage: String
-    ) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.caption2.weight(.medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 7)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(ConfigurationUI.controlBackground.opacity(0.92))
-            )
-    }
-
-    private var workflowChips: some View {
-        ViewThatFits {
-            workflowChipsExpanded
-            workflowChipsCompact
-        }
-    }
-
-    private var workflowChipsExpanded: some View {
-        HStack(spacing: 8) {
-            topWorkflowChip(
-                title: "记忆对象",
-                systemImage: MemoMarkSymbol.memorySubject.name
-            )
-            topWorkflowChip(
-                title: "时间锚点",
-                systemImage: MemoMarkSymbol.timeAnchor.name
-            )
-            topWorkflowChip(
-                title: "输出行为",
-                systemImage: MemoMarkSymbol.output.name
-            )
-        }
-    }
-
-    private var workflowChipsCompact: some View {
-        HStack(spacing: 8) {
-            topWorkflowChip(
-                title: "对象",
-                systemImage: MemoMarkSymbol.memorySubject.name
-            )
-            topWorkflowChip(
-                title: "锚点",
-                systemImage: MemoMarkSymbol.timeAnchor.name
-            )
-            topWorkflowChip(
-                title: "输出",
-                systemImage: MemoMarkSymbol.output.name
-            )
-        }
     }
 
     private var profileCompactFacts: some View {

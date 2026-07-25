@@ -16,7 +16,6 @@ struct V1TaskPageSurface: View {
     let events: [PhotoMemoShareDiagnosticEvent]
     let fallbackConfigurationName: String
     let onOpenPhotoLibrary: (V1TaskPhotoLibraryLink) -> Void
-    let onStartProcessing: () -> Void
     let onDismissKeyboard: () -> Void
 
     @State
@@ -41,7 +40,6 @@ struct V1TaskPageSurface: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 pageHeader
-                overviewStrip
                 currentTaskCard
                 recentTasksSection
             }
@@ -83,53 +81,9 @@ struct V1TaskPageSurface: View {
 
     private var pageHeader: some View {
         V1PageHeader(
-            "任务",
-            subtitle: "所有处理都在本地完成，原图不会被修改。"
+            "处理",
+            subtitle: "从 Apple Photos 分享后，可在这里确认进度与结果。"
         )
-    }
-
-    private var overviewStrip: some View {
-        HStack(spacing: 0) {
-            ForEach(presentation.overviewItems) { item in
-                overviewItem(item)
-
-                if item.id != presentation.overviewItems.last?.id {
-                    Rectangle()
-                        .fill(ConfigurationUI.faintHairline)
-                        .frame(width: 1, height: 36)
-                }
-            }
-        }
-        .frame(height: 86)
-        .v1CardChrome()
-    }
-
-    private func overviewItem(
-        _ item: V1TaskOverviewItemPresentation
-    ) -> some View {
-        VStack(spacing: 5) {
-            Label {
-                Text(item.title)
-                    .font(.caption.weight(.semibold))
-            } icon: {
-                Image(systemName: item.symbolName)
-                    .font(.caption.weight(.bold))
-            }
-            .foregroundStyle(item.tint.color)
-            .lineLimit(1)
-
-            Text(item.value)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.primary)
-                .monospacedDigit()
-
-            Text(item.unit)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
@@ -157,46 +111,16 @@ struct V1TaskPageSurface: View {
             .frame(width: 58, height: 58)
 
             VStack(spacing: 4) {
-                Text("还没有处理任务")
+                Text("当前没有正在处理的照片")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("从首页选择照片开始。")
+                Text("从 Apple Photos 分享照片后，进度会显示在这里。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            Button(action: onStartProcessing) {
-                HStack(spacing: 8) {
-                    Image(systemName: MemoMarkSymbol.processing.name)
-                        .font(.caption.weight(.semibold))
-
-                    Text("开始处理")
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.white.opacity(0.82))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .frame(width: 168)
-                .frame(height: 44)
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: 14,
-                        style: .continuous
-                    )
-                    .fill(Color.accentColor)
-                )
-                .shadow(
-                    color: Color.accentColor.opacity(0.16),
-                    radius: 10,
-                    y: 4
-                )
-            }
-            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 18)
@@ -642,7 +566,7 @@ struct V1TaskPageSurface: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 12)
-        .frame(height: 78)
+        .frame(minHeight: 78)
         .accessibilityElement(children: .combine)
     }
 
