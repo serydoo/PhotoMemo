@@ -2,6 +2,23 @@
 
 Last updated: 2026-07-25
 
+## 2026-07-25 Save-As Configuration Persistence Hotfix
+
+- Diagnosed a primary-workflow mismatch where `另存为新配置` created and
+  selected an in-memory preset, but completing its rename only marked the
+  session dirty. The durable configuration aggregate and Share production
+  projection therefore remained on the previous active configuration, and a
+  later configuration switch discarded the transient preset.
+- Changed rename completion into an explicit rename-and-save action that uses
+  the existing aggregate persistence transaction. A successful receipt now
+  retains the new configuration, makes its identity active, and refreshes the
+  compatibility projection consumed by Share and Processing.
+- Added action and root-dispatch regression coverage. Focused configuration
+  lifecycle, first-save identity, aggregate receipt, Share production snapshot,
+  and frozen-request tests passed, followed by the full `PhotoMemoTests` suite.
+  A generic iOS Debug build including the embedded Share Extension and Widget
+  also completed successfully.
+
 ## 2026-07-25 Output Localization And Destructive Action Closure
 
 - Moved the Output Memory Write titles, descriptions, placeholder, preview

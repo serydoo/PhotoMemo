@@ -16,7 +16,7 @@ enum ConfigurationLibraryActionDecision: Equatable {
     case create
     case reset
     case beginRename(title: String)
-    case commitRename(title: String)
+    case commitRenameAndSave(title: String)
     case saveCurrent
     case applyCurrentThenSave(MemoryPreset)
     case saveDurableConfiguration(MemoryPreset)
@@ -95,7 +95,7 @@ struct ConfigurationLibraryActions {
         case .beginRename(let title):
             return .beginRename(title: title)
         case .commitRename(let title):
-            return .commitRename(title: title)
+            return .commitRenameAndSave(title: title)
         case .saveCurrent:
             return .saveCurrent
         case .saveToLocalLibrary(let request):

@@ -1770,11 +1770,12 @@ struct PhotoMemoiOSV1View: View {
         case .beginRename(let title):
             memoryPresetTitleDraft = title
             isEditingMemoryPresetTitle = true
-        case .commitRename(let title):
+        case .commitRenameAndSave(let title):
             session.updateSelectedMemoryPresetTitle(title)
             activeConfigurationStatus = .dirty
             isEditingMemoryPresetTitle = false
             memoryPresetTitleFieldFocused = false
+            startCurrentConfigurationSaveWithFeedback()
         case .activate(let preset):
             logoMode = preset.logoMode
             session.selectMemoryPreset(preset)

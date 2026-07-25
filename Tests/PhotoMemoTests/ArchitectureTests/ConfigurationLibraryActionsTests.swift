@@ -22,7 +22,7 @@ struct ConfigurationLibraryActionsTests {
         )
         #expect(
             actions.decide(.commitRename(title: "新的成长记录"))
-            == .commitRename(title: "新的成长记录")
+            == .commitRenameAndSave(title: "新的成长记录")
         )
         #expect(actions.decide(.saveCurrent) == .saveCurrent)
         #expect(actions.decide(.activate(preset)) == .activate(preset))

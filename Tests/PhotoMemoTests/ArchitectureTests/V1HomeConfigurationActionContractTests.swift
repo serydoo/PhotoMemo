@@ -109,7 +109,7 @@ struct V1HomeConfigurationActionContractTests {
 
         #expect(source.contains("case .beginRename(let title):"))
         #expect(source.contains("memoryPresetTitleDraft = title"))
-        #expect(source.contains("case .commitRename(let title):"))
+        #expect(source.contains("case .commitRenameAndSave(let title):"))
         #expect(!source.contains("case .rename(let title):"))
         #expect(
             source.components(
