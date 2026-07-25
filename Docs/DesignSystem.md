@@ -1,308 +1,335 @@
-# MemoMark Design System
+# MemoMark Design System V1
 
-Last updated: 2026-06-20
+Status: Frozen
+
+Last updated: 2026-07-25
 
 ## Purpose
 
-This document defines the baseline UI system for MemoMark.
+This document is the canonical product-interface design system for MemoMark.
+It governs future UI evolution across the main app and Share Extension. It
+does not authorize immediate visual rewrites of accepted surfaces.
 
-The goal is consistency, not decoration.
+The objective is consistency, not decoration. Every new surface should feel
+like MemoMark because it follows the same hierarchy, restraint, ownership,
+and action rules—not because it repeats a logo, icon, or custom color.
 
-MemoMark should feel:
+## Product Principle
 
-- Apple-native
-- calm
-- light
-- trustworthy
-- photo-first
+MemoMark is Memory First, not Photo First.
 
-All future UI work should align with this document unless a deliberate visual decision replaces it.
+```text
+Memory Subject
+-> Time Anchor
+-> Configuration
+-> Presentation And Layout Resolution
+-> Renderer
+-> Processing
+-> Apple Photos
+```
 
-## Design Principles
+The Configuration Center edits Memory Engine Configuration Objects. It does
+not directly edit Renderer internals. Renderer remains stateless and consumes
+resolved presentation and layout input from accepted upstream owners.
 
-1. Photo first.
+The daily workflow remains:
 
-UI should support the photo, not compete with it.
+```text
+Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos
+```
 
-2. One screen, one job.
+## Experience Principles
 
-Each screen should answer a clear user question.
+1. **One screen, one responsibility.** Each page answers one primary user
+   question and exposes one primary action.
+2. **Memory truth before decoration.** Identity, time, configuration, and
+   processing state remain clearer than visual ornament.
+3. **Typography before iconography.** Use title, subtitle, value, caption,
+   spacing, and contrast to express hierarchy before adding symbols.
+4. **One screen, one accent.** A page has one dominant blue action or state.
+   Additional blue must earn a distinct interactive meaning.
+5. **One card, one responsibility.** Keep accepted cards separate when they
+   represent different objects or decisions. Do not merge cards merely to
+   reduce their count.
+6. **Remove before adding.** Prefer deleting redundant copy, icons, badges,
+   cards, and actions before introducing another visual element.
+7. **Apple-native by behavior.** Use semantic colors, system typography,
+   native controls, Dynamic Type, VoiceOver, Reduce Motion, and platform
+   lifecycle conventions.
 
-3. Preview is the truth.
+## Screen Responsibilities
 
-If preview and final result disagree, preview is wrong.
+### Home
 
-4. Prefer fewer surfaces.
+Home answers:
 
-If two cards can become one, merge them.
+- Which Memory Subject is active?
+- Which configuration is active?
+- Do I want to choose photos and begin?
 
-5. Reduce reading.
+The sole primary action is `选择照片`. Do not add banners, statistics, recent
+photos, recommendations, activities, dashboards, or new feature launchers.
 
-Short labels beat explanatory paragraphs.
+### Configuration Center
 
-6. Use hierarchy, not visual noise.
+The Configuration Center edits the active configuration aggregate and shows
+the real Renderer Result produced from accepted configuration, presentation,
+layout, and renderer boundaries.
 
-Clarity should come from spacing, size, and contrast before using more color.
+It is not a photo preview, subject introduction, Workspace, Dashboard, or
+direct Renderer editor. Preserve the accepted object hierarchy and these
+responsibilities:
 
-## Layout Grid
+- memory expression;
+- card layout and content;
+- configuration persistence.
 
-Use a simple 8-point spacing system.
+The sole primary action is `保存当前配置` or its current state-equivalent.
 
-### Spacing Scale
+### Memory Subject
 
-- `4` for micro spacing inside compact text groups
-- `8` for chip-level spacing and tight control grouping
-- `12` for compact cards and small clusters
-- `16` for default section interior spacing
-- `24` for major card padding and section separation
-- `32` only for page-level breathing room when needed
+Memory Subject owns user-authored subject identity, relationship, and time
+anchors. It is product data and memory truth—not a settings page and not a
+Renderer configuration surface.
 
-Preferred rhythm:
+Preserve the accepted separation:
 
-- inside cards: `8` or `12`
-- between controls: `8` or `10`
-- between sections: `16` or `24`
+- basic information;
+- time anchors.
 
-Avoid introducing one-off values unless there is a strong reason.
-
-## Corner Radius
-
-Current UI already clusters around these values.
-
-These should become the standard:
-
-- `16` for compact previews and small icon containers
-- `18` for inset cards, pills, configuration rows, and secondary panels
-- `24` for primary section cards and major group containers
-
-Avoid mixing too many corner sizes on one screen.
-
-Default rule:
-
-- small component: `16`
-- standard component: `18`
-- large container: `24`
-
-## Typography
-
-MemoMark should use Apple system typography and clear hierarchy.
-
-### Recommended Type Scale
-
-- Page title: `.system(size: 28...32, weight: .semibold)`
-- Section title: `.headline` or `.title3.weight(.semibold)`
-- Primary value: `.subheadline.weight(.medium)` or `.headline`
-- Secondary body: `.subheadline`
-- Support text: `.caption`
-- Dense support text: `.caption2`
-
-### Typography Rules
-
-- never use oversized decorative headings
-- keep support text muted and short
-- avoid multiple emphasis styles in the same sentence
-- use font weight for importance before adding color
-
-## Color System
-
-Current baseline:
-
-- background: very light neutral gray-blue
-- surface: white
-- border: subtle black with low opacity
-- accent: desaturated blue-gray
-
-### Current Baseline Tokens
-
-- Background: `246 / 247 / 249`
-- Surface: `255 / 255 / 255`
-- Border: `black.opacity(0.05)`
-- Accent: `111 / 125 / 166`
-
-### Color Rules
-
-- color should guide, not decorate
-- use accent mainly for active state, success emphasis, and selection
-- avoid large flat accent blocks
-- keep contrast strong enough for trust and readability
-
-## Iconography
-
-Use SF Symbols as the default icon system.
-
-### Icon Sizes
-
-- `14-16` for inline helper icons
-- `18-20` for standard action icons
-- `24-28` for key status or hero context icons
-
-### Icon Rules
-
-- do not mix many icon weights in one row
-- avoid using icons without labels for important decisions
-- use icons to reinforce meaning, not replace wording
-
-## Cards and Containers
-
-MemoMark currently relies heavily on cards.
-
-That is acceptable, but cards must be disciplined.
-
-### Primary Card
-
-Use for:
-
-- section groups
-- major configuration surfaces
-- preview framing
-
-Visual traits:
-
-- white surface
-- subtle border
-- soft shadow
-- `24` radius
-
-### Inset Card
-
-Use for:
-
-- summaries
-- supporting content
-- grouped controls inside larger sections
-
-Visual traits:
-
-- low-contrast fill
-- no heavy shadow
-- `18` radius
-
-### Pill / Chip
-
-Use for:
-
-- active state
-- quick facts
-- compact status
-
-Visual traits:
-
-- capsule or soft rounded shape
-- concise text only
-
-## Buttons
-
-MemoMark should use only a small button vocabulary.
-
-### Primary Button
-
-Use for:
-
-- generate
-- save
-- main forward action
-
-Style:
-
-- bordered prominent
-- one per decision zone when possible
-
-### Secondary Button
-
-Use for:
-
-- edit
-- manage
-- rename
-- switch supporting action
-
-Style:
-
-- bordered
-
-### Plain Button
-
-Use for:
-
-- row selection
-- low-friction state change
-
-Rule:
-
-- never rely on plain buttons alone for destructive or high-stakes actions
-
-## Motion and Feedback
-
-MemoMark should feel responsive, not animated for its own sake.
-
-Use motion for:
-
-- save success
-- configuration switching
-- progress updates
-- sheet presentation
-
-Avoid:
-
-- decorative motion
-- repeated bouncing or playful transitions
-- animations that obscure whether processing is actually happening
-
-## Content Rules
-
-### Labels
-
-- use user language
-- keep labels concrete
-- avoid system-internal nouns
-
-### Help Text
-
-- if help text becomes necessary, keep it short
-- if a section needs multiple paragraphs, the UI probably needs simplification
-
-### Duplication
-
-- do not repeat configuration names in multiple cards
-- do not restate information that is already obvious from context
-- do not show both a summary card and a source card when one is enough
-
-## Screen-Level Guidelines
-
-### Main App
-
-- should feel like a configuration center
-- photo import remains available but secondary
-- avoid making it feel like the daily working surface
+Memory Subject detail is the current visual reference for quiet hierarchy,
+text-first fields, balanced separators, and restrained actions.
 
 ### Share Extension
 
-- should feel like a natural continuation of Apple Photos
-- should minimize decisions
-- should center preview, configuration, save
+Share confirms what will be processed, how the accepted configuration applies,
+and where the result returns. It is not a feature page or explanatory guide.
 
-### Background Status
+Preserve the frozen structure in
+`Docs/04_DesignSystem/MemoMarkShareDesignV1.md`. The sole primary action is
+`生成时光记录`.
 
-- should stay secondary
-- should never dominate the main product surface
+### Processing
 
-## Implementation Notes
+Processing reports execution state and history. It is not a Dashboard and does
+not add statistics or decorative animation.
 
-Current code already reflects part of this system through:
+Keep the hierarchy:
 
-- `MinimalPalette`
-- `MinimalCardGroupBoxStyle`
-- `MinimalInsetCard`
+```text
+Current Task
+-> History
+```
 
-Next UI work should consolidate around these documented rules instead of adding new ad-hoc values.
+Actions such as viewing Apple Photos remain secondary and must not compete
+with the current task state.
 
-## Review Checklist
+## Information Hierarchy
 
-Before shipping any UI change, ask:
+### Level 1: Section
 
-- Does this reduce or increase reading?
-- Does this reduce or increase scrolling?
-- Is the main action obvious?
-- Is preview still the clearest element?
-- Is any card duplicated?
-- Is any label written for developers instead of users?
+A major section may use one SF Symbol when it improves scanning. The icon is
+supporting context, not the section identity.
+
+Examples:
+
+- Memory Subject;
+- configuration;
+- card layout.
+
+### Level 2: Cell
+
+Cells default to text-first presentation. Do not add an icon by default.
+
+Examples:
+
+- Logo 标识;
+- position display;
+- border style;
+- card content.
+
+Existing accepted icons are not removed in bulk. Reduce them only through a
+scoped visual pass with before-and-after evidence.
+
+### Level 3: Field
+
+Fields use labels and values without decorative icons.
+
+Examples:
+
+- nickname;
+- relationship;
+- birthday;
+- dedicated form of address.
+
+### System Status Symbols
+
+Retain SF Symbols that carry standard system meaning:
+
+- checkmark;
+- plus;
+- minus;
+- ellipsis;
+- chevron;
+- destructive or warning symbols when required by context.
+
+## Button System
+
+Only interactive controls belong to the Button System. Informational phrases
+such as `Apple Photos` or `本地优先` are labels, badges, or status content—not
+Secondary Buttons unless they perform an action.
+
+### Primary
+
+- one per page or decision surface;
+- solid system accent fill;
+- white foreground;
+- approximately 56 points high when used as the page-level action;
+- visually dominant without a competing blue action.
+
+Examples: `选择照片`, `生成时光记录`, `保存当前配置`.
+
+### Secondary
+
+- performs a real supporting action;
+- low-emphasis system fill or border;
+- accent-colored label;
+- never competes with Primary.
+
+### Text
+
+- blue text without a decorative background;
+- used for lightweight actions such as edit, rename, or view all.
+
+### Destructive
+
+- red text or a native destructive role;
+- no decorative filled background by default;
+- requires native confirmation when the consequence is irreversible.
+
+## Color System
+
+Use semantic system colors. Do not introduce raw colors when a semantic token
+expresses the same role.
+
+### One Screen One Accent
+
+Before adding blue, identify the screen's primary accent owner. Any additional
+blue must be interactive, selected, or semantically necessary and must remain
+visually subordinate.
+
+- Home: photo selection owns primary emphasis.
+- Configuration Center: configuration save owns primary emphasis.
+- Share: record generation owns primary emphasis.
+- Processing: current task state owns hierarchy; Apple Photos navigation is
+  secondary.
+
+Color never acts as the only carrier of state. Pair it with text, shape, or a
+system symbol.
+
+## Typography
+
+Use Apple system typography and Dynamic Type. Prefer semantic text styles over
+fixed point sizes in runtime surfaces.
+
+Hierarchy:
+
+- page title;
+- section title;
+- primary value;
+- body or subtitle;
+- caption and support text.
+
+Rules:
+
+- use weight before color to increase importance;
+- keep support copy short and secondary;
+- do not use oversized decorative headings;
+- allow localization and accessibility text to expand vertically;
+- do not truncate memory truth merely to preserve a fixed row height.
+
+Share-specific typography tokens remain defined in
+`Docs/04_DesignSystem/MemoMarkTypographyTokens.md` and runtime
+`MemoMarkDesignTokens.Typography`.
+
+## Cards And Separators
+
+One card owns one product object, decision, or status group.
+
+Accepted examples:
+
+- Home: Memory Subject and configuration remain separate;
+- Configuration Center: expression, layout/content, and save remain separate;
+- Memory Subject: basic information and time anchors remain separate.
+
+Do not create a new card when content belongs to an accepted card. Do not merge
+accepted cards when their responsibilities differ.
+
+Horizontal row separators use:
+
+- a semantic low-contrast separator color;
+- a physical-pixel or approved `0.5` point hairline;
+- symmetric leading and trailing content insets;
+- accessibility-hidden decoration.
+
+System `List` separators and vertical structural dividers retain native or
+surface-specific behavior.
+
+## Spacing And Shape
+
+Use the existing token owners before introducing new values:
+
+- `ConfigurationUI` for main-app configuration surfaces;
+- `MemoMarkDesignTokens` for Share Extension surfaces.
+
+Prefer the existing 4/8/12/16/24 spacing rhythm. Corner radius follows
+component hierarchy and existing tokens; do not invent a new radius for a
+single use.
+
+## Motion And Feedback
+
+Use motion only to explain state changes such as save completion, selection,
+progress, and system presentation.
+
+Respect Reduce Motion. Avoid decorative bouncing, looping animation, or motion
+that obscures whether processing actually succeeded.
+
+## Accessibility
+
+Every UI change must preserve:
+
+- Dynamic Type and content-driven height;
+- VoiceOver labels, values, hints, and logical traversal;
+- sufficient contrast in light and dark appearances;
+- Reduce Motion behavior;
+- localization expansion;
+- compact-width and iPad adaptation where applicable;
+- native control roles and minimum practical hit targets.
+
+Automated contracts and builds do not replace simulator or signed-device visual
+and accessibility verification.
+
+## Change Discipline
+
+This freeze does not authorize a repository-wide icon deletion, color rewrite,
+or card consolidation. Existing accepted surfaces evolve through bounded UI
+passes with recorded observations, intended outcomes, affected files, and
+verification evidence.
+
+Before approving a UI PR, ask:
+
+1. Did it add another blue element? Can hierarchy work without it?
+2. Did it add another icon? Can text express the meaning?
+3. Did it add another card? Does an accepted card already own the content?
+4. Did it add another Primary Button? A page may have only one.
+5. Does it preserve one screen, one responsibility?
+6. Does it preserve configuration, presentation, layout, Renderer, and export
+   ownership boundaries?
+7. Was the relevant compact, Dynamic Type, VoiceOver, and appearance behavior
+   verified or explicitly left unverified?
+
+## Exceptions
+
+An exception requires a scoped product reason, an identified owner, and visual
+verification. It must not be justified only by preference, another app's
+screenshot, or the availability of an SF Symbol.

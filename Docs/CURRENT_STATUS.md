@@ -18927,3 +18927,20 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   completed because the connected device was locked and SpringBoard denied the
   launch request. The two stale Home contract assertions were aligned during
   the follow-up review and now pass with the complete 29-test focused group.
+
+## 2026-07-25 MemoMark Design System V1 Freeze
+
+- Replaced the outdated Photo-first UI baseline with a frozen Memory-first
+  product-interface contract covering Home, Configuration Center, Memory
+  Subject, Share Extension, and Processing.
+- Established one screen/one responsibility, one screen/one accent, one
+  page-level Primary Button, typography-first hierarchy, and one Card/one
+  responsibility as future UI review rules. The freeze does not authorize a
+  bulk removal of accepted icons or a repository-wide visual rewrite.
+- Clarified that Configuration Center edits Memory Engine Configuration
+  Objects while Renderer remains a stateless downstream consumer of resolved
+  presentation and layout input. Informational labels and badges remain
+  distinct from interactive Secondary Buttons.
+- Added a repository PR checklist and a lightweight source contract so future
+  changes must state design-system, accessibility, verification, and ownership
+  impact before approval.

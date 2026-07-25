@@ -5,6 +5,23 @@ import Testing
 @Suite("Apple native product surface contract")
 struct AppleNativeProductSurfaceContractTests {
 
+    @Test("MemoMark Design System freezes memory-first restrained UI rules")
+    func designSystemFreezesMemoryFirstRestrainedUIRules() throws {
+        let designSystem = try sourceText("Docs/DesignSystem.md")
+
+        #expect(designSystem.contains("Status: Frozen"))
+        #expect(designSystem.contains("Memory First, not Photo First"))
+        #expect(designSystem.contains("One screen, one responsibility"))
+        #expect(designSystem.contains("One screen, one accent"))
+        #expect(designSystem.contains("One card, one responsibility"))
+        #expect(designSystem.contains("A page may have only one"))
+        #expect(designSystem.contains("The Configuration Center edits Memory Engine Configuration Objects"))
+        #expect(designSystem.contains("Renderer remains stateless"))
+        #expect(designSystem.contains("Informational phrases"))
+        #expect(!designSystem.contains("1. Photo first."))
+        #expect(!designSystem.contains("If two cards can become one, merge them."))
+    }
+
     @Test("processing surface avoids dashboard and import-first language")
     func processingSurfaceAvoidsDashboardLanguage() throws {
         let source = try sourceText(
