@@ -372,6 +372,8 @@ final class ConfigurationBackupRestoreCoordinator {
         configuration: MemoryConfigurationRecord,
         selectedConfigurationID: UUID?,
         selectedCustomLogoPath: String?,
+        baseDirectoryURL: URL =
+            PhotoMemoSharedContainer.baseDirectoryURL,
         fileManager: FileManager = .default
     ) -> [PortableAssetManifest.Role: URL] {
         var urls: [PortableAssetManifest.Role: URL] = [:]
@@ -379,18 +381,21 @@ final class ConfigurationBackupRestoreCoordinator {
             subject.identity.avatarImagePath,
             role: .subjectAvatar,
             to: &urls,
+            baseDirectoryURL: baseDirectoryURL,
             fileManager: fileManager
         )
         appendAssetURL(
             subject.identity.avatarBadgeImagePath,
             role: .subjectAvatarBadge,
             to: &urls,
+            baseDirectoryURL: baseDirectoryURL,
             fileManager: fileManager
         )
         appendAssetURL(
             subject.identity.avatarPreviewImagePath,
             role: .subjectAvatarPreview,
             to: &urls,
+            baseDirectoryURL: baseDirectoryURL,
             fileManager: fileManager
         )
         let customLogoPath =
@@ -403,6 +408,7 @@ final class ConfigurationBackupRestoreCoordinator {
             customLogoPath,
             role: .customLogo,
             to: &urls,
+            baseDirectoryURL: baseDirectoryURL,
             fileManager: fileManager
         )
         return urls
@@ -415,12 +421,20 @@ private extension ConfigurationBackupRestoreCoordinator {
         _ path: String?,
         role: PortableAssetManifest.Role,
         to urls: inout [PortableAssetManifest.Role: URL],
+        baseDirectoryURL: URL,
         fileManager: FileManager
     ) {
-        guard let path, path.hasPrefix("/") else {
+        guard let path else {
             return
         }
-        let url = URL(fileURLWithPath: path)
+        let url: URL
+        if path.hasPrefix("/") {
+            url = URL(fileURLWithPath: path)
+        } else if PortableAssetReference.isValid(path) {
+            url = baseDirectoryURL.appendingPathComponent(path)
+        } else {
+            return
+        }
         guard fileManager.fileExists(atPath: url.path) else {
             return
         }

@@ -2,6 +2,7 @@ import Foundation
 
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
+import UIKit
 
 struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
@@ -339,10 +340,14 @@ private struct V1IOSHomeActivityCard: View {
     let onOpenProcessing: () -> Void
 
     @State
-    private var isMounted = false
+    private var isMounted =
+        V1IOSHomeActivityPresentationState()
+        .isMounted
 
     @State
-    private var isVisible = false
+    private var isVisible =
+        V1IOSHomeActivityPresentationState()
+        .isVisible
 
     var body: some View {
         Group {
@@ -441,7 +446,7 @@ private struct V1IOSHomeActivityCard: View {
     private func present(
         _ projection: V1IOSHomeActivityProjection
     ) async {
-        let wasMounted = isMounted
+        let wasVisible = isVisible
         guard V1IOSHomeActivityPresenter.shouldShow(projection) else {
             await dismiss()
             return
@@ -449,7 +454,7 @@ private struct V1IOSHomeActivityCard: View {
 
         isMounted = true
 
-        if !wasMounted {
+        if !wasVisible {
             isVisible = false
             await Task.yield()
             withAnimation(
@@ -841,40 +846,31 @@ private struct V1HomeConfigurationGlyph: View {
 private struct V1HomeAppMark: View {
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(
-                cornerRadius: 26,
-                style: .continuous
-            )
-            .fill(Color.white)
-            .shadow(
-                color: Color.black.opacity(0.05),
-                radius: 12,
-                y: 6
-            )
-
-            RoundedRectangle(
-                cornerRadius: 15,
-                style: .continuous
-            )
-            .stroke(Color.black, lineWidth: 4)
-            .frame(width: 50, height: 56)
-            .offset(x: -6, y: -1)
-
-            RoundedRectangle(
-                cornerRadius: 13,
-                style: .continuous
-            )
-            .stroke(Color.black.opacity(0.92), lineWidth: 3)
-            .frame(width: 43, height: 48)
-            .offset(x: 11, y: 7)
-
-            Circle()
-                .fill(Color.blue)
-                .frame(width: 10, height: 10)
-                .offset(x: 19, y: -16)
+        Group {
+            if let icon = UIImage(named: "AppIcon") {
+                Image(uiImage: icon)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: "photo.stack")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.white)
+            }
         }
         .frame(width: 76, height: 76)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+        )
+        .shadow(
+            color: Color.black.opacity(0.08),
+            radius: 8,
+            y: 3
+        )
     }
 }
 

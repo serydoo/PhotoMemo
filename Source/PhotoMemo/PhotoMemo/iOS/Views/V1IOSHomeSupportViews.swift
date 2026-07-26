@@ -31,12 +31,21 @@ struct V1IOSHomeActivityProjection: Equatable {
 
     let totalCount: Int
 
+    let queuedJobCount: Int
+
     let progressFraction: Double
 
     let updatedAt: Date
 
     var countText: String {
-        "任务 \(currentPosition) / \(totalCount) 张"
+        let baseText =
+            "任务 \(currentPosition) / \(totalCount) 张"
+
+        guard queuedJobCount > 0 else {
+            return baseText
+        }
+
+        return "\(baseText) · 后续 \(queuedJobCount) 个"
     }
 
     var statusText: String {
@@ -48,9 +57,16 @@ struct V1IOSHomeActivityProjection: Equatable {
     }
 }
 
+struct V1IOSHomeActivityPresentationState {
+
+    var isMounted = true
+
+    var isVisible = false
+}
+
 enum V1IOSHomeActivityPresenter {
 
-    static let completionDisplayDuration: TimeInterval = 6
+    static let completionDisplayDuration: TimeInterval = 10 * 60
 
     static func projection(
         from snapshot: PhotoMemoBackgroundJobSnapshot?
@@ -110,6 +126,7 @@ enum V1IOSHomeActivityPresenter {
             state: state,
             currentPosition: currentPosition,
             totalCount: snapshot.totalCount,
+            queuedJobCount: snapshot.queuedJobCount,
             progressFraction: progressFraction,
             updatedAt: snapshot.updatedAt
         )

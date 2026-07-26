@@ -6,6 +6,14 @@ import Testing
 @Suite("V1 iOS home recent processing presenter")
 struct V1IOSHomeRecentProcessingPresenterTests {
 
+    @Test("home activity card is mounted before its entry animation")
+    func homeActivityCardIsMountedBeforeItsEntryAnimation() {
+        let state = V1IOSHomeActivityPresentationState()
+
+        #expect(state.isMounted)
+        #expect(!state.isVisible)
+    }
+
     @Test("home activity projection shows the current processing position")
     func homeActivityProjectionShowsCurrentProcessingPosition() {
         let snapshot = makeSnapshot(
@@ -25,6 +33,25 @@ struct V1IOSHomeRecentProcessingPresenterTests {
         #expect(projection?.countText == "任务 6 / 10 张")
         #expect(projection?.statusText == "进行中")
         #expect(projection?.progressFraction == 0.56)
+    }
+
+    @Test("home activity projection appends queued job count in its title")
+    func homeActivityProjectionAppendsQueuedJobCountInItsTitle() {
+        let snapshot = makeSnapshot(
+            presentationState: .active,
+            jobState: .running,
+            completedCount: 5,
+            failedCount: 0,
+            totalCount: 10,
+            progressFraction: 0.56,
+            queuedJobCount: 2
+        )
+
+        let projection =
+            V1IOSHomeActivityPresenter
+            .projection(from: snapshot)
+
+        #expect(projection?.countText == "任务 6 / 10 张 · 后续 2 个")
     }
 
     @Test("home activity projection keeps the failed position")
@@ -48,8 +75,8 @@ struct V1IOSHomeRecentProcessingPresenterTests {
         #expect(projection?.progressFraction == 0.4)
     }
 
-    @Test("completed home activity expires after its short display window")
-    func completedHomeActivityExpiresAfterItsShortDisplayWindow() {
+    @Test("completed home activity expires after ten minutes")
+    func completedHomeActivityExpiresAfterTenMinutes() {
         let completedAt = Date(timeIntervalSince1970: 100)
         let snapshot = makeSnapshot(
             presentationState: .completed,
@@ -70,7 +97,7 @@ struct V1IOSHomeRecentProcessingPresenterTests {
                 V1IOSHomeActivityPresenter
                     .shouldShow(
                         $0,
-                        now: Date(timeIntervalSince1970: 105)
+                        now: Date(timeIntervalSince1970: 699)
                     )
             } == true
         )
@@ -79,7 +106,7 @@ struct V1IOSHomeRecentProcessingPresenterTests {
                 V1IOSHomeActivityPresenter
                     .shouldShow(
                         $0,
-                        now: Date(timeIntervalSince1970: 107)
+                        now: Date(timeIntervalSince1970: 701)
                     )
             } == false
         )
@@ -203,6 +230,7 @@ struct V1IOSHomeRecentProcessingPresenterTests {
         failedCount: Int,
         totalCount: Int,
         progressFraction: Double,
+        queuedJobCount: Int = 0,
         updatedAt: Date = Date(timeIntervalSince1970: 1_720_000_000)
     ) -> PhotoMemoBackgroundJobSnapshot {
         PhotoMemoBackgroundJobSnapshot(
@@ -220,6 +248,7 @@ struct V1IOSHomeRecentProcessingPresenterTests {
             activePipelineStepIndex: 2,
             queueLines: [],
             overflowQueueCount: 0,
+            queuedJobCount: queuedJobCount,
             completedCount: completedCount,
             failedCount: failedCount,
             totalCount: totalCount,

@@ -7,6 +7,96 @@ import Testing
 @Suite("Background status service")
 struct PhotoMemoBackgroundStatusServiceTests {
 
+    @Test("Current snapshot counts only unfinished subsequent external jobs")
+    func currentSnapshotCountsOnlyUnfinishedSubsequentExternalJobs() throws {
+        let suiteName =
+            "PhotoMemo.BackgroundStatusServiceTests.queue.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let activeJobID = UUID()
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: .classicWhite,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: true,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let jobs = [
+            makeJob(
+                id: activeJobID,
+                title: "Active",
+                source: .shareExtension,
+                phase: .exporting,
+                updatedAt: 500,
+                configuration: configuration
+            ),
+            makeJob(
+                title: "Queued 1",
+                source: .shareExtension,
+                phase: .queued,
+                updatedAt: 400,
+                configuration: configuration
+            ),
+            makeJob(
+                title: "Queued 2",
+                source: .quickAction,
+                phase: .queued,
+                updatedAt: 300,
+                configuration: configuration
+            ),
+            makeJob(
+                title: "Completed",
+                source: .shareExtension,
+                phase: .completed,
+                updatedAt: 200,
+                configuration: configuration
+            ),
+            makeJob(
+                title: "Preview",
+                source: .inAppPreview,
+                phase: .queued,
+                updatedAt: 100,
+                configuration: configuration
+            )
+        ]
+
+        defaults.set(
+            try JSONEncoder().encode(jobs),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+
+        let store =
+            BatchQueueStore(
+                defaults: defaults,
+                settingsService:
+                    SettingsService(
+                        defaults: defaults
+                    )
+            )
+        let service =
+            PhotoMemoBackgroundStatusService(
+                batchQueueStore: store
+            )
+
+        #expect(service.currentSnapshot?.jobID == activeJobID)
+        #expect(service.currentSnapshot?.queuedJobCount == 2)
+    }
+
     @Test("Latest completed external job is not masked by older retryable failures")
     func latestCompletedExternalJobIsNotMaskedByOlderRetryableFailures() throws {
 
@@ -225,6 +315,45 @@ struct PhotoMemoBackgroundStatusServiceTests {
 
         defaults.removePersistentDomain(
             forName: suiteName
+        )
+    }
+
+    private func makeJob(
+        id: UUID = UUID(),
+        title: String,
+        source: BatchJobLaunchSource,
+        phase: BatchTaskPhase,
+        updatedAt: TimeInterval,
+        configuration: BatchConfigurationSnapshot
+    ) -> BatchJob {
+        BatchJob(
+            id: id,
+            title: title,
+            createdAt:
+                Date(
+                    timeIntervalSince1970: updatedAt
+                ),
+            updatedAt:
+                Date(
+                    timeIntervalSince1970: updatedAt
+                ),
+            state:
+                phase.isTerminal
+                ? .completed
+                : .queued,
+            launchSource: source,
+            configuration: configuration,
+            tasks: [
+                BatchTask(
+                    sourceURL:
+                        URL(
+                            fileURLWithPath:
+                                "/tmp/\(id.uuidString).heic"
+                        ),
+                    fileName: "\(id.uuidString).heic",
+                    phase: phase
+                )
+            ]
         )
     }
 }

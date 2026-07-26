@@ -249,6 +249,8 @@ struct PhotoMemoBackgroundJobSnapshot: Hashable {
 
     let overflowQueueCount: Int
 
+    let queuedJobCount: Int
+
     let completedCount: Int
 
     let failedCount: Int
@@ -290,6 +292,7 @@ struct PhotoMemoBackgroundJobSnapshot: Hashable {
         activePipelineStepIndex: Int,
         queueLines: [String],
         overflowQueueCount: Int,
+        queuedJobCount: Int = 0,
         completedCount: Int,
         failedCount: Int,
         totalCount: Int,
@@ -324,6 +327,8 @@ struct PhotoMemoBackgroundJobSnapshot: Hashable {
         self.queueLines = queueLines
         self.overflowQueueCount =
             overflowQueueCount
+        self.queuedJobCount =
+            queuedJobCount
         self.completedCount =
             completedCount
         self.failedCount = failedCount
@@ -607,6 +612,11 @@ private extension PhotoMemoBackgroundStatusService {
                             job.id
                     ).count - 3,
                     0
+                ),
+            queuedJobCount:
+                queuedJobCount(
+                    in: allExternalJobs,
+                    excluding: job.id
                 ),
             completedCount:
                 job.completedTaskCount,
@@ -1193,6 +1203,19 @@ private extension PhotoMemoBackgroundStatusService {
                     activeJobID: activeJobID
                 )
             }
+    }
+
+    func queuedJobCount(
+        in jobs: [BatchJob],
+        excluding activeJobID: UUID
+    ) -> Int {
+        jobs.filter { job in
+            job.id != activeJobID
+            && job.launchSource != .inAppPreview
+            && job.tasks.contains {
+                !$0.phase.isTerminal
+            }
+        }.count
     }
 
     func queuePriority(

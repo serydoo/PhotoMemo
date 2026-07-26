@@ -1273,8 +1273,7 @@ struct PhotoMemoiOSV1View: View {
             previewPinProgress: previewPinProgress,
             editorRevealProgress: editorRevealProgress,
             pageTitle: "配置中心",
-            pageSubtitle:
-                "当前配置：\(session.currentMemoryPresetTitle)",
+            pageSubtitle: "",
             onDismissKeyboard: dismissKeyboard
         ) {
             previewSection
@@ -3087,15 +3086,17 @@ struct PhotoMemoiOSV1View: View {
                     exportCoordinator
             )
 
-        availableAlbums =
-            projection.availableAlbums
-        selectedExistingAlbumIdentifier =
-            projection
-            .selectedExistingAlbumIdentifier
+        isApplyingSavedOutputConfiguration = true
+        availableAlbums = projection.availableAlbums
+        selectedExistingAlbumIdentifier = projection.selectedExistingAlbumIdentifier
         albumStatusMessage =
             projection.albumStatusMessage
 
         isLoadingAlbums = false
+        Task { @MainActor in
+            await Task.yield()
+            isApplyingSavedOutputConfiguration = false
+        }
     }
 
     @MainActor

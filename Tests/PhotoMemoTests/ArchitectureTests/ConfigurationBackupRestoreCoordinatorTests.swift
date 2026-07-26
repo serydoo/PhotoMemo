@@ -413,6 +413,45 @@ struct ConfigurationBackupRestoreCoordinatorTests {
             .customLogo: logoURL
         ])
     }
+
+    @MainActor
+    @Test("asset collection resolves persisted relative references from the managed container")
+    func assetCollectionResolvesPersistedRelativeReferences() throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let relativePath = "Assets/family-logo.png"
+        let logoURL = rootURL.appendingPathComponent(relativePath)
+        try FileManager.default.createDirectory(
+            at: logoURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("logo".utf8).write(to: logoURL)
+
+        var configuration = Self.makeConfiguration(
+            id: Self.liveConfigurationID
+        )
+        configuration.presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "家庭标识",
+                type: .customUpload,
+                assetReference: try PortableAssetReference(
+                    relativePath: relativePath
+                )
+            )
+        )
+
+        let urls = ConfigurationBackupRestoreCoordinator.assetURLs(
+            subject: Self.makeSubject(id: Self.liveSubjectID),
+            configuration: configuration,
+            selectedConfigurationID: nil,
+            selectedCustomLogoPath: nil,
+            baseDirectoryURL: rootURL
+        )
+
+        #expect(urls[.customLogo] == logoURL)
+    }
 }
 
 private extension ConfigurationBackupRestoreCoordinatorTests {

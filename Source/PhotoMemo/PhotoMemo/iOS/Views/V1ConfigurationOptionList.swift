@@ -420,28 +420,21 @@ struct V1ConfigurationOptionList: View {
     }
 
     private var configurationStatusCard: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(spacing: 10) {
             Image(systemName: configurationStatusSystemImage)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(configurationStatusColor)
                 .frame(width: 20)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(configurationStatusTitle)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(configurationStatusColor)
-
-                Text(configurationStatusDetail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(configurationStatusTitle)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(configurationStatusColor)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 11)
+        .padding(.vertical, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 13, style: .continuous)
@@ -463,17 +456,6 @@ struct V1ConfigurationOptionList: View {
         case .saved: return "当前配置已保存"
         case .subjectSynced: return "记忆对象已同步，等待保存"
         case .failure: return "保存失败"
-        }
-    }
-
-    private var configurationStatusDetail: String {
-        switch configurationStatus {
-        case .idle: return "保存后将应用于后续任务"
-        case .dirty: return "保存后将应用于后续任务"
-        case .saving: return "请稍候"
-        case .saved: return "后续任务将使用此配置"
-        case .subjectSynced: return "保存后将应用于后续任务"
-        case .failure(let message): return message
         }
     }
 

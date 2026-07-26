@@ -30,7 +30,10 @@ struct V1PageHeader: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .frame(minHeight: 52, alignment: .topLeading)
+        .frame(
+            minHeight: subtitle?.isEmpty == false ? 52 : 31,
+            alignment: .topLeading
+        )
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

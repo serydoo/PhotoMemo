@@ -1,6 +1,23 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-26
+Last updated: 2026-07-27
+
+## 2026-07-27 Configuration Reliability And Home Polish Pass
+
+- Local configuration backups now resolve valid relative asset references from
+  MemoMark's managed container before packaging them. Persisted custom Logo
+  assets therefore remain eligible for a local backup instead of presenting an
+  unsupported-resource error.
+- Prevented the output page's album-list refresh from marking a configuration
+  as modified. Only user changes remain eligible to show the unsaved state.
+- Condensed the Configuration Center status card to its current state title,
+  and removed the redundant configuration subtitle from the editor header to
+  preserve vertical space above the persistent save action.
+- The Home header now displays the application's actual App Icon rather than a
+  separately drawn approximation. Focused persistence and Home/UI contract
+  tests, macOS test execution, and unsigned `PhotoMemoiOS` Debug builds pass.
+  The paired iPhone 17 Pro Max was offline during this pass, so device visual
+  acceptance and installation remain pending reconnection.
 
 ## 2026-07-26 Home Activity Card Pass
 
@@ -9,7 +26,7 @@ Last updated: 2026-07-26
   only count, status, and a fixed 4 pt accent-blue progress bar, and opens the
   existing Processing page when tapped.
 - Processing, completed, and failed states map to the existing background
-  status source. Completed feedback remains for six seconds before a subtle
+  status source. Completed feedback remains for ten minutes before a subtle
   opacity/vertical-entry dismissal; failed feedback remains at its failure
   position for a later retry. Object names, configuration names, save paths,
   estimates, and pipeline details remain excluded from Home.
@@ -18,6 +35,13 @@ Last updated: 2026-07-26
   unsigned macOS Debug build pass. iOS simulator visual acceptance remains
   blocked by the current CoreSimulator launch hang and is not inferred from
   build evidence.
+- Fixed the Home Activity Card's initial SwiftUI mount cycle after signed-device
+  evidence showed that a recent completed task was not rendering. The card now
+  mounts before its entry animation while retaining the same completion expiry
+  and dismissal behavior.
+- Added queue-compatible single-line Home activity titles. When unfinished
+  external jobs follow the current job, the existing count text appends
+  `· 后续 N 个` without adding another row or changing the card hierarchy.
 
 ## 2026-07-26 Settings Localization And Contract Closure
 
