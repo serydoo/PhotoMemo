@@ -1,6 +1,135 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
 
+enum V1IOSHomeActivityState: Equatable {
+
+    case processing
+
+    case completed
+
+    case failed
+
+    var statusText: String {
+        switch self {
+        case .processing:
+            return "进行中"
+        case .completed:
+            return "已完成"
+        case .failed:
+            return "失败"
+        }
+    }
+}
+
+struct V1IOSHomeActivityProjection: Equatable {
+
+    let jobID: UUID
+
+    let state: V1IOSHomeActivityState
+
+    let currentPosition: Int
+
+    let totalCount: Int
+
+    let progressFraction: Double
+
+    let updatedAt: Date
+
+    var countText: String {
+        "任务 \(currentPosition) / \(totalCount) 张"
+    }
+
+    var statusText: String {
+        state.statusText
+    }
+
+    var lifecycleID: String {
+        "\(jobID.uuidString)-\(state)"
+    }
+}
+
+enum V1IOSHomeActivityPresenter {
+
+    static let completionDisplayDuration: TimeInterval = 6
+
+    static func projection(
+        from snapshot: PhotoMemoBackgroundJobSnapshot?
+    ) -> V1IOSHomeActivityProjection? {
+        guard let snapshot, snapshot.totalCount > 0 else {
+            return nil
+        }
+
+        let state: V1IOSHomeActivityState
+        switch snapshot.feedbackState {
+        case .preparing,
+             .processing:
+            state = .processing
+        case .completed:
+            state = .completed
+        case .partialSuccess,
+             .needsAttention,
+             .unsupported:
+            state = .failed
+        }
+
+        let currentPosition: Int
+        switch state {
+        case .processing:
+            currentPosition = min(
+                max(snapshot.completedCount + snapshot.failedCount + 1, 1),
+                snapshot.totalCount
+            )
+        case .completed:
+            currentPosition = snapshot.totalCount
+        case .failed:
+            currentPosition = min(
+                max(snapshot.completedCount + snapshot.failedCount, 1),
+                snapshot.totalCount
+            )
+        }
+
+        let progressFraction: Double
+        switch state {
+        case .processing:
+            progressFraction = min(max(snapshot.progressFraction, 0), 1)
+        case .completed:
+            progressFraction = 1
+        case .failed:
+            progressFraction = min(
+                max(
+                    Double(currentPosition)
+                        / Double(snapshot.totalCount),
+                    0
+                ),
+                1
+            )
+        }
+
+        return V1IOSHomeActivityProjection(
+            jobID: snapshot.jobID,
+            state: state,
+            currentPosition: currentPosition,
+            totalCount: snapshot.totalCount,
+            progressFraction: progressFraction,
+            updatedAt: snapshot.updatedAt
+        )
+    }
+
+    static func shouldShow(
+        _ projection: V1IOSHomeActivityProjection,
+        now: Date = Date()
+    ) -> Bool {
+        switch projection.state {
+        case .processing,
+             .failed:
+            return true
+        case .completed:
+            return now.timeIntervalSince(projection.updatedAt)
+                <= completionDisplayDuration
+        }
+    }
+}
+
 struct V1IOSHomeQuickAction:
     Equatable,
     Identifiable {

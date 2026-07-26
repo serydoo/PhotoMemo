@@ -40,6 +40,10 @@ enum MemoMarkDesignTokens {
 
         static let cardCornerRadius: CGFloat = 24
         static let cardPadding: CGFloat = 24
+        static let compactCardCornerRadius: CGFloat = 18
+        static let compactCardPadding: CGFloat = 14
+        static let compactInnerCardCornerRadius: CGFloat = 18
+        static let compactInnerCardPadding: CGFloat = 12
         static let dividerInset: CGFloat = 12
         static let brandLineSpacing: CGFloat = 3
         static let compactPrimaryActionWidth: CGFloat = 184

@@ -93,6 +93,10 @@ struct V1SettingsPagePresenterTests {
             == "处理中"
         )
         #expect(
+            presentation.currentTask.displayMode
+            == .processing
+        )
+        #expect(
             presentation.currentTask.itemCountText
             == "3 张照片"
         )
@@ -177,6 +181,10 @@ struct V1SettingsPagePresenterTests {
             == "需要恢复"
         )
         #expect(
+            presentation.currentTask.displayMode
+            == .needsAttention
+        )
+        #expect(
             presentation.currentTask.itemCountText
             == nil
         )
@@ -242,6 +250,10 @@ struct V1SettingsPagePresenterTests {
         #expect(
             presentation.currentTask.statusText
             == "暂不支持"
+        )
+        #expect(
+            presentation.currentTask.displayMode
+            == .needsAttention
         )
         #expect(
             presentation.currentTask.progressText
@@ -332,6 +344,99 @@ struct V1SettingsPagePresenterTests {
                 .displayTitle
             == "时光记"
         )
+        #expect(
+            presentation.currentTask.displayMode
+            == .waiting
+        )
+    }
+
+    @Test("presents a completed snapshot as the latest result and removes the same job from recent history")
+    func presentationSeparatesCompletedResultFromRecentHistory() {
+        let completedJobID = UUID(
+            uuidString: "11111111-1111-1111-1111-111111111111"
+        )!
+        let olderJobID = UUID(
+            uuidString: "22222222-2222-2222-2222-222222222222"
+        )!
+        let snapshot = PhotoMemoBackgroundJobSnapshot(
+            jobID: completedJobID,
+            title: "生日回顾",
+            launchSource: .shareExtension,
+            presentationState: .completed,
+            jobState: .completed,
+            currentPhase: .completed,
+            currentPhaseTitle: "已保存到照片图库",
+            currentFileName: "birthday.jpg",
+            statusMessage: "已保存到时光记。",
+            displayMode: .singleTask,
+            pipelineSteps: [
+                PhotoMemoBackgroundPipelineStep(
+                    title: "写入图库",
+                    state: .completed
+                )
+            ],
+            activePipelineStepIndex: 1,
+            queueLines: [],
+            overflowQueueCount: 0,
+            completedCount: 1,
+            failedCount: 0,
+            totalCount: 1,
+            progressFraction: 1,
+            canRetryFailures: false,
+            hasOnlyUnsupportedFailures: false,
+            updatedAt: Date(timeIntervalSince1970: 1_720_000_180),
+            configurationName: "生日回顾",
+            templateName: "Classic White",
+            savedAlbumName: "时光记",
+            savedAssetIdentifier: "birthday-asset"
+        )
+        let recentJobs = [
+            PhotoMemoBackgroundJobSummary(
+                jobID: completedJobID,
+                configurationName: "生日回顾",
+                templateName: "Classic White",
+                presentationState: .completed,
+                jobState: .completed,
+                completedCount: 1,
+                failedCount: 0,
+                totalCount: 1,
+                previewSourceURL: nil,
+                savedAlbumName: "时光记",
+                savedAssetIdentifier: "birthday-asset",
+                updatedAt: Date(timeIntervalSince1970: 1_720_000_180)
+            ),
+            PhotoMemoBackgroundJobSummary(
+                jobID: olderJobID,
+                configurationName: "旅行记录",
+                templateName: "Classic White",
+                presentationState: .completed,
+                jobState: .completed,
+                completedCount: 3,
+                failedCount: 0,
+                totalCount: 3,
+                previewSourceURL: nil,
+                savedAlbumName: "时光记",
+                savedAssetIdentifier: "travel-asset",
+                updatedAt: Date(timeIntervalSince1970: 1_720_000_120)
+            )
+        ]
+
+        let presentation = V1SettingsPagePresenter.presentation(
+            header: PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+                headline: "生日回顾 已完成",
+                subheadline: "已保存到照片图库。",
+                symbolName: "checkmark.circle.fill",
+                tint: .green
+            ),
+            snapshot: snapshot,
+            recoveryMessage: nil,
+            events: [],
+            recentJobs: recentJobs
+        )
+
+        #expect(presentation.currentTask.displayMode == .completed)
+        #expect(presentation.currentTask.jobID == completedJobID)
+        #expect(presentation.historyRows.map(\.jobID) == [olderJobID])
     }
 }
 #endif

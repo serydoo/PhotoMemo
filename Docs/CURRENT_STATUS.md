@@ -2,6 +2,47 @@
 
 Last updated: 2026-07-26
 
+## 2026-07-26 Home Activity Card Pass
+
+- Added the Home Activity Card as the only dynamic Home module. It reads the
+  latest `PhotoMemoBackgroundJobSnapshot`, stays absent without a task, shows
+  only count, status, and a fixed 4 pt accent-blue progress bar, and opens the
+  existing Processing page when tapped.
+- Processing, completed, and failed states map to the existing background
+  status source. Completed feedback remains for six seconds before a subtle
+  opacity/vertical-entry dismissal; failed feedback remains at its failure
+  position for a later retry. Object names, configuration names, save paths,
+  estimates, and pipeline details remain excluded from Home.
+- Added focused projection coverage for processing position, failed position,
+  completion expiry, and the no-snapshot hidden state. The focused suite and
+  unsigned macOS Debug build pass. iOS simulator visual acceptance remains
+  blocked by the current CoreSimulator launch hang and is not inferred from
+  build evidence.
+
+## 2026-07-26 Settings Localization And Contract Closure
+
+- Closed the interface-language regression in iOS Settings: its navigation,
+  section titles, overview, help labels, capability and privacy content,
+  feedback grouping, version/build fields, and disclosure accessibility values
+  now resolve through the existing Simplified Chinese and English resources.
+- The Settings-owned workflow tutorial now resolves its title, instructions,
+  close action, and step copy through the same interface-language preference.
+  User-authored text and configuration output-language content remain outside
+  this UI-localization boundary.
+- Replaced two stale source contracts that still required removed decorative
+  Settings heading icons and superseded long-form product copy. New regression
+  coverage requires the Settings and workflow resource keys to be present in
+  both supported language bundles.
+- TDD red/green evidence: the new localization contract failed before the
+  resources and call-site wiring existed, then passed with the focused Settings,
+  expression-guide, and symbol-catalog suites. The final full `PhotoMemoTests`
+  run passed 1,102 tests with 1 existing skip and 0 failures. Unsigned macOS
+  Debug and generic iOS Simulator Debug builds produced their app bundles;
+  both strings files pass `plutil -lint` and `git diff --check` passes.
+- Existing test-host UTType and fixture QoS runtime warnings remain unchanged;
+  this UI-localization slice does not alter media support, Share, PhotoKit,
+  Renderer, Export, or configuration ownership.
+
 ## 2026-07-26 Home Header Brand Hierarchy Pass
 
 - Increased the Home header App Mark from a `68 x 68` frame with a smaller
@@ -19115,3 +19156,36 @@ CLGeocoder SDK deprecation warnings remain unrelated.
 - The focused Home action contract, iOS device Debug build, installation, and
   `git diff --check` passed. The later device retry launched the installed app
   successfully without clearing local data.
+
+## 2026-07-26 Share Extension Stable-State UI Pass
+
+- Treated the three physical Share screenshots as Product Loop evidence. The
+  normal confirmation, intake, and successful-handoff states now retain one
+  page shell: the same Hero, `本次分享` card, `处理状态` card, assurance list,
+  quote, and bottom-action position.
+- `处理状态` is now a stable outer-card heading. Its inner status row moves
+  through `等待开始` -> `正在接收照片` -> `已加入后台处理` using a fixed indicator
+  footprint, a native spinner during intake, and a subdued SF Symbol completion
+  receipt after handoff. The four assurance rows remain in place throughout.
+- Share card geometry now follows the compact Configuration Center/Output
+  rhythm through shared `18 / 14 / 12` tokens. The user-authored Apple Photos
+  album title is still displayed exactly as saved, including any emoji in that
+  data; no user data is normalized as decoration.
+- Successful handoff now changes the disabled primary action to `已提交` with a
+  checkmark while preserving the existing 700 ms automatic extension dismissal.
+  Diagnostic updates no longer replace the normal Hero or outer-card heading.
+  Configuration-required, unsupported-input, admission-limit, intake-failure,
+  and handoff-retry semantics remain unchanged.
+- Added red-green source contracts for the stable shell, compact card geometry,
+  completion receipt, and original-share-count projection. Passed focused Share
+  controller contracts; related Share intake and Apple-native surface
+  contracts; unsigned generic iOS Simulator `PhotoMemoShareExtension` Debug
+  build; required unsigned macOS `PhotoMemo` Debug build; and `git diff --check`.
+- Signed-device Apple Photos -> Share -> MemoMark acceptance remains required:
+  capture the three normal states at one Dynamic Type size, confirm no position
+  shift, verify automatic dismissal, and exercise at least one retryable error
+  state.
+- A signed Debug `2.0 (47)` build containing the stable-state Share UI was
+  overwrite-installed and launched on the paired physical iPhone 17 Pro Max.
+  Installation and launch are confirmed; the Apple Photos Share acceptance
+  checklist remains manual device evidence and is not inferred from launch.

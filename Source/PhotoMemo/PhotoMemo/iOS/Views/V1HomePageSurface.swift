@@ -7,6 +7,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     let subjectSummary: V1IOSHomeSubjectSummaryProjection
     let subject: MemorySubject?
+    let activitySnapshot: PhotoMemoBackgroundJobSnapshot?
     let completedPhotoCount: Int
     let borderStyleName: String
     let borderStyleDescription: String
@@ -18,6 +19,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     let isConfigurationReady: Bool
     let isSavingConfiguration: Bool
     let onOpenSubject: () -> Void
+    let onOpenProcessing: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onOpenPhotoPicker: () -> Void
     let onOpenSettings: () -> Void
@@ -65,7 +67,23 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             profileSection
                 .background(profileTrackingBackground)
 
+            activitySection
+
             currentPresetSection
+        }
+    }
+
+    @ViewBuilder
+    private var activitySection: some View {
+        if let projection =
+            V1IOSHomeActivityPresenter
+            .projection(from: activitySnapshot),
+           V1IOSHomeActivityPresenter
+            .shouldShow(projection) {
+            V1IOSHomeActivityCard(
+                projection: projection,
+                onOpenProcessing: onOpenProcessing
+            )
         }
     }
 
@@ -309,6 +327,190 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 .opacity(0.96)
                 .ignoresSafeArea()
         )
+    }
+}
+
+private struct V1IOSHomeActivityCard: View {
+
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
+
+    let projection: V1IOSHomeActivityProjection
+    let onOpenProcessing: () -> Void
+
+    @State
+    private var isMounted = false
+
+    @State
+    private var isVisible = false
+
+    var body: some View {
+        Group {
+            if isMounted {
+                V1TitledSectionCard(title: "当前任务") {
+                    Button(action: onOpenProcessing) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(alignment: .center, spacing: 12) {
+                                Text(projection.countText)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .monospacedDigit()
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.82)
+
+                                Spacer(minLength: 8)
+
+                                Text(projection.statusText)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(statusColor)
+                                    .lineLimit(1)
+                            }
+
+                            activityProgressBar
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, ConfigurationUI.innerPanelPadding)
+                        .padding(.vertical, ConfigurationUI.innerPanelPadding)
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
+                                style: .continuous
+                            )
+                            .fill(ConfigurationUI.controlBackground)
+                        )
+                        .overlay(
+                            RoundedRectangle(
+                                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
+                                style: .continuous
+                            )
+                            .stroke(ConfigurationUI.faintHairline)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(
+                        "\(projection.countText)，\(projection.statusText)"
+                    )
+                    .accessibilityValue(
+                        "进度 \(progressPercentText)"
+                    )
+                }
+                .opacity(isVisible ? 1 : 0)
+                .offset(y: isVisible || accessibilityReduceMotion ? 0 : -6)
+            }
+        }
+        .task(id: projection.lifecycleID) {
+            await present(projection)
+        }
+    }
+
+    private var activityProgressBar: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(Color.accentColor.opacity(0.16))
+
+                Capsule(style: .continuous)
+                    .fill(Color.accentColor)
+                    .frame(
+                        width: proxy.size.width
+                            * projection.progressFraction
+                    )
+            }
+        }
+        .frame(height: 4)
+        .accessibilityHidden(true)
+    }
+
+    private var statusColor: Color {
+        switch projection.state {
+        case .processing:
+            return .accentColor
+        case .completed:
+            return .green
+        case .failed:
+            return .red
+        }
+    }
+
+    private var progressPercentText: String {
+        "\(Int((projection.progressFraction * 100).rounded()))%"
+    }
+
+    @MainActor
+    private func present(
+        _ projection: V1IOSHomeActivityProjection
+    ) async {
+        let wasMounted = isMounted
+        guard V1IOSHomeActivityPresenter.shouldShow(projection) else {
+            await dismiss()
+            return
+        }
+
+        isMounted = true
+
+        if !wasMounted {
+            isVisible = false
+            await Task.yield()
+            withAnimation(
+                accessibilityReduceMotion
+                ? nil
+                : .easeOut(duration: 0.25)
+            ) {
+                isVisible = true
+            }
+        } else {
+            isVisible = true
+        }
+
+        guard projection.state == .completed else {
+            return
+        }
+
+        let elapsed =
+            Date().timeIntervalSince(projection.updatedAt)
+        let remaining =
+            max(
+                V1IOSHomeActivityPresenter
+                    .completionDisplayDuration
+                    - elapsed,
+                0
+            )
+
+        if remaining > 0 {
+            try? await Task.sleep(
+                nanoseconds: UInt64(remaining * 1_000_000_000)
+            )
+        }
+
+        guard !Task.isCancelled else {
+            return
+        }
+
+        await dismiss()
+    }
+
+    @MainActor
+    private func dismiss() async {
+        withAnimation(
+            accessibilityReduceMotion
+            ? nil
+            : .easeOut(duration: 0.2)
+        ) {
+            isVisible = false
+        }
+
+        if !accessibilityReduceMotion {
+            try? await Task.sleep(
+                nanoseconds: 200_000_000
+            )
+        }
+
+        guard !Task.isCancelled else {
+            return
+        }
+
+        isMounted = false
     }
 }
 

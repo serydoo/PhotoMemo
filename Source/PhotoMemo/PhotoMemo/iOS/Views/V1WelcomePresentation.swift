@@ -62,35 +62,65 @@ struct V1WelcomePresentation: Equatable {
                     systemImage: "checkmark.seal.fill"
                 )
             ],
-            workflowSteps: [
-                .init(
-                    id: "photos",
-                    title: "在 Apple Photos 选择照片",
-                    detail: "从系统相册里找到想处理的照片。",
-                    systemImage: "photo.on.rectangle.angled"
-                ),
-                .init(
-                    id: "share",
-                    title: "分享给时光记",
-                    detail: "也可以直接在首页点“处理照片”进入相同流程。",
-                    systemImage: "square.and.arrow.up"
-                ),
-                .init(
-                    id: "processing",
-                    title: "后台生成记忆表达",
-                    detail: "时光记会按当前配置、时间锚点和输出规则自动处理。",
-                    systemImage: "arrow.trianglehead.2.clockwise.circle"
-                ),
-                .init(
-                    id: "return",
-                    title: "写回相册继续查看",
-                    detail: "处理完成后回到 Apple Photos 继续阅读和整理记忆。",
-                    systemImage: "checkmark.circle.fill"
-                )
-            ],
+            workflowSteps: workflowSteps(for: .simplifiedChinese),
             primaryActionTitle: "开始使用",
             secondaryActionTitle: "查看使用流程"
         )
+
+    static func workflowSteps(
+        for language: MemoMarkLanguage
+    ) -> [WorkflowStep] {
+        [
+            .init(
+                id: "photos",
+                title: language.localized(
+                    key: "welcome.workflow.photos.title",
+                    fallback: "在 Apple Photos 选择照片"
+                ),
+                detail: language.localized(
+                    key: "welcome.workflow.photos.detail",
+                    fallback: "从系统相册里找到想处理的照片。"
+                ),
+                systemImage: "photo.on.rectangle.angled"
+            ),
+            .init(
+                id: "share",
+                title: language.localized(
+                    key: "welcome.workflow.share.title",
+                    fallback: "分享给时光记"
+                ),
+                detail: language.localized(
+                    key: "welcome.workflow.share.detail",
+                    fallback: "也可以直接在首页点“处理照片”进入相同流程。"
+                ),
+                systemImage: "square.and.arrow.up"
+            ),
+            .init(
+                id: "processing",
+                title: language.localized(
+                    key: "welcome.workflow.processing.title",
+                    fallback: "后台生成记忆表达"
+                ),
+                detail: language.localized(
+                    key: "welcome.workflow.processing.detail",
+                    fallback: "时光记会按当前配置、时间锚点和输出规则自动处理。"
+                ),
+                systemImage: "arrow.trianglehead.2.clockwise.circle"
+            ),
+            .init(
+                id: "return",
+                title: language.localized(
+                    key: "welcome.workflow.return.title",
+                    fallback: "写回相册继续查看"
+                ),
+                detail: language.localized(
+                    key: "welcome.workflow.return.detail",
+                    fallback: "处理完成后回到 Apple Photos 继续阅读和整理记忆。"
+                ),
+                systemImage: "checkmark.circle.fill"
+            )
+        ]
+    }
 }
 
 #if os(iOS)
@@ -304,6 +334,7 @@ struct V1FirstRunConfigurationSheet: View {
 struct V1WorkflowGuideSurface: View {
 
     let steps: [V1WelcomePresentation.WorkflowStep]
+    let language: MemoMarkLanguage
     let onClose: (() -> Void)?
 
     var body: some View {
@@ -311,12 +342,20 @@ struct V1WorkflowGuideSurface: View {
             ScrollView {
                 VStack(spacing: 18) {
                     V1CardSurface(
-                        title: "使用流程",
+                        title: language.localized(
+                            key: "welcome.workflow.title",
+                            fallback: "使用流程"
+                        ),
                         systemImage: MemoMarkSymbol.workflow.name,
                         tint: .purple
                     ) {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("推荐日常路径保持在 Apple Photos 内：选择照片，分享给时光记，后台处理完成后再回到系统相册继续阅读。")
+                            Text(
+                                language.localized(
+                                    key: "welcome.workflow.introduction",
+                                    fallback: "推荐日常路径保持在 Apple Photos 内：选择照片，分享给时光记，后台处理完成后再回到系统相册继续阅读。"
+                                )
+                            )
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -356,12 +395,23 @@ struct V1WorkflowGuideSurface: View {
                 ConfigurationUI.appBackground
                     .ignoresSafeArea()
             )
-            .navigationTitle("使用说明")
+            .navigationTitle(
+                language.localized(
+                    key: "welcome.workflow.navigation_title",
+                    fallback: "使用说明"
+                )
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if let onClose {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("关闭", action: onClose)
+                        Button(
+                            language.localized(
+                                key: "welcome.workflow.close",
+                                fallback: "关闭"
+                            ),
+                            action: onClose
+                        )
                     }
                 }
             }
