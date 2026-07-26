@@ -45,6 +45,8 @@ enum MemoMarkDesignTokens {
         static let compactPrimaryActionWidth: CGFloat = 184
         static let compactPrimaryActionHeight: CGFloat = 40
         static let compactPrimaryActionCornerRadius: CGFloat = 12
+        static let compactPrimaryActionTintOpacity: Double = 0.84
+        static let compactPrimaryActionShadowOpacity: Double = 0.08
     }
 
     enum Typography {

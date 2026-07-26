@@ -304,6 +304,7 @@ struct V1FirstRunConfigurationSheet: View {
 struct V1WorkflowGuideSurface: View {
 
     let steps: [V1WelcomePresentation.WorkflowStep]
+    let onClose: (() -> Void)?
 
     var body: some View {
         NavigationStack {
@@ -357,6 +358,13 @@ struct V1WorkflowGuideSurface: View {
             )
             .navigationTitle("使用说明")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let onClose {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("关闭", action: onClose)
+                    }
+                }
+            }
         }
     }
 }

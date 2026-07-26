@@ -1,6 +1,62 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-25
+Last updated: 2026-07-26
+
+## 2026-07-26 Home Header Brand Hierarchy Pass
+
+- Increased the Home header App Mark from a `68 x 68` frame with a smaller
+  internal mark to a `76 x 76` frame with approximately `64pt` visual mark
+  geometry, giving the first viewport a stronger brand anchor.
+- Increased the Home Settings entry from `38 x 38` to `44 x 44`, raised its
+  symbol weight slightly, and moved it from Accent blue to a neutral
+  `.secondary` label on `.secondarySystemFill`, while preserving the existing
+  action and accessibility label.
+- Kept the existing `ViewThatFits` header-label fallback and reduced the logo
+  to title spacing slightly so the larger mark does not crowd narrow iPhones.
+- The focused responsive-layout contracts passed, followed by unsigned generic
+  iOS and iOS Simulator Debug builds. Full-suite verification is not repeated
+  for this bounded header-only change.
+- A signed Debug build was installed and launched successfully on `iPhone7`.
+  The device was reachable after retry without clearing app data. CoreDevice
+  still reports `Transport Type: wired`, so strict wireless transport is not
+  claimed from this evidence.
+
+## 2026-07-26 Softened System Tint For Primary Actions
+
+- Audited the Home, Configuration Center, Output, and Share Extension bottom
+  primary actions. Home, Configuration Center, and Output now share a softened
+  `Color.accentColor` treatment at `0.84` opacity with a restrained `0.08`
+  shadow; Share Extension inherits the UIKit system tint and applies the same
+  opacity token instead of hard-coded `.systemBlue`.
+- Preserved destructive red semantics and separate blue/green/gray status color
+  meanings outside the primary-action role.
+- The `PhotoMemoiOS` unsigned generic and iOS Simulator builds passed. The
+  focused `AppleNativeProductSurfaceContractTests` suite passed after
+  refreshing stale source-shape assertions; the full `PhotoMemoTests` suite
+  passed with 1,079 tests passed, 1 skipped, and 0 failed. Simulator launch
+  reached the system Photos permission sheet; bottom-action visual inspection
+  remains a device/manual follow-up after permission setup.
+- After the final Tint reduction, focused
+  `AppleNativeProductSurfaceContractTests` and
+  `IPhoneResponsiveLayoutContractTests` passed. A signed generic iOS Debug
+  build was installed over the existing app and launched successfully on the
+  paired physical `iPhone7` without clearing local data. Visual color acceptance
+  remains a manual device check.
+
+## 2026-07-26 Global Destructive Action Semantics Audit
+
+- Audited all user-visible delete entry points across Memory Subject, Time
+  Anchor, Home configuration rows, local configuration backups, expression
+  blocks, custom fields, inserted modules, and system modules.
+- Delete triggers now consistently declare SwiftUI `.destructive`; swipe
+  actions retain explicit `.tint(.red)`, and icon-only inspector actions use
+  explicit red foreground/tint semantics. Existing confirmation alerts retain
+  native destructive confirmation buttons and unchanged data/persistence
+  behavior.
+- Added source contracts for global destructive-role and red-semantic coverage,
+  updated the Time Anchor swipe regression, and verified 34 focused tests plus
+  the full `PhotoMemoTests` suite: 1,078 passed, 1 skipped, 0 failed. The
+  unsigned macOS Debug build also completed and produced `PhotoMemo.app`.
 
 ## 2026-07-25 Save-As Configuration Persistence Hotfix
 
@@ -19048,3 +19104,14 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   Simulator Debug build passed, and `git diff --check` passed. Manual simulator
   or physical-device visual acceptance remains outstanding and is not inferred
   from build evidence.
+
+## 2026-07-26 Home Configuration Action Menu Pass
+
+- Home configuration rows retain the selected-state checkmark as an
+  independent activation control. Selecting the checkmark still makes that
+  configuration effective.
+- Moved `重命名` into the shared `更多配置操作` menu alongside `保存` and
+  `删除`; later configuration rows reuse the same row component and behavior.
+- The focused Home action contract, iOS device Debug build, installation, and
+  `git diff --check` passed. The later device retry launched the installed app
+  successfully without clearing local data.

@@ -455,8 +455,16 @@ private extension PhotoMemoShareExtensionViewController {
             .filled()
         primaryButton.configuration?.cornerStyle =
             .large
+        let systemTint =
+            view.tintColor ?? UIColor.tintColor
         primaryButton.configuration?.baseBackgroundColor =
-            .systemBlue
+            systemTint.withAlphaComponent(
+                CGFloat(
+                    MemoMarkDesignTokens
+                        .Layout
+                        .compactPrimaryActionTintOpacity
+                )
+            )
         primaryButton.configuration?.baseForegroundColor =
             .white
         primaryButton.configuration?.image =

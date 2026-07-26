@@ -123,7 +123,7 @@ struct V1LocalConfigurationLibrarySheet: View {
         }
         .padding(.vertical, 4)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button {
+            Button(role: .destructive) {
                 pendingDeleteBackup = backup
             } label: {
                 Label("删除", systemImage: "trash")

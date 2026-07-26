@@ -1768,7 +1768,7 @@ private struct SubjectTimeAnchorRow: View {
                 allowsFullSwipe: false
             ) {
                 if canDelete {
-                    Button {
+                    Button(role: .destructive) {
                         showsDeleteConfirmation = true
                     } label: {
                         Label("删除", systemImage: "trash")

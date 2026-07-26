@@ -282,7 +282,8 @@ struct ConfigurationCenteriOSView: View {
                 steps:
                     V1WelcomePresentation
                     .default
-                    .workflowSteps
+                    .workflowSteps,
+                onClose: nil
             )
         }
         .sheet(
@@ -632,10 +633,6 @@ struct ConfigurationCenteriOSView: View {
                 onShowWelcome: {
                     showsSettingsSheet = false
                     showsWelcomePage = true
-                },
-                onShowWorkflow: {
-                    showsSettingsSheet = false
-                    showsWorkflowGuide = true
                 },
                 onDismissKeyboard: dismissKeyboard
             )

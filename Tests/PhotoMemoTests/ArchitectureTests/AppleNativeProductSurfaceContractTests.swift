@@ -135,7 +135,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!home.contains("private struct V1HomeConfigurationCard"))
         #expect(!home.contains("systemImage: MemoMarkSymbol.memorySubject.name"))
         #expect(!home.contains("systemImage: MemoMarkSymbol.configuration.name"))
-        #expect(home.contains("HStack(spacing: 2)"))
+        #expect(home.contains("HStack(spacing: 8)"))
         #expect(home.contains(".frame(width: 30, height: 30)"))
         #expect(home.contains(".frame(width: 26, height: 30)"))
     }
@@ -260,7 +260,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("private var memoMarkPlusSection"))
         #expect(!source.contains("private func settingsTonalIcon"))
         #expect(!source.contains("private func settingsThumbnailStack"))
-        #expect(!source.contains("Image(systemName: \"checkmark.circle.fill\")"))
+        #expect(source.contains("private func settingsPrivacyRow"))
     }
 
     @Test("interactive surfaces respect reduced motion")
@@ -431,6 +431,88 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(configuration.contains("当前未保存的修改会被默认内容替换。此操作无法撤销。"))
         #expect(subject.contains("对象的基础资料和时间锚点都会被删除。此操作无法撤销。"))
         #expect(backups.contains("当前正在使用的配置不会被删除。此操作无法撤销。"))
+    }
+
+    @Test("every visible delete entry point declares destructive red semantics")
+    func everyVisibleDeleteEntryPointDeclaresDestructiveRedSemantics() throws {
+        let home = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let subjectEditor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let anchors = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let backups = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+        )
+        let customFields = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorCustomFieldsSection.swift"
+        )
+        let systemModules = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Inspector/MemoryBlockInspectorSystemModulesSection.swift"
+        )
+        let expression = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/ExpressionEditor.swift"
+        )
+
+        for source in [home, subjectEditor, anchors, backups] {
+            #expect(source.contains("role: .destructive"))
+            #expect(source.contains(".tint(.red)"))
+        }
+
+        #expect(customFields.contains("Button(role: .destructive)"))
+        #expect(customFields.contains(".foregroundStyle(.red)"))
+        #expect(customFields.contains("Button(role: .destructive) {"))
+        #expect(systemModules.contains("Button(role: .destructive)"))
+        #expect(systemModules.contains(".tint(.red)"))
+        #expect(expression.contains("Button(role: .destructive)"))
+        #expect(expression.contains(".foregroundStyle(.red)"))
+
+        for source in [home, subjectEditor, anchors, backups] {
+            #expect(source.contains("role: .destructive)"))
+        }
+    }
+
+    @Test("bottom primary actions use a softened system tint")
+    func bottomPrimaryActionsUseASoftenedSystemTint() throws {
+        let sharedSupport = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+        let tokens = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift"
+        )
+        let shareController = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+        )
+
+        #expect(sharedSupport.contains("Color.accentColor.opacity("))
+        #expect(
+            sharedSupport.contains(
+                "compactPrimaryActionTintOpacity"
+            )
+        )
+        #expect(
+            sharedSupport.contains(
+                "compactPrimaryActionShadowOpacity"
+            )
+        )
+        #expect(
+            tokens.contains(
+                "compactPrimaryActionTintOpacity: Double = 0.84"
+            )
+        )
+        #expect(
+            tokens.contains(
+                "compactPrimaryActionShadowOpacity: Double = 0.08"
+            )
+        )
+        #expect(
+            shareController.contains("view.tintColor")
+        )
+        #expect(shareController.contains("withAlphaComponent"))
+        #expect(!shareController.contains(".systemBlue"))
     }
 
     @Test("time anchor dialog copy names the consequence")

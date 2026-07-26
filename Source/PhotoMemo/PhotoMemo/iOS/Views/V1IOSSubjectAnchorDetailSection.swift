@@ -51,7 +51,7 @@ struct V1IOSSubjectAnchorDetailSection: View {
                     )
                     .overlay(alignment: .leading) {
                         if allowsSwipeDeletion {
-                            Button {
+                            Button(role: .destructive) {
                                 requestDeletion(anchor)
                             } label: {
                                 Image(systemName: "minus.circle.fill")

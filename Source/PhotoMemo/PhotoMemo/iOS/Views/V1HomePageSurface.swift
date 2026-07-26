@@ -70,7 +70,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var topHeaderSection: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
             V1HomeAppMark()
 
             VStack(alignment: .leading, spacing: 7) {
@@ -90,12 +90,16 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
             Button(action: onOpenSettings) {
                 Image(systemName: MemoMarkSymbol.settings.name)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Color.blue)
-                    .frame(width: 38, height: 38)
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
                     .background(
                         Circle()
-                            .fill(Color.blue.opacity(0.08))
+                            .fill(
+                                Color(
+                                    uiColor: .secondarySystemFill
+                                )
+                            )
                     )
             }
             .buttonStyle(.plain)
@@ -328,7 +332,7 @@ private struct V1HomeMemoryPresetRow: View {
             .contentShape(Rectangle())
             .onTapGesture(perform: onSelect)
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button {
+                Button(role: .destructive) {
                     showsDeleteConfirmation = true
                 } label: {
                     Label("删除", systemImage: "trash")
@@ -382,35 +386,14 @@ private struct V1HomeMemoryPresetRow: View {
 
             Spacer(minLength: 4)
 
-            HStack(spacing: 2) {
-                if isSelected {
-                    Button(action: onRename) {
-                        Text("重命名")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
-                            .lineLimit(1)
-                            .padding(.horizontal, 8)
-                            .frame(height: 30)
-                            .background(
-                                RoundedRectangle(
-                                    cornerRadius: 10,
-                                    style: .continuous
-                                )
-                                .fill(ConfigurationUI.controlBackground)
-                            )
-                            .overlay(
-                                RoundedRectangle(
-                                    cornerRadius: 10,
-                                    style: .continuous
-                                )
-                                .stroke(ConfigurationUI.faintHairline)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("重命名配置")
-                }
-
+            HStack(spacing: 8) {
                 Menu {
+                    if isSelected {
+                        Button(action: onRename) {
+                            Label("重命名", systemImage: "pencil")
+                        }
+                    }
+
                     Button(action: onSave) {
                         Label(
                             "保存",
@@ -430,7 +413,7 @@ private struct V1HomeMemoryPresetRow: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 30, height: 30)
                 }
-                .accessibilityLabel("配置操作")
+                .accessibilityLabel("更多配置操作")
 
                 Image(
                     systemName:
@@ -658,7 +641,7 @@ private struct V1HomeAppMark: View {
     var body: some View {
         ZStack {
             RoundedRectangle(
-                cornerRadius: 22,
+                cornerRadius: 26,
                 style: .continuous
             )
             .fill(Color.white)
@@ -669,27 +652,27 @@ private struct V1HomeAppMark: View {
             )
 
             RoundedRectangle(
-                cornerRadius: 12,
+                cornerRadius: 15,
                 style: .continuous
             )
             .stroke(Color.black, lineWidth: 4)
-            .frame(width: 40, height: 46)
-            .offset(x: -5, y: -1)
+            .frame(width: 50, height: 56)
+            .offset(x: -6, y: -1)
 
             RoundedRectangle(
-                cornerRadius: 11,
+                cornerRadius: 13,
                 style: .continuous
             )
             .stroke(Color.black.opacity(0.92), lineWidth: 3)
-            .frame(width: 34, height: 38)
-            .offset(x: 9, y: 6)
+            .frame(width: 43, height: 48)
+            .offset(x: 11, y: 7)
 
             Circle()
                 .fill(Color.blue)
-                .frame(width: 8, height: 8)
-                .offset(x: 15, y: -13)
+                .frame(width: 10, height: 10)
+                .offset(x: 19, y: -16)
         }
-        .frame(width: 68, height: 68)
+        .frame(width: 76, height: 76)
     }
 }
 

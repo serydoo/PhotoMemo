@@ -160,6 +160,7 @@ struct MemoryBlockInspectorCustomFieldsSection: View {
             } label: {
                 Image(systemName: "trash.fill")
                     .font(.body.weight(.semibold))
+                    .foregroundStyle(.red)
                     .frame(width: 32, height: 32)
             }
             .buttonStyle(.borderless)
@@ -196,10 +197,10 @@ private struct MemoryBlockInspectorInsertedTokenChip: View {
                     .lineLimit(1)
             }
 
-            Button(action: onDelete) {
+            Button(role: .destructive, action: onDelete) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
             .help("移除此模块")

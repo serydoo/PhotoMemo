@@ -53,6 +53,7 @@ struct MemoryBlockInspectorSystemModulesSection: View {
                                 .labelStyle(.iconOnly)
                         }
                         .buttonStyle(.borderless)
+                        .tint(.red)
                         .help("删除默认模块")
                     }
                     .padding(10)

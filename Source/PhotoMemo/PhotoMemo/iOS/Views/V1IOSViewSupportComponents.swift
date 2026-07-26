@@ -194,10 +194,20 @@ extension View {
                         V1CompactBottomActionMetrics.cornerRadius,
                     style: .continuous
                 )
-                .fill(Color.accentColor)
+                .fill(
+                    Color.accentColor.opacity(
+                        MemoMarkDesignTokens
+                            .Layout
+                            .compactPrimaryActionTintOpacity
+                    )
+                )
             )
             .shadow(
-                color: Color.accentColor.opacity(0.20),
+                color: Color.accentColor.opacity(
+                    MemoMarkDesignTokens
+                        .Layout
+                        .compactPrimaryActionShadowOpacity
+                ),
                 radius: 12,
                 y: 5
             )

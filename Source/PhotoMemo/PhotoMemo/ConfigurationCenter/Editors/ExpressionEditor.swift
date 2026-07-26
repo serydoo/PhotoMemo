@@ -87,6 +87,7 @@ struct ExpressionEditor: View {
                     session.removeBlock(block)
                 } label: {
                     Image(systemName: "trash")
+                        .foregroundStyle(.red)
                 }
                 .buttonStyle(.borderless)
                 .help("删除")

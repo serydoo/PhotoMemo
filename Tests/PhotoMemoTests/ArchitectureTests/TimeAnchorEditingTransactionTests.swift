@@ -142,14 +142,10 @@ struct TimeAnchorEditingTransactionTests {
 
         #expect(
             normalizedSwipeSource.contains(
-                "Button { showsDeleteConfirmation = true"
-            )
-        )
-        #expect(
-            !normalizedSwipeSource.contains(
                 "Button(role: .destructive) { showsDeleteConfirmation = true"
             )
         )
+        #expect(normalizedSwipeSource.contains(".tint(.red)"))
         #expect(
             normalizedSource.contains(
                 "Button(role: .destructive) { showsDeleteConfirmation = true"

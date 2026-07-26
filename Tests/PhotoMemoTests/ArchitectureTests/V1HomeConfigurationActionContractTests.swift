@@ -35,8 +35,10 @@ struct V1HomeConfigurationActionContractTests {
         #expect(!source.contains("V1HomeConfigurationSwipePresenter"))
         #expect(source.contains("accessibilityLabel(\"保存配置到本地库\")"))
         #expect(source.contains("accessibilityLabel(\"删除配置\")"))
-        #expect(source.contains("accessibilityLabel(\"配置操作\")"))
+        #expect(source.contains("accessibilityLabel(\"更多配置操作\")"))
         #expect(source.contains("Image(systemName: \"ellipsis.circle\")"))
+        #expect(source.contains("Label(\"重命名\", systemImage: \"pencil\")"))
+        #expect(!source.contains("accessibilityLabel(\"重命名配置\")"))
         #expect(source.contains("删除“\\(preset.title)”配置？"))
     }
 

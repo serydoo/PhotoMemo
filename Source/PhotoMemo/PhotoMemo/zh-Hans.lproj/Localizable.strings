@@ -135,9 +135,9 @@
 "commerce.settings.accessibility.testflight" = "查看 TestFlight 临时体验权益";
 "commerce.settings.accessibility.free" = "了解 MemoMark+ 完整记录能力";
 "settings.version.section_title" = "版本信息";
-"settings.version.row_title" = "当前版本";
-"settings.version.headline_format" = "时光记 %@";
-"settings.version.detail_format" = "产品版本 %@ · Xcode Cloud 构建 %@。信息来自当前安装包。";
+"settings.version.app_name" = "时光记";
+"settings.version.version_format" = "Version %@";
+"settings.version.build_format" = "Build %@";
 "settings.feedback.section_title" = "反馈渠道";
 "settings.feedback.social.title" = "小红书、抖音";
 "settings.feedback.social.headline" = "搜索 MemoMark";

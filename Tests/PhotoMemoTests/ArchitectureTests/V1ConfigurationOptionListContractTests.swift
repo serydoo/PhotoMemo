@@ -24,8 +24,8 @@ struct V1ConfigurationOptionListContractTests {
         #expect(!rootSource.contains("private struct V1ConfigurationNavigationRowButtonStyle"))
     }
 
-    @Test("configuration footer separates status save and more actions")
-    func configurationSaveStatusAndActionsShareFixedAdaptiveFooter() throws {
+    @Test("configuration card owns status and footer keeps primary actions")
+    func configurationCardOwnsStatusWhileFooterKeepsPrimaryActions() throws {
         let optionListSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
@@ -37,15 +37,18 @@ struct V1ConfigurationOptionListContractTests {
         )
 
         #expect(optionListSource.contains("struct V1ConfigurationActionFooter"))
+        #expect(optionListSource.contains("let configurationStatus: V1ConfigurationStatus"))
+        #expect(optionListSource.contains("private var configurationStatusCard"))
+        #expect(optionListSource.contains("configurationStatusCard"))
         #expect(optionListSource.contains("private var configurationActionRow"))
-        #expect(optionListSource.contains("private var configurationStatusLabel"))
         #expect(optionListSource.contains("private var centeredPrimaryAction"))
         #expect(optionListSource.contains("ZStack(alignment: .bottom)"))
-        #expect(optionListSource.contains("configurationStatusLabel\n                    .frame(width: 84, alignment: .leading)"))
-        #expect(optionListSource.contains("moreActionsMenu\n                    .frame(width: 84, alignment: .trailing)"))
-        #expect(optionListSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(optionListSource.contains("Image(systemName: \"ellipsis\")"))
+        #expect(!optionListSource.contains("private var configurationStatusLabel"))
+        #expect(!optionListSource.contains("Image(systemName: \"ellipsis.circle\")"))
         #expect(editorSurfaceSource.contains(".safeAreaInset(edge: .bottom)"))
         #expect(rootSource.contains("V1ConfigurationActionFooter("))
+        #expect(rootSource.contains("configurationStatus:\n                activeConfigurationStatus"))
     }
 
     @Test("region editor explains customizable phrase and module composition")

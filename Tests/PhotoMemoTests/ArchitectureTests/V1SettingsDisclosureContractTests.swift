@@ -19,8 +19,8 @@ struct V1SettingsDisclosureContractTests {
         #expect(source.contains("isExpanded.toggle()"))
     }
 
-    @Test("settings combines product version and Xcode Cloud build")
-    func settingsCombinesInstalledVersionFields() throws {
+    @Test("settings presents installed version in user-facing fields")
+    func settingsPresentsInstalledVersionFields() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
         )
@@ -31,17 +31,11 @@ struct V1SettingsDisclosureContractTests {
             "Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings"
         )
 
-        #expect(source.contains("private var combinedAppVersion"))
-        #expect(
-            source.contains(
-                "\"\\(appVersion).\\(appBuild)\""
-            )
-        )
         for key in [
             "settings.version.section_title",
-            "settings.version.row_title",
-            "settings.version.headline_format",
-            "settings.version.detail_format"
+            "settings.version.app_name",
+            "settings.version.version_format",
+            "settings.version.build_format"
         ] {
             #expect(source.contains(key))
             #expect(simplifiedChinese.contains("\"\(key)\""))
@@ -61,32 +55,31 @@ struct V1SettingsDisclosureContractTests {
             "Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings"
         )
 
-        let socialPosition = try #require(
-            source.range(
-                of: "settings.feedback.social.title"
-            )?.lowerBound
-        )
-        let qqPosition = try #require(
-            source.range(
-                of: "settings.feedback.qq.title"
-            )?.lowerBound
-        )
         let testFlightPosition = try #require(
             source.range(of: "TestFlight 反馈")?.lowerBound
         )
         let emailPosition = try #require(
             source.range(of: "邮件反馈")?.lowerBound
         )
+        let qqPosition = try #require(
+            source.range(
+                of: "settings.feedback.qq.title"
+            )?.lowerBound
+        )
+        let socialPosition = try #require(
+            source.range(
+                of: "settings.feedback.social.title"
+            )?.lowerBound
+        )
         let githubPosition = try #require(
             source.range(of: "GitHub Issues")?.lowerBound
         )
 
-        #expect(socialPosition < qqPosition)
-        #expect(qqPosition < testFlightPosition)
         #expect(testFlightPosition < emailPosition)
-        #expect(emailPosition < githubPosition)
+        #expect(emailPosition < qqPosition)
+        #expect(qqPosition < socialPosition)
+        #expect(socialPosition < githubPosition)
         #expect(source.contains("955680366"))
-        #expect(source.contains("settings.feedback.closing"))
         #expect(source.contains(".textSelection(.enabled)"))
         #expect(source.contains("openMailFeedback()"))
         #expect(source.contains("openGitHubIssues()"))
@@ -105,13 +98,125 @@ struct V1SettingsDisclosureContractTests {
             "settings.feedback.email.detail",
             "settings.feedback.github.title",
             "settings.feedback.github.headline",
-            "settings.feedback.github.detail",
-            "settings.feedback.closing"
+            "settings.feedback.github.detail"
         ] {
             #expect(source.contains(key))
             #expect(simplifiedChinese.contains("\"\(key)\""))
             #expect(english.contains("\"\(key)\""))
         }
+    }
+
+    @Test("settings uses one story and concise information cards")
+    func settingsUsesBoundedContentFamilies() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+
+        #expect(source.contains("private var overviewSection"))
+        #expect(source.contains("让照片知道，它位于谁的人生里"))
+        #expect(source.contains("private func settingsPrivacyRow"))
+        #expect(source.contains("\"checkmark.circle.fill\""))
+        #expect(source.contains("fallback: \"Version %@\""))
+        #expect(source.contains("fallback: \"Build %@\""))
+        #expect(!source.contains("Xcode Cloud 构建"))
+        #expect(!source.contains("系统扩展内存压力"))
+        #expect(!source.contains("欢迎在小红书等公开渠道分享体验"))
+    }
+
+    @Test("settings disclosure headings use text without decorative icons")
+    func settingsDisclosureHeadingsAreTextOnly() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let disclosureStart = try #require(
+            source.range(of: "private struct V1SettingsDisclosureSection")?.lowerBound
+        )
+        let disclosureSource = source[disclosureStart...]
+
+        #expect(!disclosureSource.contains("V1CompactHeadingIcon"))
+        #expect(!disclosureSource.contains("let systemImage"))
+        #expect(!disclosureSource.contains("let tint"))
+    }
+
+    @Test("settings orders commerce, brand, control, and reference content")
+    func settingsUsesIntentionalSectionOrder() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let bodyStart = try #require(
+            source.range(of: "var body: some View")?.lowerBound
+        )
+        let bodyEnd = try #require(
+            source.range(of: "private var interfaceLanguageSection")?.lowerBound
+        )
+        let body = source[bodyStart..<bodyEnd]
+        let orderedSections = [
+            "memoMarkPlusSection",
+            "overviewSection",
+            "guideSection",
+            "supportSection",
+            "principleSection",
+            "feedbackSection",
+            "interfaceLanguageSection",
+            "releaseSection"
+        ]
+        let positions = try orderedSections.map { section in
+            try #require(body.range(of: section)?.lowerBound)
+        }
+
+        #expect(positions == positions.sorted())
+    }
+
+    @Test("workflow tutorial stays inside settings and closes back to settings")
+    func workflowTutorialUsesSettingsOwnedPresentation() throws {
+        let settingsSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let workflowSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1WelcomePresentation.swift"
+        )
+        let configurationCenterSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenteriOSView.swift"
+        )
+
+        #expect(settingsSource.contains("private var showsWorkflowGuide = false"))
+        #expect(settingsSource.contains("isPresented: $showsWorkflowGuide"))
+        #expect(settingsSource.contains("showsWorkflowGuide = true"))
+        #expect(settingsSource.contains("showsWorkflowGuide = false"))
+        #expect(!settingsSource.contains("let onShowWorkflow"))
+        #expect(workflowSource.contains("let onClose: (() -> Void)?"))
+        #expect(workflowSource.contains("Button(\"关闭\""))
+
+        let settingsStart = try #require(
+            configurationCenterSource.range(of: "private var settingsSheet")?.lowerBound
+        )
+        let settingsSourceTail = configurationCenterSource[settingsStart...]
+        #expect(!settingsSourceTail.contains("onShowWorkflow:"))
+    }
+
+    @Test("capability starts with the original EXIF prerequisite")
+    func capabilityStartsWithOriginalEXIFPrerequisite() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let supportStart = try #require(
+            source.range(of: "private var supportSection")?.lowerBound
+        )
+        let feedbackStart = try #require(
+            source.range(of: "private var feedbackSection")?.lowerBound
+        )
+        let supportSource = source[supportStart..<feedbackStart]
+        let exifPosition = try #require(
+            supportSource.range(of: "原始拍摄信息")?.lowerBound
+        )
+        let inputPosition = try #require(
+            supportSource.range(of: "照片输入")?.lowerBound
+        )
+
+        #expect(exifPosition < inputPosition)
+        #expect(supportSource.contains("保留原始 EXIF"))
+        #expect(supportSource.contains("EXIF 缺失时仍可处理"))
+        #expect(!supportSource.contains("完美输出"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

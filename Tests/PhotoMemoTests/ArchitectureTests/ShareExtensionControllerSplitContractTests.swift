@@ -31,7 +31,7 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("title: \"相册\""))
         #expect(controller.contains("constant: -24"))
         #expect(controller.contains("stack.spacing = 8"))
-        #expect(controller.contains("baseBackgroundColor =\n            .systemBlue"))
+        #expect(controller.contains("view.tintColor ?? UIColor.tintColor"))
         #expect(controller.contains("baseForegroundColor =\n            .white"))
         #expect(!controller.contains("这次会如何处理"))
         #expect(!controller.contains("默认风格"))

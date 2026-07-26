@@ -74,6 +74,21 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("fixedSize(horizontal: true"))
     }
 
+    @Test("home header gives the app mark and settings entry primary touch weight")
+    func homeHeaderGivesTheAppMarkAndSettingsEntryPrimaryTouchWeight() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+
+        #expect(source.contains(".frame(width: 76, height: 76)"))
+        #expect(source.contains(".frame(width: 50, height: 56)"))
+        #expect(source.contains(".frame(width: 43, height: 48)"))
+        #expect(source.contains(".frame(width: 44, height: 44)"))
+        #expect(source.contains(".font(.body.weight(.bold))"))
+        #expect(source.contains(".foregroundStyle(.secondary)"))
+        #expect(source.contains(".secondarySystemFill"))
+    }
+
     @Test("configuration library actions provide a narrow width fallback")
     func configurationLibraryActionsProvideNarrowWidthFallback() throws {
         let source = try sourceText(
@@ -93,7 +108,6 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(optionListSource.contains("@Environment(\\.dynamicTypeSize)"))
         #expect(optionListSource.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(optionListSource.contains("ViewThatFits(in: .horizontal)"))
         #expect(optionListSource.contains("更多配置操作"))
         #expect(optionListSource.contains("adaptiveSectionHeader"))
     }

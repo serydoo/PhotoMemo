@@ -173,9 +173,9 @@
 "commerce.settings.accessibility.testflight" = "View temporary TestFlight benefits";
 "commerce.settings.accessibility.free" = "Learn about complete MemoMark+ recording";
 "settings.version.section_title" = "Version";
-"settings.version.row_title" = "Installed Version";
-"settings.version.headline_format" = "MemoMark %@";
-"settings.version.detail_format" = "Product version %@ · Xcode Cloud build %@. Read from this installed app.";
+"settings.version.app_name" = "MemoMark";
+"settings.version.version_format" = "Version %@";
+"settings.version.build_format" = "Build %@";
 "settings.feedback.section_title" = "Feedback";
 "settings.feedback.social.title" = "Xiaohongshu and Douyin";
 "settings.feedback.social.headline" = "Search for MemoMark";

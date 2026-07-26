@@ -620,7 +620,8 @@ struct PhotoMemoiOSV1View: View {
             isPresented: entryBinding(\.showsWorkflowGuide)
         ) {
             V1WorkflowGuideSurface(
-                steps: V1WelcomePresentation.default.workflowSteps
+                steps: V1WelcomePresentation.default.workflowSteps,
+                onClose: nil
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
@@ -1185,14 +1186,6 @@ struct PhotoMemoiOSV1View: View {
                         from: entryFlowState
                     )
             },
-            onShowWorkflow: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .closeSettingsPage(
-                        from: entryFlowState
-                    )
-                entryFlowState.showsWorkflowGuide = true
-            },
             onDismissKeyboard: dismissKeyboard
         )
     }
@@ -1375,6 +1368,8 @@ struct PhotoMemoiOSV1View: View {
                 selectedMemoryDisplayStyleBinding,
             borderStyleName:
                 currentBorderStyleName,
+            configurationStatus:
+                activeConfigurationStatus,
             onOpenRegionContent: {
                 showsRegionContentSheet = true
             }
