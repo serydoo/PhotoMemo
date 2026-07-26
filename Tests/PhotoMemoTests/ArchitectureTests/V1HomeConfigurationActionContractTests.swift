@@ -71,15 +71,16 @@ struct V1HomeConfigurationActionContractTests {
         #expect(!subjectSheetSource.contains("List {"))
     }
 
-    @Test("configuration card footer opens the current subject local library")
-    func footerPlusOpensLocalLibrary() throws {
+    @Test("configuration header exposes a dedicated local backup manager")
+    func headerOpensLocalBackupManager() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
         )
 
-        #expect(source.contains("Image(systemName: \"plus\")"))
-        #expect(source.contains("accessibilityLabel(\"打开当前记忆对象的本地配置库\")"))
+        #expect(source.contains("Image(systemName: \"archivebox\")"))
+        #expect(source.contains("accessibilityLabel(\"管理本地备份\")"))
         #expect(source.contains("onOpenLocalConfigurationLibrary"))
+        #expect(!source.contains("Image(systemName: \"plus\")"))
     }
 
     @Test("home separates blocking failures from non-modal success feedback")

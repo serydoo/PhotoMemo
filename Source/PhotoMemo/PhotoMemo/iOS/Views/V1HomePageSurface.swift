@@ -190,16 +190,26 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             title: "我的配置",
             subtitle: "选择当前生效的记录方式",
             trailingAccessory: {
-                Text("勾选生效")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Text("勾选生效")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Button(action: onOpenLocalConfigurationLibrary) {
+                        Image(systemName: "archivebox")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityLabel("管理本地备份")
+                }
             }
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 if memoryPresets.isEmpty {
                     V1HomeEmptyPresetRow()
                 } else {
-                    VStack(spacing: 0) {
+                    VStack(spacing: 8) {
                         ForEach(memoryPresets) { preset in
                             V1HomeMemoryPresetRow(
                                 preset: preset,
@@ -274,22 +284,6 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                     .padding(.top, 2)
                 }
 
-                Button(action: onOpenLocalConfigurationLibrary) {
-                    Image(systemName: "plus")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.blue)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 40)
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: 12,
-                                style: .continuous
-                            )
-                            .fill(Color.blue.opacity(0.07))
-                        )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("打开当前记忆对象的本地配置库")
             }
         }
     }
@@ -846,19 +840,9 @@ private struct V1HomeConfigurationGlyph: View {
 private struct V1HomeAppMark: View {
 
     var body: some View {
-        Group {
-            if let icon = UIImage(named: "AppIcon") {
-                Image(uiImage: icon)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: "photo.stack")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.white)
-            }
-        }
+        Image("HomeAppIcon")
+            .resizable()
+            .scaledToFill()
         .frame(width: 76, height: 76)
         .clipShape(
             RoundedRectangle(

@@ -81,23 +81,25 @@ struct IPhoneResponsiveLayoutContractTests {
         )
 
         #expect(source.contains(".frame(width: 76, height: 76)"))
-        #expect(source.contains(".frame(width: 50, height: 56)"))
-        #expect(source.contains(".frame(width: 43, height: 48)"))
         #expect(source.contains(".frame(width: 44, height: 44)"))
         #expect(source.contains(".font(.body.weight(.bold))"))
         #expect(source.contains(".foregroundStyle(.secondary)"))
-        #expect(source.contains(".secondarySystemFill"))
+        #expect(source.contains("Image(\"HomeAppIcon\")"))
+        #expect(!source.contains("Image(systemName: \"photo.stack\")"))
     }
 
-    @Test("configuration library actions provide a narrow width fallback")
-    func configurationLibraryActionsProvideNarrowWidthFallback() throws {
+    @Test("configuration backup library uses a native row menu")
+    func configurationBackupLibraryUsesNativeRowMenu() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
         )
 
-        #expect(source.contains("adaptiveBackupActions"))
-        #expect(source.contains("ViewThatFits(in: .horizontal)"))
-        #expect(source.contains("compactBackupActions"))
+        #expect(source.contains("Menu"))
+        #expect(source.contains("恢复为副本"))
+        #expect(source.contains("恢复并设为当前"))
+        #expect(source.contains("Image(systemName: \"ellipsis\")"))
+        #expect(!source.contains("adaptiveBackupActions"))
+        #expect(!source.contains("compactBackupActions"))
     }
 
     @Test("configuration controls reflow for accessibility text sizes")

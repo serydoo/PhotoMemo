@@ -4,6 +4,18 @@ Last updated: 2026-07-27
 
 ## 2026-07-27 Configuration Reliability And Home Polish Pass
 
+- Home now uses a dedicated normal asset-catalog image set sourced from the
+  shipped application icon, so the 76 pt Home mark cannot fall back to an
+  unrelated SF Symbol at runtime. Configuration cards have a restrained 8 pt
+  separation, and local backup management moved from the misleading Home plus
+  footer to an `archivebox` action beside the configuration status.
+- Local backup management now follows an iOS settings-style List: each backup
+  presents its revision and saved time with one overflow menu for restore as
+  copy, restore and make current, or delete. Disabled future import/export
+  controls and stale success banners are absent; deletion remains a confirmed,
+  non-full-swipe destructive action. Focused Home, responsive-layout, and
+  native-interaction contracts passed, followed by signed build, overwrite
+  installation, and launch on iPhone 17 Pro Max.
 - Local configuration backups now resolve valid relative asset references from
   MemoMark's managed container before packaging them. Persisted custom Logo
   assets therefore remain eligible for a local backup instead of presenting an

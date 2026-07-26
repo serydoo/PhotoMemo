@@ -6,7 +6,6 @@ struct V1LocalConfigurationLibrarySheet: View {
     let subjectName: String
     let backups: [LocalConfigurationBackupRecord]
     let isWorking: Bool
-    let statusMessage: String?
     let onRefresh: () -> Void
     let onRestore: (LocalConfigurationBackupRecord) -> Void
     let onRestoreAndMakeCurrent:
@@ -21,24 +20,13 @@ struct V1LocalConfigurationLibrarySheet: View {
     var body: some View {
         NavigationStack {
             List {
-                if let statusMessage {
-                    Section {
-                        Label(
-                            statusMessage,
-                            systemImage: "info.circle"
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    }
-                }
-
                 Section {
                     if backups.isEmpty {
                         ContentUnavailableView(
                             "还没有本地备份",
                             systemImage: MemoMarkSymbol.localStorage.name,
                             description: Text(
-                                "在首页向左滑动配置并点按“保存”，备份会保留在当前记忆对象的本地库中。"
+                                "在首页保存配置后，会自动保留在当前记忆对象的本地备份中。"
                             )
                         )
                     } else {
@@ -48,12 +36,12 @@ struct V1LocalConfigurationLibrarySheet: View {
                         }
                     }
                 } header: {
-                    Text(subjectName)
+                    Text("\(subjectName)的配置")
                 } footer: {
-                    Text("恢复会作为副本加入；“恢复并设当前”会通过正常保存路径切换当前配置。")
+                    Text("恢复为副本会保留当前配置；恢复并设为当前会立即切换到该备份。")
                 }
             }
-            .navigationTitle("本地配置库")
+            .navigationTitle("本地备份")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -62,13 +50,7 @@ struct V1LocalConfigurationLibrarySheet: View {
                     }
                 }
 
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {} label: {
-                        Image(systemName: "square.and.arrow.down")
-                    }
-                    .disabled(true)
-                    .accessibilityLabel("导入配置备份即将开放")
-
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: onRefresh) {
                         if isWorking {
                             ProgressView()
@@ -77,7 +59,7 @@ struct V1LocalConfigurationLibrarySheet: View {
                         }
                     }
                     .disabled(isWorking)
-                    .accessibilityLabel("刷新本地配置库")
+                    .accessibilityLabel("刷新本地备份")
                 }
             }
             .alert(
@@ -105,7 +87,7 @@ struct V1LocalConfigurationLibrarySheet: View {
     private func backupRow(
         _ backup: LocalConfigurationBackupRecord
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(backup.title)
                     .font(.subheadline.weight(.semibold))
@@ -116,12 +98,32 @@ struct V1LocalConfigurationLibrarySheet: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            adaptiveBackupActions(backup)
-            .font(.caption.weight(.semibold))
+            Menu {
+                Button("恢复为副本") {
+                    onRestore(backup)
+                }
+
+                Button("恢复并设为当前") {
+                    onRestoreAndMakeCurrent(backup)
+                }
+
+                Divider()
+
+                Button("删除本地备份", role: .destructive) {
+                    pendingDeleteBackup = backup
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
+            }
             .disabled(isWorking)
+            .accessibilityLabel("更多备份操作")
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
                 pendingDeleteBackup = backup
@@ -131,7 +133,7 @@ struct V1LocalConfigurationLibrarySheet: View {
             .tint(.red)
         }
         .contextMenu {
-            Button("恢复") { onRestore(backup) }
+            Button("恢复为副本") { onRestore(backup) }
             Button("恢复并设当前") { onRestoreAndMakeCurrent(backup) }
             Button("删除本地备份", role: .destructive) {
                 pendingDeleteBackup = backup
@@ -139,74 +141,5 @@ struct V1LocalConfigurationLibrarySheet: View {
         }
     }
 
-    private func adaptiveBackupActions(
-        _ backup: LocalConfigurationBackupRecord
-    ) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                restoreBackupButton(backup)
-                restoreAndActivateBackupButton(backup)
-                backupUtilityActions(backup)
-            }
-
-            compactBackupActions(backup)
-        }
-    }
-
-    private func compactBackupActions(
-        _ backup: LocalConfigurationBackupRecord
-    ) -> some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                restoreBackupButton(backup)
-                    .frame(maxWidth: .infinity)
-
-                restoreAndActivateBackupButton(backup)
-                    .frame(maxWidth: .infinity)
-            }
-
-            HStack {
-                Spacer(minLength: 0)
-                backupUtilityActions(backup)
-            }
-        }
-    }
-
-    private func restoreBackupButton(
-        _ backup: LocalConfigurationBackupRecord
-    ) -> some View {
-        Button("恢复") {
-            onRestore(backup)
-        }
-        .buttonStyle(.bordered)
-    }
-
-    private func restoreAndActivateBackupButton(
-        _ backup: LocalConfigurationBackupRecord
-    ) -> some View {
-        Button("恢复并设当前") {
-            onRestoreAndMakeCurrent(backup)
-        }
-        .buttonStyle(.borderedProminent)
-    }
-
-    private func backupUtilityActions(
-        _ backup: LocalConfigurationBackupRecord
-    ) -> some View {
-        HStack(spacing: 8) {
-            Button {} label: {
-                Image(systemName: "square.and.arrow.up")
-            }
-            .disabled(true)
-            .accessibilityLabel("含资源的完整导出即将开放")
-
-            Button(role: .destructive) {
-                pendingDeleteBackup = backup
-            } label: {
-                Image(systemName: "trash")
-            }
-            .accessibilityLabel("删除本地配置备份")
-        }
-    }
 }
 #endif

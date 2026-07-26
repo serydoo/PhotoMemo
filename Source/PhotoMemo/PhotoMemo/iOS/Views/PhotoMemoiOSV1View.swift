@@ -585,8 +585,6 @@ struct PhotoMemoiOSV1View: View {
                 backups: localConfigurationBackups,
                 isWorking:
                     isWorkingWithLocalConfigurationLibrary,
-                statusMessage:
-                    localConfigurationLibraryStatus,
                 onRefresh: {
                     refreshLocalConfigurationLibrary()
                 },
