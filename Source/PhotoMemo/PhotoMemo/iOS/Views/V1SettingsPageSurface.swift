@@ -61,14 +61,22 @@ struct V1SettingsPageSurface: View {
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
         )
-        .navigationTitle("设置")
+        .navigationTitle(
+            localized(
+                "settings.navigation.title",
+                fallback: "设置"
+            )
+        )
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showsExpressionGuide) {
             expressionGuideSheet
         }
         .sheet(isPresented: $showsWorkflowGuide) {
             V1WorkflowGuideSurface(
-                steps: V1WelcomePresentation.default.workflowSteps,
+                steps: V1WelcomePresentation.workflowSteps(
+                    for: interfaceLanguage
+                ),
+                language: interfaceLanguage,
                 onClose: {
                     showsWorkflowGuide = false
                 }
@@ -82,7 +90,7 @@ struct V1SettingsPageSurface: View {
         settingsDisclosureSection(
             section: .interfaceLanguage,
             title: localized(
-                "应用界面语言",
+                "settings.interface.title",
                 fallback: "应用界面语言"
             ),
             trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle
@@ -90,7 +98,7 @@ struct V1SettingsPageSurface: View {
             VStack(alignment: .leading, spacing: 12) {
                 Picker(
                     localized(
-                        "应用界面语言",
+                        "settings.interface.title",
                         fallback: "应用界面语言"
                     ),
                     selection: interfaceLanguageBinding
@@ -107,7 +115,7 @@ struct V1SettingsPageSurface: View {
 
                 Text(
                     localized(
-                        "控制时光记的菜单、设置、帮助与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。",
+                        "settings.interface.description",
                         fallback: "控制时光记的菜单、设置、帮助与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。"
                     )
                 )
@@ -327,6 +335,7 @@ struct V1SettingsPageSurface: View {
         V1SettingsDisclosureSection(
             title: title,
             trailingValue: trailingValue,
+            language: interfaceLanguage,
             isExpanded: expansionBinding(for: section),
             content: content
         )
@@ -352,29 +361,57 @@ struct V1SettingsPageSurface: View {
     private var overviewSection: some View {
         settingsDisclosureSection(
             section: .overview,
-            title: "为什么是时光记"
+            title: localized(
+                "settings.overview.title",
+                fallback: "为什么是时光记"
+            )
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("让照片知道，它位于谁的人生里")
+                Text(
+                    localized(
+                        "settings.overview.headline",
+                        fallback: "让照片知道，它位于谁的人生里"
+                    )
+                )
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("陪伴孩子长大的过程中，我们留下了很多照片。时光记最初只想回答一个问题：打开照片时，能不能马上知道那一天，孩子多大？")
+                Text(
+                    localized(
+                        "settings.overview.paragraph_one",
+                        fallback: "陪伴孩子长大的过程中，我们留下了很多照片。时光记最初只想回答一个问题：打开照片时，能不能马上知道那一天，孩子多大？"
+                    )
+                )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("从孩子出生的那一天开始，生日、纪念日和未来的重要日期都可以成为时间锚点。照片因此不只记录拍摄时间，也能呈现年龄、倒数，以及它位于一段人生的什么位置。")
+                Text(
+                    localized(
+                        "settings.overview.paragraph_two",
+                        fallback: "从孩子出生的那一天开始，生日、纪念日和未来的重要日期都可以成为时间锚点。照片因此不只记录拍摄时间，也能呈现年龄、倒数，以及它位于一段人生的什么位置。"
+                    )
+                )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("时光记不是给照片添加水印，而是把时间关系变成更容易读懂的记忆。所有核心计算都在本机完成，并始终生成新的照片。")
+                Text(
+                    localized(
+                        "settings.overview.paragraph_three",
+                        fallback: "时光记不是给照片添加水印，而是把时间关系变成更容易读懂的记忆。所有核心计算都在本机完成，并始终生成新的照片。"
+                    )
+                )
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("愿大家都能享受这些被时间标记的记忆。")
+                Text(
+                    localized(
+                        "settings.overview.closing",
+                        fallback: "愿大家都能享受这些被时间标记的记忆。"
+                    )
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -399,13 +436,22 @@ struct V1SettingsPageSurface: View {
     private var guideSection: some View {
         settingsDisclosureSection(
             section: .guide,
-            title: "使用与帮助"
+            title: localized(
+                "settings.guide.title",
+                fallback: "使用与帮助"
+            )
         ) {
             VStack(spacing: 12) {
                 Button(action: onShowWelcome) {
                     settingsActionRow(
-                        title: "重新查看欢迎说明",
-                        detail: "回看首次使用说明、核心能力与基础引导。"
+                        title: localized(
+                            "settings.guide.welcome.title",
+                            fallback: "重新查看欢迎说明"
+                        ),
+                        detail: localized(
+                            "settings.guide.welcome.detail",
+                            fallback: "回看首次使用说明、核心能力与基础引导。"
+                        )
                     )
                 }
                 .buttonStyle(.plain)
@@ -414,8 +460,14 @@ struct V1SettingsPageSurface: View {
                     showsWorkflowGuide = true
                 } label: {
                     settingsActionRow(
-                        title: "查看使用教程",
-                        detail: "按 Apple Photos -> Share -> 时光记的真实路径回看处理方式。"
+                        title: localized(
+                            "settings.guide.workflow.title",
+                            fallback: "查看使用教程"
+                        ),
+                        detail: localized(
+                            "settings.guide.workflow.detail",
+                            fallback: "按 Apple Photos -> Share -> 时光记的真实路径回看处理方式。"
+                        )
                     )
                 }
                 .buttonStyle(.plain)
@@ -424,8 +476,14 @@ struct V1SettingsPageSurface: View {
                     showsExpressionGuide = true
                 } label: {
                     settingsActionRow(
-                        title: "查看表达公式说明",
-                        detail: "按时间锚点查看主体、智能输出和锚点结果的组合方式。"
+                        title: localized(
+                            "settings.guide.expression.title",
+                            fallback: "查看表达公式说明"
+                        ),
+                        detail: localized(
+                            "settings.guide.expression.detail",
+                            fallback: "按时间锚点查看主体、智能输出和锚点结果的组合方式。"
+                        )
                     )
                 }
                 .buttonStyle(.plain)
@@ -447,7 +505,12 @@ struct V1SettingsPageSurface: View {
                 ConfigurationUI.appBackground
                     .ignoresSafeArea()
             )
-            .navigationTitle("表达公式说明")
+            .navigationTitle(
+                localized(
+                    "settings.expression_guide.title",
+                    fallback: "表达公式说明"
+                )
+            )
             .navigationBarTitleDisplayMode(.inline)
         }
         .presentationDetents([.medium, .large])
@@ -463,7 +526,7 @@ struct V1SettingsPageSurface: View {
             ),
             trailingValue: formatted(
                 "settings.version.version_format",
-                fallback: "Version %@",
+                fallback: "版本 %@",
                 appVersion
             )
         ) {
@@ -471,10 +534,10 @@ struct V1SettingsPageSurface: View {
                 Text(localized("settings.version.app_name", fallback: "时光记"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
-                Text(formatted("settings.version.version_format", fallback: "Version %@", appVersion))
+                Text(formatted("settings.version.version_format", fallback: "版本 %@", appVersion))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(formatted("settings.version.build_format", fallback: "Build %@", appBuild))
+                Text(formatted("settings.version.build_format", fallback: "构建 %@", appBuild))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -487,35 +550,74 @@ struct V1SettingsPageSurface: View {
     private var supportSection: some View {
         settingsDisclosureSection(
             section: .support,
-            title: "能力与边界"
+            title: localized(
+                "settings.support.title",
+                fallback: "能力与边界"
+            )
         ) {
             VStack(spacing: 0) {
                 settingsInfoRow(
-                    title: "原始拍摄信息",
-                    headline: "保留原始 EXIF，完整呈现拍摄与时间内容",
-                    detail: "EXIF 缺失时仍可处理，但相关拍摄参数与时间表达可能不可用。",
+                    title: localized(
+                        "settings.support.metadata.title",
+                        fallback: "原始拍摄信息"
+                    ),
+                    headline: localized(
+                        "settings.support.metadata.headline",
+                        fallback: "保留原始 EXIF，完整呈现拍摄与时间内容"
+                    ),
+                    detail: localized(
+                        "settings.support.metadata.detail",
+                        fallback: "EXIF 缺失时仍可处理，但相关拍摄参数与时间表达可能不可用。"
+                    ),
                     showsDivider: true
                 )
 
                 settingsInfoRow(
-                    title: "照片输入",
-                    headline: "静态照片、Live Photo 与 RAW / DNG",
-                    detail: "可从主程序或 Apple Photos 分享进入。",
+                    title: localized(
+                        "settings.support.input.title",
+                        fallback: "照片输入"
+                    ),
+                    headline: localized(
+                        "settings.support.input.headline",
+                        fallback: "静态照片、Live Photo 与 RAW / DNG"
+                    ),
+                    detail: localized(
+                        "settings.support.input.detail",
+                        fallback: "可从主程序或 Apple Photos 分享进入。"
+                    ),
                     showsDivider: true
                 )
 
                 settingsInfoRow(
-                    title: "每次处理",
-                    headline:
-                        "最多 \(commerceSnapshot.batchLimit) 张照片",
-                    detail: "更多照片请分批处理。",
+                    title: localized(
+                        "settings.support.batch.title",
+                        fallback: "每次处理"
+                    ),
+                    headline: formatted(
+                        "settings.support.batch.headline_format",
+                        fallback: "最多 %lld 张照片",
+                        Int64(commerceSnapshot.batchLimit)
+                    ),
+                    detail: localized(
+                        "settings.support.batch.detail",
+                        fallback: "更多照片请分批处理。"
+                    ),
                     showsDivider: true
                 )
 
                 settingsInfoRow(
-                    title: "处理结果",
-                    headline: "生成新文件并保存回 Apple Photos",
-                    detail: "不会覆盖 Apple Photos 中的原图。",
+                    title: localized(
+                        "settings.support.result.title",
+                        fallback: "处理结果"
+                    ),
+                    headline: localized(
+                        "settings.support.result.headline",
+                        fallback: "生成新文件并保存回 Apple Photos"
+                    ),
+                    detail: localized(
+                        "settings.support.result.detail",
+                        fallback: "不会覆盖 Apple Photos 中的原图。"
+                    ),
                     showsDivider: false
                 )
             }
@@ -533,7 +635,12 @@ struct V1SettingsPageSurface: View {
             trailingValue: nil
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("优先反馈")
+                Text(
+                    localized(
+                        "settings.feedback.priority_heading",
+                        fallback: "优先反馈"
+                    )
+                )
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
@@ -569,7 +676,12 @@ struct V1SettingsPageSurface: View {
                 }
                 .background(settingsInsetBackground)
 
-                Text("社区与开发")
+                Text(
+                    localized(
+                        "settings.feedback.community_heading",
+                        fallback: "社区与开发"
+                    )
+                )
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
@@ -629,27 +741,54 @@ struct V1SettingsPageSurface: View {
     private var principleSection: some View {
         settingsDisclosureSection(
             section: .principle,
-            title: "隐私与数据"
+            title: localized(
+                "settings.privacy.title",
+                fallback: "隐私与数据"
+            )
         ) {
             VStack(spacing: 0) {
                 settingsPrivacyRow(
-                    title: "本地完成处理",
-                    detail: "不会上传照片。",
+                    title: localized(
+                        "settings.privacy.local_processing.title",
+                        fallback: "本地完成处理"
+                    ),
+                    detail: localized(
+                        "settings.privacy.local_processing.detail",
+                        fallback: "不会上传照片。"
+                    ),
                     showsDivider: true
                 )
                 settingsPrivacyRow(
-                    title: "不修改原图",
-                    detail: "始终生成新的照片。",
+                    title: localized(
+                        "settings.privacy.original.title",
+                        fallback: "不修改原图"
+                    ),
+                    detail: localized(
+                        "settings.privacy.original.detail",
+                        fallback: "始终生成新的照片。"
+                    ),
                     showsDivider: true
                 )
                 settingsPrivacyRow(
-                    title: "配置保存在本机",
-                    detail: "记忆对象、时间锚点与任务记录保存在应用容器中。",
+                    title: localized(
+                        "settings.privacy.local_configuration.title",
+                        fallback: "配置保存在本机"
+                    ),
+                    detail: localized(
+                        "settings.privacy.local_configuration.detail",
+                        fallback: "记忆对象、时间锚点与任务记录保存在应用容器中。"
+                    ),
                     showsDivider: true
                 )
                 settingsPrivacyRow(
-                    title: "删除应用",
-                    detail: "未单独备份的本地配置与记录会一起删除。",
+                    title: localized(
+                        "settings.privacy.delete_app.title",
+                        fallback: "删除应用"
+                    ),
+                    detail: localized(
+                        "settings.privacy.delete_app.detail",
+                        fallback: "未单独备份的本地配置与记录会一起删除。"
+                    ),
                     showsDivider: false
                 )
             }
@@ -729,19 +868,28 @@ struct V1SettingsPageSurface: View {
 
     private var privacyTag: some View {
         settingsTag(
-            title: "本地优先"
+            title: localized(
+                "settings.overview.tag.local_first",
+                fallback: "本地优先"
+            )
         )
     }
 
     private var memoryTag: some View {
         settingsTag(
-            title: "保存记忆"
+            title: localized(
+                "settings.overview.tag.memory",
+                fallback: "保存记忆"
+            )
         )
     }
 
     private var originalPhotoTag: some View {
         settingsTag(
-            title: "不改原图"
+            title: localized(
+                "settings.overview.tag.original",
+                fallback: "不改原图"
+            )
         )
     }
 
@@ -913,6 +1061,7 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
 
     let title: String
     let trailingValue: String?
+    let language: MemoMarkLanguage
 
     @Binding
     var isExpanded: Bool
@@ -955,9 +1104,22 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(title)
                 .accessibilityValue(
-                    isExpanded ? "已展开" : "已收起"
+                    isExpanded
+                    ? localized(
+                        "settings.accessibility.expanded",
+                        fallback: "已展开"
+                    )
+                    : localized(
+                        "settings.accessibility.collapsed",
+                        fallback: "已收起"
+                    )
                 )
-                .accessibilityHint("点击展开或收起")
+                .accessibilityHint(
+                    localized(
+                        "settings.accessibility.toggle_hint",
+                        fallback: "点击展开或收起"
+                    )
+                )
 
                 if isExpanded {
                     content
@@ -970,6 +1132,13 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
         accessibilityReduceMotion
             ? nil
             : .easeInOut(duration: 0.2)
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        language.localized(key: key, fallback: fallback)
     }
 }
 #endif

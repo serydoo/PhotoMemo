@@ -88,54 +88,55 @@ struct V1TaskPageSurface: View {
 
     @ViewBuilder
     private var currentTaskCard: some View {
-        if snapshot == nil {
-            currentTaskEmptyState
-        } else {
-            currentTaskActiveCard
+        switch presentation.currentTask.displayMode {
+        case .waiting:
+            waitingTaskCard
+        case .processing:
+            processingTaskCard
+        case .completed:
+            completedResultCard
+        case .needsAttention:
+            needsAttentionTaskCard
         }
     }
 
-    private var currentTaskEmptyState: some View {
+    private var waitingTaskCard: some View {
         V1TitledSectionCard(
-            title: "当前任务",
-            subtitle: "确认当前处理进度与结果。"
+            title: "等待下一次分享",
+            subtitle: "从 Apple Photos 分享后，会在这里显示进度和结果。"
         ) {
-            VStack(alignment: .center, spacing: 12) {
-                ZStack {
-                    RoundedRectangle(
-                        cornerRadius: 18,
-                        style: .continuous
+            HStack(spacing: 12) {
+                Image(systemName: "photo.badge.plus")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(
+                                ConfigurationUI.controlBackground
+                            )
                     )
-                    .fill(Color.accentColor.opacity(0.10))
 
-                    Image(systemName: MemoMarkSymbol.processing.name)
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
-                .frame(width: 58, height: 58)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("准备就绪")
+                        .font(.subheadline.weight(.semibold))
 
-                VStack(spacing: 4) {
-                    Text("当前没有正在处理的照片")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    Text("从 Apple Photos 分享照片后，进度会显示在这里。")
+                    Text("从 Apple Photos 分享照片，即可开始生成。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity)
             .padding(.horizontal, 4)
-            .padding(.vertical, 8)
         }
     }
 
-    private var currentTaskActiveCard: some View {
+    private var processingTaskCard: some View {
         V1TitledSectionCard(
-            title: "当前任务",
-            subtitle: "确认当前处理进度与结果。"
+            title: "正在处理",
+            subtitle: "完成后会自动保存到 Apple Photos。"
         ) {
             taskStatusPill(
                 title: presentation.currentTask.statusText,
@@ -143,8 +144,46 @@ struct V1TaskPageSurface: View {
             )
         } content: {
             currentTaskSummary
-            pipelineRows
-            photoLibraryLinkRow
+
+            if presentation.currentTask.stepRows.count > 1 {
+                pipelineDetailsDisclosure
+            }
+        }
+    }
+
+    private var completedResultCard: some View {
+        V1TitledSectionCard(
+            title: "刚刚完成",
+            subtitle: "已生成并保存到 Apple Photos。"
+        ) {
+            taskStatusPill(
+                title: presentation.currentTask.statusText,
+                tint: presentation.currentTask.tint
+            )
+        } content: {
+            completedResultSummary
+
+            if presentation.currentTask.photoLibraryLink != nil {
+                photoLibraryLinkRow
+            }
+        }
+    }
+
+    private var needsAttentionTaskCard: some View {
+        V1TitledSectionCard(
+            title: "需要查看",
+            subtitle: presentation.currentTask.detailText
+        ) {
+            taskStatusPill(
+                title: presentation.currentTask.statusText,
+                tint: presentation.currentTask.tint
+            )
+        } content: {
+            attentionTaskSummary
+
+            if !presentation.currentTask.stepRows.isEmpty {
+                pipelineRows
+            }
         }
     }
 
@@ -197,6 +236,69 @@ struct V1TaskPageSurface: View {
         )
     }
 
+    private var completedResultSummary: some View {
+        HStack(alignment: .center, spacing: 12) {
+            taskThumbnail(
+                url: presentation.currentTask.previewSourceURL,
+                symbolName: presentation.currentTask.thumbnailSymbolName,
+                tint: presentation.currentTask.tint,
+                size: CGSize(width: 56, height: 56)
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(presentation.currentTask.headline)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(taskSummarySubtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                if let updatedAt = presentation.currentTask.updatedAt {
+                    Label(
+                        V1UserFacingDateFormatter.dateTime(updatedAt),
+                        systemImage: "checkmark.circle.fill"
+                    )
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(
+                        presentation.currentTask.tint.color
+                    )
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private var attentionTaskSummary: some View {
+        HStack(alignment: .center, spacing: 12) {
+            taskThumbnail(
+                url: presentation.currentTask.previewSourceURL,
+                symbolName: presentation.currentTask.thumbnailSymbolName,
+                tint: presentation.currentTask.tint,
+                size: CGSize(width: 56, height: 56)
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(presentation.currentTask.headline)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(presentation.currentTask.detailText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 4)
+    }
+
     private var taskSummarySubtitle: String {
         guard presentation.currentTask.itemCountText != nil else {
             return presentation.currentTask.subtitleText
@@ -247,7 +349,7 @@ struct V1TaskPageSurface: View {
                 presentation.currentTask.progressFraction {
                 ProgressView(value: progressFraction)
                     .progressViewStyle(.linear)
-                    .tint(progressBarTint(progressFraction))
+                    .tint(presentation.currentTask.tint.color)
                     .accessibilityLabel("当前任务进度")
                     .accessibilityValue(
                         progressPercentText(progressFraction)
@@ -259,6 +361,16 @@ struct V1TaskPageSurface: View {
                     .accessibilityLabel("当前任务正在处理")
             }
         }
+    }
+
+    private var pipelineDetailsDisclosure: some View {
+        DisclosureGroup("处理详情") {
+            pipelineRows
+                .padding(.top, 8)
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .tint(.secondary)
     }
 
     private var pipelineRows: some View {
@@ -325,7 +437,7 @@ struct V1TaskPageSurface: View {
 
     private var recentTasksSection: some View {
         V1TitledSectionCard(
-            title: "最近任务",
+            title: "最近完成",
             subtitle: "保留最近完成的处理记录。"
         ) {
             if presentation.historyRows.count > 2 {
@@ -581,16 +693,6 @@ struct V1TaskPageSurface: View {
         _ progressFraction: Double
     ) -> Bool {
         progressFraction < 1
-    }
-
-    private func progressBarTint(
-        _ progressFraction: Double
-    ) -> Color {
-        guard progressFraction < 1 else {
-            return .secondary
-        }
-
-        return presentation.currentTask.tint.color
     }
 
     private func taskStatusPill(

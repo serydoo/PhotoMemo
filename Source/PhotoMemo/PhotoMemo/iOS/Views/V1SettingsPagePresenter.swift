@@ -14,8 +14,23 @@ struct V1SettingsPagePresentation:
         [V1SettingsHistoryRowPresentation]
 }
 
+enum V1TaskDisplayMode: Equatable {
+
+    case waiting
+
+    case processing
+
+    case completed
+
+    case needsAttention
+}
+
 struct V1SettingsCurrentTaskPresentation:
     Equatable {
+
+    let jobID: UUID?
+
+    let displayMode: V1TaskDisplayMode
 
     let headline: String
     let subtitleText: String
@@ -43,6 +58,8 @@ struct V1SettingsHistoryRowPresentation:
     Equatable {
 
     let id: UUID
+
+    let jobID: UUID?
     let timestamp: Date
     let title: String
     let detailText: String
@@ -117,25 +134,33 @@ enum V1SettingsPagePresenter {
             [PhotoMemoBackgroundJobSummary] = [],
         fallbackConfigurationName: String = "当前配置"
     ) -> V1SettingsPagePresentation {
-        V1SettingsPagePresentation(
+        let currentTask = currentTaskPresentation(
+            header: header,
+            snapshot: snapshot,
+            recoveryMessage: recoveryMessage,
+            fallbackConfigurationName:
+                fallbackConfigurationName
+        )
+        let historyRows = historyRows(
+            from: events,
+            recentJobs: recentJobs
+        )
+
+        return V1SettingsPagePresentation(
             overviewItems:
                 overviewItems(
                     from: overview
                 ),
-            currentTask:
-                currentTaskPresentation(
-                    header: header,
-                    snapshot: snapshot,
-                    recoveryMessage: recoveryMessage,
-                    fallbackConfigurationName:
-                        fallbackConfigurationName
-                ),
+            currentTask: currentTask,
             historyRows:
-                historyRows(
-                    from: events,
-                    recentJobs:
-                        recentJobs
-                )
+                historyRows.filter { row in
+                    guard currentTask.displayMode == .completed,
+                          let currentJobID = currentTask.jobID else {
+                        return true
+                    }
+
+                    return row.jobID != currentJobID
+                }
         )
     }
 }
@@ -158,6 +183,11 @@ private extension V1SettingsPagePresenter {
                 )
 
             return V1SettingsCurrentTaskPresentation(
+                jobID: snapshot.jobID,
+                displayMode:
+                    displayMode(
+                        for: snapshot.presentationState
+                    ),
                 headline:
                     snapshot.configurationName,
                 subtitleText:
@@ -218,6 +248,8 @@ private extension V1SettingsPagePresenter {
         }
 
         return V1SettingsCurrentTaskPresentation(
+            jobID: nil,
+            displayMode: displayMode(for: header),
             headline:
                 header.headline,
             subtitleText:
@@ -296,6 +328,27 @@ private extension V1SettingsPagePresenter {
                 tint: .orange
             )
         ]
+    }
+
+    static func displayMode(
+        for state: PhotoMemoBackgroundPresentationState
+    ) -> V1TaskDisplayMode {
+        switch state {
+        case .active:
+            return .processing
+        case .completed:
+            return .completed
+        case .needsAttention:
+            return .needsAttention
+        }
+    }
+
+    static func displayMode(
+        for header: PhotoMemoiOSQueueDiagnosticsHeaderProjection
+    ) -> V1TaskDisplayMode {
+        header.tint == .orange
+            ? .needsAttention
+            : .waiting
     }
 
     static var waitingStepRows:
@@ -465,6 +518,7 @@ private extension V1SettingsPagePresenter {
 
                 return V1SettingsHistoryRowPresentation(
                     id: event.id,
+                    jobID: event.jobID,
                     timestamp:
                         event.timestamp,
                     title: title,
@@ -502,6 +556,7 @@ private extension V1SettingsPagePresenter {
     ) -> V1SettingsHistoryRowPresentation {
         V1SettingsHistoryRowPresentation(
             id: summary.jobID,
+            jobID: summary.jobID,
             timestamp:
                 summary.updatedAt,
             title:

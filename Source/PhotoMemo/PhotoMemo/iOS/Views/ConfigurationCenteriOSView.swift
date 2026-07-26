@@ -279,10 +279,10 @@ struct ConfigurationCenteriOSView: View {
                 $showsWorkflowGuide
         ) {
             V1WorkflowGuideSurface(
-                steps:
-                    V1WelcomePresentation
-                    .default
-                    .workflowSteps,
+                steps: V1WelcomePresentation.workflowSteps(
+                    for: .interfaceStored
+                ),
+                language: .interfaceStored,
                 onClose: nil
             )
         }

@@ -70,18 +70,12 @@ struct MemoMarkSymbolCatalogContractTests {
         #expect(source.contains("V1CompactInformationRowMetrics.iconCornerRadius"))
     }
 
-    @Test("approved headings and entries keep their semantic icons")
+    @Test("approved headings and entries keep their semantic icons outside text-only settings disclosures")
     func approvedHeadingsAndEntriesKeepTheirSemanticIcons() throws {
         let expectations = [
             ("iOS/Views/V1HomePageSurface.swift", "我的配置", "MemoMarkSymbol.configuration.name"),
             ("iOS/Views/V1HomePageSurface.swift", "记忆对象", "MemoMarkSymbol.memorySubject.name"),
             ("iOS/Views/V1HomeFeedbackSection.swift", "意见反馈", "MemoMarkSymbol.feedback.name"),
-            ("iOS/Views/V1SettingsPageSurface.swift", "为什么是时光记", "MemoMarkSymbol.memoryContent.name"),
-            ("iOS/Views/V1SettingsPageSurface.swift", "使用与帮助", "MemoMarkSymbol.help.name"),
-            ("iOS/Views/V1SettingsPageSurface.swift", "版本信息", "MemoMarkSymbol.information.name"),
-            ("iOS/Views/V1SettingsPageSurface.swift", "能力与边界", "MemoMarkSymbol.capability.name"),
-            ("iOS/Views/V1SettingsPageSurface.swift", "反馈渠道", "MemoMarkSymbol.feedback.name"),
-            ("iOS/Views/V1SettingsPageSurface.swift", "隐私与数据", "MemoMarkSymbol.privacy.name"),
             ("iOS/Views/V1WelcomePresentation.swift", "初次打开你会用到", "MemoMarkSymbol.welcome.name"),
             ("iOS/Views/V1WelcomePresentation.swift", "推荐流程", "MemoMarkSymbol.workflow.name"),
             ("iOS/Views/V1WelcomePresentation.swift", "使用流程", "MemoMarkSymbol.workflow.name")
@@ -94,6 +88,11 @@ struct MemoMarkSymbolCatalogContractTests {
             #expect(source.contains(title))
             #expect(source.contains(symbol))
         }
+
+        let settingsSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        #expect(!settingsSource.contains("V1CompactHeadingIcon"))
     }
 
     @Test("existing configuration rows use the same iconography vocabulary")
@@ -118,8 +117,8 @@ struct MemoMarkSymbolCatalogContractTests {
         }
     }
 
-    @Test("non-configuration surfaces use semantic symbols")
-    func nonConfigurationSurfacesUseSemanticSymbols() throws {
+    @Test("non-configuration surfaces preserve approved semantic symbols")
+    func nonConfigurationSurfacesPreserveApprovedSemanticSymbols() throws {
         let paths = [
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift",
@@ -133,7 +132,6 @@ struct MemoMarkSymbolCatalogContractTests {
         #expect(combined.contains("MemoMarkSymbol.output.name"))
         #expect(combined.contains("MemoMarkSymbol.applePhotos.name"))
         #expect(combined.contains("MemoMarkSymbol.localStorage.name"))
-        #expect(combined.contains("MemoMarkSymbol.processing.name"))
         #expect(combined.contains("MemoMarkSymbol.privacy.name"))
     }
 }

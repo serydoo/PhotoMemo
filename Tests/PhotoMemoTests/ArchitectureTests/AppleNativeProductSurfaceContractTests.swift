@@ -45,18 +45,22 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(processing.contains(".stroke(ConfigurationUI.faintHairline)"))
     }
 
-    @Test("processing completion keeps one calm success hierarchy")
-    func processingCompletionKeepsOneCalmSuccessHierarchy() throws {
+    @Test("processing surface separates result states from live progress")
+    func processingSurfaceSeparatesResultStatesFromLiveProgress() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
         )
 
         #expect(!source.contains("Circle()\n                    .fill(presentation.currentTask.tint.color)"))
-        #expect(source.contains("private func showsProgressPercentage"))
-        #expect(source.contains("progressFraction < 1"))
-        #expect(source.contains("private func progressBarTint"))
-        #expect(source.contains("return .secondary"))
-        #expect(source.contains("progressPercentText(progressFraction)"))
+        #expect(source.contains("case .waiting:"))
+        #expect(source.contains("case .processing:"))
+        #expect(source.contains("case .completed:"))
+        #expect(source.contains("case .needsAttention:"))
+        #expect(source.contains("title: \"正在处理\""))
+        #expect(source.contains("title: \"刚刚完成\""))
+        #expect(source.contains("title: \"需要查看\""))
+        #expect(source.contains("DisclosureGroup(\"处理详情\")"))
+        #expect(!source.contains("private func progressBarTint"))
     }
 
     @Test("output and region editors use typography before secondary icons")
@@ -106,8 +110,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(configuration.contains(".font(.caption)"))
         #expect(support.contains(".font(.headline.weight(.semibold))"))
         #expect(support.contains(".font(.caption)"))
-        #expect(processing.contains("title: \"当前任务\""))
-        #expect(processing.contains("title: \"最近任务\""))
+        #expect(processing.contains("title: \"最近完成\""))
         #expect(processing.contains("taskStatusPill("))
         #expect(processing.contains("isRecentTasksSheetPresented = true"))
         #expect(processing.contains("Image(systemName: \"ellipsis.circle\")"))

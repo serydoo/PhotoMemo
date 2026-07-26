@@ -88,7 +88,16 @@ final class PhotoMemoShareExtensionViewController:
     private let activityIndicator =
         UIActivityIndicatorView(style: .medium)
 
+    private let statusIndicatorContainer =
+        UIView()
+
+    private let statusSymbolView =
+        UIImageView()
+
     private let statusTitleLabel =
+        UILabel()
+
+    private let statusStageLabel =
         UILabel()
 
     private let statusMessageLabel =
@@ -189,7 +198,7 @@ private extension PhotoMemoShareExtensionViewController {
 
         let statusCard =
             makeTitledCardContainer(
-                headerView: makeStatusHeaderStack(),
+                headerView: statusTitleLabel,
                 contentView:
                     makeInnerCardContainer(
                         contentView: makeStatusStack()
@@ -382,16 +391,50 @@ private extension PhotoMemoShareExtensionViewController {
 
     func configureStatusLabels() {
 
+        statusIndicatorContainer.translatesAutoresizingMaskIntoConstraints =
+            false
+        statusIndicatorContainer.accessibilityElementsHidden =
+            true
+
         activityIndicator.translatesAutoresizingMaskIntoConstraints =
             false
         activityIndicator.hidesWhenStopped =
             true
+
+        statusSymbolView.translatesAutoresizingMaskIntoConstraints =
+            false
+        statusSymbolView.contentMode =
+            .scaleAspectFit
+        statusSymbolView.preferredSymbolConfiguration =
+            UIImage.SymbolConfiguration(
+                pointSize: 16,
+                weight: .semibold
+            )
+        statusSymbolView.tintColor =
+            .secondaryLabel
 
         statusTitleLabel.font =
             MemoMarkDesignTokens.Typography.moduleTitle.uiFont()
         statusTitleLabel.numberOfLines = 0
         statusTitleLabel.adjustsFontForContentSizeCategory = true
         statusTitleLabel.accessibilityTraits = .header
+        statusTitleLabel.text =
+            "处理状态"
+
+        statusStageLabel.font =
+            UIFontMetrics(forTextStyle: .subheadline)
+            .scaledFont(
+                for: UIFont.systemFont(
+                    ofSize:
+                        MemoMarkDesignTokens
+                        .Typography
+                        .detail
+                        .size,
+                    weight: .semibold
+                )
+            )
+        statusStageLabel.numberOfLines = 0
+        statusStageLabel.adjustsFontForContentSizeCategory = true
 
         statusMessageLabel.font =
             MemoMarkDesignTokens.Typography.detail.uiFont()
@@ -637,6 +680,10 @@ private extension PhotoMemoShareExtensionViewController {
             false
         stack.axis = .vertical
         stack.alignment = .fill
+        stack.spacing = 10
+        stack.addArrangedSubview(
+            makeStatusStageStack()
+        )
         stack.addArrangedSubview(
             statusMessageLabel
         )
@@ -644,7 +691,7 @@ private extension PhotoMemoShareExtensionViewController {
         return stack
     }
 
-    func makeStatusHeaderStack() -> UIStackView {
+    func makeStatusStageStack() -> UIStackView {
 
         let stack =
             UIStackView()
@@ -653,11 +700,46 @@ private extension PhotoMemoShareExtensionViewController {
         stack.axis = .horizontal
         stack.alignment = .center
         stack.spacing = 10
-        stack.addArrangedSubview(
+
+        statusIndicatorContainer.addSubview(
+            statusSymbolView
+        )
+        statusIndicatorContainer.addSubview(
             activityIndicator
         )
+
+        NSLayoutConstraint.activate([
+            statusIndicatorContainer.widthAnchor.constraint(
+                equalToConstant: 20
+            ),
+            statusIndicatorContainer.heightAnchor.constraint(
+                greaterThanOrEqualToConstant: 20
+            ),
+            statusSymbolView.centerXAnchor.constraint(
+                equalTo: statusIndicatorContainer.centerXAnchor
+            ),
+            statusSymbolView.centerYAnchor.constraint(
+                equalTo: statusIndicatorContainer.centerYAnchor
+            ),
+            statusSymbolView.widthAnchor.constraint(
+                equalToConstant: 18
+            ),
+            statusSymbolView.heightAnchor.constraint(
+                equalToConstant: 18
+            ),
+            activityIndicator.centerXAnchor.constraint(
+                equalTo: statusIndicatorContainer.centerXAnchor
+            ),
+            activityIndicator.centerYAnchor.constraint(
+                equalTo: statusIndicatorContainer.centerYAnchor
+            )
+        ])
+
         stack.addArrangedSubview(
-            statusTitleLabel
+            statusIndicatorContainer
+        )
+        stack.addArrangedSubview(
+            statusStageLabel
         )
 
         return stack
@@ -827,7 +909,10 @@ private extension PhotoMemoShareExtensionViewController {
 
         return makeCardContainer(
             contentView: stack,
-            padding: 14
+            padding:
+                MemoMarkDesignTokens
+                .Layout
+                .compactCardPadding
         )
     }
 
@@ -840,9 +925,11 @@ private extension PhotoMemoShareExtensionViewController {
         container.translatesAutoresizingMaskIntoConstraints =
             false
         container.backgroundColor =
-            .tertiarySystemGroupedBackground
+            .systemBackground
         container.layer.cornerRadius =
-            18
+            MemoMarkDesignTokens
+            .Layout
+            .compactInnerCardCornerRadius
         container.layer.cornerCurve =
             .continuous
         container.layer.borderColor =
@@ -856,19 +943,31 @@ private extension PhotoMemoShareExtensionViewController {
         NSLayoutConstraint.activate([
             contentView.topAnchor.constraint(
                 equalTo: container.topAnchor,
-                constant: 12
+                constant:
+                    MemoMarkDesignTokens
+                    .Layout
+                    .compactInnerCardPadding
             ),
             contentView.leadingAnchor.constraint(
                 equalTo: container.leadingAnchor,
-                constant: 12
+                constant:
+                    MemoMarkDesignTokens
+                    .Layout
+                    .compactInnerCardPadding
             ),
             contentView.trailingAnchor.constraint(
                 equalTo: container.trailingAnchor,
-                constant: -12
+                constant:
+                    -MemoMarkDesignTokens
+                    .Layout
+                    .compactInnerCardPadding
             ),
             contentView.bottomAnchor.constraint(
                 equalTo: container.bottomAnchor,
-                constant: -12
+                constant:
+                    -MemoMarkDesignTokens
+                    .Layout
+                    .compactInnerCardPadding
             )
         ])
 
@@ -877,7 +976,8 @@ private extension PhotoMemoShareExtensionViewController {
 
     func makeCardContainer(
         contentView: UIView,
-        padding: CGFloat = MemoMarkDesignTokens.Layout.cardPadding
+        padding: CGFloat =
+            MemoMarkDesignTokens.Layout.compactCardPadding
     ) -> UIView {
 
         let container =
@@ -887,7 +987,7 @@ private extension PhotoMemoShareExtensionViewController {
         container.backgroundColor =
             .secondarySystemBackground
         container.layer.cornerRadius =
-            MemoMarkDesignTokens.Layout.cardCornerRadius
+            MemoMarkDesignTokens.Layout.compactCardCornerRadius
         container.layer.cornerCurve = .continuous
         container.addSubview(
             contentView
@@ -1062,6 +1162,8 @@ private extension PhotoMemoShareExtensionViewController {
             titleLabel: titleLabel,
             subtitleLabel: subtitleLabel,
             statusTitleLabel: statusTitleLabel,
+            statusStageLabel: statusStageLabel,
+            statusSymbolView: statusSymbolView,
             statusMessageLabel: statusMessageLabel,
             footerLabel: footerLabel,
             primaryButton: primaryButton
@@ -1186,16 +1288,18 @@ private extension PhotoMemoShareExtensionViewController {
                 pendingHandoffPhotoCount =
                     result.importedCount
 
-                statusTitleLabel.text =
-                    "正在打开时光记"
-                statusMessageLabel.textColor =
-                    .secondaryLabel
-                statusMessageLabel.text =
-                    viewStateRenderer.successMessage(
-                        for: result
-                    )
-                footerLabel.text =
-                    "处理进度会在时光记主程序中显示。"
+                if result.hasWarnings {
+                    statusMessageLabel.attributedText =
+                        nil
+                    statusMessageLabel.textColor =
+                        .secondaryLabel
+                    statusMessageLabel.text =
+                        viewStateRenderer.successMessage(
+                            for: result
+                        )
+                    footerLabel.text =
+                        "其余情况会在时光记中继续说明。"
+                }
             }
         )
 
@@ -1205,7 +1309,7 @@ private extension PhotoMemoShareExtensionViewController {
                 importResult.importedCount
             applyViewState(
                 .received,
-                photoCount: importResult.importedCount
+                photoCount: sharedPhotoCount
             )
             scheduleSuccessfulDismissal()
         case .handoffFailed(let importResult):

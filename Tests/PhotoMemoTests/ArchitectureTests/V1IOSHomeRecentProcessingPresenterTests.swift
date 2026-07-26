@@ -6,6 +6,94 @@ import Testing
 @Suite("V1 iOS home recent processing presenter")
 struct V1IOSHomeRecentProcessingPresenterTests {
 
+    @Test("home activity projection shows the current processing position")
+    func homeActivityProjectionShowsCurrentProcessingPosition() {
+        let snapshot = makeSnapshot(
+            presentationState: .active,
+            jobState: .running,
+            completedCount: 5,
+            failedCount: 0,
+            totalCount: 10,
+            progressFraction: 0.56
+        )
+
+        let projection =
+            V1IOSHomeActivityPresenter
+            .projection(from: snapshot)
+
+        #expect(projection?.state == .processing)
+        #expect(projection?.countText == "任务 6 / 10 张")
+        #expect(projection?.statusText == "进行中")
+        #expect(projection?.progressFraction == 0.56)
+    }
+
+    @Test("home activity projection keeps the failed position")
+    func homeActivityProjectionKeepsFailedPosition() {
+        let snapshot = makeSnapshot(
+            presentationState: .needsAttention,
+            jobState: .failed,
+            completedCount: 3,
+            failedCount: 1,
+            totalCount: 10,
+            progressFraction: 0.4
+        )
+
+        let projection =
+            V1IOSHomeActivityPresenter
+            .projection(from: snapshot)
+
+        #expect(projection?.state == .failed)
+        #expect(projection?.countText == "任务 4 / 10 张")
+        #expect(projection?.statusText == "失败")
+        #expect(projection?.progressFraction == 0.4)
+    }
+
+    @Test("completed home activity expires after its short display window")
+    func completedHomeActivityExpiresAfterItsShortDisplayWindow() {
+        let completedAt = Date(timeIntervalSince1970: 100)
+        let snapshot = makeSnapshot(
+            presentationState: .completed,
+            jobState: .completed,
+            completedCount: 10,
+            failedCount: 0,
+            totalCount: 10,
+            progressFraction: 1,
+            updatedAt: completedAt
+        )
+
+        let projection =
+            V1IOSHomeActivityPresenter
+            .projection(from: snapshot)
+
+        #expect(
+            projection.map {
+                V1IOSHomeActivityPresenter
+                    .shouldShow(
+                        $0,
+                        now: Date(timeIntervalSince1970: 105)
+                    )
+            } == true
+        )
+        #expect(
+            projection.map {
+                V1IOSHomeActivityPresenter
+                    .shouldShow(
+                        $0,
+                        now: Date(timeIntervalSince1970: 107)
+                    )
+            } == false
+        )
+    }
+
+    @Test("home activity projection is absent without a task snapshot")
+    func homeActivityProjectionIsAbsentWithoutATaskSnapshot() {
+        #expect(
+            V1IOSHomeActivityPresenter
+                .projection(from: nil)
+            == nil
+        )
+    }
+
     @Test("presentation reflects latest snapshot state for home summary")
     func presentationReflectsLatestSnapshotStateForHomeSummary() {
         let snapshot =
@@ -105,6 +193,40 @@ struct V1IOSHomeRecentProcessingPresenterTests {
         #expect(
             presentation.recoveryMessage
             == "共享接单记录不可读取。"
+        )
+    }
+
+    private func makeSnapshot(
+        presentationState: PhotoMemoBackgroundPresentationState,
+        jobState: BatchJobState,
+        completedCount: Int,
+        failedCount: Int,
+        totalCount: Int,
+        progressFraction: Double,
+        updatedAt: Date = Date(timeIntervalSince1970: 1_720_000_000)
+    ) -> PhotoMemoBackgroundJobSnapshot {
+        PhotoMemoBackgroundJobSnapshot(
+            jobID: UUID(),
+            title: "最近处理",
+            launchSource: .shareExtension,
+            presentationState: presentationState,
+            jobState: jobState,
+            currentPhase: .exporting,
+            currentPhaseTitle: "生成图片",
+            currentFileName: "family.jpg",
+            statusMessage: "正在生成图片",
+            displayMode: .queueLines,
+            pipelineSteps: [],
+            activePipelineStepIndex: 2,
+            queueLines: [],
+            overflowQueueCount: 0,
+            completedCount: completedCount,
+            failedCount: failedCount,
+            totalCount: totalCount,
+            progressFraction: progressFraction,
+            canRetryFailures: false,
+            hasOnlyUnsupportedFailures: false,
+            updatedAt: updatedAt
         )
     }
 }

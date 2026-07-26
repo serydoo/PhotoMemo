@@ -37,7 +37,7 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(!controller.contains("默认风格"))
         #expect(!controller.contains("结果去向"))
         #expect(renderer.contains("已准备好"))
-        #expect(renderer.contains("已开始处理"))
+        #expect(renderer.contains("已加入后台处理"))
         #expect(renderer.contains("后台继续处理"))
         #expect(renderer.contains("\\(input.photoCount) 张照片准备开始记录"))
         #expect(renderer.contains("photo.stack.fill"))
@@ -75,6 +75,47 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("makeInnerCardContainer("))
         #expect(controller.contains("makeInsetDivider()"))
         #expect(controller.contains("stack.alignment = .fill"))
+    }
+
+    @Test("Share Extension normal handoff states keep one stable visual shell")
+    func shareExtensionNormalHandoffStatesKeepOneStableVisualShell() throws {
+        let controller = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+        )
+        let renderer = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
+        )
+        let tokens = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift"
+        )
+
+        #expect(renderer.contains("func normalTitle("))
+        #expect(renderer.contains("func normalSubtitle("))
+        #expect(renderer.components(separatedBy: "title: normalTitle(input)").count == 4)
+        #expect(renderer.components(separatedBy: "subtitle: normalSubtitle(input)").count == 4)
+        #expect(renderer.components(separatedBy: "statusTitle: localized(\"处理状态\"").count == 6)
+        #expect(renderer.components(separatedBy: "showsProcessingChecklist: true").count == 3)
+        #expect(renderer.contains("showsProcessingChecklist: isNormalConfirmation"))
+        #expect(renderer.contains("statusStageTitle = localized(\"等待开始\""))
+        #expect(renderer.contains("statusStageTitle: localized(\"正在接收照片\""))
+        #expect(renderer.contains("statusStageTitle: localized(\"已加入后台处理\""))
+        #expect(renderer.contains("buttonTitle: localized(\"已提交\""))
+        #expect(renderer.contains("buttonSystemImage: \"checkmark\""))
+        #expect(controller.contains("private let statusSymbolView"))
+        #expect(controller.contains("private let statusStageLabel"))
+        #expect(controller.contains("makeStatusStageStack()"))
+        #expect(tokens.contains("static let compactCardCornerRadius: CGFloat = 18"))
+        #expect(tokens.contains("static let compactCardPadding: CGFloat = 14"))
+        #expect(tokens.contains("static let compactInnerCardPadding: CGFloat = 12"))
+        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactCardCornerRadius"))
+        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactCardPadding"))
+        #expect(controller.contains(".compactInnerCardPadding"))
+        #expect(
+            controller.contains(
+                ".received,\n                photoCount: sharedPhotoCount"
+            )
+        )
+        #expect(controller.contains("nanoseconds: 700_000_000"))
     }
 
     @Test("Share Extension summary dividers use symmetric native hairlines")

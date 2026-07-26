@@ -620,7 +620,10 @@ struct PhotoMemoiOSV1View: View {
             isPresented: entryBinding(\.showsWorkflowGuide)
         ) {
             V1WorkflowGuideSurface(
-                steps: V1WelcomePresentation.default.workflowSteps,
+                steps: V1WelcomePresentation.workflowSteps(
+                    for: .interfaceStored
+                ),
+                language: .interfaceStored,
                 onClose: nil
             )
             .presentationDetents([.medium, .large])
@@ -1108,7 +1111,7 @@ struct PhotoMemoiOSV1View: View {
                 editorPage
                     .tabItem {
                         Label(
-                            "配置中心",
+                            "配置",
                             systemImage: MemoMarkSymbol.configurationCenter.name
                         )
                     }
@@ -1212,6 +1215,8 @@ struct PhotoMemoiOSV1View: View {
         V1HomePageSurface(
             subjectSummary: homeSubjectSummaryProjection,
             subject: session.state.selectedSubject,
+            activitySnapshot:
+                backgroundStatusService.currentSnapshot,
             completedPhotoCount:
                 backgroundStatusService
                 .taskOverview
@@ -1232,6 +1237,14 @@ struct PhotoMemoiOSV1View: View {
                 entryFlowState =
                     V1EntryFlowCoordinator
                     .openSubjectOverview(
+                        from:
+                            entryFlowState
+                    )
+            },
+            onOpenProcessing: {
+                entryFlowState =
+                    V1EntryFlowCoordinator
+                    .openTasksTab(
                         from:
                             entryFlowState
                     )
