@@ -8,7 +8,7 @@ Last updated: 2026-07-27
   restrained system material rather than consuming its layout height. The
   existing scroll-end reserve keeps the last card reachable while the editor
   gains usable vertical space above the tab bar. Card-header functions now
-  share one native 44 pt icon-button treatment: Home backup (`archivebox`),
+  share one native 44 pt icon-button treatment: Home backup management (`ellipsis`),
   subject edit (`pencil`), and recent-task expansion (`ellipsis`). Focused UI
   contracts passed; the signed build was overwrite-installed, launched, and
   screen-captured on the physical iPhone 17 Pro Max.
@@ -16,7 +16,7 @@ Last updated: 2026-07-27
   shipped application icon, so the 76 pt Home mark cannot fall back to an
   unrelated SF Symbol at runtime. Configuration cards have a restrained 8 pt
   separation, and local backup management moved from the misleading Home plus
-  footer to an `archivebox` action beside the configuration status.
+  footer to an `ellipsis` action beside the configuration status.
 - Local backup management now follows an iOS settings-style List: each backup
   presents its revision and saved time with one overflow menu for restore as
   copy, restore and make current, or delete. Disabled future import/export
@@ -36,8 +36,13 @@ Last updated: 2026-07-27
 - The Home header now displays the application's actual App Icon rather than a
   separately drawn approximation. Focused persistence and Home/UI contract
   tests, macOS test execution, and unsigned `PhotoMemoiOS` Debug builds pass.
-  The paired iPhone 17 Pro Max was offline during this pass, so device visual
-  acceptance and installation remain pending reconnection.
+  The initial device pass was deferred while the paired iPhone 17 Pro Max was
+  offline; the later signed build was installed and visually accepted after
+  reconnection.
+- Home's configuration header now uses the same clean overflow-only treatment
+  as Processing's recent-completions card. Two compact footer lines distinguish
+  local-backup management from each configuration row's save, delete, rename,
+  and activation controls; no configuration or backup behavior changed.
 
 ## 2026-07-26 Home Activity Card Pass
 

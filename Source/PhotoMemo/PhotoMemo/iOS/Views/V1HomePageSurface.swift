@@ -190,17 +190,11 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             title: "我的配置",
             subtitle: "选择当前生效的记录方式",
             trailingAccessory: {
-                HStack(spacing: 8) {
-                    Text("勾选生效")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    V1CardHeaderIconButton(
-                        systemImage: "archivebox",
-                        accessibilityLabel: "管理本地备份",
-                        action: onOpenLocalConfigurationLibrary
-                    )
-                }
+                V1CardHeaderIconButton(
+                    systemImage: "ellipsis",
+                    accessibilityLabel: "管理本地备份",
+                    action: onOpenLocalConfigurationLibrary
+                )
             }
         ) {
             VStack(alignment: .leading, spacing: 10) {
@@ -282,6 +276,15 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                     .padding(.top, 2)
                 }
 
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("右上角可管理本地备份。")
+                    Text("配置内可保存、删除或重命名；勾选切换当前配置。")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 4)
+                .padding(.top, 2)
             }
         }
     }

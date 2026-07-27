@@ -71,16 +71,27 @@ struct V1HomeConfigurationActionContractTests {
         #expect(!subjectSheetSource.contains("List {"))
     }
 
-    @Test("configuration header exposes a dedicated local backup manager")
-    func headerOpensLocalBackupManager() throws {
+    @Test("configuration header uses a clean overflow action with guidance below the rows")
+    func headerUsesOverflowActionWithGuidanceBelowTheRows() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
         )
 
         #expect(source.contains("V1CardHeaderIconButton("))
-        #expect(source.contains("systemImage: \"archivebox\""))
+        #expect(source.contains("systemImage: \"ellipsis\""))
         #expect(source.contains("accessibilityLabel: \"管理本地备份\""))
         #expect(source.contains("onOpenLocalConfigurationLibrary"))
+        #expect(
+            source.contains(
+                "右上角可管理本地备份。"
+            )
+        )
+        #expect(
+            source.contains(
+                "配置内可保存、删除或重命名；勾选切换当前配置。"
+            )
+        )
+        #expect(!source.contains("Text(\"勾选生效\")"))
         #expect(!source.contains("Image(systemName: \"plus\")"))
     }
 
