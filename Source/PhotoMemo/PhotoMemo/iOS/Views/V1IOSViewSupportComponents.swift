@@ -465,8 +465,11 @@ struct V1PreviewCard: View {
                 )
                     .stroke(ConfigurationUI.faintHairline)
             )
-            .padding(12)
-            .v1CardChrome()
+            .shadow(
+                color: ConfigurationUI.cardShadow,
+                radius: 8,
+                y: 3
+            )
     }
 
     private var compactSpec: CompactInformationBarSpec {

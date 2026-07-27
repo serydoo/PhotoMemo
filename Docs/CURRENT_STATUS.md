@@ -43,6 +43,14 @@ Last updated: 2026-07-27
   as Processing's recent-completions card. Two compact footer lines distinguish
   local-backup management from each configuration row's save, delete, rename,
   and activation controls; no configuration or backup behavior changed.
+- Configuration Center restores its page-level guidance beneath the title and
+  removes the preview's redundant outer card. The renderer-ratio preview now
+  occupies the same content-column width as the editor cards while retaining
+  its own corner radius, hairline, and shadow. Responsive layout contracts and
+  generic and signed iOS Debug builds pass. The signed app was overwrite-
+  installed on the physical iPhone 17 Pro Max; device evidence confirms the
+  restored guidance, single-layer preview, aligned widths, and available editor
+  height above the floating save action.
 
 ## 2026-07-26 Home Activity Card Pass
 

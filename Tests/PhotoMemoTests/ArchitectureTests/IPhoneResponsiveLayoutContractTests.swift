@@ -114,6 +114,42 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(optionListSource.contains("adaptiveSectionHeader"))
     }
 
+    @Test("configuration preview is full width and restores the page guidance")
+    func configurationPreviewIsFullWidthAndRestoresPageGuidance() throws {
+        let rootSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+        let supportSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+
+        #expect(
+            rootSource.contains(
+                "pageSubtitle: \"调整记忆表达，并实时确认最终卡片。\""
+            )
+        )
+
+        let previewStart = try #require(
+            supportSource.range(of: "struct V1PreviewCard")?.lowerBound
+        )
+        let previewEnd = try #require(
+            supportSource.range(
+                of: "private var compactSpec",
+                range: previewStart..<supportSource.endIndex
+            )?.lowerBound
+        )
+        let previewBody = String(
+            supportSource[previewStart..<previewEnd]
+        )
+
+        #expect(previewBody.contains(".aspectRatio(compactPreviewAspectRatio"))
+        #expect(previewBody.contains("cornerRadius: ConfigurationUI.cornerRadius"))
+        #expect(previewBody.contains(".stroke(ConfigurationUI.faintHairline)"))
+        #expect(previewBody.contains("color: ConfigurationUI.cardShadow"))
+        #expect(!previewBody.contains(".padding(12)"))
+        #expect(!previewBody.contains(".v1CardChrome()"))
+    }
+
     @Test("subject identity overview does not force intrinsic horizontal width")
     func subjectIdentityOverviewAvoidsForcedIntrinsicWidth() throws {
         let source = try sourceText(

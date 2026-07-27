@@ -1271,7 +1271,7 @@ struct PhotoMemoiOSV1View: View {
             previewPinProgress: previewPinProgress,
             editorRevealProgress: editorRevealProgress,
             pageTitle: "配置中心",
-            pageSubtitle: "",
+            pageSubtitle: "调整记忆表达，并实时确认最终卡片。",
             onDismissKeyboard: dismissKeyboard
         ) {
             previewSection
