@@ -179,6 +179,18 @@ struct PhotoMemoiOSV1View: View {
     private var showsConfigurationRequiredAlert = false
 
     @State
+    private var pendingMemoryPresetActivation: MemoryPreset?
+
+    @State
+    private var showsUnsavedPresetSwitchAlert = false
+
+    @State
+    private var pendingSubjectSelectionID: UUID?
+
+    @State
+    private var showsUnsavedSubjectSwitchAlert = false
+
+    @State
     private var showsLocalConfigurationLibrary = false
 
     @State
@@ -463,9 +475,7 @@ struct PhotoMemoiOSV1View: View {
                     selectedSubjectID:
                         selectedSubjectID,
                     memoryPresets:
-                        memoryPresets.isEmpty
-                        ? nil
-                        : memoryPresets,
+                        memoryPresets,
                     selectedMemoryPresetID:
                         selectedMemoryPresetID
                 )
@@ -485,6 +495,9 @@ struct PhotoMemoiOSV1View: View {
                 session.restoreSelectedSubject(
                     subject
                 )
+            },
+            clearSession: {
+                session.clearBootstrapContent()
             },
             applyWelcomeState: applyWelcomeFlowState,
             refreshDynamicPreview:
@@ -571,6 +584,19 @@ struct PhotoMemoiOSV1View: View {
         } message: {
             Text(localConfigurationLibraryStatus ?? "操作未完成，请稍后重试。")
         }
+        .alert(
+            "有未保存的修改",
+            isPresented: $showsUnsavedPresetSwitchAlert
+        ) {
+            Button("保存并切换") {
+                saveCurrentConfigurationThenActivatePendingPreset()
+            }
+            Button("取消", role: .cancel) {
+                pendingMemoryPresetActivation = nil
+            }
+        } message: {
+            Text("请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。")
+        }
         .task {
             await loadAlbumOptions()
         }
@@ -581,7 +607,7 @@ struct PhotoMemoiOSV1View: View {
                 subjectName:
                     session.state.selectedSubject?
                     .identity.displayName
-                    ?? "当前记忆对象",
+                    ?? "全部记忆对象",
                 backups: localConfigurationBackups,
                 isWorking:
                     isWorkingWithLocalConfigurationLibrary,
@@ -750,20 +776,7 @@ struct PhotoMemoiOSV1View: View {
                     session.state.selectedSubjectID,
                 onSelectSubject: {
                     subjectID in
-                    guard let patch =
-                        V1SubjectOverviewActionCoordinator
-                        .selectSubject(
-                            subjectID,
-                            in: session,
-                            shouldSaveSubjectLibrary:
-                                shouldSaveSubjectLibrary,
-                            configurationCoordinator:
-                                configurationCoordinator
-                        ) else {
-                        return
-                    }
-
-                    applySubjectFlowPatch(patch)
+                    requestSubjectSelection(subjectID)
                 },
                 onAddSubject: {
                     let patch =
@@ -817,6 +830,19 @@ struct PhotoMemoiOSV1View: View {
                 },
                 onPersistSubjectChanges: persistCurrentSubjectChanges
             )
+            .alert(
+                "有未保存的修改",
+                isPresented: $showsUnsavedSubjectSwitchAlert
+            ) {
+                Button("保存并切换") {
+                    saveCurrentConfigurationThenSelectPendingSubject()
+                }
+                Button("取消", role: .cancel) {
+                    pendingSubjectSelectionID = nil
+                }
+            } message: {
+                Text("请先保存当前配置，再切换记忆对象，避免丢失刚刚的修改。")
+            }
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
@@ -1651,7 +1677,91 @@ struct PhotoMemoiOSV1View: View {
     private func activateHomePreset(
         _ preset: MemoryPreset
     ) {
-        performConfigurationLibraryAction(.activate(preset))
+        performConfigurationLibraryAction(
+            .requestActivation(
+                ConfigurationLibraryActivationRequest(
+                    preset: preset,
+                    selectedConfigurationID:
+                        session.state.selectedMemoryPresetID,
+                    isCurrentConfigurationDirty:
+                        activeConfigurationStatus
+                        .hasUncommittedChanges
+                )
+            )
+        )
+    }
+
+    private func saveCurrentConfigurationThenActivatePendingPreset() {
+        guard let preset = pendingMemoryPresetActivation else {
+            return
+        }
+
+        Task { @MainActor in
+            guard await applyCurrentV1Configuration(),
+                  activeConfigurationStatus == .saved else {
+                pendingMemoryPresetActivation = nil
+                return
+            }
+
+            pendingMemoryPresetActivation = nil
+            performConfigurationLibraryAction(.activate(preset))
+        }
+    }
+
+    private func requestSubjectSelection(
+        _ subjectID: MemorySubject.ID
+    ) {
+        if V1SubjectSelectionMutationCoordinator
+            .requiresSavingCurrentConfiguration(
+                destinationSubjectID: subjectID,
+                currentSubjectID:
+                    session.state.selectedSubjectID,
+                isCurrentConfigurationDirty:
+                    activeConfigurationStatus
+                    .hasUncommittedChanges
+            ) {
+            pendingSubjectSelectionID = subjectID
+            showsUnsavedSubjectSwitchAlert = true
+            return
+        }
+
+        performSubjectSelection(subjectID)
+    }
+
+    private func saveCurrentConfigurationThenSelectPendingSubject() {
+        guard let subjectID = pendingSubjectSelectionID else {
+            return
+        }
+
+        Task { @MainActor in
+            guard await applyCurrentV1Configuration(),
+                  activeConfigurationStatus == .saved else {
+                pendingSubjectSelectionID = nil
+                return
+            }
+
+            pendingSubjectSelectionID = nil
+            performSubjectSelection(subjectID)
+        }
+    }
+
+    private func performSubjectSelection(
+        _ subjectID: MemorySubject.ID
+    ) {
+        guard let patch =
+            V1SubjectOverviewActionCoordinator
+            .selectSubject(
+                subjectID,
+                in: session,
+                shouldSaveSubjectLibrary:
+                    shouldSaveSubjectLibrary,
+                configurationCoordinator:
+                    configurationCoordinator
+            ) else {
+            return
+        }
+
+        applySubjectFlowPatch(patch)
     }
 
     private func deleteHomePreset(
@@ -1781,6 +1891,9 @@ struct PhotoMemoiOSV1View: View {
             isEditingMemoryPresetTitle = false
             memoryPresetTitleFieldFocused = false
             startCurrentConfigurationSaveWithFeedback()
+        case .confirmSaveBeforeActivation(let preset):
+            pendingMemoryPresetActivation = preset
+            showsUnsavedPresetSwitchAlert = true
         case .activate(let preset):
             logoMode = preset.logoMode
             session.selectMemoryPreset(preset)
@@ -1801,11 +1914,6 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func openLocalConfigurationLibrary() {
-        guard session.state.selectedSubject != nil else {
-            localConfigurationLibraryStatus =
-                "请先选择一个记忆对象。"
-            return
-        }
         showsLocalConfigurationLibrary = true
         refreshLocalConfigurationLibrary()
     }
@@ -1966,21 +2074,17 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func refreshLocalConfigurationLibrary() {
-        guard let subjectID = session.state.selectedSubject?.id else {
-            localConfigurationLibraryStatus =
-                "请先选择一个记忆对象。"
-            return
-        }
         Task {
             await loadLocalConfigurationBackups(
-                subjectID: subjectID
+                subjectID:
+                    session.state.selectedSubject?.id
             )
         }
     }
 
     @MainActor
     private func loadLocalConfigurationBackups(
-        subjectID: UUID
+        subjectID: UUID?
     ) async {
         guard !isWorkingWithLocalConfigurationLibrary else {
             return
@@ -2037,10 +2141,7 @@ struct PhotoMemoiOSV1View: View {
         assetRootURL: URL,
         makeCurrent: Bool
     ) async {
-        guard !isWorkingWithLocalConfigurationLibrary,
-              let aggregate = session.state.configurationLibrary else {
-            localConfigurationLibraryStatus =
-                "当前配置库不可用，无法恢复。"
+        guard !isWorkingWithLocalConfigurationLibrary else {
             return
         }
 
@@ -2055,7 +2156,8 @@ struct PhotoMemoiOSV1View: View {
                     fileURL: url,
                     assetRootURL: assetRootURL,
                     makeCurrent: makeCurrent,
-                    aggregate: aggregate,
+                    aggregate:
+                        session.state.configurationLibrary,
                     availableAlbumIdentifiers: Set(
                         availableAlbums.compactMap(\.localIdentifier)
                     ),
@@ -3665,18 +3767,7 @@ struct PhotoMemoiOSV1View: View {
         case .configurationSaveFailed:
             return
         case .noSupportedPhotos:
-            activeConfigurationStatus =
-                .failure(
-                    message:
-                        V1PhotoIntakeUnsupportedMessagePresenter
-                        .message(
-                            for:
-                                items
-                                .flatMap(
-                                    \.supportedContentTypes
-                                )
-                        )
-                )
+            break
         case .submitted:
             refreshExternalIntake()
             refreshProcessingState()
@@ -3718,23 +3809,7 @@ struct PhotoMemoiOSV1View: View {
         case .configurationSaveFailed:
             return
         case .noSupportedPhotos:
-            activeConfigurationStatus =
-                .failure(
-                    message:
-                        V1PhotoIntakeUnsupportedMessagePresenter
-                        .message(
-                            for:
-                                results
-                                .flatMap {
-                                    $0
-                                        .itemProvider
-                                        .registeredTypeIdentifiers
-                                        .compactMap(
-                                            UTType.init
-                                        )
-                                }
-                        )
-                )
+            break
         case .submitted:
             refreshExternalIntake()
             refreshProcessingState()
@@ -3776,8 +3851,6 @@ struct PhotoMemoiOSV1View: View {
                 activateHomePreset(
                     update.preset
                 )
-                activeConfigurationStatus =
-                    update.activeConfigurationStatus
             }
         )
     }

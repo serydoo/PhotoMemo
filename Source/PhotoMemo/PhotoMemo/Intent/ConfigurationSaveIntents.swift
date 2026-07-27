@@ -99,6 +99,9 @@ struct V1ConfigurationBootstrapState:
     let configurationLibrary:
         ConfigurationLibraryRecord?
 
+    let configurationLibraryRecoveryFailed:
+        Bool
+
     let draftProjection:
         V1ConfigurationDraftProjection?
 
@@ -133,6 +136,8 @@ struct V1ConfigurationBootstrapState:
     init(
         configurationLibrary:
             ConfigurationLibraryRecord? = nil,
+        configurationLibraryRecoveryFailed:
+            Bool = false,
         draftProjection:
             V1ConfigurationDraftProjection? = nil,
         subjects: [MemorySubject]? = nil,
@@ -154,6 +159,8 @@ struct V1ConfigurationBootstrapState:
     ) {
         self.configurationLibrary =
             configurationLibrary
+        self.configurationLibraryRecoveryFailed =
+            configurationLibraryRecoveryFailed
         self.draftProjection = draftProjection
         self.subjects = subjects
         self.selectedSubjectID =

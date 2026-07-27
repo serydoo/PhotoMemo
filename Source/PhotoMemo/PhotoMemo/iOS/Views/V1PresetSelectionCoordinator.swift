@@ -4,9 +4,6 @@ import Foundation
 struct V1PresetSelectionUpdate {
 
     let preset: MemoryPreset
-
-    let activeConfigurationStatus:
-        V1ConfigurationStatus
 }
 
 enum V1PresetSelectionCoordinator {
@@ -41,9 +38,7 @@ enum V1PresetSelectionCoordinator {
         }
 
         return V1PresetSelectionUpdate(
-            preset: preset,
-            activeConfigurationStatus:
-                .saving
+            preset: preset
         )
     }
 }

@@ -6,6 +6,42 @@ import Testing
 @Suite("V1 bootstrap flow coordinator")
 struct V1BootstrapFlowCoordinatorTests {
 
+    @Test("corrupt canonical recovery never projects transient preview drafts")
+    func corruptCanonicalRecoveryClearsTransientPreviewDrafts() {
+        var didLoadDrafts = false
+        let coordinator = V1BootstrapFlowCoordinator(
+            loadConfigurationState: {
+                V1ConfigurationBootstrapState(
+                    configurationLibraryRecoveryFailed: true,
+                    subjects: [],
+                    memoryPresets: [],
+                    customLogoBadge: nil,
+                    logoMode: .appleMini,
+                    outputTarget: .automatic,
+                    selectedExistingAlbumIdentifier: "",
+                    suggestedNewAlbumName: nil
+                )
+            },
+            loadDrafts: { _, _ in
+                didLoadDrafts = true
+                return [
+                    .slotA: V1EditorDraft(items: [.text("Mock")])
+                ]
+            }
+        )
+
+        let patch = coordinator.bootstrap(
+            hasSeenWelcome: true,
+            fallbackBirthdayDate: Date(timeIntervalSince1970: 0),
+            makeDefaultDraft: { _ in
+                V1EditorDraft(items: [.text("Default")])
+            }
+        )
+
+        #expect(!didLoadDrafts)
+        #expect(patch.regionDrafts.isEmpty)
+    }
+
     @Test("aggregate runtime applies the active configuration draft after restoring the library")
     @MainActor
     func aggregateRuntimeAppliesActiveConfigurationDraftAfterRestore() throws {
@@ -350,8 +386,8 @@ struct V1BootstrapFlowCoordinatorTests {
         }
     }
 
-    @Test("bootstrap preserves decode-failure guard and falls back to single selected subject restore")
-    func bootstrapPreservesDecodeFailureGuardAndFallsBackToSingleSelectedSubjectRestore() {
+    @Test("corrupted subject library restores readable fallback without mock presets")
+    func corruptedSubjectLibraryRestoresReadableFallbackWithoutMockPresets() {
         let fallbackSubject =
             Self.makeSubject(
                 displayName: "备用对象",
@@ -434,12 +470,85 @@ struct V1BootstrapFlowCoordinatorTests {
         #expect(capturedContext?.subject == fallbackSubject)
 
         switch patch.sessionRestorePlan {
-        case .restoreSelectedSubject(let subject):
-            #expect(subject == fallbackSubject)
+        case .restoreLibrary(
+            let subjects,
+            let selectedSubjectID,
+            let memoryPresets,
+            let selectedMemoryPresetID
+        ):
+            #expect(subjects == [fallbackSubject])
+            #expect(selectedSubjectID == fallbackSubject.id)
+            #expect(memoryPresets.isEmpty)
+            #expect(selectedMemoryPresetID == nil)
         default:
             Issue.record(
-                "Expected bootstrap patch to restore the fallback selected subject."
+                "Expected bootstrap patch to clear mock presets while restoring the fallback subject."
             )
+        }
+    }
+
+    @Test("canonical recovery failure clears transient mock content")
+    func canonicalRecoveryFailureClearsTransientMockContent() {
+        let coordinator = V1BootstrapFlowCoordinator(
+            loadConfigurationState: {
+                V1ConfigurationBootstrapState(
+                    configurationLibraryRecoveryFailed: true,
+                    customLogoBadge: nil,
+                    logoMode: .appleMini,
+                    outputTarget: .automatic,
+                    selectedExistingAlbumIdentifier: "",
+                    suggestedNewAlbumName: nil
+                )
+            },
+            loadDrafts: { _, _ in [:] }
+        )
+
+        let patch = coordinator.bootstrap(
+            hasSeenWelcome: true,
+            fallbackBirthdayDate: Date(timeIntervalSince1970: 0),
+            makeDefaultDraft: { _ in
+                V1EditorDraft(items: [.text("默认")])
+            }
+        )
+
+        guard case .clearSession = patch.sessionRestorePlan else {
+            Issue.record("Expected recovery failure to clear transient mock content")
+            return
+        }
+    }
+
+    @Test("subject library failure without fallback clears transient mock content")
+    func subjectLibraryFailureWithoutFallbackClearsTransientMockContent() {
+        let readFailure = PhotoMemoSharedDefaultsReadFailure(
+            storageKey: "photomemo.v1.subjectLibrary",
+            payloadByteCount: 128,
+            underlyingDescription: "Corrupted payload"
+        )
+        let coordinator = V1BootstrapFlowCoordinator(
+            loadConfigurationState: {
+                V1ConfigurationBootstrapState(
+                    subjectLibraryReadFailure: readFailure,
+                    customLogoBadge: nil,
+                    logoMode: .appleMini,
+                    outputTarget: .automatic,
+                    selectedExistingAlbumIdentifier: "",
+                    suggestedNewAlbumName: nil
+                )
+            },
+            loadDrafts: { _, _ in [:] }
+        )
+
+        let patch = coordinator.bootstrap(
+            hasSeenWelcome: true,
+            fallbackBirthdayDate: Date(timeIntervalSince1970: 0),
+            makeDefaultDraft: { _ in
+                V1EditorDraft(items: [.text("默认")])
+            }
+        )
+
+        guard case .clearSession = patch.sessionRestorePlan else {
+            Issue.record("Expected subject recovery failure to clear mock content")
+            return
         }
     }
 

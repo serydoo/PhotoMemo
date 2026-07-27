@@ -919,6 +919,8 @@ struct BatchJob:
     var intakeSummary:
         ExternalPhotoImportSummary?
 
+    var intakeRequestID: UUID?
+
     var policy: BatchPipelinePolicy
 
     var startNotificationSentAt: Date?
@@ -938,6 +940,7 @@ struct BatchJob:
         tasks: [BatchTask],
         intakeSummary:
             ExternalPhotoImportSummary? = nil,
+        intakeRequestID: UUID? = nil,
         policy: BatchPipelinePolicy = .init(),
         startNotificationSentAt: Date? = nil,
         lastProgressNotificationStage: String? = nil,
@@ -953,6 +956,8 @@ struct BatchJob:
         self.tasks = tasks
         self.intakeSummary =
             intakeSummary
+        self.intakeRequestID =
+            intakeRequestID
         self.policy = policy
         self.startNotificationSentAt =
             startNotificationSentAt

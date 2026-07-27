@@ -9,6 +9,7 @@ enum ConfigurationAssetPackagingError:
     case missingSource(PortableAssetManifest.Role)
     case readFailed(String)
     case writeFailed(String)
+    case destinationConflict(String)
     case checksumMismatch(
         path: String,
         expected: String,
@@ -25,6 +26,7 @@ struct PackagedConfigurationAssets {
     let subject: MemorySubject
     let configuration: MemoryConfigurationRecord
     let manifest: PortableAssetManifest
+    let newlyCreatedAssetURLs: [URL]
 }
 
 struct RestoredConfigurationAssets {
@@ -33,15 +35,18 @@ struct RestoredConfigurationAssets {
     let configuration: MemoryConfigurationRecord
     private let assetURLs:
         [PortableAssetManifest.Role: URL]
+    let newlyCreatedAssetURLs: [URL]
 
     init(
         subject: MemorySubject,
         configuration: MemoryConfigurationRecord,
-        assetURLs: [PortableAssetManifest.Role: URL]
+        assetURLs: [PortableAssetManifest.Role: URL],
+        newlyCreatedAssetURLs: [URL] = []
     ) {
         self.subject = subject
         self.configuration = configuration
         self.assetURLs = assetURLs
+        self.newlyCreatedAssetURLs = newlyCreatedAssetURLs
     }
 
     func assetURL(
@@ -235,47 +240,56 @@ struct ConfigurationAssetPackager {
         var packagedSubject = subject
         var packagedConfiguration = configuration
         var entries: [PortableAssetManifest.Entry] = []
+        var newlyCreatedAssetURLs: [URL] = []
 
-        for role in Self.roles {
-            guard let sourceURL = sourceURLs[role] else {
-                continue
-            }
-            let data = try readData(at: sourceURL)
-            let reference = try PortableAssetReference(
-                relativePath: relativePath(
-                    for: role,
-                    sourceURL: sourceURL,
-                    data: data
+        do {
+            for role in Self.roles {
+                guard let sourceURL = sourceURLs[role] else {
+                    continue
+                }
+                let data = try readData(at: sourceURL)
+                let reference = try PortableAssetReference(
+                    relativePath: relativePath(
+                        for: role,
+                        sourceURL: sourceURL,
+                        data: data
+                    )
                 )
-            )
-            let destinationURL = destinationRootURL
-                .appendingPathComponent(reference.relativePath)
-            try write(data, to: destinationURL)
-            remap(
-                role: role,
-                reference: reference,
-                subject: &packagedSubject,
-                configuration: &packagedConfiguration
-            )
-            entries.append(
-                PortableAssetManifest.Entry(
-                    id: manifestID(
-                        role: role,
-                        subjectID: subject.id,
-                        configurationID: configuration.id
-                    ),
+                let destinationURL = destinationRootURL
+                    .appendingPathComponent(reference.relativePath)
+                if try writeIfNeeded(data, to: destinationURL) {
+                    newlyCreatedAssetURLs.append(destinationURL)
+                }
+                remap(
                     role: role,
                     reference: reference,
-                    originalFileName: sourceURL.lastPathComponent,
-                    checksum: checksum(for: data)
+                    subject: &packagedSubject,
+                    configuration: &packagedConfiguration
                 )
-            )
+                entries.append(
+                    PortableAssetManifest.Entry(
+                        id: manifestID(
+                            role: role,
+                            subjectID: subject.id,
+                            configurationID: configuration.id
+                        ),
+                        role: role,
+                        reference: reference,
+                        originalFileName: sourceURL.lastPathComponent,
+                        checksum: checksum(for: data)
+                    )
+                )
+            }
+        } catch {
+            removeCreatedAssets(newlyCreatedAssetURLs)
+            throw error
         }
 
         return PackagedConfigurationAssets(
             subject: packagedSubject,
             configuration: packagedConfiguration,
-            manifest: PortableAssetManifest(entries: entries)
+            manifest: PortableAssetManifest(entries: entries),
+            newlyCreatedAssetURLs: newlyCreatedAssetURLs
         )
     }
 
@@ -286,8 +300,12 @@ struct ConfigurationAssetPackager {
     ) throws -> RestoredConfigurationAssets {
         var subject = document.subject
         let configuration = document.configuration
-        var restoredURLs:
-            [PortableAssetManifest.Role: URL] = [:]
+        var restoredURLs: [PortableAssetManifest.Role: URL] = [:]
+        var preparedAssets: [(
+            entry: PortableAssetManifest.Entry,
+            destinationURL: URL,
+            data: Data
+        )] = []
 
         for entry in document.assetManifest.entries {
             let sourceURL = try containedURL(
@@ -314,20 +332,62 @@ struct ConfigurationAssetPackager {
                         )
                 }
             }
-            try write(data, to: destinationURL)
-            restoredURLs[entry.role] = destinationURL
-            remapRestoredSubject(
-                role: entry.role,
-                absolutePath: destinationURL.path,
-                subject: &subject
+            preparedAssets.append(
+                (entry, destinationURL, data)
             )
+        }
+
+        var newlyCreatedAssetURLs: [URL] = []
+        do {
+            for prepared in preparedAssets {
+                if try writeIfNeeded(
+                    prepared.data,
+                    to: prepared.destinationURL
+                ) {
+                    newlyCreatedAssetURLs.append(
+                        prepared.destinationURL
+                    )
+                }
+                restoredURLs[prepared.entry.role] =
+                    prepared.destinationURL
+                remapRestoredSubject(
+                    role: prepared.entry.role,
+                    absolutePath: prepared.destinationURL.path,
+                    subject: &subject
+                )
+            }
+        } catch {
+            removeCreatedAssets(newlyCreatedAssetURLs)
+            throw error
         }
 
         return RestoredConfigurationAssets(
             subject: subject,
             configuration: configuration,
-            assetURLs: restoredURLs
+            assetURLs: restoredURLs,
+            newlyCreatedAssetURLs: newlyCreatedAssetURLs
         )
+    }
+
+    func removeCreatedAssets(_ urls: [URL]) {
+        for url in urls {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
+    func removeUnreferencedAssets(
+        relativePaths: Set<String>,
+        destinationRootURL: URL
+    ) {
+        for relativePath in relativePaths {
+            guard let url = try? containedURL(
+                destinationRootURL.appendingPathComponent(relativePath),
+                within: destinationRootURL
+            ) else {
+                continue
+            }
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 }
 
@@ -441,6 +501,22 @@ private extension ConfigurationAssetPackager {
                 String(describing: error)
             )
         }
+    }
+
+    func writeIfNeeded(
+        _ data: Data,
+        to url: URL
+    ) throws -> Bool {
+        if FileManager.default.fileExists(atPath: url.path) {
+            let existing = try readData(at: url)
+            if existing == data {
+                return false
+            }
+            throw ConfigurationAssetPackagingError
+                .destinationConflict(url.path)
+        }
+        try write(data, to: url)
+        return true
     }
 
     func checksum(

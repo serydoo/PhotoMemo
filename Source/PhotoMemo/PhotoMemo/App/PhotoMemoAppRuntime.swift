@@ -290,6 +290,10 @@ final class PhotoMemoAppRuntime:
         )
         flushExternalRequests()
 
+        guard externalIntakeCenter.intakePersistenceError == nil else {
+            return
+        }
+
         externalIntakeStore
             .cleanupOrphanedManagedContent(
                 keepingReferencedURLs:

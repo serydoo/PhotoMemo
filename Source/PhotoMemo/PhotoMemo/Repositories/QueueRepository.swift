@@ -54,6 +54,7 @@ final class QueueRepository {
         launchSource: BatchJobLaunchSource,
         intakeSummary:
             ExternalPhotoImportSummary? = nil,
+        intakeRequestID: UUID? = nil,
         title: String? = nil
     ) -> BatchJob? {
 
@@ -63,6 +64,8 @@ final class QueueRepository {
             launchSource: launchSource,
             intakeSummary:
                 intakeSummary,
+            intakeRequestID:
+                intakeRequestID,
             title: title
         )
     }

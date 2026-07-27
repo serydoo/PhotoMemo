@@ -123,10 +123,14 @@ final class ConfigurationSession: ObservableObject {
         editingState.restoreSelectedSubject(subject)
     }
 
+    func clearBootstrapContent() {
+        editingState.clearBootstrapContent()
+    }
+
     func restoreSubjectLibrary(
         _ subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
-        memoryPresets: [MemoryPreset]? = nil,
+        memoryPresets: [MemoryPreset],
         selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
         editingState.restoreSubjectLibrary(

@@ -118,6 +118,9 @@ actor LocalConfigurationLibraryRepository {
     private let applicationSupportURL: URL
     private let atomicWriter:
         any LocalConfigurationLibraryAtomicWriting
+    private var persistenceGateIsLocked = false
+    private var persistenceGateWaiters:
+        [CheckedContinuation<Void, Never>] = []
 
     init(
         applicationSupportURL: URL? = nil,
@@ -159,6 +162,9 @@ actor LocalConfigurationLibraryRepository {
         _ data: Data,
         receipt: LocalConfigurationBackupReceipt
     ) async throws -> LocalConfigurationBackupReceipt {
+        await acquirePersistenceGate()
+        defer { releasePersistenceGate() }
+
         if let existingReceipt = try await existingReceipt(
             matching: receipt
         ), receipt.revision < existingReceipt.revision {
@@ -206,10 +212,15 @@ actor LocalConfigurationLibraryRepository {
             subjectID: receipt.subjectID,
             configurationID: receipt.configurationID
         )
-        let document = try await Self.decodeAndValidate(
-            stored,
-            subjectID: receipt.subjectID
-        )
+        let document: PortableMemoryConfigurationDocument
+        do {
+            document = try await Self.decodeAndValidate(
+                stored,
+                subjectID: receipt.subjectID
+            )
+        } catch {
+            return nil
+        }
         return LocalConfigurationBackupReceipt(
             disposition: .saved,
             subjectID: receipt.subjectID,
@@ -271,10 +282,55 @@ actor LocalConfigurationLibraryRepository {
         let stored = try await storedBackups(
             subjectID: subjectID
         )
-        return try await Self.backupRecords(
+        return await Self.backupRecords(
             from: stored,
             subjectID: subjectID
         )
+    }
+
+    nonisolated func listAll()
+    async throws -> [LocalConfigurationBackupRecord] {
+        guard FileManager.default.fileExists(
+            atPath: memorySubjectsRootURL.path
+        ) else {
+            return []
+        }
+
+        let subjectURLs: [URL]
+        do {
+            subjectURLs = try FileManager.default.contentsOfDirectory(
+                at: memorySubjectsRootURL,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        } catch {
+            throw LocalConfigurationLibraryError.readFailed(
+                String(describing: error)
+            )
+        }
+
+        var records: [LocalConfigurationBackupRecord] = []
+        for subjectURL in subjectURLs {
+            guard let subjectID = UUID(
+                uuidString: subjectURL.lastPathComponent
+            ) else {
+                continue
+            }
+            do {
+                records.append(
+                    contentsOf: try await list(subjectID: subjectID)
+                )
+            } catch {
+                continue
+            }
+        }
+        return records.sorted {
+            if $0.savedAt != $1.savedAt {
+                return $0.savedAt > $1.savedAt
+            }
+            return $0.configurationID.uuidString
+                > $1.configurationID.uuidString
+        }
     }
 
     private func storedBackups(
@@ -302,18 +358,16 @@ actor LocalConfigurationLibraryRepository {
             )
         }
 
-        return try fileURLs
+        return fileURLs
             .filter { $0.pathExtension == "memomarkconfig" }
-            .map { fileURL in
+            .compactMap { fileURL in
                 guard let configurationID = UUID(
                     uuidString: fileURL.deletingPathExtension()
                         .lastPathComponent
                 ) else {
-                    throw LocalConfigurationLibraryError.readFailed(
-                        "Invalid backup filename: \(fileURL.lastPathComponent)"
-                    )
+                    return nil
                 }
-                return try storedBackup(
+                return try? storedBackup(
                     subjectID: subjectID,
                     configurationID: configurationID
                 )
@@ -348,6 +402,71 @@ actor LocalConfigurationLibraryRepository {
         )
     }
 
+    func referencedAssetPaths(
+        subjectID: UUID
+    ) async -> Set<String>? {
+        let directoryURL = configurationsDirectoryURL(
+            subjectID: subjectID
+        )
+        guard FileManager.default.fileExists(
+            atPath: directoryURL.path
+        ) else {
+            return []
+        }
+        guard let fileURLs = try? FileManager.default
+            .contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+        else {
+            return nil
+        }
+
+        var paths: Set<String> = []
+        for fileURL in fileURLs
+        where fileURL.pathExtension == "memomarkconfig" {
+            guard let configurationID = UUID(
+                uuidString: fileURL.deletingPathExtension()
+                    .lastPathComponent
+            ),
+            let stored = try? storedBackup(
+                subjectID: subjectID,
+                configurationID: configurationID
+            ),
+            let document = try? await Self.decodeAndValidate(
+                stored,
+                subjectID: subjectID
+            ) else {
+                return nil
+            }
+            paths.formUnion(
+                document.assetManifest.entries.map {
+                    $0.reference.relativePath
+                }
+            )
+        }
+        return paths
+    }
+
+    private func acquirePersistenceGate() async {
+        guard persistenceGateIsLocked else {
+            persistenceGateIsLocked = true
+            return
+        }
+        await withCheckedContinuation {
+            persistenceGateWaiters.append($0)
+        }
+    }
+
+    private func releasePersistenceGate() {
+        guard !persistenceGateWaiters.isEmpty else {
+            persistenceGateIsLocked = false
+            return
+        }
+        persistenceGateWaiters.removeFirst().resume()
+    }
+
     nonisolated func subjectRootURL(
         subjectID: UUID
     ) -> URL {
@@ -380,7 +499,7 @@ actor LocalConfigurationLibraryRepository {
 
 private extension LocalConfigurationLibraryRepository {
 
-    var memorySubjectsRootURL: URL {
+    nonisolated var memorySubjectsRootURL: URL {
         applicationSupportURL
             .appendingPathComponent("MemoMark", isDirectory: true)
             .appendingPathComponent(
@@ -466,13 +585,15 @@ private extension LocalConfigurationLibraryRepository {
     static func backupRecords(
         from storedBackups: [StoredLocalConfigurationBackup],
         subjectID: UUID
-    ) throws -> [LocalConfigurationBackupRecord] {
-        try storedBackups
-            .map { stored in
-                let document = try decodeAndValidate(
+    ) -> [LocalConfigurationBackupRecord] {
+        storedBackups
+            .compactMap { stored in
+                guard let document = try? decodeAndValidate(
                     stored,
                     subjectID: subjectID
-                )
+                ) else {
+                    return nil
+                }
                 return LocalConfigurationBackupRecord(
                     subjectID: subjectID,
                     configurationID: stored.configurationID,

@@ -239,6 +239,8 @@ final class ShareCoordinator {
                     request.launchSource,
                 intakeSummary:
                     intakeSummary,
+                intakeRequestID:
+                    request.id,
                 title:
                     resolvedRequestTitle(
                         receivedAt:

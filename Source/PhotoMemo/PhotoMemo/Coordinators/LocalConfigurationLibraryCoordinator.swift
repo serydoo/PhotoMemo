@@ -50,13 +50,31 @@ final class LocalConfigurationLibraryCoordinator {
             assetManifest: package.manifest,
             documentChecksum: "pending"
         )
-        return try await repository.save(document)
+        do {
+            let receipt = try await repository.save(document)
+            if case .noOpRevisionConflict = receipt.disposition {
+                assetPackager.removeCreatedAssets(
+                    package.newlyCreatedAssetURLs
+                )
+            }
+            return receipt
+        } catch {
+            assetPackager.removeCreatedAssets(
+                package.newlyCreatedAssetURLs
+            )
+            throw error
+        }
     }
 
     func listBackups(
-        subjectID: UUID
+        subjectID: UUID?
     ) async throws -> [LocalConfigurationBackupRecord] {
-        try await repository.list(subjectID: subjectID)
+        if let subjectID {
+            return try await repository.list(
+                subjectID: subjectID
+            )
+        }
+        return try await repository.listAll()
     }
 
     func restore(
@@ -82,10 +100,32 @@ final class LocalConfigurationLibraryCoordinator {
         subjectID: UUID,
         configurationID: UUID
     ) async throws -> LocalConfigurationBackupDeletionReceipt {
-        try await repository.deleteBackup(
+        let document = try? await repository.load(
             subjectID: subjectID,
             configurationID: configurationID
         )
+        let receipt = try await repository.deleteBackup(
+            subjectID: subjectID,
+            configurationID: configurationID
+        )
+        if let document,
+           let referencedPaths = await repository
+            .referencedAssetPaths(subjectID: subjectID) {
+            let deletedPaths = Set(
+                document.assetManifest.entries.map {
+                    $0.reference.relativePath
+                }
+            )
+            assetPackager.removeUnreferencedAssets(
+                relativePaths: deletedPaths.subtracting(
+                    referencedPaths
+                ),
+                destinationRootURL: repository.subjectRootURL(
+                    subjectID: subjectID
+                )
+            )
+        }
+        return receipt
     }
 }
 #endif

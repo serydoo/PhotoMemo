@@ -70,6 +70,15 @@ extension V1ConfigurationStatus {
         return false
     }
 
+    var hasUncommittedChanges: Bool {
+        switch self {
+        case .dirty, .failure:
+            return true
+        case .idle, .saving, .saved, .subjectSynced:
+            return false
+        }
+    }
+
     var isSaving: Bool {
         if case .saving = self {
             return true

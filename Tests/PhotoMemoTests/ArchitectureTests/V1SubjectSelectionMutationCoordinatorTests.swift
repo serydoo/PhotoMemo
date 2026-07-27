@@ -50,8 +50,8 @@ struct V1SubjectSelectionMutationCoordinatorTests {
         #expect(decision.shouldMarkDirty == false)
     }
 
-    @Test("user subject change without an anchor-date mutation refreshes and marks the view dirty directly")
-    func userSubjectChangeWithoutAnAnchorDateMutationRefreshesAndMarksTheViewDirtyDirectly() {
+    @Test("subject restoration with the same anchor refreshes without marking dirty")
+    func subjectRestorationWithTheSameAnchorRefreshesWithoutMarkingDirty() {
         let date =
             Date(timeIntervalSince1970: 86_400)
         let decision =
@@ -65,7 +65,58 @@ struct V1SubjectSelectionMutationCoordinatorTests {
         #expect(decision.updatedBirthdayDate == nil)
         #expect(decision.nextBirthdayDateBehavior == nil)
         #expect(decision.shouldRefreshPreview)
-        #expect(decision.shouldMarkDirty)
+        #expect(decision.shouldMarkDirty == false)
+    }
+
+    @Test("subject restoration without an anchor refreshes without marking dirty")
+    func subjectRestorationWithoutAnAnchorRefreshesWithoutMarkingDirty() {
+        let decision =
+            V1SubjectSelectionMutationCoordinator
+            .decision(
+                subjectAnchorDate: nil,
+                currentBirthdayDate: Date(timeIntervalSince1970: 86_400),
+                isApplyingBootstrapState: false
+            )
+
+        #expect(decision.updatedBirthdayDate == nil)
+        #expect(decision.nextBirthdayDateBehavior == nil)
+        #expect(decision.shouldRefreshPreview)
+        #expect(decision.shouldMarkDirty == false)
+    }
+
+    @Test("dirty configuration requires saving before selecting another subject")
+    func dirtyConfigurationRequiresSavingBeforeSelectingAnotherSubject() {
+        let currentID = UUID(
+            uuidString: "11111111-1111-1111-1111-111111111111"
+        )!
+        let destinationID = UUID(
+            uuidString: "22222222-2222-2222-2222-222222222222"
+        )!
+
+        #expect(
+            V1SubjectSelectionMutationCoordinator
+                .requiresSavingCurrentConfiguration(
+                    destinationSubjectID: destinationID,
+                    currentSubjectID: currentID,
+                    isCurrentConfigurationDirty: true
+                )
+        )
+        #expect(
+            V1SubjectSelectionMutationCoordinator
+                .requiresSavingCurrentConfiguration(
+                    destinationSubjectID: currentID,
+                    currentSubjectID: currentID,
+                    isCurrentConfigurationDirty: true
+                ) == false
+        )
+        #expect(
+            V1SubjectSelectionMutationCoordinator
+                .requiresSavingCurrentConfiguration(
+                    destinationSubjectID: destinationID,
+                    currentSubjectID: currentID,
+                    isCurrentConfigurationDirty: false
+                ) == false
+        )
     }
 
     @Test("birthday-date behavior keeps user edits dirty but suppresses programmatic dirtying")

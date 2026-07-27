@@ -8,6 +8,7 @@ enum ConfigurationLibraryActionIntent: Equatable {
     case commitRename(title: String)
     case saveCurrent
     case saveToLocalLibrary(ConfigurationLibrarySaveRequest)
+    case requestActivation(ConfigurationLibraryActivationRequest)
     case activate(MemoryPreset)
     case delete(ConfigurationLibraryDeletionRequest)
 }
@@ -20,6 +21,7 @@ enum ConfigurationLibraryActionDecision: Equatable {
     case saveCurrent
     case applyCurrentThenSave(MemoryPreset)
     case saveDurableConfiguration(MemoryPreset)
+    case confirmSaveBeforeActivation(MemoryPreset)
     case activate(MemoryPreset)
     case applyCurrentThenDelete(MemoryPreset)
     case persistDeletion(ConfigurationLibraryDeletionResult)
@@ -65,6 +67,12 @@ struct ConfigurationLibrarySaveRequest: Equatable {
     let durableConfigurationIDs: [UUID]
 }
 
+struct ConfigurationLibraryActivationRequest: Equatable {
+    let preset: MemoryPreset
+    let selectedConfigurationID: UUID?
+    let isCurrentConfigurationDirty: Bool
+}
+
 struct ConfigurationLibraryDeletionResult: Equatable {
     let deletedPreset: MemoryPreset
     let candidate: ConfigurationLibraryRecord
@@ -100,6 +108,14 @@ struct ConfigurationLibraryActions {
             return .saveCurrent
         case .saveToLocalLibrary(let request):
             return saveDecision(for: request)
+        case .requestActivation(let request):
+            if request.isCurrentConfigurationDirty,
+               request.preset.id != request.selectedConfigurationID {
+                return .confirmSaveBeforeActivation(
+                    request.preset
+                )
+            }
+            return .activate(request.preset)
         case .activate(let preset):
             return .activate(preset)
         case .delete(let request):

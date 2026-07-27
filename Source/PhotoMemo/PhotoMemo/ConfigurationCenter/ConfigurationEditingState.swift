@@ -278,10 +278,20 @@ struct ConfigurationEditingState {
         }
     }
 
+    mutating func clearBootstrapContent() {
+        state.subjects = []
+        state.selectedSubjectID = nil
+        state.memoryPresets = []
+        state.selectedMemoryPresetID = nil
+        state.configurationLibrary = nil
+        presentationState.appliedMemoryPresetID = nil
+        presentationState.draftMemoryConfiguration = nil
+    }
+
     mutating func restoreSubjectLibrary(
         _ subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
-        memoryPresets: [MemoryPreset]? = nil,
+        memoryPresets: [MemoryPreset],
         selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
         guard !subjects.isEmpty else {
@@ -303,17 +313,15 @@ struct ConfigurationEditingState {
             ? selectedSubjectID
             : subjects.first?.id
 
-        if let memoryPresets {
-            state.memoryPresets = memoryPresets
-            state.selectedMemoryPresetID =
-                memoryPresets.contains {
-                    $0.id == selectedMemoryPresetID
-                }
-                ? selectedMemoryPresetID
-                : memoryPresets.first {
-                    $0.selectedSubjectID == state.selectedSubjectID
-                }?.id
-        }
+        state.memoryPresets = memoryPresets
+        state.selectedMemoryPresetID =
+            memoryPresets.contains {
+                $0.id == selectedMemoryPresetID
+            }
+            ? selectedMemoryPresetID
+            : memoryPresets.first {
+                $0.selectedSubjectID == state.selectedSubjectID
+            }?.id
 
         let selectedSubject =
             state.selectedSubject

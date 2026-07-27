@@ -111,6 +111,7 @@ struct WorkspaceConfigurationSlot:
 
 struct V1ConfigurationBootstrapReadState {
     let configurationLibrary: ConfigurationLibraryRecord?
+    let configurationLibraryRecoveryFailed: Bool
     let subjectLibraryResult:
         PhotoMemoSharedDefaultsReadResult<V1SubjectLibraryRecord>
     let subjectResult:
@@ -389,6 +390,8 @@ final class SettingsService: ObservableObject {
         return V1ConfigurationBootstrapReadState(
             configurationLibrary:
                 configurationLibraryStore.recoveredAggregate,
+            configurationLibraryRecoveryFailed:
+                configurationLibraryStartupRecoveryError != nil,
             subjectLibraryResult:
                 loadV1SubjectLibraryResult(),
             subjectResult:

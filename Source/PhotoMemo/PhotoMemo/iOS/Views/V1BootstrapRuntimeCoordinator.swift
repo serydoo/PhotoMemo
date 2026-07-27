@@ -39,6 +39,8 @@ struct V1BootstrapRuntimeCoordinator {
         (V1ConfigurationDraftProjection) -> Void
     private let restoreSelectedSubject:
         (MemorySubject) -> Void
+    private let clearSession:
+        () -> Void
     private let applyWelcomeState:
         (V1WelcomeFlowState) -> Void
     private let refreshDynamicPreview:
@@ -66,6 +68,7 @@ struct V1BootstrapRuntimeCoordinator {
         restoreSelectedSubject: @escaping (
             MemorySubject
         ) -> Void,
+        clearSession: @escaping () -> Void = {},
         applyWelcomeState: @escaping (
             V1WelcomeFlowState
         ) -> Void,
@@ -82,6 +85,7 @@ struct V1BootstrapRuntimeCoordinator {
             applyConfigurationDraftProjection
         self.restoreSelectedSubject =
             restoreSelectedSubject
+        self.clearSession = clearSession
         self.applyWelcomeState =
             applyWelcomeState
         self.refreshDynamicPreview =
@@ -121,6 +125,8 @@ struct V1BootstrapRuntimeCoordinator {
         )
 
         switch patch.sessionRestorePlan {
+        case .clearSession:
+            clearSession()
         case .restoreConfigurationLibrary(let aggregate):
             restoreConfigurationLibrary(aggregate)
             if let activeSubjectID = aggregate.activeSubjectID,

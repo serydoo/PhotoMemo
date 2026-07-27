@@ -3,6 +3,7 @@ import Foundation
 
 enum V1BootstrapSessionRestorePlan {
 
+    case clearSession
     case none
     case restoreConfigurationLibrary(
         ConfigurationLibraryRecord
@@ -184,7 +185,9 @@ struct V1BootstrapFlowCoordinator {
                     hasSeenWelcome
                 ),
             regionDrafts:
-                loadDrafts(
+                state.configurationLibraryRecoveryFailed
+                ? [:]
+                : loadDrafts(
                     draftContext,
                     makeDefaultDraft
                 )
@@ -196,6 +199,29 @@ struct V1BootstrapFlowCoordinator {
         resolvedSubjects: [MemorySubject]?,
         resolvedSubject: MemorySubject?
     ) -> V1BootstrapSessionRestorePlan {
+        if state.configurationLibraryRecoveryFailed {
+            if let subjects = resolvedSubjects,
+               !subjects.isEmpty {
+                return .restoreLibrary(
+                    subjects: subjects,
+                    selectedSubjectID:
+                        state.selectedSubjectID,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil
+                )
+            }
+            if let resolvedSubject {
+                return .restoreLibrary(
+                    subjects: [resolvedSubject],
+                    selectedSubjectID:
+                        resolvedSubject.id,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil
+                )
+            }
+            return .clearSession
+        }
+
         if let configurationLibrary =
             state.configurationLibrary {
             return .restoreConfigurationLibrary(
@@ -214,6 +240,19 @@ struct V1BootstrapFlowCoordinator {
                 selectedMemoryPresetID:
                     state.selectedMemoryPresetID
             )
+        }
+
+        if state.subjectLibraryReadFailure != nil {
+            if let resolvedSubject {
+                return .restoreLibrary(
+                    subjects: [resolvedSubject],
+                    selectedSubjectID:
+                        resolvedSubject.id,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil
+                )
+            }
+            return .clearSession
         }
 
         if let resolvedSubject {

@@ -1,7 +1,7 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
-struct BatchQueueHistory {
+final class BatchQueueHistory {
 
     private let maxRetainedTerminalJobs =
         120
@@ -9,13 +9,30 @@ struct BatchQueueHistory {
     private let externalIntakeStore:
         ExternalPhotoIntakeStore
 
+    private let notificationAttachmentsDirectoryURL:
+        URL
+
+    private var pendingNotificationAttachmentCleanupURLs:
+        Set<URL> = []
+
+    private var pendingManagedSourceCleanupURLs:
+        Set<URL> = []
+
     init(
         externalIntakeStore:
-            ExternalPhotoIntakeStore? = nil
+            ExternalPhotoIntakeStore? = nil,
+        notificationAttachmentsDirectoryURL: URL =
+            PhotoMemoSharedContainer.baseDirectoryURL
+            .appendingPathComponent(
+                "NotificationAttachments",
+                isDirectory: true
+            )
     ) {
         self.externalIntakeStore =
             externalIntakeStore
             ?? .shared
+        self.notificationAttachmentsDirectoryURL =
+            notificationAttachmentsDirectoryURL
     }
 
     func usageSnapshot(
@@ -265,46 +282,76 @@ struct BatchQueueHistory {
         _ jobs: inout [BatchJob]
     ) -> Set<String> {
 
-        guard jobs.count
-            > maxRetainedTerminalJobs else {
-            return []
-        }
-
         var retainedTerminalCount = 0
         var removedTaskIDStrings = Set<String>()
 
-        jobs = jobs.filter { job in
+        if jobs.count > maxRetainedTerminalJobs {
+            jobs = jobs.filter { job in
 
-            let isTerminal =
-                job.tasks.allSatisfy {
-                    $0.phase.isTerminal
+                let isTerminal =
+                    job.tasks.allSatisfy {
+                        $0.phase.isTerminal
+                    }
+
+                guard isTerminal else {
+                    return true
                 }
 
-            guard isTerminal else {
-                return true
-            }
+                retainedTerminalCount += 1
 
-            retainedTerminalCount += 1
+                if retainedTerminalCount
+                    <= maxRetainedTerminalJobs {
+                    return true
+                }
 
-            if retainedTerminalCount
-                <= maxRetainedTerminalJobs {
-                return true
-            }
-
-            for task in job.tasks {
-                removedTaskIDStrings.insert(
-                    task.id.uuidString
-                )
-                externalIntakeStore
-                    .cleanupManagedSourceIfNeeded(
-                        at: task.sourceURL
+                for task in job.tasks {
+                    removedTaskIDStrings.insert(
+                        task.id.uuidString
                     )
-            }
+                    pendingManagedSourceCleanupURLs.insert(
+                        task.sourceURL.standardizedFileURL
+                    )
+                }
 
-            return false
+                return false
+            }
         }
 
         return removedTaskIDStrings
+    }
+
+    func commitResourceCleanup(
+        retaining jobs: [BatchJob]
+    ) {
+        let retainedSourceURLs = Set(
+            jobs.flatMap(\.tasks).map {
+                $0.sourceURL.standardizedFileURL
+            }
+        )
+        for sourceURL in pendingManagedSourceCleanupURLs
+        where !retainedSourceURLs.contains(sourceURL) {
+            externalIntakeStore.cleanupManagedSourceIfNeeded(
+                at: sourceURL
+            )
+        }
+        pendingManagedSourceCleanupURLs.removeAll()
+
+        pendingNotificationAttachmentCleanupURLs =
+            BatchTaskResourceLifecycle
+            .cleanupUnreferencedNotificationAttachments(
+                in:
+                    notificationAttachmentsDirectoryURL,
+                retaining:
+                    Set(
+                        jobs
+                            .flatMap(\.tasks)
+                            .compactMap(
+                                \.notificationAttachmentURL
+                            )
+                    ),
+                previouslyUnreferencedURLs:
+                    pendingNotificationAttachmentCleanupURLs
+            )
     }
 }
 #endif

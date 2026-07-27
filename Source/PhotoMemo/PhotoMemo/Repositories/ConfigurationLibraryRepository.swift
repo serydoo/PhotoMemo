@@ -29,6 +29,10 @@ enum ConfigurationLibraryPersistenceError: Error {
     case encodingFailed(String)
     case readFailed(String)
     case writeFailed(String)
+    case staleAggregate(
+        candidateRevision: Int,
+        storedRevision: Int
+    )
     case revisionOverflow
     case noStoredAggregate
     case corruptedPrimaryAndLastKnownGood(
@@ -193,7 +197,6 @@ final class ConfigurationLibraryRepository {
             ) throws -> Void = { _, _ in }
     ) async throws -> ConfigurationLibrarySaveReceipt {
         var candidate = aggregate
-        candidate.revision = 0
         try validate(candidate)
         let subjectID = try requiredActiveSubjectID(candidate)
         let configurationID =
@@ -208,6 +211,14 @@ final class ConfigurationLibraryRepository {
                 allowNoValue: true
             )
             let currentRevision = current?.aggregate.revision ?? 0
+            if current != nil,
+               aggregate.revision != currentRevision {
+                throw ConfigurationLibraryPersistenceError
+                    .staleAggregate(
+                        candidateRevision: aggregate.revision,
+                        storedRevision: currentRevision
+                    )
+            }
             guard currentRevision < Int.max - 1 else {
                 throw ConfigurationLibraryPersistenceError
                     .revisionOverflow

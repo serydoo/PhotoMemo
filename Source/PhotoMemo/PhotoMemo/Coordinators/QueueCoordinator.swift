@@ -45,6 +45,7 @@ final class QueueCoordinator {
         launchSource: BatchJobLaunchSource,
         intakeSummary:
             ExternalPhotoImportSummary? = nil,
+        intakeRequestID: UUID? = nil,
         title: String? = nil
     ) -> PhotoMemoResult<BatchJob> {
 
@@ -55,6 +56,8 @@ final class QueueCoordinator {
                 launchSource: launchSource,
                 intakeSummary:
                     intakeSummary,
+                intakeRequestID:
+                    intakeRequestID,
                 title: title
             ) else {
             return .failure(

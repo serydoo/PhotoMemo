@@ -249,6 +249,47 @@ struct ConfigurationAssetPackagerTests {
             ).isEmpty
         )
     }
+
+    @Test("packaging never overwrites conflicting content-addressed assets")
+    func rejectsConflictingDestinationAsset() throws {
+        let workspace = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+        let sourceDirectory = workspace.appendingPathComponent("Sources")
+        let packageRoot = workspace.appendingPathComponent("Package")
+        try FileManager.default.createDirectory(
+            at: sourceDirectory,
+            withIntermediateDirectories: true
+        )
+        let avatarURL = sourceDirectory.appendingPathComponent("avatar.png")
+        let avatarData = Data("avatar".utf8)
+        let conflictingData = Data("conflict".utf8)
+        try avatarData.write(to: avatarURL)
+        let packager = ConfigurationAssetPackager()
+        let firstPackage = try packager.package(
+            subject: Self.makeSubject(),
+            configuration: Self.makeConfiguration(),
+            sourceURLs: [.subjectAvatar: avatarURL],
+            destinationRootURL: packageRoot
+        )
+        let relativePath = try #require(
+            firstPackage.subject.identity.avatarImagePath
+        )
+        let destinationURL = packageRoot.appendingPathComponent(relativePath)
+        try conflictingData.write(to: destinationURL, options: .atomic)
+
+        #expect(
+            throws: ConfigurationAssetPackagingError
+                .destinationConflict(destinationURL.path)
+        ) {
+            _ = try packager.package(
+                subject: Self.makeSubject(),
+                configuration: Self.makeConfiguration(),
+                sourceURLs: [.subjectAvatar: avatarURL],
+                destinationRootURL: packageRoot
+            )
+        }
+        #expect(try Data(contentsOf: destinationURL) == conflictingData)
+    }
 }
 
 private extension ConfigurationAssetPackagerTests {

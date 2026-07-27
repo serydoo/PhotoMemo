@@ -17,8 +17,10 @@ struct ConfigurationLibraryRepositoryTests {
         )
         let firstData = try #require(storage.primaryData)
 
+        var secondAggregate = Self.makeAggregate(title: "第二版")
+        secondAggregate.revision = firstReceipt.revision
         let secondReceipt = try await repository.save(
-            Self.makeAggregate(title: "第二版")
+            secondAggregate
         )
         let secondData = try #require(storage.primaryData)
         let lastKnownGoodData = try #require(
@@ -89,12 +91,14 @@ struct ConfigurationLibraryRepositoryTests {
         let lastKnownGoodBeforeFailure = storage.lastKnownGoodData
         storage.shouldFailWrites = true
         var projectionCallCount = 0
+        var failedAggregate = Self.makeAggregate(title: "失败版")
+        failedAggregate.revision = 1
 
         await #expect(
             throws: ConfigurationLibraryPersistenceError.self
         ) {
             _ = try await repository.save(
-                Self.makeAggregate(title: "失败版"),
+                failedAggregate,
                 compatibilityProjection: { _, _ in
                     projectionCallCount += 1
                 }
@@ -134,40 +138,45 @@ struct ConfigurationLibraryRepositoryTests {
     }
 
     @MainActor
-    @Test("repository ignores caller revisions and serializes concurrent saves")
-    func concurrentSavesUseMonotonicRepositoryRevisions() async throws {
+    @Test("repository rejects a stale aggregate instead of overwriting newer content")
+    func staleAggregateDoesNotOverwriteNewerContent() async throws {
         let storage = TestConfigurationLibraryStorage()
         let repository = Self.makeRepository(storage: storage)
+        let initialReceipt = try await repository.save(
+            Self.makeAggregate(title: "初始版本")
+        )
+        var firstEdit = Self.makeAggregate(title: "较新修改")
+        firstEdit.revision = initialReceipt.revision
+        var staleEdit = Self.makeAggregate(title: "过期修改")
+        staleEdit.revision = initialReceipt.revision
 
-        let revisions = try await withThrowingTaskGroup(
-            of: Int.self
-        ) { group in
-            for index in 0..<12 {
-                group.addTask { @MainActor in
-                    var aggregate = Self.makeAggregate(
-                        title: "并发 \(index)"
-                    )
-                    aggregate.revision = index * 100
-                    return try await repository.save(
-                        aggregate
-                    ).revision
-                }
+        let newerReceipt = try await repository.save(firstEdit)
+        do {
+            _ = try await repository.save(staleEdit)
+            Issue.record("Expected stale aggregate rejection")
+        } catch let error as ConfigurationLibraryPersistenceError {
+            guard case .staleAggregate(
+                let candidateRevision,
+                let storedRevision
+            ) = error else {
+                Issue.record("Expected staleAggregate, got \(error)")
+                return
             }
-
-            var values: [Int] = []
-            for try await revision in group {
-                values.append(revision)
-            }
-            return values
+            #expect(candidateRevision == initialReceipt.revision)
+            #expect(storedRevision == newerReceipt.revision)
         }
+
         let saved = try JSONDecoder().decode(
             ConfigurationLibraryRecord.self,
             from: try #require(storage.primaryData)
         )
 
-        #expect(revisions.sorted() == Array(1...12))
-        #expect(saved.revision == 12)
-        #expect(storage.writeCount == 12)
+        #expect(saved.revision == newerReceipt.revision)
+        #expect(
+            saved.subjects[0].configurations[0].title
+            == "较新修改"
+        )
+        #expect(storage.writeCount == 2)
     }
 
     @MainActor
@@ -244,8 +253,10 @@ struct ConfigurationLibraryRepositoryTests {
         let firstData = try #require(
             try storage.loadPrimaryData()
         )
+        var secondAggregate = Self.makeAggregate(title: "File Two")
+        secondAggregate.revision = firstReceipt.revision
         let secondReceipt = try await repository.save(
-            Self.makeAggregate(title: "File Two")
+            secondAggregate
         )
         let primaryData = try #require(
             try storage.loadPrimaryData()
@@ -312,6 +323,60 @@ struct ConfigurationLibraryRepositoryTests {
         }
 
         #expect(projectionCount == 0)
+    }
+
+    @MainActor
+    @Test("separate file repositories cannot overwrite the same revision")
+    func separateFileRepositoriesUseAtomicComparison() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let firstRepository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: FileConfigurationLibraryStorage(
+                    baseDirectoryURL: rootURL,
+                    legacyDefaults: nil
+                )
+            )
+        )
+        let secondRepository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: FileConfigurationLibraryStorage(
+                    baseDirectoryURL: rootURL,
+                    legacyDefaults: nil
+                )
+            )
+        )
+        let initialReceipt = try await firstRepository.save(
+            Self.makeAggregate(title: "Initial")
+        )
+        var firstCandidate = Self.makeAggregate(title: "First")
+        firstCandidate.revision = initialReceipt.revision
+        var secondCandidate = Self.makeAggregate(title: "Second")
+        secondCandidate.revision = initialReceipt.revision
+
+        let outcomes = await withTaskGroup(of: Bool.self) { group in
+            group.addTask { @MainActor in
+                (try? await firstRepository.save(firstCandidate)) != nil
+            }
+            group.addTask { @MainActor in
+                (try? await secondRepository.save(secondCandidate)) != nil
+            }
+            var values: [Bool] = []
+            for await value in group {
+                values.append(value)
+            }
+            return values
+        }
+
+        #expect(outcomes.filter { $0 }.count == 1)
+        let durable = try await firstRepository.load().aggregate
+        #expect(durable.revision == 2)
+        #expect(
+            ["First", "Second"].contains(
+                durable.subjects[0].configurations[0].title
+            )
+        )
     }
 }
 

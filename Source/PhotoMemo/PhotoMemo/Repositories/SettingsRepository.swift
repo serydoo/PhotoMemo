@@ -141,45 +141,10 @@ final class SettingsRepository {
             .loadV1BootstrapReadState()
         if let aggregate =
             bootstrapReadState.configurationLibrary,
-           let active = Self.activeSelection(
-               in: aggregate
+           let state = bootstrapState(
+               from: aggregate
            ) {
-            let projection =
-                V1ConfigurationDraftProjection(
-                    configuration:
-                        active.configuration
-                )
-            return V1ConfigurationBootstrapState(
-                configurationLibrary: aggregate,
-                draftProjection: projection,
-                subjects:
-                    aggregate.subjects.map(\.subject),
-                selectedSubjectID:
-                    active.subject.id,
-                memoryPresets:
-                    Self.memoryPresets(from: aggregate),
-                selectedMemoryPresetID:
-                    active.configuration.id,
-                selectedSubject:
-                    active.subject,
-                customLogoBadge:
-                    projection.logoMode == .customUpload
-                    ? projection.badge
-                    : nil,
-                logoMode: projection.logoMode,
-                outputTarget:
-                    projection.outputTarget,
-                mediaOutputMode:
-                    projection.mediaOutputMode,
-                selectedExistingAlbumIdentifier:
-                    projection.selectedAlbumIdentifier,
-                suggestedNewAlbumName:
-                    projection.albumTitle.isEmpty
-                    ? nil
-                    : projection.albumTitle,
-                locationDisplayConfiguration:
-                    projection.locationConfiguration
-            )
+            return state
         }
         let subjectLibrary: V1SubjectLibraryRecord?
         let subjectLibraryReadFailure:
@@ -267,37 +232,183 @@ final class SettingsRepository {
             ? nil
             : trimmedAlbumTitle
 
+        let legacyBootstrapState =
+            V1ConfigurationBootstrapState(
+                configurationLibraryRecoveryFailed:
+                    bootstrapReadState
+                    .configurationLibraryRecoveryFailed,
+                subjects:
+                    subjectLibrary?.subjects,
+                selectedSubjectID:
+                    subjectLibrary?.selectedSubjectID,
+                memoryPresets:
+                    subjectLibrary?.memoryPresets ?? [],
+                selectedMemoryPresetID:
+                    subjectLibrary?.selectedMemoryPresetID,
+                selectedSubject:
+                    savedSubject,
+                subjectLibraryReadFailure:
+                    subjectLibraryReadFailure,
+                customLogoBadge:
+                    logoMode == .customUpload
+                    ? savedBadge
+                    : nil,
+                logoMode:
+                    logoMode,
+                outputTarget:
+                    outputTarget,
+                mediaOutputMode:
+                    bootstrapReadState
+                    .mediaOutputMode,
+                selectedExistingAlbumIdentifier:
+                    selectedExistingAlbumIdentifier,
+                suggestedNewAlbumName:
+                    suggestedNewAlbumName,
+                locationDisplayConfiguration:
+                    settingsService
+                    .loadLocationDisplayConfiguration()
+            )
+
+        let migrationLibrary:
+            V1SubjectLibraryRecord? = {
+                guard !bootstrapReadState
+                    .configurationLibraryRecoveryFailed else {
+                    return nil
+                }
+                if let subjectLibrary {
+                    return subjectLibrary
+                }
+                guard subjectLibraryReadFailure == nil,
+                      savedSubject == nil else {
+                    return nil
+                }
+
+                let defaults =
+                    ConfigurationCenterMockSeed
+                    .makeState()
+                return V1SubjectLibraryRecord(
+                    subjects: defaults.subjects,
+                    selectedSubjectID:
+                        defaults.selectedSubjectID,
+                    memoryPresets:
+                        defaults.memoryPresets,
+                    selectedMemoryPresetID:
+                        defaults.selectedMemoryPresetID
+                )
+            }()
+
+        if let migrationLibrary,
+           !migrationLibrary.subjects.isEmpty {
+            let aggregate =
+                ConfigurationLibraryRecord.migrating(
+                    migrationLibrary,
+                    compatibility:
+                        LegacyConfigurationCompatibilitySettings(
+                            template:
+                                settingsService.selectedTemplate
+                                ?? .classicWhite,
+                            badge: savedBadge,
+                            logoMode: logoMode,
+                            locationConfiguration:
+                                settingsService
+                                .loadLocationDisplayConfiguration(),
+                            shouldWritePhotosDescription:
+                                settingsService
+                                .shouldWritePhotoDescription,
+                            photosDescriptionOverride:
+                                settingsService
+                                .photoDescriptionOverride,
+                            selectedAlbumIdentifier:
+                                bootstrapReadState
+                                .selectedAlbumIdentifier,
+                            selectedAlbumTitle:
+                                bootstrapReadState
+                                .selectedAlbumTitle,
+                            mediaOutputMode:
+                                bootstrapReadState
+                                .mediaOutputMode
+                        ),
+                    revision: 0,
+                    savedAt: Date()
+                )
+
+            if let state = bootstrapState(
+                from: aggregate,
+                preservingPresentationFrom:
+                    legacyBootstrapState
+            ) {
+                return state
+            }
+        }
+
+        return legacyBootstrapState
+    }
+
+    private func bootstrapState(
+        from aggregate: ConfigurationLibraryRecord,
+        preservingPresentationFrom legacyState:
+            V1ConfigurationBootstrapState? = nil
+    ) -> V1ConfigurationBootstrapState? {
+        guard let active = Self.activeSelection(
+            in: aggregate
+        ) else {
+            return nil
+        }
+
+        let projection =
+            V1ConfigurationDraftProjection(
+                configuration:
+                    active.configuration
+            )
         return V1ConfigurationBootstrapState(
+            configurationLibrary: aggregate,
+            draftProjection: projection,
             subjects:
-                subjectLibrary?.subjects,
+                aggregate.subjects.map(\.subject),
             selectedSubjectID:
-                subjectLibrary?.selectedSubjectID,
+                active.subject.id,
             memoryPresets:
-                subjectLibrary?.memoryPresets ?? [],
+                Self.memoryPresets(from: aggregate),
             selectedMemoryPresetID:
-                subjectLibrary?.selectedMemoryPresetID,
+                active.configuration.id,
             selectedSubject:
-                savedSubject,
+                legacyState?.selectedSubject
+                ?? active.subject,
             subjectLibraryReadFailure:
-                subjectLibraryReadFailure,
+                legacyState?
+                .subjectLibraryReadFailure,
             customLogoBadge:
-                logoMode == .customUpload
-                ? savedBadge
-                : nil,
+                legacyState?.customLogoBadge
+                ?? (
+                    projection.logoMode == .customUpload
+                    ? projection.badge
+                    : nil
+                ),
             logoMode:
-                logoMode,
+                legacyState?.logoMode
+                ?? projection.logoMode,
             outputTarget:
-                outputTarget,
+                legacyState?.outputTarget
+                ?? projection.outputTarget,
             mediaOutputMode:
-                bootstrapReadState
-                .mediaOutputMode,
+                legacyState?.mediaOutputMode
+                ?? projection.mediaOutputMode,
             selectedExistingAlbumIdentifier:
-                selectedExistingAlbumIdentifier,
+                legacyState?
+                .selectedExistingAlbumIdentifier
+                ?? projection.selectedAlbumIdentifier,
             suggestedNewAlbumName:
-                suggestedNewAlbumName,
+                legacyState == nil
+                ? (
+                    projection.albumTitle.isEmpty
+                    ? nil
+                    : projection.albumTitle
+                )
+                : legacyState?.suggestedNewAlbumName,
             locationDisplayConfiguration:
-                settingsService
-                .loadLocationDisplayConfiguration()
+                legacyState?
+                .locationDisplayConfiguration
+                ?? projection.locationConfiguration
         )
     }
 

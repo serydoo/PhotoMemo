@@ -22,7 +22,7 @@ struct ConfigurationBackupResult {
 }
 
 struct ConfigurationBackupListRequest {
-    let subjectID: UUID
+    let subjectID: UUID?
     let previousBackups: [LocalConfigurationBackupRecord]
 }
 
@@ -48,10 +48,32 @@ struct ConfigurationRestoreRequest {
     let fileURL: URL
     let assetRootURL: URL?
     let makeCurrent: Bool
-    let aggregate: ConfigurationLibraryRecord
+    let aggregate: ConfigurationLibraryRecord?
     let availableAlbumIdentifiers: Set<String>
     let currentSubjectID: UUID?
     let previousBackups: [LocalConfigurationBackupRecord]
+    let destinationRootURL: URL
+
+    init(
+        fileURL: URL,
+        assetRootURL: URL?,
+        makeCurrent: Bool,
+        aggregate: ConfigurationLibraryRecord?,
+        availableAlbumIdentifiers: Set<String>,
+        currentSubjectID: UUID?,
+        previousBackups: [LocalConfigurationBackupRecord],
+        destinationRootURL: URL =
+            PhotoMemoSharedContainer.baseDirectoryURL
+    ) {
+        self.fileURL = fileURL
+        self.assetRootURL = assetRootURL
+        self.makeCurrent = makeCurrent
+        self.aggregate = aggregate
+        self.availableAlbumIdentifiers = availableAlbumIdentifiers
+        self.currentSubjectID = currentSubjectID
+        self.previousBackups = previousBackups
+        self.destinationRootURL = destinationRootURL
+    }
 }
 
 struct ConfigurationRestoreResult {
@@ -66,6 +88,30 @@ struct ConfigurationRestoreResult {
     let backupListRefreshSucceeded: Bool
 }
 
+private actor ConfigurationRestoreSerializationGate {
+
+    private var isLocked = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func acquire() async {
+        guard isLocked else {
+            isLocked = true
+            return
+        }
+        await withCheckedContinuation {
+            waiters.append($0)
+        }
+    }
+
+    func release() {
+        guard !waiters.isEmpty else {
+            isLocked = false
+            return
+        }
+        waiters.removeFirst().resume()
+    }
+}
+
 @MainActor
 struct ConfigurationBackupRestoreDependencies {
     let backup: (
@@ -74,7 +120,7 @@ struct ConfigurationBackupRestoreDependencies {
         [PortableAssetManifest.Role: URL]
     ) async throws -> LocalConfigurationBackupReceipt
     let listBackups:
-        (UUID) async throws -> [LocalConfigurationBackupRecord]
+        (UUID?) async throws -> [LocalConfigurationBackupRecord]
     let deleteBackup:
         (UUID, UUID) async throws -> LocalConfigurationBackupDeletionReceipt
     let saveAggregate:
@@ -87,6 +133,9 @@ struct ConfigurationBackupRestoreDependencies {
 
 @MainActor
 final class ConfigurationBackupRestoreCoordinator {
+
+    private static let restoreGate =
+        ConfigurationRestoreSerializationGate()
 
     private let dependencies: ConfigurationBackupRestoreDependencies
 
@@ -241,6 +290,15 @@ final class ConfigurationBackupRestoreCoordinator {
     func restore(
         _ request: ConfigurationRestoreRequest
     ) async -> ConfigurationRestoreResult {
+        await Self.restoreGate.acquire()
+        let result = await restoreExclusively(request)
+        await Self.restoreGate.release()
+        return result
+    }
+
+    private func restoreExclusively(
+        _ request: ConfigurationRestoreRequest
+    ) async -> ConfigurationRestoreResult {
         guard let saveAggregate = dependencies.saveAggregate else {
             return ConfigurationRestoreResult(
                 succeeded: false,
@@ -263,6 +321,8 @@ final class ConfigurationBackupRestoreCoordinator {
             }
         }
 
+        let assetPackager = ConfigurationAssetPackager()
+        var newlyCopiedAssetURLs: [URL] = []
         do {
             let data = try dependencies.readData(request.fileURL)
             let importCoordinator = ConfigurationImportCoordinator(
@@ -274,21 +334,51 @@ final class ConfigurationBackupRestoreCoordinator {
                 availableAlbumIdentifiers:
                     request.availableAlbumIdentifiers
             )
+            if let assetRootURL = request.assetRootURL {
+                let document = try JSONDecoder().decode(
+                    PortableMemoryConfigurationDocument.self,
+                    from: data
+                )
+                if !document.assetManifest.entries.isEmpty {
+                    let restoredAssets = try assetPackager
+                        .restoreAssets(
+                            in: document,
+                            sourceRootURL: assetRootURL,
+                            destinationRootURL:
+                                request.destinationRootURL
+                        )
+                    newlyCopiedAssetURLs =
+                        restoredAssets.newlyCreatedAssetURLs
+                }
+            }
 
             let restoreReceipt: ConfigurationImportRestoreReceipt
             let saveReceipt: ConfigurationLibrarySaveReceipt
-            if request.makeCurrent {
+            let isCreatingFirstConfiguration =
+                request.aggregate == nil
+            let baseAggregate =
+                request.aggregate
+                ?? ConfigurationLibraryRecord(
+                    revision: 0,
+                    subjects: [],
+                    activeSubjectID: nil,
+                    activeConfigurationID: nil
+                )
+            let shouldMakeCurrent =
+                request.makeCurrent
+                || isCreatingFirstConfiguration
+            if shouldMakeCurrent {
                 let applyReceipt = try await importCoordinator
                     .restoreAndMakeCurrent(
                         resolution,
-                        into: request.aggregate
+                        into: baseAggregate
                     )
                 restoreReceipt = applyReceipt.restoreReceipt
                 saveReceipt = applyReceipt.saveReceipt
             } else {
                 restoreReceipt = importCoordinator.restore(
                     resolution,
-                    into: request.aggregate
+                    into: baseAggregate
                 )
                 saveReceipt = try await saveAggregate(
                     restoreReceipt.aggregate
@@ -299,10 +389,10 @@ final class ConfigurationBackupRestoreCoordinator {
             durableAggregate.revision = saveReceipt.revision
             let warnings = restoreReceipt.warnings
             let successStatus = Self.importSuccessStatus(
-                makeCurrent: request.makeCurrent,
+                makeCurrent: shouldMakeCurrent,
                 warnings: warnings
             )
-            let refreshSubjectID = request.makeCurrent
+            let refreshSubjectID = shouldMakeCurrent
                 ? restoreReceipt.restoredSubjectID
                 : request.currentSubjectID
 
@@ -315,7 +405,7 @@ final class ConfigurationBackupRestoreCoordinator {
                     warnings: warnings,
                     backups: request.previousBackups,
                     status: .replace(successStatus),
-                    shouldApplyCurrentConfiguration: request.makeCurrent,
+                    shouldApplyCurrentConfiguration: shouldMakeCurrent,
                     backupListRefreshSucceeded: true
                 )
             }
@@ -332,7 +422,7 @@ final class ConfigurationBackupRestoreCoordinator {
                     warnings: warnings,
                     backups: backups,
                     status: .replace(successStatus),
-                    shouldApplyCurrentConfiguration: request.makeCurrent,
+                    shouldApplyCurrentConfiguration: shouldMakeCurrent,
                     backupListRefreshSucceeded: true
                 )
             } catch {
@@ -344,15 +434,18 @@ final class ConfigurationBackupRestoreCoordinator {
                     warnings: warnings,
                     backups: request.previousBackups,
                     status: .replace(
-                        request.makeCurrent
+                        shouldMakeCurrent
                             ? "已恢复并设为当前配置，但本地备份列表刷新失败，请稍后刷新。"
                             : "已恢复配置副本，但本地备份列表刷新失败，请稍后刷新。"
                     ),
-                    shouldApplyCurrentConfiguration: request.makeCurrent,
+                    shouldApplyCurrentConfiguration: shouldMakeCurrent,
                     backupListRefreshSucceeded: false
                 )
             }
         } catch {
+            assetPackager.removeCreatedAssets(
+                newlyCopiedAssetURLs
+            )
             return ConfigurationRestoreResult(
                 succeeded: false,
                 aggregate: nil,
@@ -438,6 +531,16 @@ private extension ConfigurationBackupRestoreCoordinator {
         guard fileManager.fileExists(atPath: url.path) else {
             return
         }
+        let resolvedRoot = baseDirectoryURL
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let resolvedURL = url
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        guard resolvedURL.path == resolvedRoot.path
+                || resolvedURL.path.hasPrefix(resolvedRoot.path + "/") else {
+            return
+        }
         urls[role] = url
     }
 
@@ -475,6 +578,10 @@ private extension ConfigurationBackupRestoreCoordinator {
     }
 
     static func importErrorMessage(_ error: Error) -> String {
+        if case ConfigurationLibraryPersistenceError
+            .corruptedPrimaryAndLastKnownGood = error {
+            return "当前配置库需要恢复，原数据仍然保留。请先联系支持后再继续。"
+        }
         guard let error = error as? ConfigurationImportError else {
             return "导入或恢复失败：\(error.localizedDescription)"
         }

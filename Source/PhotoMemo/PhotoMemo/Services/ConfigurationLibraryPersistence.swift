@@ -12,6 +12,30 @@ nonisolated protocol ConfigurationLibraryDataStorage:
         _ data: Data,
         lastKnownGoodData: Data?
     ) throws
+
+    func compareAndReplacePrimaryData(
+        _ data: Data,
+        expectedPrimaryData: Data?,
+        lastKnownGoodData: Data?
+    ) throws -> Bool
+}
+
+nonisolated extension ConfigurationLibraryDataStorage {
+
+    func compareAndReplacePrimaryData(
+        _ data: Data,
+        expectedPrimaryData: Data?,
+        lastKnownGoodData: Data?
+    ) throws -> Bool {
+        guard try loadPrimaryData() == expectedPrimaryData else {
+            return false
+        }
+        try replacePrimaryData(
+            data,
+            lastKnownGoodData: lastKnownGoodData
+        )
+        return true
+    }
 }
 
 nonisolated protocol ConfigurationLibraryFileSystem:
@@ -65,6 +89,8 @@ nonisolated final class FileConfigurationLibraryStorage:
     private let fileSystem:
         any ConfigurationLibraryFileSystem
 
+    private static let replacementLock = NSLock()
+
     private enum LegacyKeys {
         static let primary =
             "photomemo.configurationLibrary.primary"
@@ -98,18 +124,12 @@ nonisolated final class FileConfigurationLibraryStorage:
         if let data = try fileSystem.readData(at: primaryURL) {
             return data
         }
-        migrateLegacyDefaultsIfPossible()
+        try migrateLegacyDefaultsIfPossible()
         return try fileSystem.readData(at: primaryURL)
     }
 
     nonisolated func loadLastKnownGoodData() throws -> Data? {
-        if let data = try fileSystem.readData(
-            at: lastKnownGoodURL
-        ) {
-            return data
-        }
-        migrateLegacyDefaultsIfPossible()
-        return try fileSystem.readData(at: lastKnownGoodURL)
+        try fileSystem.readData(at: lastKnownGoodURL)
     }
 
     nonisolated func replacePrimaryData(
@@ -130,7 +150,25 @@ nonisolated final class FileConfigurationLibraryStorage:
         removeMigratedLegacyDefaults()
     }
 
-    private nonisolated func migrateLegacyDefaultsIfPossible() {
+    nonisolated func compareAndReplacePrimaryData(
+        _ data: Data,
+        expectedPrimaryData: Data?,
+        lastKnownGoodData: Data?
+    ) throws -> Bool {
+        try Self.replacementLock.withLock {
+            guard try fileSystem.readData(at: primaryURL)
+                    == expectedPrimaryData else {
+                return false
+            }
+            try replacePrimaryData(
+                data,
+                lastKnownGoodData: lastKnownGoodData
+            )
+            return true
+        }
+    }
+
+    private nonisolated func migrateLegacyDefaultsIfPossible() throws {
         guard let legacyDefaults,
               let primaryData = legacyDefaults.data(
                   forKey: LegacyKeys.primary
@@ -138,24 +176,20 @@ nonisolated final class FileConfigurationLibraryStorage:
         else {
             return
         }
-        do {
-            try fileSystem.createDirectory(at: directoryURL)
-            if let lastKnownGoodData = legacyDefaults.data(
-                forKey: LegacyKeys.lastKnownGood
-            ) {
-                try fileSystem.writeDataAtomically(
-                    lastKnownGoodData,
-                    to: lastKnownGoodURL
-                )
-            }
+        try fileSystem.createDirectory(at: directoryURL)
+        if let lastKnownGoodData = legacyDefaults.data(
+            forKey: LegacyKeys.lastKnownGood
+        ) {
             try fileSystem.writeDataAtomically(
-                primaryData,
-                to: primaryURL
+                lastKnownGoodData,
+                to: lastKnownGoodURL
             )
-            removeMigratedLegacyDefaults()
-        } catch {
-            return
         }
+        try fileSystem.writeDataAtomically(
+            primaryData,
+            to: primaryURL
+        )
+        removeMigratedLegacyDefaults()
     }
 
     private nonisolated func removeMigratedLegacyDefaults() {
@@ -227,16 +261,14 @@ actor ConfigurationLibraryPersistence {
         lastKnownGoodData: Data?
     ) throws {
         do {
-            guard try storage.loadPrimaryData()
-                    == expectedPrimaryData
-            else {
+            guard try storage.compareAndReplacePrimaryData(
+                data,
+                expectedPrimaryData: expectedPrimaryData,
+                lastKnownGoodData: lastKnownGoodData
+            ) else {
                 throw ConfigurationLibraryPersistenceTransportError
                     .primaryChanged
             }
-            try storage.replacePrimaryData(
-                data,
-                lastKnownGoodData: lastKnownGoodData
-            )
         } catch let error as
             ConfigurationLibraryPersistenceTransportError {
             throw error

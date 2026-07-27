@@ -427,8 +427,8 @@ struct BatchQueueExecutionContractTests {
     }
 
     @MainActor
-    @Test("Cancelling a queued task cleans its managed source")
-    func cancellationCleansManagedSource() throws {
+    @Test("Cancelling a queued task defers managed source cleanup")
+    func cancellationDefersManagedSourceCleanup() throws {
         let context = try makeManagedSourceContext()
         defer { cleanup(context) }
         let managedSourceURL = try #require(
@@ -454,7 +454,7 @@ struct BatchQueueExecutionContractTests {
 
         #expect(didCancel)
         #expect(jobs[0].tasks[0].phase == .cancelled)
-        #expect(!FileManager.default.fileExists(atPath: managedSourceURL.path))
+        #expect(FileManager.default.fileExists(atPath: managedSourceURL.path))
     }
 
     @MainActor

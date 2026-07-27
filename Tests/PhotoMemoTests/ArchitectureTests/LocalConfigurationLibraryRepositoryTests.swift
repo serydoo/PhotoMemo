@@ -205,6 +205,44 @@ struct LocalConfigurationLibraryRepositoryTests {
         )
     }
 
+    @Test("concurrent saves retain the highest configuration revision")
+    func concurrentSavesRetainHighestRevision() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        let seed = Self.makeDocument(
+            title: "Seed",
+            revision: 8,
+            savedAt: Date(timeIntervalSince1970: 8)
+        )
+        _ = try await repository.save(seed)
+
+        await withTaskGroup(of: Void.self) { group in
+            for revision in stride(from: 40, through: 9, by: -1) {
+                group.addTask {
+                    _ = try? await repository.save(
+                        Self.makeDocument(
+                            title: "Revision \(revision)",
+                            revision: revision,
+                            savedAt: Date(
+                                timeIntervalSince1970: TimeInterval(revision)
+                            )
+                        )
+                    )
+                }
+            }
+        }
+
+        let stored = try await repository.load(
+            subjectID: seed.subject.id,
+            configurationID: seed.configuration.id
+        )
+        #expect(stored.configuration.revision == 40)
+        #expect(stored.configuration.title == "Revision 40")
+    }
+
     @Test("list is newest first and backup deletion is isolated from live state")
     func listsNewestFirstAndKeepsLiveDeletionSeparate() async throws {
         let rootURL = Self.makeTemporaryDirectory()
@@ -269,6 +307,333 @@ struct LocalConfigurationLibraryRepositoryTests {
         #expect(remaining.map(\.configurationID) == [older.configuration.id])
         #expect(liveConfigurationIDs.contains(older.configuration.id))
     }
+
+    @Test("list all keeps backups discoverable without a current subject")
+    func listAllKeepsBackupsDiscoverableWithoutCurrentSubject() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        let firstSubjectID = UUID(
+            uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAA1"
+        )!
+        let secondSubjectID = UUID(
+            uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAA2"
+        )!
+        let older = Self.makeDocument(
+            subjectID: firstSubjectID,
+            configurationID: UUID(
+                uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBB1"
+            )!,
+            title: "Older Subject",
+            revision: 2,
+            savedAt: Date(timeIntervalSince1970: 100)
+        )
+        let newer = Self.makeDocument(
+            subjectID: secondSubjectID,
+            configurationID: UUID(
+                uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBB2"
+            )!,
+            title: "Newer Subject",
+            revision: 3,
+            savedAt: Date(timeIntervalSince1970: 200)
+        )
+        _ = try await repository.save(older)
+        _ = try await repository.save(newer)
+
+        let records = try await repository.listAll()
+
+        #expect(records.map(\.subjectID) == [secondSubjectID, firstSubjectID])
+        #expect(records.map(\.title) == ["Newer Subject", "Older Subject"])
+    }
+
+    @Test("list skips malformed and corrupted backups without hiding healthy records")
+    func listSkipsMalformedAndCorruptedBackups() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        let healthy = Self.makeDocument(
+            title: "Healthy",
+            revision: 3,
+            savedAt: Date(timeIntervalSince1970: 300)
+        )
+        _ = try await repository.save(healthy)
+        let configurationsURL = repository.subjectRootURL(
+            subjectID: healthy.subject.id
+        ).appendingPathComponent("Configurations")
+        try Data("not-json".utf8).write(
+            to: configurationsURL.appendingPathComponent(
+                "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC.memomarkconfig"
+            )
+        )
+        try Data("not-json".utf8).write(
+            to: configurationsURL.appendingPathComponent(
+                "not-a-uuid.memomarkconfig"
+            )
+        )
+
+        let records = try await repository.list(
+            subjectID: healthy.subject.id
+        )
+
+        #expect(records.map(\.configurationID) == [healthy.configuration.id])
+    }
+
+    @Test("list all isolates a corrupted subject and keeps other subjects visible")
+    func listAllIsolatesCorruptedSubject() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        let healthy = Self.makeDocument(
+            subjectID: UUID(
+                uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAA1"
+            )!,
+            title: "Healthy",
+            revision: 3,
+            savedAt: Date(timeIntervalSince1970: 300)
+        )
+        _ = try await repository.save(healthy)
+        let corruptedSubjectID = UUID(
+            uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAA2"
+        )!
+        let corruptedDirectory = repository.subjectRootURL(
+            subjectID: corruptedSubjectID
+        ).appendingPathComponent("Configurations")
+        try FileManager.default.createDirectory(
+            at: corruptedDirectory,
+            withIntermediateDirectories: true
+        )
+        try Data("not-json".utf8).write(
+            to: corruptedDirectory.appendingPathComponent(
+                "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC.memomarkconfig"
+            )
+        )
+
+        let records = try await repository.listAll()
+
+        #expect(records.map(\.configurationID) == [healthy.configuration.id])
+    }
+
+    @Test("a newer valid revision replaces a corrupted existing backup")
+    func newerRevisionReplacesCorruptedExistingBackup() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        let original = Self.makeDocument(
+            title: "Original",
+            revision: 4,
+            savedAt: Date(timeIntervalSince1970: 400)
+        )
+        let originalReceipt = try await repository.save(original)
+        try Data("corrupted".utf8).write(
+            to: originalReceipt.fileURL,
+            options: .atomic
+        )
+        let replacement = Self.makeDocument(
+            title: "Recovered",
+            revision: 5,
+            savedAt: Date(timeIntervalSince1970: 500)
+        )
+
+        let receipt = try await repository.save(replacement)
+        let stored = try await repository.load(
+            subjectID: replacement.subject.id,
+            configurationID: replacement.configuration.id
+        )
+
+        #expect(receipt.disposition == .saved)
+        #expect(stored.configuration.title == "Recovered")
+        #expect(stored.configuration.revision == 5)
+    }
+
+    @Test("failed document save removes only newly written orphan assets")
+    func failedDocumentSaveRemovesNewlyWrittenOrphanAssets() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let writer = ToggleLocalConfigurationLibraryAtomicWriter()
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL,
+            atomicWriter: writer
+        )
+        let coordinator = LocalConfigurationLibraryCoordinator(
+            repository: repository,
+            appVersion: "1.7"
+        )
+        try FileManager.default.createDirectory(
+            at: rootURL,
+            withIntermediateDirectories: true
+        )
+        let sourceURL = rootURL.appendingPathComponent("avatar.png")
+        try Data("orphan".utf8).write(to: sourceURL)
+        writer.failNextWrite()
+
+        do {
+            _ = try await coordinator.backup(
+                subject: Self.makeSubject(),
+                configuration: Self.makeConfiguration(
+                    id: UUID(
+                        uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
+                    )!,
+                    title: "Rejected",
+                    revision: 4,
+                    savedAt: Date(timeIntervalSince1970: 400)
+                ),
+                sourceURLs: [.subjectAvatar: sourceURL]
+            )
+            Issue.record("Expected document write failure")
+        } catch {
+            #expect(error is LocalConfigurationLibraryError)
+        }
+
+        let assetsURL = repository.subjectRootURL(
+            subjectID: Self.makeSubject().id
+        ).appendingPathComponent("Assets")
+        let assetFiles = FileManager.default.enumerator(
+            at: assetsURL,
+            includingPropertiesForKeys: nil
+        )?.allObjects.compactMap { $0 as? URL }.filter {
+            !$0.hasDirectoryPath
+        } ?? []
+        #expect(assetFiles.isEmpty)
+    }
+
+    @Test("lower revision no-op removes newly written unreferenced assets")
+    func lowerRevisionNoOpRemovesNewlyWrittenAssets() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        let coordinator = LocalConfigurationLibraryCoordinator(
+            repository: repository,
+            appVersion: "1.7"
+        )
+        try FileManager.default.createDirectory(
+            at: rootURL,
+            withIntermediateDirectories: true
+        )
+        let sourceURL = rootURL.appendingPathComponent("avatar.png")
+        let subject = Self.makeSubject()
+        let newer = Self.makeConfiguration(
+            id: UUID(
+                uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
+            )!,
+            title: "Newer",
+            revision: 8,
+            savedAt: Date(timeIntervalSince1970: 800)
+        )
+        try Data("newer-avatar".utf8).write(to: sourceURL)
+        _ = try await coordinator.backup(
+            subject: subject,
+            configuration: newer,
+            sourceURLs: [.subjectAvatar: sourceURL]
+        )
+        try Data("rejected-avatar".utf8).write(
+            to: sourceURL,
+            options: .atomic
+        )
+        let older = Self.makeConfiguration(
+            id: newer.id,
+            title: "Older",
+            revision: 7,
+            savedAt: Date(timeIntervalSince1970: 700)
+        )
+
+        let receipt = try await coordinator.backup(
+            subject: subject,
+            configuration: older,
+            sourceURLs: [.subjectAvatar: sourceURL]
+        )
+        let assetsURL = repository.subjectRootURL(
+            subjectID: subject.id
+        ).appendingPathComponent("Assets")
+        let assetFiles = FileManager.default.enumerator(
+            at: assetsURL,
+            includingPropertiesForKeys: nil
+        )?.allObjects.compactMap { $0 as? URL }.filter {
+            !$0.hasDirectoryPath
+        } ?? []
+
+        #expect(
+            receipt.disposition
+            == .noOpRevisionConflict(
+                existingRevision: 8,
+                attemptedRevision: 7
+            )
+        )
+        #expect(assetFiles.count == 1)
+        #expect(try Data(contentsOf: assetFiles[0]) == Data("newer-avatar".utf8))
+    }
+
+    @Test("deleting backups collects assets only after their last reference")
+    func deletingBackupsCollectsOnlyUnreferencedAssets() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        let coordinator = LocalConfigurationLibraryCoordinator(
+            repository: repository,
+            appVersion: "1.7"
+        )
+        try FileManager.default.createDirectory(
+            at: rootURL,
+            withIntermediateDirectories: true
+        )
+        let sourceURL = rootURL.appendingPathComponent("shared-avatar.png")
+        try Data("shared".utf8).write(to: sourceURL)
+        let subject = Self.makeSubject()
+        let first = Self.makeConfiguration(
+            id: UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBB1")!,
+            title: "First",
+            revision: 3,
+            savedAt: Date(timeIntervalSince1970: 300)
+        )
+        let second = Self.makeConfiguration(
+            id: UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBB2")!,
+            title: "Second",
+            revision: 4,
+            savedAt: Date(timeIntervalSince1970: 400)
+        )
+        _ = try await coordinator.backup(
+            subject: subject,
+            configuration: first,
+            sourceURLs: [.subjectAvatar: sourceURL]
+        )
+        _ = try await coordinator.backup(
+            subject: subject,
+            configuration: second,
+            sourceURLs: [.subjectAvatar: sourceURL]
+        )
+        let assetURL = try #require(
+            FileManager.default.enumerator(
+                at: repository.subjectRootURL(subjectID: subject.id)
+                    .appendingPathComponent("Assets"),
+                includingPropertiesForKeys: nil
+            )?.allObjects.compactMap { $0 as? URL }.first {
+                !$0.hasDirectoryPath
+            }
+        )
+
+        _ = try await coordinator.deleteBackup(
+            subjectID: subject.id,
+            configurationID: first.id
+        )
+        #expect(FileManager.default.fileExists(atPath: assetURL.path))
+
+        _ = try await coordinator.deleteBackup(
+            subjectID: subject.id,
+            configurationID: second.id
+        )
+        #expect(!FileManager.default.fileExists(atPath: assetURL.path))
+    }
 }
 
 nonisolated final class ToggleLocalConfigurationLibraryAtomicWriter:
@@ -319,6 +684,9 @@ private extension LocalConfigurationLibraryRepositoryTests {
     }
 
     static func makeDocument(
+        subjectID: UUID = UUID(
+            uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+        )!,
         configurationID: UUID = UUID(
             uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
         )!,
@@ -328,7 +696,7 @@ private extension LocalConfigurationLibraryRepositoryTests {
     ) -> PortableMemoryConfigurationDocument {
         PortableMemoryConfigurationDocument(
             appVersion: "1.6",
-            subject: makeSubject(),
+            subject: makeSubject(id: subjectID),
             configuration: makeConfiguration(
                 id: configurationID,
                 title: title,
@@ -340,11 +708,13 @@ private extension LocalConfigurationLibraryRepositoryTests {
         )
     }
 
-    static func makeSubject() -> MemorySubject {
+    static func makeSubject(
+        id: UUID = UUID(
+            uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+        )!
+    ) -> MemorySubject {
         MemorySubject(
-            id: UUID(
-                uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
-            )!,
+            id: id,
             identity: .init(displayName: "小宝", shortName: "小宝"),
             relationship: .init(role: "family", label: "成长记录"),
             referenceDate: Date(timeIntervalSince1970: 0),

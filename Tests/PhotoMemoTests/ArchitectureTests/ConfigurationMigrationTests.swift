@@ -7,6 +7,102 @@ import Testing
 struct ConfigurationMigrationTests {
 
     @MainActor
+    @Test("Corrupt file canonical is never replaced by legacy defaults during recovery")
+    func corruptFileCanonicalDoesNotRemigrateLegacyDefaults() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "corruptCanonicalLegacyFallback"
+        )
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let configurationDirectoryURL = rootURL
+            .appendingPathComponent("ConfigurationLibrary", isDirectory: true)
+        let primaryURL = configurationDirectoryURL
+            .appendingPathComponent("primary.json")
+        try FileManager.default.createDirectory(
+            at: configurationDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let corruptPrimaryData = Data("corrupt-primary".utf8)
+        let legacyPrimaryData = Data("legacy-primary".utf8)
+        try corruptPrimaryData.write(to: primaryURL)
+        defaults.set(
+            legacyPrimaryData,
+            forKey: "photomemo.configurationLibrary.primary"
+        )
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: FileConfigurationLibraryStorage(
+                    baseDirectoryURL: rootURL,
+                    legacyDefaults: defaults
+                )
+            )
+        )
+
+        do {
+            _ = try await repository.load()
+            Issue.record("Expected canonical corruption")
+        } catch let error as ConfigurationLibraryPersistenceError {
+            guard case .corruptedPrimaryAndLastKnownGood = error else {
+                Issue.record("Expected canonical corruption, got \(error)")
+                return
+            }
+        }
+
+        #expect(try Data(contentsOf: primaryURL) == corruptPrimaryData)
+        #expect(
+            defaults.data(
+                forKey: "photomemo.configurationLibrary.primary"
+            ) == legacyPrimaryData
+        )
+    }
+
+    @MainActor
+    @Test("Legacy canonical migration failure remains a read failure and preserves legacy keys")
+    func legacyCanonicalMigrationFailurePreservesLegacyKeys() async throws {
+        let defaults = try Self.makeDefaults(
+            suffix: "legacyCanonicalMigrationFailure"
+        )
+        let primaryKey =
+            "photomemo.configurationLibrary.primary"
+        let lastKnownGoodKey =
+            "photomemo.configurationLibrary.lastKnownGood"
+        let primaryData = Data("legacy-primary".utf8)
+        let lastKnownGoodData = Data("legacy-last-known-good".utf8)
+        defaults.set(primaryData, forKey: primaryKey)
+        defaults.set(lastKnownGoodData, forKey: lastKnownGoodKey)
+        let storage = FileConfigurationLibraryStorage(
+            baseDirectoryURL:
+                FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString),
+            legacyDefaults: defaults,
+            fileSystem:
+                MigrationFailingConfigurationLibraryFileSystem()
+        )
+        let repository = ConfigurationLibraryRepository(
+            persistence: ConfigurationLibraryPersistence(
+                storage: storage
+            )
+        )
+
+        do {
+            _ = try await repository.load()
+            Issue.record("Expected legacy migration read failure")
+        } catch let error as ConfigurationLibraryPersistenceError {
+            guard case .readFailed = error else {
+                Issue.record("Expected readFailed, got \(error)")
+                return
+            }
+        }
+
+        #expect(defaults.data(forKey: primaryKey) == primaryData)
+        #expect(
+            defaults.data(forKey: lastKnownGoodKey)
+            == lastKnownGoodData
+        )
+    }
+
+    @MainActor
     @Test(
         "Legacy template presets migrate through saved configuration loading",
         arguments: [
@@ -1792,8 +1888,8 @@ struct ConfigurationMigrationTests {
     }
 
     @MainActor
-    @Test("concurrent aggregate saves pair each production snapshot with its own receipt revision")
-    func concurrentAggregateSavesPreserveSnapshotReceiptPairing() async throws {
+    @Test("concurrent saves from the same revision publish only the winning aggregate")
+    func concurrentStaleAggregateSavesDoNotPublish() async throws {
         let defaults = try Self.makeDefaults(
             suffix: "aggregateConcurrentPairing"
         )
@@ -1819,72 +1915,49 @@ struct ConfigurationMigrationTests {
             }
         )
 
-        let completedSaves = try await withThrowingTaskGroup(
-            of: (
-                revision: Int,
-                configurationRevision: Int,
-                title: String
-            ).self
+        let completedRevisions = await withTaskGroup(
+            of: Int?.self
         ) { group in
             for index in 0..<12 {
                 let title = "Concurrent Aggregate \(index)"
                 group.addTask { @MainActor in
-                    let receipt = try await coordinator
-                        .saveConfigurationLibrary(
-                            Self.makeConfigurationLibraryAggregate(
-                                title: title
+                    do {
+                        return try await coordinator
+                            .saveConfigurationLibrary(
+                                Self.makeConfigurationLibraryAggregate(
+                                    title: title
+                                )
+                            ).revision
+                    } catch let error as
+                        ConfigurationLibraryPersistenceError {
+                        guard case .staleAggregate = error else {
+                            Issue.record(
+                                "Expected staleAggregate, got \(error)"
                             )
+                            return -1
+                        }
+                        return nil
+                    } catch {
+                        Issue.record(
+                            "Expected success or staleAggregate, got \(error)"
                         )
-                    return (
-                        receipt.revision,
-                        receipt.configurationRevision,
-                        title
-                    )
+                        return -1
+                    }
                 }
             }
 
-            var saves: [(
-                revision: Int,
-                configurationRevision: Int,
-                title: String
-            )] = []
-            for try await save in group {
-                saves.append(save)
+            var revisions: [Int] = []
+            for await revision in group {
+                if let revision {
+                    revisions.append(revision)
+                }
             }
-            return saves
+            return revisions
         }
-        let expectedPairs = Dictionary(
-            uniqueKeysWithValues:
-                completedSaves.map {
-                    (
-                        $0.revision,
-                        PublishedConfigurationPair(
-                            title: $0.title,
-                            configurationID: UUID(
-                                uuidString:
-                                    "72727272-7272-7272-7272-727272727272"
-                            ),
-                            configurationRevision:
-                                $0.configurationRevision
-                        )
-                    )
-                }
-        )
 
-        #expect(
-            completedSaves.map(\.revision).sorted()
-            == Array(1...12)
-        )
-        #expect(publishedPairs == expectedPairs)
-        #expect(callbackReceipts.count == 12)
-        #expect(
-            Set(callbackReceipts.map(\.revision))
-            == Set(1...12)
-        )
-        #expect(
-            Set(callbackReceipts.map(\.configurationRevision))
-            == [1]
-        )
+        #expect(completedRevisions == [1])
+        #expect(publishedPairs.count == 1)
+        #expect(callbackReceipts.map(\.revision) == [1])
     }
 
     @Test("legacy batch and canonical snapshots decode without configuration identity")
@@ -2095,15 +2168,18 @@ struct ConfigurationMigrationTests {
                 ),
             configurationLibraryStorage: storage
         )
-        _ = try await settings.saveConfigurationLibrary(
+        let firstReceipt = try await settings.saveConfigurationLibrary(
             Self.makeConfigurationLibraryAggregate(
                 title: "Last Known Good"
             )
         )
-        _ = try await settings.saveConfigurationLibrary(
+        var corruptedPrimary =
             Self.makeConfigurationLibraryAggregate(
                 title: "Corrupted Primary"
             )
+        corruptedPrimary.revision = firstReceipt.revision
+        _ = try await settings.saveConfigurationLibrary(
+            corruptedPrimary
         )
         let corruptData = Data("corrupt-primary".utf8)
         let primaryURL = rootURL
@@ -2457,7 +2533,7 @@ private extension ConfigurationMigrationTests {
             )
         )
         return ConfigurationLibraryRecord(
-            revision: 999,
+            revision: 0,
             subjects: [
                 .init(
                     subject: subject,
@@ -2545,6 +2621,23 @@ private enum CoordinatorConfigurationLibraryFailure: Error {
     case encoding
     case write
     case projection
+}
+
+private struct MigrationFailingConfigurationLibraryFileSystem:
+    ConfigurationLibraryFileSystem {
+
+    func createDirectory(at url: URL) throws {}
+
+    func readData(at url: URL) throws -> Data? {
+        nil
+    }
+
+    func writeDataAtomically(
+        _ data: Data,
+        to url: URL
+    ) throws {
+        throw CoordinatorConfigurationLibraryFailure.write
+    }
 }
 
 private struct PublishedConfigurationPair: Equatable {

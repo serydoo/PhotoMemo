@@ -21,6 +21,15 @@ enum V1BirthdayDateChangeBehavior: Equatable {
 
 enum V1SubjectSelectionMutationCoordinator {
 
+    static func requiresSavingCurrentConfiguration(
+        destinationSubjectID: UUID,
+        currentSubjectID: UUID?,
+        isCurrentConfigurationDirty: Bool
+    ) -> Bool {
+        isCurrentConfigurationDirty
+            && destinationSubjectID != currentSubjectID
+    }
+
     static func decision(
         subjectAnchorDate: Date?,
         currentBirthdayDate: Date,
@@ -31,7 +40,7 @@ enum V1SubjectSelectionMutationCoordinator {
                 updatedBirthdayDate: nil,
                 nextBirthdayDateBehavior: nil,
                 shouldRefreshPreview: !isApplyingBootstrapState,
-                shouldMarkDirty: !isApplyingBootstrapState
+                shouldMarkDirty: false
             )
         }
 
@@ -40,7 +49,7 @@ enum V1SubjectSelectionMutationCoordinator {
                 updatedBirthdayDate: nil,
                 nextBirthdayDateBehavior: nil,
                 shouldRefreshPreview: !isApplyingBootstrapState,
-                shouldMarkDirty: !isApplyingBootstrapState
+                shouldMarkDirty: false
             )
         }
 

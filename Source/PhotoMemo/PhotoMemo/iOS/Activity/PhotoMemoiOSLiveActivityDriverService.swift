@@ -1,5 +1,243 @@
-#if os(iOS) && canImport(ActivityKit) && !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
+
+struct PhotoMemoLiveActivityBootstrapResolution<ActivityValue> {
+    let trackedActivities: [UUID: ActivityValue]
+    let duplicateActivities:
+        [(jobID: UUID, activity: ActivityValue)]
+    let activitiesToEnd:
+        [(jobID: UUID?, activity: ActivityValue)]
+}
+
+enum PhotoMemoLiveActivityBootstrapResolver {
+
+    static func resolve<ActivityValue>(
+        candidates:
+            [(jobID: UUID, activity: ActivityValue)]
+    ) -> PhotoMemoLiveActivityBootstrapResolution<
+        ActivityValue
+    > {
+        var trackedActivities:
+            [UUID: ActivityValue] = [:]
+        var duplicateActivities:
+            [(jobID: UUID, activity: ActivityValue)] = []
+        var seenJobIDs: Set<UUID> = []
+
+        for candidate in candidates {
+            guard seenJobIDs.insert(
+                candidate.jobID
+            ).inserted else {
+                duplicateActivities.append(
+                    candidate
+                )
+                continue
+            }
+
+            trackedActivities[
+                candidate.jobID
+            ] = candidate.activity
+        }
+
+        return .init(
+            trackedActivities:
+                trackedActivities,
+            duplicateActivities:
+                duplicateActivities,
+            activitiesToEnd:
+                duplicateActivities.map {
+                    (
+                        jobID: Optional($0.jobID),
+                        activity: $0.activity
+                    )
+                }
+        )
+    }
+
+    static func resolve<ActivityValue>(
+        candidates:
+            [(
+                jobIDString: String,
+                activity: ActivityValue
+            )],
+        currentJobID: UUID?
+    ) -> PhotoMemoLiveActivityBootstrapResolution<
+        ActivityValue
+    > {
+        var trackedActivities:
+            [UUID: ActivityValue] = [:]
+        var duplicateActivities:
+            [(jobID: UUID, activity: ActivityValue)] = []
+        var activitiesToEnd:
+            [(jobID: UUID?, activity: ActivityValue)] = []
+
+        for candidate in candidates {
+            let jobID = UUID(
+                uuidString:
+                    candidate.jobIDString
+            )
+
+            guard let jobID,
+                  jobID == currentJobID else {
+                activitiesToEnd.append(
+                    (
+                        jobID: jobID,
+                        activity: candidate.activity
+                    )
+                )
+                continue
+            }
+
+            guard trackedActivities[jobID] == nil else {
+                duplicateActivities.append(
+                    (
+                        jobID: jobID,
+                        activity: candidate.activity
+                    )
+                )
+                activitiesToEnd.append(
+                    (
+                        jobID: jobID,
+                        activity: candidate.activity
+                    )
+                )
+                continue
+            }
+
+            trackedActivities[jobID] =
+                candidate.activity
+        }
+
+        return .init(
+            trackedActivities:
+                trackedActivities,
+            duplicateActivities:
+                duplicateActivities,
+            activitiesToEnd:
+                activitiesToEnd
+        )
+    }
+}
+
+enum PhotoMemoLiveActivityQueueReconciliationResolver {
+
+    static func jobIDsToEnd(
+        trackedJobIDs: Set<UUID>,
+        currentJobID: UUID?
+    ) -> [UUID] {
+        trackedJobIDs
+            .filter {
+                $0 != currentJobID
+            }
+            .sorted {
+                $0.uuidString < $1.uuidString
+            }
+    }
+}
+
+enum PhotoMemoLiveActivityRequestFailureKind {
+    case temporarilyUnavailable
+    case invalidRequest
+    case serviceUnavailable
+}
+
+enum PhotoMemoLiveActivityRequestFailureDisposition:
+    Equatable {
+    case retryAfter(TimeInterval)
+    case suppressJob
+    case disableRequestsForRun
+}
+
+enum PhotoMemoLiveActivityRequestFailurePolicy {
+
+    static func disposition(
+        for kind:
+            PhotoMemoLiveActivityRequestFailureKind
+    ) -> PhotoMemoLiveActivityRequestFailureDisposition {
+        switch kind {
+        case .temporarilyUnavailable:
+            return .retryAfter(15)
+        case .invalidRequest:
+            return .suppressJob
+        case .serviceUnavailable:
+            return .disableRequestsForRun
+        }
+    }
+}
+
+struct PhotoMemoLiveActivityRequestRetryRegistry<Payload: Equatable> {
+
+    private struct Entry {
+        var payload: Payload
+        let token: UUID
+    }
+
+    private var entries: [UUID: Entry] = [:]
+
+    mutating func schedule(
+        payload: Payload,
+        for jobID: UUID
+    ) -> UUID {
+        let token = UUID()
+        entries[jobID] = Entry(
+            payload: payload,
+            token: token
+        )
+        return token
+    }
+
+    mutating func updateScheduledPayload(
+        _ payload: Payload,
+        for jobID: UUID
+    ) {
+        guard var entry = entries[jobID] else {
+            return
+        }
+        entry.payload = payload
+        entries[jobID] = entry
+    }
+
+    mutating func consumeRetry(
+        for jobID: UUID,
+        token: UUID,
+        currentPayload: Payload
+    ) -> Payload? {
+        guard let entry = entries[jobID],
+              entry.token == token else {
+            return nil
+        }
+        entries[jobID] = nil
+        guard entry.payload == currentPayload else {
+            return nil
+        }
+        return entry.payload
+    }
+
+    func hasScheduledRetry(
+        for jobID: UUID
+    ) -> Bool {
+        entries[jobID] != nil
+    }
+
+    @discardableResult
+    mutating func cancel(
+        for jobID: UUID
+    ) -> Bool {
+        entries.removeValue(forKey: jobID) != nil
+    }
+
+    mutating func cancelAll(
+        except currentJobID: UUID?
+    ) -> Set<UUID> {
+        let jobIDs = Set(entries.keys).filter {
+            $0 != currentJobID
+        }
+        for jobID in jobIDs {
+            entries[jobID] = nil
+        }
+        return Set(jobIDs)
+    }
+}
+
+#if os(iOS) && canImport(ActivityKit) && !PHOTOMEMO_SHARE_EXTENSION
 import Combine
 import ActivityKit
 
@@ -27,11 +265,22 @@ final class PhotoMemoiOSLiveActivityDriverService {
     private var delayedTerminalEndTasks:
         [UUID: Task<Void, Never>] = [:]
 
+    private var requestRetryTasks:
+        [UUID: Task<Void, Never>] = [:]
+
+    private var requestRetryRegistry =
+        PhotoMemoLiveActivityRequestRetryRegistry<
+            PhotoMemoBackgroundLiveActivityPayload
+        >()
+
     private let minimumVisibleActivityDuration:
         TimeInterval = 2.8
 
-    private var hasPermanentlyDisabledRequests =
+    private var hasDisabledRequestsForRun =
         false
+
+    private var suppressedRequestJobIDs:
+        Set<UUID> = []
 
     private var cancellables:
         Set<AnyCancellable> = []
@@ -56,31 +305,42 @@ private extension PhotoMemoiOSLiveActivityDriverService {
             return
         }
 
-        trackedActivities =
-            Dictionary(
-                uniqueKeysWithValues:
-                    Activity<
-                        PhotoMemoBackgroundActivityAttributes
-                    >
-                    .activities.compactMap {
-                        activity in
+        let candidates:
+            [(
+                jobIDString: String,
+                activity: Activity<
+                    PhotoMemoBackgroundActivityAttributes
+                >
+            )] =
+                Activity<
+                    PhotoMemoBackgroundActivityAttributes
+                >
+                .activities.map {
+                    activity in
 
-                        guard let jobID =
-                            UUID(
-                                uuidString:
-                                    activity
-                                    .attributes
-                                    .jobID
-                            ) else {
-                            return nil
-                        }
-
-                        return (
-                            jobID,
+                    return (
+                        jobIDString:
                             activity
-                        )
-                    }
+                            .attributes
+                            .jobID,
+                        activity: activity
+                    )
+                }
+
+        let resolution =
+            PhotoMemoLiveActivityBootstrapResolver
+            .resolve(
+                candidates:
+                    candidates,
+                currentJobID:
+                    bridgeService
+                    .bridgeState
+                    .currentPayload?
+                    .jobID
             )
+
+        trackedActivities =
+            resolution.trackedActivities
 
         let now = Date()
         activityStartDates =
@@ -95,6 +355,49 @@ private extension PhotoMemoiOSLiveActivityDriverService {
                         )
                     }
             )
+
+        guard !resolution
+            .activitiesToEnd
+            .isEmpty else {
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            await self?
+                .endBootstrapActivities(
+                    resolution
+                    .activitiesToEnd
+                )
+        }
+    }
+
+    func endBootstrapActivities(
+        _ activities:
+            [(
+                jobID: UUID?,
+                activity: Activity<
+                    PhotoMemoBackgroundActivityAttributes
+                >
+            )]
+    ) async {
+        for candidate in activities {
+            let payload =
+                fallbackPayload(
+                    for:
+                        candidate.activity,
+                    jobID:
+                        candidate.jobID
+                        ?? UUID()
+                )
+
+            await candidate
+                .activity
+                .end(
+                    payload.activityContent,
+                    dismissalPolicy:
+                        .immediate
+                )
+        }
     }
 
     func bind() {
@@ -121,6 +424,20 @@ private extension PhotoMemoiOSLiveActivityDriverService {
             return
         }
 
+        if let currentJobID = bridgeState.currentPayload?.jobID {
+            suppressedRequestJobIDs.formIntersection([currentJobID])
+            cancelRequestRetries(except: currentJobID)
+            if let payload = bridgeState.currentPayload {
+                requestRetryRegistry.updateScheduledPayload(
+                    payload,
+                    for: currentJobID
+                )
+            }
+        } else {
+            suppressedRequestJobIDs.removeAll()
+            cancelRequestRetries(except: nil)
+        }
+
         guard ActivityAuthorizationInfo()
             .areActivitiesEnabled else {
             PhotoMemoShareDiagnostics.record(
@@ -131,6 +448,7 @@ private extension PhotoMemoiOSLiveActivityDriverService {
                 dismissalPolicy:
                     .immediate
             )
+            cancelRequestRetries(except: nil)
             lastAppliedPayloads.removeAll()
             return
         }
@@ -146,6 +464,25 @@ private extension PhotoMemoiOSLiveActivityDriverService {
                     bridgeState
                     .obsoleteJobIDs
                 )
+        }
+
+        let reconciledJobIDs =
+            PhotoMemoLiveActivityQueueReconciliationResolver
+            .jobIDsToEnd(
+                trackedJobIDs:
+                    Set(trackedActivities.keys),
+                currentJobID:
+                    bridgeState
+                    .currentPayload?
+                    .jobID
+            )
+
+        if !reconciledJobIDs.isEmpty {
+            await endTrackedActivities(
+                for: reconciledJobIDs,
+                dismissalPolicy:
+                    .immediate
+            )
         }
 
         guard let payload =
@@ -185,6 +522,9 @@ private extension PhotoMemoiOSLiveActivityDriverService {
             trackedActivities[
                 payload.jobID
             ] {
+            cancelRequestRetry(
+                for: payload.jobID
+            )
             delayedTerminalEndTasks[
                 payload.jobID
             ]?
@@ -233,9 +573,6 @@ private extension PhotoMemoiOSLiveActivityDriverService {
             guard await requestActivity(
                 for: payload
             ) != nil else {
-                lastAppliedPayloads[
-                    payload.jobID
-                ] = payload
                 return
             }
 
@@ -265,6 +602,9 @@ private extension PhotoMemoiOSLiveActivityDriverService {
     ) async {
 
         for jobID in jobIDs {
+            cancelRequestRetry(
+                for: jobID
+            )
             guard let activity =
                 trackedActivities[jobID]
             else {
@@ -313,7 +653,11 @@ private extension PhotoMemoiOSLiveActivityDriverService {
         PhotoMemoBackgroundActivityAttributes
     >? {
 
-        guard !hasPermanentlyDisabledRequests else {
+        guard !hasDisabledRequestsForRun,
+              !suppressedRequestJobIDs.contains(payload.jobID),
+              !requestRetryRegistry.hasScheduledRetry(
+                for: payload.jobID
+              ) else {
             return nil
         }
 
@@ -338,6 +682,9 @@ private extension PhotoMemoiOSLiveActivityDriverService {
             lastAppliedPayloads[
                 payload.jobID
             ] = payload
+            cancelRequestRetry(
+                for: payload.jobID
+            )
 
             PhotoMemoShareDiagnostics.record(
                 stage: .liveActivityRequestCreated,
@@ -358,9 +705,135 @@ private extension PhotoMemoiOSLiveActivityDriverService {
                 jobID:
                     payload.jobID
             )
-            hasPermanentlyDisabledRequests =
-                true
+            let failureKind =
+                requestFailureKind(
+                    for: error
+                )
+            switch PhotoMemoLiveActivityRequestFailurePolicy
+                .disposition(for: failureKind) {
+            case .retryAfter(let delay):
+                scheduleRequestRetry(
+                    for: payload,
+                    after: delay
+                )
+            case .suppressJob:
+                cancelRequestRetry(
+                    for: payload.jobID
+                )
+                suppressedRequestJobIDs.insert(payload.jobID)
+            case .disableRequestsForRun:
+                cancelRequestRetries(except: nil)
+                hasDisabledRequestsForRun = true
+            }
             return nil
+        }
+    }
+
+    func scheduleRequestRetry(
+        for payload:
+            PhotoMemoBackgroundLiveActivityPayload,
+        after delay: TimeInterval
+    ) {
+        cancelRequestRetry(
+            for: payload.jobID
+        )
+        let token = requestRetryRegistry.schedule(
+            payload: payload,
+            for: payload.jobID
+        )
+        requestRetryTasks[payload.jobID] =
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(
+                    nanoseconds:
+                        UInt64(
+                            max(delay, 0)
+                            * 1_000_000_000
+                        )
+                )
+                guard !Task.isCancelled else {
+                    return
+                }
+                await self?.performScheduledRequestRetry(
+                    for: payload.jobID,
+                    token: token
+                )
+            }
+    }
+
+    func performScheduledRequestRetry(
+        for jobID: UUID,
+        token: UUID
+    ) async {
+        guard let currentPayload =
+                bridgeService.bridgeState.currentPayload,
+              currentPayload.jobID == jobID,
+              let payload = requestRetryRegistry.consumeRetry(
+                for: jobID,
+                token: token,
+                currentPayload: currentPayload
+              ) else {
+            requestRetryTasks[jobID] = nil
+            return
+        }
+        requestRetryTasks[jobID] = nil
+        await apply(payload: payload)
+    }
+
+    func cancelRequestRetry(
+        for jobID: UUID
+    ) {
+        requestRetryTasks[jobID]?.cancel()
+        requestRetryTasks[jobID] = nil
+        requestRetryRegistry.cancel(for: jobID)
+    }
+
+    func cancelRequestRetries(
+        except currentJobID: UUID?
+    ) {
+        let jobIDs =
+            requestRetryRegistry.cancelAll(
+                except: currentJobID
+            )
+            .union(
+                requestRetryTasks.keys.filter {
+                    $0 != currentJobID
+                }
+            )
+        for jobID in jobIDs {
+            requestRetryTasks[jobID]?.cancel()
+            requestRetryTasks[jobID] = nil
+        }
+    }
+
+    func requestFailureKind(
+        for error: Error
+    ) -> PhotoMemoLiveActivityRequestFailureKind {
+        guard let authorizationError =
+            error as? ActivityAuthorizationError else {
+            return .temporarilyUnavailable
+        }
+
+        switch authorizationError {
+        case .unsupported,
+             .denied,
+             .unsupportedTarget,
+             .unentitled:
+            return .serviceUnavailable
+
+        case .attributesTooLarge,
+             .missingProcessIdentifier,
+             .malformedActivityIdentifier:
+            return .invalidRequest
+
+        case .globalMaximumExceeded,
+             .targetMaximumExceeded,
+             .visibility,
+             .persistenceFailure,
+             .reconnectNotPermitted:
+            return .temporarilyUnavailable
+
+        @unknown default:
+            return .temporarilyUnavailable
         }
     }
 
@@ -426,6 +899,10 @@ private extension PhotoMemoiOSLiveActivityDriverService {
         for payload:
             PhotoMemoBackgroundLiveActivityPayload
     ) async {
+
+        cancelRequestRetry(
+            for: payload.jobID
+        )
 
         guard let activity =
             trackedActivities[

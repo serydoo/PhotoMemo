@@ -52,6 +52,205 @@ struct BatchQueueHistoryTests {
         #expect(removedTaskIDs == expectedRemovedTaskIDs)
     }
 
+    @Test("Managed source cleanup waits for durable history commit")
+    func managedSourceCleanupWaitsForCommit() throws {
+        let intakeDirectoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: intakeDirectoryURL) }
+        let managedSourceURL = intakeDirectoryURL
+            .appendingPathComponent("managed-source.jpg")
+        try Data("source".utf8).write(to: managedSourceURL)
+        let history = BatchQueueHistory(
+            externalIntakeStore: ExternalPhotoIntakeStore(
+                defaults: UserDefaults.standard,
+                intakeDirectoryURL: intakeDirectoryURL
+            )
+        )
+        var jobs = (0..<120).map {
+            makeTerminalJob(title: "Retained \($0)")
+        }
+        jobs.append(
+            makeTerminalJob(
+                title: "Removed",
+                sourceURL: managedSourceURL
+            )
+        )
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+
+        #expect(
+            FileManager.default.fileExists(
+                atPath: managedSourceURL.path
+            )
+        )
+
+        history.commitResourceCleanup(retaining: jobs)
+
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: managedSourceURL.path
+            )
+        )
+    }
+
+    @Test("Reconciliation removes orphaned notification attachments and preserves referenced files")
+    func reconciliationRemovesOnlyUnreferencedNotificationAttachments() throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.BatchQueueHistory.Attachments.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        try FileManager.default.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+        let referencedURL = directoryURL.appendingPathComponent("referenced.jpg")
+        let orphanedURL = directoryURL.appendingPathComponent("orphaned.jpg")
+        try Data("referenced".utf8).write(to: referencedURL)
+        try Data("orphaned".utf8).write(to: orphanedURL)
+        let history = BatchQueueHistory(
+            notificationAttachmentsDirectoryURL: directoryURL
+        )
+        var jobs = [
+            makeTerminalJob(
+                title: "Retained",
+                notificationAttachmentURL: referencedURL
+            )
+        ]
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+        history.commitResourceCleanup(retaining: jobs)
+
+        #expect(FileManager.default.fileExists(atPath: referencedURL.path))
+        #expect(FileManager.default.fileExists(atPath: orphanedURL.path))
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+        history.commitResourceCleanup(retaining: jobs)
+
+        #expect(!FileManager.default.fileExists(atPath: orphanedURL.path))
+    }
+
+    @Test("Cleared failure and cancellation references release their notification attachments")
+    func clearedTerminalReferencesReleaseNotificationAttachments() throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.BatchQueueHistory.TerminalAttachments.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        try FileManager.default.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+        let failedURL = directoryURL.appendingPathComponent("failed.jpg")
+        let cancelledURL = directoryURL.appendingPathComponent("cancelled.jpg")
+        try Data("failed".utf8).write(to: failedURL)
+        try Data("cancelled".utf8).write(to: cancelledURL)
+        let history = BatchQueueHistory(
+            notificationAttachmentsDirectoryURL: directoryURL
+        )
+        var jobs = [
+            BatchJob(
+                title: "Terminal",
+                state: .failed,
+                configuration:
+                    BatchConfigurationSnapshot(
+                        template: .classicWhite,
+                        badge: nil,
+                        anchor: nil,
+                        shouldWritePhotoDescription: true,
+                        photoDescriptionOverride: "",
+                        selectedAlbumIdentifier: ""
+                    ),
+                tasks: [
+                    BatchTask(
+                        sourceURL: URL(fileURLWithPath: "/tmp/failed.jpg"),
+                        phase: .failed,
+                        notificationAttachmentURL: nil
+                    ),
+                    BatchTask(
+                        sourceURL: URL(fileURLWithPath: "/tmp/cancelled.jpg"),
+                        phase: .cancelled,
+                        notificationAttachmentURL: nil
+                    )
+                ]
+            )
+        ]
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+        history.commitResourceCleanup(retaining: jobs)
+
+        #expect(FileManager.default.fileExists(atPath: failedURL.path))
+        #expect(FileManager.default.fileExists(atPath: cancelledURL.path))
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+        history.commitResourceCleanup(retaining: jobs)
+
+        #expect(!FileManager.default.fileExists(atPath: failedURL.path))
+        #expect(!FileManager.default.fileExists(atPath: cancelledURL.path))
+    }
+
+    @Test("History trimming does not delete an attachment still referenced by a retained task")
+    func historyTrimmingPreservesSharedReferencedAttachment() throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.BatchQueueHistory.SharedAttachment.\(UUID().uuidString)",
+                isDirectory: true
+            )
+        try FileManager.default.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+        let sharedURL = directoryURL.appendingPathComponent("shared.jpg")
+        let removedOnlyURL = directoryURL.appendingPathComponent("removed.jpg")
+        try Data("shared".utf8).write(to: sharedURL)
+        try Data("removed".utf8).write(to: removedOnlyURL)
+        let history = BatchQueueHistory(
+            notificationAttachmentsDirectoryURL: directoryURL
+        )
+        var jobs = (0..<119).map {
+            makeTerminalJob(title: "Job \($0)")
+        }
+        jobs.append(
+            makeTerminalJob(
+                title: "Retained shared",
+                notificationAttachmentURL: sharedURL
+            )
+        )
+        jobs.append(
+            makeTerminalJob(
+                title: "Removed shared",
+                notificationAttachmentURL: sharedURL
+            )
+        )
+        jobs.append(
+            makeTerminalJob(
+                title: "Removed only",
+                notificationAttachmentURL: removedOnlyURL
+            )
+        )
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+        history.commitResourceCleanup(retaining: jobs)
+
+        #expect(FileManager.default.fileExists(atPath: sharedURL.path))
+        #expect(FileManager.default.fileExists(atPath: removedOnlyURL.path))
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+        history.commitResourceCleanup(retaining: jobs)
+
+        #expect(!FileManager.default.fileExists(atPath: removedOnlyURL.path))
+    }
+
     @Test("Usage snapshot prefers frozen configuration anchor over legacy batch anchor")
     func usageSnapshotPrefersFrozenConfigurationAnchorOverLegacyBatchAnchor() throws {
         let history =
@@ -276,6 +475,8 @@ private extension BatchQueueHistoryTests {
         title: String,
         launchSource: BatchJobLaunchSource =
             .inAppPreview,
+        sourceURL: URL? = nil,
+        notificationAttachmentURL: URL? = nil,
         configuration:
             BatchConfigurationSnapshot? = nil
     ) -> BatchJob {
@@ -298,11 +499,14 @@ private extension BatchQueueHistoryTests {
             tasks: [
                 BatchTask(
                     sourceURL:
-                        URL(
+                        sourceURL
+                        ?? URL(
                             fileURLWithPath:
                                 "/tmp/\(title).jpg"
                         ),
-                    phase: .completed
+                    phase: .completed,
+                    notificationAttachmentURL:
+                        notificationAttachmentURL
                 )
             ]
         )

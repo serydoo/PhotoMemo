@@ -561,7 +561,7 @@ struct ProductionConfigurationContractTests {
         let fixture = try Self.makeFixture()
         let context = try Self.makeEnvironment()
         defer { Self.cleanup(context) }
-        _ = try await context.environment.coordinators.configuration
+        let initialReceipt = try await context.environment.coordinators.configuration
             .saveConfigurationLibrary(fixture.aggregate)
 
         let transport = BatchConfigurationSnapshot(
@@ -580,6 +580,7 @@ struct ProductionConfigurationContractTests {
         )
 
         var switched = fixture.aggregate
+        switched.revision = initialReceipt.revision
         let secondConfiguration = Self.secondConfiguration(
             from: fixture
         )

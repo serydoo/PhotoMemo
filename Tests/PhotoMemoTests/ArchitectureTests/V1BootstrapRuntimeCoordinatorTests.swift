@@ -6,6 +6,30 @@ import Testing
 @Suite("V1 bootstrap runtime coordinator")
 struct V1BootstrapRuntimeCoordinatorTests {
 
+    @Test("home bootstrap forwards an empty preset library instead of treating it as absent")
+    func homeBootstrapForwardsEmptyPresetLibrary() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: repositoryRoot.appendingPathComponent(
+                "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(
+            source.contains(
+                "memoryPresets:\n                        memoryPresets,"
+            )
+        )
+        #expect(
+            source.contains("memoryPresets.isEmpty\n                        ? nil") == false
+        )
+    }
+
     @Test("restore-library patch updates view projection, welcome state, and preview refresh")
     @MainActor
     func restoreLibraryPatchUpdatesViewProjectionWelcomeStateAndPreviewRefresh() {
@@ -191,6 +215,49 @@ struct V1BootstrapRuntimeCoordinatorTests {
         #expect(didRestoreLibrary == false)
         #expect(restoredSubject == subject)
         #expect(refreshCount == 1)
+    }
+
+    @Test("clear-session patch removes transient mock configuration content")
+    @MainActor
+    func clearSessionPatchRemovesTransientMockConfigurationContent() {
+        let session = ConfigurationSession()
+        #expect(!session.state.memoryPresets.isEmpty)
+        let patch = V1BootstrapFlowPatch(
+            shouldSaveSubjectLibrary: false,
+            customLogoBadge: nil,
+            logoMode: .appleMini,
+            logoStatusMessage: nil,
+            outputTarget: .automatic,
+            mediaOutputMode: .originalFormat,
+            selectedExistingAlbumIdentifier: "",
+            suggestedNewAlbumName: nil,
+            locationDisplayConfiguration: nil,
+            sessionRestorePlan: .clearSession,
+            birthdayDate: nil,
+            welcomeState: V1WelcomeFlowState(
+                hasSeenWelcome: true,
+                showsWelcomePage: false,
+                showsWorkflowGuide: false
+            ),
+            regionDrafts: [:]
+        )
+        let coordinator = V1BootstrapRuntimeCoordinator(
+            setApplyingBootstrapState: { _ in },
+            updateProjection: { _ in },
+            restoreSubjectLibrary: { _, _, _, _ in },
+            restoreSelectedSubject: { _ in },
+            clearSession: {
+                session.clearBootstrapContent()
+            },
+            applyWelcomeState: { _ in },
+            refreshDynamicPreview: {}
+        )
+
+        coordinator.apply(patch)
+
+        #expect(session.state.subjects.isEmpty)
+        #expect(session.state.memoryPresets.isEmpty)
+        #expect(session.state.configurationLibrary == nil)
     }
 
     private static func makeSubject(

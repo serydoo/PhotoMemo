@@ -139,7 +139,9 @@ final class BatchTaskProcessor {
             guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
                 currentPhase: store.currentTaskPhase(at: reference)
             ) else {
-                resourceLifecycle.cleanupManagedSourceIfNeeded(at: task.sourceURL)
+                store.cleanupManagedSourceForDurablyTerminalTask(
+                    at: reference
+                )
                 return
             }
 
@@ -193,8 +195,8 @@ final class BatchTaskProcessor {
                         at: reference
                     )
             ) else {
-                resourceLifecycle.cleanupManagedSourceIfNeeded(
-                    at: task.sourceURL
+                store.cleanupManagedSourceForDurablyTerminalTask(
+                    at: reference
                 )
                 return
             }
@@ -236,7 +238,9 @@ final class BatchTaskProcessor {
                 currentPhase: store.currentTaskPhase(at: reference)
             ) else {
                 resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
-                resourceLifecycle.cleanupManagedSourceIfNeeded(at: task.sourceURL)
+                store.cleanupManagedSourceForDurablyTerminalTask(
+                    at: reference
+                )
                 return
             }
 
@@ -303,8 +307,8 @@ final class BatchTaskProcessor {
                 task: task,
                 jobID: store.currentJobID(at: reference)
             )
-            resourceLifecycle.cleanupManagedSourceIfNeeded(
-                at: store.currentTask(at: reference)?.sourceURL
+            store.cleanupManagedSourceForDurablyTerminalTask(
+                at: reference
             )
             if let jobID = store.currentJobID(at: reference) {
                 await store.deliverFinalNotificationIfNeeded(for: jobID)
@@ -314,8 +318,8 @@ final class BatchTaskProcessor {
                 currentPhase: store.currentTaskPhase(at: reference)
             ) {
                 resourceLifecycle.cleanupTemporaryFile(at: temporaryFileURL)
-                resourceLifecycle.cleanupManagedSourceIfNeeded(
-                    at: store.currentTask(at: reference)?.sourceURL
+                store.cleanupManagedSourceForDurablyTerminalTask(
+                    at: reference
                 )
                 if let jobID = store.currentJobID(at: reference) {
                     await store.deliverFinalNotificationIfNeeded(for: jobID)
@@ -391,7 +395,9 @@ final class BatchTaskProcessor {
             currentPhase: store.currentTaskPhase(at: reference)
         ) else {
             resourceLifecycle.cleanupTemporaryFiles(result.temporaryFileURLs)
-            resourceLifecycle.cleanupManagedSourceIfNeeded(at: task.sourceURL)
+            store.cleanupManagedSourceForDurablyTerminalTask(
+                at: reference
+            )
             return
         }
         let notificationAttachmentURL = result.notificationSourceURL.flatMap {
@@ -410,8 +416,8 @@ final class BatchTaskProcessor {
                 statusMessage: "处理完成"
             )
         }
-        resourceLifecycle.cleanupManagedSourceIfNeeded(
-            at: store.currentTask(at: reference)?.sourceURL
+        store.cleanupManagedSourceForDurablyTerminalTask(
+            at: reference
         )
         if let jobID = store.currentJobID(at: reference) {
             await store.deliverFinalNotificationIfNeeded(for: jobID)

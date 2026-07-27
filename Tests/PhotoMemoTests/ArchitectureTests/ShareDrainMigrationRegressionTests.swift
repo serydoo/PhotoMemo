@@ -155,6 +155,90 @@ struct ShareDrainMigrationRegressionTests {
     }
 
     @MainActor
+    @Test("Queue persistence failure keeps the Share request pending")
+    func queuePersistenceFailureKeepsShareRequestPending() throws {
+        let suiteName =
+            "PhotoMemo.ShareDrainMigrationRegressionTests.QueueFailure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let rootDirectoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(suiteName, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: rootDirectoryURL)
+        }
+        let settingsService = SettingsService(
+            defaults: defaults,
+            configurationLibraryBaseDirectoryURL: rootDirectoryURL
+        )
+        let queueStore = BatchQueueStore(
+            defaults: defaults,
+            settingsService: settingsService,
+            persistence: BatchQueuePersistence(
+                backend: ShareQueueFailingPersistenceBackend()
+            )
+        )
+        let environment = AppEnvironment.live(
+            defaults: defaults,
+            configurationLibraryBaseDirectoryURL: rootDirectoryURL,
+            intakeDirectoryURL: rootDirectoryURL
+                .appendingPathComponent("ExternalIntake", isDirectory: true),
+            batchQueueStore: queueStore
+        )
+        let runtime = PhotoMemoAppRuntime(environment: environment)
+        let sourceURL = try SyntheticFixtureLibrary.fixtureURL(.iphoneJPEG)
+
+        runtime.handleExternalURLs(
+            [sourceURL],
+            source: .shareExtension
+        )
+        runtime.flushExternalRequests()
+
+        #expect(queueStore.jobs.isEmpty)
+        #expect(
+            !environment.externalIntakeCenter
+                .drainPendingRequests()
+                .isEmpty
+        )
+    }
+
+    @MainActor
+    @Test("Corrupt Share metadata suppresses managed orphan cleanup")
+    func corruptShareMetadataSuppressesManagedOrphanCleanup() throws {
+        let context = try Self.makeContext(
+            named:
+                "PhotoMemo.ShareDrainMigrationRegressionTests.CorruptCleanup.\(UUID().uuidString)"
+        )
+        defer { Self.cleanup(context) }
+        let requestDirectoryURL = context.intakeDirectoryURL
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: requestDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let managedURL = requestDirectoryURL
+            .appendingPathComponent("recoverable.jpg")
+        try Data("recoverable".utf8).write(to: managedURL)
+        context.defaults.set(
+            Data("corrupt-request-metadata".utf8),
+            forKey: ExternalIntakeRequestStore.storageKey
+        )
+        let runtime = PhotoMemoAppRuntime(
+            environment: context.environment
+        )
+
+        runtime.refreshExternalIntakeState()
+
+        #expect(runtime.externalIntakeCenter.intakePersistenceError != nil)
+        #expect(
+            FileManager.default.fileExists(atPath: managedURL.path)
+        )
+    }
+
+    @MainActor
     @Test("QueueCoordinator enqueues drained share requests without changing launch source or payload metadata")
     func queueCoordinatorEnqueuesDrainedShareRequestsWithoutChangingSemantics() async throws {
 
@@ -384,6 +468,113 @@ struct ShareDrainMigrationRegressionTests {
                 "Expected process share intent to succeed, got \(error.message)"
             )
         }
+    }
+
+    @MainActor
+    @Test("Acknowledgement retry reuses the durable Share job")
+    func acknowledgementRetryReusesDurableShareJob() async throws {
+        let context = try Self.makeContext(
+            named:
+                "PhotoMemo.ShareDrainMigrationRegressionTests.IdempotentAdmission.\(UUID().uuidString)"
+        )
+        defer { Self.cleanup(context) }
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .iphoneJPEG
+            )
+        let request =
+            ExternalPhotoIntakeRequest(
+                launchSource: .shareExtension,
+                urls: [sourceURL],
+                configurationSnapshot:
+                    context.environment
+                    .repositories
+                    .configuration
+                    .loadDefaultBatchConfigurationSnapshot()
+            )
+
+        let firstReceipt =
+            try #require(
+                await ProcessShareIntent(
+                    request: request,
+                    consumedPayloadKeys: [],
+                    coordinator:
+                        context.environment
+                        .coordinators.share
+                )
+                .execute()
+                .value
+            )
+        let retriedReceipt =
+            try #require(
+                await ProcessShareIntent(
+                    request: request,
+                    consumedPayloadKeys: [],
+                    coordinator:
+                        context.environment
+                        .coordinators.share
+                )
+                .execute()
+                .value
+            )
+        let firstJob = try #require(firstReceipt.job)
+        let retriedJob = try #require(retriedReceipt.job)
+        let persistedJobs =
+            try #require(
+                BatchQueuePersistence(
+                    defaults: context.defaults
+                )
+                .loadPersistedJobsResult()
+                .value
+            )
+
+        #expect(retriedJob.id == firstJob.id)
+        #expect(firstJob.intakeRequestID == request.id)
+        #expect(
+            context.environment.batchQueueStore.jobs.count
+            == 1
+        )
+        #expect(persistedJobs.map(\.id) == [firstJob.id])
+        #expect(persistedJobs.first?.intakeRequestID == request.id)
+    }
+
+    @MainActor
+    @Test("Legacy BatchJob decodes without a Share request identity")
+    func legacyBatchJobDecodesWithoutShareRequestIdentity() throws {
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: .classicWhite,
+                badge: nil,
+                anchor: nil,
+                memorySubjectText: "",
+                shouldWritePhotoDescription: true,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let encoded = try JSONEncoder().encode(
+            BatchJob(
+                title: "Legacy",
+                configuration: configuration,
+                tasks: []
+            )
+        )
+        var object =
+            try #require(
+                JSONSerialization.jsonObject(
+                    with: encoded
+                ) as? [String: Any]
+            )
+        object.removeValue(forKey: "intakeRequestID")
+        let legacyData = try JSONSerialization.data(
+            withJSONObject: object
+        )
+
+        let decoded = try JSONDecoder().decode(
+            BatchJob.self,
+            from: legacyData
+        )
+
+        #expect(decoded.intakeRequestID == nil)
     }
 
     @MainActor
@@ -1152,6 +1343,20 @@ private extension ShareDrainMigrationRegressionTests {
         )
     }
 }
+
+private struct ShareQueueFailingPersistenceBackend:
+    BatchQueuePersistenceBackend {
+
+    func loadData(forKey key: String) throws -> Data? {
+        nil
+    }
+
+    func saveData(_ data: Data, forKey key: String) throws {
+        throw ShareQueuePersistenceFailure()
+    }
+}
+
+private struct ShareQueuePersistenceFailure: Error {}
 
 private struct FakeLivePhotoAssetIdentityResolver:
     LivePhotoAssetIdentityResolving {

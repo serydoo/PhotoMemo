@@ -207,8 +207,19 @@ final class BatchQueueStore: ObservableObject {
         launchSource: BatchJobLaunchSource,
         intakeSummary:
             ExternalPhotoImportSummary? = nil,
+        intakeRequestID: UUID? = nil,
         title: String? = nil
     ) -> BatchJob? {
+
+        if let intakeRequestID,
+           let existingJob = jobs.first(
+               where: {
+                   $0.intakeRequestID
+                   == intakeRequestID
+               }
+           ) {
+            return existingJob
+        }
 
         let reservedRecordCount =
             jobs.reduce(into: 0) { count, job in
@@ -256,14 +267,24 @@ final class BatchQueueStore: ObservableObject {
                 launchSource: launchSource,
                 intakeSummary:
                     intakeSummary,
+                intakeRequestID:
+                    intakeRequestID,
                 title: title
             )
         else {
             return nil
         }
 
+        let jobsBeforeAdmission = jobs
+        let pendingReceiptKeysBeforeAdmission =
+            pendingSaveReceiptRemovalKeys
         jobs.insert(job, at: 0)
-        persistJobs()
+        guard persistJobs() else {
+            jobs = jobsBeforeAdmission
+            pendingSaveReceiptRemovalKeys =
+                pendingReceiptKeysBeforeAdmission
+            return nil
+        }
         scheduleStartNotificationIfNeeded(
             for: job.id
         )
@@ -351,6 +372,17 @@ final class BatchQueueStore: ObservableObject {
         _ jobID: UUID
     ) {
 
+        let queuedSourceURLs =
+            jobs.first {
+                $0.id == jobID
+            }?
+            .tasks
+            .filter {
+                $0.phase == .queued
+            }
+            .map(\.sourceURL)
+            ?? []
+
         guard execution.cancelJob(
             in: &jobs,
             jobID: jobID
@@ -358,7 +390,16 @@ final class BatchQueueStore: ObservableObject {
             return
         }
 
-        persistJobs()
+        guard persistJobs() else {
+            return
+        }
+
+        for sourceURL in queuedSourceURLs {
+            execution
+                .cleanupManagedSourceIfNeeded(
+                    at: sourceURL
+                )
+        }
     }
 
     func startProcessingIfNeeded() {
@@ -401,6 +442,9 @@ final class BatchQueueStore: ObservableObject {
             persistenceBlocked = false
             startupPersistenceError = nil
             lastErrorMessage = ""
+            history.commitResourceCleanup(
+                retaining: jobs
+            )
             removePendingSaveReceipts()
             reconcileSaveReceiptsWithPersistedJobs()
             startProcessingIfNeeded()
@@ -535,10 +579,11 @@ extension BatchQueueStore {
         persistJobs()
     }
 
-    func persistJobs() {
+    @discardableResult
+    func persistJobs() -> Bool {
 
         guard !persistenceBlocked else {
-            return
+            return false
         }
 
         pendingSaveReceiptRemovalKeys.formUnion(
@@ -550,8 +595,13 @@ extension BatchQueueStore {
         if let error = persistence.persistJobs(jobs).error {
             lastErrorMessage = error.message
             persistenceBlocked = true
+            return false
         } else {
+            history.commitResourceCleanup(
+                retaining: jobs
+            )
             removePendingSaveReceipts()
+            return true
         }
     }
 
@@ -687,6 +737,27 @@ extension BatchQueueStore {
         currentTask(
             at: reference
         )?.phase
+    }
+
+    @discardableResult
+    func cleanupManagedSourceForDurablyTerminalTask(
+        at reference:
+            BatchQueueExecution.TaskReference
+    ) -> Bool {
+
+        guard let task = currentTask(
+            at: reference
+        ),
+        task.phase.isTerminal,
+        persistJobs() else {
+            return false
+        }
+
+        execution
+            .cleanupManagedSourceIfNeeded(
+                at: task.sourceURL
+            )
+        return true
     }
 
     func updateTask(

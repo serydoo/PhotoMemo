@@ -122,5 +122,83 @@ final class BatchTaskResourceLifecycle {
             ? destinationURL
             : nil
     }
+
+    static func cleanupUnreferencedNotificationAttachments(
+        in directoryURL: URL,
+        retaining referencedURLs: Set<URL>,
+        previouslyUnreferencedURLs: Set<URL>,
+        fileManager: FileManager = .default
+    ) -> Set<URL> {
+        let normalizedDirectoryURL =
+            directoryURL.standardizedFileURL
+        let normalizedReferencedURLs =
+            Set(
+                referencedURLs.map {
+                    $0.standardizedFileURL
+                }
+            )
+        let normalizedPreviouslyUnreferencedURLs =
+            Set(
+                previouslyUnreferencedURLs.map {
+                    $0.standardizedFileURL
+                }
+            )
+
+        guard let candidateURLs = try? fileManager
+            .contentsOfDirectory(
+                at: normalizedDirectoryURL,
+                includingPropertiesForKeys: [
+                    .isRegularFileKey,
+                    .isSymbolicLinkKey
+                ],
+                options: [
+                    .skipsHiddenFiles
+                ]
+            ) else {
+            return []
+        }
+
+        var currentUnreferencedURLs:
+            Set<URL> = []
+
+        for candidateURL in candidateURLs {
+            let normalizedCandidateURL =
+                candidateURL.standardizedFileURL
+
+            guard normalizedCandidateURL
+                .deletingLastPathComponent()
+                == normalizedDirectoryURL,
+                  !normalizedReferencedURLs
+                    .contains(
+                        normalizedCandidateURL
+                    ),
+                  let resourceValues = try? normalizedCandidateURL
+                    .resourceValues(
+                        forKeys: [
+                            .isRegularFileKey,
+                            .isSymbolicLinkKey
+                        ]
+                    ),
+                  resourceValues.isRegularFile == true,
+                  resourceValues.isSymbolicLink != true else {
+                continue
+            }
+
+            currentUnreferencedURLs.insert(
+                normalizedCandidateURL
+            )
+
+            if normalizedPreviouslyUnreferencedURLs
+                .contains(
+                    normalizedCandidateURL
+                ) {
+                try? fileManager.removeItem(
+                    at: normalizedCandidateURL
+                )
+            }
+        }
+
+        return currentUnreferencedURLs
+    }
 }
 #endif

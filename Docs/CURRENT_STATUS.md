@@ -4,6 +4,37 @@ Last updated: 2026-07-27
 
 ## 2026-07-27 Configuration Reliability And Home Polish Pass
 
+- Closed a signed-device launch crash in Live Activity restoration. ActivityKit
+  may retain more than one activity carrying the same MemoMark job identifier,
+  but bootstrap previously constructed a dictionary that trapped on duplicate
+  keys. Bootstrap now retains one activity per job, immediately ends duplicate
+  remnants, and has focused duplicate-resolution coverage. Physical iPhone 17
+  Pro Max evidence confirms overwrite installation, preserved local
+  configurations, sustained foreground launch, and no new crash report.
+- Closed the fresh-install and legacy-only configuration deletion failure.
+  Bootstrap now exposes an in-memory canonical configuration aggregate for the
+  existing default or legacy library, while preserving legacy Logo, subject,
+  and album presentation values until the first durable mutation. This keeps
+  the existing persistence coordinator as the sole write boundary and retains
+  corrupted-library diagnostics and single-subject fallback behavior. Focused
+  initial-library, deletion-action, migration, bootstrap-flow, and
+  configuration-lifecycle tests passed, including a direct fresh-default
+  deletion regression. A signed generic iOS Debug build passed and was
+  overwrite-installed on the paired physical iPhone 17 Pro Max without clearing
+  app data. After unlocking, automated launch succeeded, the application process
+  remained live, and the device produced no new MemoMark crash report.
+- Hardened the remaining configuration-library recovery boundaries. Canonical
+  primary plus last-known-good corruption now remains distinguishable from a
+  fresh install, never synthesizes or overwrites a replacement library, and
+  clears transient mock configurations while retaining any independently
+  readable subjects. The local backup library can enumerate every subject when
+  no current subject is available, and a valid backup can create the first
+  canonical aggregate in a genuinely empty library. Focused recovery tests and
+  the broader migration, deletion, configuration-session, import, local-library,
+  and persistence suites passed. A signed iOS Debug build passed and was
+  overwrite-installed on the paired physical iPhone 17 Pro Max without deleting
+  app data. After unlocking, automated launch succeeded, the main application
+  and Widget extension processes remained live, and no new crash report appeared.
 - Configuration's bottom save affordance now floats over the editor with a
   restrained system material rather than consuming its layout height. The
   existing scroll-end reserve keeps the last card reachable while the editor
@@ -19246,3 +19277,28 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   overwrite-installed and launched on the paired physical iPhone 17 Pro Max.
   Installation and launch are confirmed; the Apple Photos Share acceptance
   checklist remains manual device evidence and is not inferred from launch.
+
+## 2026-07-27 V3 Persistence And Recovery Hardening
+
+- Closed the Share queue admission loss window: failed durable queue writes now
+  roll back admission and keep the Share request and managed intake files for
+  retry. Corrupt intake metadata suppresses managed orphan cleanup.
+- Hardened canonical configuration truth with stale-revision rejection,
+  process-wide file compare-and-replace serialization, corruption-preserving
+  startup behavior, and migration failures that retain legacy keys.
+- Isolated corrupt local backups, enabled valid self-repair, copied verified
+  avatar and Logo resources into runtime storage before aggregate commit, and
+  added failure/no-op rollback plus reference-aware deletion cleanup.
+- Protected failed-save, dirty, and subject-synced edits before configuration or
+  Memory Subject switching. Corrupt recovery no longer leaves mock presets in
+  the editable session.
+- Reconciled stale, duplicate, and invalid Live Activities; bounded transient
+  request retries with an actual delayed retry task; and moved terminal task
+  source and notification-attachment cleanup behind successful durable queue
+  persistence. Share acknowledgement retries now reuse a durable request ID.
+- Focused suites and the complete serialized `PhotoMemoTests` suite passed 1,153
+  tests with one existing skip and zero failures. `git diff --check`, unsigned
+  macOS Debug, signed generic iOS Debug, and strict signature verification passed.
+  Earlier hardening builds were installed and launched on the paired physical
+  iPhone 17 Pro Max without clearing local data; this final review follow-up was
+  verified as a signed build but was not reinstalled during repository sync.

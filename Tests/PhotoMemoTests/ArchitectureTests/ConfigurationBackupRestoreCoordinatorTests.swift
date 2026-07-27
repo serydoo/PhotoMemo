@@ -59,7 +59,7 @@ struct ConfigurationBackupRestoreCoordinatorTests {
         let result = await coordinator.restore(
             .init(
                 fileURL: documentURL,
-                assetRootURL: rootURL,
+                assetRootURL: nil,
                 makeCurrent: true,
                 aggregate: Self.makeAggregate(),
                 availableAlbumIdentifiers: [],
@@ -147,6 +147,395 @@ struct ConfigurationBackupRestoreCoordinatorTests {
         )
         #expect(!result.shouldApplyCurrentConfiguration)
         #expect(result.status == .replace("已恢复配置副本。"))
+    }
+
+    @MainActor
+    @Test("restore into an empty library makes the first configuration current")
+    func restoreIntoEmptyLibraryMakesFirstConfigurationCurrent() async throws {
+        let document = Self.signedDocument(
+            subject: Self.makeSubject(id: Self.importedSubjectID),
+            configuration: Self.makeConfiguration(
+                id: Self.importedConfigurationID,
+                title: "First Restored"
+            )
+        )
+        var savedAggregate: ConfigurationLibraryRecord?
+        let coordinator = ConfigurationBackupRestoreCoordinator(
+            dependencies: .init(
+                backup: { _, _, _ in throw TestFailure.expected },
+                listBackups: { _ in [] },
+                deleteBackup: { _, _ in throw TestFailure.expected },
+                saveAggregate: { aggregate in
+                    savedAggregate = aggregate
+                    return Self.makeSaveReceipt(
+                        revision: 23,
+                        subjectID: Self.importedSubjectID,
+                        configurationID: Self.importedConfigurationID
+                    )
+                },
+                readData: { _ in try Self.encode(document) },
+                startSecurityScopedAccess: { _ in false },
+                stopSecurityScopedAccess: { _ in }
+            )
+        )
+
+        let result = await coordinator.restore(
+            .init(
+                fileURL: URL(fileURLWithPath: "/tmp/first.memomarkconfig"),
+                assetRootURL: nil,
+                makeCurrent: false,
+                aggregate: nil,
+                availableAlbumIdentifiers: [],
+                currentSubjectID: nil,
+                previousBackups: []
+            )
+        )
+
+        #expect(result.succeeded)
+        #expect(savedAggregate?.activeSubjectID == Self.importedSubjectID)
+        #expect(
+            savedAggregate?.activeConfigurationID
+            == Self.importedConfigurationID
+        )
+        #expect(result.shouldApplyCurrentConfiguration)
+        #expect(result.status == .replace("已恢复并设为当前配置。"))
+    }
+
+    @MainActor
+    @Test("restore copies verified avatar and logo before committing aggregate")
+    func restoreCopiesAssetsBeforeAggregateCommit() async throws {
+        let backupRootURL = Self.makeTemporaryDirectory()
+        let destinationRootURL = Self.makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: backupRootURL)
+            try? FileManager.default.removeItem(at: destinationRootURL)
+        }
+        let avatar = try PortableAssetReference(
+            relativePath: "Assets/subjectAvatar/avatar.png"
+        )
+        let logo = try PortableAssetReference(
+            relativePath: "Assets/customLogo/logo.png"
+        )
+        let avatarData = Data("avatar".utf8)
+        let logoData = Data("logo".utf8)
+        for (reference, data) in [(avatar, avatarData), (logo, logoData)] {
+            let url = backupRootURL.appendingPathComponent(
+                reference.relativePath
+            )
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: url)
+        }
+        var subject = Self.makeSubject(id: Self.importedSubjectID)
+        subject.identity.avatarImagePath = avatar.relativePath
+        var configuration = Self.makeConfiguration(
+            id: Self.importedConfigurationID
+        )
+        configuration.presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "Logo",
+                type: .customUpload,
+                assetReference: logo
+            )
+        )
+        let document = Self.signedDocument(
+            subject: subject,
+            configuration: configuration,
+            manifest: .init(entries: [
+                .init(
+                    role: .subjectAvatar,
+                    reference: avatar,
+                    checksum: Self.assetChecksum(avatarData)
+                ),
+                .init(
+                    role: .customLogo,
+                    reference: logo,
+                    checksum: Self.assetChecksum(logoData)
+                )
+            ])
+        )
+        var didSave = false
+        let coordinator = ConfigurationBackupRestoreCoordinator(
+            dependencies: .init(
+                backup: { _, _, _ in throw TestFailure.expected },
+                listBackups: { _ in [] },
+                deleteBackup: { _, _ in throw TestFailure.expected },
+                saveAggregate: { _ in
+                    let restoredAvatarData = try? Data(
+                        contentsOf: destinationRootURL
+                            .appendingPathComponent(avatar.relativePath)
+                    )
+                    let restoredLogoData = try? Data(
+                        contentsOf: destinationRootURL
+                            .appendingPathComponent(logo.relativePath)
+                    )
+                    #expect(
+                        restoredAvatarData == avatarData
+                    )
+                    #expect(
+                        restoredLogoData == logoData
+                    )
+                    didSave = true
+                    return Self.makeSaveReceipt()
+                },
+                readData: { _ in try Self.encode(document) },
+                startSecurityScopedAccess: { _ in false },
+                stopSecurityScopedAccess: { _ in }
+            )
+        )
+
+        let result = await coordinator.restore(
+            .init(
+                fileURL: backupRootURL.appendingPathComponent("backup.memomarkconfig"),
+                assetRootURL: backupRootURL,
+                makeCurrent: true,
+                aggregate: Self.makeAggregate(),
+                availableAlbumIdentifiers: [],
+                currentSubjectID: Self.liveSubjectID,
+                previousBackups: [],
+                destinationRootURL: destinationRootURL
+            )
+        )
+
+        #expect(result.succeeded)
+        #expect(didSave)
+    }
+
+    @MainActor
+    @Test("asset checksum failure never commits the aggregate")
+    func assetChecksumFailureNeverCommitsAggregate() async throws {
+        let backupRootURL = Self.makeTemporaryDirectory()
+        let destinationRootURL = Self.makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: backupRootURL)
+            try? FileManager.default.removeItem(at: destinationRootURL)
+        }
+        let avatar = try PortableAssetReference(
+            relativePath: "Assets/subjectAvatar/avatar.png"
+        )
+        let sourceURL = backupRootURL.appendingPathComponent(
+            avatar.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: sourceURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("tampered".utf8).write(to: sourceURL)
+        var subject = Self.makeSubject(id: Self.importedSubjectID)
+        subject.identity.avatarImagePath = avatar.relativePath
+        let document = Self.signedDocument(
+            subject: subject,
+            configuration: Self.makeConfiguration(
+                id: Self.importedConfigurationID
+            ),
+            manifest: .init(entries: [
+                .init(
+                    role: .subjectAvatar,
+                    reference: avatar,
+                    checksum: Self.assetChecksum(Data("expected".utf8))
+                )
+            ])
+        )
+        var didSave = false
+        let coordinator = ConfigurationBackupRestoreCoordinator(
+            dependencies: .init(
+                backup: { _, _, _ in throw TestFailure.expected },
+                listBackups: { _ in [] },
+                deleteBackup: { _, _ in throw TestFailure.expected },
+                saveAggregate: { _ in
+                    didSave = true
+                    return Self.makeSaveReceipt()
+                },
+                readData: { _ in try Self.encode(document) },
+                startSecurityScopedAccess: { _ in false },
+                stopSecurityScopedAccess: { _ in }
+            )
+        )
+
+        let result = await coordinator.restore(
+            .init(
+                fileURL: backupRootURL.appendingPathComponent("backup.memomarkconfig"),
+                assetRootURL: backupRootURL,
+                makeCurrent: true,
+                aggregate: Self.makeAggregate(),
+                availableAlbumIdentifiers: [],
+                currentSubjectID: Self.liveSubjectID,
+                previousBackups: [],
+                destinationRootURL: destinationRootURL
+            )
+        )
+
+        #expect(!result.succeeded)
+        #expect(!didSave)
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: destinationRootURL
+                    .appendingPathComponent(avatar.relativePath).path
+            )
+        )
+    }
+
+    @MainActor
+    @Test("aggregate save failure removes newly copied restore assets")
+    func aggregateSaveFailureRemovesNewlyCopiedAssets() async throws {
+        let backupRootURL = Self.makeTemporaryDirectory()
+        let destinationRootURL = Self.makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: backupRootURL)
+            try? FileManager.default.removeItem(at: destinationRootURL)
+        }
+        let avatar = try PortableAssetReference(
+            relativePath: "Assets/subjectAvatar/avatar.png"
+        )
+        let avatarData = Data("avatar".utf8)
+        let sourceURL = backupRootURL.appendingPathComponent(
+            avatar.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: sourceURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try avatarData.write(to: sourceURL)
+        var subject = Self.makeSubject(id: Self.importedSubjectID)
+        subject.identity.avatarImagePath = avatar.relativePath
+        let document = Self.signedDocument(
+            subject: subject,
+            configuration: Self.makeConfiguration(
+                id: Self.importedConfigurationID
+            ),
+            manifest: .init(entries: [
+                .init(
+                    role: .subjectAvatar,
+                    reference: avatar,
+                    checksum: Self.assetChecksum(avatarData)
+                )
+            ])
+        )
+        let coordinator = ConfigurationBackupRestoreCoordinator(
+            dependencies: .init(
+                backup: { _, _, _ in throw TestFailure.expected },
+                listBackups: { _ in [] },
+                deleteBackup: { _, _ in throw TestFailure.expected },
+                saveAggregate: { _ in throw TestFailure.expected },
+                readData: { _ in try Self.encode(document) },
+                startSecurityScopedAccess: { _ in false },
+                stopSecurityScopedAccess: { _ in }
+            )
+        )
+
+        let result = await coordinator.restore(
+            .init(
+                fileURL: backupRootURL.appendingPathComponent("backup.memomarkconfig"),
+                assetRootURL: backupRootURL,
+                makeCurrent: true,
+                aggregate: Self.makeAggregate(),
+                availableAlbumIdentifiers: [],
+                currentSubjectID: Self.liveSubjectID,
+                previousBackups: [],
+                destinationRootURL: destinationRootURL
+            )
+        )
+
+        #expect(!result.succeeded)
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: destinationRootURL
+                    .appendingPathComponent(avatar.relativePath).path
+            )
+        )
+    }
+
+    @MainActor
+    @Test("concurrent restores never let a failed rollback delete a successful shared asset")
+    func concurrentRestoreRollbackPreservesSuccessfulSharedAsset() async throws {
+        let backupRootURL = Self.makeTemporaryDirectory()
+        let destinationRootURL = Self.makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: backupRootURL)
+            try? FileManager.default.removeItem(at: destinationRootURL)
+        }
+        let avatar = try PortableAssetReference(
+            relativePath: "Assets/subjectAvatar/avatar.png"
+        )
+        let avatarData = Data("shared-avatar".utf8)
+        let sourceURL = backupRootURL.appendingPathComponent(
+            avatar.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: sourceURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try avatarData.write(to: sourceURL)
+        var subject = Self.makeSubject(id: Self.importedSubjectID)
+        subject.identity.avatarImagePath = avatar.relativePath
+        let document = Self.signedDocument(
+            subject: subject,
+            configuration: Self.makeConfiguration(
+                id: Self.importedConfigurationID
+            ),
+            manifest: .init(entries: [
+                .init(
+                    role: .subjectAvatar,
+                    reference: avatar,
+                    checksum: Self.assetChecksum(avatarData)
+                )
+            ])
+        )
+        var saveCallCount = 0
+        var firstSaveContinuation:
+            CheckedContinuation<ConfigurationLibrarySaveReceipt, Error>?
+        let coordinator = ConfigurationBackupRestoreCoordinator(
+            dependencies: .init(
+                backup: { _, _, _ in throw TestFailure.expected },
+                listBackups: { _ in [] },
+                deleteBackup: { _, _ in throw TestFailure.expected },
+                saveAggregate: { _ in
+                    saveCallCount += 1
+                    if saveCallCount == 1 {
+                        return try await withCheckedThrowingContinuation {
+                            firstSaveContinuation = $0
+                        }
+                    }
+                    return Self.makeSaveReceipt()
+                },
+                readData: { _ in try Self.encode(document) },
+                startSecurityScopedAccess: { _ in false },
+                stopSecurityScopedAccess: { _ in }
+            )
+        )
+        let request = ConfigurationRestoreRequest(
+            fileURL: backupRootURL.appendingPathComponent("backup.memomarkconfig"),
+            assetRootURL: backupRootURL,
+            makeCurrent: true,
+            aggregate: Self.makeAggregate(),
+            availableAlbumIdentifiers: [],
+            currentSubjectID: Self.liveSubjectID,
+            previousBackups: [],
+            destinationRootURL: destinationRootURL
+        )
+
+        let firstTask = Task { await coordinator.restore(request) }
+        while firstSaveContinuation == nil {
+            await Task.yield()
+        }
+        let secondTask = Task { await coordinator.restore(request) }
+        await Task.yield()
+        await Task.yield()
+        #expect(saveCallCount == 1)
+        firstSaveContinuation?.resume(throwing: TestFailure.expected)
+
+        let firstResult = await firstTask.value
+        let secondResult = await secondTask.value
+        let destinationURL = destinationRootURL.appendingPathComponent(
+            avatar.relativePath
+        )
+        #expect(!firstResult.succeeded)
+        #expect(secondResult.succeeded)
+        #expect(try Data(contentsOf: destinationURL) == avatarData)
     }
 
     @MainActor
@@ -405,13 +794,41 @@ struct ConfigurationBackupRestoreCoordinatorTests {
                 id: Self.liveConfigurationID
             ),
             selectedConfigurationID: Self.liveConfigurationID,
-            selectedCustomLogoPath: logoURL.path
+            selectedCustomLogoPath: logoURL.path,
+            baseDirectoryURL: rootURL
         )
 
         #expect(urls == [
             .subjectAvatar: avatarURL,
             .customLogo: logoURL
         ])
+    }
+
+    @MainActor
+    @Test("asset collection rejects absolute files outside managed storage")
+    func assetCollectionRejectsUnmanagedAbsoluteFiles() throws {
+        let managedRootURL = Self.makeTemporaryDirectory()
+        let outsideRootURL = Self.makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: managedRootURL)
+            try? FileManager.default.removeItem(at: outsideRootURL)
+        }
+        let outsideURL = outsideRootURL.appendingPathComponent("private.txt")
+        try Data("private".utf8).write(to: outsideURL)
+        var subject = Self.makeSubject(id: Self.liveSubjectID)
+        subject.identity.avatarImagePath = outsideURL.path
+
+        let urls = ConfigurationBackupRestoreCoordinator.assetURLs(
+            subject: subject,
+            configuration: Self.makeConfiguration(
+                id: Self.liveConfigurationID
+            ),
+            selectedConfigurationID: nil,
+            selectedCustomLogoPath: nil,
+            baseDirectoryURL: managedRootURL
+        )
+
+        #expect(urls.isEmpty)
     }
 
     @MainActor
@@ -596,6 +1013,10 @@ private extension ConfigurationBackupRestoreCoordinatorTests {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         return try encoder.encode(document)
+    }
+
+    static func assetChecksum(_ data: Data) -> String {
+        "sha256:\(SHA256.hash(data: data).hexString)"
     }
 
     static func makeSaveReceipt(

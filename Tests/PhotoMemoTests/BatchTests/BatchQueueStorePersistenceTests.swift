@@ -382,6 +382,29 @@ struct BatchQueueStorePersistenceTests {
         }
     }
 
+    private final class SwitchableSaveBackend:
+        BatchQueuePersistenceBackend {
+
+        var rejectsWrites = false
+        private var persistedData: Data?
+
+        func loadData(
+            forKey key: String
+        ) throws -> Data? {
+            persistedData
+        }
+
+        func saveData(
+            _ data: Data,
+            forKey key: String
+        ) throws {
+            guard !rejectsWrites else {
+                throw SaveFailure()
+            }
+            persistedData = data
+        }
+    }
+
     private func terminalExternalJob(
         taskID: UUID
     ) -> BatchJob {
@@ -716,6 +739,162 @@ struct BatchQueueStorePersistenceTests {
                     "photomemo.batchQueue.jobs"
             )
             == existingPayload
+        )
+    }
+
+    @MainActor
+    @Test("Queue admission rolls back when durable persistence fails")
+    func queueAdmissionRollsBackWhenDurablePersistenceFails() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.AdmissionFailure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            persistence: BatchQueuePersistence(
+                backend: FailingSaveBackend()
+            )
+        )
+
+        let job = store.enqueue(
+            urls: [
+                URL(
+                    fileURLWithPath:
+                        "/tmp/admission-persistence-failure.jpg"
+                )
+            ]
+        )
+
+        #expect(job == nil)
+        #expect(store.jobs.isEmpty)
+    }
+
+    @MainActor
+    @Test("Cancelling a queued task retains its managed source when persistence fails")
+    func cancellationPersistenceFailureRetainsManagedSource() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.CancellationFailure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        let intakeDirectoryURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+        }
+        try FileManager.default.createDirectory(
+            at: intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let managedSourceURL = intakeDirectoryURL
+            .appendingPathComponent("managed-source.jpg")
+        try Data("managed-source".utf8).write(
+            to: managedSourceURL
+        )
+        let backend = SwitchableSaveBackend()
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            externalIntakeStore: ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: intakeDirectoryURL
+            ),
+            persistence: BatchQueuePersistence(
+                backend: backend
+            )
+        )
+        let job = try #require(
+            store.enqueue(urls: [managedSourceURL])
+        )
+
+        backend.rejectsWrites = true
+        store.cancelJob(job.id)
+
+        #expect(store.jobs[0].tasks[0].phase == .cancelled)
+        #expect(
+            FileManager.default.fileExists(
+                atPath: managedSourceURL.path
+            )
+        )
+    }
+
+    @MainActor
+    @Test("Terminal task cleanup retains its managed source when persistence fails")
+    func terminalCleanupPersistenceFailureRetainsManagedSource() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.TerminalCleanupFailure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        let intakeDirectoryURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+        }
+        try FileManager.default.createDirectory(
+            at: intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let managedSourceURL = intakeDirectoryURL
+            .appendingPathComponent("terminal-managed-source.jpg")
+        try Data("managed-source".utf8).write(
+            to: managedSourceURL
+        )
+        let backend = SwitchableSaveBackend()
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            externalIntakeStore: ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: intakeDirectoryURL
+            ),
+            persistence: BatchQueuePersistence(
+                backend: backend
+            )
+        )
+        _ = try #require(
+            store.enqueue(urls: [managedSourceURL])
+        )
+        let reference = try #require(
+            store.nextPendingTaskReference()
+        )
+        store.updateTask(
+            at: reference,
+            persist: false
+        ) { task in
+            task.phase = .completed
+        }
+
+        backend.rejectsWrites = true
+        let didCleanup = store
+            .cleanupManagedSourceForDurablyTerminalTask(
+                at: reference
+            )
+
+        #expect(!didCleanup)
+        #expect(
+            FileManager.default.fileExists(
+                atPath: managedSourceURL.path
+            )
         )
     }
 

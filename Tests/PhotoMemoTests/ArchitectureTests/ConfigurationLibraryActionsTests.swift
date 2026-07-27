@@ -28,6 +28,67 @@ struct ConfigurationLibraryActionsTests {
         #expect(actions.decide(.activate(preset)) == .activate(preset))
     }
 
+    @Test("dirty configuration requires saving before activating another configuration")
+    func dirtyConfigurationRequiresSavingBeforeActivation() {
+        let currentID = UUID(
+            uuidString: "11111111-1111-1111-1111-111111111111"
+        )!
+        let destination = Self.makePreset(
+            id: UUID(
+                uuidString: "22222222-2222-2222-2222-222222222222"
+            )!,
+            title: "另一条配置"
+        )
+        let request = ConfigurationLibraryActivationRequest(
+            preset: destination,
+            selectedConfigurationID: currentID,
+            isCurrentConfigurationDirty: true
+        )
+
+        #expect(
+            ConfigurationLibraryActions().decide(
+                .requestActivation(request)
+            )
+            == .confirmSaveBeforeActivation(destination)
+        )
+    }
+
+    @Test("clean or already-selected configuration activates immediately")
+    func cleanOrAlreadySelectedConfigurationActivatesImmediately() {
+        let destination = Self.makePreset(
+            id: UUID(
+                uuidString: "22222222-2222-2222-2222-222222222222"
+            )!,
+            title: "另一条配置"
+        )
+        let actions = ConfigurationLibraryActions()
+
+        #expect(
+            actions.decide(
+                .requestActivation(
+                    ConfigurationLibraryActivationRequest(
+                        preset: destination,
+                        selectedConfigurationID: UUID(),
+                        isCurrentConfigurationDirty: false
+                    )
+                )
+            )
+            == .activate(destination)
+        )
+        #expect(
+            actions.decide(
+                .requestActivation(
+                    ConfigurationLibraryActivationRequest(
+                        preset: destination,
+                        selectedConfigurationID: destination.id,
+                        isCurrentConfigurationDirty: true
+                    )
+                )
+            )
+            == .activate(destination)
+        )
+    }
+
     @Test("begin rename can refresh its draft while already editing")
     func beginRenameCanBeRetiggeredWhileEditing() {
         let actions = ConfigurationLibraryActions()

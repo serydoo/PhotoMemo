@@ -30,6 +30,7 @@ final class BatchQueueCoordinator {
         configuration: BatchConfigurationSnapshot,
         launchSource: BatchJobLaunchSource,
         intakeSummary: ExternalPhotoImportSummary? = nil,
+        intakeRequestID: UUID? = nil,
         title: String? = nil
     ) -> BatchJob? {
         guard !payloads.isEmpty else { return nil }
@@ -68,7 +69,8 @@ final class BatchQueueCoordinator {
             launchSource: launchSource,
             configuration: configuration,
             tasks: tasks,
-            intakeSummary: intakeSummary
+            intakeSummary: intakeSummary,
+            intakeRequestID: intakeRequestID
         )
         diagnosticsRecorder.recordAdmissionDiagnostics(for: job)
         return job
@@ -111,16 +113,12 @@ final class BatchQueueCoordinator {
             guard phase != .savingToPhotoLibrary else {
                 continue
             }
-            let sourceURL = job.tasks[index].sourceURL
             job.tasks[index].phase = .cancelled
             job.tasks[index].progress = BatchTaskProgress(
                 currentUnit: 1,
                 totalUnits: 1,
                 statusMessage: "已取消"
             )
-            if phase == .queued {
-                resourceLifecycle.cleanupManagedSourceIfNeeded(at: sourceURL)
-            }
             didCancelTask = true
         }
         guard didCancelTask else { return false }
@@ -128,6 +126,15 @@ final class BatchQueueCoordinator {
         job.state = derivedJobState(from: job.tasks)
         jobs[jobIndex] = job
         return true
+    }
+
+    func cleanupManagedSourceIfNeeded(
+        at url: URL?
+    ) {
+        resourceLifecycle
+            .cleanupManagedSourceIfNeeded(
+                at: url
+            )
     }
 
     func processingLoop(in store: BatchQueueStore) async {

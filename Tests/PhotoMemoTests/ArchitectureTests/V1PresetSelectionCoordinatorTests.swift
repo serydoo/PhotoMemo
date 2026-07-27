@@ -104,10 +104,6 @@ struct V1PresetSelectionCoordinatorTests {
             )
 
         #expect(update.preset.id == second.id)
-        #expect(
-            update.activeConfigurationStatus
-            == .saving
-        )
     }
 }
 #endif

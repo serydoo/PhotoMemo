@@ -113,9 +113,10 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(processing.contains("title: \"最近完成\""))
         #expect(processing.contains("taskStatusPill("))
         #expect(processing.contains("isRecentTasksSheetPresented = true"))
-        #expect(processing.contains("Image(systemName: \"ellipsis.circle\")"))
+        #expect(processing.contains("V1CardHeaderIconButton("))
+        #expect(processing.contains("systemImage: \"ellipsis\""))
         #expect(processing.contains(".frame(width: 40, height: 40)"))
-        #expect(processing.contains("Circle().fill(ConfigurationUI.controlBackground)"))
+        #expect(processing.contains("ConfigurationUI.controlBackground"))
         #expect(processing.contains(".foregroundStyle(Color.accentColor)"))
         #expect(!processing.contains("Text(\"…\")"))
         #expect(!processing.contains("V1SectionHeading(\n                    \"最近任务\""))
@@ -134,7 +135,12 @@ struct AppleNativeProductSurfaceContractTests {
 
         #expect(home.contains("title: \"记忆对象\",\n            subtitle: \"查看当前对象与时间锚点\""))
         #expect(home.contains("title: \"我的配置\",\n            subtitle: \"选择当前生效的记录方式\""))
-        #expect(home.contains("Text(\"勾选生效\")"))
+        #expect(home.contains("勾选切换当前配置"))
+        #expect(
+            !home.contains(
+                "activeConfigurationStatus =\n                    update.activeConfigurationStatus"
+            )
+        )
         #expect(!home.contains("private struct V1HomeConfigurationCard"))
         #expect(!home.contains("systemImage: MemoMarkSymbol.memorySubject.name"))
         #expect(!home.contains("systemImage: MemoMarkSymbol.configuration.name"))
@@ -352,8 +358,9 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(detail.contains("ToolbarItem(placement: .topBarLeading)"))
         #expect(!detail.contains("ToolbarItem(placement: .topBarTrailing)"))
         #expect(detail.contains("private var editSubjectButton"))
-        #expect(detail.contains("Text(\"编辑\")"))
-        #expect(detail.contains("Image(systemName: \"chevron.right\")"))
+        #expect(detail.contains("V1CardHeaderIconButton("))
+        #expect(detail.contains("systemImage: \"pencil\""))
+        #expect(detail.contains("accessibilityLabel: \"编辑记忆对象\""))
         #expect(detail.contains("V1TitledSectionCard("))
         #expect(!detail.contains("onSaveSubject"))
         #expect(!detail.contains("当前使用"))

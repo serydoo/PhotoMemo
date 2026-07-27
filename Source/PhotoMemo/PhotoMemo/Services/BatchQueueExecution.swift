@@ -78,6 +78,7 @@ final class BatchQueueExecution {
         configuration: BatchConfigurationSnapshot,
         launchSource: BatchJobLaunchSource,
         intakeSummary: ExternalPhotoImportSummary? = nil,
+        intakeRequestID: UUID? = nil,
         title: String? = nil
     ) -> BatchJob? {
         queueCoordinator.enqueue(
@@ -85,6 +86,7 @@ final class BatchQueueExecution {
             configuration: configuration,
             launchSource: launchSource,
             intakeSummary: intakeSummary,
+            intakeRequestID: intakeRequestID,
             title: title
         )
     }
@@ -95,6 +97,15 @@ final class BatchQueueExecution {
 
     func cancelJob(in jobs: inout [BatchJob], jobID: UUID) -> Bool {
         queueCoordinator.cancelJob(in: &jobs, jobID: jobID)
+    }
+
+    func cleanupManagedSourceIfNeeded(
+        at url: URL?
+    ) {
+        queueCoordinator
+            .cleanupManagedSourceIfNeeded(
+                at: url
+            )
     }
 
     func processingLoop(in store: BatchQueueStore) async {

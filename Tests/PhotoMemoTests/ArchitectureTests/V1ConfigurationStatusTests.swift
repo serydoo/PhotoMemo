@@ -38,5 +38,18 @@ struct V1ConfigurationStatusTests {
         #expect(V1ConfigurationStatus.failure(message: "保存失败").tone == .warning)
         #expect(V1ConfigurationStatus.saving.tone == .neutral)
     }
+
+    @Test("switch protection includes dirty and failed saves but not synchronized subjects")
+    func switchProtectionTracksEveryUncommittedState() {
+        #expect(V1ConfigurationStatus.dirty.hasUncommittedChanges)
+        #expect(!V1ConfigurationStatus.subjectSynced.hasUncommittedChanges)
+        #expect(
+            V1ConfigurationStatus.failure(message: "保存失败")
+                .hasUncommittedChanges
+        )
+        #expect(!V1ConfigurationStatus.idle.hasUncommittedChanges)
+        #expect(!V1ConfigurationStatus.saving.hasUncommittedChanges)
+        #expect(!V1ConfigurationStatus.saved.hasUncommittedChanges)
+    }
 }
 #endif
