@@ -24,8 +24,8 @@ struct V1ConfigurationOptionListContractTests {
         #expect(!rootSource.contains("private struct V1ConfigurationNavigationRowButtonStyle"))
     }
 
-    @Test("configuration card owns status and footer keeps primary actions")
-    func configurationCardOwnsStatusWhileFooterKeepsPrimaryActions() throws {
+    @Test("configuration card owns status while a translucent footer floats above the editor")
+    func configurationCardOwnsStatusWhileFooterFloatsAboveEditor() throws {
         let optionListSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
@@ -46,7 +46,9 @@ struct V1ConfigurationOptionListContractTests {
         #expect(optionListSource.contains("Image(systemName: \"ellipsis\")"))
         #expect(!optionListSource.contains("private var configurationStatusLabel"))
         #expect(!optionListSource.contains("Image(systemName: \"ellipsis.circle\")"))
-        #expect(editorSurfaceSource.contains(".safeAreaInset(edge: .bottom)"))
+        #expect(editorSurfaceSource.contains(".overlay(alignment: .bottom)"))
+        #expect(!editorSurfaceSource.contains(".safeAreaInset(edge: .bottom)"))
+        #expect(optionListSource.contains(".ultraThinMaterial"))
         #expect(rootSource.contains("V1ConfigurationActionFooter("))
         #expect(rootSource.contains("configurationStatus:\n                activeConfigurationStatus"))
     }

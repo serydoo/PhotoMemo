@@ -195,13 +195,11 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
 
-                    Button(action: onOpenLocalConfigurationLibrary) {
-                        Image(systemName: "archivebox")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
-                    .accessibilityLabel("管理本地备份")
+                    V1CardHeaderIconButton(
+                        systemImage: "archivebox",
+                        accessibilityLabel: "管理本地备份",
+                        action: onOpenLocalConfigurationLibrary
+                    )
                 }
             }
         ) {

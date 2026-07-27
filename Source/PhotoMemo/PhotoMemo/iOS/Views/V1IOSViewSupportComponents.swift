@@ -386,6 +386,38 @@ struct V1TitledSectionCard<
     }
 }
 
+struct V1CardHeaderIconButton: View {
+
+    let systemImage: String
+    let accessibilityLabel: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle()
+                        .fill(
+                            Color(
+                                uiColor: .secondarySystemFill
+                            )
+                        )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(ConfigurationUI.faintHairline)
+                )
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
 extension V1TitledSectionCard where TrailingAccessory == EmptyView {
 
     init(

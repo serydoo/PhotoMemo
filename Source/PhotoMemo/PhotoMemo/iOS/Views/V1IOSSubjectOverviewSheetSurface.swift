@@ -136,21 +136,12 @@ struct V1IOSSubjectOverviewSheet: View {
     }
 
     private var editSubjectButton: some View {
-        Button {
+        V1CardHeaderIconButton(
+            systemImage: "pencil",
+            accessibilityLabel: "编辑记忆对象"
+        ) {
             configurationFlowState = onEditSubject()
-        } label: {
-            HStack(spacing: 5) {
-                Text("编辑")
-                    .font(.subheadline.weight(.semibold))
-
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.bold))
-                    .accessibilityHidden(true)
-            }
-            .foregroundStyle(Color.accentColor)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("编辑记忆对象")
         .accessibilityHint("编辑对象身份、关系与时间锚点")
     }
 

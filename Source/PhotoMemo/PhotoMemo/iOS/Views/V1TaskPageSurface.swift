@@ -438,24 +438,18 @@ struct V1TaskPageSurface: View {
     private var recentTasksSection: some View {
         V1TitledSectionCard(
             title: "最近完成",
-            subtitle: "保留最近完成的处理记录。"
-        ) {
-            if presentation.historyRows.count > 2 {
-                Button {
-                    isRecentTasksSheetPresented = true
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.title3)
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            Circle().fill(ConfigurationUI.controlBackground)
-                        )
+            subtitle: "保留最近完成的处理记录。",
+            trailingAccessory: {
+                if presentation.historyRows.count > 2 {
+                    V1CardHeaderIconButton(
+                        systemImage: "ellipsis",
+                        accessibilityLabel: "查看更多最近任务"
+                    ) {
+                        isRecentTasksSheetPresented = true
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("查看更多最近任务")
             }
-        } content: {
+        ) {
             if presentation.historyRows.isEmpty {
                 emptyRecentState
             } else {

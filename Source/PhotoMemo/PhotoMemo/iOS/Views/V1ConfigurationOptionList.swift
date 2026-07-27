@@ -831,10 +831,13 @@ struct V1ConfigurationActionFooter: View {
             .padding(.bottom, 8)
             .frame(maxWidth: .infinity)
             .background(
-                ConfigurationUI.appBackground
-                    .opacity(0.96)
-                    .ignoresSafeArea()
+                .ultraThinMaterial
             )
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(ConfigurationUI.faintHairline)
+                    .frame(height: 0.5)
+            }
             .alert(
                 "恢复默认配置？",
                 isPresented: $showsResetConfigurationConfirmation

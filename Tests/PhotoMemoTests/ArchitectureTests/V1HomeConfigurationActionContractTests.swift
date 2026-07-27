@@ -77,10 +77,31 @@ struct V1HomeConfigurationActionContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
         )
 
-        #expect(source.contains("Image(systemName: \"archivebox\")"))
-        #expect(source.contains("accessibilityLabel(\"管理本地备份\")"))
+        #expect(source.contains("V1CardHeaderIconButton("))
+        #expect(source.contains("systemImage: \"archivebox\""))
+        #expect(source.contains("accessibilityLabel: \"管理本地备份\""))
         #expect(source.contains("onOpenLocalConfigurationLibrary"))
         #expect(!source.contains("Image(systemName: \"plus\")"))
+    }
+
+    @Test("card header actions share the native icon-button treatment")
+    func cardHeaderActionsShareTheNativeIconButtonTreatment() throws {
+        let supportSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+        let subjectSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
+        let taskSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
+        )
+
+        #expect(supportSource.contains("struct V1CardHeaderIconButton"))
+        #expect(supportSource.contains(".frame(width: 44, height: 44)"))
+        #expect(supportSource.contains(".secondarySystemFill"))
+        #expect(subjectSource.contains("systemImage: \"pencil\""))
+        #expect(taskSource.contains("systemImage: \"ellipsis\""))
+        #expect(taskSource.contains("trailingAccessory:"))
     }
 
     @Test("home separates blocking failures from non-modal success feedback")

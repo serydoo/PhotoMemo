@@ -4,6 +4,14 @@ Last updated: 2026-07-27
 
 ## 2026-07-27 Configuration Reliability And Home Polish Pass
 
+- Configuration's bottom save affordance now floats over the editor with a
+  restrained system material rather than consuming its layout height. The
+  existing scroll-end reserve keeps the last card reachable while the editor
+  gains usable vertical space above the tab bar. Card-header functions now
+  share one native 44 pt icon-button treatment: Home backup (`archivebox`),
+  subject edit (`pencil`), and recent-task expansion (`ellipsis`). Focused UI
+  contracts passed; the signed build was overwrite-installed, launched, and
+  screen-captured on the physical iPhone 17 Pro Max.
 - Home now uses a dedicated normal asset-catalog image set sourced from the
   shipped application icon, so the 76 pt Home mark cannot fall back to an
   unrelated SF Symbol at runtime. Configuration cards have a restrained 8 pt
