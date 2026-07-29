@@ -2,6 +2,10 @@
 
 ## 2026-07-29 MemoMark 2.0.1 GitHub synchronization preparation
 
+- The signed `PhotoMemoiOS` build `2.0.1 (48)` was overwrite-installed and
+  launched on the paired physical iPhone 17 Pro Max (`iPhone7`) after the
+  GitHub sync. Existing app data was retained; the main app and Widget
+  Extension were observed running.
 - The next candidate is now `2.0.1 (48)`. Historical `2.0 (47)` release
   documents remain unchanged as the previous candidate record.
 - Settings -> About -> What's New now opens an in-app, localized release-note

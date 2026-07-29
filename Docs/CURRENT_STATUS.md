@@ -4,6 +4,10 @@ Last updated: 2026-07-29
 
 ## 2026-07-29 MemoMark 2.0.1 Release Preparation
 
+- Signed `PhotoMemoiOS` Debug build `2.0.1 (48)` was overwrite-installed on the
+  paired physical device identified as iPhone 17 Pro Max (`iPhone7`). The app
+  was not uninstalled and its container data was not cleared; the main app and
+  Widget Extension were confirmed running after launch.
 - Reframed the next delivery candidate as `2.0.1 (48)`, preserving `2.0 (47)`
   as the previous release-candidate history and keeping V3 as the active
   product stage.
