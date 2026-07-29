@@ -1,6 +1,130 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-29
+Last updated: 2026-07-30
+
+## 2026-07-30 UI And Time Output GitHub Sync Verification
+
+- Reviewed the time-display production repair, Share Extension polish, and
+  Configuration Center UI refinements across correctness, readability,
+  architecture, security, and performance boundaries. No private screenshots,
+  media, build products, credentials, or new dependencies enter the sync.
+- Closed two review gaps before synchronization: added the missing bilingual
+  Share checklist resource for `后台继续处理`, and updated the transport-DTO
+  architecture allowlist for the new `timeDisplayConfiguration` field.
+- The four focused regression suites passed. The complete macOS
+  `PhotoMemoTests` run then passed `1,214` tests with `1` existing skip and zero
+  failures. The unsigned generic iOS Debug build, both localization plist
+  checks, and `git diff --check` also passed.
+
+## 2026-07-30 Advanced Modules Sheet Spacing Follow-up
+
+- Refined the existing Advanced Modules sheet without changing its feature
+  scope, bindings, persistence, preview, renderer, or output behavior.
+- Replaced the zero-spacing container row with two native grouped `List` rows
+  for location and time. Each module now receives `12pt` vertical row padding,
+  while title-to-description spacing remains `4pt` and the internal control
+  rhythm uses `12pt`.
+- Preserved the accepted `390pt` / large detents, native separators, menus,
+  Dynamic Type behavior, accessibility labels, and single navigation title.
+- The focused `V1ConfigurationOptionListContractTests` suite, unsigned generic
+  iOS Debug build, and `git diff --check` passed. Physical iPhone 15 Pro and
+  iPhone 17 Pro Max visual acceptance remains pending and is not inferred from
+  build evidence.
+- A signed `2.0.1 (48)` Debug build passed strict signature verification and
+  was installed in place on `IPhone5` (iPhone 15 Pro) and `iPhone7` (iPhone 17
+  Pro Max) without uninstalling the app or clearing either container. Both
+  devices report the expected installed version. `IPhone5` launched
+  successfully; `iPhone7` rejected the automated launch because it was locked.
+- The same verified `2.0.1 (48)` package was subsequently installed in place
+  on `Hong` (iPhone 15 Pro), again without clearing its app container. The
+  device reports the expected version; automated launch was denied only because
+  the phone was locked.
+
+## 2026-07-30 Share Extension UI Polish
+
+- Kept the accepted Share half-sheet shell, nested outer/inner cards, stable
+  state projection, automatic dismissal, intake, queue, PhotoKit, Live Photo,
+  and export behavior unchanged.
+- Added Share-specific geometry tokens for the content inset, content/action
+  rhythm, bottom action inset, 44pt primary action target, and checklist row/icon
+  metrics. The Hero title is now a VoiceOver heading and the brand is static
+  text.
+- Replaced the renderer-owned `NSTextAttachment` paragraph with four native
+  UIKit rows owned by `PhotoMemoShareExtensionViewController`. The renderer now
+  only shows or hides that checklist while projecting dynamic status messages.
+- Removed the repeated photo count from the Hero subtitle and added the
+  localized `share.ready.subtitle` key in both interface languages.
+- Focused Share controller contracts passed. Unsigned macOS Debug and generic
+  unsigned iOS Debug builds passed; `git diff --check` passed. Physical Apple
+  Photos -> Share -> MemoMark visual and VoiceOver acceptance remains pending.
+
+## 2026-07-30 Memory Expression Row Follow-up
+
+- On the smaller iPhone evidence, `记忆表达` fell back to a vertical row
+  because the shared horizontal row reserved `128pt` for its selector and
+  detail group. The wider iPhone remained horizontal, making the responsive
+  rhythm visibly inconsistent.
+- Added a presentation-only `112pt` horizontal trailing budget for
+  `记忆表达`. Other configuration rows retain `128pt`; the native `Menu`,
+  selected value, accessibility behavior, persistence, Memory Engine,
+  renderer, export, and Share flow are unchanged.
+- Focused `V1ConfigurationOptionListContractTests` passed with 11 tests;
+  unsigned generic iOS Debug build produced `PhotoMemoiOS.app`; `git diff
+  --check` passed. A signed `PhotoMemoiOS` Debug `2.0.1 (48)` package was
+  then overwrite-installed and launched on paired `IPhone5` (iPhone 15 Pro)
+  and `iPhone7` (iPhone 17 Pro Max); main App and Widget Extension processes
+  were confirmed running. Manual visual acceptance of the one-line row on
+  both physical devices remains separate.
+
+## 2026-07-30 Memory Expression Picker Polish
+
+- On the physical iPhone 15 Pro evidence, the `记忆表达` selector was the
+  only visible capsule that expanded across the full inner panel after the
+  compact row reflowed vertically. Its native `Menu`, selected value binding,
+  and accessibility labels remain unchanged.
+- Added an explicit presentation-only width choice so `记忆表达` uses its
+  intrinsic capsule width and the vertical trailing group remains aligned to
+  the panel edge. Other selection capsules retain their existing width
+  behavior.
+- Focused `V1ConfigurationOptionListContractTests` passed with 11 tests;
+  unsigned generic iOS Debug build passed; `git diff --check` passed. Manual
+  visual acceptance on the physical iPhone 15 Pro and iPhone 17 Pro Max is
+  still required before device delivery.
+
+## 2026-07-29 Time Display Configuration Production Output Repair
+
+- Fixed the daily-record regression where the preview reflected the saved time
+  display choice but final output fell back to the default date format and lost
+  the weekday. `TimeDisplayConfiguration` now flows through the durable batch
+  snapshot and final `RecordCardBuildService` context, using the same formatter
+  as the preview.
+- Added focused regression coverage for the daily weekday and final-render
+  paths. `TimeDisplayModuleContractTests` and `RecordCardBuildServiceTests`
+  passed, including the expected output `2026年7月29日 星期三`.
+- Built signed `PhotoMemoiOS` Debug `2.0.1 (48)` with the active Apple
+  Development identity and strict nested-code verification. The same app was
+  overwrite-installed without uninstalling or clearing data on paired device
+  `Hong` (iPhone 15 Pro) and `iPhone7` (iPhone 17 Pro Max), then both main app
+  and Widget Extension processes were confirmed running.
+- This is deployment evidence only. Manual visual confirmation of the final
+  exported card, weekday rendering in Apple Photos, the full Share ->
+  Processing -> Notification -> Apple Photos lifecycle, Dynamic Type,
+  VoiceOver, and Live Photo behavior remains separate; Live Photo is not part
+  of this repair pass.
+
+## 2026-07-29 Advanced Modules Sheet Polish
+
+- Scoped the supplied iPhone screenshot follow-up to the Advanced Modules
+  sheet. The default presentation now uses a compact `390pt` detent with
+  `.large` available for expansion, and the duplicated `高级模块` section
+  heading was removed so the navigation title is the single heading.
+- Standardized the module title-to-description gap to `4pt` and the vertical
+  control-group gap to `8pt` using existing design tokens. No Memory Engine,
+  renderer, export, persistence, or other Configuration Center behavior
+  changed.
+- Focused `V1ConfigurationOptionListContractTests` passed and the generic iOS
+  Debug build passed with signing disabled. Physical-device visual acceptance
+  of the sheet and native menus remains a follow-up verification item.
 
 ## 2026-07-29 MemoMark 2.0.1 Release Preparation
 
