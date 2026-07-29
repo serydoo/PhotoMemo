@@ -27,13 +27,17 @@ struct V1AdvancedModulesSheet: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(spacing: 0) {
-                        locationDisplayRow
-                        V1HorizontalDivider(horizontalInset: 0)
-                        timeDisplayRow
-                    }
-                } header: {
-                    Text("高级模块")
+                    locationDisplayRow
+                        .padding(
+                            .vertical,
+                            MemoMarkDesignTokens.Spacing.medium
+                        )
+
+                    timeDisplayRow
+                        .padding(
+                            .vertical,
+                            MemoMarkDesignTokens.Spacing.medium
+                        )
                 }
             }
             .listStyle(.insetGrouped)
@@ -47,7 +51,7 @@ struct V1AdvancedModulesSheet: View {
                 }
             }
         }
-        .presentationDetents([.fraction(0.58), .large])
+        .presentationDetents([.height(390), .large])
         .presentationDragIndicator(.visible)
     }
 
@@ -79,7 +83,10 @@ struct V1AdvancedModulesSheet: View {
     }
 
     private var verticalLocationDisplayRow: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(
+            alignment: .leading,
+            spacing: MemoMarkDesignTokens.Spacing.medium
+        ) {
             locationDisplayHeading
 
             locationDisplayMenu
@@ -88,7 +95,10 @@ struct V1AdvancedModulesSheet: View {
     }
 
     private var locationDisplayHeading: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(
+            alignment: .leading,
+            spacing: MemoMarkDesignTokens.Spacing.extraSmall
+        ) {
             Text("地理显示")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
@@ -102,9 +112,15 @@ struct V1AdvancedModulesSheet: View {
     }
 
     private var timeDisplayRow: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(
+            alignment: .leading,
+            spacing: MemoMarkDesignTokens.Spacing.medium
+        ) {
             HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(
+                    alignment: .leading,
+                    spacing: MemoMarkDesignTokens.Spacing.extraSmall
+                ) {
                     Text("时间显示")
                         .font(.subheadline.weight(.semibold))
                     Text("照片时间想怎样被写下。")

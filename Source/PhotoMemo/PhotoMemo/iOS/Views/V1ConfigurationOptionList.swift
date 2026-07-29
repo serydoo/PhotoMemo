@@ -343,6 +343,7 @@ struct V1ConfigurationOptionList: View {
             value: memoryDisplayValue,
             detail: memoryDisplayDetail,
             showsTrailingChevron: false,
+            horizontalTrailingWidth: 112,
             onDetailTap: {
                 showsMemoryDisplayDetail = true
             }
@@ -372,7 +373,10 @@ struct V1ConfigurationOptionList: View {
                         }
                     }
                 } label: {
-                    optionSelectionPill(title: memoryDisplayValue)
+                    optionSelectionPill(
+                        title: memoryDisplayValue,
+                        expandsToRowWidth: false
+                    )
                 }
                 .accessibilityLabel("记忆表达")
                 .accessibilityValue(memoryDisplayValue)
@@ -690,6 +694,7 @@ struct V1ConfigurationOptionList: View {
         value: String,
         detail: String,
         showsTrailingChevron: Bool = true,
+        horizontalTrailingWidth: CGFloat = 128,
         onDetailTap: (() -> Void)? = nil,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
@@ -701,6 +706,7 @@ struct V1ConfigurationOptionList: View {
             detail: detail,
             showsTrailingChevron:
                 showsTrailingChevron,
+            horizontalTrailingWidth: horizontalTrailingWidth,
             onDetailTap: onDetailTap,
             trailing: trailing
         )
@@ -713,6 +719,7 @@ struct V1ConfigurationOptionList: View {
         value: String,
         detail: String,
         showsTrailingChevron: Bool = true,
+        horizontalTrailingWidth: CGFloat = 128,
         onDetailTap: (() -> Void)? = nil,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
@@ -727,6 +734,7 @@ struct V1ConfigurationOptionList: View {
             subtitle: subtitle,
             detail: detail,
             trailingSpacing: trailingSpacing,
+            horizontalTrailingWidth: horizontalTrailingWidth,
             showsTrailingChevron: showsTrailingChevron,
             onDetailTap: onDetailTap,
             trailing: trailing
@@ -749,6 +757,7 @@ struct V1ConfigurationOptionList: View {
         subtitle: String,
         detail: String,
         trailingSpacing: CGFloat,
+        horizontalTrailingWidth: CGFloat,
         showsTrailingChevron: Bool,
         onDetailTap: (() -> Void)?,
         @ViewBuilder trailing: () -> Trailing
@@ -772,6 +781,7 @@ struct V1ConfigurationOptionList: View {
                     subtitle: subtitle,
                     detail: detail,
                     trailingSpacing: trailingSpacing,
+                    horizontalTrailingWidth: horizontalTrailingWidth,
                     showsTrailingChevron: showsTrailingChevron,
                     onDetailTap: onDetailTap,
                     trailing: trailing
@@ -797,6 +807,7 @@ struct V1ConfigurationOptionList: View {
         subtitle: String,
         detail: String,
         trailingSpacing: CGFloat,
+        horizontalTrailingWidth: CGFloat,
         showsTrailingChevron: Bool,
         onDetailTap: (() -> Void)?,
         @ViewBuilder trailing: () -> Trailing
@@ -822,7 +833,7 @@ struct V1ConfigurationOptionList: View {
             )
             .frame(
                 minWidth: 72,
-                maxWidth: 128,
+                maxWidth: horizontalTrailingWidth,
                 alignment: .trailing
             )
         }
@@ -852,7 +863,7 @@ struct V1ConfigurationOptionList: View {
                 onDetailTap: onDetailTap,
                 trailing: trailing
             )
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -974,7 +985,10 @@ struct V1ConfigurationOptionList: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
-    private func optionSelectionPill(title: String) -> some View {
+    private func optionSelectionPill(
+        title: String,
+        expandsToRowWidth: Bool = true
+    ) -> some View {
         HStack(spacing: 6) {
             Text(title)
                 .font(.caption.weight(.semibold))
@@ -990,7 +1004,10 @@ struct V1ConfigurationOptionList: View {
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(
+            maxWidth: expandsToRowWidth ? CGFloat.infinity : nil,
+            alignment: .trailing
+        )
         .background(
             RoundedRectangle(
                 cornerRadius:

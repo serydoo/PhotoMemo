@@ -100,7 +100,26 @@ struct V1ConfigurationOptionListContractTests {
         #expect(optionListSource.contains("Text(\"…\")"))
         #expect(optionListSource.contains(".foregroundStyle(Color.accentColor)"))
         #expect(optionListSource.contains(".lineLimit(1)"))
-        #expect(optionListSource.contains("optionSelectionPill(title: memoryDisplayValue)"))
+        #expect(
+            optionListSource.contains(
+                "title: memoryDisplayValue,\n                        expandsToRowWidth: false"
+            )
+        )
+        #expect(
+            optionListSource.contains(
+                "horizontalTrailingWidth: 112,"
+            )
+        )
+        #expect(
+            optionListSource.contains(
+                "horizontalTrailingWidth: CGFloat = 128"
+            )
+        )
+        #expect(
+            optionListSource.contains(
+                "expandsToRowWidth: Bool = true"
+            )
+        )
     }
 
     @Test("saved configuration uses a restrained disabled action")
@@ -223,6 +242,14 @@ struct V1ConfigurationOptionListContractTests {
         )
         #expect(sheetSource.contains("NavigationStack"))
         #expect(sheetSource.contains(".listStyle(.insetGrouped)"))
+        #expect(!sheetSource.contains("VStack(spacing: 0)"))
+        #expect(!sheetSource.contains("V1HorizontalDivider(horizontalInset: 0)"))
+        #expect(
+            sheetSource.components(
+                separatedBy:
+                    "MemoMarkDesignTokens.Spacing.medium"
+            ).count >= 5
+        )
         #expect(sheetSource.contains("Text(\"地理显示\")"))
         #expect(
             sheetSource.contains(
@@ -230,7 +257,11 @@ struct V1ConfigurationOptionListContractTests {
             )
         )
         #expect(sheetSource.contains(".font(.caption)"))
-        #expect(sheetSource.contains("spacing: 3"))
+        #expect(
+            sheetSource.contains(
+                "spacing: MemoMarkDesignTokens.Spacing.extraSmall"
+            )
+        )
         #expect(
             sheetSource.contains(
                 "@Environment(\\.dynamicTypeSize)"
@@ -304,6 +335,66 @@ struct V1ConfigurationOptionListContractTests {
         ]
 
         #expect(!headerSource.contains(".frame(minHeight: 44)"))
+    }
+
+    @Test("advanced modules sheet uses a compact default detent and one heading")
+    func advancedModulesSheetUsesCompactDefaultDetentAndOneHeading() throws {
+        let sheetSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AdvancedModulesSheet.swift"
+        )
+
+        #expect(
+            sheetSource.contains(
+                ".presentationDetents([.height(390), .large])"
+            )
+        )
+        #expect(
+            !sheetSource.contains(
+                "} header: {\n                    Text(\"高级模块\")"
+            )
+        )
+        #expect(
+            sheetSource.contains(
+                "VStack(\n            alignment: .leading,\n            spacing: MemoMarkDesignTokens.Spacing.extraSmall\n        )"
+            )
+        )
+        #expect(
+            sheetSource.contains(
+                "locationDisplayRow\n                        .padding("
+            )
+        )
+        #expect(
+            sheetSource.contains(
+                "timeDisplayRow\n                        .padding("
+            )
+        )
+    }
+
+    @Test("vertical configuration rows keep compact controls trailing aligned")
+    func verticalConfigurationRowsKeepCompactControlsTrailingAligned() throws {
+        let optionListSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let verticalRowStart = try #require(
+            optionListSource.range(
+                of: "private func verticalConfigurationRow"
+            )
+        )
+        let verticalRowEnd = try #require(
+            optionListSource.range(
+                of: "private func configurationRowHeading",
+                range: verticalRowStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let verticalRowSource = optionListSource[
+            verticalRowStart.lowerBound..<verticalRowEnd.lowerBound
+        ]
+
+        #expect(
+            verticalRowSource.contains(
+                ".frame(maxWidth: .infinity, alignment: .trailing)"
+            )
+        )
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
