@@ -6,6 +6,12 @@ import UIKit
 
 struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
+    @Environment(\.locale)
+    private var locale
+
+    @AppStorage("photomemo.v1.applePhotosGuideDismissed")
+    private var hasDismissedApplePhotosGuide = false
+
     let subjectSummary: V1IOSHomeSubjectSummaryProjection
     let subject: MemorySubject?
     let activitySnapshot: PhotoMemoBackgroundJobSnapshot?
@@ -22,6 +28,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     let onOpenSubject: () -> Void
     let onOpenProcessing: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
+    let onOpenWorkflowGuide: () -> Void
     let onOpenPhotoPicker: () -> Void
     let onOpenSettings: () -> Void
     let onSelectMemoryPreset: (MemoryPreset) -> Void
@@ -65,6 +72,10 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private var topSummaryCluster: some View {
         VStack(spacing: 14) {
+            if !hasDismissedApplePhotosGuide {
+                applePhotosEntrySection
+            }
+
             profileSection
                 .background(profileTrackingBackground)
 
@@ -72,6 +83,108 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
             currentPresetSection
         }
+    }
+
+    private var applePhotosEntrySection: some View {
+        V1TitledSectionCard(
+            title: "从 Apple Photos 开始",
+            subtitle: "在系统相册选好照片，分享给时光记。",
+            trailingAccessory: {
+                Button(action: dismissApplePhotosGuide) {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("关闭首次使用说明")
+                .accessibilityHint("关闭后，仍可在设置的使用流程中查看")
+            }
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(applePhotosWorkflowIntroduction)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(applePhotosWorkflowSteps) { step in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(step.title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+
+                            Text(step.detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 9)
+
+                        if step.id != applePhotosWorkflowSteps.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+
+                Button(action: onOpenWorkflowGuide) {
+                    Text("查看分享方法")
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                        .v1CompactBottomPrimaryAction()
+                }
+                .buttonStyle(V1CompactPrimaryActionButtonStyle())
+                .frame(maxWidth: .infinity)
+
+                Text(nextShareConfigurationText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(nextShareConfigurationText)
+            }
+        }
+    }
+
+    private var applePhotosWorkflowSteps:
+        [V1WelcomePresentation.WorkflowStep] {
+        V1WelcomePresentation.workflowSteps(
+            for: MemoMarkLanguage.resolved(from: locale)
+        )
+    }
+
+    private var applePhotosWorkflowIntroduction: String {
+        MemoMarkLanguage.resolved(from: locale).localized(
+            key: "welcome.workflow.introduction",
+            fallback: "日常记录从 Apple Photos 开始：选择照片，分享给时光记，完成后再回到相册查看。"
+        )
+    }
+
+    private func dismissApplePhotosGuide() {
+        hasDismissedApplePhotosGuide = true
+    }
+
+    private var nextShareConfigurationText: String {
+        let language = MemoMarkLanguage.resolved(from: locale)
+
+        guard isConfigurationReady,
+              let selectedMemoryPresetID,
+              let preset = memoryPresets.first(where: {
+                  $0.id == selectedMemoryPresetID
+              }) else {
+            return language.localized(
+                key: "home.next_share.save_configuration",
+                fallback: "保存配置后，下一次分享会自动使用当前配置。"
+            )
+        }
+
+        let format = language.localized(
+            key: "home.next_share.configuration_format",
+            fallback: "下一次从 Apple Photos 分享时，将使用当前配置“%@”。"
+        )
+        return String(format: format, locale: locale, preset.title)
     }
 
     @ViewBuilder
@@ -89,43 +202,73 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var topHeaderSection: some View {
+        ViewThatFits(in: .horizontal) {
+            regularTopHeaderSection
+            compactTopHeaderSection
+        }
+        .padding(.horizontal, 2)
+        .padding(.vertical, 4)
+    }
+
+    private var regularTopHeaderSection: some View {
         HStack(alignment: .top, spacing: 12) {
             V1HomeAppMark()
 
             VStack(alignment: .leading, spacing: 7) {
-                Text("时光记")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text("让照片保留它在人生时间线里的位置。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
+                brandIdentity
                 adaptiveHeaderPills
             }
+            .fixedSize(horizontal: true, vertical: false)
 
             Spacer(minLength: 0)
 
-            Button(action: onOpenSettings) {
-                Image(systemName: MemoMarkSymbol.settings.name)
-                    .font(.body.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        Circle()
-                            .fill(
-                                Color(
-                                    uiColor: .secondarySystemFill
-                                )
-                            )
-                    )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("打开设置")
+            settingsButton
         }
-        .padding(.horizontal, 2)
-        .padding(.vertical, 4)
+    }
+
+    private var compactTopHeaderSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                V1HomeAppMark()
+                brandIdentity
+                Spacer(minLength: 0)
+                settingsButton
+            }
+
+            adaptiveHeaderPills
+        }
+    }
+
+    private var brandIdentity: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("时光记")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.primary)
+
+            Text("让照片记得，它在人生里的位置。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var settingsButton: some View {
+        Button(action: onOpenSettings) {
+            Image(systemName: MemoMarkSymbol.settings.name)
+                .font(.body.weight(.bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle()
+                        .fill(
+                            Color(
+                                uiColor: .secondarySystemFill
+                            )
+                        )
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("打开设置")
     }
 
     private var adaptiveHeaderPills: some View {
@@ -159,7 +302,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     private var profileSection: some View {
         V1TitledSectionCard(
             title: "记忆对象",
-            subtitle: "查看当前对象与时间锚点"
+            subtitle: "回忆正围绕谁展开。"
         ) {
             V1IOSSubjectHomeEntryContent(
                 subjectSummary: subjectSummary,
@@ -187,8 +330,8 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private var currentPresetSection: some View {
         V1TitledSectionCard(
-            title: "我的配置",
-            subtitle: "选择当前生效的记录方式",
+            title: "我的预设",
+            subtitle: "下一次分享，要用哪种方式记录。",
             trailingAccessory: {
                 V1CardHeaderIconButton(
                     systemImage: "ellipsis",
@@ -292,26 +435,21 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     private var processPhotoFooter: some View {
         VStack(spacing: 0) {
             Button(action: onOpenPhotoPicker) {
-                HStack(spacing: 10) {
-                    V1HomeProcessPhotoIcon()
-
-                    Text(
-                        isConfigurationReady
-                        ? "选择照片"
-                        : "先完成配置"
-                    )
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                }
+                Label(
+                    isConfigurationReady
+                    ? "在 App 内选择照片"
+                    : "先完成配置",
+                    systemImage: "photo.on.rectangle"
+                )
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
                 .v1CompactBottomPrimaryAction()
             }
-            .buttonStyle(
-                V1CompactPrimaryActionButtonStyle()
-            )
+            .buttonStyle(V1CompactPrimaryActionButtonStyle())
             .accessibilityLabel(
                 isConfigurationReady
-                ? "选择照片"
+                ? "在 App 内选择照片"
                 : "先完成配置"
             )
         }
@@ -516,6 +654,9 @@ private struct V1IOSHomeActivityCard: View {
 
 private struct V1HomeMemoryPresetRow: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     let preset: MemoryPreset
     let borderStyleName: String
     let anchorType: AnchorType
@@ -566,100 +707,141 @@ private struct V1HomeMemoryPresetRow: View {
     }
 
     private var rowContent: some View {
-        HStack(alignment: .center, spacing: 12) {
-            presetIdentityMark
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(preset.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                Text(borderStyleName)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                Text(presetDetail)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 4)
-
-            HStack(spacing: 8) {
-                Menu {
-                    if isSelected {
-                        Button(action: onRename) {
-                            Label("重命名", systemImage: "pencil")
-                        }
-                    }
-
-                    Button(action: onSave) {
-                        Label(
-                            "保存",
-                            systemImage: MemoMarkSymbol.localStorage.name
-                        )
-                    }
-                    .disabled(isSaveDisabled)
-
-                    Button(role: .destructive) {
-                        showsDeleteConfirmation = true
-                    } label: {
-                        Label("删除", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 30, height: 30)
-                }
-                .accessibilityLabel("更多配置操作")
-
-                Image(
-                    systemName:
-                        isSelected
-                        ? "checkmark.circle.fill"
-                        : "circle"
+        adaptivePresetRowContent
+            .padding(10)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
                 )
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(
-                    isSelected
-                    ? Color.accentColor
-                    : Color.secondary.opacity(0.58)
+                .fill(ConfigurationUI.panelBackground)
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
                 )
-                .frame(width: 26, height: 30)
+                .stroke(ConfigurationUI.faintHairline)
+            )
+            .shadow(
+                color: Color.black.opacity(0.045),
+                radius: 12,
+                y: 5
+            )
+    }
+
+    @ViewBuilder
+    private var adaptivePresetRowContent: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            verticalPresetRowContent
+        } else {
+            ViewThatFits(in: .horizontal) {
+                horizontalPresetRowContent
+                verticalPresetRowContent
             }
         }
-        .padding(10)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
+    }
+
+    private var horizontalPresetRowContent: some View {
+        HStack(alignment: .center, spacing: 12) {
+            presetIdentityMark
+            presetTextContent(lineLimit: 1)
+
+            Spacer(minLength: 4)
+            presetActions
+        }
+    }
+
+    private var verticalPresetRowContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                presetIdentityMark
+                presetTextContent(lineLimit: 3)
+            }
+
+            presetActions
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+
+    private func presetTextContent(
+        lineLimit: Int
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(preset.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(lineLimit)
+
+            Text(borderStyleName)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(lineLimit)
+
+            Text(presetDetail)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(lineLimit)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var presetActions: some View {
+        HStack(spacing: 8) {
+            Menu {
+                if isSelected {
+                    Button(action: onRename) {
+                        Label("重命名", systemImage: "pencil")
+                    }
+                }
+
+                Button(action: onSave) {
+                    Label(
+                        "保存",
+                        systemImage: MemoMarkSymbol.localStorage.name
+                    )
+                }
+                .disabled(isSaveDisabled)
+
+                Button(role: .destructive) {
+                    showsDeleteConfirmation = true
+                } label: {
+                    Label("删除", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 30, height: 30)
+                    .contentShape(
+                        Rectangle().inset(by: -7)
+                    )
+            }
+            .accessibilityLabel("更多配置操作")
+
+            Image(
+                systemName:
+                    isSelected
+                    ? "checkmark.circle.fill"
+                    : "circle"
             )
-            .fill(ConfigurationUI.panelBackground)
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(
+                isSelected
+                ? Color.accentColor
+                : Color.secondary.opacity(0.58)
             )
-            .stroke(ConfigurationUI.faintHairline)
-        )
-        .shadow(
-            color: Color.black.opacity(0.045),
-            radius: 12,
-            y: 5
-        )
+            .frame(width: 26, height: 30)
+        }
+        .opacity(isSelected ? 1 : 0.42)
     }
 
     private var presetDetail: String {
-        guard let savedAt = preset.savedAt else {
+        guard isSelected, let savedAt = preset.savedAt else {
             return preset.summary
         }
 
-        return "上次修改：\(Self.savedStatusValue(savedAt))"
+        return Self.savedStatusValue(savedAt)
     }
 
     private static func savedStatusValue(_ date: Date) -> String {
@@ -844,18 +1026,18 @@ private struct V1HomeAppMark: View {
         Image("HomeAppIcon")
             .resizable()
             .scaledToFill()
-        .frame(width: 76, height: 76)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: 18,
-                style: .continuous
+            .frame(width: 70, height: 70)
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
             )
-        )
-        .shadow(
-            color: Color.black.opacity(0.08),
-            radius: 8,
-            y: 3
-        )
+            .shadow(
+                color: Color.black.opacity(0.08),
+                radius: 8,
+                y: 3
+            )
     }
 }
 
@@ -873,12 +1055,12 @@ private struct V1HomeHeaderPill: View {
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
         }
-        .foregroundStyle(Color.blue)
+        .foregroundStyle(MemoMarkDesignTokens.Semantic.quietInformation)
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(
             Capsule(style: .continuous)
-                .fill(Color.blue.opacity(0.08))
+                .fill(Color(uiColor: .secondarySystemFill))
         )
         .fixedSize(horizontal: true, vertical: false)
     }

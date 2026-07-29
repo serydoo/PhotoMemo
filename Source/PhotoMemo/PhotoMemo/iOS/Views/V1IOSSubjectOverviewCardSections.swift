@@ -158,6 +158,9 @@ struct V1IOSSubjectIdentitySection: View {
 
 struct V1IOSSubjectAnchorSection: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     let presentation:
         V1IOSSubjectOverviewPresentation
 
@@ -222,8 +225,42 @@ struct V1IOSSubjectAnchorSection: View {
                 in: .whitespacesAndNewlines
             )
 
-        return HStack(alignment: .center, spacing: 12) {
-            RoundedRectangle(
+        return Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 12) {
+                        anchorIcon(anchor)
+                        anchorText(anchor, trimmedNote: trimmedNote)
+                    }
+                    anchorTypePill(anchor)
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: 12) {
+                        anchorIcon(anchor)
+                        anchorText(anchor, trimmedNote: trimmedNote)
+                        Spacer(minLength: 0)
+                        anchorTypePill(anchor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .top, spacing: 12) {
+                            anchorIcon(anchor)
+                            anchorText(anchor, trimmedNote: trimmedNote)
+                        }
+                        anchorTypePill(anchor)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+    }
+
+    private func anchorIcon(
+        _ anchor: MemorySubject.TimeAnchor
+    ) -> some View {
+        RoundedRectangle(
                 cornerRadius:
                     ConfigurationUI.compactIconCornerRadius,
                 style: .continuous
@@ -249,38 +286,42 @@ struct V1IOSSubjectAnchorSection: View {
                     )
                 )
             }
+    }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(anchor.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+    private func anchorText(
+        _ anchor: MemorySubject.TimeAnchor,
+        trimmedNote: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(anchor.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
 
-                Text(
-                    trimmedNote.isEmpty
-                    ? chineseDate(anchor.date)
-                    : "\(chineseDate(anchor.date)) · \(trimmedNote)"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            }
-
-            Spacer(minLength: 0)
-
-            Text(anchor.resolvedAnchorType.displayName)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(Color.primary.opacity(0.045))
-                )
+            Text(
+                trimmedNote.isEmpty
+                ? chineseDate(anchor.date)
+                : "\(chineseDate(anchor.date)) · \(trimmedNote)"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 11)
+    }
+
+    private func anchorTypePill(
+        _ anchor: MemorySubject.TimeAnchor
+    ) -> some View {
+        Text(anchor.resolvedAnchorType.displayName)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.primary.opacity(0.045))
+            )
     }
 
     private func chineseDate(_ date: Date) -> String {

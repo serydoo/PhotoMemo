@@ -53,10 +53,10 @@ struct PhotoMemoRootSceneView: View {
                 runtime.externalIntakeCenter
                 .$revision
             ) { _ in
-                runtime.flushExternalRequests()
+                runtime.refreshExternalIntakeState()
             }
             .task {
-                runtime.refreshExternalIntakeState()
+                await runtime.refreshPermissionsAndResume()
             }
             .onAppear {
                 runtime.refreshExternalIntakeState()
@@ -65,8 +65,10 @@ struct PhotoMemoRootSceneView: View {
                 guard newPhase == .active else {
                     return
                 }
-
-                runtime.refreshExternalIntakeState()
+                Task {
+                    await runtime
+                        .refreshPermissionsAndResume()
+                }
             }
     }
 

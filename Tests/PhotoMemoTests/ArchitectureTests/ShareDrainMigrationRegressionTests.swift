@@ -1,4 +1,5 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
+import Combine
 import Foundation
 import Testing
 import UniformTypeIdentifiers
@@ -203,6 +204,63 @@ struct ShareDrainMigrationRegressionTests {
                 .drainPendingRequests()
                 .isEmpty
         )
+    }
+
+    @MainActor
+    @Test("Direct queue preparation cannot reenter foreground processing through revision")
+    func directPreparationDoesNotStartProcessingThroughRevision() async throws {
+        let suiteName =
+            "PhotoMemo.ShareDrainMigrationRegressionTests.Preparation.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        let rootDirectoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(suiteName, isDirectory: true)
+        let intakeDirectoryURL = rootDirectoryURL
+            .appendingPathComponent("ExternalIntake", isDirectory: true)
+        let externalIntakeStore = ExternalPhotoIntakeStore(
+            defaults: defaults,
+            intakeDirectoryURL: intakeDirectoryURL
+        )
+        let settingsService = SettingsService(
+            defaults: defaults,
+            configurationLibraryBaseDirectoryURL: rootDirectoryURL
+        )
+        let queueStore = BatchQueueStore(
+            defaults: defaults,
+            settingsService: settingsService,
+            externalIntakeStore: externalIntakeStore,
+            automaticallyStartsProcessing: false
+        )
+        let environment = AppEnvironment.live(
+            defaults: defaults,
+            configurationLibraryBaseDirectoryURL: rootDirectoryURL,
+            intakeDirectoryURL: intakeDirectoryURL,
+            batchQueueStore: queueStore
+        )
+        let runtime = PhotoMemoAppRuntime(environment: environment)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: rootDirectoryURL)
+        }
+
+        runtime.handleExternalURLs(
+            [try SyntheticFixtureLibrary.fixtureURL(.iphoneJPEG)],
+            source: .shareExtension
+        )
+        let revisionObserver = environment.externalIntakeCenter
+            .$revision
+            .dropFirst()
+            .sink { _ in
+                runtime.refreshExternalIntakeState()
+            }
+
+        let result = runtime.flushExternalRequests()
+        try await Task.sleep(for: .milliseconds(200))
+        withExtendedLifetime(revisionObserver) {}
+
+        #expect(result == .prepared)
+        #expect(queueStore.jobs.first?.tasks.first?.phase == .queued)
+        #expect(!queueStore.isProcessing)
     }
 
     @MainActor

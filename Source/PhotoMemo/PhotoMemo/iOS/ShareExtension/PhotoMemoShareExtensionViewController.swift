@@ -479,7 +479,9 @@ private extension PhotoMemoShareExtensionViewController {
         previewCaptionLabel.numberOfLines = 0
         previewCaptionLabel.adjustsFontForContentSizeCategory = true
         previewCaptionLabel.text =
-            "灰色等待，蓝色处理中，绿色完成，红色需要处理。"
+            MemoMarkLanguage.interfaceStored == .english
+            ? "The receiving status for each photo appears here."
+            : "每张照片的接收状态会显示在这里。"
     }
 
     func configureFooterLabel() {

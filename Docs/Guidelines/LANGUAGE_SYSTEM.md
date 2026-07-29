@@ -1,6 +1,6 @@
 # Language System
 
-Last updated: 2026-06-23
+Last updated: 2026-07-29
 
 ## Status
 
@@ -10,12 +10,22 @@ Frozen
 
 ## Tone
 
+The canonical source for MemoMark's product language is
+`Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md`.
+
 All user-facing language should be:
 
 - Human
 - Gentle
 - Calm
 - Confident
+- Natural
+- Restrained
+- Warm
+
+Narrative copy should describe people, important moments, memories, and the
+intended result. It should not explain modules, algorithms, metadata, or layout
+mechanics as the primary user experience.
 
 ## Progress Language
 
@@ -74,6 +84,12 @@ Instead, MemoMark should recommend the best experience according to:
 The product should recommend.
 
 It should not forbid.
+
+## Precision Boundary
+
+Narrative language does not replace factual system language. Permissions,
+privacy, errors, recovery, purchases, destructive actions, and Apple Photos
+state must remain direct, precise, and actionable.
 
 ## Prohibited Language
 

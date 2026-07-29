@@ -321,6 +321,12 @@ final class SettingsService: ObservableObject {
         legacyStore.saveLocationDisplayConfiguration(configuration)
     }
 
+    func saveTimeDisplayConfiguration(
+        _ configuration: ExpressionModuleConfiguration?
+    ) {
+        legacyStore.saveTimeDisplayConfiguration(configuration)
+    }
+
     func saveMediaOutputMode(_ mode: V1MediaOutputMode) {
         mediaOutputMode = mode
         legacyStore.saveMediaOutputMode(mode)
@@ -580,6 +586,11 @@ extension SettingsService {
     func loadLocationDisplayConfiguration()
     -> ExpressionModuleConfiguration? {
         legacyStore.loadLocationDisplayConfiguration()
+    }
+
+    func loadTimeDisplayConfiguration()
+    -> ExpressionModuleConfiguration? {
+        legacyStore.loadTimeDisplayConfiguration()
     }
 
     var normalizedSelectedAlbumIdentifier: String {

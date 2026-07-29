@@ -46,7 +46,8 @@ MemoMark V1 has a real local-first application architecture:
 - The main pipeline is real, not mock-only.
 - Metadata ownership is relatively clear.
 - Share Extension does not read EXIF directly, which protects metadata ownership.
-- MainView has been decomposed into a coordinator shell and extension files.
+- The legacy `MainView` workspace/editor subtree has been retired; current
+  Configuration Center entry points are explicit on macOS and iOS.
 - Tests exist across renderer, metadata, export, memory, batch, and variable behavior.
 
 ### Weaknesses
@@ -66,7 +67,7 @@ The repository has many useful documents, but they mix product direction, histor
 ### Strengths
 
 - Strong project memory exists.
-- Metadata, export, workflow, renderer, and MainView refactor areas have substantial written context.
+- Metadata, export, workflow, renderer, and retired editor-refactor areas have substantial written context.
 - ADRs exist for several important boundaries.
 - Current status and handoff docs are rich enough for agent continuity.
 
@@ -89,7 +90,7 @@ Documents that overlap and should eventually be consolidated after research spec
   - `Docs/ProductDirection.md`
   - `Docs/ProductBacklog.md`
   - `Docs/ROADMAP.md`
-- MainView refactor planning:
+- retired MainView refactor planning (historical only):
   - `Docs/MAINVIEW_MVP_REFACTOR_SPEC.md`
   - `Docs/MAINVIEW_MVP_REFACTOR_PLAN.md`
   - `Docs/MAINVIEW_PERMISSION_AND_CONTENT_REFINEMENT_SPEC.md`

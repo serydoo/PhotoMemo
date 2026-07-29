@@ -27,6 +27,9 @@ final class BatchQueueStore: ObservableObject {
     private let settingsService:
         SettingsService
 
+    private let automaticallyStartsProcessing:
+        Bool
+
     private let execution:
         BatchQueueExecution
 
@@ -74,6 +77,7 @@ final class BatchQueueStore: ObservableObject {
         persistence: BatchQueuePersistence? = nil,
         saveReceiptStore:
             PhotoLibrarySaveReceiptStore? = nil,
+        automaticallyStartsProcessing: Bool = true,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
                 ProductionRenderHealthCheck.validate
@@ -91,6 +95,8 @@ final class BatchQueueStore: ObservableObject {
 
         self.settingsService =
             resolvedSettingsService
+        self.automaticallyStartsProcessing =
+            automaticallyStartsProcessing
         self.execution =
             BatchQueueExecution(
                 coordinator:
@@ -168,7 +174,9 @@ final class BatchQueueStore: ObservableObject {
             return
         }
         reconcileSaveReceiptsWithPersistedJobs()
-        startProcessingIfNeeded()
+        if self.automaticallyStartsProcessing {
+            startProcessingIfNeeded()
+        }
     }
 
     // MARK: - Public API
@@ -288,7 +296,9 @@ final class BatchQueueStore: ObservableObject {
         scheduleStartNotificationIfNeeded(
             for: job.id
         )
-        startProcessingIfNeeded()
+        if automaticallyStartsProcessing {
+            startProcessingIfNeeded()
+        }
         return job
     }
 
@@ -423,6 +433,17 @@ final class BatchQueueStore: ObservableObject {
                     in: self
                 )
         }
+    }
+
+    var pendingTaskCount: Int {
+        jobs
+            .flatMap(\.tasks)
+            .filter { $0.phase.isPending }
+            .count
+    }
+
+    func stopProcessingForBackgroundExpiration() {
+        processingTask?.cancel()
     }
 
     func retryPersistence() {
@@ -659,12 +680,19 @@ extension BatchQueueStore {
             )
     }
 
-    func processingLoopDidFinish() {
+    func processingLoopDidFinish(
+        shouldRestart: Bool = true
+    ) {
 
         processingTask = nil
         clearProcessingIndicators()
 
-        if nextPendingTaskReference() != nil {
+        if !shouldRestart {
+            normalizeJobsForResume()
+        }
+
+        if shouldRestart,
+           nextPendingTaskReference() != nil {
             startProcessingIfNeeded()
         }
     }

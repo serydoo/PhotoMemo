@@ -1,6 +1,6 @@
 # Frozen Registry
 
-Last updated: 2026-07-21
+Last updated: 2026-07-29
 
 ## MemoMark Share Design v1
 
@@ -61,6 +61,7 @@ Primary sources:
 - `Docs/Behavior/BEHAVIOR_SPECIFICATION.md`
 - `Docs/Guidelines/LANGUAGE_SYSTEM.md`
 - `Docs/Guidelines/PRODUCT_PERSONALITY.md`
+- `Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md`
 - `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md`
 - `Docs/Configuration/CONFIGURATION_MODEL.md`
 - `Docs/Product/ANTI_GOALS.md`
@@ -93,6 +94,7 @@ Frozen areas:
 - Apple Trust Principle
 - Product Personality
 - Language System
+- Narrative Product Language
 - Configuration Layer
 - Product Boundary
 - Anti Goals

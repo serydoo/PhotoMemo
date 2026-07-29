@@ -1,6 +1,6 @@
 ---
 name: photomemo-swiftui-reviewer
-description: Review PhotoMemo SwiftUI views, state flow, layout stability, and editing interactions. Use when Codex needs to inspect or improve MainView, permission flows, template editing, preview alignment, toolbar behavior, or macOS-to-iOS readiness in the PhotoMemo UI layer.
+description: Review PhotoMemo SwiftUI views, state flow, layout stability, and editing interactions. Use when Codex needs to inspect or improve the Configuration Center, permission flows, memory-object editing, preview alignment, navigation behavior, or Apple-platform readiness in the PhotoMemo UI layer.
 ---
 
 # PhotoMemo SwiftUI Reviewer
@@ -13,10 +13,10 @@ Use this skill to review and refine PhotoMemo's SwiftUI layer with emphasis on s
 
 Start from these files when applicable:
 
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Main/PhotoImporterView.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Preview/CardPreviewView.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Template/`
+- `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterView.swift`
+- `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift`
+- `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift`
+- `Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift`
 - `Source/PhotoMemo/PhotoMemo/App/PhotoMemoApp.swift`
 
 ## Review Priorities
@@ -28,7 +28,7 @@ Check in this order:
 3. slot routing for inserted variables and smart modules
 4. preview layout stability
 5. light-mode readability and system-style polish
-6. whether the interaction model can later translate to iOS without rethinking everything
+6. compact and wide-layout behavior across supported Apple devices
 
 ## PhotoMemo-Specific Expectations
 
@@ -37,6 +37,8 @@ Check in this order:
 - Module insertion should go to the currently active slot, not a hard-coded fallback
 - UI changes should not break the real render/export pipeline
 - Permission prompts and album/export actions should feel explicit and understandable
+- Do not recreate the retired `MainView`, Workspace Session, legacy Composer,
+  or photo-import-first workflow
 
 ## Review Output
 

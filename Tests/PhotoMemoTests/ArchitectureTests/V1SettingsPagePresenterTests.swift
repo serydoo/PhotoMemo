@@ -102,7 +102,7 @@ struct V1SettingsPagePresenterTests {
         )
         #expect(
             presentation.currentTask.progressText
-            == "已完成 2 / 3"
+            == "已完成 2 张 · 剩余 1 张"
         )
         #expect(
             presentation.currentTask.detailText
@@ -112,7 +112,7 @@ struct V1SettingsPagePresenterTests {
             presentation.currentTask.stepRows.map(\.statusText)
             == [
                 "已完成",
-                "处理中...",
+                "处理中",
                 "等待中"
             ]
         )
@@ -124,26 +124,7 @@ struct V1SettingsPagePresenterTests {
                 .secondary
             ]
         )
-        #expect(
-            presentation.historyRows.count
-            == 2
-        )
-        #expect(
-            presentation.historyRows[0].title
-            == "处理完成"
-        )
-        #expect(
-            presentation.historyRows[0].statusText
-            == "已完成"
-        )
-        #expect(
-            presentation.historyRows[1].title
-            == "进入处理队列"
-        )
-        #expect(
-            presentation.historyRows[1].itemCountText
-            == "3 张照片"
-        )
+        #expect(presentation.historyRows.isEmpty)
     }
 
     @Test("falls back to a recovery-oriented current-task card without an active snapshot")
@@ -192,14 +173,7 @@ struct V1SettingsPagePresenterTests {
             presentation.currentTask.detailText
             == "共享接单记录不可读取。"
         )
-        #expect(
-            presentation.historyRows.count
-            == 1
-        )
-        #expect(
-            presentation.historyRows[0].statusText
-            == "准备中"
-        )
+        #expect(presentation.historyRows.isEmpty)
     }
 
     @Test("surfaces unsupported batches as calm unsupported status instead of generic failure")
@@ -257,7 +231,68 @@ struct V1SettingsPagePresenterTests {
         )
         #expect(
             presentation.currentTask.progressText
-            == "1 张暂不支持"
+            == "已完成 0 张 · 剩余 1 张暂不支持"
+        )
+    }
+
+    @Test("maps engineering step names and progress into user language")
+    func presentationUsesUserFacingProcessingLanguage() {
+        let snapshot = PhotoMemoBackgroundJobSnapshot(
+            jobID: UUID(),
+            title: "处理照片",
+            launchSource: .shareExtension,
+            presentationState: .active,
+            jobState: .running,
+            currentPhase: .exporting,
+            currentPhaseTitle: "处理中",
+            currentFileName: "photo.jpg",
+            statusMessage: "正在处理照片。",
+            displayMode: .singleTask,
+            pipelineSteps: [
+                PhotoMemoBackgroundPipelineStep(
+                    title: "Renderer Pipeline",
+                    state: .active
+                ),
+                PhotoMemoBackgroundPipelineStep(
+                    title: "Queue",
+                    state: .pending
+                )
+            ],
+            activePipelineStepIndex: 0,
+            queueLines: [],
+            overflowQueueCount: 0,
+            completedCount: 1,
+            failedCount: 0,
+            totalCount: 4,
+            progressFraction: 0.25,
+            canRetryFailures: false,
+            hasOnlyUnsupportedFailures: false,
+            updatedAt: Date(timeIntervalSince1970: 1_720_000_000)
+        )
+
+        let presentation = V1SettingsPagePresenter.presentation(
+            header: PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+                headline: "处理中",
+                subheadline: "正在处理照片。",
+                symbolName: "photo.stack.fill",
+                tint: .blue
+            ),
+            snapshot: snapshot,
+            recoveryMessage: nil,
+            events: []
+        )
+
+        #expect(
+            presentation.currentTask.progressText
+            == "已完成 1 张 · 剩余 3 张"
+        )
+        #expect(
+            presentation.currentTask.stepRows.map(\.title)
+            == ["生成记忆照片", "处理照片"]
+        )
+        #expect(
+            presentation.currentTask.stepRows
+                .allSatisfy { $0.timeText == nil }
         )
     }
 
@@ -348,6 +383,90 @@ struct V1SettingsPagePresenterTests {
             presentation.currentTask.displayMode
             == .waiting
         )
+    }
+
+    @Test("recent saves include only completed jobs with a persisted Photos asset")
+    func recentSavesExcludeUnfinishedFailedAndUnpersistedJobs() {
+        let savedJobID = UUID(
+            uuidString: "44444444-4444-4444-4444-444444444444"
+        )!
+        let summaries = [
+            PhotoMemoBackgroundJobSummary(
+                jobID: UUID(),
+                configurationName: "正在处理",
+                templateName: "Classic White",
+                presentationState: .active,
+                jobState: .running,
+                completedCount: 1,
+                failedCount: 0,
+                totalCount: 2,
+                previewSourceURL: nil,
+                savedAssetIdentifier: "partial-asset",
+                updatedAt: Date(timeIntervalSince1970: 4)
+            ),
+            PhotoMemoBackgroundJobSummary(
+                jobID: UUID(),
+                configurationName: "需要处理",
+                templateName: "Classic White",
+                presentationState: .needsAttention,
+                jobState: .failed,
+                completedCount: 1,
+                failedCount: 1,
+                totalCount: 2,
+                previewSourceURL: nil,
+                savedAssetIdentifier: "failed-job-asset",
+                updatedAt: Date(timeIntervalSince1970: 3)
+            ),
+            PhotoMemoBackgroundJobSummary(
+                jobID: UUID(),
+                configurationName: "缺少保存凭据",
+                templateName: "Classic White",
+                presentationState: .completed,
+                jobState: .completed,
+                completedCount: 1,
+                failedCount: 0,
+                totalCount: 1,
+                previewSourceURL: nil,
+                savedAlbumName: "时光记",
+                savedAssetIdentifier: "  ",
+                updatedAt: Date(timeIntervalSince1970: 2)
+            ),
+            PhotoMemoBackgroundJobSummary(
+                jobID: savedJobID,
+                configurationName: "已经保存",
+                templateName: "Classic White",
+                presentationState: .completed,
+                jobState: .completed,
+                completedCount: 1,
+                failedCount: 0,
+                totalCount: 1,
+                previewSourceURL: nil,
+                savedAlbumName: "时光记",
+                savedAssetIdentifier: "saved-asset",
+                updatedAt: Date(timeIntervalSince1970: 1)
+            )
+        ]
+
+        let presentation = V1SettingsPagePresenter.presentation(
+            header: PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+                headline: "等待下一次分享",
+                subheadline: "分享一次照片后会显示处理状态。",
+                symbolName: "square.stack.3d.down.forward",
+                tint: .secondary
+            ),
+            snapshot: nil,
+            recoveryMessage: nil,
+            events: [
+                PhotoMemoShareDiagnosticEvent(
+                    timestamp: Date(timeIntervalSince1970: 5),
+                    stage: .liveActivityPayloadTerminal,
+                    message: "failed, progress=100"
+                )
+            ],
+            recentJobs: summaries
+        )
+
+        #expect(presentation.historyRows.map(\.jobID) == [savedJobID])
     }
 
     @Test("presents a completed snapshot as the latest result and removes the same job from recent history")

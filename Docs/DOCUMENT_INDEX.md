@@ -1,6 +1,6 @@
 # MemoMark Document Index
 
-Last updated: 2026-07-11
+Last updated: 2026-07-29
 
 ## Product Stage Source Of Truth
 
@@ -64,6 +64,8 @@ Use these when deciding what to build next:
 - `Docs/Interaction/IA-001_Interaction_Architecture.md` - interaction architecture
 - `Docs/Guidelines/LANGUAGE_SYSTEM.md` - product language system
 - `Docs/Guidelines/PRODUCT_PERSONALITY.md` - product personality
+- `Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md` - canonical narrative product
+  language guide
 - `Docs/Guidelines/APPLE_NATIVE_GUIDELINES.md` - Apple-native product guidelines
 - `Docs/Configuration/CONFIGURATION_MODEL.md` - configuration layer model
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - object-centered Configuration Center architecture

@@ -34,8 +34,8 @@ struct V1WelcomePresentation: Equatable {
     static let `default` =
         V1WelcomePresentation(
             title: "时光记",
-            subtitle: "记录人生，珍藏记忆",
-            message: "时光记会结合照片信息、时间锚点与记忆对象，生成更有意义的记忆表达，同时保留原图。",
+            subtitle: "让照片记得，它在人生里的位置。",
+            message: "时光记会把照片里的时间，和你选择的人、重要时刻放在一起，留下更容易读懂的回忆；原图保持不变。",
             features: [
                 .init(
                     id: "local-first",
@@ -52,13 +52,13 @@ struct V1WelcomePresentation: Equatable {
                 .init(
                     id: "time-anchor",
                     title: "时间锚点",
-                    detail: "让照片回到人生时间线中的具体位置。",
+                    detail: "让照片知道，它处在人生里的哪个时刻。",
                     systemImage: MemoMarkSymbol.timeAnchor.name
                 ),
                 .init(
                     id: "configure-once",
-                    title: "一次配置，长期受益",
-                    detail: "对象、锚点、输出设定好之后，后续处理会更轻松。",
+                    title: "一次设好，之后继续记录",
+                    detail: "记忆对象、时间锚点和保存方式设好后，以后每次记录都会更轻松。",
                     systemImage: "checkmark.seal.fill"
                 )
             ],
@@ -66,6 +66,84 @@ struct V1WelcomePresentation: Equatable {
             primaryActionTitle: "开始使用",
             secondaryActionTitle: "查看使用流程"
         )
+
+    static func localized(
+        for language: MemoMarkLanguage
+    ) -> Self {
+        V1WelcomePresentation(
+            title: language.localized(
+                key: "welcome.title",
+                fallback: "时光记"
+            ),
+            subtitle: language.localized(
+                key: "welcome.subtitle",
+                fallback: "让照片记得，它在人生里的位置。"
+            ),
+            message: language.localized(
+                key: "welcome.message",
+                fallback: "时光记会把照片里的时间，和你选择的人、重要时刻放在一起，留下更容易读懂的回忆；原图保持不变。"
+            ),
+            features: [
+                .init(
+                    id: "local-first",
+                    title: language.localized(
+                        key: "welcome.feature.local_first.title",
+                        fallback: "本地优先"
+                    ),
+                    detail: language.localized(
+                        key: "welcome.feature.local_first.detail",
+                        fallback: "照片处理留在你的设备中，不上传原始内容。"
+                    ),
+                    systemImage: "internaldrive.fill"
+                ),
+                .init(
+                    id: "keep-original",
+                    title: language.localized(
+                        key: "welcome.feature.original.title",
+                        fallback: "保留原图"
+                    ),
+                    detail: language.localized(
+                        key: "welcome.feature.original.detail",
+                        fallback: "生成新图输出，不改动系统相册里的原始照片。"
+                    ),
+                    systemImage: MemoMarkSymbol.originalPhoto.name
+                ),
+                .init(
+                    id: "time-anchor",
+                    title: language.localized(
+                        key: "welcome.feature.anchor.title",
+                        fallback: "时间锚点"
+                    ),
+                    detail: language.localized(
+                        key: "welcome.feature.anchor.detail",
+                        fallback: "让照片知道，它处在人生里的哪个时刻。"
+                    ),
+                    systemImage: MemoMarkSymbol.timeAnchor.name
+                ),
+                .init(
+                    id: "configure-once",
+                    title: language.localized(
+                        key: "welcome.feature.configure.title",
+                        fallback: "一次设好，之后继续记录"
+                    ),
+                    detail: language.localized(
+                        key: "welcome.feature.configure.detail",
+                        fallback: "记忆对象、时间锚点和保存方式设好后，以后每次记录都会更轻松。"
+                    ),
+                    systemImage: "checkmark.seal.fill"
+                )
+            ],
+            workflowSteps: workflowSteps(for: language),
+            primaryActionTitle: language.localized(
+                key: "welcome.primary_action",
+                fallback: "开始使用"
+            ),
+            secondaryActionTitle: language.localized(
+                key: "welcome.secondary_action",
+                fallback: "查看使用流程"
+            )
+        )
+    }
 
     static func workflowSteps(
         for language: MemoMarkLanguage
@@ -79,7 +157,7 @@ struct V1WelcomePresentation: Equatable {
                 ),
                 detail: language.localized(
                     key: "welcome.workflow.photos.detail",
-                    fallback: "从系统相册里找到想处理的照片。"
+                    fallback: "从系统相册里找到想记录的照片。"
                 ),
                 systemImage: "photo.on.rectangle.angled"
             ),
@@ -91,7 +169,7 @@ struct V1WelcomePresentation: Equatable {
                 ),
                 detail: language.localized(
                     key: "welcome.workflow.share.detail",
-                    fallback: "也可以直接在首页点“处理照片”进入相同流程。"
+                    fallback: "也可以直接在首页选择照片。"
                 ),
                 systemImage: "square.and.arrow.up"
             ),
@@ -99,11 +177,11 @@ struct V1WelcomePresentation: Equatable {
                 id: "processing",
                 title: language.localized(
                     key: "welcome.workflow.processing.title",
-                    fallback: "后台生成记忆表达"
+                    fallback: "时光记在后台整理"
                 ),
                 detail: language.localized(
                     key: "welcome.workflow.processing.detail",
-                    fallback: "时光记会按当前配置、时间锚点和输出规则自动处理。"
+                    fallback: "它会按你保存的预设，完成这次记录。"
                 ),
                 systemImage: "arrow.trianglehead.2.clockwise.circle"
             ),
@@ -111,11 +189,11 @@ struct V1WelcomePresentation: Equatable {
                 id: "return",
                 title: language.localized(
                     key: "welcome.workflow.return.title",
-                    fallback: "写回相册继续查看"
+                    fallback: "回到相册"
                 ),
                 detail: language.localized(
                     key: "welcome.workflow.return.detail",
-                    fallback: "处理完成后回到 Apple Photos 继续阅读和整理记忆。"
+                    fallback: "完成后，新的照片会保存回 Apple Photos。"
                 ),
                 systemImage: "checkmark.circle.fill"
             )
@@ -127,6 +205,7 @@ struct V1WelcomePresentation: Equatable {
 struct V1WelcomePageSurface: View {
 
     let presentation: V1WelcomePresentation
+    let language: MemoMarkLanguage
     let onStart: () -> Void
     let onShowWorkflow: () -> Void
 
@@ -135,11 +214,15 @@ struct V1WelcomePageSurface: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     V1WelcomeHeroSection(
-                        presentation: presentation
+                        presentation: presentation,
+                        language: language
                     )
 
                     V1CardSurface(
-                        title: "初次打开你会用到",
+                        title: language.localized(
+                            key: "welcome.introduction.title",
+                            fallback: "开始前，先认识这几件事"
+                        ),
                         systemImage: MemoMarkSymbol.welcome.name,
                         tint: .orange
                     ) {
@@ -156,12 +239,20 @@ struct V1WelcomePageSurface: View {
                     }
 
                     V1CardSurface(
-                        title: "推荐流程",
+                        title: language.localized(
+                            key: "welcome.workflow.title",
+                            fallback: "日常这样记录"
+                        ),
                         systemImage: MemoMarkSymbol.workflow.name,
                         tint: .purple
                     ) {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Apple Photos -> 分享 -> 时光记 -> 处理 -> Apple Photos")
+                            Text(
+                                language.localized(
+                                    key: "welcome.workflow.pipeline",
+                                    fallback: "Apple Photos -> 分享 -> 时光记 -> 处理 -> Apple Photos"
+                                )
+                            )
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
 
@@ -208,7 +299,12 @@ struct V1WelcomePageSurface: View {
                 ConfigurationUI.appBackground
                     .ignoresSafeArea()
             )
-            .navigationTitle("欢迎")
+            .navigationTitle(
+                language.localized(
+                    key: "welcome.navigation_title",
+                    fallback: "欢迎"
+                )
+            )
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -224,6 +320,12 @@ struct V1FirstRunConfigurationSheet: View {
     let onSave: (String, Date) async -> Bool
     let onDefer: () -> Void
 
+    private var isFirstRunConfigurationReady: Bool {
+        !subjectName.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty && birthday <= Date()
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -233,10 +335,10 @@ struct V1FirstRunConfigurationSheet: View {
                             .font(.title2.weight(.semibold))
                             .foregroundStyle(.blue)
 
-                        Text("开始回顾")
+                        Text("从一个人和一个重要时刻开始。")
                             .font(.title2.weight(.semibold))
 
-                        Text("先建立第一套记忆配置。以后从 Apple Photos 分享照片时，时光记会直接使用它。")
+                        Text("告诉时光记你想围绕谁记录，以及从哪个重要时刻开始。")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -244,19 +346,19 @@ struct V1FirstRunConfigurationSheet: View {
                     .padding(.vertical, 6)
                 }
 
-                Section("记忆主角") {
+                Section("想围绕谁记录") {
                     TextField(
-                        "例如：小宝、宝宝、小朋友",
+                        "例如：小宝、妈妈、团团",
                         text: $subjectName
                     )
                     .textInputAutocapitalization(.never)
 
-                    Text("这个名称会同时作为第一个记忆对象的显示名称和昵称。")
+                    Text("这个名字会陪着这段回忆一起被记住。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("生日") {
+                Section("重要日期") {
                     DatePicker(
                         "选择日期",
                         selection: $birthday,
@@ -268,10 +370,19 @@ struct V1FirstRunConfigurationSheet: View {
                     LabeledContent("表达语气", value: "自然")
                 }
 
-                Section("系统已为你准备") {
-                    Label("生日成长预设", systemImage: "rectangle.and.text.magnifyingglass")
-                    Label("自动保存到 Apple Photos", systemImage: "photo.on.rectangle")
-                    Label("保留原图，生成一张新图片", systemImage: "photo.stack")
+                Section("接下来会发生") {
+                    Label(
+                        "按这个重要时刻记录变化",
+                        systemImage: "rectangle.and.text.magnifyingglass"
+                    )
+                    Label(
+                        "自动保存到 Apple Photos",
+                        systemImage: "photo.on.rectangle"
+                    )
+                    Label(
+                        "保留原图，另存一张新照片",
+                        systemImage: "photo.stack"
+                    )
                 }
 
                 if let errorMessage {
@@ -291,15 +402,13 @@ struct V1FirstRunConfigurationSheet: View {
                             if isSaving {
                                 ProgressView()
                             }
-                            Text(isSaving ? "正在保存" : "保存配置")
+                            Text(isSaving ? "正在保存" : "开始记录")
                                 .fontWeight(.semibold)
                             Spacer()
                         }
                     }
                     .disabled(
-                        subjectName.trimmingCharacters(
-                            in: .whitespacesAndNewlines
-                        ).isEmpty || isSaving
+                        !isFirstRunConfigurationReady || isSaving
                     )
                 }
             }
@@ -344,7 +453,7 @@ struct V1WorkflowGuideSurface: View {
                     V1CardSurface(
                         title: language.localized(
                             key: "welcome.workflow.title",
-                            fallback: "使用流程"
+                            fallback: "日常这样记录"
                         ),
                         systemImage: MemoMarkSymbol.workflow.name,
                         tint: .purple
@@ -353,7 +462,7 @@ struct V1WorkflowGuideSurface: View {
                             Text(
                                 language.localized(
                                     key: "welcome.workflow.introduction",
-                                    fallback: "推荐日常路径保持在 Apple Photos 内：选择照片，分享给时光记，后台处理完成后再回到系统相册继续阅读。"
+                                    fallback: "日常记录从 Apple Photos 开始：选择照片，分享给时光记，完成后再回到相册查看。"
                                 )
                             )
                                 .font(.subheadline)
@@ -398,7 +507,7 @@ struct V1WorkflowGuideSurface: View {
             .navigationTitle(
                 language.localized(
                     key: "welcome.workflow.navigation_title",
-                    fallback: "使用说明"
+                    fallback: "怎么记录"
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
@@ -458,6 +567,7 @@ private struct V1WelcomeFeatureRow: View {
 private struct V1WelcomeHeroSection: View {
 
     let presentation: V1WelcomePresentation
+    let language: MemoMarkLanguage
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -472,7 +582,12 @@ private struct V1WelcomeHeroSection: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    Text("让照片沿着时间与对象重新被阅读。")
+                    Text(
+                        language.localized(
+                            key: "welcome.hero.detail",
+                            fallback: "让照片沿着时间与对象重新被阅读。"
+                        )
+                    )
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -484,12 +599,18 @@ private struct V1WelcomeHeroSection: View {
             HStack(spacing: 10) {
                 V1WelcomePill(
                     systemImage: "sparkles",
-                    title: "V1.0"
+                    title: language.localized(
+                        key: "welcome.hero.version",
+                        fallback: "V1.0"
+                    )
                 )
 
                 V1WelcomePill(
                     systemImage: "internaldrive",
-                    title: "本地优先"
+                    title: language.localized(
+                        key: "welcome.hero.local_first",
+                        fallback: "本地优先"
+                    )
                 )
             }
         }

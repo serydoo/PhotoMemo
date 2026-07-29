@@ -8,6 +8,12 @@ struct V1ConfigurationOptionList: View {
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
+    @State
+    private var showsMemoryDisplayDetail = false
+
+    @State
+    private var showsAdvancedModulesSheet = false
+
     let subject: MemorySubject?
     @Binding var isMemorySourceExpanded: Bool
     let subjectAvatarPreviewImagePath: String?
@@ -24,9 +30,10 @@ struct V1ConfigurationOptionList: View {
     let selectedTimeAnchorID: Binding<UUID>
     let locationPresentation:
         LocationDisplayInspectorPresentation
-    let selectedLocationValue: String
     let selectedLocationOptionID: Binding<String>
-    let isLocationSelectable: Bool
+    let timePresentation: TimeDisplayInspectorPresentation
+    let selectedTimeOptionID: Binding<String>
+    let selectedTimeSupplement: Binding<TimeDisplayConfiguration.Supplement>
     let memoryDisplayValue: String
     let memoryDisplayDetail: String
     let availableMemoryDisplayStyles:
@@ -45,17 +52,12 @@ struct V1ConfigurationOptionList: View {
                 title: "卡片布局与内容",
                 subtitle: "决定卡片各区域的内容与显示形式"
             ) {
-                logoRow
-                V1HorizontalDivider(
-                    horizontalInset:
-                        V1CompactInformationRowMetrics.horizontalPadding
-                )
                 borderStyleRow
                 V1HorizontalDivider(
                     horizontalInset:
                         V1CompactInformationRowMetrics.horizontalPadding
                 )
-                locationRow
+                logoRow
                 V1HorizontalDivider(
                     horizontalInset:
                         V1CompactInformationRowMetrics.horizontalPadding
@@ -65,9 +67,31 @@ struct V1ConfigurationOptionList: View {
                     horizontalInset:
                         V1CompactInformationRowMetrics.horizontalPadding
                 )
+                advancedModulesRow
+                V1HorizontalDivider(
+                    horizontalInset:
+                        V1CompactInformationRowMetrics.horizontalPadding
+                )
                 configurationStatusCard
             }
 
+        }
+        .sheet(isPresented: $showsMemoryDisplayDetail) {
+            V1MemoryExpressionPreviewSheet(
+                memoryDisplayValue: memoryDisplayValue,
+                memoryDisplayDetail: memoryDisplayDetail
+            )
+            .presentationDetents([.height(320), .medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showsAdvancedModulesSheet) {
+            V1AdvancedModulesSheet(
+                locationPresentation: locationPresentation,
+                selectedLocationOptionID: selectedLocationOptionID,
+                timePresentation: timePresentation,
+                selectedTimeOptionID: selectedTimeOptionID,
+                selectedTimeSupplement: selectedTimeSupplement
+            )
         }
     }
 
@@ -112,35 +136,48 @@ struct V1ConfigurationOptionList: View {
     }
 
     private var memorySourceSectionHeader: some View {
-        HStack(alignment: .center, spacing: 10) {
-            adaptiveSectionHeader(
-                title: "记忆来源",
-                subtitle: "决定智能模块生成的内容"
-            )
-
-            Spacer(minLength: 8)
-
-            Button {
-                isMemorySourceExpanded.toggle()
-            } label: {
-                Label(
-                    isMemorySourceExpanded ? "收起" : "展开",
-                    systemImage:
-                        isMemorySourceExpanded
-                        ? "chevron.up"
-                        : "chevron.down"
-                )
-                .font(.caption.weight(.semibold))
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 10) {
+                memorySourceHeading
+                Spacer(minLength: 8)
+                memorySourceDisclosureButton
             }
-            .buttonStyle(.borderless)
-            .foregroundStyle(Color.accentColor)
-            .padding(.trailing, 8)
-            .accessibilityLabel(
-                isMemorySourceExpanded
-                ? "收起记忆来源"
-                : "展开记忆来源"
-            )
+
+            VStack(alignment: .leading, spacing: 8) {
+                memorySourceHeading
+                memorySourceDisclosureButton
+            }
         }
+    }
+
+    private var memorySourceHeading: some View {
+        adaptiveSectionHeader(
+            title: "记忆来源",
+            subtitle: "你想围绕谁开展回忆。"
+        )
+    }
+
+    private var memorySourceDisclosureButton: some View {
+        Button {
+            isMemorySourceExpanded.toggle()
+        } label: {
+            Label(
+                isMemorySourceExpanded ? "收起" : "展开",
+                systemImage:
+                    isMemorySourceExpanded
+                    ? "chevron.up"
+                    : "chevron.down"
+            )
+            .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(Color.accentColor)
+        .padding(.trailing, 8)
+        .accessibilityLabel(
+            isMemorySourceExpanded
+            ? "收起记忆来源"
+            : "展开记忆来源"
+        )
     }
 
     private var memorySourceSummaryRow: some View {
@@ -182,7 +219,7 @@ struct V1ConfigurationOptionList: View {
         configurationRow(
             icon: subjectIcon,
             title: "记忆对象",
-            subtitle: "当前生效主体",
+            subtitle: "回忆正围绕谁展开。",
             value: subjectDisplayName,
             detail: "随首页同步",
             showsTrailingChevron: false
@@ -199,7 +236,7 @@ struct V1ConfigurationOptionList: View {
         configurationRow(
             icon: logoIcon,
             title: "Logo 标识",
-            subtitle: "设置输出卡片左侧标识",
+            subtitle: "让卡片留下你的标识。",
             value: logoValue,
             detail: logoDetail,
             showsTrailingChevron: false
@@ -260,7 +297,7 @@ struct V1ConfigurationOptionList: View {
     private var timeAnchorRow: some View {
         configurationTextRow(
             title: "时间锚点",
-            subtitle: "定义时间参考，计算年龄与天数",
+            subtitle: "从哪个重要时刻开始记录。",
             value:
                 availableTimeAnchors.isEmpty
                 ? "暂无"
@@ -299,52 +336,21 @@ struct V1ConfigurationOptionList: View {
         }
     }
 
-    private var locationRow: some View {
-        configurationTextRow(
-            title: locationPresentation.title,
-            subtitle: "控制位置信息的显示内容",
-            value: selectedLocationValue,
-            detail:
-                isLocationSelectable
-                ? locationValueDetail
-                : "未插入位置模块",
-            showsTrailingChevron: false
-        ) {
-            Menu {
-                ForEach(locationPresentation.options) { option in
-                    Button {
-                        selectedLocationOptionID.wrappedValue =
-                            option.id
-                    } label: {
-                        menuOptionLabel(
-                            option.title,
-                            isSelected:
-                                option.id
-                                == selectedLocationOptionID
-                                .wrappedValue
-                        )
-                    }
-                }
-            } label: {
-                optionSelectionPill(title: selectedLocationValue)
-            }
-            .accessibilityLabel(locationPresentation.title)
-            .accessibilityValue(selectedLocationValue)
-        }
-    }
-
     private var memoryDisplayRow: some View {
         configurationTextRow(
-            title: "记忆显示",
-            subtitle: "自定义表达方式与记忆内容",
+            title: "记忆表达",
+            subtitle: "让回忆拥有属于自己的表达方式。",
             value: memoryDisplayValue,
             detail: memoryDisplayDetail,
-            showsTrailingChevron: false
+            showsTrailingChevron: false,
+            onDetailTap: {
+                showsMemoryDisplayDetail = true
+            }
         ) {
             if availableMemoryDisplayStyles.isEmpty {
                 optionSelectionPill(title: "暂无")
                     .opacity(0.56)
-                    .accessibilityLabel("记忆显示")
+                    .accessibilityLabel("记忆表达")
                     .accessibilityValue("暂无")
             } else {
                 Menu {
@@ -368,7 +374,7 @@ struct V1ConfigurationOptionList: View {
                 } label: {
                     optionSelectionPill(title: memoryDisplayValue)
                 }
-                .accessibilityLabel("记忆显示")
+                .accessibilityLabel("记忆表达")
                 .accessibilityValue(memoryDisplayValue)
             }
         }
@@ -377,7 +383,7 @@ struct V1ConfigurationOptionList: View {
     private var borderStyleRow: some View {
         configurationTextRow(
             title: "边框样式",
-            subtitle: "当前公开边框样式",
+            subtitle: "当前预设使用的边框。",
             value: borderStyleName,
             detail: "当前锁定",
             showsTrailingChevron: false
@@ -390,7 +396,7 @@ struct V1ConfigurationOptionList: View {
         Button(action: onOpenRegionContent) {
             configurationTextRow(
                 title: "卡片内容",
-                subtitle: "编辑卡片四个区域的模块与文字",
+                subtitle: "决定这段回忆最终如何呈现。",
                 value: "编辑",
                 detail: "",
                 showsTrailingChevron: false
@@ -415,8 +421,43 @@ struct V1ConfigurationOptionList: View {
         .buttonStyle(
             V1ConfigurationNavigationRowButtonStyle()
         )
-        .accessibilityLabel("编辑卡片内容")
-        .accessibilityHint("编辑卡片四个区域的模块与文字")
+        .accessibilityLabel("编辑卡片呈现")
+        .accessibilityHint("决定这段回忆最终如何呈现。")
+    }
+
+    private var advancedModulesRow: some View {
+        Button {
+            showsAdvancedModulesSheet = true
+        } label: {
+            configurationTextRow(
+                title: "高级模块",
+                subtitle: "部分高级模块的展示形式选择",
+                value: "编辑",
+                detail: "",
+                showsTrailingChevron: false
+            ) {
+                HStack(spacing: 5) {
+                    Text("编辑")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.accentColor)
+                        .accessibilityHidden(true)
+                }
+                .lineLimit(1)
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .trailing
+                )
+            }
+        }
+        .buttonStyle(
+            V1ConfigurationNavigationRowButtonStyle()
+        )
+        .accessibilityLabel("编辑高级模块")
+        .accessibilityHint("部分高级模块的展示形式选择")
     }
 
     private var configurationStatusCard: some View {
@@ -472,10 +513,9 @@ struct V1ConfigurationOptionList: View {
 
     private var configurationStatusColor: Color {
         switch configurationStatus {
-        case .saved: return Color.accentColor
-        case .dirty, .subjectSynced: return Color.orange
         case .failure: return Color.red
-        case .idle, .saving: return Color.secondary
+        case .idle, .dirty, .saving, .saved, .subjectSynced:
+            return Color.secondary
         }
     }
 
@@ -644,21 +684,13 @@ struct V1ConfigurationOptionList: View {
         )
     }
 
-    private var locationValueDetail: String {
-        locationPresentation.options
-            .first { option in
-                option.title == selectedLocationValue
-            }?
-            .note
-        ?? "当前展示方式"
-    }
-
     private func configurationTextRow<Trailing: View>(
         title: String,
         subtitle: String,
         value: String,
         detail: String,
         showsTrailingChevron: Bool = true,
+        onDetailTap: (() -> Void)? = nil,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         configurationRow(
@@ -669,6 +701,7 @@ struct V1ConfigurationOptionList: View {
             detail: detail,
             showsTrailingChevron:
                 showsTrailingChevron,
+            onDetailTap: onDetailTap,
             trailing: trailing
         )
     }
@@ -680,6 +713,7 @@ struct V1ConfigurationOptionList: View {
         value: String,
         detail: String,
         showsTrailingChevron: Bool = true,
+        onDetailTap: (() -> Void)? = nil,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         let trailingSpacing: CGFloat =
@@ -687,7 +721,147 @@ struct V1ConfigurationOptionList: View {
             ? 0
             : 4
 
-        return HStack(
+        return adaptiveConfigurationRow(
+            icon: icon,
+            title: title,
+            subtitle: subtitle,
+            detail: detail,
+            trailingSpacing: trailingSpacing,
+            showsTrailingChevron: showsTrailingChevron,
+            onDetailTap: onDetailTap,
+            trailing: trailing
+        )
+        .padding(
+            .horizontal,
+            V1CompactInformationRowMetrics.horizontalPadding
+        )
+        .padding(
+            .vertical,
+            V1CompactInformationRowMetrics.verticalPadding
+        )
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private func adaptiveConfigurationRow<Icon: View, Trailing: View>(
+        icon: Icon?,
+        title: String,
+        subtitle: String,
+        detail: String,
+        trailingSpacing: CGFloat,
+        showsTrailingChevron: Bool,
+        onDetailTap: (() -> Void)?,
+        @ViewBuilder trailing: () -> Trailing
+    ) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            verticalConfigurationRow(
+                icon: icon,
+                title: title,
+                subtitle: subtitle,
+                detail: detail,
+                trailingSpacing: trailingSpacing,
+                showsTrailingChevron: showsTrailingChevron,
+                onDetailTap: onDetailTap,
+                trailing: trailing
+            )
+        } else {
+            ViewThatFits(in: .horizontal) {
+                horizontalConfigurationRow(
+                    icon: icon,
+                    title: title,
+                    subtitle: subtitle,
+                    detail: detail,
+                    trailingSpacing: trailingSpacing,
+                    showsTrailingChevron: showsTrailingChevron,
+                    onDetailTap: onDetailTap,
+                    trailing: trailing
+                )
+
+                verticalConfigurationRow(
+                    icon: icon,
+                    title: title,
+                    subtitle: subtitle,
+                    detail: detail,
+                    trailingSpacing: trailingSpacing,
+                    showsTrailingChevron: showsTrailingChevron,
+                    onDetailTap: onDetailTap,
+                    trailing: trailing
+                )
+            }
+        }
+    }
+
+    private func horizontalConfigurationRow<Icon: View, Trailing: View>(
+        icon: Icon?,
+        title: String,
+        subtitle: String,
+        detail: String,
+        trailingSpacing: CGFloat,
+        showsTrailingChevron: Bool,
+        onDetailTap: (() -> Void)?,
+        @ViewBuilder trailing: () -> Trailing
+    ) -> some View {
+        HStack(
+            alignment: .center,
+            spacing: V1CompactInformationRowMetrics.contentSpacing
+        ) {
+            configurationRowHeading(
+                icon: icon,
+                title: title,
+                subtitle: subtitle
+            )
+
+            Spacer(minLength: 8)
+
+            configurationRowTrailing(
+                detail: detail,
+                trailingSpacing: trailingSpacing,
+                showsTrailingChevron: showsTrailingChevron,
+                onDetailTap: onDetailTap,
+                trailing: trailing
+            )
+            .frame(
+                minWidth: 72,
+                maxWidth: 128,
+                alignment: .trailing
+            )
+        }
+    }
+
+    private func verticalConfigurationRow<Icon: View, Trailing: View>(
+        icon: Icon?,
+        title: String,
+        subtitle: String,
+        detail: String,
+        trailingSpacing: CGFloat,
+        showsTrailingChevron: Bool,
+        onDetailTap: (() -> Void)?,
+        @ViewBuilder trailing: () -> Trailing
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            configurationRowHeading(
+                icon: icon,
+                title: title,
+                subtitle: subtitle
+            )
+
+            configurationRowTrailing(
+                detail: detail,
+                trailingSpacing: trailingSpacing,
+                showsTrailingChevron: showsTrailingChevron,
+                onDetailTap: onDetailTap,
+                trailing: trailing
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func configurationRowHeading<Icon: View>(
+        icon: Icon?,
+        title: String,
+        subtitle: String
+    ) -> some View {
+        HStack(
             alignment: .center,
             spacing: V1CompactInformationRowMetrics.contentSpacing
         ) {
@@ -699,49 +873,89 @@ struct V1ConfigurationOptionList: View {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(2)
 
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .layoutPriority(1)
+        }
+    }
 
-            Spacer(minLength: 8)
+    private func configurationRowTrailing<Trailing: View>(
+        detail: String,
+        trailingSpacing: CGFloat,
+        showsTrailingChevron: Bool,
+        onDetailTap: (() -> Void)?,
+        @ViewBuilder trailing: () -> Trailing
+    ) -> some View {
+        VStack(alignment: .trailing, spacing: trailingSpacing) {
+            trailing()
 
-            VStack(alignment: .trailing, spacing: trailingSpacing) {
-                trailing()
-
-                if !detail.isEmpty {
-                    Text(detail)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                }
-
-                if showsTrailingChevron {
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.accentColor)
+            if !detail.isEmpty {
+                if let onDetailTap {
+                    Button(action: onDetailTap) {
+                        interactiveConfigurationRowDetailLabel(
+                            detail
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("查看记忆表达完整说明")
+                    .accessibilityHint("显示完整内容")
+                } else {
+                    configurationRowDetailLabel(detail)
                 }
             }
-            .frame(
-                minWidth: 72,
-                maxWidth: 128,
-                alignment: .trailing
-            )
+
+            if showsTrailingChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.accentColor)
+            }
         }
-        .padding(
-            .horizontal,
-            V1CompactInformationRowMetrics.horizontalPadding
-        )
-        .padding(
-            .vertical,
-            V1CompactInformationRowMetrics.verticalPadding
-        )
-        .contentShape(Rectangle())
+    }
+
+    private func interactiveConfigurationRowDetailLabel(
+        _ detail: String
+    ) -> some View {
+        HStack(spacing: 1) {
+            Text(compactConfigurationDetail(detail))
+                .foregroundStyle(.secondary)
+
+            Text("…")
+                .foregroundStyle(Color.accentColor)
+        }
+        .font(.caption.weight(.semibold))
+        .lineLimit(1)
+    }
+
+    private func configurationRowDetailLabel(
+        _ detail: String
+    ) -> some View {
+        Text(detail)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+    private func compactConfigurationDetail(
+        _ detail: String
+    ) -> String {
+        let firstPhase =
+            detail
+            .split(
+                separator: "｜",
+                maxSplits: 1,
+                omittingEmptySubsequences: false
+            )
+            .first
+            .map(String.init)
+            ?? detail
+
+        return String(firstPhase.prefix(10))
     }
 
     private func rowValueText(
@@ -880,10 +1094,16 @@ struct V1ConfigurationActionFooter: View {
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .v1CompactBottomPrimaryAction()
         }
-        .buttonStyle(V1CompactPrimaryActionButtonStyle())
-        .disabled(isSavingConfiguration)
+        .buttonStyle(saveActionButtonStyle)
+        .disabled(isSavingConfiguration || configurationStatus == .saved)
+    }
+
+    private var saveActionButtonStyle:
+        V1ConfigurationSaveButtonStyle {
+        V1ConfigurationSaveButtonStyle(
+            isRestrained: configurationStatus == .saved
+        )
     }
 
     private var moreActionsMenu: some View {
@@ -925,6 +1145,169 @@ struct V1ConfigurationActionFooter: View {
         }
     }
 
+}
+
+struct V1MemoryExpressionPreviewSheet: View {
+
+    @Environment(\.dismiss)
+    private var dismiss
+
+    let memoryDisplayValue: String
+    let memoryDisplayDetail: String
+
+    private var detailLines: [String] {
+        memoryDisplayDetail
+            .split(separator: "｜", omittingEmptySubsequences: true)
+            .map(String.init)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("让回忆拥有属于自己的表达方式。")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
+
+                        Text("当前选择：\(memoryDisplayValue)")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("一段回忆会这样呈现")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        ForEach(
+                            Array(detailLines.enumerated()),
+                            id: \.offset
+                        ) { _, line in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Image(systemName: "text.quote")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color.accentColor)
+                                    .frame(width: 18)
+
+                                Text(line)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                    .fixedSize(
+                                        horizontal: false,
+                                        vertical: true
+                                    )
+                            }
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(
+                            cornerRadius: ConfigurationUI.smallCornerRadius,
+                            style: .continuous
+                        )
+                        .fill(ConfigurationUI.controlBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: ConfigurationUI.smallCornerRadius,
+                            style: .continuous
+                        )
+                        .stroke(ConfigurationUI.faintHairline)
+                    )
+                }
+                .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+                .padding(.vertical, 18)
+            }
+            .navigationTitle("记忆表达")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct V1ConfigurationSaveButtonStyle: ButtonStyle {
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    @Environment(\.isEnabled)
+    private var isEnabled
+
+    let isRestrained: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(
+                isRestrained
+                ? Color.primary.opacity(0.58)
+                : Color.white
+            )
+            .padding(.horizontal, 14)
+            .frame(
+                width: V1CompactBottomActionMetrics.width,
+                height: V1CompactBottomActionMetrics.height
+            )
+            .background(
+                RoundedRectangle(
+                    cornerRadius:
+                        V1CompactBottomActionMetrics.cornerRadius,
+                    style: .continuous
+                )
+                .fill(
+                    isRestrained
+                    ? ConfigurationUI.controlBackground
+                    : Color.accentColor.opacity(
+                        MemoMarkDesignTokens
+                            .Layout
+                            .compactPrimaryActionTintOpacity
+                    )
+                )
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius:
+                        V1CompactBottomActionMetrics.cornerRadius,
+                    style: .continuous
+                )
+                .stroke(
+                    isRestrained
+                    ? ConfigurationUI.faintHairline
+                    : Color.clear
+                )
+            )
+            .opacity(
+                isEnabled
+                ? (configuration.isPressed ? 0.78 : 1)
+                : (isRestrained ? 1 : 0.56)
+            )
+            .scaleEffect(
+                configuration.isPressed && !reduceMotion
+                ? 0.97
+                : 1
+            )
+            .shadow(
+                color:
+                    isRestrained
+                    ? Color.clear
+                    : Color.accentColor.opacity(0.16),
+                radius: 12,
+                y: 5
+            )
+            .animation(
+                reduceMotion
+                ? nil
+                : .easeOut(duration: 0.12),
+                value: configuration.isPressed
+            )
+    }
 }
 
 private struct V1ConfigurationActionButtonStyle:

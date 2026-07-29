@@ -212,6 +212,11 @@ final class AppEnvironment {
                 settingsService:
                     settingsService
             )
+#if os(iOS)
+        let automaticallyStartsBatchProcessing = false
+#else
+        let automaticallyStartsBatchProcessing = true
+#endif
         let resolvedBatchQueueStore =
             batchQueueStore
             ?? BatchQueueStore(
@@ -229,7 +234,9 @@ final class AppEnvironment {
                 previewCoordinator:
                     previewCoordinator,
                 exportCoordinator:
-                    exportCoordinator
+                    exportCoordinator,
+                automaticallyStartsProcessing:
+                    automaticallyStartsBatchProcessing
             )
 
         let services =

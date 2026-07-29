@@ -77,17 +77,19 @@ struct MemoMarkCommerceUIContractTests {
         #expect(headerSource.contains("MemoMarkPlusBadge"))
     }
 
-    @Test("Settings keeps the free allowance quiet until the final ten records")
-    func settingsUsesProgressiveAllowanceDisclosure() throws {
+    @Test("Settings Hero makes the current membership state visible")
+    func settingsHeroShowsCurrentMembershipState() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
         )
 
-        #expect(source.contains("commerce.settings.continuity"))
-        #expect(source.contains("remaining <= 10"))
-        #expect(source.contains("commerce.settings.remaining"))
+        #expect(source.contains("private var memoMarkPlusStatus"))
+        #expect(source.contains("commerceSnapshot.remainingRecords"))
+        #expect(source.contains("commerce.settings.remaining_status"))
+        #expect(source.contains("commerce.settings.upgrade_detail"))
         #expect(!source.contains("已创建 \\(commerceSnapshot.successfulRecordCount) /"))
-        #expect(source.contains("commerce.settings.first_recorder"))
+        #expect(source.contains("commerce.settings.first_recorder_status"))
+        #expect(!source.contains("remaining <= 10"))
         #expect(source.contains("accessSource"))
     }
 
@@ -99,11 +101,11 @@ struct MemoMarkCommerceUIContractTests {
         let languagePosition = try #require(
             source.range(of: "interfaceLanguageSection")?.lowerBound
         )
-        let releasePosition = try #require(
-            source.range(of: "releaseSection")?.lowerBound
+        let aboutPosition = try #require(
+            source.range(of: "aboutSection")?.lowerBound
         )
 
-        #expect(languagePosition < releasePosition)
+        #expect(languagePosition < aboutPosition)
     }
 
     @Test("English and Simplified Chinese resources expose the same keys")

@@ -377,17 +377,13 @@ private extension V1SettingsPagePresenter {
                     id:
                         "\(index)-\(step.title)",
                     title:
-                        step.title,
+                        userFacingStepTitle(step.title),
                     statusText:
                         stepStatusText(
                             for: step.state
                         ),
                     timeText:
-                        stepTimeText(
-                            for: step.state,
-                            updatedAt:
-                                snapshot.updatedAt
-                        ),
+                        nil,
                     symbolName:
                         stepSymbolName(
                             for: step.state
@@ -411,21 +407,21 @@ private extension V1SettingsPagePresenter {
         }
 
         let completedText =
-            "已完成 \(snapshot.completedCount) / \(snapshot.totalCount)"
+            "已完成 \(snapshot.completedCount) 张"
+        let remainingCount = max(
+            snapshot.totalCount - snapshot.completedCount,
+            0
+        )
 
-        guard snapshot.failedCount > 0 else {
+        guard remainingCount > 0 else {
             return completedText
         }
 
-        if snapshot.completedCount > 0 {
-            return "\(completedText) · 仍有 \(snapshot.failedCount) 张需处理"
-        }
-
         if snapshot.hasOnlyUnsupportedFailures {
-            return "\(snapshot.failedCount) 张暂不支持"
+            return "\(completedText) · 剩余 \(remainingCount) 张暂不支持"
         }
 
-        return "\(snapshot.failedCount) 张需要处理"
+        return "\(completedText) · 剩余 \(remainingCount) 张"
     }
 
     static func snapshotStatusText(
@@ -450,7 +446,7 @@ private extension V1SettingsPagePresenter {
         case .blue:
             return "处理中"
         case .orange:
-            return "需查看"
+            return "需要处理"
         case .green:
             return "已完成"
         case .secondary:
@@ -473,81 +469,35 @@ private extension V1SettingsPagePresenter {
     }
 
     static func historyRows(
-        from events:
+        from _:
             [PhotoMemoShareDiagnosticEvent],
         recentJobs:
             [PhotoMemoBackgroundJobSummary]
     ) -> [V1SettingsHistoryRowPresentation] {
-        if !recentJobs.isEmpty {
-            return recentJobs.map {
+        recentJobs
+            .filter { summary in
+                isSavedRecentJob(summary)
+            }
+            .map {
                 recentJobRow(
                     from: $0
                 )
             }
+    }
+
+    static func isSavedRecentJob(
+        _ summary:
+            PhotoMemoBackgroundJobSummary
+    ) -> Bool {
+        guard summary.presentationState == .completed else {
+            return false
         }
 
-        var seenKeys = Set<String>()
-
-        return events
-            .reversed()
-            .compactMap { event in
-                guard let title =
-                    historyDisplayTitle(
-                        for: event
-                    )
-                else {
-                    return nil
-                }
-
-                let detailText =
-                    historyDisplayMessage(
-                        for: event
-                    )
-                let dedupeKey =
-                    "\(title)|\(detailText)"
-
-                guard !seenKeys.contains(
-                    dedupeKey
-                ) else {
-                    return nil
-                }
-
-                seenKeys.insert(
-                    dedupeKey
-                )
-
-                return V1SettingsHistoryRowPresentation(
-                    id: event.id,
-                    jobID: event.jobID,
-                    timestamp:
-                        event.timestamp,
-                    title: title,
-                    detailText:
-                        detailText,
-                    statusText:
-                        eventStatusText(
-                            event.stage
-                        ),
-                    itemCountText:
-                        photoCountText(
-                            message:
-                                event.message
-                        ),
-                    symbolName:
-                        eventSymbolName(
-                            event.stage
-                        ),
-                    tint:
-                        eventTint(
-                            event.stage
-                        ),
-                    templateName: nil,
-                    previewSourceURL: nil,
-                    photoLibraryLink: nil
-                )
-            }
-            .prefix(6)
-            .map { $0 }
+        return summary.savedAssetIdentifier?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            .isEmpty == false
     }
 
     static func recentJobRow(
@@ -658,7 +608,7 @@ private extension V1SettingsPagePresenter {
             return "处理中"
         case .needsAttention:
             return summary.failedCount > 0
-                ? "需查看"
+                ? "需要处理"
                 : "已中断"
         case .completed:
             return "已完成"
@@ -701,28 +651,31 @@ private extension V1SettingsPagePresenter {
         case .pending:
             return "等待中"
         case .active:
-            return "处理中..."
+            return "处理中"
         case .completed:
             return "已完成"
         case .needsAttention:
-            return "需查看"
+            return "需要处理"
         }
     }
 
-    static func stepTimeText(
-        for state:
-            PhotoMemoBackgroundPipelineStepState,
-        updatedAt: Date
-    ) -> String? {
-        switch state {
-        case .pending:
-            return nil
-        case .active,
-             .completed,
-             .needsAttention:
-            return V1UserFacingDateFormatter
-                .dateTime(updatedAt)
+    static func userFacingStepTitle(
+        _ title: String
+    ) -> String {
+        let normalized = title.lowercased()
+
+        if normalized.contains("renderer")
+            || normalized.contains("render") {
+            return "生成记忆照片"
         }
+
+        if normalized.contains("pipeline")
+            || normalized.contains("queue")
+            || normalized.contains("队列") {
+            return "处理照片"
+        }
+
+        return title
     }
 
     static func stepSymbolName(
@@ -757,80 +710,6 @@ private extension V1SettingsPagePresenter {
         }
     }
 
-    static func eventStatusText(
-        _ stage:
-            PhotoMemoShareDiagnosticStage
-    ) -> String {
-        switch stage {
-        case .extensionSourcePrepare:
-            return "准备中"
-        case .extensionSourceReady,
-             .extensionPersisted,
-             .extensionRequestPersisted,
-             .appDrain:
-            return "处理中"
-        case .appRequestValidated,
-             .appEnqueueCreated:
-            return "已入队"
-        case .appRequestDropped:
-            return "已跳过"
-        case .extensionSourceUnavailable,
-             .extensionHandoffFailed,
-             .extensionHandoffUnconfirmed:
-            return "需查看"
-        case .liveActivityRequestCreated:
-            return "已显示"
-        case .liveActivityPayloadTerminal:
-            return "已完成"
-        default:
-            if isFailureStage(
-                stage
-            ) {
-                return "需查看"
-            }
-
-            return "处理中"
-        }
-    }
-
-    static func eventSymbolName(
-        _ stage:
-            PhotoMemoShareDiagnosticStage
-    ) -> String {
-        switch stage {
-        case .liveActivityPayloadTerminal:
-            return "checkmark.circle.fill"
-        case .extensionSourceUnavailable,
-             .extensionHandoffFailed,
-             .extensionHandoffUnconfirmed:
-            return "exclamationmark.triangle.fill"
-        case .extensionSourcePrepare:
-            return "icloud.and.arrow.down"
-        case .appEnqueueCreated:
-            return "photo.stack"
-        default:
-            return "circle.fill"
-        }
-    }
-
-    static func eventTint(
-        _ stage:
-            PhotoMemoShareDiagnosticStage
-    ) -> PhotoMemoiOSQueueDiagnosticsTint {
-        switch stage {
-        case .liveActivityPayloadTerminal:
-            return .green
-        case .extensionSourceUnavailable,
-             .extensionHandoffFailed,
-             .extensionHandoffUnconfirmed:
-            return .orange
-        case .appRequestDropped:
-            return .secondary
-        default:
-            return .blue
-        }
-    }
-
     static func photoCountText(
         count: Int
     ) -> String? {
@@ -839,141 +718,6 @@ private extension V1SettingsPagePresenter {
         }
 
         return "\(count) 张照片"
-    }
-
-    static func photoCountText(
-        message: String
-    ) -> String? {
-        if let count =
-            intValue(
-                after: "tasks=",
-                in: message
-            ) {
-            return photoCountText(
-                count: count
-            )
-        }
-
-        if let count =
-            intValue(
-                after: "unique=",
-                in: message
-            ) {
-            return photoCountText(
-                count: count
-            )
-        }
-
-        return nil
-    }
-
-    static func intValue(
-        after token: String,
-        in text: String
-    ) -> Int? {
-        guard let range =
-            text.range(
-                of: token
-            ) else {
-            return nil
-        }
-
-        let suffix =
-            text[
-                range.upperBound...
-            ]
-        let digits =
-            suffix.prefix {
-                $0.isNumber
-            }
-
-        guard !digits.isEmpty else {
-            return nil
-        }
-
-        return Int(
-            String(digits)
-        )
-    }
-
-    static func historyDisplayTitle(
-        for event:
-            PhotoMemoShareDiagnosticEvent
-    ) -> String? {
-        switch event.stage {
-        case .extensionRequestPersisted,
-             .extensionPersisted:
-            return "照片已接收"
-        case .extensionSourcePrepare:
-            return "准备 iCloud 原图"
-        case .extensionSourceReady:
-            return "原图可读取"
-        case .extensionSourceUnavailable:
-            return "原图暂时不可读取"
-        case .extensionHandoffUnconfirmed,
-             .extensionHandoffFailed:
-            return "等待时光记接力"
-        case .appDrain:
-            return "检查待处理照片"
-        case .appRequestValidated:
-            return "照片检查完成"
-        case .appEnqueueCreated:
-            return "进入处理队列"
-        case .appRequestDropped:
-            return "已跳过重复照片"
-        case .liveActivityRequestCreated:
-            return "系统进度已显示"
-        case .liveActivityPayloadTerminal:
-            return "处理完成"
-        default:
-            return nil
-        }
-    }
-
-    static func historyDisplayMessage(
-        for event:
-            PhotoMemoShareDiagnosticEvent
-    ) -> String {
-        switch event.stage {
-        case .extensionRequestPersisted,
-             .extensionPersisted:
-            return "原图已暂存，等待时光记处理。"
-        case .extensionSourcePrepare:
-            return "正在向系统请求原图数据，等待 iCloud 缓存到本地。"
-        case .extensionSourceReady:
-            return "原图已经可读取，正在继续交给时光记。"
-        case .extensionSourceUnavailable:
-            return "系统暂时没有提供完整原图，请稍后重试或先在相册打开原图。"
-        case .extensionHandoffUnconfirmed,
-             .extensionHandoffFailed:
-            return "原图已接收，主程序会在可用时继续处理。"
-        case .appDrain:
-            return "正在读取刚接收的照片。"
-        case .appRequestValidated:
-            return "照片可处理，准备加入后台队列。"
-        case .appEnqueueCreated:
-            return "照片会按当前默认风格生成并保存。"
-        case .appRequestDropped:
-            return "同一张照片已经在队列中，本次不会重复生成。"
-        case .liveActivityRequestCreated:
-            return "可以在系统进度区域查看处理状态。"
-        case .liveActivityPayloadTerminal:
-            return "已完成处理，结果会出现在目标相册。"
-        default:
-            return event.message
-        }
-    }
-
-    static func isFailureStage(
-        _ stage:
-            PhotoMemoShareDiagnosticStage
-    ) -> Bool {
-        stage.rawValue.contains(
-            "failed"
-        )
-        || stage.rawValue.contains(
-            "error"
-        )
     }
 }
 #endif

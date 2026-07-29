@@ -1,6 +1,404 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-27
+Last updated: 2026-07-29
+
+## 2026-07-29 MemoMark 2.0.1 Release Preparation
+
+- Reframed the next delivery candidate as `2.0.1 (48)`, preserving `2.0 (47)`
+  as the previous release-candidate history and keeping V3 as the active
+  product stage.
+- Added the in-app Settings -> About -> What's New surface with Chinese and
+  English content covering the July 27-29 reliability, Configuration Center,
+  iOS UI, language, and privacy-boundary pass. It is local presentation content
+  and does not add a network dependency.
+- Unified the Xcode project marketing version and build fields to
+  `2.0.1` / `48` for the main app, iOS app, Share Extension, Widget Extension,
+  and test target.
+- Added the release-facing summary at
+  `Docs/07_Releases/2026-07-29-2.0.1-v3-production-quality-update.md` and kept
+  BrandMark research and private distribution evidence outside the GitHub
+  synchronization scope.
+- Repaired the settings expression-guide test target's missing `@testable
+  import PhotoMemo` and aligned the preview migration contracts with the new
+  localized time display. Date and time tokens now render as separate
+  components, so the default Slot B no longer repeats a full date-time value.
+- Final release checks passed: macOS `PhotoMemoTests` reported `1,207` passed,
+  `1` skipped, and `0` failed; macOS, generic iOS, and Share Extension Debug
+  builds passed; all four plist files linted successfully; Chinese and English
+  localization each contain 514 matching keys; and `git diff --check` passed.
+
+## 2026-07-29 V1 Design Freeze Polish And P1 Closure
+
+- Completed the bounded Product Loop / P1 Design Freeze pass recorded in
+  `Docs/06_Development/2026-07-29-v1-design-freeze-polish.md`. Home,
+  Configuration, Save, Progress, first-run, and Settings now share the accepted
+  restrained information hierarchy and Narrative Product Language without
+  reopening IA-002, Memory Engine, Renderer, Export, Share, or PhotoKit
+  ownership.
+- Closed the three P1 findings from the final UI review. Custom photo-description
+  edits now return a saved configuration to the existing dirty/save flow; the
+  persisted media-output choice now takes precedence over the legacy Live Photo
+  policy while retaining old-snapshot compatibility; and `最近保存` now includes
+  only completed jobs with a nonempty Apple Photos asset identifier. Diagnostic
+  and unfinished task events no longer appear as saved memories.
+- Narrowed the interface-language description to the surfaces that currently
+  support switching, and synchronized Chinese, English, source contracts, and
+  the physical-device record. The Design Freeze target is the paired physical
+  `iPhone7`, whose discovered model is iPhone 17 Pro Max; `IPhone5` is an
+  unrelated iPhone 15 Pro and is not the deployment target.
+- The final focused regression group covering Design Freeze UI contracts,
+  Settings, narrative language, configuration lifecycle, output persistence,
+  media policy, and task presentation exits successfully. Both localization
+  files pass `plutil -lint`, Chinese / English keys have parity, the unsigned
+  macOS and generic iOS Debug builds exit 0, and `git diff --check` is clean.
+  Simulator verification was intentionally not performed.
+
+## 2026-07-29 V1 Design Freeze Physical Device Evidence
+
+- Signed `PhotoMemoiOS` Debug for the paired physical device destination
+  `00008150-000A043136A1401C` using Apple Development identity
+  `GE3672Z8WA`; strict verification passed for the app, Share Extension, and
+  Widget Extension.
+- Overwrite-installed `com.serydoo.PhotoMemo.iOS` version `2.0 (47)` on
+  `iPhone7` (Marketing Name: iPhone 17 Pro Max, Product Type: iPhone18,2).
+  The existing app was not uninstalled and its container was not cleared.
+- Launched the app after the device was unlocked. Process inspection confirmed
+  the main app and Widget Extension were running. A physical-device screenshot
+  at `/tmp/PhotoMemoV1DesignFreeze-iPhone17ProMax.png` shows the updated Home
+  hierarchy and primary action. Manual interaction through the full Apple Photos
+  Share -> Processing -> Notification -> Apple Photos lifecycle, dynamic type,
+  VoiceOver, and Settings subpage traversal remains unperformed.
+
+## 2026-07-29 MemoMark Product Language Guide
+
+- Accepted and froze `Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md` as the
+  canonical Narrative Product Language source. The highest rule is:
+  `自然、克制、有温度；始终围绕人与回忆，而不是围绕功能与技术。`
+- The guide defines MemoMark as a quiet friend who understands photography,
+  everyday life, and the value of memories. It distinguishes `生活感` from
+  poetry or advertising, keeps the five-step memory sequence explicit, and
+  preserves a direct factual boundary for permissions, privacy, errors,
+  recovery, purchases, destructive actions, and Apple Photos state.
+- Synchronized the active Configuration Center copy to the final sequence,
+  including `决定这段回忆最终如何呈现。`; no data, state, architecture,
+  renderer, export, or Apple Photos lifecycle behavior changed.
+- Updated the frozen personality/language references, design decision registry,
+  document index, and `AGENTS.md` so future copy passes use one source of truth.
+- Verification passed: the focused narrative source contract now covers the
+  canonical guide and active copy (4/4 tests), both localization files pass
+  `plutil -lint`, Chinese / English key parity is `348 / 348`, the standard
+  unsigned macOS Debug build succeeds, and `git diff --check` is clean. No
+  simulator or physical-device visual acceptance was performed for this copy
+  change.
+
+## 2026-07-29 Signed iPhone7 Deployment
+
+- Built the current `PhotoMemoiOS` scheme for `generic/platform=iOS` with the
+  active Apple Development identity and provisioning profiles. The main app,
+  Share Extension, and Widget Extension all signed successfully.
+- Overwrite-installed the resulting `PhotoMemoiOS.app` on paired physical
+  device `iPhone7` (iPhone 17 Pro Max) using `devicectl`, without uninstalling
+  the app or clearing its container data.
+- Launched `com.serydoo.PhotoMemo.iOS` with the existing process terminated
+  first. A follow-up device process inspection found the main app and Widget
+  Extension running. This is deployment evidence; manual UI acceptance and
+  full Apple Photos lifecycle verification remain separate checks.
+
+## 2026-07-29 Cross-Pass Conflict Review And Background Recovery Hardening
+
+- Completed an Engineering Loop / P1 review of the July 28-29 working-tree
+  changes across UI source contracts, Share intake preparation, queue startup,
+  background expiration, recovery-result classification, localization, and
+  appearance boundaries.
+- The review found that background expiration could be converted into an
+  ordinary task failure and then misreported as completion, intake preparation
+  could start processing before all external requests had been classified, and
+  a zero-enqueued / zero-failed preparation could be treated as permanent
+  failure. The implementation now keeps cancellation recoverable, resolves run
+  and preparation outcomes through explicit value boundaries, and keeps
+  background queue startup separate from foreground resume behavior.
+- Foreground intake now persists and prepares durable requests without starting
+  PhotoKit work until `PermissionCenter` confirms Photos access. Photo and
+  notification authorization are separate explicit actions, and the first-run
+  permission surface remains reachable when Photos is already authorized but
+  notifications are still undecided or denied.
+- The Share Extension still submits durable background work, but now also asks
+  the host app to open when the current Photos authorization state requires user
+  action. Host-app fallback remains best effort; a failed open does not discard
+  the already-persisted request or falsely convert it into an intake failure.
+- The main app's forced-light boundary was restored for release safety because
+  the broader SwiftUI surface still contains fixed white backgrounds. True dark
+  appearance remains a separate bounded UI and accessibility pass.
+- Three stale UI source expectations across the responsive-layout and Settings
+  disclosure contracts were aligned with the accepted narrative copy. Their
+  focused rerun passed. The final `PhotoMemoTests` result is 1,185 passed, one
+  environment-gated skip, and zero failures. Focused background/permission
+  contracts, the unsigned generic iOS build, all plist and strings lint checks,
+  Simplified Chinese / English localization-key parity, and `git diff --check`
+  also pass.
+- The final signed Debug build passed strict code-sign verification and was
+  overwrite-installed and launched on the paired physical `iPhone7` (iPhone 17
+  Pro Max). The existing app was not uninstalled and its container was not
+  cleared; this does not by itself verify retained user data. Real
+  `BGTaskScheduler` scheduling, system-expiration recovery, Apple Photos Share
+  handoff, PhotoKit save behavior, dark mode, accessibility, and manual visual
+  acceptance still require explicit lifecycle evidence before certification.
+
+## 2026-07-29 Subject Overview Contact-Style Fact Rows
+
+- Completed a bounded Product Loop / P2 presentation pass for the iOS
+  `记忆对象` overview and edit surface. Optional facts now use a contact-style
+  leading-label / trailing-value row, while edit fields retain their vertical
+  field hierarchy and add a conditional clear action without bypassing the
+  existing draft and save boundary.
+- Canonical `MemorySubject` data, persistence, identity, Memory Engine behavior,
+  and the frozen Configuration Center architecture remain unchanged.
+- The new source contract and existing subject-overview presenter suite passed;
+  the Apple-native surface contract and an isolated unsigned iOS Debug build
+  also passed. A stale responsive-layout copy expectation discovered during the
+  combined run has since been corrected and its focused rerun passed.
+- The final integrated `PhotoMemoTests` run passed 1,185 tests with one skip and
+  zero failures; the signed integrated build was overwrite-installed and
+  launched on the paired physical `iPhone7` without uninstalling the app or
+  clearing its container. Simulator and manual visual verification were not
+  performed, so multiline layout, field focus, clear-action ergonomics, and
+  accessibility behavior are not manually certified by the current evidence.
+
+## 2026-07-29 Advanced Modules Location Entry And UI Consistency
+
+- Completed a bounded Product Loop / P2 configuration-surface pass. The
+  inline location-display control was removed from `卡片布局与内容`; a single
+  `高级模块` entry now sits below `卡片内容` and above configuration status.
+- The new entry uses the approved copy `部分高级模块的展示形式选择`, the same
+  right-side `编辑` plus chevron treatment as `卡片内容`, and an Apple-native
+  Sheet with `高级模块` as its title and `完成` in the confirmation position.
+- The Sheet currently contains only `地理显示`. Its existing menu options,
+  selected-item checkmark, value pill, custom down-chevron, selection binding,
+  persistence, preview refresh, and downstream relationships remain unchanged.
+- Appearance was kept inside the existing iOS Configuration Center system:
+  inset-grouped Sheet presentation, `.subheadline` / `.caption` typography,
+  compact row spacing, and shared `ConfigurationUI` control background,
+  corner-radius, and hairline tokens. No new card, form, or visual language was
+  introduced for one advanced setting. The row follows the existing responsive
+  rule: horizontal when it fits, vertical for narrow widths or accessibility
+  Dynamic Type sizes.
+- Added a source contract covering row order, copy, Sheet controls, menu reuse,
+  and visual-system tokens. The focused `V1ConfigurationOptionListContractTests`
+  passed with `CODE_SIGNING_ALLOWED=NO`; the unsigned `PhotoMemoiOS` Debug build
+  also passed. `git diff --check` passed.
+- Simulator launch, screenshot, and visual acceptance were intentionally not
+  performed at the product owner's direction. A signed Debug build from that
+  scoped pass was overwrite-installed on the paired `iPhone7` (iPhone 17 Pro
+  Max) without uninstalling the existing app or clearing its data, and launch
+  was confirmed. This is historical deployment evidence for that pass only; no
+  manual visual acceptance or final integrated-tree deployment is claimed.
+
+## 2026-07-29 Narrative Product Language Pass
+
+- Completed a bounded Product Loop / P2 language pass for active Configuration
+  Center, Home, Save, Progress, Welcome, Settings, macOS column labels, and
+  memory-description surfaces. The scoped replacements now describe a person,
+  an important moment, a memory expression, and a saved memory rather than
+  implementation modules, output rules, or processing mechanics.
+- The approved Configuration Center sequence is now explicit: `记忆来源` asks
+  `你想围绕谁开展回忆。`; `时间锚点` asks `从哪个重要时刻开始记录。`; `记忆显示`
+  is `记忆表达`; and card content asks `决定这段回忆最终如何呈现。`.
+- Added Simplified Chinese and English equivalents for the updated narrative
+  vocabulary, including the photo-description writing surface and the daily
+  Apple Photos flow. Status, privacy, permission, destructive-action, and
+  Photo Library wording remain direct where factual precision is required.
+  Remaining long-tail Chinese fallback strings visible under English are not
+  closed by this scoped vocabulary pass and require a separate localization
+  audit.
+- Added a source contract for the approved narrative vocabulary and aligned
+  existing copy contracts with the accepted terms. All focused language,
+  Configuration Center, Apple-native, navigation, and presenter tests passed;
+  both unsigned generic iOS Simulator and macOS Debug build logs end with
+  `Build succeeded`; `plutil -lint` and `git diff --check` passed.
+- Simulator visual verification was intentionally not performed at the
+  product owner's direction. No claim of manual device or simulator visual
+  acceptance is made for this copy pass.
+- The signed Debug build from that scoped pass was overwrite-installed
+  on the paired `iPhone7` (iPhone 17 Pro Max) without uninstalling the existing
+  app or clearing its data, and launch was confirmed. This is historical
+  deployment evidence only; the revised copy has not received separate manual
+  visual acceptance, and the later integrated working tree still requires its
+  own deployment check.
+
+## 2026-07-28 iOS View Architecture And UI-System Closure
+
+- Continued the bounded iOS View architecture pass without adding further Home
+  visual changes or changing Renderer, Layout, configuration truth, Export,
+  Share intake, or the Apple Photos lifecycle. Configuration presentation is
+  separated from the root, and photo-picker/Logo optimization presentation
+  values now share one transient state boundary while existing workflow owners
+  remain unchanged.
+- Completed semantic spacing, corner, stroke, Material, elevation, motion, and
+  control-state roles. Shared cards honor Increase Contrast and establish a
+  contained VoiceOver heading/content order; newly audited configuration,
+  output, processing, and settings copy is present in Chinese and English.
+- The bounded workflow-coordination pass is complete. Configuration deletion,
+  active-selection persistence, local backup/restore orchestration, save
+  payload construction, preview adaptation, system presentations, and root
+  lifecycle/change observation now have focused stateless boundaries. The
+  root remains the owner of `ConfigurationSession`, durable dependencies,
+  transient UI state, and final patch application.
+- The root is approximately 2,639 lines, down from 3,371 at the preceding
+  milestone. The earlier 2,000–2,200 estimate remains a progress signal rather
+  than a hard architecture target; another split requires a concrete ownership
+  boundary instead of line-count-only extraction.
+- Focused responsive, root-structure, persistence, Apple-native, and background
+  contracts pass, and the unsigned generic `PhotoMemoiOS` Debug build exits 0.
+  Two UI source-shape contracts were updated to follow their new modifier
+  owners; the complete `PhotoMemoTests` scheme then exits 0. Home and the
+  physical-device accessibility/layout matrix remain pending manual acceptance
+  and are not certified by these automated results.
+
+## 2026-07-28 Share Background Lifecycle Implementation
+
+- Added a durable Share-to-background handoff for the V3 Apple Photos workflow.
+  The Share Extension now persists its intake and configuration snapshot,
+  submits the permitted `BGProcessingTask`, returns to Apple Photos when that
+  submission succeeds, and opens the host app only as a scheduling fallback.
+- Added an iOS background coordinator and worker boundary. Background launch
+  converts persisted external intake into `BatchJob` values before execution,
+  distinguishes empty, retryable, permanent, permission, and completed results,
+  and restores interrupted nonterminal tasks without immediately restarting
+  after system expiration.
+- iOS queue bootstrap now restores persisted work without starting it before
+  the system background handler installs its expiration boundary. Foreground
+  scene refresh explicitly resumes queued work; background execution is owned
+  by the worker.
+- Background execution no longer requests Photos or notification permission.
+  The existing foreground `PermissionCenter` is now exposed through the
+  background-status surface, where separate explicit actions grant Photos
+  access or enable notifications. Photos authorization resumes retained work;
+  notification authorization remains optional and does not gate processing.
+- Added background configuration, preparation-result, run-result, and worker
+  ownership contracts. The result tests now import the host module and the
+  source contract owns its repository reader, closing their test-target
+  integration gap without changing background behavior. The complete serialized
+  `PhotoMemoTests` scheme and unsigned generic `PhotoMemoiOS` build exit 0;
+  physical-device scheduling and PhotoKit lifecycle verification remain
+  required before certification. The July 29 cross-pass review above records
+  the later expiration, queue-start, and result-classification hardening; this
+  section is the initial implementation baseline rather than final lifecycle
+  certification.
+
+## 2026-07-28 Compact UI And Primary-Flow Interaction Pass
+
+- Completed a Product Loop / P1 interaction pass together with the compact-device
+  responsive pass. Home now makes Apple Photos Share the primary daily entry,
+  reuses the existing workflow guide, explains which saved configuration the
+  next share will use, and presents in-app photo selection as a secondary path.
+- Processing now uses photo counts (`已完成 N 张` / `剩余 N 张`) and user-facing
+  step names while retaining the existing progress fraction and state model.
+  Visible percentages, step timing, and Renderer/Pipeline/Queue terminology were
+  removed from this surface. Output explains that saved settings apply to later
+  Apple Photos shares.
+- This scoped pass removed three forced-light appearance modifiers. The July 29
+  cross-pass review later restored the main-app light boundary because
+  hard-coded white surfaces remain in the broader UI; dark-mode behavior is not
+  certified by either source-only change.
+  Share handoff remains frozen as disabled
+  `已提交` followed by the existing 700 ms automatic dismissal; queue admission,
+  persistence, retry, and handoff behavior were not changed.
+- Added compact fallbacks for Home preset rows and Settings disclosure headers.
+  Default Dynamic Type preserves the existing horizontal layout first; narrow
+  proposals and accessibility sizes receive readable vertical candidates.
+- New Home, Processing, and Output interaction copy is covered in Simplified
+  Chinese and English resources, including the dynamic next-share configuration
+  sentence. The broader localization audit still identifies historical Share
+  fallback copy requiring a separate bounded localization pass.
+- Focused responsive, Home, Processing, Share, appearance, and Apple-native
+  contracts pass. Unsigned generic iOS and `PhotoMemoiOS` simulator builds pass.
+  The final serialized `PhotoMemoTests` suite exits successfully with one
+  existing environment-gated skip and zero failures; `git diff --check` passes.
+  The SE 3 simulator launched to a black surface and CoreSimulator subsequently
+  stopped returning device inventory, so no simulator screenshot is accepted as
+  visual evidence. Physical-device and healthy-simulator matrix acceptance
+  remains explicit follow-up evidence.
+
+## 2026-07-27 Compact-Device Responsive Pass
+
+- Added a container-driven responsive layer while preserving iPhone 17 Pro Max
+  default portrait as the first visual candidate. No device-model, physical
+  resolution, `UIScreen`, Renderer, configuration, persistence, Export, Share,
+  or Apple Photos branch was introduced.
+- Configuration bottom actions now participate in the system safe area and
+  keyboard layout. Configuration rows, region composer controls, Home header,
+  Time Anchor editing, Subject anchor rows, Output target choice, Settings
+  language selection, and Processing status rows use bounded vertical or native
+  Menu fallbacks when horizontal space or Dynamic Type requires them.
+- Time Anchor keeps the current 390-point initial sheet height and adds a large
+  detent plus scrollable content. Memory Card remains tied to its existing
+  aspect-fit preview contract, and module chips remain independently
+  horizontally scrollable at their current size.
+
+## 2026-07-27 iOS Root View Structure Refactor — Milestone 2
+
+- Extracted `V1RegionEditorCluster` as a stateless owner of the four-region
+  editor composition and configuration guide. The root continues to own every
+  draft mutation, focus transition, module-panel decision, preview refresh,
+  `ConfigurationSession`, and persistence dependency.
+- Replaced fourteen scattered rename, switch-confirmation, backup-sheet, and
+  Home-feedback state values with three focused presentation value types while
+  retaining the rename `FocusState` and all asynchronous re-entry guards.
+  Root state/environment wrappers decreased from 54 to 44.
+- Completed the bounded UI-system pass that was safe without screenshot-driven
+  redesign: removed duplicate Output card chrome, added semantic color and
+  motion tokens, reduced Home information pills from saturated blue to quiet
+  system emphasis, and marked shared page/section titles as accessibility
+  headings. The accepted primary-card plus independent nested-card hierarchy
+  remains unchanged.
+- Added the standing product acceptance matrix for Dynamic Type, VoiceOver,
+  Reduce Motion, Increase Contrast, appearance, localization, small iPhone,
+  landscape, and iPad. Brand-weight reductions and dynamic Processing-card
+  geometry remain visual acceptance questions rather than source-only edits.
+- `PhotoMemoiOSV1View.swift` is now 3,374 lines, down from the 3,933-line
+  baseline. Focused UI/ownership contracts passed 49/49; the final full
+  `PhotoMemoTests` xcresult passed 1,154 tests with 1 environment-gated skip and
+  0 failures. The unsigned generic iOS Debug build and `git diff --check` pass.
+  Existing StoreKit, Core Location, AVFoundation, UTType, and QoS warnings are
+  unchanged and remain outside this structural/UI pass.
+
+## 2026-07-27 iOS Root View Structure Refactor — Milestone 1
+
+- Established the current Engineering Loop specification for reducing
+  `PhotoMemoiOSV1View` without recreating the retired `MainView` / Workspace
+  architecture. `ConfigurationSession` remains the live editing truth, the
+  durable aggregate remains the saved truth, and the accepted module-card plus
+  necessary nested-card visual hierarchy is frozen during structural work.
+- Removed two batches of unreachable presentation remnants that had already
+  been superseded by current Home, Configuration, Output, and Processing
+  surfaces. Presenter and coordinator types with independent responsibilities
+  and tests remain intact.
+- Extracted compact Tab and regular sidebar composition into the stateless
+  generic `V1EntryNavigationSurface`. It receives one external selection
+  binding and five constructed page surfaces, preserves the compact four-tab
+  boundary and regular-only Settings destination, and owns no
+  `ConfigurationSession`, coordinator, persistence dependency, or mutable
+  state.
+- Extracted the Configuration page's title, guidance, preview/editor placement,
+  and floating action-footer composition into `V1ConfigurationPageSurface`.
+  The root still owns every configuration state and action; the new surface
+  only presents injected content and intent closures.
+- `PhotoMemoiOSV1View.swift` decreased from 3,933 to 3,450 lines, and its
+  state/environment wrapper count decreased from 55 to 54 after removing a
+  write-only Logo status value. The existing
+  adaptive-navigation source is 197 lines after the new surface and the new
+  Configuration page source is 73 lines, so this milestone does not replace
+  one large root with another large view.
+- TDD evidence for the stateless adaptive-navigation contract failed before the
+  surface existed and passed after extraction. The final full
+  `PhotoMemoTests` result is 1,153 passed, 1 environment-gated skip, and 0
+  failed. The unsigned generic `PhotoMemoiOS` iOS Debug build and
+  `git diff --check` pass. Existing test-host UTType, QoS, StoreKit, and platform
+  deprecation warnings remain unchanged.
+- No UI hierarchy, text, localization, persistence, Renderer, Export, Share
+  Extension, PhotoKit, or Apple Photos lifecycle behavior changed. Ongoing
+  physical-device checks remain part of later milestone/release verification,
+  not a blocker for each behavior-neutral extraction.
 
 ## 2026-07-27 Configuration Reliability And Home Polish Pass
 
@@ -19302,3 +19700,51 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   Earlier hardening builds were installed and launched on the paired physical
   iPhone 17 Pro Max without clearing local data; this final review follow-up was
   verified as a signed build but was not reinstalled during repository sync.
+
+## 2026-07-29 Settings Product Center Polish And Language Closure
+
+- Consolidated the iOS Settings information center into the accepted reading
+  path: MemoMark+ -> Getting Started -> Photo Processing -> Data Safety ->
+  Feedback -> Community -> Interface Language -> About. The first-use guide
+  remains expanded by default, while the other sections preserve their
+  disclosure state locally.
+- Added the restrained MemoMark+ hero status, lighter section hierarchy,
+  compact version presentation, semantic reading/action chevrons, footer
+  message, Dynamic Type and Reduce Motion behavior, and VoiceOver labels
+  without changing configuration or processing ownership.
+- Localized the Memory Expression guide through MemoMarkLanguage, including
+  anchor descriptions, expression names, phase labels, and every formula
+  example. Formula markers remain explanatory presentation content and do not
+  change Memory Anchor calculation or output rendering.
+- Focused Settings disclosure, expression-guide, presenter, and
+  Apple-native product-surface contracts passed. Paired Localizable.strings
+  files passed plutil -lint, and the generic iOS Debug build plus signed
+  device package verification passed.
+- The signed build was installed in place and launched on the connected
+  physical iPhone 17 Pro Max (iPhone18,2) without uninstalling the app or
+  clearing its container. Manual visual and VoiceOver traversal still requires
+  the device to be unlocked and is tracked separately from install/launch
+  evidence. No simulator was used.
+
+## 2026-07-29 Settings Follow-up And Device Delivery
+
+- The Settings “重新查看欢迎说明” action now closes Settings and opens the
+  read-only welcome explanation surface. It no longer routes through the
+  first-run configuration sheet or risks replacing the active Memory Subject
+  and Preset. The explanation surface uses the current interface language for
+  its visible introduction, feature cards, and workflow actions.
+- MemoMark+ Hero presentation remains intentionally unchanged pending product
+  review; the existing iOS V1 entry wiring is a deferred follow-up and is not
+  represented as completed in this pass.
+- Rebuilt the signed PhotoMemoiOS Debug package for the paired physical iPhone
+  17 Pro Max, verified its strict signature and 2.0 (47) bundle identity, then
+  installed it in place and launched com.serydoo.PhotoMemo.iOS without
+  removing the app container. The main process and both Widget processes were
+  observed running.
+- plutil -lint and git diff --check passed. The Settings-focused test command
+  currently cannot compile the pre-existing TimeDisplayModuleContractTests
+  references to TimeDisplayInspectorPresenter and TimeExpressionProvider; no
+  unrelated repair was made. Manual Settings traversal remains pending until
+  the device screen is unlocked; no restart or simulator operation is required.
+- Further language-system expansion is deferred for a dedicated follow-up,
+  per the current product review direction.

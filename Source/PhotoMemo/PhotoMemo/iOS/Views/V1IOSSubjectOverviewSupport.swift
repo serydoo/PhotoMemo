@@ -81,7 +81,7 @@ private struct V1IOSSubjectPrimaryCard: View {
 
     private var regularCardContent: some View {
         HStack(spacing: 14) {
-            subjectAvatar(size: 60)
+            subjectAvatar(size: 68)
 
             VStack(alignment: .leading, spacing: 8) {
                 subjectTitle
@@ -98,7 +98,7 @@ private struct V1IOSSubjectPrimaryCard: View {
     private var compactCardContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                subjectAvatar(size: 52)
+                subjectAvatar(size: 60)
 
                 VStack(alignment: .leading, spacing: 7) {
                     subjectTitle
@@ -179,11 +179,11 @@ private struct V1IOSSubjectPrimaryCard: View {
         HStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(Color.green.opacity(0.12))
+                    .fill(statisticsTint.opacity(0.12))
 
                 Image(systemName: "sparkles")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.green)
+                    .foregroundStyle(statisticsTint)
             }
             .frame(width: 24, height: 24)
 
@@ -194,7 +194,7 @@ private struct V1IOSSubjectPrimaryCard: View {
             )
 
             Rectangle()
-                .fill(Color.green.opacity(0.16))
+                .fill(statisticsTint.opacity(0.16))
                 .frame(width: 1, height: 18)
 
             statText(
@@ -210,15 +210,19 @@ private struct V1IOSSubjectPrimaryCard: View {
                 cornerRadius: 10,
                 style: .continuous
             )
-            .fill(Color.green.opacity(0.07))
+            .fill(statisticsTint.opacity(0.07))
         )
         .overlay(
             RoundedRectangle(
                 cornerRadius: 10,
                 style: .continuous
             )
-            .stroke(Color.green.opacity(0.12))
+            .stroke(statisticsTint.opacity(0.12))
         )
+    }
+
+    private var statisticsTint: Color {
+        MemoMarkDesignTokens.Semantic.memoryStatistics
     }
 
     private func statText(

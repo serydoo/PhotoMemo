@@ -20,6 +20,7 @@ struct V1PageHeader: View {
             Text(title)
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
 
             if let subtitle,
                !subtitle.isEmpty {
@@ -97,9 +98,13 @@ struct V1SectionHeading: View {
 
 struct V1CardChrome: ViewModifier {
 
+    @Environment(\.colorSchemeContrast)
+    private var accessibilityContrast
+
     let cornerRadius: CGFloat
     let shadowRadius: CGFloat
     let shadowY: CGFloat
+    let background: Color
 
     func body(content: Content) -> some View {
         content
@@ -108,20 +113,26 @@ struct V1CardChrome: ViewModifier {
                     cornerRadius: cornerRadius,
                     style: .continuous
                 )
-                .fill(ConfigurationUI.panelBackground)
+                .fill(background)
             )
             .overlay(
                 RoundedRectangle(
                     cornerRadius: cornerRadius,
                     style: .continuous
                 )
-                .stroke(ConfigurationUI.faintHairline)
+                .stroke(cardHairline)
             )
             .shadow(
                 color: ConfigurationUI.cardShadow,
                 radius: shadowRadius,
                 y: shadowY
             )
+    }
+
+    private var cardHairline: Color {
+        accessibilityContrast == .increased
+            ? ConfigurationUI.hairline
+            : ConfigurationUI.faintHairline
     }
 }
 
@@ -130,13 +141,15 @@ extension View {
     func v1CardChrome(
         cornerRadius: CGFloat = ConfigurationUI.cardCornerRadius,
         shadowRadius: CGFloat = 4,
-        shadowY: CGFloat = 1
+        shadowY: CGFloat = 1,
+        background: Color = ConfigurationUI.panelBackground
     ) -> some View {
         modifier(
             V1CardChrome(
                 cornerRadius: cornerRadius,
                 shadowRadius: shadowRadius,
-                shadowY: shadowY
+                shadowY: shadowY,
+                background: background
             )
         )
     }
@@ -289,12 +302,16 @@ struct V1CompactHeadingIcon: View {
 
 struct V1ConfigurationCardContainer<Content: View>: View {
 
+    let background: Color
+
     @ViewBuilder
     let content: Content
 
     init(
+        background: Color = ConfigurationUI.panelBackground,
         @ViewBuilder content: () -> Content
     ) {
+        self.background = background
         self.content = content()
     }
 
@@ -302,7 +319,7 @@ struct V1ConfigurationCardContainer<Content: View>: View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(ConfigurationUI.cardPadding)
-            .v1CardChrome()
+            .v1CardChrome(background: background)
     }
 }
 
@@ -348,6 +365,7 @@ struct V1TitledSectionCard<
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
         .padding(14)
         .v1CardChrome()
     }
@@ -372,6 +390,7 @@ struct V1TitledSectionCard<
             .font(.headline.weight(.semibold))
             .foregroundStyle(.primary)
             .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder
@@ -787,25 +806,7 @@ struct V1RegionEditorCard: View {
             isExpanded: $isExpanded
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    Text("模块与文字")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Spacer()
-
-                    Button {
-                        onShowModules()
-                    } label: {
-                        Label(
-                            "添加模块",
-                            systemImage: "plus"
-                        )
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
+                adaptiveComposerHeader
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 3) {
@@ -826,53 +827,7 @@ struct V1RegionEditorCard: View {
                             case .token,
                                  .separator,
                                  .lineBreak:
-                                HStack(spacing: 6) {
-                                    Image(systemName: item.systemImage)
-                                        .symbolRenderingMode(.hierarchical)
-                                        .foregroundStyle(Color.accentColor)
-
-                                    Text(item.title)
-                                        .foregroundStyle(.primary)
-
-                                    Button {
-                                        UISelectionFeedbackGenerator()
-                                            .selectionChanged()
-                                        onRemoveItem(item)
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                    }
-                                    .buttonStyle(
-                                        V1ModuleChipRemoveButtonStyle()
-                                    )
-                                    .accessibilityLabel(
-                                        "移除\(item.title)"
-                                    )
-                                }
-                                .font(.caption.weight(.semibold))
-                                .padding(.leading, 9)
-                                .padding(.trailing, 4)
-                                .padding(.vertical, 4)
-                                .background(
-                                    RoundedRectangle(
-                                        cornerRadius: 9,
-                                        style: .continuous
-                                    )
-                                    .fill(
-                                        Color(
-                                            uiColor:
-                                                .tertiarySystemFill
-                                        )
-                                    )
-                                )
-                                .overlay(
-                                    RoundedRectangle(
-                                        cornerRadius: 9,
-                                        style: .continuous
-                                    )
-                                    .stroke(
-                                        Color.primary.opacity(0.08)
-                                    )
-                                )
+                                moduleChip(item)
                             }
                         }
 
@@ -927,6 +882,93 @@ struct V1RegionEditorCard: View {
                 }
             }
         }
+    }
+
+    private var adaptiveComposerHeader: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                composerHeading
+                Spacer()
+                addModuleButton
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                composerHeading
+                addModuleButton
+            }
+        }
+    }
+
+    private var composerHeading: some View {
+        Text("模块与文字")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+    }
+
+    private var addModuleButton: some View {
+        Button {
+            onShowModules()
+        } label: {
+            Label(
+                "添加模块",
+                systemImage: "plus"
+            )
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+    }
+
+    private func moduleChip(
+        _ item: V1ContentItem
+    ) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: item.systemImage)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+
+            Text(item.title)
+                .foregroundStyle(.primary)
+
+            Button {
+                UISelectionFeedbackGenerator()
+                    .selectionChanged()
+                onRemoveItem(item)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(
+                V1ModuleChipRemoveButtonStyle()
+            )
+            .accessibilityLabel(
+                "移除\(item.title)"
+            )
+        }
+        .font(.caption.weight(.semibold))
+        .padding(.leading, 9)
+        .padding(.trailing, 4)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 9,
+                style: .continuous
+            )
+            .fill(
+                Color(
+                    uiColor:
+                        .tertiarySystemFill
+                )
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 9,
+                style: .continuous
+            )
+            .stroke(
+                Color.primary.opacity(0.08)
+            )
+        )
     }
 
     private var rowValueText: String {

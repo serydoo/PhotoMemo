@@ -50,7 +50,7 @@ struct ConfigurationCenterMemoryDisplaySupportTests {
         #expect(
             ConfigurationCenterMemoryDisplaySupport
                 .summaryDetail(subject: subject)
-            == "锚点前：等待示例昵称到来，还有倒计时天数｜锚点后：陪示例昵称走到年龄结果"
+            == "之前：等待示例昵称到来，还有倒计时天数｜当时：今天陪示例昵称迎来这一天｜之后：陪示例昵称走到年龄结果"
         )
         #expect(
             ConfigurationCenterMemoryDisplaySupport

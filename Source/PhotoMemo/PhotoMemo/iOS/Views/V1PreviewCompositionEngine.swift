@@ -12,11 +12,16 @@ struct V1PreviewCompositionContext: Hashable {
     let locationDisplayConfiguration:
         ExpressionModuleConfiguration?
 
+    let timeDisplayConfiguration:
+        ExpressionModuleConfiguration?
+
     init(
         subject: MemorySubject?,
         birthdayDate: Date,
         captureDate: Date = V1PreviewCompositionEngine.defaultCaptureDate,
         locationDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil,
+        timeDisplayConfiguration:
             ExpressionModuleConfiguration? = nil
     ) {
         self.subject = subject
@@ -24,6 +29,8 @@ struct V1PreviewCompositionContext: Hashable {
         self.captureDate = captureDate
         self.locationDisplayConfiguration =
             locationDisplayConfiguration
+        self.timeDisplayConfiguration =
+            timeDisplayConfiguration
     }
 
     var subjectNameFallback: String {
@@ -659,12 +666,16 @@ struct V1PreviewCompositionEngine {
                 calendar: context.smartTimeCalendar
             )
         case .captureDate:
-            return captureDateFormatter.string(
-                from: context.captureDate
+            return timeDisplayText(
+                for: context.captureDate,
+                component: .date,
+                context: context
             )
         case .captureTime:
-            return captureTimeFormatter.string(
-                from: context.captureDate
+            return timeDisplayText(
+                for: context.captureDate,
+                component: .time,
+                context: context
             )
         case .cameraMaker:
             return "Apple"
@@ -792,20 +803,58 @@ struct V1PreviewCompositionEngine {
         )
     }
 
-    private var captureDateFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.locale =
-            MemoMarkLanguage.stored.locale
-        formatter.dateFormat = "yyyy.MM.dd"
-        return formatter
+    private enum TimeDisplayComponent {
+        case date
+        case time
     }
 
-    private var captureTimeFormatter: DateFormatter {
+    private func timeDisplayText(
+        for date: Date,
+        component: TimeDisplayComponent,
+        context: V1PreviewCompositionContext
+    ) -> String {
+        let style = TimeDisplayConfiguration.BaseStyle(
+            rawValue: context.timeDisplayConfiguration?.options["baseStyle"] ?? "daily"
+        ) ?? .daily
         let formatter = DateFormatter()
-        formatter.locale =
-            MemoMarkLanguage.stored.locale
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter
+        formatter.locale = MemoMarkLanguage.stored.locale
+        switch style {
+        case .daily:
+            formatter.dateFormat = component == .date
+                ? "yyyy年M月d日 EEEE"
+                : "a h:mm"
+        case .precise:
+            formatter.dateFormat = component == .date
+                ? "yyyy.MM.dd"
+                : "HH:mm:ss"
+        case .minimal:
+            formatter.dateFormat = component == .date
+                ? "yyyy.MM.dd"
+                : "HH:mm"
+        case .photography:
+            formatter.dateFormat = component == .date
+                ? "dd MMM yyyy"
+                : "HH:mm"
+        case .weekdayContext:
+            formatter.dateFormat = component == .date
+                ? "yyyy年M月d日"
+                : "EEE"
+        }
+        let base = formatter.string(from: date)
+        guard component == .date else {
+            return base
+        }
+        let supplement = TimeDisplayConfiguration.Supplement(
+            rawValue: context.timeDisplayConfiguration?.options["supplement"] ?? "none"
+        ) ?? .none
+        let additions = TimeExpressionProvider.supplementText(for: date, supplement: supplement, calendar: context.smartTimeCalendar)
+        return TimeExpressionProvider.compose(
+            base: base,
+            lunar: additions.first(where: { $0.hasPrefix("农历") }),
+            solarTerm: additions.first(where: { ["大暑", "立秋", "白露", "寒露", "冬至"].contains($0) }),
+            holiday: additions.first(where: { $0 == "国庆节" || $0 == "劳动节" }),
+            statutoryHoliday: additions.first(where: { $0.hasSuffix("假期") })
+        )
     }
 }
 #endif

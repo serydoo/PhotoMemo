@@ -67,7 +67,7 @@ struct V1EditorPageSurface<
                     .ignoresSafeArea()
             )
             .coordinateSpace(name: "v1-scroll")
-            .overlay(alignment: .bottom) {
+            .safeAreaInset(edge: .bottom, spacing: 0) {
                 accessoryContent
             }
         }

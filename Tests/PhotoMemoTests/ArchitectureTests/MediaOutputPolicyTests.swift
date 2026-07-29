@@ -289,6 +289,56 @@ struct MediaOutputPolicyTests {
         )
     }
 
+    @Test("Batch processing gives the selected media mode precedence over a stale Live Photo policy")
+    func selectedMediaModeControlsBatchLivePhotoBehavior() {
+        let snapshot =
+            BatchConfigurationSnapshot(
+                template:
+                    .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: "",
+                mediaOutputModeRawValue:
+                    V1MediaOutputMode
+                    .staticImage
+                    .rawValue,
+                livePhotoPolicyRawValue:
+                    MemoryConfigurationRecord.Output
+                    .LivePhotoPolicy
+                    .preserveMotion
+                    .rawValue
+            )
+
+        #expect(
+            snapshot.v1MediaOutputMode == .staticImage
+        )
+    }
+
+    @Test("Legacy batch snapshots without a media mode still honor their Live Photo policy")
+    func legacyLivePhotoPolicyRemainsCompatible() {
+        let snapshot =
+            BatchConfigurationSnapshot(
+                template:
+                    .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: "",
+                livePhotoPolicyRawValue:
+                    MemoryConfigurationRecord.Output
+                    .LivePhotoPolicy
+                    .staticImageOnly
+                    .rawValue
+            )
+
+        #expect(
+            snapshot.v1MediaOutputMode == .staticImage
+        )
+    }
+
     @Test("Rejects unsupported media routes")
     func rejectsUnsupportedMediaRoutes() throws {
         do {

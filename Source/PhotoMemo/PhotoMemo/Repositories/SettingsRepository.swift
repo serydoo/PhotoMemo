@@ -109,6 +109,17 @@ final class SettingsRepository {
             )
     }
 
+    func saveTimeDisplayConfiguration(
+        _ configuration: ExpressionModuleConfiguration?
+    ) {
+        settingsService.saveTimeDisplayConfiguration(configuration)
+    }
+
+    func loadTimeDisplayConfiguration()
+    -> ExpressionModuleConfiguration? {
+        settingsService.loadTimeDisplayConfiguration()
+    }
+
     func saveMediaOutputMode(
         _ mode: V1MediaOutputMode
     ) {

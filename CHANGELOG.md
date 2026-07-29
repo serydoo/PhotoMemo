@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.0.1 (48) Release Candidate - 2026-07-29
+
+### Added
+- Added an in-app What's New sheet under Settings -> About, localized in
+  Simplified Chinese and English.
+- Added a release note covering the July 27-29 V3 production-quality pass.
+
+### Changed
+- Hardened Apple Photos Share handoff, background processing recovery, queue
+  admission, retry classification, and duplicate-save protection.
+- Improved configuration save, restore, rename, subject switching, backup,
+  and real Memory Card preview continuity.
+- Refined the iOS root-view ownership boundaries, compact-device layout,
+  Configuration Center hierarchy, Settings information center, and narrative
+  product language.
+- Raised the marketing version to `2.0.1` and the next build to `48`.
+
+### Verification
+- Added or updated focused contracts for background processing, settings,
+  release notes, localization, configuration lifecycle, media output, and
+  responsive UI behavior.
+- Full macOS `PhotoMemoTests` regression passed with `1,207` passed, `1`
+  skipped, and `0` failed; macOS, generic iOS, and Share Extension Debug
+  builds also passed.
+- Physical Apple Photos lifecycle and accessibility acceptance remain separate
+  release evidence.
+
+See `Docs/07_Releases/2026-07-29-2.0.1-v3-production-quality-update.md` for the
+full scope and synchronization boundary.
+
 ## 2.0 (47) Release Candidate - 2026-07-24
 
 ### Added

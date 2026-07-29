@@ -22,59 +22,73 @@ struct V1ModuleLibrarySurface: View {
         }
     }
 
+    private var groupedModules: [ModuleGroup] {
+        let categoryTitles = filteredModules.reduce(into: [String]()) {
+            titles, module in
+            let title = categoryTitle(module)
+            if !titles.contains(title) {
+                titles.append(title)
+            }
+        }
+
+        return categoryTitles.map { title in
+            ModuleGroup(
+                title: title,
+                modules: filteredModules.filter {
+                    categoryTitle($0) == title
+                }
+            )
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    ForEach(filteredModules) { module in
-                        Button {
-                            UISelectionFeedbackGenerator()
-                                .selectionChanged()
-                            onSelectModule(module)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: module.systemImage)
-                                    .font(.body.weight(.semibold))
-                                    .symbolRenderingMode(.hierarchical)
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 24)
+                ForEach(groupedModules) { group in
+                    Section {
+                        ForEach(group.modules) { module in
+                            Button {
+                                UISelectionFeedbackGenerator()
+                                    .selectionChanged()
+                                onSelectModule(module)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: module.systemImage)
+                                        .font(.body.weight(.semibold))
+                                        .symbolRenderingMode(.hierarchical)
+                                        .foregroundStyle(Color.accentColor)
+                                        .frame(width: 24)
 
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(module.title)
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-
-                                    HStack(spacing: 6) {
-                                        Text(categoryTitle(module))
-                                            .font(.caption2.weight(.semibold))
-                                            .foregroundStyle(.tertiary)
-                                            .textCase(.uppercase)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(module.title)
+                                            .font(.body)
+                                            .foregroundStyle(.primary)
 
                                         Text(valueText(module))
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                             .lineLimit(1)
                                     }
+
+                                    Spacer(minLength: 0)
+
+                                    Image(
+                                        systemName: "plus.circle.fill"
+                                    )
+                                    .font(.body.weight(.semibold))
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(Color.accentColor)
+                                    .accessibilityHidden(true)
                                 }
-
-                                Spacer(minLength: 0)
-
-                                Image(
-                                    systemName: "plus.circle.fill"
-                                )
-                                .font(.body.weight(.semibold))
-                                .symbolRenderingMode(.hierarchical)
-                                .foregroundStyle(Color.accentColor)
-                                .accessibilityHidden(true)
+                                .contentShape(Rectangle())
                             }
-                            .contentShape(Rectangle())
                         }
+                    } header: {
+                        Text(group.title)
                     }
-                } header: {
-                    Text("常用与模块")
                 }
             }
-            .searchable(text: $searchText, prompt: "搜索模块")
+            .searchable(text: $searchText, prompt: "搜索内容")
             .overlay {
                 if filteredModules.isEmpty {
                     ContentUnavailableView.search(text: searchText)
@@ -89,6 +103,18 @@ struct V1ModuleLibrarySurface: View {
                     }
                 }
             }
+        }
+    }
+}
+
+private extension V1ModuleLibrarySurface {
+
+    struct ModuleGroup: Identifiable {
+        let title: String
+        let modules: [IOSInsertableModule]
+
+        var id: String {
+            title
         }
     }
 }

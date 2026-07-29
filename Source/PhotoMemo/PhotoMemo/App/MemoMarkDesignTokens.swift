@@ -36,6 +36,73 @@ struct MemoMarkTypographyToken {
 
 enum MemoMarkDesignTokens {
 
+    enum Spacing {
+        static let extraSmall: CGFloat = 4
+        static let small: CGFloat = 8
+        static let medium: CGFloat = 12
+        static let large: CGFloat = 16
+        static let extraLarge: CGFloat = 20
+        static let pageHorizontal: CGFloat = 16
+        static let cardContent: CGFloat = 14
+    }
+
+    enum CornerRadius {
+        static let control: CGFloat = 10
+        static let compactControl: CGFloat = 11
+        static let card: CGFloat = 18
+        static let preview: CGFloat = 12
+    }
+
+    enum Stroke {
+        static let hairlineWidth: CGFloat = 0.5
+        static let standardWidth: CGFloat = 1
+    }
+
+    enum SurfaceMaterial {
+        static let contextual: Material = .regular
+        static let elevated: Material = .thick
+    }
+
+    enum Elevation {
+        static let cardColor = Color.black.opacity(0.05)
+        static let cardRadius: CGFloat = 4
+        static let cardOffsetY: CGFloat = 1
+        static let previewRadius: CGFloat = 8
+        static let previewOffsetY: CGFloat = 3
+    }
+
+    enum ControlState {
+        static let minimumTouchTarget: CGFloat = 44
+        static let disabledOpacity: Double = 0.45
+        static let pressedOpacity: Double = 0.82
+        static let selectedTintOpacity: Double = 0.075
+        static let hoverTintOpacity: Double = 0.018
+    }
+
+    enum Semantic {
+
+        static let interaction = Color.accentColor
+        static let success = Color(uiColor: .systemGreen)
+        static let memoryStatistics = Color(uiColor: .systemTeal)
+        static let danger = Color(uiColor: .systemRed)
+        static let warning = Color(uiColor: .systemOrange)
+        static let quietInformation = Color.secondary
+        static let pageBackground =
+            Color(uiColor: .systemGroupedBackground)
+        static let cardBackground =
+            Color(uiColor: .secondarySystemGroupedBackground)
+        static let controlBackground =
+            Color(uiColor: .secondarySystemFill)
+        static let hairline = Color(uiColor: .separator).opacity(0.24)
+    }
+
+    enum Motion {
+
+        static let quick: Double = 0.16
+        static let standard: Double = 0.24
+        static let deliberate: Double = 0.32
+    }
+
     enum Layout {
 
         static let cardCornerRadius: CGFloat = 24

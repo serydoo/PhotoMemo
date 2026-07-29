@@ -1,6 +1,6 @@
 # Design Decisions
 
-Last updated: 2026-06-24
+Last updated: 2026-07-29
 
 ## Decision 1
 
@@ -663,6 +663,31 @@ MemoMark needs a Memory Language Layer that can express growth records, annivers
 Impact:
 
 The long-term MemoryBlock model is `templateID + fields`. `Subject + Action + Result` is frozen as Preset Schema #001, not as the core model. BlockField values may come from fixed text, token bindings, smart module bindings, or custom field bindings. IA-003A should remain MemorySubject Adapter work; the first implementation point for this decision is IA-003C Memory Block Resolver.
+
+Status:
+
+Frozen
+
+## Decision 38
+
+Decision:
+
+MemoMark user-facing language follows Narrative Product Language: natural,
+restrained, and warm; always centered on people and memories rather than
+features and technology.
+
+Reason:
+
+MemoMark should feel like a quiet friend helping the user organize a memory,
+not a program explaining its own modules, algorithms, or internal state.
+
+Impact:
+
+Titles, subtitles, buttons, prompts, and helper copy should guide one coherent
+act of remembering. Factual language for permissions, privacy, errors,
+recovery, purchases, destructive actions, and Apple Photos state remains direct
+and precise. The canonical rules are in
+`Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md`.
 
 Status:
 

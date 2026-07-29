@@ -12,6 +12,16 @@ struct PhotoMemoiOSBackgroundStatusSheet:
     var batchQueueStore:
         BatchQueueStore
 
+    @ObservedObject
+    var permissionCenter:
+        PermissionCenter
+
+    let authorizePhotoWorkflow:
+        @MainActor () async -> Void
+
+    let authorizeNotificationWorkflow:
+        @MainActor () async -> Void
+
     @Environment(\.dismiss)
     private var dismiss
 
@@ -79,6 +89,8 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                 spacing: 18
             ) {
 
+                permissionCards
+
                 statusHero(
                     snapshot
                 )
@@ -121,16 +133,101 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
         }
     }
 
-    var emptyState: some View {
+    @ViewBuilder
+    var permissionCards: some View {
+        if !permissionCenter.canAccessPhotoLibrary {
+            photoPermissionCard
+        }
+        if !permissionCenter.canDeliverNotifications {
+            notificationPermissionCard
+        }
+    }
 
-        ContentUnavailableView(
-            "暂时没有后台任务",
-            systemImage:
-                "square.stack.3d.down.forward",
-            description: Text(
-                "这里只保留当前处理、失败重试和最近一次失败。"
+    var photoPermissionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(
+                "允许保存到 Apple Photos",
+                systemImage: "photo.badge.checkmark"
             )
+            .font(.headline)
+            Text(
+                "后台任务需要照片权限，才能把生成结果保存回系统相册。"
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            Button(
+                permissionCenter.photoLibraryState == .denied
+                ? "打开系统设置"
+                : "允许照片访问"
+            ) {
+                if permissionCenter.photoLibraryState == .denied {
+                    permissionCenter.openSystemSettings(
+                        for: .photoLibrary
+                    )
+                } else {
+                    Task {
+                        await authorizePhotoWorkflow()
+                    }
+                }
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(16)
+        .background(
+            Color.secondary.opacity(0.08),
+            in: RoundedRectangle(cornerRadius: 16)
         )
+    }
+
+    var notificationPermissionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(
+                "允许完成提醒",
+                systemImage: "bell.badge"
+            )
+            .font(.headline)
+            Text(
+                "处理结束后，时光记可以通过系统通知告诉你结果。"
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            Button(
+                permissionCenter.notificationState == .denied
+                ? "打开通知设置"
+                : "允许完成提醒"
+            ) {
+                if permissionCenter.notificationState == .denied {
+                    permissionCenter.openSystemSettings(
+                        for: .notifications
+                    )
+                } else {
+                    Task {
+                        await authorizeNotificationWorkflow()
+                    }
+                }
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(16)
+        .background(
+            Color.secondary.opacity(0.08),
+            in: RoundedRectangle(cornerRadius: 16)
+        )
+    }
+
+    var emptyState: some View {
+        VStack(spacing: 20) {
+            permissionCards
+            ContentUnavailableView(
+                "暂时没有后台任务",
+                systemImage:
+                    "square.stack.3d.down.forward",
+                description: Text(
+                    "这里只保留当前处理、失败重试和最近一次失败。"
+                )
+            )
+        }
+        .padding(20)
     }
 
     func statusHero(

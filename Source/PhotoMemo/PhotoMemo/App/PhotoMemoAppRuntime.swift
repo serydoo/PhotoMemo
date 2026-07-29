@@ -16,6 +16,19 @@ final class PhotoMemoAppRuntime:
     let backgroundStatusService:
         PhotoMemoBackgroundStatusService
 
+    let permissionCenter = PermissionCenter()
+
+#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+    lazy var backgroundTaskCoordinator =
+        PhotoMemoBackgroundTaskCoordinator(
+            batchQueueStore: batchQueueStore,
+            prepareQueue: { [weak self] in
+                self?.flushExternalRequests()
+                    ?? .retryableFailure
+            }
+        )
+#endif
+
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
     let backgroundExecutionService:
         PhotoMemoiOSBackgroundExecutionService
@@ -37,6 +50,8 @@ final class PhotoMemoAppRuntime:
 
     private var cancellables:
         Set<AnyCancellable> = []
+
+    private var isFlushingExternalRequests = false
 
     init(
         environment: AppEnvironment
@@ -84,6 +99,9 @@ final class PhotoMemoAppRuntime:
         self.externalIntakeStore =
             environment.services
             .externalIntakeStore
+#if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+        self.backgroundTaskCoordinator.register()
+#endif
 
         commerceStore.$snapshot
             .removeDuplicates()
@@ -151,7 +169,17 @@ final class PhotoMemoAppRuntime:
         )
     }
 
-    func flushExternalRequests() {
+    @discardableResult
+    func flushExternalRequests()
+    -> BackgroundQueuePreparationResult {
+
+        guard !isFlushingExternalRequests else {
+            return .retryableFailure
+        }
+        isFlushingExternalRequests = true
+        defer {
+            isFlushingExternalRequests = false
+        }
 
         let requests =
             externalIntakeCenter
@@ -170,11 +198,25 @@ final class PhotoMemoAppRuntime:
             )
         }
 
+        guard externalIntakeCenter.intakePersistenceError == nil else {
+            return BackgroundQueuePreparationResult.resolve(
+                enqueuedRequestCount: 0,
+                failedRequestCount: 1,
+                pendingTaskCount: batchQueueStore.pendingTaskCount
+            )
+        }
+
         guard !requests.isEmpty else {
-            return
+            return BackgroundQueuePreparationResult.resolve(
+                enqueuedRequestCount: 0,
+                failedRequestCount: 0,
+                pendingTaskCount: batchQueueStore.pendingTaskCount
+            )
         }
 
         var consumedPayloadKeys = Set<String>()
+        var enqueuedRequestCount = 0
+        var failedRequestCount = 0
 
         for request in requests {
             let processedRequest =
@@ -201,6 +243,9 @@ final class PhotoMemoAppRuntime:
                     requestID:
                         receipt.requestID
                 )
+                if receipt.job != nil {
+                    enqueuedRequestCount += 1
+                }
 
                 if let droppedReason =
                     receipt.droppedReason {
@@ -246,6 +291,7 @@ final class PhotoMemoAppRuntime:
                         request.id
                 )
             case .failure(let error):
+                failedRequestCount += 1
                 PhotoMemoShareDiagnostics.record(
                     stage: .appEnqueueFailed,
                     message:
@@ -259,6 +305,12 @@ final class PhotoMemoAppRuntime:
         externalIntakeCenter.updateDefaultConfiguration(
             batchQueueStore
                 .defaultConfigurationSnapshot
+        )
+
+        return BackgroundQueuePreparationResult.resolve(
+            enqueuedRequestCount: enqueuedRequestCount,
+            failedRequestCount: failedRequestCount,
+            pendingTaskCount: batchQueueStore.pendingTaskCount
         )
     }
 
@@ -284,11 +336,21 @@ final class PhotoMemoAppRuntime:
 
     func refreshExternalIntakeState() {
 
+        guard !isFlushingExternalRequests else {
+            return
+        }
+
         externalIntakeCenter.updateDefaultConfiguration(
             batchQueueStore
                 .defaultConfigurationSnapshot
         )
         flushExternalRequests()
+
+        guard permissionCenter.canAccessPhotoLibrary else {
+            return
+        }
+
+        batchQueueStore.startProcessingIfNeeded()
 
         guard externalIntakeCenter.intakePersistenceError == nil else {
             return
@@ -300,6 +362,28 @@ final class PhotoMemoAppRuntime:
                     batchQueueStore
                     .referencedManagedSourceURLs
             )
+    }
+
+    func refreshPermissionsAndResume() async {
+        await permissionCenter.refreshStatuses()
+        if permissionCenter.canAccessPhotoLibrary {
+            refreshExternalIntakeState()
+        }
+    }
+
+    func authorizePhotoWorkflow() async {
+        permissionCenter.markPrimerPresented()
+        guard await permissionCenter
+            .requestPhotoLibraryPermission() else {
+            return
+        }
+        refreshExternalIntakeState()
+    }
+
+    func authorizeNotificationWorkflow() async {
+        permissionCenter.markPrimerPresented()
+        _ = await permissionCenter
+            .requestNotificationPermission()
     }
 
     private func recordEnqueuedTaskRoutes(

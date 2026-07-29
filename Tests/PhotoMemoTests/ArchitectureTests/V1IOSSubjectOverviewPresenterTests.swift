@@ -469,11 +469,51 @@ struct V1IOSSubjectOverviewPresenterTests {
         #expect(normalizedField.contains("VStack(alignment: .leading, spacing: 4)"))
         #expect(normalizedField.contains("Text(title) .font(.subheadline)"))
         #expect(normalizedField.contains("alignment: .leading"))
+        #expect(normalizedField.contains("HStack(spacing: 8)"))
+        #expect(normalizedField.contains(".configurationFieldChrome( isActive: focusedField == focus )"))
+        #expect(normalizedField.contains("if !text.wrappedValue.isEmpty"))
+        #expect(normalizedField.contains("Image(systemName: \"xmark.circle.fill\")"))
+        #expect(normalizedField.contains(".accessibilityLabel(\"清除\\(title)\")"))
         #expect(!normalizedField.contains("RoundedRectangle("))
         #expect(!normalizedField.contains(".fill(tint.opacity(0.11))"))
         #expect(!normalizedField.contains(".frame(width: 34, height: 34)"))
         #expect(!fieldSource.contains(".clipShape("))
         #expect(!panelSource.contains("RoundedRectangle("))
+    }
+
+    @Test("subject overview facts use contact-style horizontal rows")
+    func subjectOverviewFactsUseContactStyleHorizontalRows() throws {
+        let overviewSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
+        let factRow = try sourceSection(
+            in: overviewSource,
+            from: "private struct V1IOSSubjectFactRow",
+            to: "#endif"
+        )
+        let normalizedFactRow = factRow.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+
+        #expect(
+            normalizedFactRow.contains(
+                "HStack(alignment: .firstTextBaseline, spacing: 12)"
+            )
+        )
+        #expect(
+            normalizedFactRow.contains(
+                "Text(title) .font(.body) .foregroundStyle(.secondary)"
+            )
+        )
+        #expect(normalizedFactRow.contains("Spacer(minLength: 0)"))
+        #expect(
+            normalizedFactRow.contains(
+                "Text(value) .font(.body) .foregroundStyle(.primary) .multilineTextAlignment(.trailing)"
+            )
+        )
+        #expect(!normalizedFactRow.contains("VStack(alignment: .leading, spacing: 4)"))
     }
 }
 

@@ -194,7 +194,7 @@ struct ConfigurationCenterSummarySection: View {
             summaryDivider
 
             summaryRow(
-                title: "记忆显示",
+                title: "记忆表达",
                 systemImage: MemoMarkSymbol.memoryContent.name,
                 detail: memoryDisplayDetail
             ) {
@@ -208,7 +208,7 @@ struct ConfigurationCenterSummarySection: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Picker(
-                        "记忆显示",
+                        "记忆表达",
                         selection: selectedMemoryDisplayStyle
                     ) {
                         ForEach(
@@ -222,7 +222,7 @@ struct ConfigurationCenterSummarySection: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .controlSize(.small)
-                    .accessibilityLabel("选择记忆显示方式")
+                    .accessibilityLabel("选择记忆表达方式")
                 }
             }
 

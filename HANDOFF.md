@@ -1,5 +1,25 @@
 # MemoMark Handoff
 
+## 2026-07-29 MemoMark 2.0.1 GitHub synchronization preparation
+
+- The next candidate is now `2.0.1 (48)`. Historical `2.0 (47)` release
+  documents remain unchanged as the previous candidate record.
+- Settings -> About -> What's New now opens an in-app, localized release-note
+  sheet instead of sending the user to GitHub Releases.
+- The in-app and repository release notes summarize the July 27-29 work:
+  Share/background recovery, queue and PhotoKit reliability, configuration
+  persistence, iOS view ownership, compact layouts, Settings hierarchy,
+  narrative product language, and privacy boundaries.
+- The release candidate includes source, tests, localization, version
+  settings, and release documents. BrandMark research, private media, signed
+  packages, archives, device screenshots, and personal Xcode state remain
+  excluded from synchronization.
+- Final verification passed: full macOS `PhotoMemoTests` reported `1,207`
+  passed, `1` skipped, and `0` failed; macOS, generic iOS, and Share Extension
+  Debug builds passed; plist lint, bilingual key parity, and `git diff --check`
+  passed. Manual physical-device Apple Photos lifecycle and accessibility
+  acceptance remain open evidence rather than implicit release claims.
+
 ## 2026-07-24 MemoMark 2.0 App Store release preparation
 
 - 全部产品目标的 `MARKETING_VERSION` 已从 `1.7` 升级为 `2.0`，主 App、

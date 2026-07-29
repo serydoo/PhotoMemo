@@ -331,18 +331,7 @@ private extension BatchNotificationService {
             return true
 
         case .notDetermined:
-            do {
-                return try await center
-                    .requestAuthorization(
-                        options: [
-                            .alert,
-                            .sound,
-                            .badge
-                        ]
-                    )
-            } catch {
-                return false
-            }
+            return false
 
         case .denied:
             return false

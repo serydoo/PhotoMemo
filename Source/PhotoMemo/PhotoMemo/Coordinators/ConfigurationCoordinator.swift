@@ -121,6 +121,18 @@ final class ConfigurationCoordinator {
         return .success(())
     }
 
+    func saveTimeDisplayConfiguration(
+        _ configuration: ExpressionModuleConfiguration
+    ) -> PhotoMemoResult<Void> {
+        settingsRepository.saveTimeDisplayConfiguration(configuration)
+        return .success(())
+    }
+
+    func loadTimeDisplayConfiguration()
+    -> ExpressionModuleConfiguration? {
+        settingsRepository.loadTimeDisplayConfiguration()
+    }
+
     func saveV1SubjectLibrary(
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,

@@ -5,6 +5,9 @@ import UIKit
 
 struct V1TaskPageSurface: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
 
@@ -81,8 +84,8 @@ struct V1TaskPageSurface: View {
 
     private var pageHeader: some View {
         V1PageHeader(
-            "处理",
-            subtitle: "从 Apple Photos 分享后，可在这里确认进度与结果。"
+            "进展",
+            subtitle: "从 Apple Photos 分享后，这里会告诉你进展。"
         )
     }
 
@@ -102,8 +105,8 @@ struct V1TaskPageSurface: View {
 
     private var waitingTaskCard: some View {
         V1TitledSectionCard(
-            title: "等待下一次分享",
-            subtitle: "从 Apple Photos 分享后，会在这里显示进度和结果。"
+            title: "准备好了",
+            subtitle: "从 Apple Photos 分享照片后，这里会告诉你进展。"
         ) {
             HStack(spacing: 12) {
                 Image(systemName: "photo.badge.plus")
@@ -121,7 +124,7 @@ struct V1TaskPageSurface: View {
                     Text("准备就绪")
                         .font(.subheadline.weight(.semibold))
 
-                    Text("从 Apple Photos 分享照片，即可开始生成。")
+                    Text("从 Apple Photos 分享照片，就能开始记录。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -171,7 +174,7 @@ struct V1TaskPageSurface: View {
 
     private var needsAttentionTaskCard: some View {
         V1TitledSectionCard(
-            title: "需要查看",
+            title: "需要处理",
             subtitle: presentation.currentTask.detailText
         ) {
             taskStatusPill(
@@ -208,12 +211,12 @@ struct V1TaskPageSurface: View {
                 Text(presentation.currentTask.headline)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
 
                 Text(taskSummarySubtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
 
                 currentProgressLine
             }
@@ -241,7 +244,7 @@ struct V1TaskPageSurface: View {
             taskThumbnail(
                 url: presentation.currentTask.previewSourceURL,
                 symbolName: presentation.currentTask.thumbnailSymbolName,
-                tint: presentation.currentTask.tint,
+                tint: .secondary,
                 size: CGSize(width: 56, height: 56)
             )
 
@@ -249,22 +252,20 @@ struct V1TaskPageSurface: View {
                 Text(presentation.currentTask.headline)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
 
                 Text(taskSummarySubtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
 
                 if let updatedAt = presentation.currentTask.updatedAt {
                     Label(
                         V1UserFacingDateFormatter.dateTime(updatedAt),
-                        systemImage: "checkmark.circle.fill"
+                        systemImage: "clock"
                     )
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(
-                        presentation.currentTask.tint.color
-                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
             }
 
@@ -286,7 +287,7 @@ struct V1TaskPageSurface: View {
                 Text(presentation.currentTask.headline)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
 
                 Text(presentation.currentTask.detailText)
                     .font(.caption)
@@ -329,20 +330,9 @@ struct V1TaskPageSurface: View {
                 )
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
                 Spacer(minLength: 0)
-
-                if let progressFraction =
-                    presentation.currentTask.progressFraction,
-                   showsProgressPercentage(progressFraction) {
-                    Text(progressPercentText(progressFraction))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(
-                            presentation.currentTask.tint.color
-                        )
-                        .monospacedDigit()
-                }
             }
 
             if let progressFraction =
@@ -352,7 +342,9 @@ struct V1TaskPageSurface: View {
                     .tint(presentation.currentTask.tint.color)
                     .accessibilityLabel("当前任务进度")
                     .accessibilityValue(
-                        progressPercentText(progressFraction)
+                        presentation.currentTask.progressText
+                        ?? presentation.currentTask.itemCountText
+                        ?? "处理中"
                     )
             } else {
                 ProgressView()
@@ -364,7 +356,7 @@ struct V1TaskPageSurface: View {
     }
 
     private var pipelineDetailsDisclosure: some View {
-        DisclosureGroup("处理详情") {
+        DisclosureGroup("本次进展") {
             pipelineRows
                 .padding(.top, 8)
         }
@@ -398,52 +390,73 @@ struct V1TaskPageSurface: View {
     private func pipelineRow(
         _ step: V1TaskPipelineStepPresentation
     ) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: step.symbolName)
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(step.tint.color)
-                .frame(width: 16, height: 16)
-
-            Text(step.title)
-                .font(
-                    .callout
-                    .weight(
-                        step.emphasizesTitle
-                        ? .semibold
-                        : .regular
-                    )
-                )
-                .foregroundStyle(step.tint == .secondary ? .secondary : .primary)
-                .lineLimit(1)
-
-            Text(step.statusText)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(step.tint.color)
-                .lineLimit(1)
-
-            Spacer(minLength: 0)
-
-            if let timeText = step.timeText {
-                Text(timeText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 8) {
+                        pipelineStepIcon(step)
+                        pipelineStepTitle(step)
+                    }
+                    pipelineStepStatus(step)
+                }
+            } else {
+                HStack(spacing: 10) {
+                    pipelineStepIcon(step)
+                    pipelineStepTitle(step)
+                    pipelineStepStatus(step)
+                    Spacer(minLength: 0)
+                }
             }
         }
         .padding(.horizontal, 10)
-        .frame(height: 28)
+        .padding(.vertical, 5)
+        .frame(minHeight: 28)
         .accessibilityElement(children: .combine)
+    }
+
+    private func pipelineStepIcon(
+        _ step: V1TaskPipelineStepPresentation
+    ) -> some View {
+        Image(systemName: step.symbolName)
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(step.tint.color)
+            .frame(width: 16, height: 16)
+    }
+
+    private func pipelineStepTitle(
+        _ step: V1TaskPipelineStepPresentation
+    ) -> some View {
+        Text(step.title)
+            .font(
+                .callout
+                .weight(
+                    step.emphasizesTitle
+                    ? .semibold
+                    : .regular
+                )
+            )
+            .foregroundStyle(step.tint == .secondary ? .secondary : .primary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+    }
+
+    private func pipelineStepStatus(
+        _ step: V1TaskPipelineStepPresentation
+    ) -> some View {
+        Text(step.statusText)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(step.tint.color)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
     }
 
     private var recentTasksSection: some View {
         V1TitledSectionCard(
-            title: "最近完成",
-            subtitle: "保留最近完成的处理记录。",
+            title: "最近保存",
+            subtitle: "最近完成的回忆会在这里出现。",
             trailingAccessory: {
                 if presentation.historyRows.count > 2 {
                     V1CardHeaderIconButton(
                         systemImage: "ellipsis",
-                        accessibilityLabel: "查看更多最近任务"
+                        accessibilityLabel: "查看更多最近保存的回忆"
                     ) {
                         isRecentTasksSheetPresented = true
                     }
@@ -480,7 +493,7 @@ struct V1TaskPageSurface: View {
                     .listRowSeparator(.visible)
             }
             .listStyle(.plain)
-            .navigationTitle("近期完成任务")
+            .navigationTitle("最近保存的回忆")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -506,9 +519,9 @@ struct V1TaskPageSurface: View {
                 )
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("还没有最近任务")
+                Text("还没有保存的回忆")
                     .font(.subheadline.weight(.semibold))
-                Text("从 Apple Photos 分享照片后，这里会显示最近处理。")
+                Text("从 Apple Photos 分享照片后，这里会显示最近保存的回忆。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -537,77 +550,70 @@ struct V1TaskPageSurface: View {
     }
 
     private var photoLibraryLinkRow: some View {
-        HStack {
-            Spacer(minLength: 0)
-
-            Button {
-                guard let link =
-                    presentation
-                    .currentTask
-                    .photoLibraryLink else {
-                    return
-                }
-
-                onOpenPhotoLibrary(link)
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: MemoMarkSymbol.applePhotos.name)
-                        .font(.caption.weight(.semibold))
-                        .frame(width: 16)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("查看相册")
-                            .font(.caption.weight(.semibold))
-                            .lineLimit(1)
-
-                        Text(
-                            presentation
-                            .currentTask
-                            .photoLibraryLink?
-                            .displayTitle
-                            ?? "系统照片"
-                        )
-                        .font(.caption2)
-                        .lineLimit(1)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "arrow.up.forward")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-                }
-                .foregroundStyle(Color.accentColor)
-                .padding(.horizontal, 12)
-                .frame(width: 178)
-                .frame(height: 44)
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: 14,
-                        style: .continuous
-                    )
-                    .fill(ConfigurationUI.controlBackground)
-                )
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: 14,
-                        style: .continuous
-                    )
-                    .stroke(ConfigurationUI.faintHairline)
-                )
+        Button {
+            guard let link =
+                presentation
+                .currentTask
+                .photoLibraryLink else {
+                return
             }
-            .buttonStyle(.plain)
-            .disabled(
-                presentation.currentTask.photoLibraryLink == nil
+
+            onOpenPhotoLibrary(link)
+        } label: {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: MemoMarkSymbol.applePhotos.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("查看 Apple Photos")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(
+                            dynamicTypeSize.isAccessibilitySize ? 3 : 1
+                        )
+
+                    Text(
+                        presentation
+                        .currentTask
+                        .photoLibraryLink?
+                        .displayTitle
+                        ?? "系统照片"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(
+                        dynamicTypeSize.isAccessibilitySize ? 3 : 1
+                    )
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 14,
+                    style: .continuous
+                )
+                .fill(ConfigurationUI.controlBackground)
             )
-            .opacity(
-                presentation.currentTask.photoLibraryLink == nil
-                ? 0.56
-                : 1
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 14,
+                    style: .continuous
+                )
+                .stroke(ConfigurationUI.faintHairline)
             )
         }
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
+        .accessibilityHint("打开 Apple Photos 查看已保存的回忆")
     }
 
     private func recentTaskRowContent(
@@ -625,12 +631,12 @@ struct V1TaskPageSurface: View {
                 Text(row.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
 
                 Text(row.detailText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 1)
 
                 HStack(spacing: 12) {
                     Label(
@@ -648,7 +654,7 @@ struct V1TaskPageSurface: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
             }
 
             Spacer(minLength: 0)
@@ -675,18 +681,6 @@ struct V1TaskPageSurface: View {
             tint: tint,
             size: size
         )
-    }
-
-    private func progressPercentText(
-        _ fraction: Double
-    ) -> String {
-        "\(Int((fraction * 100).rounded()))%"
-    }
-
-    private func showsProgressPercentage(
-        _ progressFraction: Double
-    ) -> Bool {
-        progressFraction < 1
     }
 
     private func taskStatusPill(

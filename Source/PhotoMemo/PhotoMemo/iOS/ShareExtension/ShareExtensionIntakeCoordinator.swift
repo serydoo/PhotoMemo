@@ -72,19 +72,38 @@ final class ShareExtensionIntakeCoordinator {
                     "imported=\(result.importedCount), requested=\(result.requestedCount), skipped=\(result.skippedCount), failed=\(result.failedCount), livePhotoStaticFallback=\(result.livePhotoStaticFallbackCount)"
             )
             onPersisted(result)
+            let backgroundRequestSubmitted =
+                PhotoMemoBackgroundTaskSubmission.submit()
+            let hostAppRequiresPhotoAuthorization =
+                PhotoMemoBackgroundTaskSubmission
+                .requiresHostAppForPhotoAuthorization
+            guard !backgroundRequestSubmitted
+                    || hostAppRequiresPhotoAuthorization
+            else {
+                return .received(result)
+            }
+
+            let fallbackReason =
+                hostAppRequiresPhotoAuthorization
+                ? "Host app requires Apple Photos authorization"
+                : "Background scheduling failed"
             PhotoMemoShareDiagnostics.record(
                 stage: .extensionHandoffRequested,
                 message:
-                    "Intake is safely persisted; requesting host app handoff.",
+                    "\(fallbackReason); requesting host app fallback.",
                 requestID: result.requestID
             )
-
-            let handoffResult =
-                await handoffCoordinator
-                .requestMainAppRefresh()
-            return handoffResult.opened
-                ? .received(result)
-                : .handoffFailed(result)
+            let fallbackHandoff =
+                await handoffCoordinator.requestMainAppRefresh()
+            if !fallbackHandoff.opened {
+                PhotoMemoShareDiagnostics.record(
+                    stage: .extensionHandoffFailed,
+                    message:
+                        "Task is durably queued; host app handoff was unavailable.",
+                    requestID: result.requestID
+                )
+            }
+            return .received(result)
         } catch let shareError as PhotoMemoShareExtensionError {
             PhotoMemoShareIntakeLog.error(
                 "Share extension caught PhotoMemoShareExtensionError.\n\(shareError.diagnosticsDescription ?? "no diagnostics")"

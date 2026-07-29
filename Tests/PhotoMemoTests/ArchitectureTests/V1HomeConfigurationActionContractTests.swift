@@ -5,6 +5,37 @@ import Testing
 @Suite("V1 home configuration action contract")
 struct V1HomeConfigurationActionContractTests {
 
+    @Test("home presents a dismissible first-install Apple Photos workflow")
+    func homeMakesApplePhotosSharingPrimary() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let rootSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+        let presentationSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1WelcomeAndSettingsPresentationModifier.swift"
+        )
+
+        #expect(source.contains("applePhotosEntrySection"))
+        #expect(source.contains("从 Apple Photos 开始"))
+        #expect(source.contains("photomemo.v1.applePhotosGuideDismissed"))
+        #expect(source.contains("if !hasDismissedApplePhotosGuide"))
+        #expect(source.contains("dismissApplePhotosGuide"))
+        #expect(source.contains("Image(systemName: \"xmark\")"))
+        #expect(source.contains("V1WelcomePresentation.workflowSteps"))
+        #expect(source.contains("ForEach(applePhotosWorkflowSteps)"))
+        #expect(source.contains("下一次从 Apple Photos 分享时，将使用当前配置"))
+        #expect(source.contains("onOpenWorkflowGuide"))
+        #expect(source.contains("在 App 内选择照片"))
+        #expect(source.contains(".v1CompactBottomPrimaryAction()"))
+        #expect(source.contains("V1CompactPrimaryActionButtonStyle()"))
+        #expect(!source.contains("applePhotosEntryIcon"))
+        #expect(rootSource.contains("entryFlowState.showsWorkflowGuide = true"))
+        #expect(presentationSource.contains("V1WorkflowGuideSurface("))
+        #expect(!rootSource.contains("V1WorkflowGuideSurface("))
+    }
+
     @Test("configuration rows use native non-full-swipe actions")
     func rowSwipeActionsExposeSaveAndDelete() throws {
         let source = try sourceText(
@@ -26,11 +57,8 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains(".tint(.blue)"))
         #expect(source.contains("Label(\"删除\", systemImage: \"trash\")"))
         #expect(source.contains(".tint(.red)"))
-        #expect(
-            source.contains(
-                "Button(role: .destructive) {\n                        showsDeleteConfirmation = true"
-            )
-        )
+        #expect(source.contains("Button(role: .destructive)"))
+        #expect(source.contains("showsDeleteConfirmation = true"))
         #expect(!source.contains("DragGesture(minimumDistance: 12)"))
         #expect(!source.contains("V1HomeConfigurationSwipePresenter"))
         #expect(source.contains("accessibilityLabel(\"保存配置到本地库\")"))
@@ -123,10 +151,13 @@ struct V1HomeConfigurationActionContractTests {
         let actionSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationLibraryActions.swift"
         )
+        let presentationSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1RootPresentationState.swift"
+        )
 
-        #expect(rootSource.contains("homeConfigurationActionFeedback"))
+        #expect(presentationSource.contains("var homeActionFeedback: String?"))
         #expect(rootSource.contains("homeConfigurationStatusBanner"))
-        #expect(rootSource.contains("showsHomeConfigurationFailureAlert"))
+        #expect(presentationSource.contains("var showsHomeActionFailureAlert = false"))
         #expect(!rootSource.contains("\"配置操作\""))
         #expect(!rootSource.contains("Button(\"知道了\""))
         #expect(rootSource.contains("presentHomeConfigurationActionFeedback"))
@@ -143,7 +174,7 @@ struct V1HomeConfigurationActionContractTests {
         )
 
         #expect(source.contains("case .beginRename(let title):"))
-        #expect(source.contains("memoryPresetTitleDraft = title"))
+        #expect(source.contains("renamePresentation.titleDraft = title"))
         #expect(source.contains("case .commitRenameAndSave(let title):"))
         #expect(!source.contains("case .rename(let title):"))
         #expect(

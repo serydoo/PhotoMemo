@@ -143,4 +143,36 @@ enum LocationDisplayInspectorPresenter {
         )
     }
 }
+
+struct TimeDisplayInspectorOption: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let preview: String
+    let configuration: TimeDisplayConfiguration
+}
+
+struct TimeDisplayInspectorPresentation: Equatable {
+    let title: String
+    let selectedValue: String
+    let options: [TimeDisplayInspectorOption]
+}
+
+enum TimeDisplayInspectorPresenter {
+    static let presentation = TimeDisplayInspectorPresentation(title: "时间显示", selectedValue: "日常记录", options: [
+        option(.daily, "日常记录", "2026年7月29日 星期三 下午3:24"),
+        option(.precise, "精确记录", "2026.07.29 15:24:36"),
+        option(.minimal, "极简记录", "2026.07.29"),
+        option(.photography, "摄影风格", "29 JUL 2026\n15:24"),
+        option(.weekdayContext, "星期上下文", "2026年7月29日 周三")
+    ])
+    static func configuration(baseStyle: TimeDisplayConfiguration.BaseStyle, supplement: TimeDisplayConfiguration.Supplement) -> ExpressionModuleConfiguration {
+        ExpressionModuleConfiguration(token: TimeExpressionProvider.timeToken, options: ["baseStyle": baseStyle.rawValue, "supplement": supplement.rawValue])
+    }
+    static func compose(base: String, lunar: String?, solarTerm: String?, holiday: String?, statutoryHoliday: String?, separator: String = " · ") -> String {
+        TimeExpressionProvider.compose(base: base, lunar: lunar, solarTerm: solarTerm, holiday: holiday, statutoryHoliday: statutoryHoliday, separator: separator)
+    }
+    private static func option(_ style: TimeDisplayConfiguration.BaseStyle, _ title: String, _ preview: String) -> TimeDisplayInspectorOption {
+        TimeDisplayInspectorOption(id: style.rawValue, title: title, preview: preview, configuration: TimeDisplayConfiguration(baseStyle: style))
+    }
+}
 #endif

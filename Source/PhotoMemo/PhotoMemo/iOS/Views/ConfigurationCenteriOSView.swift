@@ -264,7 +264,10 @@ struct ConfigurationCenteriOSView: View {
             V1WelcomePageSurface(
                 presentation:
                     V1WelcomePresentation
-                    .default,
+                    .localized(
+                        for: .interfaceStored
+                    ),
+                language: .interfaceStored,
                 onStart: {
                     showsWelcomePage = false
                 },
@@ -292,7 +295,6 @@ struct ConfigurationCenteriOSView: View {
         ) {
             compactNavigatorSheet
         }
-        .preferredColorScheme(.light)
     }
 
     private var commerceMilestoneBinding:

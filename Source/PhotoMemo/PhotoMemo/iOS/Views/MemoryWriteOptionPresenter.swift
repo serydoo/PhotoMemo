@@ -24,41 +24,41 @@ enum MemoryWriteOptionPresenter {
         MemoryWriteOptionPresentation(
             toggleTitle: language.localized(
                 key: "output.memory_write.custom.title",
-                fallback: "添加自定义内容"
+                fallback: "补充一句话"
             ),
             toggleDescription:
                 language.localized(
                     key: "output.memory_write.custom.description",
-                    fallback: "开启后，将用户自定义内容追加写入生成照片的说明文本，不会覆盖智能模块输出。"
+                    fallback: "把想补充的话，写在照片说明里。"
                 ),
             defaultContentTitle: language.localized(
                 key: "output.memory_write.default.title",
-                fallback: "默认写入内容"
+                fallback: "照片说明"
             ),
             defaultContentDescription:
                 language.localized(
                     key: "output.memory_write.default.description",
-                    fallback: "将当前智能模块输出写入生成照片的说明文本，便于在 Apple Photos 中检索。"
+                    fallback: "把这段回忆写进照片说明，方便之后在 Apple Photos 中找到它。"
                 ),
             inputPlaceholder:
                 language.localized(
                     key: "output.memory_write.custom.placeholder",
-                    fallback: "输入补充到智能模块结果后的内容"
+                    fallback: "写下想补充的话"
                 ),
             resolvedTitle: language.localized(
                 key: "output.memory_write.preview.title",
-                fallback: "写入预览"
+                fallback: "即将写下的内容"
             ),
             resolvedDescription: resolvedText,
             fallbackNote:
                 usesCustomText
                 ? language.localized(
                     key: "output.memory_write.preview.custom_note",
-                    fallback: "包含当前智能模块输出与自定义内容。"
+                    fallback: "包含这段回忆和你补充的话。"
                 )
                 : language.localized(
                     key: "output.memory_write.preview.default_note",
-                    fallback: "由当前智能模块根据拍摄时间、记忆对象和时间锚点生成。"
+                    fallback: "会根据照片拍摄时间、记忆对象和时间锚点写下这段回忆。"
                 )
         )
     }

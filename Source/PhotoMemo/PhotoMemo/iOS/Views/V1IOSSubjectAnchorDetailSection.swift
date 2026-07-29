@@ -100,7 +100,7 @@ struct V1IOSSubjectAnchorDetailSection: View {
                         commitEditingDraft()
                     }
                 )
-                .presentationDetents([.height(390)])
+                .presentationDetents([.height(390), .large])
                 .presentationDragIndicator(.visible)
             }
             .alert(
@@ -355,112 +355,120 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
-            categoryRow
+        ScrollView {
+            VStack(spacing: 12) {
+                categoryRow
 
-            CompactSubjectAnchorDatePicker(
-                selection: Binding(
-                    get: { anchor.date },
-                    set: { newDate in
-                        anchor.date = newDate
-                        onChange(anchor)
-                    }
+                CompactSubjectAnchorDatePicker(
+                    selection: Binding(
+                        get: { anchor.date },
+                        set: { newDate in
+                            anchor.date = newDate
+                            onChange(anchor)
+                        }
+                    )
                 )
-            )
 
+                adaptiveNameRow
+            }
+            .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+            .padding(.top, 12)
+            .padding(.bottom, 20)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(ConfigurationUI.appBackground)
+    }
+
+    private var adaptiveNameRow: some View {
+        ViewThatFits(in: .horizontal) {
             HStack(spacing: 12) {
-                Text("自定义名称")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(minWidth: 76, alignment: .leading)
+                nameLabel
 
                 Rectangle()
                     .fill(ConfigurationUI.faintHairline)
                     .frame(width: 1, height: 24)
 
-                TextField(
-                    anchor.resolvedAnchorType.suggestedTitle,
-                    text: Binding(
-                        get: { anchor.title },
-                        set: { newTitle in
-                            anchor.title = newTitle
-                            onChange(anchor)
-                        }
-                    )
-                )
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity)
-                .submitLabel(.done)
+                nameField
 
-                Button("保存") {
-                    onSave()
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.blue)
+                saveButton
             }
-            .padding(.horizontal, 14)
-            .frame(minHeight: 50)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
-                )
-                .fill(ConfigurationUI.panelBackground)
-            )
+
+            VStack(alignment: .leading, spacing: 10) {
+                nameLabel
+                nameField
+                saveButton
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
         }
-        .padding(.horizontal, ConfigurationUI.contentColumnPadding)
-        .padding(.top, 12)
-        .background(ConfigurationUI.appBackground)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .frame(minHeight: 50)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 14,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.panelBackground)
+        )
+    }
+
+    private var nameLabel: some View {
+        Text("自定义名称")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .frame(minWidth: 76, alignment: .leading)
+    }
+
+    private var nameField: some View {
+        TextField(
+            anchor.resolvedAnchorType.suggestedTitle,
+            text: Binding(
+                get: { anchor.title },
+                set: { newTitle in
+                    anchor.title = newTitle
+                    onChange(anchor)
+                }
+            )
+        )
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity)
+        .submitLabel(.done)
+    }
+
+    private var saveButton: some View {
+        Button("保存") {
+            onSave()
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.regular)
+        .font(.subheadline.weight(.semibold))
+        .frame(minWidth: 44, minHeight: 44)
     }
 
     private var categoryRow: some View {
-        HStack(spacing: 12) {
-            Text("锚点类别")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 76, alignment: .leading)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                categoryLabel
+                categoryMenu
 
-            Menu {
-                ForEach(AnchorType.allCases, id: \.self) { type in
-                    Button {
-                        updateAnchorType(type)
-                    } label: {
-                        HStack {
-                            Text(type.displayName)
-                            if type == anchor.resolvedAnchorType {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Text(anchor.resolvedAnchorType.displayName)
-                        .font(.subheadline)
-                        .foregroundStyle(.blue)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+                Rectangle()
+                    .fill(ConfigurationUI.faintHairline)
+                    .frame(width: 1, height: 24)
 
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.blue)
+                selectedDateText
+                    .padding(.leading, 12)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                categoryLabel
+                HStack(spacing: 12) {
+                    categoryMenu
+                    selectedDateText
                 }
             }
-            .tint(.blue)
-
-            Rectangle()
-                .fill(ConfigurationUI.faintHairline)
-                .frame(width: 1, height: 24)
-
-            Text(V1UserFacingDateFormatter.date(anchor.date))
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .padding(.leading, 12)
-                .accessibilityLabel("已选日期")
         }
         .padding(.horizontal, 14)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
         .background(
             RoundedRectangle(
@@ -469,6 +477,51 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
             )
             .fill(ConfigurationUI.panelBackground)
         )
+    }
+
+    private var categoryLabel: some View {
+        Text("锚点类别")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .frame(minWidth: 76, alignment: .leading)
+    }
+
+    private var categoryMenu: some View {
+        Menu {
+            ForEach(AnchorType.allCases, id: \.self) { type in
+                Button {
+                    updateAnchorType(type)
+                } label: {
+                    HStack {
+                        Text(type.displayName)
+                        if type == anchor.resolvedAnchorType {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(anchor.resolvedAnchorType.displayName)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(minHeight: 44)
+        }
+        .tint(.secondary)
+    }
+
+    private var selectedDateText: some View {
+        Text(V1UserFacingDateFormatter.date(anchor.date))
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.primary)
+            .lineLimit(2)
+            .accessibilityLabel("已选日期")
     }
 
     private func updateAnchorType(_ newType: AnchorType) {

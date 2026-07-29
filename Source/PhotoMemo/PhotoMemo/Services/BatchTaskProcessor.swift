@@ -314,6 +314,16 @@ final class BatchTaskProcessor {
                 await store.deliverFinalNotificationIfNeeded(for: jobID)
             }
         } catch {
+            if BatchTaskFailurePolicy.shouldResumeAfterCancellation(
+                error: error,
+                taskIsCancelled: Task.isCancelled
+            ) {
+                resourceLifecycle.cleanupTemporaryFile(
+                    at: temporaryFileURL
+                )
+                return
+            }
+
             if BatchTaskFailurePolicy.shouldIgnoreErrorBecauseTaskEnded(
                 currentPhase: store.currentTaskPhase(at: reference)
             ) {

@@ -59,23 +59,14 @@ struct PhotoMemoiOSV1View: View {
         V1MemorySourceDisclosureState()
 
     @State
-    private var selectedProcessingItems: [PhotosPickerItem] = []
+    private var mediaPickerPresentation =
+        V1MediaPickerPresentationState()
 
     @State
     private var logoMode: V1LogoMode = .appleMini
 
     @State
-    private var selectedLogoItem: PhotosPickerItem?
-
-    @State
     private var customLogoBadge: Badge?
-
-    @State
-    private var isOptimizingLogo = false
-
-    @State
-    private var logoStatusMessage =
-        "建议选择 2048 × 2048 的透明 PNG。"
 
     @State
     private var birthdayDate =
@@ -93,6 +84,13 @@ struct PhotoMemoiOSV1View: View {
         LocationDisplayInspectorPresenter
         .configuration(
             for: "legacyDisplay"
+        )
+
+    @State
+    private var timeDisplayConfiguration =
+        TimeDisplayInspectorPresenter.configuration(
+            baseStyle: .daily,
+            supplement: .none
         )
 
     @State
@@ -167,47 +165,22 @@ struct PhotoMemoiOSV1View: View {
         PhotoMemoiOSProcessingDiagnosticsSnapshot()
 
     @State
-    private var isEditingMemoryPresetTitle = false
+    private var renamePresentation =
+        V1ConfigurationRenamePresentationState()
 
     @State
     private var showsRegionContentSheet = false
 
     @State
-    private var memoryPresetTitleDraft = ""
+    private var showsWelcomeInformation = false
 
     @State
-    private var showsConfigurationRequiredAlert = false
+    private var switchPresentation =
+        V1ConfigurationSwitchPresentationState()
 
     @State
-    private var pendingMemoryPresetActivation: MemoryPreset?
-
-    @State
-    private var showsUnsavedPresetSwitchAlert = false
-
-    @State
-    private var pendingSubjectSelectionID: UUID?
-
-    @State
-    private var showsUnsavedSubjectSwitchAlert = false
-
-    @State
-    private var showsLocalConfigurationLibrary = false
-
-    @State
-    private var localConfigurationBackups:
-        [LocalConfigurationBackupRecord] = []
-
-    @State
-    private var localConfigurationLibraryStatus: String?
-
-    @State
-    private var isWorkingWithLocalConfigurationLibrary = false
-
-    @State
-    private var homeConfigurationActionFeedback: String?
-
-    @State
-    private var showsHomeConfigurationFailureAlert = false
+    private var localLibraryPresentation =
+        V1LocalConfigurationLibraryPresentationState()
 
     @FocusState
     private var memoryPresetTitleFieldFocused: Bool
@@ -261,6 +234,44 @@ struct PhotoMemoiOSV1View: View {
         ConfigurationLibraryActions()
     }
 
+    private var configurationDeletionRuntimeCoordinator:
+        V1ConfigurationDeletionRuntimeCoordinator? {
+        guard let configurationCoordinator else {
+            return nil
+        }
+        return V1ConfigurationDeletionRuntimeCoordinator(
+            actions: configurationLibraryActions,
+            currentRequest: configurationDeletionRequest(for:),
+            applyCurrentConfiguration: {
+                await applyCurrentV1Configuration()
+                && activeConfigurationStatus == .saved
+            },
+            persistConfigurationLibrary: {
+                try await configurationCoordinator
+                    .saveConfigurationLibrary($0)
+            },
+            setPersistenceInProgress: { isPersisting in
+                isSavingConfiguration = isPersisting
+                if isPersisting {
+                    activeConfigurationStatus = .saving
+                }
+            }
+        )
+    }
+
+    private var configurationSelectionPersistenceCoordinator:
+        V1ConfigurationSelectionPersistenceCoordinator? {
+        guard let configurationCoordinator else {
+            return nil
+        }
+        return V1ConfigurationSelectionPersistenceCoordinator(
+            saveConfigurationLibrary: {
+                try await configurationCoordinator
+                    .saveConfigurationLibrary($0)
+            }
+        )
+    }
+
     private var configurationBackupRestoreCoordinator:
         ConfigurationBackupRestoreCoordinator {
         ConfigurationBackupRestoreCoordinator(
@@ -268,6 +279,49 @@ struct PhotoMemoiOSV1View: View {
                 localConfigurationLibraryCoordinator,
             configurationCoordinator:
                 configurationCoordinator
+        )
+    }
+
+    private var localConfigurationLibraryRuntimeCoordinator:
+        V1LocalConfigurationLibraryRuntimeCoordinator {
+        V1LocalConfigurationLibraryRuntimeCoordinator(
+            actions: configurationLibraryActions,
+            backupRestoreCoordinator:
+                configurationBackupRestoreCoordinator,
+            snapshot: {
+                V1LocalConfigurationLibraryRuntimeSnapshot(
+                    aggregate: session.state.configurationLibrary,
+                    selectedSubjectID:
+                        session.state.selectedSubject?.id,
+                    availablePresets: homeAvailablePresets,
+                    selectedPresetID:
+                        session.state.selectedMemoryPresetID,
+                    isCurrentConfigurationDirty:
+                        activeConfigurationStatus == .dirty,
+                    isSavingConfiguration: isSavingConfiguration,
+                    availableAlbumIdentifiers: Set(
+                        availableAlbums.compactMap(\.localIdentifier)
+                    ),
+                    selectedCustomLogoPath: customLogoBadge?.imagePath
+                )
+            },
+            presentation: { localLibraryPresentation },
+            updatePresentation: { localLibraryPresentation = $0 },
+            applyCurrentConfiguration: {
+                await applyCurrentV1Configuration()
+                && activeConfigurationStatus == .saved
+            },
+            restoreAggregate: {
+                session.restoreConfigurationLibrary($0)
+            },
+            applyRestoredCurrentConfiguration:
+                applyRestoredCurrentConfiguration,
+            presentFeedback: {
+                presentHomeConfigurationActionFeedback(
+                    $0,
+                    isBlocking: $1
+                )
+            }
         )
     }
 
@@ -428,12 +482,6 @@ struct PhotoMemoiOSV1View: View {
                     projection.customLogoBadge
                 logoMode = projection.logoMode
 
-                if let logoStatusMessage =
-                    projection.logoStatusMessage {
-                    self.logoStatusMessage =
-                        logoStatusMessage
-                }
-
                 outputTarget =
                     projection.outputTarget
                 mediaOutputMode =
@@ -538,6 +586,15 @@ struct PhotoMemoiOSV1View: View {
             queueCoordinator
         self.configurationCoordinator =
             configurationCoordinator
+        self._timeDisplayConfiguration = State(
+            initialValue:
+                configurationCoordinator?
+                .loadTimeDisplayConfiguration()
+                ?? TimeDisplayInspectorPresenter.configuration(
+                    baseStyle: .daily,
+                    supplement: .none
+                )
+        )
         self.externalIntakeCenter =
             externalIntakeCenter
             ?? .shared
@@ -572,27 +629,30 @@ struct PhotoMemoiOSV1View: View {
 
     var body: some View {
         rootNavigation
-        .preferredColorScheme(.light)
         .overlay(alignment: .bottom) {
             homeConfigurationStatusBanner
         }
-        .alert(
-            "无法完成配置操作",
-            isPresented: $showsHomeConfigurationFailureAlert
-        ) {
-            Button("好", role: .cancel) {}
-        } message: {
-            Text(localConfigurationLibraryStatus ?? "操作未完成，请稍后重试。")
-        }
+        .modifier(
+            V1LocalConfigurationLibraryPresentationModifier(
+                presentation: $localLibraryPresentation,
+                subjectName:
+                    session.state.selectedSubject?
+                    .identity.displayName
+                    ?? "全部记忆对象",
+                onRefresh: refreshLocalConfigurationLibrary,
+                onRestore: restoreLocalConfigurationBackup,
+                onDelete: deleteLocalConfigurationBackup
+            )
+        )
         .alert(
             "有未保存的修改",
-            isPresented: $showsUnsavedPresetSwitchAlert
+            isPresented: $switchPresentation.showsUnsavedPresetSwitchAlert
         ) {
             Button("保存并切换") {
                 saveCurrentConfigurationThenActivatePendingPreset()
             }
             Button("取消", role: .cancel) {
-                pendingMemoryPresetActivation = nil
+                switchPresentation.pendingMemoryPresetActivation = nil
             }
         } message: {
             Text("请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。")
@@ -600,599 +660,138 @@ struct PhotoMemoiOSV1View: View {
         .task {
             await loadAlbumOptions()
         }
-        .sheet(
-            isPresented: $showsLocalConfigurationLibrary
-        ) {
-            V1LocalConfigurationLibrarySheet(
-                subjectName:
-                    session.state.selectedSubject?
-                    .identity.displayName
-                    ?? "全部记忆对象",
-                backups: localConfigurationBackups,
-                isWorking:
-                    isWorkingWithLocalConfigurationLibrary,
-                onRefresh: {
-                    refreshLocalConfigurationLibrary()
-                },
-                onRestore: { backup in
-                    restoreLocalConfigurationBackup(
-                        backup,
-                        makeCurrent: false
-                    )
-                },
-                onRestoreAndMakeCurrent: { backup in
-                    restoreLocalConfigurationBackup(
-                        backup,
-                        makeCurrent: true
-                    )
-                },
-                onDelete: deleteLocalConfigurationBackup
+        .modifier(
+            V1WelcomeAndSettingsPresentationModifier(
+                flowState: $entryNavigationState.flowState,
+                showsConfigurationRequiredAlert:
+                    $switchPresentation.showsConfigurationRequiredAlert,
+                hasSeenWelcome: hasSeenWelcome,
+                settingsContent: settingsPage,
+                initializeFirstConfiguration:
+                    initializeFirstConfiguration,
+                completeWelcomeFlow: completeWelcomeFlow
             )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(
-            isPresented: entryBinding(\.showsWelcomePage)
-        ) {
-            V1FirstRunConfigurationSheet(
-                onSave: initializeFirstConfiguration,
-                onDefer: completeWelcomeFlow
-            )
-            .interactiveDismissDisabled(!hasSeenWelcome)
-        }
-        .sheet(
-            isPresented: entryBinding(\.showsWorkflowGuide)
-        ) {
-            V1WorkflowGuideSurface(
-                steps: V1WelcomePresentation.workflowSteps(
-                    for: .interfaceStored
-                ),
+        )
+        .sheet(isPresented: $showsWelcomeInformation) {
+            V1WelcomePageSurface(
+                presentation:
+                    V1WelcomePresentation.localized(
+                        for: .interfaceStored
+                    ),
                 language: .interfaceStored,
-                onClose: nil
+                onStart: {
+                    showsWelcomeInformation = false
+                },
+                onShowWorkflow: {
+                    showsWelcomeInformation = false
+                    entryFlowState =
+                        V1EntryFlowCoordinator
+                        .showWorkflowFromWelcome(
+                            from: entryFlowState,
+                            hasSeenWelcome: hasSeenWelcome
+                        )
+                        .flowState
+                }
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
-        .sheet(
-            isPresented: entryBinding(\.showsSettingsPage)
-        ) {
-            NavigationStack {
-                settingsPage
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("完成") {
-                            entryFlowState =
-                                V1EntryFlowCoordinator
-                                .closeSettingsPage(
-                                    from: entryFlowState
-                                )
-                        }
-                        .font(.caption.weight(.semibold))
-                    }
-                }
-            }
-        }
-        .sheet(
-            isPresented: moduleSheetPresented
-        ) {
-            if let region = activeModuleRegion {
-                V1ModuleLibrarySurface(
-                    region: region,
-                    modules: modules(for: region),
-                    categoryTitle: moduleCategoryTitle,
-                    valueText: moduleDisplayText,
-                    onSelectModule: { module in
-                        applyModulePanelState(
-                            V1ModulePanelCoordinator
-                                .selectModule(
-                                    module,
-                                    state:
-                                        modulePanelState
-                                )
+        .modifier(
+            V1EditorPresentationModifier(
+                isModuleSheetPresented: moduleSheetPresented,
+                showsRegionContentSheet: $showsRegionContentSheet,
+                activeModuleRegion: activeModuleRegion,
+                editorContent: editorCluster,
+                modules: modules(for:),
+                categoryTitle: moduleCategoryTitle,
+                valueText: moduleDisplayText,
+                onSelectModule: { module, region in
+                    applyModulePanelState(
+                        V1ModulePanelCoordinator.selectModule(
+                            module,
+                            state: modulePanelState
                         )
-                        insert(module, into: region)
-                    },
-                    onClose: {
-                        applyModulePanelState(
-                            V1ModulePanelCoordinator
-                                .setSheetPresented(
-                                    false,
-                                    state:
-                                        modulePanelState
-                                )
+                    )
+                    insert(module, into: region)
+                },
+                onCloseModuleSheet: {
+                    applyModulePanelState(
+                        V1ModulePanelCoordinator.setSheetPresented(
+                            false,
+                            state: modulePanelState
                         )
-                    }
-                )
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-            }
-        }
-        .sheet(
-            isPresented: $showsRegionContentSheet
-        ) {
-            NavigationStack {
-                ScrollView {
-                    editorCluster
-                        .padding(.top, 16)
-                        .padding(.bottom, 28)
-                        .v1AdaptiveScrollContent(
-                            horizontalPadding: ConfigurationUI.contentColumnPadding
-                        )
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .simultaneousGesture(
-                    TapGesture()
-                        .onEnded {
-                            dismissKeyboard()
-                        }
-                )
-                .background(
-                    ConfigurationUI.appBackground
-                        .ignoresSafeArea()
-                )
-                .navigationTitle("区域内容设置")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("完成") {
-                            dismissKeyboard()
-                            showsRegionContentSheet = false
-                        }
-                    }
-
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-
-                        Button {
-                            dismissKeyboard()
-                        } label: {
-                            Image(
-                                systemName:
-                                    "keyboard.chevron.compact.down"
-                            )
-                        }
-                        .accessibilityLabel("收起键盘")
-                    }
-                }
-            }
-            .presentationDetents([
-                .fraction(0.58),
-                .large
-            ])
-            .presentationDragIndicator(.visible)
-            .presentationBackgroundInteraction(
-                .enabled(upThrough: .fraction(0.58))
+                    )
+                },
+                onDismissKeyboard: dismissKeyboard
             )
-        }
-        .sheet(
-            isPresented: entryBinding(\.showsSubjectOverview)
-        ) {
-            V1IOSSubjectOverviewSheet(
-                subjects: session.state.subjects,
-                subject:
-                    session.state.selectedSubject,
+        )
+        .modifier(
+            V1SubjectPresentationModifier(
                 session: session,
-                selectedSubjectID:
-                    session.state.selectedSubjectID,
-                onSelectSubject: {
-                    subjectID in
-                    requestSubjectSelection(subjectID)
-                },
-                onAddSubject: {
-                    let patch =
-                        V1SubjectOverviewActionCoordinator
-                        .addDefaultSubject(
-                            referenceDate:
-                                birthdayDate,
-                            to: session,
-                            shouldSaveSubjectLibrary:
-                                shouldSaveSubjectLibrary,
-                            configurationCoordinator:
-                                configurationCoordinator,
-                            onPersistedSubject: {
-                                patch in
-                                applySubjectFlowPatch(
-                                    patch
-                                )
-                            }
-                        )
-                    applySubjectFlowPatch(patch)
-                },
-                onEditSubject: {
-                    V1SubjectOverviewActionCoordinator
-                        .makeConfigurationFlowState(
-                            from: session,
-                            shouldSaveSubjectLibrary:
-                                shouldSaveSubjectLibrary,
-                            configurationCoordinator:
-                                configurationCoordinator,
-                            savedStatus: .subjectSynced,
-                            onPersistedSubject: {
-                                patch in
-                                applySubjectFlowPatch(patch)
-                            }
-                        )
-                },
-                onDeleteCurrentSubject: {
-                    guard let patch =
-                        V1SubjectOverviewActionCoordinator
-                        .deleteCurrentSubject(
-                            from: session,
-                            shouldSaveSubjectLibrary:
-                                shouldSaveSubjectLibrary,
-                            configurationCoordinator:
-                                configurationCoordinator
-                        ) else {
-                        return
-                    }
-
-                    applySubjectFlowPatch(patch)
-                },
-                onPersistSubjectChanges: persistCurrentSubjectChanges
+                flowState: $entryNavigationState.flowState,
+                switchPresentation: $switchPresentation,
+                birthdayDate: birthdayDate,
+                shouldSaveSubjectLibrary: shouldSaveSubjectLibrary,
+                configurationCoordinator: configurationCoordinator,
+                onRequestSubjectSelection: requestSubjectSelection,
+                onApplySubjectFlowPatch: applySubjectFlowPatch,
+                onPersistSubjectChanges: persistCurrentSubjectChanges,
+                onSaveThenSelectPendingSubject:
+                    saveCurrentConfigurationThenSelectPendingSubject
             )
-            .alert(
-                "有未保存的修改",
-                isPresented: $showsUnsavedSubjectSwitchAlert
-            ) {
-                Button("保存并切换") {
-                    saveCurrentConfigurationThenSelectPendingSubject()
-                }
-                Button("取消", role: .cancel) {
-                    pendingSubjectSelectionID = nil
-                }
-            } message: {
-                Text("请先保存当前配置，再切换记忆对象，避免丢失刚刚的修改。")
-            }
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(
-            item: entryBinding(\.subjectConfigurationFlowState)
-        ) { flowState in
-            V1IOSSubjectConfigurationFlow(
-                flowState: flowState,
-                onDeleteSubject: {
-                    guard let patch =
-                        V1SubjectOverviewActionCoordinator
-                        .deleteCurrentSubject(
-                            from: session,
-                            shouldSaveSubjectLibrary:
-                                shouldSaveSubjectLibrary,
-                            configurationCoordinator:
-                                configurationCoordinator
-                        ) else {
-                        return
-                    }
-
-                    applySubjectFlowPatch(patch)
-                    var nextState =
-                        V1EntryFlowCoordinator
-                        .closeSubjectConfiguration(
-                            from: entryFlowState
-                        )
-                    nextState.showsSubjectOverview = false
-                    entryFlowState = nextState
-                },
-                onCancel: {
-                    var nextState =
-                        V1EntryFlowCoordinator
-                        .closeSubjectConfiguration(
-                            from: entryFlowState
-                        )
-                    nextState.showsSubjectOverview = true
-                    entryFlowState = nextState
-                },
-                onSave: {
-                    var nextState =
-                        V1EntryFlowCoordinator
-                        .closeSubjectConfiguration(
-                            from: entryFlowState
-                        )
-                    nextState.showsSubjectOverview = true
-                    entryFlowState = nextState
-                }
+        )
+        .modifier(
+            V1RootChangeObservationModifier(
+                session: session,
+                scenePhase: scenePhase,
+                horizontalSizeClass: horizontalSizeClass,
+                isApplyingBootstrapState: isApplyingBootstrapState,
+                isApplyingSavedOutputConfiguration:
+                    isApplyingSavedOutputConfiguration,
+                flowState: $entryNavigationState.flowState,
+                renamePresentation: $renamePresentation,
+                titleFieldFocus: $memoryPresetTitleFieldFocused,
+                birthdayDate: $birthdayDate,
+                birthdayDateChangeBehavior: $birthdayDateChangeBehavior,
+                memorySourceDisclosureState: $memorySourceDisclosureState,
+                mediaPickerPresentation: $mediaPickerPresentation,
+                logoMode: $logoMode,
+                outputTarget: $outputTarget,
+                mediaOutputMode: $mediaOutputMode,
+                selectedAlbumIdentifier:
+                    $selectedExistingAlbumIdentifier,
+                newAlbumName: $newAlbumName,
+                configurationStatus: $activeConfigurationStatus,
+                bootstrapIfNeeded: bootstrapIfNeeded,
+                refreshProcessingState: refreshProcessingState,
+                loadAlbumOptions: loadAlbumOptions,
+                applyConfigurationDraftProjection:
+                    applyConfigurationDraftProjection,
+                applySavedOutputConfiguration:
+                    applySavedOutputConfiguration,
+                bootstrapDrafts: bootstrapDrafts,
+                refreshDynamicPreview: refreshDynamicPreview,
+                optimizeSelectedLogo: optimizeSelectedLogo,
+                importPickedPhotos: importPickedPhotos,
+                importPickerResults: importPickedPHPickerResults
             )
-        }
-        .alert(
-            "请先完成配置",
-            isPresented:
-                $showsConfigurationRequiredAlert
-        ) {
-            Button("去配置中心") {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openEditorTab(
-                        from: entryFlowState
-                    )
-            }
-            Button("稍后", role: .cancel) {}
-        } message: {
-            Text("首次处理前，请先在配置中心保存当前记忆对象的配置。输出部分默认会按系统推荐走；如果你改了输出设置，保存后也会一并写回当前配置。")
-        }
-        .onAppear {
-            bootstrapIfNeeded()
-            refreshProcessingState()
-        }
-        .sheet(
-            isPresented:
-                entryBinding(\.showsProcessingPhotoPicker)
-        ) {
-            V1UIKitPhotoPicker(
-                selectionLimit: 24,
-                onCancel: {
-                    entryNavigationState.flowState
-                        .showsProcessingPhotoPicker = false
-                },
-                onSelect: { results in
-                    entryNavigationState.flowState
-                        .showsProcessingPhotoPicker = false
-
-                    Task {
-                        await importPickedPHPickerResults(
-                            results
-                        )
-                    }
-                }
-            )
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active else {
-                return
-            }
-
-            refreshProcessingState()
-
-            Task {
-                await loadAlbumOptions()
-            }
-        }
-        .onChange(of: entryFlowState.selectedTab) { _, newTab in
-            guard newTab == .output else {
-                return
-            }
-
-            Task {
-                await loadAlbumOptions()
-            }
-        }
-        .onChange(of: horizontalSizeClass) { _, newSizeClass in
-            guard newSizeClass == .compact else {
-                return
-            }
-
-            entryFlowState =
-                V1EntryFlowCoordinator
-                .prepareForCompactPresentation(
-                    from: entryFlowState
-                )
-        }
-        .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
-            isEditingMemoryPresetTitle = false
-            memoryPresetTitleFieldFocused = false
-            if let selectedConfiguration =
-                session.selectedMemoryConfiguration {
-                applyConfigurationDraftProjection(
-                    V1ConfigurationDraftProjection(
-                        configuration:
-                            selectedConfiguration
-                    )
-                )
-            } else if let selectedPreset =
-                session.state.selectedMemoryPreset {
-                logoMode = selectedPreset.logoMode
-                applySavedOutputConfiguration(
-                    selectedPreset
-                )
-            }
-            bootstrapDrafts()
-        }
-        .onChange(of: birthdayDate) { _, _ in
-            let effect =
-                V1SubjectSelectionMutationCoordinator
-                .effect(
-                    for:
-                        birthdayDateChangeBehavior
-                )
-
-            birthdayDateChangeBehavior =
-                .userInitiated
-
-            if effect.shouldRefreshPreview {
-                refreshDynamicPreview()
-            }
-
-            if effect.shouldMarkDirty {
-                activeConfigurationStatus = .dirty
-            }
-        }
-        .onChange(of: session.state.selectedSubject) { _, subject in
-            memorySourceDisclosureState.synchronize(
-                selectedSubjectID: subject?.id
-            )
-            let decision =
-                V1SubjectSelectionMutationCoordinator
-                .decision(
-                    subjectAnchorDate:
-                        subject?.primaryTimeAnchor?.date
-                        ?? subject?.timeAnchors.first?.date,
-                    currentBirthdayDate:
-                        birthdayDate,
-                    isApplyingBootstrapState:
-                        isApplyingBootstrapState
-                )
-
-            if let nextBirthdayDateBehavior =
-                decision.nextBirthdayDateBehavior {
-                birthdayDateChangeBehavior =
-                    nextBirthdayDateBehavior
-            }
-
-            if let updatedBirthdayDate =
-                decision.updatedBirthdayDate {
-                birthdayDate =
-                    updatedBirthdayDate
-            }
-
-            if decision.shouldRefreshPreview {
-                refreshDynamicPreview()
-            }
-
-            if decision.shouldMarkDirty {
-                activeConfigurationStatus = .dirty
-            }
-        }
-        .onChange(of: selectedLogoItem) { _, item in
-            guard let item else {
-                return
-            }
-
-            Task {
-                await optimizeSelectedLogo(item)
-            }
-        }
-        .onChange(of: logoMode) { _, newMode in
-            guard
-                session.state
-                .selectedMemoryPreset?
-                .logoMode != newMode
-            else {
-                return
-            }
-
-            activeConfigurationStatus = .dirty
-        }
-        .onChange(of: outputTarget) { _, _ in
-            guard
-                !isApplyingBootstrapState,
-                !isApplyingSavedOutputConfiguration
-            else {
-                return
-            }
-            activeConfigurationStatus = .dirty
-
-            if outputTarget == .existingAlbum {
-                Task {
-                    await loadAlbumOptions()
-                }
-            }
-        }
-        .onChange(of: mediaOutputMode) { _, _ in
-            guard
-                !isApplyingBootstrapState,
-                !isApplyingSavedOutputConfiguration
-            else {
-                return
-            }
-            activeConfigurationStatus = .dirty
-        }
-        .onChange(of: selectedExistingAlbumIdentifier) { _, _ in
-            guard
-                !isApplyingBootstrapState,
-                !isApplyingSavedOutputConfiguration
-            else {
-                return
-            }
-            activeConfigurationStatus = .dirty
-        }
-        .onChange(of: newAlbumName) { _, _ in
-            guard
-                !isApplyingBootstrapState,
-                !isApplyingSavedOutputConfiguration
-            else {
-                return
-            }
-            activeConfigurationStatus = .dirty
-        }
-        .onChange(of: selectedProcessingItems) { _, items in
-            guard !items.isEmpty else {
-                return
-            }
-
-            Task {
-                await importPickedPhotos(items)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var rootNavigation: some View {
-        if usesSidebarNavigation {
-            regularNavigation
-        } else {
-            compactNavigation
-        }
-    }
-
-    private var compactNavigation: some View {
-        NavigationStack {
-            TabView(selection: entryBinding(\.selectedTab)) {
-                homePage
-                    .tabItem {
-                        Label("首页", systemImage: MemoMarkSymbol.home.name)
-                    }
-                    .tag(V1EntryTab.home)
-
-                editorPage
-                    .tabItem {
-                        Label(
-                            "配置",
-                            systemImage: MemoMarkSymbol.configurationCenter.name
-                        )
-                    }
-                    .tag(V1EntryTab.editor)
-
-                outputPage
-                    .tabItem {
-                        Label("输出", systemImage: MemoMarkSymbol.output.name)
-                    }
-                    .tag(V1EntryTab.output)
-
-                tasksPage
-                    .tabItem {
-                        Label("处理", systemImage: MemoMarkSymbol.task.name)
-                    }
-                    .tag(V1EntryTab.tasks)
-            }
-        }
-    }
-
-    private var regularNavigation: some View {
-        HStack(spacing: 0) {
-            V1EntrySidebar(
-                selection: entryBinding(\.selectedTab)
-            )
-            .frame(width: 220)
-
-            Rectangle()
-                .fill(ConfigurationUI.faintHairline)
-                .frame(width: 0.5)
-
-            NavigationStack {
-                regularDestination
-            }
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity
-            )
-        }
-        .background(
-            ConfigurationUI.appBackground
-                .ignoresSafeArea()
         )
     }
 
     @ViewBuilder
-    private var regularDestination: some View {
-        switch entryFlowState.selectedTab {
-        case .home:
+    private var rootNavigation: some View {
+        V1EntryNavigationSurface(
+            usesSidebarNavigation: usesSidebarNavigation,
+            selection: entryBinding(\.selectedTab)
+        ) {
             homePage
-        case .editor:
+        } editorContent: {
             editorPage
-        case .output:
+        } outputContent: {
             outputPage
-        case .tasks:
+        } taskContent: {
             tasksPage
-        case .settings:
+        } settingsContent: {
             settingsPage
         }
     }
@@ -1207,11 +806,10 @@ struct PhotoMemoiOSV1View: View {
                     .closeSettingsPage(
                         from: entryFlowState
                     )
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .showWelcomePage(
-                        from: entryFlowState
-                    )
+                Task { @MainActor in
+                    await Task.yield()
+                    showsWelcomeInformation = true
+                }
             },
             onDismissKeyboard: dismissKeyboard
         )
@@ -1250,8 +848,8 @@ struct PhotoMemoiOSV1View: View {
             memoryPresets: homeAvailablePresets,
             selectedMemoryPresetID:
                 session.state.selectedMemoryPreset?.id,
-            isEditingMemoryPresetTitle: isEditingMemoryPresetTitle,
-            memoryPresetTitleDraft: $memoryPresetTitleDraft,
+            isEditingMemoryPresetTitle: renamePresentation.isEditing,
+            memoryPresetTitleDraft: $renamePresentation.titleDraft,
             memoryPresetTitleFieldFocused: $memoryPresetTitleFieldFocused,
             isConfigurationReady:
                 hasSavedConfigurationForSelectedSubject,
@@ -1274,6 +872,9 @@ struct PhotoMemoiOSV1View: View {
                     )
             },
             onCommitMemoryPresetTitle: commitMemoryPresetTitle,
+            onOpenWorkflowGuide: {
+                entryFlowState.showsWorkflowGuide = true
+            },
             onOpenPhotoPicker:
                 beginPhotoProcessingFlow,
             onOpenSettings: {
@@ -1293,58 +894,41 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var editorPage: some View {
-        V1EditorPageSurface(
+        V1ConfigurationPageSurface(
             previewPinProgress: previewPinProgress,
             editorRevealProgress: editorRevealProgress,
-            pageTitle: "配置中心",
-            pageSubtitle: "调整记忆表达，并实时确认最终卡片。",
-            onDismissKeyboard: dismissKeyboard
+            configurationStatus: activeConfigurationStatus,
+            isSavingConfiguration: isSavingConfiguration,
+            onDismissKeyboard: dismissKeyboard,
+            onSaveCurrentConfiguration: {
+                performConfigurationLibraryAction(.saveCurrent)
+            },
+            onCreateConfiguration: {
+                performConfigurationLibraryAction(.create)
+            },
+            onResetConfiguration: {
+                performConfigurationLibraryAction(.reset)
+            },
+            onDeleteConfiguration: deleteCurrentConfiguration
         ) {
             previewSection
-                .background(
-                    offsetReader(
-                        for: .preview
-                    )
-                )
+                .background(offsetReader(for: .preview))
         } editorContent: {
             configurationOptionList
-        } accessoryContent: {
-            V1ConfigurationActionFooter(
-                configurationStatus: activeConfigurationStatus,
-                isSavingConfiguration: isSavingConfiguration,
-                onSaveCurrentConfiguration: {
-                    performConfigurationLibraryAction(.saveCurrent)
-                },
-                onCreateConfiguration: {
-                    performConfigurationLibraryAction(.create)
-                },
-                onResetConfiguration: {
-                    performConfigurationLibraryAction(.reset)
-                },
-                onDeleteConfiguration: {
-                    guard let selectedPreset =
-                        session.state.selectedMemoryPreset else {
-                        return
-                    }
-                    deleteHomePreset(selectedPreset)
-                }
-            )
         }
-        .navigationTitle("")
-        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func deleteCurrentConfiguration() {
+        guard let selectedPreset =
+            session.state.selectedMemoryPreset else {
+            return
+        }
+        deleteHomePreset(selectedPreset)
     }
 
     private var configurationOptionList: some View {
         let locationPresentation =
             LocationDisplayInspectorPresenter.presentation
-        let selectedLocationValue =
-            ConfigurationCenterLocationDisplaySupport
-            .summaryValue(
-                module: locationDisplayModule,
-                presentation: locationPresentation,
-                selectedConfiguration:
-                    locationDisplayConfiguration
-            )
 
         return V1ConfigurationOptionList(
             subject:
@@ -1363,12 +947,12 @@ struct PhotoMemoiOSV1View: View {
             subjectAvatarPreviewImagePath:
                 resolvedSubjectAvatarPreviewImagePath,
             logoMode: $logoMode,
-            selectedLogoItem: $selectedLogoItem,
+            selectedLogoItem: $mediaPickerPresentation.selectedLogoItem,
             logoValue: logoMode.title,
             logoDetail: logoRowDetail,
             customLogoImagePath:
                 customLogoBadge?.imagePath,
-            isOptimizingLogo: isOptimizingLogo,
+            isOptimizingLogo: mediaPickerPresentation.isOptimizingLogo,
             timeAnchorTitle:
                 session.currentTimeAnchorTitle,
             timeAnchorCount:
@@ -1379,12 +963,14 @@ struct PhotoMemoiOSV1View: View {
                 selectedTimeAnchorBinding,
             locationPresentation:
                 locationPresentation,
-            selectedLocationValue:
-                selectedLocationValue,
             selectedLocationOptionID:
                 locationDisplayOptionBinding,
-            isLocationSelectable:
-                locationDisplayModule != nil,
+            timePresentation:
+                TimeDisplayInspectorPresenter.presentation,
+            selectedTimeOptionID:
+                timeDisplayOptionBinding,
+            selectedTimeSupplement:
+                timeDisplaySupplementBinding,
             memoryDisplayValue:
                 ConfigurationCenterMemoryDisplaySupport
                 .summaryValue(
@@ -1409,103 +995,6 @@ struct PhotoMemoiOSV1View: View {
             onOpenRegionContent: {
                 showsRegionContentSheet = true
             }
-        )
-    }
-
-    private var configurationCenterIntroSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                RoundedRectangle(
-                    cornerRadius: 14,
-                    style: .continuous
-                )
-                .fill(Color.accentColor.opacity(0.11))
-                .frame(width: 42, height: 42)
-                .overlay {
-                    Image(systemName: "rectangle.3.group.bubble.left")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("配置中心")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.primary)
-
-                    Text("这里负责把当前记忆对象、时间锚点、显示方式和四个区域整理成一套可保存的当前配置。对象资料继续在对象页维护，配置页只负责选择与生效。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .fill(Color.white.opacity(0.92))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
-    }
-
-    private var configurationSummarySection: some View {
-        let presentation =
-            LocationDisplayInspectorPresenter.presentation
-        let selectedLocationValue =
-            ConfigurationCenterLocationDisplaySupport
-            .summaryValue(
-                module: locationDisplayModule,
-                presentation: presentation,
-                selectedConfiguration:
-                    locationDisplayConfiguration
-            )
-
-        return ConfigurationCenterSummarySection(
-            subject:
-                session.state.selectedSubject,
-            selectedRegion:
-                session.state.selectedRegion,
-            currentBorderStyleName:
-                currentBorderStyleName,
-            locationPresentation:
-                presentation,
-            selectedLocationValue:
-                selectedLocationValue,
-            locationDetail:
-                ConfigurationCenterLocationDisplaySupport
-                .summaryDetail(
-                    module: locationDisplayModule,
-                    selectedValue: selectedLocationValue
-                ),
-            selectedLocationOptionID:
-                locationDisplayOptionBinding,
-            selectedMemoryDisplayStyle:
-                selectedMemoryDisplayStyleBinding,
-            availableMemoryDisplayStyles:
-                ConfigurationCenterMemoryDisplaySupport
-                .availableStyles(
-                    subject: session.state.selectedSubject
-                ),
-            availableTimeAnchors:
-                session.availableTimeAnchors,
-            selectedTimeAnchorID:
-                selectedTimeAnchorBinding,
-            onOpenSubject: {
-                entryFlowState =
-                    V1EntryFlowCoordinator
-                    .openSubjectOverview(
-                        from: entryFlowState
-                    )
-            },
-            onSelectRegion: selectConfigurationSummaryRegion
         )
     }
 
@@ -1569,80 +1058,6 @@ struct PhotoMemoiOSV1View: View {
             )
     }
 
-    private var presetOperationsMenu: some View {
-        V1PresetOperationsMenu(
-            onRename: beginEditingMemoryPresetTitle,
-            onRestoreDefaults: {
-                performConfigurationLibraryAction(.reset)
-            }
-        )
-    }
-
-    private var homePresetSummaryProjection:
-        V1IOSHomePresetSummaryProjection {
-
-        guard !homeAvailablePresets.isEmpty else {
-            return V1IOSHomeProjection
-                .emptyPresetSummary(
-                    configurationLabel:
-                        session.currentConfigurationLabel
-                )
-        }
-
-        return V1IOSHomeProjection
-            .presetSummary(
-                presetTitle:
-                    session.currentMemoryPresetTitle,
-                configurationLabel:
-                    session.currentConfigurationLabel,
-                presetSummary:
-                    session.currentMemoryPresetSummary,
-                activeConfigurationStatus:
-                    activeConfigurationStatus,
-                isApplied:
-                    session.selectedMemoryPresetIsApplied
-            )
-    }
-
-    private var homePresetSavedStatusText: String {
-        V1IOSHomeProjection
-            .savedStatusValue(
-                savedAt:
-                    session.state
-                    .selectedMemoryPreset?
-                    .savedAt
-            )
-    }
-
-    private var currentPresetStatusTone:
-        V1IOSHomeStatusBadge.Tone {
-
-        guard !homeAvailablePresets.isEmpty else {
-            return .neutral
-        }
-
-        if homePresetSummaryProjection
-            .emphasizesAppliedState {
-            return .accent
-        }
-
-        return activeConfigurationStatus.tone
-    }
-
-    private var subjectOverviewPresentation:
-        V1IOSSubjectOverviewPresentation {
-
-        V1IOSSubjectOverviewPresenter
-            .presentation(
-                subject:
-                    session.state.selectedSubject,
-                currentTimeAnchorTitle:
-                    session.currentTimeAnchorTitle,
-                currentTimeAnchorDescription:
-                    session.currentTimeAnchorDescription
-            )
-    }
-
     private func beginEditingMemoryPresetTitle() {
         performConfigurationLibraryAction(
             .beginRename(title: session.currentMemoryPresetTitle)
@@ -1655,7 +1070,7 @@ struct PhotoMemoiOSV1View: View {
 
     private func commitMemoryPresetTitle() {
         performConfigurationLibraryAction(
-            .commitRename(title: memoryPresetTitleDraft)
+            .commitRename(title: renamePresentation.titleDraft)
         )
     }
 
@@ -1692,18 +1107,18 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func saveCurrentConfigurationThenActivatePendingPreset() {
-        guard let preset = pendingMemoryPresetActivation else {
+        guard let preset = switchPresentation.pendingMemoryPresetActivation else {
             return
         }
 
         Task { @MainActor in
             guard await applyCurrentV1Configuration(),
                   activeConfigurationStatus == .saved else {
-                pendingMemoryPresetActivation = nil
+                switchPresentation.pendingMemoryPresetActivation = nil
                 return
             }
 
-            pendingMemoryPresetActivation = nil
+            switchPresentation.pendingMemoryPresetActivation = nil
             performConfigurationLibraryAction(.activate(preset))
         }
     }
@@ -1720,8 +1135,8 @@ struct PhotoMemoiOSV1View: View {
                     activeConfigurationStatus
                     .hasUncommittedChanges
             ) {
-            pendingSubjectSelectionID = subjectID
-            showsUnsavedSubjectSwitchAlert = true
+            switchPresentation.pendingSubjectSelectionID = subjectID
+            switchPresentation.showsUnsavedSubjectSwitchAlert = true
             return
         }
 
@@ -1729,18 +1144,18 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func saveCurrentConfigurationThenSelectPendingSubject() {
-        guard let subjectID = pendingSubjectSelectionID else {
+        guard let subjectID = switchPresentation.pendingSubjectSelectionID else {
             return
         }
 
         Task { @MainActor in
             guard await applyCurrentV1Configuration(),
                   activeConfigurationStatus == .saved else {
-                pendingSubjectSelectionID = nil
+                switchPresentation.pendingSubjectSelectionID = nil
                 return
             }
 
-            pendingSubjectSelectionID = nil
+            switchPresentation.pendingSubjectSelectionID = nil
             performSubjectSelection(subjectID)
         }
     }
@@ -1774,74 +1189,30 @@ struct PhotoMemoiOSV1View: View {
 
     @MainActor
     private func deleteHomePresetNow(
-        _ preset: MemoryPreset,
-        mayApplyCurrentConfiguration: Bool = true
+        _ preset: MemoryPreset
     ) async {
-        let decision = configurationLibraryActions.decide(
-            .delete(configurationDeletionRequest(for: preset))
-        )
-        switch decision {
-        case .applyCurrentThenDelete:
-            guard mayApplyCurrentConfiguration else {
-                presentHomeConfigurationActionFeedback(
-                    "删除配置失败，原配置仍然保留。"
-                )
-                return
-            }
-            guard await applyCurrentV1Configuration(),
-                  activeConfigurationStatus == .saved else {
-                presentHomeConfigurationActionFeedback(
-                    "当前新增配置保存失败，未删除原配置。"
-                )
-                return
-            }
-            await deleteHomePresetNow(
-                preset,
-                mayApplyCurrentConfiguration: false
-            )
-        case .persistDeletion(let result):
-            await persistConfigurationDeletion(result)
-        case .unavailable(let message):
-            presentHomeConfigurationActionFeedback(message)
-        default:
-            return
-        }
-    }
-
-    @MainActor
-    private func persistConfigurationDeletion(
-        _ result: ConfigurationLibraryDeletionResult
-    ) async {
-        guard let configurationCoordinator else {
+        guard let configurationDeletionRuntimeCoordinator else {
             presentHomeConfigurationActionFeedback(
                 "当前配置库不可用，请稍后重试。"
             )
             return
         }
-        isSavingConfiguration = true
-        activeConfigurationStatus = .saving
-        defer { isSavingConfiguration = false }
-        do {
-            let receipt = try await configurationCoordinator
-                .saveConfigurationLibrary(result.candidate)
-            let durableResult = result.reconcilingRevision(
-                receipt.revision
-            )
+        switch await configurationDeletionRuntimeCoordinator
+            .delete(preset) {
+        case .deleted(let durableResult):
             session.restoreConfigurationLibrary(
                 durableResult.candidate
             )
-            memoryPresetTitleDraft = session.currentMemoryPresetTitle
+            renamePresentation.titleDraft = session.currentMemoryPresetTitle
             bootstrapDrafts()
             activeConfigurationStatus = .saved
             presentHomeConfigurationActionFeedback(
-                "已删除“\(result.deletedPreset.title)”。本地备份仍会保留。",
+                "已删除“\(durableResult.deletedPreset.title)”。本地备份仍会保留。",
                 isBlocking: false
             )
-        } catch {
+        case .rejected(let message):
             activeConfigurationStatus = .dirty
-            presentHomeConfigurationActionFeedback(
-                "删除配置失败，原配置仍然保留。"
-            )
+            presentHomeConfigurationActionFeedback(message)
         }
     }
 
@@ -1875,25 +1246,25 @@ struct PhotoMemoiOSV1View: View {
                 outputConfiguration:
                     currentSavedOutputConfiguration
             )
-            memoryPresetTitleDraft = session.currentMemoryPresetTitle
-            isEditingMemoryPresetTitle = true
+            renamePresentation.titleDraft = session.currentMemoryPresetTitle
+            renamePresentation.isEditing = true
             activeConfigurationStatus = .dirty
         case .reset:
             session.resetSelectedMemoryPreset()
             bootstrapDrafts()
             activeConfigurationStatus = .dirty
         case .beginRename(let title):
-            memoryPresetTitleDraft = title
-            isEditingMemoryPresetTitle = true
+            renamePresentation.titleDraft = title
+            renamePresentation.isEditing = true
         case .commitRenameAndSave(let title):
             session.updateSelectedMemoryPresetTitle(title)
             activeConfigurationStatus = .dirty
-            isEditingMemoryPresetTitle = false
+            renamePresentation.isEditing = false
             memoryPresetTitleFieldFocused = false
             startCurrentConfigurationSaveWithFeedback()
         case .confirmSaveBeforeActivation(let preset):
-            pendingMemoryPresetActivation = preset
-            showsUnsavedPresetSwitchAlert = true
+            switchPresentation.pendingMemoryPresetActivation = preset
+            switchPresentation.showsUnsavedPresetSwitchAlert = true
         case .activate(let preset):
             logoMode = preset.logoMode
             session.selectMemoryPreset(preset)
@@ -1914,7 +1285,7 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func openLocalConfigurationLibrary() {
-        showsLocalConfigurationLibrary = true
+        localLibraryPresentation.isPresented = true
         refreshLocalConfigurationLibrary()
     }
 
@@ -1922,107 +1293,8 @@ struct PhotoMemoiOSV1View: View {
         _ preset: MemoryPreset
     ) {
         Task {
-            await backupConfigurationToLocalLibrary(
+            await localConfigurationLibraryRuntimeCoordinator.backup(
                 configurationID: preset.id
-            )
-        }
-    }
-
-    @MainActor
-    private func backupConfigurationToLocalLibrary(
-        configurationID: UUID
-    ) async {
-        guard !isWorkingWithLocalConfigurationLibrary,
-              let aggregate = session.state.configurationLibrary,
-              let subjectID = session.state.selectedSubject?.id,
-              let subjectRecord = aggregate.subjects.first(
-                  where: { $0.subject.id == subjectID }
-              ) else {
-            presentHomeConfigurationActionFeedback(
-                "当前配置还没有可备份的持久化记录。"
-            )
-            return
-        }
-
-        guard let preset = homeAvailablePresets.first(
-            where: { $0.id == configurationID }
-        ) else {
-            presentHomeConfigurationActionFeedback(
-                "找不到这条配置的持久化版本。"
-            )
-            return
-        }
-        let action = configurationLibraryActions.decide(
-            .saveToLocalLibrary(
-                ConfigurationLibrarySaveRequest(
-                    preset: preset,
-                    selectedConfigurationID:
-                        session.state.selectedMemoryPresetID,
-                    isCurrentConfigurationDirty:
-                        activeConfigurationStatus == .dirty,
-                    isSavingConfiguration:
-                        isSavingConfiguration,
-                    durableConfigurationIDs:
-                        subjectRecord.configurations.map(\.id)
-                )
-            )
-        )
-        if case .unavailable(let message) = action {
-            presentHomeConfigurationActionFeedback(message)
-            return
-        }
-
-        if case .applyCurrentThenSave = action,
-           (!(await applyCurrentV1Configuration())
-            || activeConfigurationStatus != .saved) {
-            presentHomeConfigurationActionFeedback(
-                "当前修改保存失败，未创建本地备份。"
-            )
-            return
-        }
-
-        isWorkingWithLocalConfigurationLibrary = true
-        defer {
-            isWorkingWithLocalConfigurationLibrary = false
-        }
-
-        guard let durableAggregate = session.state.configurationLibrary,
-              let durableSubjectRecord = durableAggregate.subjects.first(
-                  where: { $0.subject.id == subjectID }
-              ),
-              let configuration = durableSubjectRecord.configurations.first(
-                  where: { $0.id == configurationID }
-              ) else {
-            presentHomeConfigurationActionFeedback(
-                "保存后未找到对应的持久化配置。"
-            )
-            return
-        }
-
-        let result = await configurationBackupRestoreCoordinator
-            .backup(
-                ConfigurationBackupRequest(
-                    subject: durableSubjectRecord.subject,
-                    configuration: configuration,
-                    sourceURLs:
-                        ConfigurationBackupRestoreCoordinator
-                        .assetURLs(
-                            subject: durableSubjectRecord.subject,
-                            configuration: configuration,
-                            selectedConfigurationID:
-                                session.state.selectedMemoryPresetID,
-                            selectedCustomLogoPath:
-                                customLogoBadge?.imagePath
-                        ),
-                    previousBackups:
-                        localConfigurationBackups
-                )
-            )
-        localConfigurationBackups = result.backups
-        if case .replace(let message) = result.status {
-            presentHomeConfigurationActionFeedback(
-                message,
-                isBlocking: !result.succeeded
             )
         }
     }
@@ -2031,25 +1303,26 @@ struct PhotoMemoiOSV1View: View {
         _ message: String,
         isBlocking: Bool = true
     ) {
-        localConfigurationLibraryStatus = message
+        localLibraryPresentation.statusMessage = message
         if isBlocking {
-            homeConfigurationActionFeedback = nil
-            showsHomeConfigurationFailureAlert = true
+            localLibraryPresentation.homeActionFeedback = nil
+            localLibraryPresentation.showsHomeActionFailureAlert = true
             return
         }
 
-        homeConfigurationActionFeedback = message
+        localLibraryPresentation.homeActionFeedback = message
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 3_000_000_000)
-            if homeConfigurationActionFeedback == message {
-                homeConfigurationActionFeedback = nil
+            if localLibraryPresentation.homeActionFeedback == message {
+                localLibraryPresentation.homeActionFeedback = nil
             }
         }
     }
 
     @ViewBuilder
     private var homeConfigurationStatusBanner: some View {
-        if let homeConfigurationActionFeedback {
+        if let homeConfigurationActionFeedback =
+            localLibraryPresentation.homeActionFeedback {
             Label(
                 homeConfigurationActionFeedback,
                 systemImage: "checkmark.circle.fill"
@@ -2075,35 +1348,7 @@ struct PhotoMemoiOSV1View: View {
 
     private func refreshLocalConfigurationLibrary() {
         Task {
-            await loadLocalConfigurationBackups(
-                subjectID:
-                    session.state.selectedSubject?.id
-            )
-        }
-    }
-
-    @MainActor
-    private func loadLocalConfigurationBackups(
-        subjectID: UUID?
-    ) async {
-        guard !isWorkingWithLocalConfigurationLibrary else {
-            return
-        }
-        isWorkingWithLocalConfigurationLibrary = true
-        defer {
-            isWorkingWithLocalConfigurationLibrary = false
-        }
-        let result = await configurationBackupRestoreCoordinator
-            .listBackups(
-                ConfigurationBackupListRequest(
-                    subjectID: subjectID,
-                    previousBackups:
-                        localConfigurationBackups
-                )
-            )
-        localConfigurationBackups = result.backups
-        if case .replace(let message) = result.status {
-            localConfigurationLibraryStatus = message
+            await localConfigurationLibraryRuntimeCoordinator.listBackups()
         }
     }
 
@@ -2127,57 +1372,11 @@ struct PhotoMemoiOSV1View: View {
         makeCurrent: Bool
     ) {
         Task {
-            await importConfigurationBackupNow(
-                at: url,
+            await localConfigurationLibraryRuntimeCoordinator.restore(
+                fileURL: url,
                 assetRootURL: assetRootURL,
                 makeCurrent: makeCurrent
             )
-        }
-    }
-
-    @MainActor
-    private func importConfigurationBackupNow(
-        at url: URL,
-        assetRootURL: URL,
-        makeCurrent: Bool
-    ) async {
-        guard !isWorkingWithLocalConfigurationLibrary else {
-            return
-        }
-
-        isWorkingWithLocalConfigurationLibrary = true
-        defer {
-            isWorkingWithLocalConfigurationLibrary = false
-        }
-
-        let result = await configurationBackupRestoreCoordinator
-            .restore(
-                ConfigurationRestoreRequest(
-                    fileURL: url,
-                    assetRootURL: assetRootURL,
-                    makeCurrent: makeCurrent,
-                    aggregate:
-                        session.state.configurationLibrary,
-                    availableAlbumIdentifiers: Set(
-                        availableAlbums.compactMap(\.localIdentifier)
-                    ),
-                    currentSubjectID:
-                        session.state.selectedSubject?.id,
-                    previousBackups:
-                        localConfigurationBackups
-                )
-            )
-        if let durableAggregate = result.aggregate {
-            session.restoreConfigurationLibrary(
-                durableAggregate
-            )
-            if result.shouldApplyCurrentConfiguration {
-                applyRestoredCurrentConfiguration()
-            }
-        }
-        localConfigurationBackups = result.backups
-        if case .replace(let message) = result.status {
-            localConfigurationLibraryStatus = message
         }
     }
 
@@ -2190,7 +1389,7 @@ struct PhotoMemoiOSV1View: View {
                 configuration: configuration
             )
         )
-        memoryPresetTitleDraft = configuration.title
+        renamePresentation.titleDraft = configuration.title
         bootstrapDrafts()
         refreshDynamicPreview()
         activeConfigurationStatus = .saved
@@ -2200,25 +1399,7 @@ struct PhotoMemoiOSV1View: View {
         _ backup: LocalConfigurationBackupRecord
     ) {
         Task {
-            guard !isWorkingWithLocalConfigurationLibrary else {
-                return
-            }
-            isWorkingWithLocalConfigurationLibrary = true
-            defer {
-                isWorkingWithLocalConfigurationLibrary = false
-            }
-            let result = await configurationBackupRestoreCoordinator
-                .deleteBackup(
-                    ConfigurationBackupDeletionRequest(
-                        backup: backup,
-                        previousBackups:
-                            localConfigurationBackups
-                    )
-                )
-            localConfigurationBackups = result.backups
-            if case .replace(let message) = result.status {
-                localConfigurationLibraryStatus = message
-            }
+            await localConfigurationLibraryRuntimeCoordinator.delete(backup)
         }
     }
 
@@ -2272,30 +1453,20 @@ struct PhotoMemoiOSV1View: View {
 
     private func persistActiveConfigurationSelection() {
         guard let candidate = session.state.configurationLibrary,
-              let configurationCoordinator else {
+              let configurationSelectionPersistenceCoordinator else {
             return
         }
-        let expectedRevision = candidate.revision
-        let expectedSubjectID = candidate.activeSubjectID
-        let expectedConfigurationID = candidate.activeConfigurationID
 
         Task { @MainActor in
-            do {
-                let receipt = try await configurationCoordinator
-                    .saveConfigurationLibrary(candidate)
-                guard var current = session.state.configurationLibrary,
-                      current.revision == expectedRevision,
-                      current.activeSubjectID == expectedSubjectID,
-                      current.activeConfigurationID
-                        == expectedConfigurationID else {
-                    return
-                }
-                current.revision = receipt.revision
+            switch await configurationSelectionPersistenceCoordinator
+                .persist(candidate) {
+            case .saved(let patch):
+                guard let current = patch.reconcile(
+                    current: session.state.configurationLibrary
+                ) else { return }
                 session.updateConfigurationLibraryReference(current)
-            } catch {
-                activeConfigurationStatus = .failure(
-                    message: "当前配置切换保存失败，请重试。"
-                )
+            case .failed(let message):
+                activeConfigurationStatus = .failure(message: message)
             }
         }
     }
@@ -2389,185 +1560,51 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private var editorCluster: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            IOSCompactEntryListGroup {
-                ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
-                    V1RegionEditorCard(
-                    region: region,
-                    isExpanded:
-                        expansionBinding(
-                            for: .region(region)
-                        ),
-                    showsDivider:
-                        region != CardRegion.memoryCardRegions.last,
-                    draft: draft(for: region),
-                    resolvedText:
-                        composedText(
-                            for: draft(for: region)
-                        ),
-                    onFocus: {
-                        applyModulePanelState(
-                            V1ModulePanelCoordinator
-                                .focusEditor(
-                                    state:
-                                        modulePanelState
-                                )
-                        )
-                    },
-                    onFocusTextItem: { item in
-                        setActiveTextItem(
-                            item.id,
-                            for: region
-                        )
-                        applyModulePanelState(
-                            V1ModulePanelCoordinator
-                                .focusEditor(
-                                    state:
-                                        modulePanelState
-                                )
-                        )
-                    },
-                    onUpdateTextItem: { item, text in
-                        updateTextItem(
-                            item.id,
-                            text: text,
-                            for: region
-                        )
-                    },
-                    onPrependText: { text in
-                        prependText(
-                            text,
-                            to: region
-                        )
-                    },
-                    onAppendText: { text in
-                        appendText(
-                            text,
-                            to: region
-                        )
-                    },
-                    onRemoveItem: { item in
-                        removeItem(
-                            item.id,
-                            from: region
-                        )
-                        refreshPreview(for: region)
-                    },
-                    onShowModules: {
-                        applyModulePanelState(
-                            V1ModulePanelCoordinator
-                                .showModules(
-                                    for: region,
-                                    state:
-                                        modulePanelState
-                                )
-                        )
-                    }
-                    )
-                }
-            }
-
-            regionConfigurationGuide
-                .padding(.horizontal, 4)
-        }
-    }
-
-    private var regionConfigurationGuide: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("配置说明")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text("以上四个位置均可自定义，可自由组合自定义短语与智能模块。智能模块会结合照片拍摄信息、记忆对象和时间锚点生成真实内容；开启说明写入后，右下角的组合结果也可写入生成照片的说明，便于在 Apple Photos 中检索和回看。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var accessoryEntryCluster: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            configurationSectionHeader(
-                title: "头像与标识",
-                subtitle: "配置输出卡片左侧 Logo 标识，可使用系统标识、自选图片或当前对象头像。",
-                systemImage: MemoMarkSymbol.memorySubject.name
-            )
-
-            V1AccessoryEntrySection(
-                logoMode: $logoMode,
-                selectedLogoItem: $selectedLogoItem,
-                logoStatusMessage: resolvedLogoStatusMessage,
-                logoRowDetail: logoRowDetail,
-                logoPersistenceHint:
-                    resolvedLogoPersistenceHint,
-                subjectAvatarLogoImagePath:
-                    resolvedSubjectAvatarLogoImagePath,
-                subjectAvatarPreviewImagePath:
-                    resolvedSubjectAvatarPreviewImagePath,
-                customLogoImagePath:
-                    customLogoBadge?.imagePath,
-                isOptimizingLogo: isOptimizingLogo,
-                logoExpanded:
-                    expansionBinding(
-                        for: .logo
+        V1RegionEditorCluster(
+            expansionBinding: { region in
+                expansionBinding(for: .region(region))
+            },
+            draft: { region in
+                draft(for: region)
+            },
+            resolvedText: { draft in
+                composedText(for: draft)
+            },
+            onFocus: focusRegionEditor,
+            onFocusTextItem: { region, item in
+                setActiveTextItem(item.id, for: region)
+                focusRegionEditor()
+            },
+            onUpdateTextItem: { region, item, text in
+                updateTextItem(item.id, text: text, for: region)
+            },
+            onPrependText: { region, text in
+                prependText(text, to: region)
+            },
+            onAppendText: { region, text in
+                appendText(text, to: region)
+            },
+            onRemoveItem: { region, item in
+                removeItem(item.id, from: region)
+                refreshPreview(for: region)
+            },
+            onShowModules: { region in
+                applyModulePanelState(
+                    V1ModulePanelCoordinator.showModules(
+                        for: region,
+                        state: modulePanelState
                     )
                 )
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.controlBackground.opacity(0.56))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 24,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
+            }
         )
     }
 
-    private func configurationSectionHeader(
-        title: String,
-        subtitle: String,
-        systemImage: String
-    ) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            RoundedRectangle(
-                cornerRadius: 12,
-                style: .continuous
+    private func focusRegionEditor() {
+        applyModulePanelState(
+            V1ModulePanelCoordinator.focusEditor(
+                state: modulePanelState
             )
-            .fill(Color.white.opacity(0.92))
-            .frame(width: 36, height: 36)
-            .overlay {
-                Image(systemName: systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-            }
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 12,
-                    style: .continuous
-                )
-                .stroke(ConfigurationUI.faintHairline)
-            )
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
+        )
     }
 
     private var logoRowDetail: String {
@@ -2583,42 +1620,6 @@ struct PhotoMemoiOSV1View: View {
                 ? "当前记忆对象尚未选择头像"
                 : "已使用对象头像"
         }
-    }
-
-    private var resolvedLogoStatusMessage: String {
-        switch logoMode {
-        case .appleMini:
-            return "当前使用系统默认标识。"
-        case .customUpload:
-            return logoStatusMessage
-        case .subjectAvatar:
-            return resolvedSubjectAvatarLogoImagePath == nil
-                ? "当前记忆对象还没有可用头像，先去对象配置里选择头像即可。"
-                : "当前使用对象头像作为标识。"
-        }
-    }
-
-    private var resolvedLogoPersistenceHint: String? {
-        guard
-            activeConfigurationStatus
-            .isDirty
-        else {
-            return nil
-        }
-
-        return "预览区已经切换，点击“保存为当前配置”后，实际输出才会同步到当前标识。"
-    }
-
-    private var timeAnchorEntryPresentation:
-        V1TimeAnchorEntryPresentation {
-
-        V1TimeAnchorEntryPresenter
-            .presentation(
-                subject:
-                    alignedSelectedSubject()
-                    ?? session.state.selectedSubject,
-                anchorTitle: timeAnchorTitle
-            )
     }
 
     private var resolvedSubjectAvatarLogoImagePath: String? {
@@ -2644,22 +1645,6 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private var birthdaySummaryText: String {
-        let anchorDate =
-            alignedSelectedSubject()?
-            .primaryTimeAnchor?
-            .date
-            ?? session.state.selectedSubject?
-            .primaryTimeAnchor?
-            .date
-            ?? session.state.selectedSubject?
-            .timeAnchors.first?
-            .date
-            ?? birthdayDate
-
-        return V1UserFacingDateFormatter.date(anchorDate)
-    }
-
     private var resolvedMemoryWriteText: String {
         V1ResolvedMemoryWriteTextPresenter
             .resolvedText(
@@ -2673,33 +1658,6 @@ struct PhotoMemoiOSV1View: View {
                 smartModuleCarrierRegion:
                     session.smartModuleCarrierRegion
             )
-    }
-
-    private var recentProcessingPresentation:
-        V1IOSHomeRecentProcessingPresentation {
-
-        V1IOSHomeRecentProcessingPresenter
-            .presentation(
-                header:
-                    shareDiagnosticsHeaderProjection,
-                snapshot:
-                    backgroundStatusService
-                    .currentSnapshot,
-                recoveryMessage:
-                    processingDiagnosticsSnapshot
-                    .recoveryMessage
-            )
-    }
-
-    private var presetPicker: some View {
-        V1PresetPicker(
-            currentTitle:
-                homeAvailablePresets.isEmpty
-                ? "当前对象还没有配置"
-                : session.currentMemoryPresetTitle,
-            presets: homeAvailablePresets,
-            selectedPresetID: selectedPresetBinding
-        )
     }
 
     private var moduleSheetPresented: Binding<Bool> {
@@ -2838,79 +1796,43 @@ struct PhotoMemoiOSV1View: View {
     private func composedText(
         for draft: V1EditorDraft
     ) -> String {
-        previewRenderModel(
-            for:
-                V1DraftBridge
-                .previewDraft(from: draft)
+        V1PreviewDraftAdapter.composedText(
+            for: draft,
+            context: previewCompositionContext,
+            engine: previewCompositionEngine
         )
-        .displayText
     }
 
     private func previewRenderModel(
         for draft: V1PreviewDraft
     ) -> V1PreviewRenderModel {
-        switch BuildV1PreviewRenderModelIntent(
-            draft: draft,
+        V1PreviewDraftAdapter.renderModel(
+            for: draft,
             context: previewCompositionContext,
             engine: previewCompositionEngine
         )
-        .executeSynchronously() {
-        case .success(let model):
-            return model
-        case .failure:
-            return V1PreviewRenderModel(
-                templateSourceText:
-                    draft.singleLineTemplateText,
-                displayText:
-                    draft.resolvedSingleLineText
-            )
-        }
     }
 
     private func makeDefaultDraft(
         for region: CardRegion
     ) -> V1EditorDraft {
-        V1DraftBridge.editorDraft(
-            from:
-                previewCompositionEngine
-                .defaultDraft(
-                    for: region,
-                    templateID:
-                        session
-                        .activeTemplateID(
-                            for: region
-                        ),
-                    context:
-                        previewCompositionContext
-                )
+        V1PreviewDraftAdapter.defaultDraft(
+            for: region,
+            templateID: session.activeTemplateID(for: region),
+            context: previewCompositionContext,
+            engine: previewCompositionEngine
         )
     }
 
     private func moduleItem(
         _ module: IOSInsertableModule
     ) -> V1ContentItem {
-        guard let previewModule =
-            previewModule(
-                for: module
-            ) else {
-            return .token(
-                module.title,
-                value: moduleDisplayText(module),
-                templateValue:
-                    module.rendererToken,
-                systemImage:
-                    module.systemImage
-            )
-        }
-
-        return V1DraftBridge.editorItem(
-            from:
-                previewCompositionEngine
-                .makeModuleItem(
-                    previewModule,
-                    context:
-                        previewCompositionContext
-                )
+        V1PreviewDraftAdapter.moduleItem(
+            module,
+            previewModule: previewModule(for: module),
+            fallbackDisplayText: moduleDisplayText(module),
+            context: previewCompositionContext,
+            engine: previewCompositionEngine
         )
     }
 
@@ -2940,82 +1862,19 @@ struct PhotoMemoiOSV1View: View {
                     currentSavedOutputConfiguration
             )
 
-        let request =
-            V1ConfigurationApplyRequestBuilder
-            .buildRequest(
-                from:
-                    V1ConfigurationApplyBuildInput(
-                        selectedSubject:
-                            session
-                            .state
-                            .selectedSubject,
-                        subjects:
-                            session
-                            .state
-                            .subjects,
-                        selectedSubjectID:
-                            session
-                            .state
-                            .selectedSubjectID,
-                        shouldSaveSubjectLibrary:
-                            shouldSaveSubjectLibrary,
-                        memoryPresets:
-                            presetPersistenceSnapshot
-                            .memoryPresets,
-                        selectedMemoryPresetID:
-                            presetPersistenceSnapshot
-                            .selectedMemoryPresetID,
-                        presetTitle:
-                            session
-                            .currentMemoryPresetTitle,
-                        templateTextsByRegion:
-                            Dictionary(
-                                uniqueKeysWithValues:
-                                    CardRegion
-                                    .memoryCardRegions
-                                    .map { region in
-                                        (
-                                            region,
-                                            templateText(
-                                                for: draft(
-                                                    for: region
-                                                )
-                                            )
-                                        )
-                                    }
-                            ),
-                        locationDisplayConfiguration:
-                            locationDisplayConfiguration,
-                        badge:
-                            selectedBadgeForSaving,
-                        usesCustomMemoryWriteText:
-                            session
-                            .usesCustomMemoryWriteText,
-                        customMemoryWriteText:
-                            session
-                            .customMemoryWriteText,
-                        birthdayDate:
-                            birthdayDate,
-                        outputTarget:
-                            outputTarget,
-                        mediaOutputMode:
-                            mediaOutputMode,
-                        availableAlbums:
-                            availableAlbums,
-                        selectedExistingAlbumIdentifier:
-                            selectedExistingAlbumIdentifier,
-                        newAlbumName:
-                            newAlbumName
-                    )
-            )
-
-        let aggregateDraft = V1ConfigurationAggregateDraft(
+        let payload = V1ConfigurationApplyPayloadBuilder.build(
+            from: V1ConfigurationApplyPayloadInput(
+                state: session.state,
+                shouldSaveSubjectLibrary: shouldSaveSubjectLibrary,
+                persistenceMemoryPresets:
+                    presetPersistenceSnapshot.memoryPresets,
+                persistenceSelectedMemoryPresetID:
+                    presetPersistenceSnapshot.selectedMemoryPresetID,
                 title: session.currentMemoryPresetTitle,
                 regionDrafts: Dictionary(
                     uniqueKeysWithValues:
                         CardRegion.memoryCardRegions.map {
-                            region in
-                            (region, draft(for: region))
+                            ($0, draft(for: $0))
                         }
                 ),
                 regionTemplateIDs: Dictionary(
@@ -3026,57 +1885,35 @@ struct PhotoMemoiOSV1View: View {
                                 .map { (region, $0) }
                         }
                 ),
-                locationConfiguration:
-                    locationDisplayConfiguration,
+                locationConfiguration: locationDisplayConfiguration,
                 logoMode: logoMode,
                 badge: selectedBadgeForSaving,
                 usesCustomMemoryWriteText:
                     session.usesCustomMemoryWriteText,
-                customMemoryWriteText:
-                    session.customMemoryWriteText,
+                customMemoryWriteText: session.customMemoryWriteText,
                 shouldWritePhotosDescription:
                     shouldWritePhotosDescription,
-                photosDescriptionOverride:
-                    photosDescriptionOverride,
+                photosDescriptionOverride: photosDescriptionOverride,
+                birthdayDate: birthdayDate,
                 outputTarget: outputTarget,
+                mediaOutputMode: mediaOutputMode,
+                availableAlbums: availableAlbums,
                 selectedAlbumIdentifier:
                     selectedExistingAlbumIdentifier,
-                albumTitle: outputTarget == .newAlbum
-                    ? newAlbumName
-                    : configurationAlbumTitle,
-                mediaOutputMode: mediaOutputMode,
+                newAlbumName: newAlbumName,
+                configurationAlbumTitle: configurationAlbumTitle,
                 livePhotoPolicy: livePhotoPolicy,
-                selectedTimeAnchorID:
-                    session.selectedTimeAnchorID,
-                savedAt: Date(),
-                language: session.language
+                selectedTimeAnchorID: session.selectedTimeAnchorID,
+                language: session.language,
+                savedAt: Date()
             )
-        let configurationLibraryForApply: ConfigurationLibraryRecord?
-        if let configurationID = session.state.selectedMemoryPresetID,
-           let subject = session.state.selectedSubject {
-            configurationLibraryForApply =
-                V1LocalConfigurationLibraryPresenter
-                .preparingCurrentConfiguration(
-                    configurationID,
-                    subject: subject,
-                    seedConfiguration:
-                        V1ConfigurationAggregateCandidateBuilder
-                        .seedConfiguration(
-                            id: configurationID,
-                            draft: aggregateDraft
-                        ),
-                    in: session.state.configurationLibrary
-                )
-        } else {
-            configurationLibraryForApply =
-                session.state.configurationLibrary
-        }
+        )
 
         return await configurationApplyRuntimeCoordinator.apply(
             configurationLibrary:
-                configurationLibraryForApply,
-            aggregateDraft: aggregateDraft,
-            legacyRequest: request,
+                payload.configurationLibrary,
+            aggregateDraft: payload.aggregateDraft,
+            legacyRequest: payload.legacyRequest,
             outputTarget: outputTarget,
             availableAlbums: availableAlbums
         )
@@ -3099,7 +1936,7 @@ struct PhotoMemoiOSV1View: View {
 
     private func beginPhotoProcessingFlow() {
         guard hasSavedConfigurationForSelectedSubject else {
-            showsConfigurationRequiredAlert = true
+            switchPresentation.showsConfigurationRequiredAlert = true
             return
         }
 
@@ -3217,7 +2054,7 @@ struct PhotoMemoiOSV1View: View {
     private func applyLogoAssetUpdate(
         _ update: LogoAssetUpdate
     ) {
-        isOptimizingLogo =
+        mediaPickerPresentation.isOptimizingLogo =
             update.isOptimizingLogo
 
         if let customLogoBadge =
@@ -3230,9 +2067,6 @@ struct PhotoMemoiOSV1View: View {
             update.logoMode {
             self.logoMode = logoMode
         }
-
-        logoStatusMessage =
-            update.logoStatusMessage
 
         if let activeConfigurationStatus =
             update.activeConfigurationStatus {
@@ -3272,10 +2106,6 @@ struct PhotoMemoiOSV1View: View {
         livePhotoPolicy = projection.livePhotoPolicy
         regionDrafts = projection.regionDrafts
 
-        if projection.logoMode == .customUpload,
-           projection.badge != nil {
-            logoStatusMessage = "已使用自选 Logo。"
-        }
     }
 
     private func applyBootstrapFlowPatch(
@@ -3340,38 +2170,9 @@ struct PhotoMemoiOSV1View: View {
                 ?? session.state.selectedSubject,
             birthdayDate: birthdayDate,
             locationDisplayConfiguration:
-                locationDisplayConfiguration
-        )
-    }
-
-    private var locationDisplayModule:
-        IOSInsertedModule? {
-        guard
-            regionDrafts
-            .values
-            .flatMap(\.items)
-            .contains(where: {
-                $0.title == IOSInsertableModule.location.title
-                && $0.systemImage
-                == IOSInsertableModule.location.systemImage
-            })
-        else {
-            return nil
-        }
-
-        return IOSInsertedModule(
-            title:
-                IOSInsertableModule.location.title,
-            value:
-                LocationDisplayInspectorPresenter
-                .selectedValue(
-                    fromConfiguration:
-                        locationDisplayConfiguration
-                ),
-            systemImage:
-                IOSInsertableModule.location.systemImage,
-            expressionConfiguration:
-                locationDisplayConfiguration
+                locationDisplayConfiguration,
+            timeDisplayConfiguration:
+                timeDisplayConfiguration
         )
     }
 
@@ -3397,6 +2198,48 @@ struct PhotoMemoiOSV1View: View {
                     .saveLocationDisplayConfiguration(
                         configuration
                     )
+                activeConfigurationStatus = .dirty
+                refreshDynamicPreview()
+            }
+        )
+    }
+
+    private var timeDisplayOptionBinding: Binding<String> {
+        Binding(
+            get: {
+                timeDisplayConfiguration.options["baseStyle"] ?? "daily"
+            },
+            set: { optionID in
+                let style = TimeDisplayConfiguration.BaseStyle(rawValue: optionID) ?? .daily
+                timeDisplayConfiguration = TimeDisplayInspectorPresenter.configuration(
+                    baseStyle: style,
+                    supplement: selectedTimeSupplement
+                )
+                _ = configurationCoordinator?.saveTimeDisplayConfiguration(timeDisplayConfiguration)
+                activeConfigurationStatus = .dirty
+                refreshDynamicPreview()
+            }
+        )
+    }
+
+    private var selectedTimeSupplement: TimeDisplayConfiguration.Supplement {
+        TimeDisplayConfiguration.Supplement(
+            rawValue: timeDisplayConfiguration.options["supplement"] ?? "none"
+        ) ?? .none
+    }
+
+    private var timeDisplaySupplementBinding: Binding<TimeDisplayConfiguration.Supplement> {
+        Binding(
+            get: { selectedTimeSupplement },
+            set: { supplement in
+                let style = TimeDisplayConfiguration.BaseStyle(
+                    rawValue: timeDisplayConfiguration.options["baseStyle"] ?? "daily"
+                ) ?? .daily
+                timeDisplayConfiguration = TimeDisplayInspectorPresenter.configuration(
+                    baseStyle: style,
+                    supplement: supplement
+                )
+                _ = configurationCoordinator?.saveTimeDisplayConfiguration(timeDisplayConfiguration)
                 activeConfigurationStatus = .dirty
                 refreshDynamicPreview()
             }
@@ -3452,20 +2295,6 @@ struct PhotoMemoiOSV1View: View {
         birthdayDate = anchor.date
         activeConfigurationStatus = .dirty
         refreshDynamicPreview()
-    }
-
-    private func selectConfigurationSummaryRegion(
-        _ region: CardRegion
-    ) {
-        session.select(
-            CardRegionBehavior(region: region)
-        )
-        entryNavigationState.setEditorSection(
-            .region(region),
-            isExpanded: true
-        )
-        activeModuleRegion = region
-        dismissKeyboard()
     }
 
     private func alignedSelectedSubject()
@@ -3633,7 +2462,7 @@ struct PhotoMemoiOSV1View: View {
         let previousOutputTarget = outputTarget
         let previousMediaOutputMode = mediaOutputMode
         let previousLogoMode = logoMode
-        let previousPresetTitleDraft = memoryPresetTitleDraft
+        let previousPresetTitleDraft = renamePresentation.titleDraft
         let subject = V1SubjectLibraryFactory
             .makeFirstRunSubject(
                 name: subjectName,
@@ -3673,7 +2502,7 @@ struct PhotoMemoiOSV1View: View {
         outputTarget = .automatic
         mediaOutputMode = .originalFormat
         logoMode = .appleMini
-        memoryPresetTitleDraft = preset.title
+        renamePresentation.titleDraft = preset.title
         bootstrapDrafts()
         refreshDynamicPreview()
 
@@ -3683,7 +2512,7 @@ struct PhotoMemoiOSV1View: View {
             outputTarget = previousOutputTarget
             mediaOutputMode = previousMediaOutputMode
             logoMode = previousLogoMode
-            memoryPresetTitleDraft = previousPresetTitleDraft
+            renamePresentation.titleDraft = previousPresetTitleDraft
             bootstrapDrafts()
             refreshDynamicPreview()
             return false
@@ -3691,17 +2520,6 @@ struct PhotoMemoiOSV1View: View {
 
         completeWelcomeFlow()
         return true
-    }
-
-    private func showWorkflowGuideFromWelcome() {
-        let update =
-            V1EntryFlowCoordinator
-            .showWorkflowFromWelcome(
-                from: entryFlowState,
-                hasSeenWelcome:
-                    hasSeenWelcome
-            )
-        applyEntryWelcomeUpdate(update)
     }
 
     private func applyEntryWelcomeUpdate(
@@ -3742,64 +2560,33 @@ struct PhotoMemoiOSV1View: View {
         _ items: [PhotosPickerItem]
     ) async {
         defer {
-            selectedProcessingItems = []
+            mediaPickerPresentation.selectedProcessingItems = []
         }
-
-        let result =
-            await V1PhotoProcessingQuickActionCoordinator
-            .processPickedPhotoItems(
-                saveCurrentConfiguration: {
-                    await applyCurrentV1Configuration()
-                },
-                importItems: {
-                    await V1PhotoIntakeImporter
-                        .importItems(from: items)
-                },
-                submit: { resolvedItems in
-                    externalIntakeCenter.submit(
-                        items: resolvedItems,
-                        source: .quickAction
-                    )
-                }
-            )
-
-        switch result.status {
-        case .configurationSaveFailed:
-            return
-        case .noSupportedPhotos:
-            break
-        case .submitted:
-            refreshExternalIntake()
-            refreshProcessingState()
+        await performPhotoQuickAction {
+            await V1PhotoIntakeImporter.importItems(from: items)
         }
-
-        entryFlowState =
-            V1EntryFlowCoordinator
-            .applyQuickActionResult(
-                result,
-                to: entryFlowState
-            )
     }
 
     @MainActor
     private func importPickedPHPickerResults(
         _ results: [PHPickerResult]
     ) async {
-        let result =
-            await V1PhotoProcessingQuickActionCoordinator
+        await performPhotoQuickAction {
+            await V1PhotoIntakeImporter.importPHPickerResults(from: results)
+        }
+    }
+
+    @MainActor
+    private func performPhotoQuickAction(
+        importItems: @escaping () async -> [ExternalPhotoIntakeItem]
+    ) async {
+        let result = await V1PhotoProcessingQuickActionCoordinator
             .processPickedPhotoItems(
-                saveCurrentConfiguration: {
-                    await applyCurrentV1Configuration()
-                },
-                importItems: {
-                    await V1PhotoIntakeImporter
-                        .importPHPickerResults(
-                            from: results
-                        )
-                },
-                submit: { resolvedItems in
+                saveCurrentConfiguration: applyCurrentV1Configuration,
+                importItems: importItems,
+                submit: {
                     externalIntakeCenter.submit(
-                        items: resolvedItems,
+                        items: $0,
                         source: .quickAction
                     )
                 }
@@ -3821,38 +2608,6 @@ struct PhotoMemoiOSV1View: View {
                 result,
                 to: entryFlowState
             )
-    }
-
-    private var selectedPresetBinding: Binding<MemoryPreset.ID> {
-        Binding(
-            get: {
-                V1PresetSelectionCoordinator
-                    .selectedPresetID(
-                        selectedPreset:
-                            session.state.selectedMemoryPreset,
-                        presets:
-                            homeAvailablePresets
-                    )
-            },
-            set: { newValue in
-                guard let update =
-                    V1PresetSelectionCoordinator
-                    .selectionUpdate(
-                        for: newValue,
-                        currentPreset:
-                            session.state.selectedMemoryPreset,
-                        presets:
-                            homeAvailablePresets
-                    )
-                else {
-                    return
-                }
-
-                activateHomePreset(
-                    update.preset
-                )
-            }
-        )
     }
 
     private var homeAvailablePresets: [MemoryPreset] {

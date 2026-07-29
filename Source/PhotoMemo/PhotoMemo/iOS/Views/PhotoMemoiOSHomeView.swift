@@ -21,6 +21,10 @@ struct PhotoMemoiOSHomeView: View {
     private var backgroundStatusService:
         PhotoMemoBackgroundStatusService
 
+    @ObservedObject
+    private var permissionCenter:
+        PermissionCenter
+
     private let backgroundExecutionService:
         PhotoMemoiOSBackgroundExecutionService
 
@@ -38,6 +42,11 @@ struct PhotoMemoiOSHomeView: View {
                 wrappedValue:
                     runtime
                     .backgroundStatusService
+            )
+        self._permissionCenter =
+            ObservedObject(
+                wrappedValue:
+                    runtime.permissionCenter
             )
         self.backgroundExecutionService =
             runtime
@@ -72,8 +81,26 @@ struct PhotoMemoiOSHomeView: View {
                 backgroundStatusService:
                     backgroundStatusService,
                 batchQueueStore:
-                    batchQueueStore
+                    batchQueueStore,
+                permissionCenter:
+                    runtime.permissionCenter,
+                authorizePhotoWorkflow: {
+                    await runtime
+                        .authorizePhotoWorkflow()
+                },
+                authorizeNotificationWorkflow: {
+                    await runtime
+                        .authorizeNotificationWorkflow()
+                }
             )
+        }
+        .task {
+            await permissionCenter.refreshStatuses()
+            guard permissionCenter.shouldPresentPrimer else {
+                return
+            }
+            permissionCenter.markPrimerPresented()
+            showsBackgroundStatusSheet = true
         }
         .onAppear {
             backgroundExecutionService

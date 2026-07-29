@@ -139,8 +139,13 @@ final class BatchQueueCoordinator {
 
     func processingLoop(in store: BatchQueueStore) async {
         store.markProcessingStarted()
-        defer { store.processingLoopDidFinish() }
-        while let reference = nextPendingTaskReference(in: store.jobs) {
+        defer {
+            store.processingLoopDidFinish(
+                shouldRestart: !Task.isCancelled
+            )
+        }
+        while !Task.isCancelled,
+              let reference = nextPendingTaskReference(in: store.jobs) {
             await processTask(at: reference, in: store)
         }
     }

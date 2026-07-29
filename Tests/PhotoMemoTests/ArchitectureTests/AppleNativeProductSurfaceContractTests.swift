@@ -5,6 +5,16 @@ import Testing
 @Suite("Apple native product surface contract")
 struct AppleNativeProductSurfaceContractTests {
 
+    @Test("App keeps a light appearance until dark surfaces are complete")
+    func appKeepsLightAppearanceUntilDarkSurfacesAreComplete() throws {
+        let root = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/PhotoMemoRootSceneView.swift"
+        )
+
+        #expect(root.contains(".preferredColorScheme(.light)"))
+        #expect(!root.contains("overrideUserInterfaceStyle"))
+    }
+
     @Test("MemoMark Design System freezes memory-first restrained UI rules")
     func designSystemFreezesMemoryFirstRestrainedUIRules() throws {
         let designSystem = try sourceText("Docs/DesignSystem.md")
@@ -20,6 +30,38 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(designSystem.contains("Informational phrases"))
         #expect(!designSystem.contains("1. Photo first."))
         #expect(!designSystem.contains("If two cards can become one, merge them."))
+    }
+
+    @Test("semantic tokens cover spacing surfaces elevation and controls")
+    func semanticTokensCoverTheCompleteUISystem() throws {
+        let tokens = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift"
+        )
+        let configurationUI = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Components/InspectorSectionView.swift"
+        )
+
+        #expect(tokens.contains("enum Spacing"))
+        #expect(tokens.contains("enum CornerRadius"))
+        #expect(tokens.contains("enum Stroke"))
+        #expect(tokens.contains("enum SurfaceMaterial"))
+        #expect(tokens.contains("enum Elevation"))
+        #expect(tokens.contains("enum ControlState"))
+        #expect(configurationUI.contains("MemoMarkDesignTokens.Spacing"))
+        #expect(configurationUI.contains("MemoMarkDesignTokens.CornerRadius"))
+        #expect(configurationUI.contains("MemoMarkDesignTokens.Elevation"))
+    }
+
+    @Test("shared cards preserve VoiceOver order and increased contrast")
+    func sharedCardsSupportSystemAccessibilityPreferences() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+
+        #expect(source.contains("@Environment(\\.colorSchemeContrast)"))
+        #expect(source.contains("accessibilityContrast == .increased"))
+        #expect(source.contains(".accessibilityElement(children: .contain)"))
+        #expect(source.contains(".accessibilityAddTraits(.isHeader)"))
     }
 
     @Test("configuration and processing apply subtractive visual hierarchy")
@@ -58,8 +100,11 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("case .needsAttention:"))
         #expect(source.contains("title: \"正在处理\""))
         #expect(source.contains("title: \"刚刚完成\""))
-        #expect(source.contains("title: \"需要查看\""))
-        #expect(source.contains("DisclosureGroup(\"处理详情\")"))
+        #expect(source.contains("title: \"需要处理\""))
+        #expect(source.contains("DisclosureGroup(\"本次进展\")"))
+        #expect(!source.contains("progressPercentText"))
+        #expect(!source.contains("showsProgressPercentage"))
+        #expect(!source.contains("pipelineStepTime"))
         #expect(!source.contains("private func progressBarTint"))
     }
 
@@ -68,25 +113,26 @@ struct AppleNativeProductSurfaceContractTests {
         let output = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
         )
-        let root = try sourceText(
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        let regionEditor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1RegionEditorCluster.swift"
         )
         let support = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
         )
 
-        #expect(output.contains("V1TitledSectionCard(\n            title: \"输出目标\""))
-        #expect(output.contains("V1TitledSectionCard(\n            title: \"写入与保留\""))
-        #expect(output.contains(".verticalPadding / 2"))
-        #expect(output.contains("private struct V1OutputContentCard"))
+        #expect(output.contains("V1TitledSectionCard(\n            title: \"回到哪里\""))
+        #expect(output.contains("V1TitledSectionCard(\n            title: \"最终结果\""))
+        #expect(output.contains("Picker(\"照片形式\""))
+        #expect(output.contains("V1OutputRetentionRow("))
+        #expect(!output.contains("private struct V1OutputContentCard"))
         #expect(!output.contains("private struct V1OutputCompactCard"))
-        #expect(!output.contains("title: \"输出目标\",\n                systemImage:"))
+        #expect(!output.contains("title: \"回到哪里\",\n                systemImage:"))
         #expect(!output.contains("private struct V1MemoryWriteExplanation"))
         #expect(!output.contains("let tint: Color\n    let title: String\n    let subtitle: String"))
         #expect(support.contains("systemImage: nil"))
-        #expect(root.contains("Text(\"配置说明\")"))
-        #expect(!root.contains("Label(\"配置说明\", systemImage: \"info.circle\")"))
-        #expect(root.contains("regionConfigurationGuide\n                .padding(.horizontal, 4)"))
+        #expect(regionEditor.contains("Text(\"写进卡片的内容\")"))
+        #expect(!regionEditor.contains("Label(\"写进卡片的内容\", systemImage: \"info.circle\")"))
+        #expect(regionEditor.contains("configurationGuide\n                .padding(.horizontal, 4)"))
     }
 
     @Test("processing and output share titled card hierarchy")
@@ -110,7 +156,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(configuration.contains(".font(.caption)"))
         #expect(support.contains(".font(.headline.weight(.semibold))"))
         #expect(support.contains(".font(.caption)"))
-        #expect(processing.contains("title: \"最近完成\""))
+        #expect(processing.contains("title: \"最近保存\""))
         #expect(processing.contains("taskStatusPill("))
         #expect(processing.contains("isRecentTasksSheetPresented = true"))
         #expect(processing.contains("V1CardHeaderIconButton("))
@@ -123,7 +169,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!processing.contains("systemImage: MemoMarkSymbol.processing.name,\n                    tint: .blue"))
         #expect(output.contains("private var existingAlbumControlRow"))
         #expect(output.contains(".frame(width: 36, height: 36)"))
-        #expect(output.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(output.contains(".foregroundStyle(.secondary)"))
         #expect(output.contains(".accessibilityLabel(\n                isLoadingAlbums\n                ? \"正在刷新相册\"\n                : \"刷新相册\""))
     }
 
@@ -133,8 +179,8 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
         )
 
-        #expect(home.contains("title: \"记忆对象\",\n            subtitle: \"查看当前对象与时间锚点\""))
-        #expect(home.contains("title: \"我的配置\",\n            subtitle: \"选择当前生效的记录方式\""))
+        #expect(home.contains("title: \"记忆对象\",\n            subtitle: \"回忆正围绕谁展开。\""))
+        #expect(home.contains("title: \"我的预设\",\n            subtitle: \"下一次分享，要用哪种方式记录。\""))
         #expect(home.contains("勾选切换当前配置"))
         #expect(
             !home.contains(
@@ -149,14 +195,12 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(home.contains(".frame(width: 26, height: 30)"))
     }
 
-    @Test("functional navigation accessories use the shared accent color")
-    func functionalNavigationAccessoriesUseSharedAccentColor() throws {
+    @Test("actions use accent while reading destinations stay neutral")
+    func actionsUseAccentWhileReadingDestinationsStayNeutral() throws {
         let sourcePaths = [
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSHomeCardPrimitives.swift",
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterSummarySection.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift",
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/IOSCompactEntryRow.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift"
         ]
@@ -176,6 +220,38 @@ struct AppleNativeProductSurfaceContractTests {
                 )
             }
         }
+
+        let progress = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
+        )
+        let applePhotosRow = try #require(
+            progress.range(of: "Text(\"查看 Apple Photos\")")
+        )
+        let applePhotosRowSource = progress[applePhotosRow.lowerBound...]
+        #expect(
+            applePhotosRowSource.prefix(1_400).contains(
+                "Image(systemName: \"chevron.right\")"
+            )
+        )
+        #expect(
+            applePhotosRowSource.prefix(1_400).contains(
+                ".foregroundStyle(.secondary)"
+            )
+        )
+
+        let settings = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let disclosureStart = try #require(
+            settings.range(
+                of: "private struct V1SettingsDisclosureSection"
+            )?.lowerBound
+        )
+        let actionSource = settings[..<disclosureStart]
+        let disclosureSource = settings[disclosureStart...]
+
+        #expect(actionSource.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
     }
 
     @Test("memory subject cards and language settings use nested disclosure hierarchy")
@@ -207,7 +283,9 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(settings.contains("case interfaceLanguage"))
         #expect(settings.contains("section: .interfaceLanguage"))
         #expect(settings.contains("trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle"))
-        #expect(settings.contains("if let trailingValue,\n                           !isExpanded"))
+        #expect(settings.contains("private var adaptiveDisclosureHeader"))
+        #expect(settings.contains("private var verticalDisclosureHeader"))
+        #expect(settings.contains("if let trailingValue,"))
     }
 
     @Test("processing surface avoids dashboard and import-first language")
@@ -229,9 +307,10 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
         )
 
-        #expect(source.contains("输出设置已保存"))
-        #expect(source.contains("保存输出设置"))
+        #expect(source.contains("已保存"))
+        #expect(source.contains("保存这次选择"))
         #expect(source.contains("保留拍摄信息"))
+        #expect(source.contains("configurationStatus == .saved"))
         #expect(!source.contains("保留 EXIF 信息"))
     }
 
@@ -259,13 +338,17 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("选择照片"))
     }
 
-    @Test("settings starts with secondary explanations collapsed")
-    func settingsStartsSecondaryExplanationsCollapsed() throws {
+    @Test("settings opens getting started first and keeps secondary sections collapsed")
+    func settingsStartsGettingStartedAndCollapsesSecondarySections() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
         )
 
-        #expect(source.contains("expandedSections: Set<SettingsSection> = []"))
+        #expect(source.contains("private var isGettingStartedExpanded = true"))
+        #expect(source.contains("private var isPhotoProcessingExpanded = false"))
+        #expect(source.contains("private var isDataSafetyExpanded = false"))
+        #expect(source.contains("private var isAboutExpanded = false"))
+        #expect(source.contains("PhotoMemoSharedContainer.sharedUserDefaults"))
         #expect(source.contains("private var memoMarkPlusSection"))
         #expect(!source.contains("private func settingsTonalIcon"))
         #expect(!source.contains("private func settingsThumbnailStack"))
@@ -301,7 +384,7 @@ struct AppleNativeProductSurfaceContractTests {
 
         #expect(options.contains("保存当前配置"))
         #expect(options.contains("更多配置操作"))
-        #expect(options.contains("编辑卡片内容"))
+        #expect(options.contains("编辑卡片呈现"))
         #expect(!options.contains("index: \"1.\""))
         #expect(center.contains("title: \"拍摄信息\""))
         #expect(center.contains("subtitle: \"卡片右上\""))
@@ -559,8 +642,8 @@ struct AppleNativeProductSurfaceContractTests {
         let editor = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
         )
-        let root = try sourceText(
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        let presentation = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SubjectPresentationModifier.swift"
         )
 
         #expect(editor.contains("onCancel:"))
@@ -568,7 +651,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(editor.contains("Button(\"取消\") {\n                        onCancel()"))
         #expect(editor.contains("flowState.saveChanges()"))
         #expect(editor.contains("onSave()"))
-        #expect(root.contains("nextState.showsSubjectOverview = true"))
+        #expect(presentation.contains("nextState.showsSubjectOverview = true"))
     }
 }
 

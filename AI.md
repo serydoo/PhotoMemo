@@ -78,8 +78,9 @@ Research -> Specification -> Layout Engine -> Renderer -> Validation -> Release
 
 如果任务涉及主编辑流程，还要继续看：
 
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift`
-- 最新的 `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+*.swift`
+- `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterView.swift`
+- `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift`
+- 当前 Configuration Center 对应的状态 owner、对象编辑器与持久化协调边界
 
 ## 3. Product Guardrails
 
@@ -105,16 +106,15 @@ Research -> Specification -> Layout Engine -> Renderer -> Validation -> Release
 
 ## 4. Current Architecture
 
-### MainView
-
-`MainView.swift` 已经不是巨型单文件视图，而是很薄的 coordinator shell。
+### Configuration Center
 
 当前方向：
 
-- 状态留在 `MainView`
-- 持久化和副作用仍由 `MainView` 协调
-- 展示密集区拆到 `MainView+*.swift`
+- macOS 入口使用 `ConfigurationCenterView`
+- iOS 入口使用 `PhotoMemoiOSV1View`
+- 状态、持久化和副作用遵循当前 Configuration Center 的真实 owner 与协调边界
 - 不把业务逻辑藏进纯装饰子视图
+- 不恢复已经退役的 `Views/Main/MainView*`、Workspace Session 或旧 Composer 编辑路径
 
 必须保留的交互行为：
 
@@ -151,7 +151,7 @@ Research -> Specification -> Layout Engine -> Renderer -> Validation -> Release
 已知结果：
 
 - `PhotoMemoShareExtension.SwiftFileList` 当前约 `19` 行
-- 说明扩展 target 已经不再拖进 `MainView`、预览视图、模板视图、权限/导出/队列等主 app 责任面
+- 说明扩展 target 不包含已退役的主编辑子树，也不拖入预览视图、模板视图、权限/导出/队列等主 app 责任面
 
 ## 5. Key Files
 
@@ -169,14 +169,12 @@ Research -> Specification -> Layout Engine -> Renderer -> Validation -> Release
 - `Docs/DEVELOPMENT_PLAN.md`
 - `CHANGELOG.md`
 
-### Main editor
+### Configuration Center
 
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+LayoutSections.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ComposerSession.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+TemplateEditingActions.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+WorkspaceConfigurationState.swift`
-- `Source/PhotoMemo/PhotoMemo/Views/Main/MainView+ExportActions.swift`
+- `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/ConfigurationCenterView.swift`
+- `Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift`
+- `Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift`
+- `Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift`
 
 ### Shared intake / iOS
 
@@ -296,7 +294,7 @@ Git 同步信息：
    - `部分失效`
    - `重复来源`
 2. 继续补强外部接入和后台处理的异常反馈
-3. 保持 `MainView` 继续做 coordinator，不回退成巨型视图
+3. 保持当前 Configuration Center 的状态与持久化边界，不恢复退役的 `MainView` / Workspace 路径
 4. 继续保证预览、渲染、导出、元数据保留的一致性
 5. 在不破坏现有主链的前提下推进 iPhone 工作流
 6. 保证 share-extension / ExternalIntake 来源的失败项可以保留源文件并重试，而不是失败后直接丢失重试机会
@@ -326,7 +324,7 @@ Git 同步信息：
 先按 AGENTS.md 的 startup routine 读取 README.md、AI.md、AI_CONTEXT.md、HANDOFF.md、AGENTS.md、Docs/CURRENT_STATUS.md，并检查 git status。
 保持时光记作为 local-first 的模板校准中心，不修改原图。
 继续沿着当前产品方向开发，优先遵循 /spec -> /plan -> /build -> /test -> /review。
-如果涉及主编辑流，检查 MainView.swift 和最新 MainView+*.swift；
+如果涉及主编辑流，检查当前 Configuration Center 入口、状态 owner、对象编辑器与持久化边界；
 如果涉及分享入口或 iOS，优先检查 ExternalIntake、PhotoMemoAppRuntime、SharedBatchConfigurationSnapshotService、PhotoMemoShareExtensionIntakeService。
 不要改变已经明确保留的交互行为。
 ```

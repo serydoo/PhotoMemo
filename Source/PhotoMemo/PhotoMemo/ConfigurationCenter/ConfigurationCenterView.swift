@@ -19,7 +19,7 @@ struct ConfigurationCenterView: View {
             MemorySubjectListView(
                 session: session
             )
-            .navigationTitle("资料库")
+            .navigationTitle("记忆对象")
             .navigationSplitViewColumnWidth(
                 min: 240,
                 ideal: 280
@@ -42,7 +42,7 @@ struct ConfigurationCenterView: View {
             InspectorView(
                 session: session
             )
-            .navigationTitle("检查器")
+            .navigationTitle("编辑")
             .navigationSplitViewColumnWidth(
                 min: 300,
                 ideal: 360

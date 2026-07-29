@@ -243,17 +243,22 @@ private struct V1IOSSubjectFactRow: View {
     let value: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(title)
-                .font(.caption)
+                .font(.body)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: true, vertical: false)
+
+            Spacer(minLength: 0)
 
             Text(value)
                 .font(.body)
                 .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: .infinity, alignment: .trailing)
                 .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
         .accessibilityElement(children: .combine)

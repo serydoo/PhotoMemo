@@ -39,6 +39,8 @@ final class LegacySettingsStore {
             "photomemo.selectedMemorySubjectText"
         static let locationDisplayConfiguration =
             "photomemo.locationDisplayConfiguration"
+        static let timeDisplayConfiguration =
+            "photomemo.timeDisplayConfiguration"
         static let subjectLibrary = "photomemo.v1.subjectLibrary"
         static let activeConfigurationSlotID =
             "photomemo.activeConfigurationSlotID"
@@ -176,6 +178,27 @@ final class LegacySettingsStore {
         guard let data = defaults.data(
             forKey: Keys.locationDisplayConfiguration
         ) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(
+            ExpressionModuleConfiguration.self,
+            from: data
+        )
+    }
+
+    func saveTimeDisplayConfiguration(
+        _ configuration: ExpressionModuleConfiguration?
+    ) {
+        guard let configuration else {
+            defaults.removeObject(forKey: Keys.timeDisplayConfiguration)
+            return
+        }
+        try? setEncoded(configuration, forKey: Keys.timeDisplayConfiguration)
+    }
+
+    func loadTimeDisplayConfiguration()
+    -> ExpressionModuleConfiguration? {
+        guard let data = defaults.data(forKey: Keys.timeDisplayConfiguration) else {
             return nil
         }
         return try? JSONDecoder().decode(

@@ -417,21 +417,36 @@ struct MemorySubjectEditorView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            compactIdentityTextField(
-                title,
-                text: text,
-                focus: focus,
-                alignment: .leading
+            HStack(spacing: 8) {
+                compactIdentityTextField(
+                    title,
+                    text: text,
+                    focus: focus,
+                    alignment: .leading
+                )
+                .font(.body)
+
+                if !text.wrappedValue.isEmpty {
+                    Button {
+                        text.wrappedValue = ""
+                        focusedField = focus
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("清除\(title)")
+                }
+            }
+            .configurationFieldChrome(
+                isActive: focusedField == focus
             )
-            .font(.body)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
-        .background(
-            focusedField == focus
-            ? Color.accentColor.opacity(0.055)
-            : Color.clear
-        )
     }
 
     private func compactIdentityTextField(

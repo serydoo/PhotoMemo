@@ -39,7 +39,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteTitle
-            == "写入预览"
+            == "即将写下的内容"
         )
         #expect(
             presentation.memoryWriteDescription
@@ -47,7 +47,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteNote
-            == "由当前智能模块根据拍摄时间、记忆对象和时间锚点生成。"
+            == "会根据照片拍摄时间、记忆对象和时间锚点写下这段回忆。"
         )
         #expect(
             presentation.memoryWriteActionTitle
@@ -77,7 +77,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         #expect(presentation.storageTitle == "时光记文件夹")
         #expect(
             presentation.memoryWriteTitle
-            == "写入预览"
+            == "即将写下的内容"
         )
         #expect(
             presentation.memoryWriteDescription
@@ -85,7 +85,7 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteNote
-            == "包含当前智能模块输出与自定义内容。"
+            == "包含这段回忆和你补充的话。"
         )
     }
 }

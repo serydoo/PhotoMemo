@@ -236,6 +236,39 @@ enum MemoryAnchorExpressionStyle:
         subjectText: String,
         anchorTitle: String
     ) -> String {
+        let boundaryPreview = boundaryFormulaPreview(
+            subjectText: subjectText,
+            anchorTitle: anchorTitle
+        )
+        let boundaries = boundaryPreview.split(
+            separator: "｜",
+            maxSplits: 1,
+            omittingEmptySubsequences: false
+        )
+        guard boundaries.count == 2 else {
+            return boundaryPreview
+        }
+
+        let before = boundaries[0].replacingOccurrences(
+            of: "锚点前：",
+            with: ""
+        )
+        let after = boundaries[1].replacingOccurrences(
+            of: "锚点后：",
+            with: ""
+        )
+        let onAnchor = anchorMomentFormulaPreview(
+            subjectText: subjectText,
+            anchorTitle: anchorTitle
+        )
+
+        return "之前：\(before)｜当时：\(onAnchor)｜之后：\(after)"
+    }
+
+    private func boundaryFormulaPreview(
+        subjectText: String,
+        anchorTitle: String
+    ) -> String {
         switch self {
         case .birthdayNatural:
             return "锚点前：还有倒计时天数，\(subjectText)就要出生了｜锚点后：今天\(subjectText)年龄结果"
@@ -287,6 +320,54 @@ enum MemoryAnchorExpressionStyle:
             return "锚点前：期待\(anchorTitle)，还有倒计时结果｜锚点后：关于\(anchorTitle)，已经时长结果"
         case .customMinimal:
             return "锚点前：\(anchorTitle)倒计时：倒计时结果｜锚点后：\(anchorTitle)｜时长结果"
+        }
+    }
+
+    private func anchorMomentFormulaPreview(
+        subjectText: String,
+        anchorTitle: String
+    ) -> String {
+        switch self {
+        case .birthdayNatural:
+            return "今天是\(subjectText)的生日"
+        case .birthdayCeremonial:
+            return "今天是\(subjectText)来到世界的日子"
+        case .birthdayGrowth:
+            return "\(subjectText)今天来到世界"
+        case .birthdayWarm:
+            return "今天陪\(subjectText)迎来这一天"
+        case .birthdayMinimal:
+            return "\(subjectText) · 生日"
+        case .marriageNatural,
+             .marriageCeremonial:
+            return "今天是结婚的日子"
+        case .marriageWarm:
+            return "今天一起走进婚姻"
+        case .marriageMinimal:
+            return "结婚 · 今天"
+        case .marriageMemory:
+            return "从今天开始"
+        case .relationshipNatural,
+             .relationshipCeremonial,
+             .examNatural,
+             .examCeremonial,
+             .customNatural,
+             .customCeremonial:
+            return "今天是\(anchorTitle)"
+        case .relationshipMemory,
+             .customMemory:
+            return "从\(anchorTitle)开始"
+        case .relationshipWarm,
+             .customWarm:
+            return "今天记住\(anchorTitle)"
+        case .relationshipMinimal,
+             .examMinimal,
+             .customMinimal:
+            return "\(anchorTitle) · 今天"
+        case .examMotivational:
+            return "今天，迎接\(anchorTitle)"
+        case .examRecord:
+            return "\(anchorTitle) · 当日记录"
         }
     }
 }

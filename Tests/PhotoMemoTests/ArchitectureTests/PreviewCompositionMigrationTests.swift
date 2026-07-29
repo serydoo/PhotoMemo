@@ -88,7 +88,7 @@ struct PreviewCompositionMigrationTests {
             )
             #expect(
                 slotBModel.displayText
-                == "记录于2026.06.01 12:00:00"
+                == "记录于2026年6月1日 星期一 下午 12:00"
             )
             #expect(
                 slotCModel.templateSourceText
@@ -177,7 +177,7 @@ struct PreviewCompositionMigrationTests {
         )
         #expect(
             captureDateModel.displayText
-            == "2026.06.01"
+            == "2026年6月1日 星期一"
         )
         #expect(
             unknownItemModel.templateSourceText
@@ -337,7 +337,7 @@ struct PreviewCompositionMigrationTests {
                 context: context,
                 engine: engine
             )
-            .displayText == "记录于2026.06.01 12:00:00"
+            .displayText == "记录于2026年6月1日 星期一 下午 12:00"
         )
         #expect(
             renderModel(

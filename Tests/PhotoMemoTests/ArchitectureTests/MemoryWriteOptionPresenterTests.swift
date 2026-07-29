@@ -18,24 +18,24 @@ struct MemoryWriteOptionPresenterTests {
 
         #expect(
             presentation.toggleTitle
-            == "添加自定义内容"
+            == "补充一句话"
         )
         #expect(
             presentation.toggleDescription
-            == "开启后，将用户自定义内容追加写入生成照片的说明文本，不会覆盖智能模块输出。"
+            == "把想补充的话，写在照片说明里。"
         )
-        #expect(presentation.defaultContentTitle == "默认写入内容")
+        #expect(presentation.defaultContentTitle == "照片说明")
         #expect(
             presentation.defaultContentDescription
-            == "将当前智能模块输出写入生成照片的说明文本，便于在 Apple Photos 中检索。"
+            == "把这段回忆写进照片说明，方便之后在 Apple Photos 中找到它。"
         )
         #expect(
             presentation.inputPlaceholder
-            == "输入补充到智能模块结果后的内容"
+            == "写下想补充的话"
         )
         #expect(
             presentation.resolvedTitle
-            == "写入预览"
+            == "即将写下的内容"
         )
         #expect(
             presentation.resolvedDescription
@@ -43,7 +43,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "包含当前智能模块输出与自定义内容。"
+            == "包含这段回忆和你补充的话。"
         )
     }
 
@@ -59,20 +59,20 @@ struct MemoryWriteOptionPresenterTests {
 
         #expect(
             presentation.toggleTitle
-            == "添加自定义内容"
+            == "补充一句话"
         )
         #expect(
             presentation.toggleDescription
-            == "开启后，将用户自定义内容追加写入生成照片的说明文本，不会覆盖智能模块输出。"
+            == "把想补充的话，写在照片说明里。"
         )
-        #expect(presentation.defaultContentTitle == "默认写入内容")
+        #expect(presentation.defaultContentTitle == "照片说明")
         #expect(
             presentation.defaultContentDescription
-            == "将当前智能模块输出写入生成照片的说明文本，便于在 Apple Photos 中检索。"
+            == "把这段回忆写进照片说明，方便之后在 Apple Photos 中找到它。"
         )
         #expect(
             presentation.resolvedTitle
-            == "写入预览"
+            == "即将写下的内容"
         )
         #expect(
             presentation.resolvedDescription
@@ -80,7 +80,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "由当前智能模块根据拍摄时间、记忆对象和时间锚点生成。"
+            == "会根据照片拍摄时间、记忆对象和时间锚点写下这段回忆。"
         )
     }
 
@@ -93,13 +93,13 @@ struct MemoryWriteOptionPresenterTests {
             language: .english
         )
 
-        #expect(presentation.toggleTitle == "Add Custom Text")
-        #expect(presentation.defaultContentTitle == "Default Content")
-        #expect(presentation.resolvedTitle == "Description Preview")
+        #expect(presentation.toggleTitle == "Add a Personal Note")
+        #expect(presentation.defaultContentTitle == "Photo Description")
+        #expect(presentation.resolvedTitle == "What Will Be Written")
         #expect(presentation.resolvedDescription == resolvedText)
         #expect(
             presentation.fallbackNote
-            == "Includes the current smart-module output and your custom text."
+            == "Includes this memory and your added words."
         )
     }
 }

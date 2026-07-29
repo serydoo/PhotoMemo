@@ -114,6 +114,15 @@ enum BatchTaskPhase: String, Codable, Hashable {
 
 extension BatchTaskPhase {
 
+    var isPending: Bool {
+        switch self {
+        case .completed, .failed, .cancelled:
+            return false
+        default:
+            return true
+        }
+    }
+
     var displayTitle: String {
 
         switch self {
@@ -553,6 +562,13 @@ extension BatchConfigurationSnapshot {
 extension BatchConfigurationSnapshot {
 
     var v1MediaOutputMode: V1MediaOutputMode {
+        if let mediaOutputModeRawValue,
+            let mode = V1MediaOutputMode(
+                rawValue: mediaOutputModeRawValue
+            ) {
+            return mode
+        }
+
         if let livePhotoPolicyRawValue,
             let policy =
                 MemoryConfigurationRecord.Output.LivePhotoPolicy(
@@ -566,18 +582,7 @@ extension BatchConfigurationSnapshot {
             }
         }
 
-        guard
-            let mediaOutputModeRawValue,
-            let mode =
-                V1MediaOutputMode(
-                    rawValue:
-                        mediaOutputModeRawValue
-                )
-        else {
-            return .originalFormat
-        }
-
-        return mode
+        return .originalFormat
     }
 }
 #endif

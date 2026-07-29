@@ -26,7 +26,7 @@ struct V1LocalConfigurationLibrarySheet: View {
                             "还没有本地备份",
                             systemImage: MemoMarkSymbol.localStorage.name,
                             description: Text(
-                                "在首页保存配置后，会自动保留在当前记忆对象的本地备份中。"
+                                "在首页保存配置后，就能从这里找回。"
                             )
                         )
                     } else {
@@ -38,7 +38,9 @@ struct V1LocalConfigurationLibrarySheet: View {
                 } header: {
                     Text("\(subjectName)的配置")
                 } footer: {
-                    Text("恢复为副本会保留当前配置；恢复并设为当前会立即切换到该备份。")
+                    Text(
+                        "最近保存的配置会留在这里。恢复时会保留当前配置；恢复并设为当前会立即切换到该备份。"
+                    )
                 }
             }
             .navigationTitle("本地备份")

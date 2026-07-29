@@ -133,6 +133,35 @@ Always preserve these rules:
 - User-facing configuration language should say Preset, not Template; the internal renderer/template model may keep `Template`
 - Do not reintroduce Workspace, Dashboard, Task Center, Working Area, or Import Flow as user workflow concepts
 
+## Narrative Product Language
+
+The canonical product-language source is
+`Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md`.
+
+MemoMark should sound like a quiet friend who understands photography, everyday
+life, and the value of memories. User-facing copy must be natural, restrained,
+and warm, and should remain centered on people and memories rather than
+features or technology.
+
+Prefer narrative prompts such as:
+
+- `你想围绕谁开展回忆。`
+- `从哪个重要时刻开始记录。`
+- `让回忆拥有属于自己的表达方式。`
+- `决定这段回忆最终如何呈现。`
+- `保存这段回忆。`
+
+Avoid using implementation language as the main explanation, including
+`模块`, `算法`, `计算`, `生成`, `规则`, and `智能内容`. This is not a
+mechanical ban on necessary Apple system names or factual permission, privacy,
+error, recovery, purchase, and destructive-action language. Precision takes
+precedence whenever the user needs to understand state, consequence, or next
+step.
+
+When product-language work changes an accepted phrase, update the guide, the
+relevant localization and accessibility copy, source contracts, and a scoped
+state record together.
+
 ## Repository Simplification Rules
 
 RSR-001 established that repository language should prefer simplification over expansion.

@@ -8,6 +8,8 @@ Canonical repository-line guidance for current release history:
 
 Release events:
 
+- `2026-07-29-2.0.1-v3-production-quality-update.md`
+
 - `2026-07-21-1.7-build-7-configuration-continuity-and-ui-closure.md`
 - `2026-07-19-1.7-build-7-post-sync-optimizations.md`
 - `2026-07-18-1.7-build-7-home-subject-anchor-and-location.md`

@@ -3,6 +3,14 @@ import Foundation
 
 enum BatchTaskFailurePolicy {
 
+    static func shouldResumeAfterCancellation(
+        error: Error,
+        taskIsCancelled: Bool
+    ) -> Bool {
+
+        taskIsCancelled || error is CancellationError
+    }
+
     static func failureClassification(
         for error: Error
     ) -> BatchTaskFailure.Classification {

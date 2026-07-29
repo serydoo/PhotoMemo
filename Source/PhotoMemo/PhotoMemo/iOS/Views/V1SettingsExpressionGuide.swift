@@ -3,6 +3,8 @@ import SwiftUI
 
 struct V1SettingsExpressionGuide: View {
 
+    let language: MemoMarkLanguage
+
     @State
     private var expandedAnchorTypes: Set<String> = [
         AnchorType.birthday.rawValue
@@ -16,7 +18,12 @@ struct V1SettingsExpressionGuide: View {
 
             V1HorizontalDivider()
 
-            Text("按时间锚点查看每一种预设表达。点开分类后，右侧是对应的表达名称。")
+            Text(
+                localized(
+                    "settings.expression.guide.introduction",
+                    fallback: "按时间锚点看看每一种表达方式。展开后，可以选择更适合这段回忆的说法。"
+                )
+            )
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -45,7 +52,12 @@ struct V1SettingsExpressionGuide: View {
                 .stroke(ConfigurationUI.faintHairline)
             )
 
-            Text("照片拍摄时间不同，锚点结果也会随之变化；原图不会被修改。")
+            Text(
+                localized(
+                    "settings.expression.guide.original_note",
+                    fallback: "拍摄时间不同，时间结果也会随之变化；原图始终不变。"
+                )
+            )
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -55,11 +67,21 @@ struct V1SettingsExpressionGuide: View {
 
     private var guideHeader: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text("表达公式说明")
+            Text(
+                localized(
+                    "settings.expression.guide.header",
+                    fallback: "记忆表达说明"
+                )
+            )
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            Text("新人可以先把一条表达理解成三部分，再去配置记忆对象和时间锚点。")
+            Text(
+                localized(
+                    "settings.expression.guide.detail",
+                    fallback: "先看看一段回忆怎样由记忆对象、表达内容和时间结果组成。"
+                )
+            )
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -68,25 +90,66 @@ struct V1SettingsExpressionGuide: View {
 
     private var formulaOverview: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("一条记忆表达")
+            Text(
+                localized(
+                    "settings.expression.guide.formula_title",
+                    fallback: "一段记忆表达"
+                )
+            )
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 5) {
-                    formulaToken("主体", role: .subject)
+                    formulaToken(
+                        localized(
+                            "settings.expression.guide.subject",
+                            fallback: "记忆对象"
+                        ),
+                        role: .subject
+                    )
                     plusMark
-                    formulaToken("智能输出", role: .smartOutput)
+                    formulaToken(
+                        localized(
+                            "settings.expression.guide.expression",
+                            fallback: "表达内容"
+                        ),
+                        role: .smartOutput
+                    )
                     plusMark
-                    formulaToken("锚点结果", role: .anchorResult)
+                    formulaToken(
+                        localized(
+                            "settings.expression.guide.time_result",
+                            fallback: "时间结果"
+                        ),
+                        role: .anchorResult
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    formulaToken("主体", role: .subject)
+                    formulaToken(
+                        localized(
+                            "settings.expression.guide.subject",
+                            fallback: "记忆对象"
+                        ),
+                        role: .subject
+                    )
                     plusMark
-                    formulaToken("智能输出", role: .smartOutput)
+                    formulaToken(
+                        localized(
+                            "settings.expression.guide.expression",
+                            fallback: "表达内容"
+                        ),
+                        role: .smartOutput
+                    )
                     plusMark
-                    formulaToken("锚点结果", role: .anchorResult)
+                    formulaToken(
+                        localized(
+                            "settings.expression.guide.time_result",
+                            fallback: "时间结果"
+                        ),
+                        role: .anchorResult
+                    )
                 }
             }
         }
@@ -95,15 +158,51 @@ struct V1SettingsExpressionGuide: View {
     private var colorLegend: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
-                legendItem("主体", role: .subject)
-                legendItem("智能输出", role: .smartOutput)
-                legendItem("锚点结果", role: .anchorResult)
+                legendItem(
+                    localized(
+                        "settings.expression.guide.subject",
+                        fallback: "记忆对象"
+                    ),
+                    role: .subject
+                )
+                legendItem(
+                    localized(
+                        "settings.expression.guide.expression",
+                        fallback: "表达内容"
+                    ),
+                    role: .smartOutput
+                )
+                legendItem(
+                    localized(
+                        "settings.expression.guide.time_result",
+                        fallback: "时间结果"
+                    ),
+                    role: .anchorResult
+                )
             }
 
             VStack(alignment: .leading, spacing: 5) {
-                legendItem("主体", role: .subject)
-                legendItem("智能输出", role: .smartOutput)
-                legendItem("锚点结果", role: .anchorResult)
+                legendItem(
+                    localized(
+                        "settings.expression.guide.subject",
+                        fallback: "记忆对象"
+                    ),
+                    role: .subject
+                )
+                legendItem(
+                    localized(
+                        "settings.expression.guide.expression",
+                        fallback: "表达内容"
+                    ),
+                    role: .smartOutput
+                )
+                legendItem(
+                    localized(
+                        "settings.expression.guide.time_result",
+                        fallback: "时间结果"
+                    ),
+                    role: .anchorResult
+                )
             }
         }
     }
@@ -148,11 +247,11 @@ struct V1SettingsExpressionGuide: View {
                     .frame(width: 22)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(anchorType.displayName)
+                    Text(localizedAnchorTitle(anchorType))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    Text(anchorType.helperText)
+                    Text(localizedAnchorDetail(anchorType))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -169,25 +268,48 @@ struct V1SettingsExpressionGuide: View {
     private func expressionStyleRow(
         _ style: MemoryAnchorExpressionStyle
     ) -> some View {
-        let formula = Self.formulas[style] ?? .fallback
+        let formula = localizedFormula(style)
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("表达")
+                Text(
+                    localized(
+                        "settings.expression.guide.style_title",
+                        fallback: "表达方式"
+                    )
+                )
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
 
                 Spacer(minLength: 8)
 
-                Text(style.displayTitle)
+                Text(localizedStyleTitle(style))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
                     .lineLimit(1)
             }
 
-            phaseRow(title: "之前", formula: formula.before)
-            phaseRow(title: "当时 / 当日", formula: formula.onAnchor)
-            phaseRow(title: "之后", formula: formula.after)
+            phaseRow(
+                title: localized(
+                    "settings.expression.guide.phase.before",
+                    fallback: "之前"
+                ),
+                formula: formula.before
+            )
+            phaseRow(
+                title: localized(
+                    "settings.expression.guide.phase.on_anchor",
+                    fallback: "当时 / 当日"
+                ),
+                formula: formula.onAnchor
+            )
+            phaseRow(
+                title: localized(
+                    "settings.expression.guide.phase.after",
+                    fallback: "之后"
+                ),
+                formula: formula.after
+            )
         }
         .padding(.leading, 34)
         .padding(.trailing, 2)
@@ -244,6 +366,58 @@ struct V1SettingsExpressionGuide: View {
         }
 
         return result + Text(remaining)
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        language.localized(key: key, fallback: fallback)
+    }
+
+    private func localizedAnchorTitle(
+        _ anchorType: AnchorType
+    ) -> String {
+        localized(
+            "settings.expression.anchor.\(anchorType.rawValue).title",
+            fallback: anchorType.displayName
+        )
+    }
+
+    private func localizedAnchorDetail(
+        _ anchorType: AnchorType
+    ) -> String {
+        localized(
+            "settings.expression.anchor.\(anchorType.rawValue).detail",
+            fallback: anchorType.helperText
+        )
+    }
+
+    private func localizedStyleTitle(
+        _ style: MemoryAnchorExpressionStyle
+    ) -> String {
+        localized(style.displayTitle, fallback: style.displayTitle)
+    }
+
+    private func localizedFormula(
+        _ style: MemoryAnchorExpressionStyle
+    ) -> Formula {
+        let fallback = Self.formulas[style] ?? .fallback
+        let keyPrefix = "settings.expression.formula.\(style.rawValue)"
+        return Formula(
+            before: localized(
+                "\(keyPrefix).before",
+                fallback: fallback.before
+            ),
+            onAnchor: localized(
+                "\(keyPrefix).on_anchor",
+                fallback: fallback.onAnchor
+            ),
+            after: localized(
+                "\(keyPrefix).after",
+                fallback: fallback.after
+            )
+        )
     }
 
     private func iconName(

@@ -116,6 +116,8 @@ struct ShareExtensionControllerSplitContractTests {
             )
         )
         #expect(controller.contains("nanoseconds: 700_000_000"))
+        #expect(!controller.contains("灰色等待，蓝色处理中，绿色完成，红色需要处理。"))
+        #expect(!renderer.contains("%"))
     }
 
     @Test("Share Extension summary dividers use symmetric native hairlines")

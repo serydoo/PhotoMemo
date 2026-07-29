@@ -36,11 +36,22 @@ nonisolated enum MemoMarkCommerceEnvironment:
     static var currentRuntime:
         MemoMarkCommerceEnvironment {
         runtime(
-            receiptURL:
-                Bundle.main.appStoreReceiptURL,
+            receiptURL: localReceiptURL,
             isDebugBuild:
                 _isDebugAssertConfiguration()
         )
+    }
+
+    private static var localReceiptURL: URL? {
+        let receiptDirectory = Bundle.main.bundleURL
+            .appendingPathComponent("_MASReceipt", isDirectory: true)
+        for name in ["sandboxReceipt", "receipt"] {
+            let candidate = receiptDirectory.appendingPathComponent(name)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+        }
+        return nil
     }
 }
 

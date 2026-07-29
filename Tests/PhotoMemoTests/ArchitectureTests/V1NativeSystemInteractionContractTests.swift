@@ -11,7 +11,7 @@ struct V1NativeSystemInteractionContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
         )
 
-        #expect(source.contains("\"输出目标\","))
+        #expect(source.contains("\"回到哪里\","))
         #expect(source.contains(".pickerStyle(.segmented)"))
         #expect(!source.contains("private struct V1OutputTargetGrid"))
     }
@@ -63,7 +63,11 @@ struct V1NativeSystemInteractionContractTests {
         #expect(source.contains("恢复默认配置？"))
         #expect(source.contains("删除当前配置？"))
         #expect(source.contains("role: .destructive"))
-        #expect(source.contains(".disabled(isSavingConfiguration)"))
+        #expect(
+            source.contains(
+                ".disabled(isSavingConfiguration || configurationStatus == .saved)"
+            )
+        )
     }
 
     @Test("compact primary actions share state and press feedback")
@@ -83,10 +87,20 @@ struct V1NativeSystemInteractionContractTests {
 
         #expect(rootSource.contains("configurationStatus: activeConfigurationStatus"))
         #expect(outputSource.contains("let configurationStatus: V1ConfigurationStatus"))
-        #expect(outputSource.contains("\"输出设置已保存\""))
-        #expect(outputSource.contains("\"重新保存输出设置\""))
-        #expect(homeSource.contains("V1CompactPrimaryActionButtonStyle()"))
-        #expect(outputSource.contains("V1CompactPrimaryActionButtonStyle()"))
+        #expect(outputSource.contains("\"已保存\""))
+        #expect(outputSource.contains("\"重新保存\""))
+        #expect(
+            homeSource.contains(
+                ".buttonStyle(V1CompactPrimaryActionButtonStyle())"
+            )
+        )
+        #expect(homeSource.contains("在 App 内选择照片"))
+        #expect(outputSource.contains("V1OutputSaveButtonStyle"))
+        #expect(
+            outputSource.contains(
+                ".disabled(isSaving || configurationStatus == .saved)"
+            )
+        )
         #expect(supportSource.contains("struct V1CompactPrimaryActionButtonStyle"))
         #expect(supportSource.contains("accessibilityReduceMotion"))
     }

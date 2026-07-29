@@ -460,7 +460,9 @@ Current strengths:
 
 - The app already has a real local-first Apple Photos/share intake -> metadata -> memory -> render -> export path.
 - Metadata extraction and export preservation have real tests and docs.
-- MainView has already been reduced into a coordinator shell.
+- The retired `MainView` workspace/editor subtree has been removed; current
+  runtime entry points are `ConfigurationCenterView` on macOS and
+  `PhotoMemoiOSV1View` on iOS.
 - iOS and Share Extension groundwork exists.
 - Renderer snapshot tests exist for Classic White.
 

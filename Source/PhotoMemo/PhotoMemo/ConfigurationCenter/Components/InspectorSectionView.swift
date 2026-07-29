@@ -3,6 +3,20 @@ import SwiftUI
 
 enum ConfigurationUI {
 
+    #if os(iOS)
+    static let cornerRadius = MemoMarkDesignTokens.CornerRadius.preview
+    static let smallCornerRadius = MemoMarkDesignTokens.CornerRadius.control
+    static let cardCornerRadius = MemoMarkDesignTokens.CornerRadius.card
+    static let cardPadding = MemoMarkDesignTokens.Spacing.cardContent
+    static let contentColumnPadding = MemoMarkDesignTokens.Spacing.pageHorizontal
+    static let innerPanelCornerRadius = MemoMarkDesignTokens.CornerRadius.card
+    static let innerPanelPadding = MemoMarkDesignTokens.Spacing.medium
+    static let compactIconSize: CGFloat = 36
+    static let compactIconCornerRadius = MemoMarkDesignTokens.CornerRadius.compactControl
+    static let compactRowVerticalPadding: CGFloat = 9
+    static let contentSpacing = MemoMarkDesignTokens.Spacing.large
+    static let sectionSpacing = MemoMarkDesignTokens.Spacing.extraLarge
+    #else
     static let cornerRadius: CGFloat = 12
     static let smallCornerRadius: CGFloat = 10
     static let cardCornerRadius: CGFloat = 18
@@ -15,6 +29,7 @@ enum ConfigurationUI {
     static let compactRowVerticalPadding: CGFloat = 9
     static let contentSpacing: CGFloat = 16
     static let sectionSpacing: CGFloat = 20
+    #endif
 
     #if os(iOS)
     static let appBackground =
@@ -40,11 +55,23 @@ enum ConfigurationUI {
     static let controlBackground = Color.primary.opacity(0.04)
     #endif
 
+    #if os(iOS)
+    static let selectedBackground =
+        Color.accentColor.opacity(
+            MemoMarkDesignTokens.ControlState.selectedTintOpacity
+        )
+
+    static let hoverBackground =
+        Color.primary.opacity(
+            MemoMarkDesignTokens.ControlState.hoverTintOpacity
+        )
+    #else
     static let selectedBackground =
         Color.accentColor.opacity(0.075)
 
     static let hoverBackground =
         Color.primary.opacity(0.018)
+    #endif
 
     static let hairline =
         Color.primary.opacity(0.07)
@@ -52,8 +79,13 @@ enum ConfigurationUI {
     static let faintHairline =
         Color.primary.opacity(0.038)
 
+    #if os(iOS)
+    static let cardShadow =
+        MemoMarkDesignTokens.Elevation.cardColor
+    #else
     static let cardShadow =
         Color.black.opacity(0.05)
+    #endif
 
 }
 

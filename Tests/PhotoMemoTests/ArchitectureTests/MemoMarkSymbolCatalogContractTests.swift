@@ -73,12 +73,12 @@ struct MemoMarkSymbolCatalogContractTests {
     @Test("approved headings and entries keep their semantic icons outside text-only settings disclosures")
     func approvedHeadingsAndEntriesKeepTheirSemanticIcons() throws {
         let expectations = [
-            ("iOS/Views/V1HomePageSurface.swift", "我的配置", "MemoMarkSymbol.configuration.name"),
+            ("iOS/Views/V1HomePageSurface.swift", "我的预设", "MemoMarkSymbol.configuration.name"),
             ("iOS/Views/V1HomePageSurface.swift", "记忆对象", "MemoMarkSymbol.memorySubject.name"),
             ("iOS/Views/V1HomeFeedbackSection.swift", "意见反馈", "MemoMarkSymbol.feedback.name"),
-            ("iOS/Views/V1WelcomePresentation.swift", "初次打开你会用到", "MemoMarkSymbol.welcome.name"),
-            ("iOS/Views/V1WelcomePresentation.swift", "推荐流程", "MemoMarkSymbol.workflow.name"),
-            ("iOS/Views/V1WelcomePresentation.swift", "使用流程", "MemoMarkSymbol.workflow.name")
+            ("iOS/Views/V1WelcomePresentation.swift", "开始前，先认识这几件事", "MemoMarkSymbol.welcome.name"),
+            ("iOS/Views/V1WelcomePresentation.swift", "日常这样记录", "MemoMarkSymbol.workflow.name"),
+            ("iOS/Views/V1WelcomePresentation.swift", "怎么记录", "MemoMarkSymbol.workflow.name")
         ]
 
         for (path, title, symbol) in expectations {

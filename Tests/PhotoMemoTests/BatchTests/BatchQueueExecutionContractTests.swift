@@ -83,6 +83,24 @@ struct BatchQueueExecutionContractTests {
             ) == .processingFailure
         )
         #expect(
+            BatchTaskFailurePolicy.shouldResumeAfterCancellation(
+                error: CancellationError(),
+                taskIsCancelled: false
+            )
+        )
+        #expect(
+            BatchTaskFailurePolicy.shouldResumeAfterCancellation(
+                error: CocoaError(.fileReadUnknown),
+                taskIsCancelled: true
+            )
+        )
+        #expect(
+            !BatchTaskFailurePolicy.shouldResumeAfterCancellation(
+                error: CocoaError(.fileReadUnknown),
+                taskIsCancelled: false
+            )
+        )
+        #expect(
             BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
                 currentPhase: nil
             )
@@ -102,6 +120,34 @@ struct BatchQueueExecutionContractTests {
                 currentPhase: .exporting
             )
         )
+    }
+
+    @MainActor
+    @Test("Deferred queue admission stays queued until an owner starts processing")
+    func deferredAdmissionDoesNotStartProcessing() async throws {
+        let context = try makeStoreContext(
+            livePhotoProcessor: FailingLivePhotoProcessor(),
+            automaticallyStartsProcessing: false
+        )
+        defer { cleanup(context) }
+
+        _ = try #require(
+            context.store.enqueue(
+                payloads: [
+                    BatchTaskIntakePayload(
+                        sourceURL:
+                            try SyntheticFixtureLibrary.fixtureURL(.portraitJPEG)
+                    )
+                ],
+                configuration: makeConfiguration(),
+                launchSource: .shareExtension
+            )
+        )
+
+        try await Task.sleep(for: .milliseconds(200))
+
+        #expect(context.store.jobs.first?.tasks.first?.phase == .queued)
+        #expect(!context.store.isProcessing)
     }
 
     @MainActor
@@ -305,6 +351,44 @@ struct BatchQueueExecutionContractTests {
         #expect(task.notificationAttachmentURL == nil)
         #expect(task.savedAlbumName == nil)
         #expect(task.savedAssetIdentifier == nil)
+    }
+
+    @MainActor
+    @Test("Cancellation errors leave work queued for the next processing owner")
+    func cancellationErrorLeavesTaskQueued() async throws {
+        let context = try makeStoreContext(
+            livePhotoProcessor: CancellingLivePhotoProcessor(),
+            automaticallyStartsProcessing: false
+        )
+        defer { cleanup(context) }
+        let sourceURL = context.intakeDirectoryURL
+            .appendingPathComponent("cancelled-live-photo.HEIC")
+        try FileManager.default.createDirectory(
+            at: context.intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        try Data("source".utf8).write(to: sourceURL)
+
+        _ = context.store.enqueue(
+            payloads: [
+                BatchTaskIntakePayload(
+                    sourceURL: sourceURL,
+                    sourceIdentifier: "cancelled-live-photo",
+                    contentTypeIdentifier: try #require(
+                        UTType("com.apple.live-photo")
+                    ).identifier
+                )
+            ],
+            configuration: makeConfiguration(),
+            launchSource: .shareExtension
+        )
+        context.store.startProcessingIfNeeded()
+
+        let task = try await resumableTask(in: context.store)
+
+        #expect(task.phase == .queued)
+        #expect(task.failure == nil)
+        #expect(!context.store.isProcessing)
     }
 
     @MainActor
@@ -611,6 +695,7 @@ private extension BatchQueueExecutionContractTests {
     @MainActor
     func makeStoreContext(
         livePhotoProcessor: any LivePhotoBatchTaskProcessing,
+        automaticallyStartsProcessing: Bool = true,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
                 ProductionRenderHealthCheck.validate
@@ -629,6 +714,7 @@ private extension BatchQueueExecutionContractTests {
                 intakeDirectoryURL: intakeDirectoryURL
             ),
             livePhotoProcessor: livePhotoProcessor,
+            automaticallyStartsProcessing: automaticallyStartsProcessing,
             renderHealthValidator: renderHealthValidator
         )
         return StoreContext(
@@ -682,6 +768,24 @@ private extension BatchQueueExecutionContractTests {
     }
 
     @MainActor
+    func resumableTask(in store: BatchQueueStore) async throws -> BatchTask {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(5))
+
+        while clock.now < deadline {
+            if let task = store.jobs.first?.tasks.first,
+               task.phase == .queued,
+               !store.isProcessing {
+                return task
+            }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+
+        Issue.record("Timed out waiting five seconds for a resumable batch task")
+        throw ContractTestTimeout.resumableTask
+    }
+
+    @MainActor
     func cleanup(_ context: StoreContext) {
         context.defaults.removePersistentDomain(
             forName: context.defaultsSuiteName
@@ -718,8 +822,21 @@ private final class FailingLivePhotoProcessor:
     }
 }
 
+@MainActor
+private final class CancellingLivePhotoProcessor:
+    LivePhotoBatchTaskProcessing {
+
+    func process(
+        task: BatchTask,
+        configuration: BatchConfigurationSnapshot
+    ) async throws -> LivePhotoBatchTaskResult {
+        throw CancellationError()
+    }
+}
+
 private enum ContractTestTimeout: Error {
     case terminalTask
+    case resumableTask
 }
 
 @MainActor

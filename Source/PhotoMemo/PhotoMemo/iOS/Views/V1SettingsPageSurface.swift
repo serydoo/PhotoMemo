@@ -1,16 +1,25 @@
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
 import SwiftUI
 
+private enum V1SettingsSectionEmphasis {
+    case primary
+    case secondary
+    case system
+}
+
 struct V1SettingsPageSurface: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     private enum SettingsSection: Hashable, CaseIterable {
-        case overview
-        case guide
-        case support
-        case principle
+        case gettingStarted
+        case photoProcessing
+        case dataSafety
         case feedback
+        case community
         case interfaceLanguage
-        case release
+        case about
     }
 
     @Environment(\.openURL) private var openURL
@@ -22,6 +31,48 @@ struct V1SettingsPageSurface: View {
     private var interfaceLanguagePreferenceRawValue =
         MemoMarkInterfaceLanguagePreference.system.rawValue
 
+    @AppStorage(
+        "memomark.settings.productCenter.gettingStartedExpanded",
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var isGettingStartedExpanded = true
+
+    @AppStorage(
+        "memomark.settings.productCenter.photoProcessingExpanded",
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var isPhotoProcessingExpanded = false
+
+    @AppStorage(
+        "memomark.settings.productCenter.dataSafetyExpanded",
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var isDataSafetyExpanded = false
+
+    @AppStorage(
+        "memomark.settings.productCenter.feedbackExpanded",
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var isFeedbackExpanded = false
+
+    @AppStorage(
+        "memomark.settings.productCenter.communityExpanded",
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var isCommunityExpanded = false
+
+    @AppStorage(
+        "memomark.settings.productCenter.interfaceLanguageExpanded",
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var isInterfaceLanguageExpanded = false
+
+    @AppStorage(
+        "memomark.settings.productCenter.aboutExpanded",
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var isAboutExpanded = false
+
     @State
     private var showsExpressionGuide = false
 
@@ -29,7 +80,10 @@ struct V1SettingsPageSurface: View {
     private var showsWorkflowGuide = false
 
     @State
-    private var expandedSections: Set<SettingsSection> = []
+    private var showsAboutMemoMark = false
+
+    @State
+    private var showsReleaseNotes = false
 
     let commerceSnapshot:
         MemoMarkCommerceSnapshot
@@ -40,15 +94,41 @@ struct V1SettingsPageSurface: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: 0) {
                 memoMarkPlusSection
-                overviewSection
-                guideSection
-                supportSection
-                principleSection
-                feedbackSection
-                interfaceLanguageSection
-                releaseSection
+
+                VStack(spacing: 12) {
+                    gettingStartedSection
+                    photoProcessingSection
+                }
+                .padding(.top, 18)
+
+                VStack(spacing: 12) {
+                    dataSafetySection
+                    feedbackSection
+                    communitySection
+                }
+                .padding(.top, 18)
+
+                VStack(spacing: 12) {
+                    interfaceLanguageSection
+                    aboutSection
+                }
+                .padding(.top, 18)
+
+                Text(
+                    localized(
+                        "settings.footer.closing",
+                        fallback: "愿这些被时间标记的记忆，陪伴未来的你。"
+                    )
+                )
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 24)
+                .padding(.horizontal, 24)
             }
             .padding(.top, 16)
             .padding(.bottom, 34)
@@ -70,6 +150,17 @@ struct V1SettingsPageSurface: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showsExpressionGuide) {
             expressionGuideSheet
+        }
+        .sheet(isPresented: $showsAboutMemoMark) {
+            aboutMemoMarkSheet
+        }
+        .sheet(isPresented: $showsReleaseNotes) {
+            V1ReleaseNotesSheet(
+                language: interfaceLanguage,
+                version: appVersion
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showsWorkflowGuide) {
             V1WorkflowGuideSurface(
@@ -93,35 +184,51 @@ struct V1SettingsPageSurface: View {
                 "settings.interface.title",
                 fallback: "应用界面语言"
             ),
-            trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle
+            trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle,
+            emphasis: .system
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                Picker(
-                    localized(
-                        "settings.interface.title",
-                        fallback: "应用界面语言"
-                    ),
-                    selection: interfaceLanguageBinding
-                ) {
-                    ForEach(
-                        MemoMarkInterfaceLanguagePreference.allCases,
-                        id: \.self
-                    ) { preference in
-                        Text(preference.displayTitle)
-                            .tag(preference)
-                    }
-                }
-                .pickerStyle(.segmented)
+                adaptiveInterfaceLanguagePicker
 
                 Text(
                     localized(
                         "settings.interface.description",
-                        fallback: "控制时光记的菜单、设置、帮助与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。"
+                        fallback: "控制时光记中支持切换的菜单、设置与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。"
                     )
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var adaptiveInterfaceLanguagePicker: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            interfaceLanguagePicker
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        } else {
+            interfaceLanguagePicker
+                .pickerStyle(.segmented)
+        }
+    }
+
+    private var interfaceLanguagePicker: some View {
+        Picker(
+            localized(
+                "settings.interface.title",
+                fallback: "应用界面语言"
+            ),
+            selection: interfaceLanguageBinding
+        ) {
+            ForEach(
+                MemoMarkInterfaceLanguagePreference.allCases,
+                id: \.self
+            ) { preference in
+                Text(preference.displayTitle)
+                    .tag(preference)
             }
         }
     }
@@ -142,70 +249,74 @@ struct V1SettingsPageSurface: View {
 
     private var memoMarkPlusSection: some View {
         Button(action: onOpenMemoMarkPlus) {
-            HStack(spacing: 13) {
-                ZStack {
-                    RoundedRectangle(
-                        cornerRadius: 13,
-                        style: .continuous
-                    )
-                    .fill(
-                        Color(
-                            red: 0.98,
-                            green: 0.94,
-                            blue: 0.82
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 13) {
+                    ZStack {
+                        RoundedRectangle(
+                            cornerRadius: 13,
+                            style: .continuous
                         )
-                    )
+                        .fill(warmGold.opacity(0.11))
 
-                    Image(
-                        systemName:
-                            commerceSnapshot.isPlus
-                            ? "checkmark.seal.fill"
-                            : "sparkles"
-                    )
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(warmGold)
-                }
-                .frame(width: 46, height: 46)
+                        Image(
+                            systemName:
+                                commerceSnapshot.isPlus
+                                ? "checkmark.seal.fill"
+                                : "sparkles"
+                        )
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(warmGold)
+                    }
+                    .frame(width: 46, height: 46)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("MemoMark+")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("MemoMark+")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.primary)
 
-                    Text(memoMarkPlusDetail)
+                        Text(
+                            localized(
+                                "commerce.settings.hero_detail",
+                                fallback: "继续保存那些未来值得回看的瞬间"
+                            )
+                        )
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .fixedSize(
-                            horizontal: false,
-                            vertical: true
-                        )
+                    }
+
+                    Spacer(minLength: 0)
                 }
 
-                Spacer(minLength: 8)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(memoMarkPlusStatus)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
 
-                Image(systemName: "chevron.right")
+                    Text(memoMarkPlusStatusDetail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 6) {
+                    Spacer(minLength: 0)
+
+                    Text(
+                        localized(
+                            "commerce.settings.view_benefits",
+                            fallback: "查看权益"
+                        )
+                    )
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                }
+                .foregroundStyle(Color.accentColor)
             }
-            .frame(maxWidth: .infinity)
-            .padding(14)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .fill(ConfigurationUI.panelBackground)
-            )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 18,
-                    style: .continuous
-                )
-                .stroke(
-                    warmGold.opacity(0.18),
-                    lineWidth: 0.75
-                )
-            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(memoMarkPlusBackground)
         }
         .buttonStyle(.plain)
         .accessibilityHint(
@@ -213,41 +324,78 @@ struct V1SettingsPageSurface: View {
         )
     }
 
-    private var memoMarkPlusDetail: String {
+    private var memoMarkPlusStatus: String {
         if isTestFlightExperienceActive {
             return localized(
-                "commerce.settings.testflight",
-                fallback: "TestFlight 体验 · 无限记录\n正式版权益仍由 Apple 购买或兑换决定。"
+                "commerce.settings.testflight_status",
+                fallback: "TestFlight 体验 · 无限记录"
             )
         }
 
         if commerceSnapshot.firstRecorderDate != nil {
             return localized(
-                "commerce.settings.first_recorder",
-                fallback: "首批记录者 · 无限记录\n愿今天留下的时光，在未来仍然清晰而温暖。"
+                "commerce.settings.first_recorder_status",
+                fallback: "首批记录者 · 无限记录"
             )
         }
 
         if commerceSnapshot.isPlus {
             return localized(
-                "commerce.settings.plus",
-                fallback: "MemoMark+ · 无限记录\n永久权益由 Apple 管理并可恢复购买。"
+                "commerce.settings.plus_status",
+                fallback: "已解锁 · 无限记录"
             )
         }
 
-        if let remaining =
-                commerceSnapshot.remainingRecords,
-           remaining <= 10 {
+        if let remaining = commerceSnapshot.remainingRecords {
             return formatted(
-                "commerce.settings.remaining",
-                fallback: "还有 %lld 张免费成长记录 · 了解 MemoMark+",
+                "commerce.settings.remaining_status",
+                fallback: "免费剩余：%lld 张",
                 Int64(remaining)
             )
         }
 
         return localized(
-            "commerce.settings.continuity",
-            fallback: "继续保存那些未来值得回看的瞬间"
+            "commerce.settings.free_status",
+            fallback: "当前为免费体验"
+        )
+    }
+
+    private var memoMarkPlusStatusDetail: String {
+        if isTestFlightExperienceActive {
+            return localized(
+                "commerce.settings.testflight_detail",
+                fallback: "正式版权益仍由 Apple 购买或兑换决定。"
+            )
+        }
+
+        if commerceSnapshot.isPlus {
+            return localized(
+                "commerce.settings.plus_detail",
+                fallback: "权益由 Apple 管理，并可恢复购买。"
+            )
+        }
+
+        return localized(
+            "commerce.settings.upgrade_detail",
+            fallback: "升级后可以继续无限记录。"
+        )
+    }
+
+    private var memoMarkPlusBackground: some View {
+        RoundedRectangle(
+            cornerRadius: 18,
+            style: .continuous
+        )
+        .fill(ConfigurationUI.panelBackground)
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 18,
+                style: .continuous
+            )
+            .stroke(
+                warmGold.opacity(0.24),
+                lineWidth: 0.8
+            )
         )
     }
 
@@ -330,12 +478,14 @@ struct V1SettingsPageSurface: View {
         section: SettingsSection,
         title: String,
         trailingValue: String? = nil,
+        emphasis: V1SettingsSectionEmphasis,
         @ViewBuilder content: () -> Content
     ) -> some View {
         V1SettingsDisclosureSection(
             title: title,
             trailingValue: trailingValue,
             language: interfaceLanguage,
+            emphasis: emphasis,
             isExpanded: expansionBinding(for: section),
             content: content
         )
@@ -344,33 +494,38 @@ struct V1SettingsPageSurface: View {
     private func expansionBinding(
         for section: SettingsSection
     ) -> Binding<Bool> {
-        Binding(
-            get: {
-                expandedSections.contains(section)
-            },
-            set: { isExpanded in
-                if isExpanded {
-                    expandedSections.insert(section)
-                } else {
-                    expandedSections.remove(section)
-                }
-            }
-        )
+        switch section {
+        case .gettingStarted:
+            $isGettingStartedExpanded
+        case .photoProcessing:
+            $isPhotoProcessingExpanded
+        case .dataSafety:
+            $isDataSafetyExpanded
+        case .feedback:
+            $isFeedbackExpanded
+        case .community:
+            $isCommunityExpanded
+        case .interfaceLanguage:
+            $isInterfaceLanguageExpanded
+        case .about:
+            $isAboutExpanded
+        }
     }
 
-    private var overviewSection: some View {
+    private var gettingStartedSection: some View {
         settingsDisclosureSection(
-            section: .overview,
+            section: .gettingStarted,
             title: localized(
-                "settings.overview.title",
-                fallback: "为什么是时光记"
-            )
+                "settings.getting_started.title",
+                fallback: "开始使用"
+            ),
+            emphasis: .primary
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 Text(
                     localized(
                         "settings.overview.headline",
-                        fallback: "让照片知道，它位于谁的人生里"
+                        fallback: "让照片记得，它在人生里的位置。"
                     )
                 )
                     .font(.headline.weight(.semibold))
@@ -378,123 +533,177 @@ struct V1SettingsPageSurface: View {
 
                 Text(
                     localized(
-                        "settings.overview.paragraph_one",
-                        fallback: "陪伴孩子长大的过程中，我们留下了很多照片。时光记最初只想回答一个问题：打开照片时，能不能马上知道那一天，孩子多大？"
+                        "settings.getting_started.detail",
+                        fallback: "照片不只记录拍摄时间，也能记下它在人生中的位置。"
                     )
                 )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(
-                    localized(
-                        "settings.overview.paragraph_two",
-                        fallback: "从孩子出生的那一天开始，生日、纪念日和未来的重要日期都可以成为时间锚点。照片因此不只记录拍摄时间，也能呈现年龄、倒数，以及它位于一段人生的什么位置。"
-                    )
-                )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(
-                    localized(
-                        "settings.overview.paragraph_three",
-                        fallback: "时光记不是给照片添加水印，而是把时间关系变成更容易读懂的记忆。所有核心计算都在本机完成，并始终生成新的照片。"
-                    )
-                )
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(
-                    localized(
-                        "settings.overview.closing",
-                        fallback: "愿大家都能享受这些被时间标记的记忆。"
-                    )
-                )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 8) {
-                        privacyTag
-                        memoryTag
-                        originalPhotoTag
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        privacyTag
-                        memoryTag
-                        originalPhotoTag
-                    }
-                }
+                gettingStartedActions
             }
         }
     }
 
-    private var guideSection: some View {
-        settingsDisclosureSection(
-            section: .guide,
-            title: localized(
-                "settings.guide.title",
-                fallback: "使用与帮助"
-            )
-        ) {
-            VStack(spacing: 12) {
-                Button(action: onShowWelcome) {
-                    settingsActionRow(
-                        title: localized(
-                            "settings.guide.welcome.title",
-                            fallback: "重新查看欢迎说明"
-                        ),
-                        detail: localized(
-                            "settings.guide.welcome.detail",
-                            fallback: "回看首次使用说明、核心能力与基础引导。"
-                        )
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    showsWorkflowGuide = true
-                } label: {
-                    settingsActionRow(
-                        title: localized(
-                            "settings.guide.workflow.title",
-                            fallback: "查看使用教程"
-                        ),
-                        detail: localized(
-                            "settings.guide.workflow.detail",
-                            fallback: "按 Apple Photos -> Share -> 时光记的真实路径回看处理方式。"
-                        )
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    showsExpressionGuide = true
-                } label: {
-                    settingsActionRow(
-                        title: localized(
-                            "settings.guide.expression.title",
-                            fallback: "查看表达公式说明"
-                        ),
-                        detail: localized(
-                            "settings.guide.expression.detail",
-                            fallback: "按时间锚点查看主体、智能输出和锚点结果的组合方式。"
-                        )
-                    )
-                }
-                .buttonStyle(.plain)
+    private var gettingStartedActions: some View {
+        VStack(spacing: 0) {
+            Button {
+                showsAboutMemoMark = true
+            } label: {
+                settingsActionRow(
+                    title: localized(
+                        "settings.overview.title",
+                        fallback: "关于时光记"
+                    ),
+                    detail: localized(
+                        "settings.overview.action_detail",
+                        fallback: "看看时光记为什么从一段人生里的时间开始。"
+                    ),
+                    systemImage: MemoMarkSymbol.information.name,
+                    tint: .pink,
+                    showsDivider: true
+                )
             }
+            .buttonStyle(.plain)
+
+            Button(action: onShowWelcome) {
+                settingsActionRow(
+                    title: localized(
+                        "settings.guide.welcome.title",
+                        fallback: "重新查看欢迎说明"
+                    ),
+                    detail: localized(
+                        "settings.guide.welcome.detail",
+                        fallback: "从第一次打开时光记开始。"
+                    ),
+                    systemImage: MemoMarkSymbol.welcome.name,
+                    tint: .orange,
+                    showsDivider: true
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                showsWorkflowGuide = true
+            } label: {
+                settingsActionRow(
+                    title: localized(
+                        "settings.guide.workflow.title",
+                        fallback: "看看日常怎么记录"
+                    ),
+                    detail: localized(
+                        "settings.guide.workflow.detail",
+                        fallback: "从 Apple Photos 分享，再回到相册查看。"
+                    ),
+                    systemImage: MemoMarkSymbol.workflow.name,
+                    tint: .blue,
+                    showsDivider: true
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                showsExpressionGuide = true
+            } label: {
+                settingsActionRow(
+                    title: localized(
+                        "settings.guide.expression.title",
+                        fallback: "了解记忆表达"
+                    ),
+                    detail: localized(
+                        "settings.guide.expression.detail",
+                        fallback: "看看照片、记忆对象和时间锚点怎样一起留下回忆。"
+                    ),
+                    systemImage: MemoMarkSymbol.expressionFormula.name,
+                    tint: .purple,
+                    showsDivider: false
+                )
+            }
+            .buttonStyle(.plain)
         }
+        .background(settingsInsetBackground)
+    }
+
+    private var aboutMemoMarkSheet: some View {
+        NavigationStack {
+            ScrollView {
+                V1ConfigurationCardContainer {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text(
+                            localized(
+                                "settings.overview.headline",
+                                fallback: "让照片记得，它在人生里的位置。"
+                            )
+                        )
+                        .font(.headline.weight(.semibold))
+
+                        ForEach(
+                            aboutMemoMarkParagraphs,
+                            id: \.self
+                        ) { paragraph in
+                            Text(paragraph)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(
+                                    horizontal: false,
+                                    vertical: true
+                                )
+                        }
+
+                        Text(
+                            localized(
+                                "settings.overview.closing",
+                                fallback: "愿大家都能享受这些被时间标记的记忆。"
+                            )
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.top, 16)
+                .padding(.bottom, 34)
+                .v1AdaptiveScrollContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
+                )
+            }
+            .background(
+                ConfigurationUI.appBackground
+                    .ignoresSafeArea()
+            )
+            .navigationTitle(
+                localized(
+                    "settings.overview.title",
+                    fallback: "关于时光记"
+                )
+            )
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var aboutMemoMarkParagraphs: [String] {
+        [
+            localized(
+                "settings.overview.paragraph_one",
+                fallback: "陪伴孩子长大的过程中，我们留下了很多照片。时光记最初只想回答一个问题：打开照片时，能不能马上知道那一天，孩子多大？"
+            ),
+            localized(
+                "settings.overview.paragraph_two",
+                fallback: "从孩子出生的那一天开始，生日、纪念日和未来的重要日期都可以成为时间锚点。照片因此不只记录拍摄时间，也能呈现年龄、倒数，以及它位于一段人生的什么位置。"
+            ),
+            localized(
+                "settings.overview.paragraph_three",
+                fallback: "时光记不是给照片添加水印，而是把时间关系变成更容易读懂的回忆。照片只在你的设备上整理，原图始终保持不变。"
+            )
+        ]
     }
 
     private var expressionGuideSheet: some View {
         NavigationStack {
             ScrollView {
-                V1SettingsExpressionGuide()
+                V1SettingsExpressionGuide(language: interfaceLanguage)
                     .padding(.top, 16)
                     .padding(.bottom, 34)
                     .v1AdaptiveScrollContent(
@@ -508,7 +717,7 @@ struct V1SettingsPageSurface: View {
             .navigationTitle(
                 localized(
                     "settings.expression_guide.title",
-                    fallback: "表达公式说明"
+                    fallback: "记忆表达说明"
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
@@ -517,43 +726,62 @@ struct V1SettingsPageSurface: View {
         .presentationDragIndicator(.visible)
     }
 
-    private var releaseSection: some View {
+    private var aboutSection: some View {
         settingsDisclosureSection(
-            section: .release,
+            section: .about,
             title: localized(
-                "settings.version.section_title",
-                fallback: "版本信息"
+                "settings.about.title",
+                fallback: "关于"
             ),
-            trailingValue: formatted(
-                "settings.version.version_format",
-                fallback: "版本 %@",
-                appVersion
-            )
+            trailingValue: compactVersion,
+            emphasis: .system
         ) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(localized("settings.version.app_name", fallback: "时光记"))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                Text(formatted("settings.version.version_format", fallback: "版本 %@", appVersion))
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(spacing: 0) {
+                    settingsVersionRow
+
+                    Button {
+                        showsReleaseNotes = true
+                    } label: {
+                        settingsActionRow(
+                            title: localized(
+                                "settings.version.release_notes",
+                                fallback: "更新日志"
+                            ),
+                            detail: localized(
+                                "settings.version.release_notes_detail",
+                                fallback: "看看时光记最近有哪些变化。"
+                            ),
+                            systemImage: "doc.text.fill",
+                            tint: .blue,
+                            showsDivider: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .background(settingsInsetBackground)
+
+                Text(
+                    localized(
+                        "settings.version.copyright",
+                        fallback: "© 2026 MemoMark"
+                    )
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(formatted("settings.version.build_format", fallback: "构建 %@", appBuild))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(settingsInsetBackground)
         }
     }
 
-    private var supportSection: some View {
+    private var photoProcessingSection: some View {
         settingsDisclosureSection(
-            section: .support,
+            section: .photoProcessing,
             title: localized(
-                "settings.support.title",
-                fallback: "能力与边界"
-            )
+                "settings.photo_processing.title",
+                fallback: "照片处理"
+            ),
+            emphasis: .primary
         ) {
             VStack(spacing: 0) {
                 settingsInfoRow(
@@ -563,35 +791,33 @@ struct V1SettingsPageSurface: View {
                     ),
                     headline: localized(
                         "settings.support.metadata.headline",
-                        fallback: "保留原始 EXIF，完整呈现拍摄与时间内容"
+                        fallback: "保留日期、地点与拍摄参数；缺失时不影响照片处理。"
                     ),
-                    detail: localized(
-                        "settings.support.metadata.detail",
-                        fallback: "EXIF 缺失时仍可处理，但相关拍摄参数与时间表达可能不可用。"
-                    ),
+                    detail: nil,
+                    systemImage: MemoMarkSymbol.photoMetadata.name,
+                    tint: .blue,
                     showsDivider: true
                 )
 
                 settingsInfoRow(
                     title: localized(
                         "settings.support.input.title",
-                        fallback: "照片输入"
+                        fallback: "支持的照片"
                     ),
                     headline: localized(
                         "settings.support.input.headline",
-                        fallback: "静态照片、Live Photo 与 RAW / DNG"
+                        fallback: "JPEG、HEIF、RAW / DNG 与 Live Photo"
                     ),
-                    detail: localized(
-                        "settings.support.input.detail",
-                        fallback: "可从主程序或 Apple Photos 分享进入。"
-                    ),
+                    detail: nil,
+                    systemImage: MemoMarkSymbol.originalPhoto.name,
+                    tint: .pink,
                     showsDivider: true
                 )
 
                 settingsInfoRow(
                     title: localized(
                         "settings.support.batch.title",
-                        fallback: "每次处理"
+                        fallback: "一次分享"
                     ),
                     headline: formatted(
                         "settings.support.batch.headline_format",
@@ -600,24 +826,25 @@ struct V1SettingsPageSurface: View {
                     ),
                     detail: localized(
                         "settings.support.batch.detail",
-                        fallback: "更多照片请分批处理。"
+                        fallback: "更多照片请分次分享。"
                     ),
+                    systemImage: MemoMarkSymbol.processing.name,
+                    tint: .orange,
                     showsDivider: true
                 )
 
                 settingsInfoRow(
                     title: localized(
                         "settings.support.result.title",
-                        fallback: "处理结果"
+                        fallback: "保存到 Apple Photos"
                     ),
                     headline: localized(
                         "settings.support.result.headline",
-                        fallback: "生成新文件并保存回 Apple Photos"
+                        fallback: "生成一张新照片，原图保持不变"
                     ),
-                    detail: localized(
-                        "settings.support.result.detail",
-                        fallback: "不会覆盖 Apple Photos 中的原图。"
-                    ),
+                    detail: nil,
+                    systemImage: MemoMarkSymbol.applePhotos.name,
+                    tint: .green,
                     showsDivider: false
                 )
             }
@@ -630,22 +857,30 @@ struct V1SettingsPageSurface: View {
             section: .feedback,
             title: localized(
                 "settings.feedback.section_title",
-                fallback: "反馈渠道"
+                fallback: "反馈"
             ),
-            trailingValue: nil
+            emphasis: .secondary
         ) {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(
-                    localized(
-                        "settings.feedback.priority_heading",
-                        fallback: "优先反馈"
-                    )
-                )
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+            VStack(spacing: 0) {
+                settingsLinkRow(
+                    title: localized(
+                        "settings.feedback.email.title",
+                        fallback: "邮件反馈"
+                    ),
+                    headline: "serydoo@gmail.com",
+                    detail: localized(
+                        "settings.feedback.email.detail",
+                        fallback: "告诉我们你遇到的问题或想法。"
+                    ),
+                    systemImage: "envelope.fill",
+                    tint: .blue,
+                    showsDivider: true
+                ) {
+                    openMailFeedback()
+                }
 
-                VStack(spacing: 0) {
-                    settingsLinkRow(
+                if isTestFlightExperienceActive {
+                    settingsInfoRow(
                         title: localized(
                             "settings.feedback.testflight.title",
                             fallback: "TestFlight 反馈"
@@ -657,94 +892,94 @@ struct V1SettingsPageSurface: View {
                         detail: localized(
                             "settings.feedback.testflight.detail",
                             fallback: "优先使用系统内置反馈，方便带上设备和崩溃上下文。"
-                        )
-                    )
-
-                    settingsLinkRow(
-                        title: localized(
-                            "settings.feedback.email.title",
-                            fallback: "邮件反馈"
                         ),
-                        headline: "serydoo@gmail.com",
-                        detail: localized(
-                            "settings.feedback.email.detail",
-                            fallback: "适合描述复现步骤、预期结果、实际结果和 iOS 版本。"
-                        )
-                    ) {
-                        openMailFeedback()
-                    }
+                        systemImage: "wrench.and.screwdriver.fill",
+                        tint: .orange,
+                        showsDivider: true
+                    )
                 }
-                .background(settingsInsetBackground)
 
-                Text(
-                    localized(
-                        "settings.feedback.community_heading",
-                        fallback: "社区与开发"
-                    )
-                )
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                VStack(spacing: 0) {
-                    settingsInfoRow(
-                        title: localized(
-                            "settings.feedback.qq.title",
-                            fallback: "QQ 交流群"
-                        ),
-                        headline: "955680366",
-                        detail: localized(
-                            "settings.feedback.qq.detail",
-                            fallback: "交流使用问题与产品想法。"
-                        )
-                    )
-                    .textSelection(.enabled)
-
-                    settingsInfoRow(
-                        title: localized(
-                            "settings.feedback.social.title",
-                            fallback: "小红书、抖音"
-                        ),
-                        headline: localized(
-                            "settings.feedback.social.headline",
-                            fallback: "搜索 MemoMark"
-                        ),
-                        detail: localized(
-                            "settings.feedback.social.detail",
-                            fallback: "分享体验与建议。"
-                        )
-                    )
-                    .textSelection(.enabled)
-
-                    settingsLinkRow(
-                        title: localized(
-                            "settings.feedback.github.title",
-                            fallback: "GitHub Issues"
-                        ),
-                        headline: localized(
-                            "settings.feedback.github.headline",
-                            fallback: "公开可复现问题"
-                        ),
-                        detail: localized(
-                            "settings.feedback.github.detail",
-                            fallback: "适合记录稳定复现的缺陷和后续开发讨论。"
-                        ),
-                        showsDivider: false
-                    ) {
-                        openGitHubIssues()
-                    }
+                settingsLinkRow(
+                    title: localized(
+                        "settings.feedback.github.title",
+                        fallback: "GitHub Issues"
+                    ),
+                    headline: localized(
+                        "settings.feedback.github.headline",
+                        fallback: "公开可复现问题"
+                    ),
+                    detail: localized(
+                        "settings.feedback.github.detail",
+                        fallback: "适合记录稳定复现的缺陷和后续开发讨论。"
+                    ),
+                    systemImage: "chevron.left.forwardslash.chevron.right",
+                    tint: .purple,
+                    showsDivider: false
+                ) {
+                    openGitHubIssues()
                 }
-                .background(settingsInsetBackground)
             }
+            .background(settingsInsetBackground)
         }
     }
 
-    private var principleSection: some View {
+    private var communitySection: some View {
         settingsDisclosureSection(
-            section: .principle,
+            section: .community,
             title: localized(
-                "settings.privacy.title",
-                fallback: "隐私与数据"
-            )
+                "settings.community.section_title",
+                fallback: "社区"
+            ),
+            emphasis: .secondary
+        ) {
+            VStack(spacing: 0) {
+                settingsInfoRow(
+                    title: localized(
+                        "settings.feedback.qq.title",
+                        fallback: "QQ 交流群"
+                    ),
+                    headline: "955680366",
+                    detail: localized(
+                        "settings.feedback.qq.detail",
+                        fallback: "交流使用问题与产品想法。"
+                    ),
+                    systemImage: "person.2.fill",
+                    tint: .blue,
+                    showsDivider: true
+                )
+                .textSelection(.enabled)
+
+                settingsInfoRow(
+                    title: localized(
+                        "settings.feedback.social.title",
+                        fallback: "小红书、抖音"
+                    ),
+                    headline: localized(
+                        "settings.feedback.social.headline",
+                        fallback: "搜索 MemoMark"
+                    ),
+                    detail: localized(
+                        "settings.feedback.social.detail",
+                        fallback: "分享体验与建议。"
+                    ),
+                    systemImage: "at",
+                    tint: .pink,
+                    showsDivider: false
+                )
+                .textSelection(.enabled)
+            }
+            .background(settingsInsetBackground)
+        }
+    }
+
+    private var dataSafetySection: some View {
+        settingsDisclosureSection(
+            section: .dataSafety,
+            title: localized(
+                "settings.data_safety.title",
+                fallback: "数据安全"
+            ),
+            emphasis: .secondary
         ) {
             VStack(spacing: 0) {
                 settingsPrivacyRow(
@@ -756,6 +991,8 @@ struct V1SettingsPageSurface: View {
                         "settings.privacy.local_processing.detail",
                         fallback: "不会上传照片。"
                     ),
+                    systemImage: "iphone",
+                    tint: .cyan,
                     showsDivider: true
                 )
                 settingsPrivacyRow(
@@ -767,6 +1004,8 @@ struct V1SettingsPageSurface: View {
                         "settings.privacy.original.detail",
                         fallback: "始终生成新的照片。"
                     ),
+                    systemImage: MemoMarkSymbol.originalPhoto.name,
+                    tint: .green,
                     showsDivider: true
                 )
                 settingsPrivacyRow(
@@ -778,6 +1017,8 @@ struct V1SettingsPageSurface: View {
                         "settings.privacy.local_configuration.detail",
                         fallback: "记忆对象、时间锚点与任务记录保存在应用容器中。"
                     ),
+                    systemImage: MemoMarkSymbol.localStorage.name,
+                    tint: .purple,
                     showsDivider: true
                 )
                 settingsPrivacyRow(
@@ -789,6 +1030,8 @@ struct V1SettingsPageSurface: View {
                         "settings.privacy.delete_app.detail",
                         fallback: "未单独备份的本地配置与记录会一起删除。"
                     ),
+                    systemImage: MemoMarkSymbol.information.name,
+                    tint: .secondary,
                     showsDivider: false
                 )
             }
@@ -813,97 +1056,75 @@ struct V1SettingsPageSurface: View {
 
     private func settingsActionRow(
         title: String,
-        detail: String
+        detail: String,
+        systemImage: String,
+        tint: Color,
+        showsDivider: Bool
     ) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                settingsRowIcon(
+                    systemImage: systemImage,
+                    tint: tint
+                )
 
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
 
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
+            if showsDivider {
+                V1HorizontalDivider(horizontalInset: 12)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.controlBackground.opacity(0.82))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
     }
 
-    private func settingsTag(
-        title: String
+    private func settingsRowIcon(
+        systemImage: String,
+        tint: Color
     ) -> some View {
-        Text(title)
+        Image(systemName: systemImage)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .foregroundStyle(tint)
+            .frame(width: 32, height: 32)
             .background(
-                Capsule(style: .continuous)
-                    .fill(ConfigurationUI.controlBackground)
+                RoundedRectangle(
+                    cornerRadius: 9,
+                    style: .continuous
+                )
+                .fill(tint.opacity(0.10))
             )
-    }
-
-    private var privacyTag: some View {
-        settingsTag(
-            title: localized(
-                "settings.overview.tag.local_first",
-                fallback: "本地优先"
-            )
-        )
-    }
-
-    private var memoryTag: some View {
-        settingsTag(
-            title: localized(
-                "settings.overview.tag.memory",
-                fallback: "保存记忆"
-            )
-        )
-    }
-
-    private var originalPhotoTag: some View {
-        settingsTag(
-            title: localized(
-                "settings.overview.tag.original",
-                fallback: "不改原图"
-            )
-        )
+            .accessibilityHidden(true)
     }
 
     private func settingsPrivacyRow(
         title: String,
         detail: String,
+        systemImage: String,
+        tint: Color,
         showsDivider: Bool
     ) -> some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(.green)
-                    .accessibilityHidden(true)
+            HStack(alignment: .center, spacing: 12) {
+                settingsRowIcon(
+                    systemImage: systemImage,
+                    tint: tint
+                )
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
@@ -929,13 +1150,17 @@ struct V1SettingsPageSurface: View {
     private func settingsInfoRow(
         title: String,
         headline: String,
-        detail: String,
+        detail: String?,
+        systemImage: String,
+        tint: Color,
         showsDivider: Bool = true
     ) -> some View {
         settingsContentRow(
             title: title,
             headline: headline,
             detail: detail,
+            systemImage: systemImage,
+            tint: tint,
             showsDivider: showsDivider
         )
     }
@@ -944,7 +1169,9 @@ struct V1SettingsPageSurface: View {
     private func settingsLinkRow(
         title: String,
         headline: String,
-        detail: String,
+        detail: String?,
+        systemImage: String,
+        tint: Color,
         showsDivider: Bool = true,
         action: (() -> Void)? = nil
     ) -> some View {
@@ -954,6 +1181,8 @@ struct V1SettingsPageSurface: View {
                     title: title,
                     headline: headline,
                     detail: detail,
+                    systemImage: systemImage,
+                    tint: tint,
                     showsDivider: showsDivider,
                     accessory: "chevron.right"
                 )
@@ -964,6 +1193,8 @@ struct V1SettingsPageSurface: View {
                 title: title,
                 headline: headline,
                 detail: detail,
+                systemImage: systemImage,
+                tint: tint,
                 showsDivider: showsDivider
             )
         }
@@ -972,27 +1203,37 @@ struct V1SettingsPageSurface: View {
     private func settingsContentRow(
         title: String,
         headline: String,
-        detail: String,
+        detail: String?,
+        systemImage: String,
+        tint: Color,
         showsDivider: Bool,
         accessory: String? = nil
     ) -> some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                settingsRowIcon(
+                    systemImage: systemImage,
+                    tint: tint
+                )
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(headline)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text(detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if let detail,
+                       !detail.isEmpty {
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
 
                 Spacer(minLength: 8)
@@ -1000,8 +1241,7 @@ struct V1SettingsPageSurface: View {
                 if let accessory {
                     Image(systemName: accessory)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 12)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1012,6 +1252,44 @@ struct V1SettingsPageSurface: View {
                 V1HorizontalDivider(horizontalInset: 12)
             }
         }
+    }
+
+    private var settingsVersionRow: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                settingsRowIcon(
+                    systemImage: MemoMarkSymbol.information.name,
+                    tint: .secondary
+                )
+
+                Text(
+                    localized(
+                        "settings.version.row_title",
+                        fallback: "版本"
+                    )
+                )
+                .font(.subheadline.weight(.semibold))
+
+                Spacer(minLength: 8)
+
+                Text(compactVersion)
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(12)
+
+            V1HorizontalDivider(horizontalInset: 12)
+        }
+    }
+
+    private var compactVersion: String {
+        formatted(
+            "settings.version.compact_format",
+            fallback: "%@ (%@)",
+            appVersion,
+            appBuild
+        )
     }
 
     private func openMailFeedback() {
@@ -1056,12 +1334,16 @@ struct V1SettingsPageSurface: View {
 
 private struct V1SettingsDisclosureSection<Content: View>: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     @Environment(\.accessibilityReduceMotion)
     private var accessibilityReduceMotion
 
     let title: String
     let trailingValue: String?
     let language: MemoMarkLanguage
+    let emphasis: V1SettingsSectionEmphasis
 
     @Binding
     var isExpanded: Bool
@@ -1070,38 +1352,20 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
     let content: Content
 
     var body: some View {
-        V1ConfigurationCardContainer {
+        V1ConfigurationCardContainer(
+            background: sectionBackground
+        ) {
             VStack(alignment: .leading, spacing: 14) {
                 Button {
                     withAnimation(disclosureAnimation) {
                         isExpanded.toggle()
                     }
                 } label: {
-                    HStack(spacing: 10) {
-                        Text(title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-
-                        Spacer(minLength: 0)
-
-                        if let trailingValue,
-                           !isExpanded {
-                            Text(trailingValue)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
-                            .rotationEffect(
-                                .degrees(isExpanded ? 90 : 0)
-                            )
-                    }
+                    adaptiveDisclosureHeader
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .frame(minHeight: 44)
                 .accessibilityLabel(title)
                 .accessibilityValue(
                     isExpanded
@@ -1123,15 +1387,98 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
 
                 if isExpanded {
                     content
+                        .transition(contentTransition)
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var adaptiveDisclosureHeader: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            verticalDisclosureHeader
+        } else {
+            ViewThatFits(in: .horizontal) {
+                horizontalDisclosureHeader
+                verticalDisclosureHeader
+            }
+        }
+    }
+
+    private var horizontalDisclosureHeader: some View {
+        HStack(spacing: 10) {
+            disclosureTitle
+            Spacer(minLength: 0)
+            disclosureTrailingValue
+            disclosureChevron
+        }
+    }
+
+    private var verticalDisclosureHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            disclosureTitle
+
+            HStack(spacing: 10) {
+                disclosureTrailingValue
+                Spacer(minLength: 0)
+                disclosureChevron
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var disclosureTitle: some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.primary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private var disclosureTrailingValue: some View {
+        if let trailingValue,
+           !isExpanded {
+            Text(trailingValue)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+        }
+    }
+
+    private var disclosureChevron: some View {
+        Image(systemName: "chevron.right")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.tertiary)
+            .rotationEffect(
+                .degrees(isExpanded ? 90 : 0)
+            )
     }
 
     private var disclosureAnimation: Animation? {
         accessibilityReduceMotion
             ? nil
             : .easeInOut(duration: 0.2)
+    }
+
+    private var contentTransition: AnyTransition {
+        guard !accessibilityReduceMotion else {
+            return .identity
+        }
+
+        return .opacity.combined(
+            with: .offset(y: -4)
+        )
+    }
+
+    private var sectionBackground: Color {
+        switch emphasis {
+        case .primary:
+            ConfigurationUI.panelBackground
+        case .secondary:
+            ConfigurationUI.panelBackground.opacity(0.82)
+        case .system:
+            ConfigurationUI.controlBackground.opacity(0.36)
+        }
     }
 
     private func localized(
