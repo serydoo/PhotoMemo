@@ -41,6 +41,7 @@
 "版本信息" = "Version";
 "照片输入" = "Photo Input";
 "处理结果" = "Processing Result";
+"share.ready.subtitle" = "Ready to create new memory records";
 "正在准备照片" = "Preparing Photos";
 "这次分享会在后台继续处理。" = "This share will continue processing in the background.";
 "正在接收照片" = "Receiving Photos";
@@ -61,6 +62,7 @@
 "原图已经接收，原始照片不会被修改。" = "The originals were received and will not be modified.";
 "原图保持不变" = "Original stays unchanged";
 "保留拍摄信息" = "Capture information preserved";
+"后台继续处理" = "Continues in the background";
 "完成后发送通知" = "Notification when complete";
 "可以继续分享下一批" = "You can share another batch";
 "正在准备原图" = "Preparing Original";

@@ -103,6 +103,9 @@ final class PhotoMemoShareExtensionViewController:
     private let statusMessageLabel =
         UILabel()
 
+    private let processingChecklistStack =
+        UIStackView()
+
     private let footerLabel =
         UILabel()
 
@@ -173,6 +176,7 @@ private extension PhotoMemoShareExtensionViewController {
         configureBottomActionStack()
         configureHeaderLabels()
         configureStatusLabels()
+        makeProcessingChecklistStack()
         configureFooterLabel()
         configurePrimaryButton()
         configurePreviewViews()
@@ -242,7 +246,8 @@ private extension PhotoMemoShareExtensionViewController {
                     equalTo:
                         view.safeAreaLayoutGuide
                         .topAnchor,
-                    constant: 36
+                    constant:
+                        MemoMarkDesignTokens.Share.contentTopInset
                 ),
             scrollView.leadingAnchor
                 .constraint(
@@ -263,7 +268,8 @@ private extension PhotoMemoShareExtensionViewController {
                     equalTo:
                         bottomActionStack
                         .topAnchor,
-                    constant: -12
+                    constant:
+                        -MemoMarkDesignTokens.Share.contentActionSpacing
                 ),
             contentStack.topAnchor.constraint(
                 equalTo:
@@ -314,12 +320,13 @@ private extension PhotoMemoShareExtensionViewController {
                     equalTo:
                         view.safeAreaLayoutGuide
                         .bottomAnchor,
-                    constant: -24
+                    constant:
+                        -MemoMarkDesignTokens.Share.bottomActionInset
                 ),
             primaryButton.heightAnchor
                 .constraint(
                     equalToConstant:
-                        MemoMarkDesignTokens.Layout.compactPrimaryActionHeight
+                        MemoMarkDesignTokens.Share.primaryActionHitTarget
                 )
         ])
     }
@@ -341,7 +348,8 @@ private extension PhotoMemoShareExtensionViewController {
         contentStack.translatesAutoresizingMaskIntoConstraints =
             false
         contentStack.axis = .vertical
-        contentStack.spacing = 12
+        contentStack.spacing =
+            MemoMarkDesignTokens.Share.contentActionSpacing
         contentStack.alignment = .fill
     }
 
@@ -373,13 +381,16 @@ private extension PhotoMemoShareExtensionViewController {
             "时光记"
         brandLabel.textAlignment = .center
         brandLabel.adjustsFontForContentSizeCategory = true
-        brandLabel.accessibilityTraits = .header
+        brandLabel.accessibilityTraits =
+            .staticText
 
         titleLabel.font =
             MemoMarkDesignTokens.Typography.hero.uiFont()
         titleLabel.adjustsFontForContentSizeCategory =
             true
         titleLabel.numberOfLines = 0
+        titleLabel.accessibilityTraits =
+            .header
 
         subtitleLabel.font =
             MemoMarkDesignTokens.Typography.heroSubtitle.uiFont()
@@ -442,6 +453,123 @@ private extension PhotoMemoShareExtensionViewController {
             .secondaryLabel
         statusMessageLabel.numberOfLines = 0
         statusMessageLabel.adjustsFontForContentSizeCategory = true
+        statusMessageLabel.isHidden = true
+    }
+
+    func makeProcessingChecklistStack() {
+
+        processingChecklistStack.translatesAutoresizingMaskIntoConstraints =
+            false
+        processingChecklistStack.axis = .vertical
+        processingChecklistStack.alignment = .fill
+        processingChecklistStack.spacing =
+            MemoMarkDesignTokens.Share.checklistRowSpacing
+        processingChecklistStack.addArrangedSubview(
+            makeProcessingChecklistRow(
+                symbolName: "photo.stack.fill",
+                title: MemoMarkLanguage.interfaceStored.localized(
+                    key: "原图保持不变",
+                    fallback: "Original stays unchanged"
+                )
+            )
+        )
+        processingChecklistStack.addArrangedSubview(
+            makeProcessingChecklistRow(
+                symbolName: "doc.badge.gearshape",
+                title: MemoMarkLanguage.interfaceStored.localized(
+                    key: "保留拍摄信息",
+                    fallback: "Capture information preserved"
+                )
+            )
+        )
+        processingChecklistStack.addArrangedSubview(
+            makeProcessingChecklistRow(
+                symbolName: "arrow.right.circle.fill",
+                title: MemoMarkLanguage.interfaceStored.localized(
+                    key: "后台继续处理",
+                    fallback: "Continues in the background"
+                )
+            )
+        )
+        processingChecklistStack.addArrangedSubview(
+            makeProcessingChecklistRow(
+                symbolName: "bell.fill",
+                title: MemoMarkLanguage.interfaceStored.localized(
+                    key: "完成后发送通知",
+                    fallback: "Notification when complete"
+                )
+            )
+        )
+    }
+
+    func makeProcessingChecklistRow(
+        symbolName: String,
+        title: String
+    ) -> UIStackView {
+
+        let iconView = UIImageView(
+            image: UIImage(
+                systemName: symbolName,
+                withConfiguration: UIImage.SymbolConfiguration(
+                    pointSize:
+                        MemoMarkDesignTokens.Share.checklistIconSize,
+                    weight: .semibold
+                )
+            )
+        )
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.contentMode = .scaleAspectFit
+        iconView.tintColor = .secondaryLabel
+        iconView.accessibilityElementsHidden = true
+
+        let iconContainer = UIView()
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.addSubview(iconView)
+
+        let label = UILabel()
+        label.font = MemoMarkDesignTokens.Typography.detail.uiFont()
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        label.adjustsFontForContentSizeCategory = true
+        label.text = title
+
+        let row = UIStackView(
+            arrangedSubviews: [
+                iconContainer,
+                label
+            ]
+        )
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = MemoMarkDesignTokens.Spacing.small
+
+        NSLayoutConstraint.activate([
+            iconContainer.widthAnchor.constraint(
+                equalToConstant:
+                    MemoMarkDesignTokens.Share.checklistIconContainerWidth
+            ),
+            iconContainer.heightAnchor.constraint(
+                equalToConstant:
+                    MemoMarkDesignTokens.Share.checklistIconContainerWidth
+            ),
+            iconView.centerXAnchor.constraint(
+                equalTo: iconContainer.centerXAnchor
+            ),
+            iconView.centerYAnchor.constraint(
+                equalTo: iconContainer.centerYAnchor
+            ),
+            iconView.widthAnchor.constraint(
+                equalToConstant:
+                    MemoMarkDesignTokens.Share.checklistIconSize
+            ),
+            iconView.heightAnchor.constraint(
+                equalToConstant:
+                    MemoMarkDesignTokens.Share.checklistIconSize
+            )
+        ])
+
+        return row
     }
 
     func configurePreviewViews() {
@@ -688,6 +816,9 @@ private extension PhotoMemoShareExtensionViewController {
         )
         stack.addArrangedSubview(
             statusMessageLabel
+        )
+        stack.addArrangedSubview(
+            processingChecklistStack
         )
 
         return stack
@@ -1167,6 +1298,7 @@ private extension PhotoMemoShareExtensionViewController {
             statusStageLabel: statusStageLabel,
             statusSymbolView: statusSymbolView,
             statusMessageLabel: statusMessageLabel,
+            statusChecklistStack: processingChecklistStack,
             footerLabel: footerLabel,
             primaryButton: primaryButton
         )

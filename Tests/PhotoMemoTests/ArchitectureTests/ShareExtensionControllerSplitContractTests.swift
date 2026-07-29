@@ -21,7 +21,7 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("本次分享"))
         #expect(controller.contains("scheduleSuccessfulDismissal"))
         #expect(controller.contains("scrollView.topAnchor"))
-        #expect(controller.contains("constant: 36"))
+        #expect(controller.contains("MemoMarkDesignTokens.Share.contentTopInset"))
         #expect(controller.contains("override func viewDidAppear"))
         #expect(controller.contains("summary.memorySubjectTitle"))
         #expect(controller.contains("makeQuoteStack"))
@@ -29,7 +29,7 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("contentStack.addArrangedSubview(quoteStack)"))
         #expect(controller.contains("title: \"配置\""))
         #expect(controller.contains("title: \"相册\""))
-        #expect(controller.contains("constant: -24"))
+        #expect(controller.contains("MemoMarkDesignTokens.Share.bottomActionInset"))
         #expect(controller.contains("stack.spacing = 8"))
         #expect(controller.contains("view.tintColor ?? UIColor.tintColor"))
         #expect(controller.contains("baseForegroundColor =\n            .white"))
@@ -38,13 +38,13 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(!controller.contains("结果去向"))
         #expect(renderer.contains("已准备好"))
         #expect(renderer.contains("已加入后台处理"))
-        #expect(renderer.contains("后台继续处理"))
-        #expect(renderer.contains("\\(input.photoCount) 张照片准备开始记录"))
-        #expect(renderer.contains("photo.stack.fill"))
-        #expect(renderer.contains("doc.badge.gearshape"))
-        #expect(renderer.contains("bell.fill"))
-        #expect(renderer.contains("arrow.right.circle.fill"))
-        #expect(renderer.contains("hierarchicalColor"))
+        #expect(controller.contains("后台继续处理"))
+        #expect(renderer.contains("share.ready.subtitle"))
+        #expect(controller.contains("photo.stack.fill"))
+        #expect(controller.contains("doc.badge.gearshape"))
+        #expect(controller.contains("bell.fill"))
+        #expect(controller.contains("arrow.right.circle.fill"))
+        #expect(controller.contains("MemoMarkDesignTokens.Share.checklistIconSize"))
         #expect(!renderer.contains("UIColor.systemGreen"))
         #expect(!renderer.contains("UIColor.systemBlue"))
         #expect(renderer.contains("showsProcessingChecklist"))
@@ -64,10 +64,10 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(typography.contains("size: 15"))
         #expect(typography.contains("size: 14"))
         #expect(typography.contains("compactPrimaryActionWidth: CGFloat = 184"))
-        #expect(typography.contains("compactPrimaryActionHeight: CGFloat = 40"))
+        #expect(typography.contains("primaryActionHitTarget: CGFloat = 44"))
         #expect(typography.contains("compactPrimaryActionCornerRadius: CGFloat = 12"))
         #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionWidth"))
-        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionHeight"))
+        #expect(controller.contains("MemoMarkDesignTokens.Share.primaryActionHitTarget"))
         #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionCornerRadius"))
         #expect(controller.contains("UIImage(systemName: \"sparkles\")"))
         #expect(controller.contains("primaryButton.configuration?.imagePadding =\n            8"))
@@ -134,6 +134,65 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("constant: MemoMarkDesignTokens.Layout.dividerInset"))
         #expect(controller.contains("constant: -MemoMarkDesignTokens.Layout.dividerInset"))
         #expect(tokens.contains("static let dividerInset: CGFloat = 12"))
+    }
+
+    @Test("Share Extension keeps semantic heading and action targets")
+    func shareExtensionKeepsSemanticHeadingAndActionTargets() throws {
+        let controller = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+        )
+        let tokens = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift"
+        )
+
+        #expect(controller.contains("brandLabel.accessibilityTraits =\n            .staticText"))
+        #expect(controller.contains("titleLabel.accessibilityTraits =\n            .header"))
+        #expect(controller.contains("MemoMarkDesignTokens.Share.primaryActionHitTarget"))
+        #expect(controller.contains("MemoMarkDesignTokens.Share.contentTopInset"))
+        #expect(tokens.contains("enum Share"))
+        #expect(tokens.contains("static let primaryActionHitTarget: CGFloat = 44"))
+    }
+
+    @Test("Share processing assurances use independent native rows")
+    func shareProcessingAssurancesUseIndependentNativeRows() throws {
+        let controller = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionViewController.swift"
+        )
+        let renderer = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
+        )
+        let englishLocalization = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings"
+        )
+        let chineseLocalization = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings"
+        )
+
+        #expect(controller.contains("private let processingChecklistStack ="))
+        #expect(controller.contains("makeProcessingChecklistStack()"))
+        #expect(controller.contains("makeProcessingChecklistRow("))
+        #expect(renderer.contains("statusChecklistStack"))
+        #expect(!renderer.contains("NSTextAttachment"))
+        #expect(
+            englishLocalization.contains(
+                "\"后台继续处理\" = \"Continues in the background\";"
+            )
+        )
+        #expect(
+            chineseLocalization.contains(
+                "\"后台继续处理\" = \"后台继续处理\";"
+            )
+        )
+    }
+
+    @Test("Share hero subtitle avoids repeating the summary count")
+    func shareHeroSubtitleAvoidsRepeatingSummaryCount() throws {
+        let renderer = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
+        )
+
+        #expect(renderer.contains("share.ready.subtitle"))
+        #expect(!renderer.contains("\\(input.photoCount) 张照片准备开始记录"))
     }
 
     @Test("Share Extension owns focused lifecycle collaborators")

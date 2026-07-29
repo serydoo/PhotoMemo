@@ -48,6 +48,7 @@ struct ShareExtensionViewStateBindings {
     let statusStageLabel: UILabel
     let statusSymbolView: UIImageView
     let statusMessageLabel: UILabel
+    let statusChecklistStack: UIStackView
     let footerLabel: UILabel
     let primaryButton: UIButton
 }
@@ -84,13 +85,12 @@ final class ShareExtensionViewStateRenderer {
         bindings.statusStageLabel.text = update.statusStageTitle
         bindings.statusStageLabel.textColor = update.statusColor
         bindings.statusMessageLabel.textColor = update.statusColor
-        if update.showsProcessingChecklist {
-            bindings.statusMessageLabel.attributedText =
-                processingChecklistAttributedText()
-        } else {
-            bindings.statusMessageLabel.attributedText = nil
-            bindings.statusMessageLabel.text = update.statusMessage
-        }
+        bindings.statusChecklistStack.isHidden =
+            !update.showsProcessingChecklist
+        bindings.statusMessageLabel.isHidden =
+            update.showsProcessingChecklist
+        bindings.statusMessageLabel.attributedText = nil
+        bindings.statusMessageLabel.text = update.statusMessage
         bindings.footerLabel.text = update.footer
         bindings.primaryButton.isEnabled = update.buttonIsEnabled
         bindings.primaryButton.configuration?.title = update.buttonTitle
@@ -268,69 +268,6 @@ final class ShareExtensionViewStateRenderer {
         return "已接收 \(result.requestedCount) 张，正在后台处理。"
     }
 
-    private func processingChecklistAttributedText() -> NSAttributedString {
-        let items = [
-            ("photo.stack.fill", localized("原图保持不变", english: "Original stays unchanged")),
-            ("doc.badge.gearshape", localized("保留拍摄信息", english: "Capture information preserved")),
-            ("arrow.right.circle.fill", localized("后台继续处理", english: "Continues in the background")),
-            ("bell.fill", localized("完成后发送通知", english: "Notification when complete"))
-        ]
-        let font =
-            MemoMarkDesignTokens
-            .Typography
-            .detail
-            .uiFont()
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 6
-        let textAttributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: UIColor.secondaryLabel,
-            .paragraphStyle: paragraphStyle
-        ]
-        let result = NSMutableAttributedString(string: "")
-
-        let symbolConfiguration =
-            UIImage.SymbolConfiguration(
-                hierarchicalColor: .secondaryLabel
-            )
-
-        for (symbolName, title) in items {
-            let attachment = NSTextAttachment()
-            attachment.image = UIImage(
-                systemName: symbolName,
-                withConfiguration: symbolConfiguration
-            )
-            attachment.bounds = CGRect(
-                x: 0,
-                y: -2,
-                width: 16,
-                height: 16
-            )
-            result.append(
-                NSAttributedString(
-                    attachment: attachment
-                )
-            )
-            result.append(
-                NSAttributedString(
-                    string: "  \(title)\n",
-                    attributes: textAttributes
-                )
-            )
-        }
-
-        if result.length > 0 {
-            result.deleteCharacters(
-                in: NSRange(
-                    location: result.length - 1,
-                    length: 1
-                )
-            )
-        }
-
-        return result
-    }
-
     private func confirmingUpdate(
         _ input: ShareExtensionViewStateInput
     ) -> ShareExtensionViewStateUpdate {
@@ -436,9 +373,10 @@ final class ShareExtensionViewStateRenderer {
                 english: "There are no photos ready to process."
             )
         }
-        return MemoMarkLanguage.interfaceStored == .english
-            ? "\(input.photoCount) photos are ready to process"
-            : "\(input.photoCount) 张照片准备开始记录"
+        return MemoMarkLanguage.interfaceStored.localized(
+            key: "share.ready.subtitle",
+            fallback: "Ready to create new memory records"
+        )
     }
 
     private func localized(

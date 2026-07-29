@@ -120,6 +120,17 @@ enum MemoMarkDesignTokens {
         static let compactPrimaryActionShadowOpacity: Double = 0.08
     }
 
+    enum Share {
+
+        static let contentTopInset: CGFloat = 28
+        static let contentActionSpacing: CGFloat = 12
+        static let bottomActionInset: CGFloat = 24
+        static let primaryActionHitTarget: CGFloat = 44
+        static let checklistRowSpacing: CGFloat = 10
+        static let checklistIconContainerWidth: CGFloat = 20
+        static let checklistIconSize: CGFloat = 16
+    }
+
     enum Typography {
 
         static let hero = MemoMarkTypographyToken(
