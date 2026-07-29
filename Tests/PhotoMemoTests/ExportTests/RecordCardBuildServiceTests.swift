@@ -81,6 +81,73 @@ struct RecordCardBuildServiceTests {
         #expect(block.value == "示例市 · 示例区")
     }
 
+    @Test("Time display configuration feeds the final render text")
+    func timeDisplayConfigurationFeedsFinalRenderText() throws {
+        let template = Template(
+            preset: .classicWhite,
+            name: "Time Display",
+            leftTopArea: .empty,
+            leftBottomArea: TemplateArea(
+                name: "Timeline",
+                items: [
+                    TemplateItem(
+                        type: .variable,
+                        name: "Date",
+                        value: "{{capture_date_short}}"
+                    )
+                ]
+            ),
+            rightTopArea: .empty,
+            rightBottomArea: .empty,
+            badgeArea: .empty
+        )
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let captureDate = calendar.date(
+            from: DateComponents(
+                calendar: calendar,
+                year: 2026,
+                month: 7,
+                day: 29,
+                hour: 15,
+                minute: 24
+            )
+        )!
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/time.jpeg"),
+            image: NSImage(size: NSSize(width: 1200, height: 900)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                captureTimezoneOffsetSeconds: 0
+            )
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: nil,
+            timeDisplayConfiguration:
+                TimeDisplayInspectorPresenter.configuration(
+                    baseStyle: .daily,
+                    supplement: .none
+                ),
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+
+        let blocks = CardTextBlockEngine().build(
+            from: RecordCardBuildService().buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        )
+
+        #expect(
+            blocks.first(where: { $0.area == .leftBottom })?.value
+                == "2026年7月29日 星期三"
+        )
+    }
+
     @Test("Explicit location display configuration does not fall back to legacy coordinates")
     func explicitLocationDisplayConfigurationDoesNotFallBackToLegacyCoordinates() throws {
         let template =

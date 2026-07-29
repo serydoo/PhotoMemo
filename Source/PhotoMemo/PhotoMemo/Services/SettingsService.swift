@@ -457,8 +457,11 @@ final class SettingsService: ObservableObject {
     func resolveDurableProductionConfiguration(
         _ reference: ProductionConfigurationReference
     ) throws -> BatchConfigurationSnapshot {
-        try configurationLibraryStore
+        var snapshot = try configurationLibraryStore
             .resolveDurableProductionConfiguration(reference)
+        snapshot.timeDisplayConfiguration =
+            legacyStore.loadTimeDisplayConfiguration()
+        return snapshot
     }
 
     func saveConfigurationSlots() {

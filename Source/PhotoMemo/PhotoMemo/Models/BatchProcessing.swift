@@ -235,6 +235,9 @@ struct BatchConfigurationSnapshot:
     var locationDisplayConfiguration:
         ExpressionModuleConfiguration?
 
+    var timeDisplayConfiguration:
+        ExpressionModuleConfiguration?
+
     var usesCustomMemoryWriteText: Bool
 
     var customMemoryWriteText: String
@@ -275,6 +278,8 @@ struct BatchConfigurationSnapshot:
         memorySubjectText: String? = nil,
         locationDisplayConfiguration:
             ExpressionModuleConfiguration? = nil,
+        timeDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil,
         usesCustomMemoryWriteText: Bool = false,
         customMemoryWriteText: String = "",
         presentationRouteRawValue: String? = nil,
@@ -300,6 +305,8 @@ struct BatchConfigurationSnapshot:
             memorySubjectText
         self.locationDisplayConfiguration =
             locationDisplayConfiguration
+        self.timeDisplayConfiguration =
+            timeDisplayConfiguration
         self.usesCustomMemoryWriteText =
             usesCustomMemoryWriteText
         self.customMemoryWriteText =
@@ -335,6 +342,7 @@ extension BatchConfigurationSnapshot {
         case anchor
         case memorySubjectText
         case locationDisplayConfiguration
+        case timeDisplayConfiguration
         case usesCustomMemoryWriteText
         case customMemoryWriteText
         case presentationRouteRawValue
@@ -391,6 +399,10 @@ extension BatchConfigurationSnapshot {
         locationDisplayConfiguration = try container.decodeIfPresent(
             ExpressionModuleConfiguration.self,
             forKey: .locationDisplayConfiguration
+        )
+        timeDisplayConfiguration = try container.decodeIfPresent(
+            ExpressionModuleConfiguration.self,
+            forKey: .timeDisplayConfiguration
         )
         usesCustomMemoryWriteText = try container.decodeIfPresent(
             Bool.self,
@@ -472,6 +484,10 @@ extension BatchConfigurationSnapshot {
         try container.encodeIfPresent(
             locationDisplayConfiguration,
             forKey: .locationDisplayConfiguration
+        )
+        try container.encodeIfPresent(
+            timeDisplayConfiguration,
+            forKey: .timeDisplayConfiguration
         )
         try container.encode(
             usesCustomMemoryWriteText,

@@ -72,6 +72,8 @@ struct ConfigurationProjectionService {
                 input.selectedAlbumIdentifier,
             locationDisplayConfiguration:
                 legacyStore.loadLocationDisplayConfiguration(),
+            timeDisplayConfiguration:
+                legacyStore.loadTimeDisplayConfiguration(),
             mediaOutputModeRawValue:
                 input.mediaOutputMode.rawValue
         )
@@ -88,11 +90,13 @@ struct ConfigurationProjectionService {
             configurationID: configurationID,
             revision: configuration.revision
         )
-        if let exact = try? ProductionConfigurationSnapshotFactory
+        if var exact = try? ProductionConfigurationSnapshotFactory
             .resolve(
                 reference: reference,
                 from: durableAggregate
             ) {
+            exact.timeDisplayConfiguration =
+                legacyStore.loadTimeDisplayConfiguration()
             return exact
         }
         return compatibilitySnapshot

@@ -63,6 +63,9 @@ struct BatchConfigurationSnapshotProvider {
         static let locationDisplayConfiguration =
             "photomemo.locationDisplayConfiguration"
 
+        static let timeDisplayConfiguration =
+            "photomemo.timeDisplayConfiguration"
+
         static let mediaOutputMode =
             "photomemo.v1.mediaOutputMode"
 
@@ -118,6 +121,8 @@ struct BatchConfigurationSnapshotProvider {
                 ) ?? "",
             locationDisplayConfiguration:
                 loadLocationDisplayConfiguration(),
+            timeDisplayConfiguration:
+                loadTimeDisplayConfiguration(),
             mediaOutputModeRawValue:
                 defaults.string(
                     forKey:
@@ -245,6 +250,8 @@ struct BatchConfigurationSnapshotProvider {
         selectedAlbumIdentifier: String,
         locationDisplayConfiguration:
             ExpressionModuleConfiguration? = nil,
+        timeDisplayConfiguration:
+            ExpressionModuleConfiguration? = nil,
         mediaOutputModeRawValue: String? = nil,
         language: MemoMarkLanguage = .stored
     ) -> BatchConfigurationSnapshot {
@@ -291,6 +298,8 @@ struct BatchConfigurationSnapshotProvider {
                 resolvedMemorySubjectText,
             locationDisplayConfiguration:
                 locationDisplayConfiguration,
+            timeDisplayConfiguration:
+                timeDisplayConfiguration,
             shouldWritePhotoDescription:
                 shouldWritePhotoDescription,
             photoDescriptionOverride:
@@ -527,6 +536,23 @@ private extension BatchConfigurationSnapshotProvider {
                     forKey:
                         Keys.locationDisplayConfiguration
                 )
+        else {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(
+            ExpressionModuleConfiguration.self,
+            from: data
+        )
+    }
+
+    func loadTimeDisplayConfiguration()
+    -> ExpressionModuleConfiguration? {
+        guard
+            let data = defaults.data(
+                forKey:
+                    Keys.timeDisplayConfiguration
+            )
         else {
             return nil
         }

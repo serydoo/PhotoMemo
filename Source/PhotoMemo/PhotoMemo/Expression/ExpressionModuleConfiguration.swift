@@ -29,6 +29,98 @@ nonisolated struct TimeDisplayConfiguration: Codable, Hashable {
 
 struct TimeExpressionProvider {
     static let timeToken = ExpressionToken(rawValue: "capture_time")
+
+    static func dateText(
+        for date: Date,
+        configuration: TimeDisplayConfiguration,
+        timeZone: TimeZone? = nil,
+        language: MemoMarkLanguage = .stored
+    ) -> String {
+        let format: String
+        switch configuration.baseStyle {
+        case .daily:
+            format = "yyyy年M月d日 EEEE"
+        case .precise, .minimal:
+            format = "yyyy.MM.dd"
+        case .photography:
+            format = "dd MMM yyyy"
+        case .weekdayContext:
+            format = "yyyy年M月d日"
+        }
+
+        let base = formattedDate(
+            date,
+            format: format,
+            timeZone: timeZone,
+            language: language
+        )
+        let additions = supplementText(
+            for: date,
+            supplement: configuration.supplement,
+            calendar: calendar(timeZone: timeZone)
+        )
+
+        return compose(
+            base: base,
+            lunar: additions.first(where: { $0.hasPrefix("农历") }),
+            solarTerm: additions.first(where: {
+                !$0.hasPrefix("农历") && !$0.hasSuffix("假期")
+                    && $0 != "元旦" && $0 != "劳动节" && $0 != "国庆节"
+            }),
+            holiday: additions.first(where: {
+                ["元旦", "劳动节", "国庆节"].contains($0)
+            }),
+            statutoryHoliday: additions.first(where: { $0.hasSuffix("假期") })
+        )
+    }
+
+    static func timeText(
+        for date: Date,
+        configuration: TimeDisplayConfiguration,
+        timeZone: TimeZone? = nil,
+        language: MemoMarkLanguage = .stored
+    ) -> String {
+        let format: String
+        switch configuration.baseStyle {
+        case .daily:
+            format = "a h:mm"
+        case .precise:
+            format = "HH:mm:ss"
+        case .minimal, .photography:
+            format = "HH:mm"
+        case .weekdayContext:
+            format = "EEE"
+        }
+
+        return formattedDate(
+            date,
+            format: format,
+            timeZone: timeZone,
+            language: language
+        )
+    }
+
+    private static func formattedDate(
+        _ date: Date,
+        format: String,
+        timeZone: TimeZone?,
+        language: MemoMarkLanguage
+    ) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = language.locale
+        formatter.timeZone = timeZone
+        formatter.dateFormat = format
+        return formatter.string(from: date)
+    }
+
+    private static func calendar(timeZone: TimeZone?) -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        if let timeZone {
+            calendar.timeZone = timeZone
+        }
+        return calendar
+    }
+
     static func compose(base: String, lunar: String?, solarTerm: String?, holiday: String?, statutoryHoliday: String?, separator: String = " · ") -> String {
         [base, lunar, solarTerm, holiday, statutoryHoliday].compactMap { value in
             guard let value, !value.isEmpty else { return nil }

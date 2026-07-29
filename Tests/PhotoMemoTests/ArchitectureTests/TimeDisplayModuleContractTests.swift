@@ -17,6 +17,31 @@ struct TimeDisplayModuleContractTests {
         #expect(configuration.token == TimeExpressionProvider.timeToken)
     }
 
+    @Test("daily output date keeps the weekday from the saved style")
+    func dailyOutputDateIncludesWeekday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = calendar.date(
+            from: DateComponents(
+                calendar: calendar,
+                year: 2026,
+                month: 7,
+                day: 29,
+                hour: 15,
+                minute: 24
+            )
+        )!
+
+        let result = TimeExpressionProvider.dateText(
+            for: date,
+            configuration: TimeDisplayConfiguration(baseStyle: .daily),
+            timeZone: calendar.timeZone
+        )
+
+        #expect(result.contains("星期三"))
+        #expect(result == "2026年7月29日 星期三")
+    }
+
     @Test("solar term is appended only when the date is a solar-term date")
     func solarTermIsConditional() {
         let regularDate = TimeDisplayInspectorPresenter.compose(

@@ -547,6 +547,7 @@ struct MemoryResultContractTests {
                 "anchor",
                 "memorySubjectText",
                 "locationDisplayConfiguration",
+                "timeDisplayConfiguration",
                 "usesCustomMemoryWriteText",
                 "customMemoryWriteText",
                 "presentationRouteRawValue",

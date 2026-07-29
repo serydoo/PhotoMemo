@@ -90,7 +90,9 @@ private extension RecordCardBuildService {
             buildContext(
                 from: selectedPhoto.metadata,
                 memorySubject:
-                    memoryPayload.subject
+                    memoryPayload.subject,
+                timeDisplayConfiguration:
+                    configuration.timeDisplayConfiguration
             )
         let title =
             resolvedTitle(
@@ -106,7 +108,9 @@ private extension RecordCardBuildService {
         let context =
             buildContext(
                 from: selectedPhoto.metadata,
-                configuration: configuration
+                configuration: configuration,
+                timeDisplayConfiguration:
+                    configuration.timeDisplayConfiguration
             )
         let anchor =
             configuration.legacyAnchor
@@ -460,7 +464,9 @@ private extension RecordCardBuildService {
 #if !PHOTOMEMO_SHARE_EXTENSION
     func buildContext(
         from metadata: PhotoMetadata,
-        memorySubject: MemorySubject
+        memorySubject: MemorySubject,
+        timeDisplayConfiguration:
+            ExpressionModuleConfiguration?
     ) -> MetadataContext {
 
         var context =
@@ -489,19 +495,74 @@ private extension RecordCardBuildService {
             )
         }
 
+        applyTimeDisplayConfiguration(
+            timeDisplayConfiguration,
+            to: &context,
+            metadata: metadata
+        )
+
         return context
     }
 #else
     func buildContext(
         from metadata: PhotoMetadata,
-        configuration: BatchConfigurationSnapshot
+        configuration: BatchConfigurationSnapshot,
+        timeDisplayConfiguration:
+            ExpressionModuleConfiguration?
     ) -> MetadataContext {
 
-        return MetadataContext.build(
+        var context = MetadataContext.build(
             from: metadata
         )
+
+        applyTimeDisplayConfiguration(
+            timeDisplayConfiguration,
+            to: &context,
+            metadata: metadata
+        )
+
+        return context
     }
 #endif
+
+    func applyTimeDisplayConfiguration(
+        _ configuration: ExpressionModuleConfiguration?,
+        to context: inout MetadataContext,
+        metadata: PhotoMetadata
+    ) {
+        guard
+            let date = metadata.captureDate,
+            let configuration
+        else {
+            return
+        }
+
+        let timeConfiguration = TimeDisplayConfiguration(
+            baseStyle: TimeDisplayConfiguration.BaseStyle(
+                rawValue: configuration.options["baseStyle"] ?? "daily"
+            ) ?? .daily,
+            supplement: TimeDisplayConfiguration.Supplement(
+                rawValue: configuration.options["supplement"] ?? "none"
+            ) ?? .none
+        )
+        let timeZone = metadata.captureTimeZone
+        context.set(
+            TimeExpressionProvider.dateText(
+                for: date,
+                configuration: timeConfiguration,
+                timeZone: timeZone
+            ),
+            for: MetadataContext.Key.captureDateShort
+        )
+        context.set(
+            TimeExpressionProvider.timeText(
+                for: date,
+                configuration: timeConfiguration,
+                timeZone: timeZone
+            ),
+            for: MetadataContext.Key.captureTimeShort
+        )
+    }
 
     func normalizedRelationshipLabel(
         _ label: String?

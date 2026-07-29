@@ -813,48 +813,29 @@ struct V1PreviewCompositionEngine {
         component: TimeDisplayComponent,
         context: V1PreviewCompositionContext
     ) -> String {
-        let style = TimeDisplayConfiguration.BaseStyle(
-            rawValue: context.timeDisplayConfiguration?.options["baseStyle"] ?? "daily"
-        ) ?? .daily
-        let formatter = DateFormatter()
-        formatter.locale = MemoMarkLanguage.stored.locale
-        switch style {
-        case .daily:
-            formatter.dateFormat = component == .date
-                ? "yyyy年M月d日 EEEE"
-                : "a h:mm"
-        case .precise:
-            formatter.dateFormat = component == .date
-                ? "yyyy.MM.dd"
-                : "HH:mm:ss"
-        case .minimal:
-            formatter.dateFormat = component == .date
-                ? "yyyy.MM.dd"
-                : "HH:mm"
-        case .photography:
-            formatter.dateFormat = component == .date
-                ? "dd MMM yyyy"
-                : "HH:mm"
-        case .weekdayContext:
-            formatter.dateFormat = component == .date
-                ? "yyyy年M月d日"
-                : "EEE"
-        }
-        let base = formatter.string(from: date)
-        guard component == .date else {
-            return base
-        }
-        let supplement = TimeDisplayConfiguration.Supplement(
-            rawValue: context.timeDisplayConfiguration?.options["supplement"] ?? "none"
-        ) ?? .none
-        let additions = TimeExpressionProvider.supplementText(for: date, supplement: supplement, calendar: context.smartTimeCalendar)
-        return TimeExpressionProvider.compose(
-            base: base,
-            lunar: additions.first(where: { $0.hasPrefix("农历") }),
-            solarTerm: additions.first(where: { ["大暑", "立秋", "白露", "寒露", "冬至"].contains($0) }),
-            holiday: additions.first(where: { $0 == "国庆节" || $0 == "劳动节" }),
-            statutoryHoliday: additions.first(where: { $0.hasSuffix("假期") })
+        let configuration = TimeDisplayConfiguration(
+            baseStyle: TimeDisplayConfiguration.BaseStyle(
+                rawValue: context.timeDisplayConfiguration?.options["baseStyle"] ?? "daily"
+            ) ?? .daily,
+            supplement: TimeDisplayConfiguration.Supplement(
+                rawValue: context.timeDisplayConfiguration?.options["supplement"] ?? "none"
+            ) ?? .none
         )
+
+        switch component {
+        case .date:
+            return TimeExpressionProvider.dateText(
+                for: date,
+                configuration: configuration,
+                timeZone: context.smartTimeCalendar.timeZone
+            )
+        case .time:
+            return TimeExpressionProvider.timeText(
+                for: date,
+                configuration: configuration,
+                timeZone: context.smartTimeCalendar.timeZone
+            )
+        }
     }
 }
 #endif
