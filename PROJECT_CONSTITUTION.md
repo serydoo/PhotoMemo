@@ -1,32 +1,49 @@
 # MemoMark Project Constitution
 
-Last updated: 2026-07-11
+Last updated: 2026-07-30
 
 This is the highest-level repository instruction for MemoMark.
 
 Every AI agent and future coding session must read this before making any modification.
 
-## V3 Amendment
+## V4 Amendment
 
-MemoMark V1 and V2 are complete. The current product stage is:
+MemoMark V1, V2, and V3 are concluded. The current product stage is:
 
 ```text
-V3 Production Quality And Delivery
+V4 Expression Style System
 ```
 
 The canonical product-stage history is `Docs/PRODUCT_VERSION_HISTORY.md`.
+The accepted V4 stage decision is
+`Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`.
 
-V3 preserves the local-first Memory Presentation Engine, Configuration Center,
-Memory Engine, IA-002, and IA-003 boundaries established during V2. The active
-work now emphasizes production correctness, durable configuration, full Apple
-Photos lifecycle evidence, regression control, performance, and release
-readiness.
+V3 concluded on 2026-07-30 after the MemoMark `2.0.1 (48)` production-quality
+baseline. Its conclusion is `Concluded With Certification Carryover`, not a
+claim that the 2026-07-20 conditional production certification passed. The
+open `TX-001` Export Commit Protocol and `BP-001` enforced single-task memory
+contract remain P0 obligations in the V4 Entry Engineering Gate.
 
-Historical V2 sections below remain binding architectural foundations unless a
-later V3 decision explicitly amends them. References to V2 as the current phase
-are historical and must not override this amendment or `Docs/CURRENT_STATUS.md`.
+V4 preserves the local-first Memory Presentation Engine, Configuration Center,
+Memory Engine, IA-002, IA-003, durable configuration aggregate, and Apple
+Photos lifecycle established during V2 and hardened during V3. The active
+Product Loop now researches and specifies Expression Style as a presentation
+system inside Preset while continuing evidence-driven refinement of the main
+interface, existing features, interaction logic, and device fit. The active
+Engineering Loop closes `TX-001`, `BP-001`, and a superseding production
+certification before Expression Style production implementation or any broader
+production-capability claim.
 
-## Current Status
+V4 is MemoMark's final sustained refinement stage. It does not authorize a
+large-scale core-flow or architecture rewrite. After V4, routine version updates
+stop unless a material issue, Apple-platform change, or required compatibility
+maintenance justifies a scoped release.
+
+Historical V1-V3 sections below remain binding foundations or evidence unless
+a later accepted V4 decision explicitly amends them. Historical stage labels
+must not override this amendment or `Docs/CURRENT_STATUS.md`.
+
+## Historical Foundation Status
 
 MemoMark Repository V2 Reset has already been completed.
 
@@ -61,7 +78,7 @@ IA-003 Memory Engine Integration
 
 This is the first controlled return to real pipeline integration after Product Definition.
 
-The latest repository amendment is:
+The latest frozen V2 repository amendment is:
 
 ```text
 PDR-004 Configuration Center Architecture
@@ -69,7 +86,8 @@ PDR-004 Configuration Center Architecture
 
 PDR-004 freezes the Configuration Center as object-centered architecture.
 
-V3 work must preserve the approved IA-003 result and must not reopen IA-002 architecture without an explicit new product decision.
+V4 work must preserve the approved IA-003 result and must not reopen IA-002
+architecture without an explicit new product decision.
 
 ## Mission
 
@@ -189,33 +207,44 @@ MemoMark fully trusts Apple Photos.
 
 ## Immediate Task
 
-IA-002 is complete and frozen at the architecture level.
-
-The next approved implementation track is:
+V4 starts with two separate tracks:
 
 ```text
-IA-003 Memory Engine Integration
+Product Loop
+-> ES-001 User Expression Scenarios
+-> Style Dimension Taxonomy
+-> Measurable Style Specifications
+-> Product Design Review
+
+Product Loop, as observed
+-> Bounded main-interface, existing-feature, interaction, and device-fit polish
+
+Engineering Loop
+-> TX-001 Export Commit Protocol Specification And Failure Tests
+-> BP-001 Enforced Single-Task Memory Contract
+-> Superseding Production Reliability Certification
 ```
 
-IA-003 must proceed in small reviewed slices:
-
-```text
-IA-003A MemorySubject Adapter
--> IA-003B Configuration Snapshot
--> IA-003C Memory Block Resolver
--> IA-003D CaptureTimeResolver
--> IA-003E Interactive Memory Card connects real data
--> IA-003F Renderer
-```
+IA-002 remains frozen. IA-003 is a completed architectural foundation.
+Product research and bounded existing-product refinement may proceed while the
+Engineering Loop closes the V4 entry gate. No Expression Style production
+implementation or broader production-capability claim is authorized until both
+the Product Design Review and Engineering gate pass.
 
 Do not:
 
 - reopen IA-002 UI architecture
 - replace the Library -> Interactive Memory Card -> Object Inspector structure
-- modify Renderer, Metadata, Export, Share Extension, or Photo Library behavior before the approved IA-003 slice reaches that boundary
+- report the historical V3 Production Certification as passed without a
+  superseding evidence record
+- modify Renderer, Metadata, Export, Share Extension, Photo Library, durable
+  configuration, or Layout Engine behavior from the V4 research foundation
+  alone
 - migrate old documents before research specifications stabilize
 
-Focus on turning frozen repository concepts into one real MemoMark pipeline while preserving local-first and Apple Photos lifecycle boundaries.
+Focus on defining one coherent Expression Style system while preserving the
+real MemoMark pipeline, local-first behavior, memory truth, and Apple Photos
+lifecycle boundaries.
 
 ## Repository Simplification Principle
 

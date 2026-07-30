@@ -1,11 +1,11 @@
 # Changelog
 
-## 2.0.1 (48) Release Candidate - 2026-07-29
+## 2.0.1 (48) Release Candidate - 2026-07-30
 
 ### Added
 - Added an in-app What's New sheet under Settings -> About, localized in
   Simplified Chinese and English.
-- Added a release note covering the July 27-29 V3 production-quality pass.
+- Added a release note covering the July 27-30 V3 production-quality pass.
 
 ### Changed
 - Hardened Apple Photos Share handoff, background processing recovery, queue
@@ -15,15 +15,34 @@
 - Refined the iOS root-view ownership boundaries, compact-device layout,
   Configuration Center hierarchy, Settings information center, and narrative
   product language.
+- Refined the Advanced Modules sheet and compact Memory Expression row while
+  preserving their native menus, bindings, and accessibility fallbacks.
+- Replaced the Share status attachment paragraph with independent native rows,
+  improved heading semantics and action sizing, and completed bilingual copy.
+- Closed the V3 production-quality cycle with `2.0.1`. V4 starts with
+  Expression Style research and remains the final refinement stage for the
+  main interface, existing features, interaction logic, and device fit,
+  without a large-scale core-flow or architecture rewrite. After V4, routine
+  releases stop unless a material issue or required platform-maintenance need
+  appears.
 - Raised the marketing version to `2.0.1` and the next build to `48`.
+
+### Fixed
+- Carried the saved time-display configuration through production snapshots
+  and final card construction so Daily Record output retains its weekday and
+  matches Configuration Preview.
+- Closed a missing Share checklist localization key found during pre-sync
+  review.
 
 ### Verification
 - Added or updated focused contracts for background processing, settings,
   release notes, localization, configuration lifecycle, media output, and
   responsive UI behavior.
-- Full macOS `PhotoMemoTests` regression passed with `1,207` passed, `1`
+- Full macOS `PhotoMemoTests` regression passed with `1,214` passed, `1`
   skipped, and `0` failed; macOS, generic iOS, and Share Extension Debug
   builds also passed.
+- Signed build `2.0.1 (48)` was installed in place on one iPhone 17 Pro Max
+  and two iPhone 15 Pro devices without clearing their app containers.
 - Physical Apple Photos lifecycle and accessibility acceptance remain separate
   release evidence.
 

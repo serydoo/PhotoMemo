@@ -1,23 +1,27 @@
 # MemoMark Document Index
 
-Last updated: 2026-07-29
+Last updated: 2026-07-30
 
 ## Product Stage Source Of Truth
 
-- `Docs/PRODUCT_VERSION_HISTORY.md` - canonical V1, V2, and V3 product-stage
-  boundaries and the distinction between product, App release, audit-report,
-  and implementation versions
+- `Docs/PRODUCT_VERSION_HISTORY.md` - canonical V1 through V4 product-stage
+  boundaries and the distinction between product, App
+  release, audit-report, and implementation versions
 
 This index explains which project documents should be treated as current working references, which documents are topic-specific, and which documents are mostly historical notes.
 
-## V2 Required Entry
+## Current Required Entry
 
 Read these before all other project documents:
 
-- `PROJECT_CONSTITUTION.md` - highest-level V2 repository instruction
+- `PROJECT_CONSTITUTION.md` - highest-level V4 repository instruction
+- `Docs/MASTER_PLAN.md` - current operational project entry
+- `Docs/PRODUCT_VERSION_HISTORY.md` - canonical V1 through V4 boundaries
+- `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md` - accepted V4
+  boundary, V3 certification carryover, entry gates, and first work
+- `Docs/CURRENT_STATUS.md` - current state, latest slices, and next steps
 - `PROJECT_PHILOSOPHY.md` - highest-level product philosophy
-- `PROJECT_DIRECTION.md` - current product direction and version sequence
-- `Docs/MASTER_PLAN.md` - single V2 project entry
+- `PROJECT_DIRECTION.md` - historical V2 product direction and rationale
 - `Docs/Interaction/IA-001_Interaction_Architecture.md` - frozen interaction architecture
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - frozen Configuration Center object architecture
 - `Docs/REPOSITORY_VOCABULARY.md` - RSR-001 repository language rules
@@ -30,8 +34,12 @@ Read these before all other project documents:
 
 Read these first at the start of a new session:
 
-- `PROJECT_CONSTITUTION.md` - highest-level V2 repository instruction
-- `Docs/MASTER_PLAN.md` - single V2 project entry
+- `PROJECT_CONSTITUTION.md` - highest-level V4 repository instruction
+- `Docs/MASTER_PLAN.md` - current operational project entry
+- `Docs/PRODUCT_VERSION_HISTORY.md` - canonical V1 through V4 boundaries
+- `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md` - accepted V4
+  product-stage decision
+- `Docs/CURRENT_STATUS.md` - current state, latest slices, and next steps
 - `PROJECT_RESET.md` - project reset memory
 - `PROJECT_PHILOSOPHY.md` - product philosophy
 - `PROJECT_DIRECTION.md` - project direction
@@ -41,7 +49,6 @@ Read these first at the start of a new session:
 - `AI_CONTEXT.md` - compact AI working context
 - `HANDOFF.md` - chronological session handoff history
 - `AGENTS.md` - repository rules for agent sessions
-- `Docs/CURRENT_STATUS.md` - current state, latest slices, and next steps
 - `Docs/FROZEN_REGISTRY.md` - current frozen architecture and interaction registry
 - `Docs/PDR/PDR-004_Configuration_Center_Architecture.md` - Configuration Center Architecture Revision A
 - `Docs/REPOSITORY_VOCABULARY.md` - current repository vocabulary
@@ -53,6 +60,10 @@ Read these first at the start of a new session:
 
 Use these when deciding what to build next:
 
+- `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md` - active V4 boundary,
+  entry gates, and first research/engineering work
+- `Research/ExpressionStyles/README.md` - active V4 research foundation; not
+  implementation authority
 - `Docs/PRODUCT_SPEC.md` - product definition and core workflow
 - `Docs/MVP.md` - MVP scope and non-goals
 - `Docs/ProductModel.md` - product model notes
@@ -182,10 +193,12 @@ When documents disagree, use this order:
 
 1. Latest explicit user request
 2. `PROJECT_CONSTITUTION.md`
-3. `Docs/MASTER_PLAN.md`
-4. `PROJECT_RESET.md`
-5. Current code behavior
-6. `Docs/CURRENT_STATUS.md`
-7. `HANDOFF.md`
-8. Topic-specific docs
-9. Historical notes
+3. `Docs/PRODUCT_VERSION_HISTORY.md`
+4. `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
+5. `Docs/MASTER_PLAN.md`
+6. Current code behavior
+7. `Docs/CURRENT_STATUS.md`
+8. `PROJECT_RESET.md`
+9. `HANDOFF.md`
+10. Topic-specific docs
+11. Historical notes

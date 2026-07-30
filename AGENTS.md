@@ -27,34 +27,51 @@ advice. Apple provides system capabilities and trusted lifecycle boundaries;
 it does not replace MemoMark's Memory Engine, Presentation Engine, Layout
 Engine, configuration aggregate, or other accepted domain ownership.
 
-## Highest Priority: MemoMark V3
+## Highest Priority: MemoMark V4
 
 Before any modification, read:
 
 1. `PROJECT_CONSTITUTION.md`
 2. `Docs/MASTER_PLAN.md`
 3. `Docs/PRODUCT_VERSION_HISTORY.md`
-4. `Docs/CURRENT_STATUS.md`
-5. `PROJECT_RESET.md`
-6. `RepositoryAudit.md`
-7. `Research/README.md`
+4. `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
+5. `Docs/CURRENT_STATUS.md`
+6. `PROJECT_RESET.md`
+7. `RepositoryAudit.md`
+8. `Research/README.md`
 
-MemoMark V1 MVP and V2 Product Definition And Realization are complete.
+MemoMark V1 MVP, V2 Product Definition And Realization, and V3 Production
+Quality And Delivery are concluded.
 
-The current product stage is `V3 Production Quality And Delivery`.
+The current product stage is `V4 Expression Style System`, subphase
+`V4.0 Research And Product Definition`.
 
-V3 preserves the V2 local-first Memory Presentation Engine, Configuration
-Center, Memory Engine, IA-002, and IA-003 foundations. Current work prioritizes
-production correctness, durable configuration, full Apple Photos lifecycle
-evidence, regression control, performance, and release readiness.
+V4 preserves the V2/V3 local-first Memory Presentation Engine, Configuration
+Center, Memory Engine, IA-002, IA-003, durable configuration, and Apple Photos
+lifecycle foundations. The Product Loop now researches and specifies the
+Expression Style System and continues bounded, observation-led refinement of
+the main interface, existing features, interaction logic, accessibility, and
+device fit. The Engineering Loop must close `TX-001`, `BP-001`, and a
+superseding production certification before Expression Style production
+implementation or broader production-capability claims.
+
+V4 is the final sustained refinement stage. It does not authorize a large-scale
+core-flow or architecture rewrite. After V4, routine releases stop unless a
+material issue, Apple-platform or compatibility change, or major
+reliability/privacy need justifies scoped maintenance.
+
+V3 concluded as `Concluded With Certification Carryover`. Do not describe it
+as production-certified: the 2026-07-20 verdict remains `FAIL (Conditional)`
+until superseding evidence closes or explicitly narrows its two P0 findings.
 
 The completed V2 IA-003 sequence remains an architectural reference:
 
 `IA-003A MemorySubject Adapter -> IA-003B Configuration Snapshot -> IA-003C Memory Block Resolver -> IA-003D CaptureTimeResolver -> IA-003E Interactive Memory Card connects real data -> IA-003F Renderer`
 
-Do not reopen frozen V2 architecture or change Renderer, Metadata, Export,
-Share Extension, Photo Library, or Layout Engine behavior without a scoped V3
-requirement and verification plan.
+Do not reopen frozen V2/V3 architecture or change Renderer, Metadata, Export,
+Share Extension, Photo Library, durable configuration, or Layout Engine
+behavior without a scoped V4 requirement and verification plan. The active V4
+research foundation alone does not authorize implementation.
 
 Do not immediately migrate old documents. Build the new research documentation first; migrate old documents only after research specifications stabilize.
 
@@ -94,15 +111,16 @@ At the start of any new session:
 1. Read `PROJECT_CONSTITUTION.md`
 2. Read `Docs/MASTER_PLAN.md`
 3. Read `Docs/PRODUCT_VERSION_HISTORY.md`
-4. Read `Docs/CURRENT_STATUS.md`
-5. Read `PROJECT_RESET.md`
-6. Read `RepositoryAudit.md`
-7. Read `Research/README.md`
-8. Read `README.md`
-9. Read `AI_CONTEXT.md`
-10. Read `HANDOFF.md`
-11. Read `AGENTS.md`
-12. Check `git status`
+4. Read `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
+5. Read `Docs/CURRENT_STATUS.md`
+6. Read `PROJECT_RESET.md`
+7. Read `RepositoryAudit.md`
+8. Read `Research/README.md`
+9. Read `README.md`
+10. Read `AI_CONTEXT.md`
+11. Read `HANDOFF.md`
+12. Read `AGENTS.md`
+13. Check `git status`
 
 If the task touches the main editor flow, inspect the current Configuration
 Center implementation. Do not restore the retired `Views/Main/MainView*`

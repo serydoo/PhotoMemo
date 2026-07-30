@@ -1,5 +1,29 @@
 # MemoMark Handoff
 
+## 2026-07-30 V4 Expression Style System kickoff
+
+- Formally concluded `V3 Production Quality And Delivery` as
+  `Concluded With Certification Carryover` and started
+  `V4 Expression Style System`, subphase
+  `V4.0 Research And Product Definition`.
+- Canonical decision:
+  `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`.
+- Starting baseline: `864d6cdf Record July UI and device verification`.
+- V3's 2026-07-20 Production Reliability Certification remains
+  `FAIL (Conditional)`. `TX-001` and `BP-001` retain P0 priority as the V4
+  Entry Engineering Gate; this transition does not waive or close them.
+- Product Loop starts with `ES-001 User Expression Scenarios`. Research and
+  specification are active, but no Expression Style production implementation
+  is authorized until the Product Design Review and Engineering gate pass.
+- V4 is also the final sustained refinement stage for the main interface,
+  existing features, interaction logic, accessibility, and device fit. It does
+  not authorize a broad core-flow rewrite. After V4, routine releases stop
+  unless material user impact, platform compatibility, or a major
+  reliability/privacy need requires scoped maintenance.
+- The transition changes documentation and governance only. No Swift source,
+  persistence, Renderer, Export, Share Extension, PhotoKit, permission,
+  entitlement, or original-photo behavior changed.
+
 ## 2026-07-29 MemoMark 2.0.1 GitHub synchronization preparation
 
 - The signed `PhotoMemoiOS` build `2.0.1 (48)` was overwrite-installed and
@@ -503,12 +527,12 @@ crash. User feedback again identified only the known Live Photo filename issue.
 Evidence:
 `/tmp/PhotoMemoRuntimeEvidence/iphone17promax-share20-heavy-mixed-20260713-085852`.
 
-## Current Truth
+## Historical V3 Baseline Truth (Superseded 2026-07-30)
 
 - `Docs/CURRENT_STATUS.md` is the single source of truth for the active repository state.
-- MemoMark is in `V3 Production Quality And Delivery`. V1 MVP and V2 Product
-  Definition And Realization are complete. Product-stage boundaries are
-  canonical in `Docs/PRODUCT_VERSION_HISTORY.md`.
+- At this historical checkpoint, MemoMark was in
+  `V3 Production Quality And Delivery`. This section is retained as V3 evidence
+  and must not override the 2026-07-30 V4 kickoff at the top of this file.
 - App release versions (`1.5`, `1.6`), Production Audit report versions, and
   legacy `V1*` source identifiers are separate version systems. Existing
   `V1*` source names remain compatibility-oriented implementation identifiers
@@ -652,7 +676,8 @@ Evidence:
   source paths, and GitHub repository URL remain intentionally preserved until
   a dedicated engineering rename slice is approved.
 - RFC documents are historical architecture records unless `CURRENT_STATUS.md` says their conclusions have been revalidated for the current live HEAD.
-- `main` is the active V3 repository and product source line. It contains the
+- At this historical checkpoint, `main` was the active V3 repository and
+  product source line. It contains the
   historical V1-compatible iOS implementation after the former
   `v1-checkpoint-20260702` checkpoint was merged into it.
 - `main` now also contains the Live Photo main app picker release candidate via

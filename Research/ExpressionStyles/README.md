@@ -1,25 +1,24 @@
-# MemoMark V4 Candidate: Expression Style System
+# MemoMark V4: Expression Style System Research Foundation
 
-Last updated: 2026-07-20
+Last updated: 2026-07-30
 
 ## Status
 
 ```text
-Research Seed
-Deferred Until V3 Reliability Closure
+Active V4 Research Foundation
+V4.0 Research And Product Definition
 Not Frozen
-No Implementation Authorized
+No Production Implementation Authorized
 ```
 
-This document archives the initial product thesis for a possible MemoMark V4
-direction. It is intentionally a research starting point rather than a Product
-Design Review, architecture decision, implementation plan, or commitment to a
-V4 product stage.
+This document is the active research foundation for MemoMark V4. It remains a
+research starting point rather than a Product Design Review, architecture
+decision, implementation plan, persistence change, or Renderer authorization.
 
-MemoMark remains in:
+MemoMark is in:
 
 ```text
-V3 Production Quality And Delivery
+V4 Expression Style System
 ```
 
 No Swift model, persistence schema, Configuration Center interaction,
@@ -59,9 +58,9 @@ choosing how the photograph should tell its story.
    -> Object Inspector
    ```
 
-6. V4 research may continue as documentation, but production implementation is
-   deferred until the V3 reliability gates are closed and a future PDR is
-   explicitly reviewed.
+6. V4 research and specification are active, but production implementation is
+   deferred until the V4 Entry Engineering Gate closes and a Product Design
+   Review is explicitly accepted.
 
 These assumptions require validation before a specification is frozen.
 
@@ -216,23 +215,24 @@ Future research should prefer `Style Family` or `风格系列` over `Style Pack`
 The latter risks implying a template marketplace, which is outside MemoMark's
 product identity.
 
-## V3 Release Gate
+## V4 Entry Gate
 
-This research does not change the active engineering order.
+The formal V4 start does not change the active engineering order.
 
-No V4 feature implementation should precede V3 reliability closure. The next
-engineering work remains:
+No Expression Style production implementation should precede the carried
+reliability closure. The next engineering work remains:
 
 ```text
 TX-001 Export Transaction Specification And Failure Tests
 -> BP-001 Enforced Single-Task Memory Contract
--> V3 Reliability Evidence And Certification Closure
+-> Superseding Production Reliability Certification
 ```
 
 Research and product discussion may continue without touching production code.
 Implementation may begin only after:
 
-1. V3 release-blocking reliability gaps are resolved or explicitly waived.
+1. The carried V3 release-blocking reliability gaps are resolved or the
+   supported production claim is explicitly narrowed through certification.
 2. The Expression Style product model is reviewed through a future PDR.
 3. Vocabulary, persistence, migration, Layout Engine, preview, export, and
    compatibility boundaries have approved specifications.
@@ -242,7 +242,7 @@ Implementation may begin only after:
 ## Proposed Research Sequence
 
 ```text
-Research Seed
+Research Foundation
 -> User Expression Scenarios
 -> Style Dimension Taxonomy
 -> Synthetic Visual Studies
@@ -261,7 +261,9 @@ The likely first implementation proof, when eventually authorized, should be:
 3. Verify preview/export fidelity, migration, and orientation behavior before
    expanding the library.
 
-This sequence is deferred and is not an active implementation plan.
+The research-through-PDR portion is the active V4 Product Loop. The
+implementation portion remains deferred and is not an active implementation
+plan.
 
 ## Research Questions
 
@@ -287,7 +289,8 @@ The following questions must be answered before a PDR can freeze the system:
 
 ## Research Completion Criteria
 
-This research seed is ready to advance into a Product Design Review only when:
+This research foundation is ready to advance into a Product Design Review only
+when:
 
 - the semantic and visual dimensions no longer overlap ambiguously
 - at least two structurally different styles have measurable specifications
@@ -296,6 +299,8 @@ This research seed is ready to advance into a Product Design Review only when:
   IA-002
 - preview/export parity requirements are explicit
 - Layout Engine ownership is measurable
-- V3 reliability work is no longer displaced by the proposal
+- the V4 Entry Engineering Gate is complete and is no longer displaced by the
+  proposal
 
-Until then, this document remains an idea archive and discussion anchor.
+Until then, this document remains the active research foundation and discussion
+anchor, not implementation authority.

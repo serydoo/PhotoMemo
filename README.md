@@ -190,24 +190,40 @@ One photo may belong to multiple life timelines. The long-term goal is to let ev
 
 ## Current Status
 
-MemoMark is in `V3 Production Quality And Delivery`.
+MemoMark is in `V4 Expression Style System`, subphase
+`V4.0 Research And Product Definition`.
 
-V1 MVP and V2 Product Definition And Realization are complete. V3 turns the
-established Memory Presentation Engine into a production-ready,
-evidence-backed delivery system.
+V1 MVP, V2 Product Definition And Realization, and V3 Production Quality And
+Delivery are concluded. V3 ended with certification carryover rather than a
+false production-certification pass.
+
+V4 is the final sustained refinement stage. It begins with Expression Style
+research and continues bounded improvement of the main interface, existing
+features, interaction logic, accessibility, and device fit without a broad
+core-flow or architecture rewrite.
 
 Current priorities include:
 
 ```text
-Durable Configuration
--> Apple Photos Lifecycle Validation
--> Regression And Performance Evidence
--> TestFlight / App Store Readiness
+Product Loop: ES-001 User Expression Scenarios
+-> Style Taxonomy
+-> Measurable Classic And Minimal Specifications
+-> Product Design Review
+-> Observed Existing-Product Refinement
+
+Engineering Loop: TX-001 Export Commit Protocol
+-> BP-001 Enforced Single-Task Memory Contract
+-> Superseding Production Reliability Certification
 ```
 
 IA-002 Configuration Center Architecture and the completed IA-003 Memory Engine
-integration remain architectural foundations. V3 does not reopen them by
-default.
+integration remain architectural foundations. V4 does not reopen them by
+default. Expression Style production implementation and broader production
+claims remain unauthorized until both V4 entry gates pass.
+
+After V4, routine version updates stop unless material user impact,
+Apple-platform compatibility, or a major reliability/privacy need justifies a
+scoped maintenance release.
 
 Recent IA-003-compatible foundation work has established the first Memory Expression Engine path:
 
@@ -221,6 +237,9 @@ MemorySubject
 See `Docs/PRODUCT_VERSION_HISTORY.md` for the canonical distinction between
 product stages, App release versions, audit-report versions, and legacy `V1*`
 implementation identifiers.
+
+See `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md` for the accepted
+V4 boundary, V3 carryover, and first work items.
 
 ## Repository Map
 
@@ -246,7 +265,7 @@ MemoMark should preserve historical product phases through branches, tags, and r
 
 Current intended line split:
 
-- `main` - active V3 repository and product source-of-truth line
+- `main` - active V4 repository and product source-of-truth line
 - milestone tags and releases - macOS foundation, iOS foundation, MVP, and V1 checkpoints
 
 Repository cleanup should not create root-level copies such as `MacVersion/`, `MVP/`, or `V1/`.
@@ -260,11 +279,12 @@ For project context, read:
 1. `PROJECT_CONSTITUTION.md`
 2. `Docs/MASTER_PLAN.md`
 3. `Docs/PRODUCT_VERSION_HISTORY.md`
-4. `Docs/CURRENT_STATUS.md`
-5. `PROJECT_PHILOSOPHY.md`
-6. `PROJECT_DIRECTION.md`
-7. `Docs/DOCUMENT_INDEX.md`
-8. `Docs/PROJECT_STRUCTURE.md`
+4. `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
+5. `Docs/CURRENT_STATUS.md`
+6. `PROJECT_PHILOSOPHY.md`
+7. `PROJECT_DIRECTION.md`
+8. `Docs/DOCUMENT_INDEX.md`
+9. `Docs/PROJECT_STRUCTURE.md`
 
 Old documents remain reference material for now. Do not migrate them until the research specifications stabilize.
 

@@ -1,5 +1,17 @@
 # Research History
 
+## 2026-07-30
+
+MemoMark formally started `V4 Expression Style System`, subphase
+`V4.0 Research And Product Definition`. The former Expression Style research
+seed is now the active V4 research foundation.
+
+This transition authorizes `ES-001 User Expression Scenarios`, taxonomy,
+synthetic studies, measurable specifications, and Product Design Review
+preparation. It does not freeze the product model or authorize production
+implementation. `TX-001`, `BP-001`, and a superseding production reliability
+certification remain the parallel V4 Entry Engineering Gate.
+
 ## 2026-07-20
 
 MemoMark archived the initial Expression Style System thesis as a possible V4

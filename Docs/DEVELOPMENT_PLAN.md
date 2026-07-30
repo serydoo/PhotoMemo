@@ -1,5 +1,11 @@
 # MemoMark Development Plan
 
+Status: Historical implementation-phase plan
+
+Current stage: `V4 Expression Style System`. Current sequencing is owned by
+`Docs/MASTER_PLAN.md` and
+`Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`.
+
 ## Phase 1
 
 ### Real Single-Photo Pipeline
@@ -25,7 +31,7 @@ Completed as the foundation.
 
 Status:
 
-In active refinement.
+Established during V2/V3; ongoing changes are scoped polish only.
 
 ## Phase 3
 
@@ -52,7 +58,8 @@ Implemented as the current processing backbone.
 
 Status:
 
-Current.
+Established during V3; remaining certification work is carried by the V4 Entry
+Engineering Gate.
 
 ## Phase 5
 
@@ -66,7 +73,7 @@ Current.
 
 Status:
 
-Next.
+Established as a V3 baseline; `TX-001` and `BP-001` remain explicit carryover.
 
 ## Phase 6
 
@@ -78,7 +85,7 @@ Next.
 
 Status:
 
-Future, but current code should not block it.
+Realized during V2/V3. This label is historical.
 
 ## Working Rule
 

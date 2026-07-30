@@ -1,6 +1,6 @@
 # MemoMark Product Version History
 
-Last updated: 2026-07-11
+Last updated: 2026-07-30
 
 This document is the canonical source for MemoMark product-stage boundaries.
 It distinguishes product stages from App Store versions, audit-report versions,
@@ -10,8 +10,8 @@ and legacy implementation identifiers.
 
 MemoMark uses four different kinds of version labels:
 
-1. **Product stage**: V1, V2, and V3 describe the evolution of the product and
-   repository architecture.
+1. **Product stage**: V1, V2, V3, and V4 describe the evolution of the product
+   and repository architecture.
 2. **App release version**: versions such as `1.5` and `1.6` identify builds
    distributed through TestFlight or App Store Connect.
 3. **Audit report version**: names such as `Production Audit v1.0` and
@@ -72,11 +72,11 @@ Representative boundaries:
 
 Documents whose titles contain `V1`, `V2`, IA-series identifiers, or historical
 release labels remain valid records of the work performed during V2. They do
-not override the current V3 stage.
+not override the current V4 stage.
 
 ## V3: Production Quality And Delivery
 
-Start: 2026-07-10 after completion of the Production Audit v2.0 baseline.
+Period: 2026-07-10 through 2026-07-30.
 
 Canonical starting checkpoint:
 
@@ -98,12 +98,78 @@ V3 preserves the product principles and frozen architecture established during
 V2. Entering V3 does not reopen IA-002 or discard the Memory Engine,
 Configuration Center, or local-first boundaries.
 
+V3 ended after the MemoMark `2.0.1 (48)` production-quality baseline at
+`864d6cdf`. The transition evidence includes `1,214` passing tests, one existing
+skip, zero failures, successful unsigned macOS and generic iOS Debug builds,
+and in-place signed-device installations recorded in `Docs/CURRENT_STATUS.md`.
+
+V3 closure status is:
+
+```text
+Concluded With Certification Carryover
+```
+
+This is not a `PASS` verdict for the 2026-07-20 V3 Production Reliability
+Certification. `TX-001` Export Commit Protocol and `BP-001` enforced
+single-task memory contract remained open without a superseding certification
+at the stage boundary. They retain P0 priority as the V4 Entry Engineering
+Gate.
+
+## V4: Expression Style System
+
+Start: 2026-07-30.
+
+Canonical starting baseline:
+
+- `864d6cdf` — `Record July UI and device verification` on 2026-07-30
+
+Accepted stage decision:
+
+- `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
+
+Active subphase:
+
+```text
+V4.0 Research And Product Definition
+```
+
+V4 defines how a Preset expresses a memory without collapsing semantic behavior,
+visual grammar, variants, and content composition into an unstructured template
+catalog. The initial direction is:
+
+```text
+Preset
+-> Memory Behavior
+-> Expression Style
+-> Style Variant
+-> Content Composition
+```
+
+V4 begins with two distinct loops:
+
+- Product Loop: user scenarios, taxonomy, synthetic visual studies, measurable
+  Classic and Minimal specifications, Product Design Review, and bounded
+  observation-led refinement of the main interface, existing features,
+  interaction logic, accessibility, and device fit.
+- Engineering Loop: `TX-001`, `BP-001`, and a superseding production
+  reliability certification.
+
+V4 is MemoMark's final sustained refinement stage. It does not authorize a
+large-scale core-flow or architecture rewrite. Research, specification, and
+bounded existing-product refinement are active. Expression Style production
+implementation and broader production-capability claims are not authorized
+until both the Product Design Review and V4 Entry Engineering Gate pass.
+
+After V4, routine version updates stop unless a material issue, Apple-platform
+change, compatibility requirement, or major reliability/privacy problem
+requires a scoped maintenance release.
+
 ## Naming Policy
 
-- Current project-facing documentation must identify V3 as the active product
+- Current project-facing documentation must identify V4 as the active product
   stage.
 - Historical documents should remain historically accurate rather than being
-  rewritten as if they were created during V3.
+  rewritten as if they were created during V4.
 - New release-facing documents should use App release versions explicitly,
   such as `MemoMark 1.6`, when discussing TestFlight or App Store builds.
 - Audit packages must use the phrase `audit report version` when ambiguity is
@@ -114,8 +180,9 @@ Configuration Center, or local-first boundaries.
 
 ## Current Truth
 
-MemoMark is currently in V3 Production Quality And Delivery.
+MemoMark is currently in `V4 Expression Style System`, subphase
+`V4.0 Research And Product Definition`.
 
-The V1 MVP stage and V2 Product Definition And Realization stage are complete.
-V2 documents remain architectural and historical inputs; they are no longer
-the active-stage instruction set.
+V1 MVP, V2 Product Definition And Realization, and V3 Production Quality And
+Delivery are concluded. V3's open certification findings remain active
+engineering obligations; concluded does not mean certified.

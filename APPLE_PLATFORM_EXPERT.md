@@ -73,7 +73,7 @@ Preserve these principles:
 - Apple Photos owns the user's photo library and original assets.
 - Objective media facts enter through the Metadata and media pipeline.
 - Memory Engine owns Life Position and time-anchor meaning.
-- The durable configuration aggregate defined by the current V3 contracts owns
+- The durable configuration aggregate established by the V3 contracts owns
   saved configuration truth; do not infer a generic snapshot as canonical.
 - Layout Engine owns layout decisions and canonical geometry contracts.
 - Renderer is stateless and consumes resolved presentation and layout input.

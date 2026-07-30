@@ -1,12 +1,12 @@
 # MemoMark Repository Line Strategy
 
-Last updated: 2026-07-11
+Last updated: 2026-07-30
 
 This document defines how MemoMark should preserve older product phases without turning the repository into a stack of duplicated version folders.
 
 Read `PROJECT_CONSTITUTION.md`, `Docs/MASTER_PLAN.md`, and
 `Docs/PRODUCT_VERSION_HISTORY.md` first. This strategy must not override the
-current V3 repository rules.
+current V4 repository rules.
 
 ## Purpose
 
@@ -18,6 +18,7 @@ MemoMark has already moved through several meaningful phases:
 - V1-compatible iPhone configuration and memory implementation
 - V2 Product Definition and Realization
 - V3 Production Quality and Delivery
+- V4 Expression Style System
 
 Those phases are important project memory, but they should not each become a duplicated source tree inside the repository root.
 
@@ -32,7 +33,7 @@ Use these lines going forward:
 It represents:
 
 - the current repository identity
-- the active V3 product and engineering line
+- the active V4 product and engineering line
 - the V2 architecture and completed IA-003 integration baseline
 - the latest source-of-truth documentation
 
@@ -74,6 +75,8 @@ Recommended milestone grouping:
 4. V1-compatible implementation checkpoints and release candidates
 5. V2 architecture and IA-series checkpoints
 6. V3 production-quality and release-readiness checkpoints
+7. V4 Expression Style research, specification, and accepted implementation
+   checkpoints
 
 If a historical phase needs a downloadable build, attach the artifact to a release. Do not keep multiple app copies in the main source tree.
 
@@ -98,7 +101,7 @@ Avoid:
 
 Current steady-state structure:
 
-1. `main` for the active V3 product and repository source of truth
+1. `main` for the active V4 product and repository source of truth
 2. milestone tags for historical stages
 3. GitHub Releases for packaged builds and phase notes
 4. temporary scoped branches only when active work requires isolation

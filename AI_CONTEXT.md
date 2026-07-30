@@ -1,17 +1,32 @@
 # MemoMark AI Context
 
-## Current Stage: V3
+## Current Stage: V4
 
-MemoMark V1 MVP and V2 Product Definition And Realization are complete.
+MemoMark V1 MVP, V2 Product Definition And Realization, and V3 Production
+Quality And Delivery are concluded.
 
-The current stage is `V3 Production Quality And Delivery`.
+The current stage is `V4 Expression Style System`, subphase
+`V4.0 Research And Product Definition`.
 
 Read `Docs/PRODUCT_VERSION_HISTORY.md` for the canonical stage boundaries.
+Read `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md` for the accepted
+V4 entry decision.
 
-V3 preserves PM-003, IA-002, IA-003, the Configuration Center, and the Memory
-Presentation Engine boundaries established during V2. It focuses on durable
-configuration, real Apple Photos lifecycle evidence, regression control,
-performance, and release readiness.
+V4 preserves PM-003, IA-002, IA-003, the Configuration Center, durable
+configuration aggregate, and Memory Presentation Engine boundaries established
+during V2 and hardened during V3. It researches and specifies Expression Style
+while continuing bounded, observation-led refinement of the main interface,
+existing features, interaction logic, accessibility, and device fit. It does
+not authorize Expression Style production implementation or broader production
+claims before the Product Design Review and V4 Entry Engineering Gate pass.
+
+V4 is the final sustained refinement stage. After V4, routine releases stop
+unless material user impact, Apple-platform compatibility, or a major
+reliability/privacy need requires scoped maintenance.
+
+V3 concluded with certification carryover. `TX-001` Export Commit Protocol and
+`BP-001` enforced single-task memory contract remain P0 engineering obligations;
+do not report the historical conditional certification as passed.
 
 The completed V2 integration track was:
 
@@ -30,15 +45,16 @@ Read these first:
 1. `PROJECT_CONSTITUTION.md`
 2. `Docs/MASTER_PLAN.md`
 3. `Docs/PRODUCT_VERSION_HISTORY.md`
-4. `Docs/CURRENT_STATUS.md`
-5. `PROJECT_RESET.md`
-6. `RepositoryAudit.md`
-7. `Research/README.md`
+4. `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
+5. `Docs/CURRENT_STATUS.md`
+6. `PROJECT_RESET.md`
+7. `RepositoryAudit.md`
+8. `Research/README.md`
 
 Renderer must not own layout decisions. New layout work must move through research, specification, Layout Engine, renderer, validation, and release.
 
-Historical V1 and V2 documents remain evidence and architecture records. Do
-not rewrite their original context merely to make their titles say V3.
+Historical V1-V3 documents remain evidence and architecture records. Do not
+rewrite their original context merely to make their titles say V4.
 
 ## IA-001 Frozen State
 
@@ -281,19 +297,22 @@ Default interaction posture:
 
 ## Near-Term Priorities
 
-1. close durable configuration and clean-install persistence regressions
-2. preserve Memory Engine and Time Anchor architecture boundaries
-3. validate the complete signed-device Apple Photos lifecycle
-4. keep Memory Card, configuration aggregate, render, export, and metadata retention aligned
-5. collect performance, memory, concurrency, and media-format evidence
-6. apply repeatable product-consistency and release quality gates
+1. run `ES-001 User Expression Scenarios` without production code changes
+2. separate Memory Behavior, Expression Style, Style Variant, and Content Composition
+3. continue bounded observed refinement of existing product and device fit
+4. close `TX-001` export commit and crash-recovery reconciliation
+5. close `BP-001` with enforced budgets and 48MP/RAW peak-memory evidence
+6. publish a superseding production reliability certification
+7. freeze measurable Classic and Minimal specifications through Product Design Review
 
-Current implementation priority inside V3:
+Current implementation priority inside V4:
 
 1. keep IA-002 architecture frozen
 2. treat completed IA-003 integration as an architectural foundation
-3. require scoped evidence before changing production pipeline boundaries
-4. prioritize real-device correctness and durable state over feature expansion
+3. keep Expression Style production implementation and broader production
+   claims unauthorized until both V4 entry gates pass
+4. require scoped evidence before changing production pipeline boundaries
+5. prioritize real-device correctness and durable state over feature expansion
 
 ## Product Guardrails
 

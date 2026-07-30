@@ -2,6 +2,56 @@
 
 Last updated: 2026-07-30
 
+## 2026-07-30 V4 Expression Style System Formally Started
+
+- Concluded `V3 Production Quality And Delivery` as
+  `Concluded With Certification Carryover` and formally started
+  `V4 Expression Style System`, subphase
+  `V4.0 Research And Product Definition`.
+- Recorded the accepted stage decision in
+  `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md` and synchronized the
+  constitution, master plan, canonical product-stage history, active research
+  direction, and current repository entry points.
+- Used verified baseline `864d6cdf` as the V4 starting checkpoint. The latest
+  V3 transition evidence remains `1,214` passing tests, one existing skip, zero
+  failures, successful unsigned macOS and generic iOS Debug builds, and signed
+  in-place installation of MemoMark `2.0.1 (48)` on the recorded devices.
+- Preserved the 2026-07-20 V3 Production Reliability Certification verdict as
+  `FAIL (Conditional)`. No later source formally superseded `TX-001` Export
+  Commit Protocol or `BP-001` enforced single-task memory contract, so both
+  retain P0 priority as the V4 Entry Engineering Gate.
+- Activated `Research/ExpressionStyles/README.md` as the V4 research foundation,
+  not as a frozen PDR or implementation authority. The first Product Loop item
+  is `ES-001 User Expression Scenarios`; the first Engineering Loop item is
+  `TX-001 Export Commit Protocol Specification And Failure Tests`.
+- Defined V4 as the final sustained refinement stage: Expression Style research
+  starts the stage, while bounded work may continue across the main interface,
+  existing features, interaction logic, accessibility, and device fit. V4 does
+  not authorize a large-scale core-flow or architecture rewrite.
+- After V4, routine version updates stop unless material user impact, an
+  Apple-platform or compatibility change, or a major reliability/privacy issue
+  requires scoped maintenance. This boundary does not waive open P0 findings.
+- This stage transition changes product governance and documentation only. It
+  changes no Swift source, persistence schema, renderer/layout behavior,
+  metadata/export behavior, Share Extension, PhotoKit, entitlement, permission,
+  or original-photo handling.
+
+## 2026-07-30 MemoMark 2.0.1 Release Notes Closure
+
+- Extended the canonical `2.0.1 (48)` release note through July 30 so it now
+  includes final-output time-display parity, Share handoff UI polish, Advanced
+  Modules spacing, compact Memory Expression behavior, complete regression
+  evidence, and delivery to three paired physical iPhones.
+- Synchronized the same user-facing themes into the in-app Chinese and English
+  What's New surface. The complete in-app release note now covers recording,
+  final-output parity, Advanced Modules, compact-device behavior, product
+  language, unchanged privacy and architecture boundaries, verification
+  evidence, and the post-V4 maintenance rhythm. It explicitly states that
+  `2.0.1` closes V3 and that V4 is the final sustained refinement stage.
+- Recorded the intended maintenance boundary: after V4, if no material issue
+  affects normal use, MemoMark stops routine version updates and retains only
+  necessary compatibility, platform-change, and major-issue maintenance.
+
 ## 2026-07-30 UI And Time Output GitHub Sync Verification
 
 - Reviewed the time-display production repair, Share Extension polish, and

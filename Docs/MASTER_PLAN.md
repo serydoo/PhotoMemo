@@ -1,6 +1,6 @@
 # MemoMark Master Plan
 
-Last updated: 2026-07-14
+Last updated: 2026-07-30
 
 Read `PROJECT_CONSTITUTION.md` before this file. The constitution is the highest-level repository instruction. This file remains the operational master plan.
 
@@ -14,14 +14,18 @@ MemoMark does not only present photographs. It presents memories.
 
 ## Current Phase
 
-MemoMark is in `V3 Production Quality And Delivery`.
+MemoMark is in `V4 Expression Style System`.
 
-V1 MVP and V2 Product Definition And Realization are complete. The canonical
-stage boundaries are recorded in `Docs/PRODUCT_VERSION_HISTORY.md`.
+V1 MVP, V2 Product Definition And Realization, and V3 Production Quality And
+Delivery are concluded. The canonical stage boundaries are recorded in
+`Docs/PRODUCT_VERSION_HISTORY.md`.
 
-V3 carries the V2 architecture into production-quality validation and delivery.
-It prioritizes durable configuration, real Apple Photos lifecycle correctness,
-regression prevention, performance and memory evidence, and release readiness.
+V3 concluded with the MemoMark `2.0.1 (48)` production-quality baseline and
+explicit certification carryover. V4 extends the accepted Memory Presentation
+Engine through research, specification, and review of the Expression Style
+System. It is also the final sustained refinement stage for the main interface,
+existing features, interaction logic, and device fit. It does not reopen the
+architecture hardened during V3 or authorize a large-scale core-flow rewrite.
 
 PM-003 Content Layout System Phase 1 is frozen.
 
@@ -41,27 +45,38 @@ PDR-004 Configuration Center Architecture
 
 ## Current Priority
 
-Close V3 production-quality gaps without reopening frozen V2 architecture:
+Start V4 without using the stage change to bypass unresolved evidence:
 
-1. Keep `ConfigurationLibraryRecord` and its V3 successors as durable truth.
-2. Close configuration save, restore, backup, and clean-install regressions.
-3. Validate the real Apple Photos -> Share -> MemoMark -> Processing ->
-   Notification -> Apple Photos lifecycle on signed devices.
-4. Collect evidence for Live Photo, orientation, location, RAW/ProRAW/DNG,
-   high-resolution media, performance, memory, and concurrency behavior.
-5. Establish repeatable change-level and release-level production quality gates.
-6. Preserve the frozen Configuration Center, Memory Engine, Presentation,
-   Layout Engine, Renderer, and Export ownership boundaries.
+1. Begin `ES-001 User Expression Scenarios` and separate Memory Behavior,
+   Expression Style, Style Variant, and Content Composition through evidence.
+2. Continue bounded, observation-led refinement of the main interface, existing
+   features, interaction logic, accessibility, and device fit.
+3. Close `TX-001` Export Commit Protocol and crash-recovery reconciliation.
+4. Close `BP-001` enforced single-task memory contract with 48MP/RAW peak-memory
+   evidence.
+5. Publish a superseding production reliability certification before Expression
+   Style production implementation or broader production-capability claims.
+6. Turn at least Classic and Minimal into measurable style specifications,
+   then review the V4 product model through a Product Design Review.
+7. Preserve the frozen Configuration Center, Memory Engine, Presentation,
+   Layout Engine, Renderer, Export, durable configuration, and Apple Photos
+   ownership boundaries.
 
-## Deferred V4 Candidate: Expression Style System
+## Active V4 Direction: Expression Style System
 
-MemoMark has archived an initial research seed for a possible future
-`Expression Style System` in `Research/ExpressionStyles/README.md`.
+The accepted V4 kickoff is recorded in
+`Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`. The initial research
+foundation is `Research/ExpressionStyles/README.md`.
 
-This is not a declaration that V4 has started. The current product stage remains
-`V3 Production Quality And Delivery`, and the proposal is not yet a frozen PDR,
-architecture decision, implementation plan, persistence change, or Renderer
-expansion.
+V4 has formally started at the research and product-definition level. The
+direction is not yet a frozen PDR, architecture decision, implementation plan,
+persistence change, or Renderer expansion.
+
+V4 is also MemoMark's final sustained product-refinement stage. Bounded changes
+to the main interface, existing features, interaction logic, accessibility, and
+device fit may continue when they begin from observed scenarios, stay within
+frozen ownership, and carry scoped verification. This is not authorization for
+a broad rewrite or unrelated feature expansion.
 
 The candidate direction separates:
 
@@ -72,15 +87,25 @@ Preset
 -> Style Variant: a bounded treatment inside one style
 ```
 
-Research and product discussion may continue while V3 closes. Production code
-work for this candidate is deferred until the V3 reliability gates are closed,
-beginning with `TX-001` and `BP-001`, and a future Product Design Review
+Research, specification, and bounded existing-product refinement may proceed
+while the V4 Entry Engineering Gate closes. Expression Style production code
+and broader production-capability claims are deferred until `TX-001`, `BP-001`,
+and a superseding production certification pass, and a Product Design Review
 explicitly approves the product model and verification boundaries.
 
-## V3 Production Readiness Engineering Loop
+## Post-V4 Maintenance Boundary
 
-Production Readiness is an Engineering Loop inside V3, not a separate product
-stage. Each system proceeds through:
+After the accepted V4 scope is complete, MemoMark stops routine version updates
+unless a material issue affects normal use, an Apple-platform change requires
+compatibility work, or a major reliability/privacy problem requires a scoped
+release. This boundary does not excuse open P0 findings or prevent necessary
+maintenance.
+
+## V4 Entry Engineering Gate
+
+The Production Readiness discipline established during V3 remains an
+Engineering Loop inside V4. It does not become Expression Style feature work.
+Each affected system proceeds through:
 
 ```text
 Boundary Audit
@@ -94,7 +119,7 @@ The canonical method, fixed reliability questions, finding levels, evidence
 matrix, and certification verdicts are defined in
 `Docs/06_Development/Reliability_Engineering_Discipline.md`.
 
-The current audit order is:
+The retained audit order is:
 
 ```text
 Share Workflow
@@ -104,8 +129,9 @@ Share Workflow
 -> Diagnostics
 ```
 
-Production readiness is demonstrated by evidence, not confidence. This loop
-must improve reliability and proof before expanding feature surface.
+Production readiness is demonstrated by evidence, not confidence. The open
+V3 findings keep their original severity until superseding evidence closes or
+explicitly narrows the supported claim.
 
 ## Long-Term Development Rule
 
@@ -161,7 +187,10 @@ The product should not change how users manage photos.
 
 It should change how users understand them.
 
-## Completed V2 Roadmap
+## Historical V2 Roadmap
+
+The labels below preserve the original planning structure. They do not override
+the current V4 stage or the active priorities above.
 
 ### V2.0: Repository Reset
 
@@ -179,7 +208,7 @@ Scope:
 
 ### V2.1: Memory Engine
 
-Status: current.
+Status: completed foundation.
 
 Scope:
 
@@ -349,7 +378,7 @@ IA-003 must preserve:
 
 ### V2.2: Layout Specification
 
-Status: waits for reverse-engineering completion.
+Status: carried forward as a research prerequisite.
 
 Scope:
 
@@ -363,7 +392,7 @@ Scope:
 
 ### V2.3: Layout Engine
 
-Status: future.
+Status: deferred until measurable specifications are approved.
 
 Scope:
 
@@ -373,7 +402,7 @@ Scope:
 
 ### V2.4: Renderer Rewrite
 
-Status: future.
+Status: deferred; no V4 Renderer rewrite is currently authorized.
 
 Scope:
 
@@ -383,7 +412,7 @@ Scope:
 
 ### V2.5: macOS Release
 
-Status: future.
+Status: historical planning track.
 
 Scope:
 
@@ -393,14 +422,14 @@ Scope:
 
 ### V3.0: iOS
 
-Status: future.
+Status: realized during V2/V3; the label is historical.
 
 Scope:
 
 - resume iOS product work after the V2 macOS architecture is stable
 - reuse Memory Engine, Presentation Engine, Layout Engine, and Renderer boundaries
 
-## Roadmap
+## Historical Repository Roadmap
 
 ### Phase 0: Reset And Audit
 
@@ -477,7 +506,7 @@ Current risks:
 
 ## Architecture
 
-V2 target flow:
+Accepted dependency flow:
 
 ```text
 Photo
@@ -500,15 +529,16 @@ Ownership:
 
 ## Next Step
 
-The next implementation slice is:
+The next two bounded work items are:
 
 ```text
-IA-003A MemorySubject Adapter
+Product Loop: ES-001 User Expression Scenarios
+Engineering Loop: TX-001 Export Commit Protocol Specification And Failure Tests
 ```
 
-IA-003A should bridge the existing personal/profile configuration into the new `MemorySubject` model.
-
-Do not modify Renderer, Metadata, Export, Share Extension, Photo Library behavior, or Layout Engine work in IA-003A.
+They are separate work items. `ES-001` must not modify production behavior.
+`TX-001` must specify and prove transaction invariants before changing PhotoKit
+commit behavior. Neither item authorizes a Renderer change.
 
 Do not migrate old documents until the research specifications stabilize.
 
@@ -537,12 +567,16 @@ Current source-of-truth docs from V1 that remain useful:
 - `Docs/ARCHITECTURE.md`
 - `Docs/ADR/INDEX.md`
 
-Historical docs remain useful for context but must not override V2 reset direction.
+Historical docs remain useful for context but must not override the current V4
+constitution, kickoff decision, master plan, or product-stage history.
 
 ## Forbidden Actions
 
-- Do not continue feature development.
-- Do not continue renderer polishing.
+- Do not start Expression Style production implementation or expand the
+  supported production claim before the V4 Product Design Review and Entry
+  Engineering Gate pass.
+- Do not continue renderer polishing without measurable V4 specifications and
+  a scoped verification plan.
 - Do not imitate Immers or any other product.
 - Do not immediately migrate old documents.
 - Do not commit private research photos.

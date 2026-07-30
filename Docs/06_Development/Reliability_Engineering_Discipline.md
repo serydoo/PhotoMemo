@@ -1,6 +1,6 @@
 # MemoMark Reliability Engineering Discipline
 
-Status: Active V3 Engineering Loop discipline
+Status: Established in V3; active cross-stage Engineering Loop discipline
 
 Date: 2026-07-14
 
@@ -23,8 +23,14 @@ one. Do not pre-create empty category files.
 ## V3 Production Readiness Engineering Loop
 
 Production Readiness is an Engineering Loop inside `V3 Production Quality And
-Delivery`. It is not a new product stage and does not replace the V1/V2/V3
+Delivery`. It is not a new product stage and does not replace the V1/V2/V3/V4
 product-version history.
+
+V4 reuses this discipline for its Entry Engineering Gate. The open V3
+`TX-001` and `BP-001` findings retain their original severity until a
+superseding certification closes them or explicitly narrows the supported
+production claim. Reuse of this discipline does not turn reliability work into
+Expression Style feature work.
 
 The governing principle is:
 
@@ -50,7 +56,7 @@ accepted system to production quality, not to expand its feature surface.
 
 ### Audit Order
 
-The current V3 production-readiness order is:
+The retained production-readiness order is:
 
 1. Share Workflow;
 2. Batch Queue System;
