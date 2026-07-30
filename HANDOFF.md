@@ -1,5 +1,22 @@
 # MemoMark Handoff
 
+## 2026-07-30 MemoMark+ App Review candidate 2.0 (65)
+
+- The Guideline 2.1(b) purchase-entry repair now has an aligned App Review
+  candidate: `MARKETING_VERSION = 2.0`, `CURRENT_PROJECT_VERSION = 65` across
+  the app and embedded targets. Historical `2.0.1 (48)` release evidence is
+  intentionally unchanged.
+- Settings -> About -> What's New is localized for `2.0 (65)` and accurately
+  describes the StoreKit entry repair and its visible unavailable/retry path.
+- Focused release-note and commerce suites, localization syntax, generic iOS
+  Debug build, signed iOS build, and strict nested-signature verification
+  passed. The signed app was installed in place and launched on the connected
+  iPhone 17 Pro Max (`iPhone7`), whose installed-app list reports `2.0 (65)`.
+- This is not Sandbox purchase acceptance: the current StoreKit product lookup
+  remains unavailable. Before App Store resubmission, complete the paid-apps
+  agreement, product metadata and `2.0 (65)` association, then observe Apple’s
+  real Sandbox purchase sheet on clean iPhone and iPad installs.
+
 ## 2026-07-30 V4 Expression Style System kickoff
 
 - Formally concluded `V3 Production Quality And Delivery` as

@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.0 (65) App Review Recovery Candidate - 2026-07-30
+
+### Changed
+- Returned the App Store submission train to marketing version `2.0` and raised
+  the build number to `65` across the app, Share Extension, Widget Extension,
+  macOS host, and test target.
+- Updated the in-app What's New sheet in Simplified Chinese and English to
+  identify this candidate and explain the MemoMark+ purchase-entry repair.
+
+### Fixed
+- MemoMark+ now always exposes the StoreKit purchase action to users without a
+  verified entitlement. If the App Store cannot return the product, the app
+  explains the condition and preserves a retry action instead of accepting a
+  tap without visible feedback.
+- Settings now owns the MemoMark+ purchase sheet, so closing it returns to
+  Settings rather than presenting the page only after returning to Home.
+
+### Verification
+- Focused release-note and MemoMark commerce suites, localization syntax,
+  generic iOS Debug build, signed iOS Debug build, and strict nested-signature
+  verification passed.
+- Signed `2.0 (65)` installed in place and launched on the connected iPhone 17
+  Pro Max without clearing its app container.
+- A real StoreKit purchase-confirmation sheet remains an external App Store
+  Connect and clean-Sandbox acceptance requirement; it is not inferred from
+  the local build or device installation.
+
 ## 2.0.1 (48) Release Candidate - 2026-07-30
 
 ### Added

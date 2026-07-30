@@ -25,8 +25,8 @@ struct MemoMarkCommerceUIContractTests {
             "commerce.purchase.trust.local_processing",
             "commerce.purchase.trust.future_presets",
             "commerce.purchase.testflight.sandbox_notice",
-            "commerce.purchase.testflight.activate",
             "commerce.purchase.testflight.deactivate",
+            "commerce.purchase.retry",
             "commerce.purchase.price_note.launch",
             "commerce.purchase.price_note.standard",
             "commerce.purchase.primary_format.launch",
@@ -40,6 +40,107 @@ struct MemoMarkCommerceUIContractTests {
         #expect(!source.contains("VIP"))
         #expect(!source.contains("crown"))
         #expect(source.contains("isFirstRecorderCampaignOpen"))
+        #expect(
+            !source.contains(
+                "commerce.purchase.testflight.activate"
+            )
+        )
+        #expect(
+            !source.contains(
+                "commerce.purchase.testflight.purchase"
+            )
+        )
+    }
+
+    @Test("purchase remains actionable when the product must be reloaded")
+    func missingProductKeepsPurchaseActionAvailable() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/MemoMarkPlusPurchaseView.swift"
+        )
+
+        #expect(!source.contains("store.product == nil"))
+        #expect(source.contains("await store.purchasePlus()"))
+    }
+
+    @Test("App Review Sandbox uses the real StoreKit purchase action")
+    func sandboxDoesNotOfferLocalPlusActivation() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/MemoMarkPlusPurchaseView.swift"
+        )
+
+        #expect(
+            !source.contains(
+                "store.canActivateTestFlightExperience"
+            )
+        )
+        #expect(
+            !source.contains(
+                "store.activateTestFlightExperience()"
+            )
+        )
+        #expect(!source.contains("sandboxPurchaseButton"))
+    }
+
+    @Test("iOS Settings presents MemoMark+ before the Settings sheet closes")
+    func iOSSettingsPresentsLiveMemoMarkPlusPurchase() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        let bodyStart = try #require(
+            source.range(
+                of: "    var body: some View {"
+            )
+        )
+        let rootNavigationStart = try #require(
+            source.range(
+                of: "    @ViewBuilder\n    private var rootNavigation"
+            )
+        )
+        let settingsPageStart = try #require(
+            source.range(
+                of: "    private var settingsPage: some View {"
+            )
+        )
+        let entryPresentationStart = try #require(
+            source.range(
+                of: "    private var entryPresentation:"
+            )
+        )
+        let rootBodySource = String(
+            source[
+                bodyStart.lowerBound
+                ..< rootNavigationStart.lowerBound
+            ]
+        )
+        let settingsPageSource = String(
+            source[
+                settingsPageStart.lowerBound
+                ..< entryPresentationStart.lowerBound
+            ]
+        )
+
+        #expect(!source.contains("commerceSnapshot: .initial"))
+        #expect(!source.contains("onOpenMemoMarkPlus: {}"))
+        #expect(source.contains("showsMemoMarkPlus"))
+        #expect(
+            settingsPageSource.contains(
+                ".sheet(isPresented: $showsMemoMarkPlus)"
+            )
+        )
+        #expect(
+            settingsPageSource.contains(
+                "MemoMarkPlusPurchaseView("
+            )
+        )
+        #expect(
+            settingsPageSource.contains("store: commerceStore")
+        )
+        #expect(
+            !rootBodySource.contains(
+                ".sheet(isPresented: $showsMemoMarkPlus)"
+            )
+        )
     }
 
     @Test("StoreKit service uses one verified product path")
@@ -58,9 +159,9 @@ struct MemoMarkCommerceUIContractTests {
         #expect(source.contains("case .verified"))
         #expect(source.contains("AppTransaction.shared"))
         #expect(source.contains("presentOfferCodeRedeemSheet"))
-        #expect(source.contains("activateTestFlightExperience"))
         #expect(source.contains("isTestFlightExperienceActive"))
         #expect(source.contains("amount: 100"))
+        #expect(!source.contains("func activateTestFlightExperience"))
     }
 
     @Test("warm-gold badge remains app chrome")

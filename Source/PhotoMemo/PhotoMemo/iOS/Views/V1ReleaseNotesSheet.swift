@@ -191,7 +191,7 @@ struct V1ReleaseNotesSheet: View {
                     ),
                     localized(
                         "settings.release_notes.verification.item_four",
-                        fallback: "2.0.1 (48) 已原位安装到一台 iPhone 17 Pro Max 和两台 iPhone 15 Pro，没有清除应用数据。"
+                        fallback: "2.0 (65) 在提交审核前完成 MemoMark+ 购买入口修复：购买会请求 Apple 的 StoreKit 服务；服务暂时不可用时会给出说明并可重新尝试。"
                     ),
                     localized(
                         "settings.release_notes.verification.item_five",
@@ -208,7 +208,7 @@ struct V1ReleaseNotesSheet: View {
                 bullets: [
                     localized(
                         "settings.release_notes.next_stage.item_one",
-                        fallback: "2.0.1 标志着 V3 收尾。V4 从表达方式研究开始，继续打磨主界面、既有功能、操作逻辑和设备适配，不做大规模核心流程或架构重构。"
+                        fallback: "2.0 标志着 V3 的产品质量收口。V4 从表达方式研究开始，继续打磨主界面、既有功能、操作逻辑和设备适配，不做大规模核心流程或架构重构。"
                     ),
                     localized(
                         "settings.release_notes.next_stage.item_two",
@@ -250,7 +250,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.positioning",
-                                    fallback: "2.0.1 延续本地优先的记忆呈现方式，重点让既有流程更可靠，让预览、保存和最终结果保持一致。"
+                                    fallback: "2.0 延续本地优先的记忆呈现方式，重点让既有流程更可靠，让预览、保存和最终结果保持一致，并修复 MemoMark+ 的购买入口。"
                                 )
                             )
                             .font(.caption)

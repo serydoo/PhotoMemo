@@ -14,6 +14,10 @@ struct PhotoMemoiOSV1View: View {
     private var backgroundStatusService:
         PhotoMemoBackgroundStatusService
 
+    @ObservedObject
+    private var commerceStore:
+        MemoMarkCommerceStore
+
     private let refreshExternalIntake:
         () -> Void
 
@@ -173,6 +177,9 @@ struct PhotoMemoiOSV1View: View {
 
     @State
     private var showsWelcomeInformation = false
+
+    @State
+    private var showsMemoMarkPlus = false
 
     @State
     private var switchPresentation =
@@ -556,6 +563,8 @@ struct PhotoMemoiOSV1View: View {
     init(
         backgroundStatusService:
             PhotoMemoBackgroundStatusService,
+        commerceStore:
+            MemoMarkCommerceStore,
         refreshExternalIntake:
             @escaping () -> Void = {},
         previewCoordinator:
@@ -575,6 +584,11 @@ struct PhotoMemoiOSV1View: View {
             ObservedObject(
                 wrappedValue:
                     backgroundStatusService
+            )
+        self._commerceStore =
+            ObservedObject(
+                wrappedValue:
+                    commerceStore
             )
         self.refreshExternalIntake =
             refreshExternalIntake
@@ -798,8 +812,10 @@ struct PhotoMemoiOSV1View: View {
 
     private var settingsPage: some View {
         V1SettingsPageSurface(
-            commerceSnapshot: .initial,
-            onOpenMemoMarkPlus: {},
+            commerceSnapshot: commerceStore.snapshot,
+            onOpenMemoMarkPlus: {
+                showsMemoMarkPlus = true
+            },
             onShowWelcome: {
                 entryFlowState =
                     V1EntryFlowCoordinator
@@ -813,6 +829,14 @@ struct PhotoMemoiOSV1View: View {
             },
             onDismissKeyboard: dismissKeyboard
         )
+        .sheet(isPresented: $showsMemoMarkPlus) {
+            MemoMarkPlusPurchaseView(
+                store: commerceStore,
+                onDismiss: {
+                    showsMemoMarkPlus = false
+                }
+            )
+        }
     }
 
     private var entryPresentation:
@@ -2659,6 +2683,7 @@ private struct V1ScrollOffsetPreferenceKey:
     PhotoMemoiOSV1View(
         backgroundStatusService:
             runtime.backgroundStatusService,
+        commerceStore: runtime.commerceStore,
         previewCoordinator:
             runtime.environment
             .coordinators

@@ -1,6 +1,7 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Combine
 import Foundation
+import os
 import StoreKit
 #if os(iOS)
 import UIKit
@@ -21,15 +22,25 @@ final class MemoMarkCommerceStore:
 
     private let persistence:
         MemoMarkCommercePersistence
+    private let productLoader:
+        ([String]) async throws -> [Product]
     private var transactionListener:
         Task<Void, Never>?
 
     init(
         persistence:
             MemoMarkCommercePersistence =
-                MemoMarkCommercePersistence()
+                MemoMarkCommercePersistence(),
+        productLoader:
+            @escaping ([String]) async throws -> [Product] = {
+                productIDs in
+                try await Product.products(
+                    for: productIDs
+                )
+            }
     ) {
         self.persistence = persistence
+        self.productLoader = productLoader
         self.snapshot =
             persistence.loadSharedSnapshot(
                 compatibleWith:
@@ -62,13 +73,13 @@ final class MemoMarkCommerceStore:
             )
     }
 
-    var canActivateTestFlightExperience: Bool {
-        snapshot.environment == .sandbox
-        && !snapshot.isPlus
-    }
-
     var displayPrice: String {
         product?.displayPrice ?? "—"
+    }
+
+    var isPurchaseActionInProgress: Bool {
+        purchaseState == .loading
+        || purchaseState == .purchasing
     }
 
     var remainingRecords: Int? {
@@ -118,13 +129,7 @@ final class MemoMarkCommerceStore:
         let environment =
             await resolvedEnvironment()
 
-        do {
-            product = try await Product.products(
-                for: [Self.plusProductID]
-            ).first
-        } catch {
-            product = nil
-        }
+        product = await loadProduct()
 
         var plusTransaction: Transaction?
 
@@ -145,37 +150,60 @@ final class MemoMarkCommerceStore:
             environment: environment,
             plusTransaction: plusTransaction
         )
-        purchaseState =
-            plusTransaction == nil
-            ? .idle
-            : .purchased
+        if plusTransaction != nil {
+            purchaseState = .purchased
+        } else if product != nil {
+            purchaseState = .idle
+        } else {
+            purchaseState = unavailableStoreState
+        }
     }
 
     func purchasePlus() async {
-        guard let product else {
-            purchaseState =
-                .failed(
-                    localized(
-                        "commerce.error.store_unavailable",
-                        fallback: "暂时无法连接 App Store，请稍后重试。"
-                    )
-                )
-            return
+#if DEBUG
+        print("MemoMark.StoreKit: purchase action received")
+#endif
+        let productToPurchase: Product
+
+        if let product {
+            productToPurchase = product
+        } else {
+            purchaseState = .loading
+
+            guard let loadedProduct = await loadProduct() else {
+                purchaseState = unavailableStoreState
+                return
+            }
+
+            product = loadedProduct
+            productToPurchase = loadedProduct
         }
 
         purchaseState = .purchasing
 
         do {
-            let result = try await product.purchase()
+#if DEBUG
+            print("MemoMark.StoreKit: calling Product.purchase()")
+#endif
+            let result = try await productToPurchase.purchase()
 
             switch result {
             case .success(let verification):
+#if DEBUG
+                print("MemoMark.StoreKit: purchase result is success")
+#endif
                 await handleTransactionResult(
                     verification
                 )
             case .pending:
+#if DEBUG
+                print("MemoMark.StoreKit: purchase result is pending")
+#endif
                 purchaseState = .pending
             case .userCancelled:
+#if DEBUG
+                print("MemoMark.StoreKit: purchase result is cancelled")
+#endif
                 purchaseState = .cancelled
             @unknown default:
                 purchaseState =
@@ -202,23 +230,6 @@ final class MemoMarkCommerceStore:
             purchaseState =
                 .failed(error.localizedDescription)
         }
-    }
-
-    @discardableResult
-    func activateTestFlightExperience() -> Bool {
-        guard canActivateTestFlightExperience,
-              persistence
-                .activateTestFlightExperience(
-                    environment: .sandbox
-                ) else {
-            return false
-        }
-
-        publishSnapshot(
-            environment: .sandbox,
-            plusTransaction: nil
-        )
-        return true
     }
 
     @discardableResult
@@ -364,6 +375,50 @@ final class MemoMarkCommerceStore:
         await transaction.finish()
     }
 
+    private var unavailableStoreState:
+        MemoMarkPurchaseState {
+        .failed(
+            localized(
+                "commerce.error.store_unavailable",
+                fallback: "暂时无法连接 App Store，请稍后重试。"
+            )
+        )
+    }
+
+    private func loadProduct() async -> Product? {
+        do {
+#if DEBUG
+            print("MemoMark.StoreKit: requesting product")
+#endif
+            let product = try await productLoader(
+                [Self.plusProductID]
+            ).first
+
+            guard let product else {
+                commerceLogger.error(
+                    "StoreKit returned no MemoMark+ product."
+                )
+#if DEBUG
+                print("MemoMark.StoreKit: product request returned no product")
+#endif
+                return nil
+            }
+
+#if DEBUG
+            print("MemoMark.StoreKit: configured product loaded")
+#endif
+            return product
+        } catch {
+            commerceLogger.error(
+                "StoreKit product request failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
+            )
+#if DEBUG
+            print("MemoMark.StoreKit: product request failed")
+#endif
+            return nil
+        }
+    }
+
     private func resolvedEnvironment() async
     -> MemoMarkCommerceEnvironment {
         let verifiedEnvironment:
@@ -503,4 +558,9 @@ final class MemoMarkCommerceStore:
             )
     }
 }
+
+private let commerceLogger = Logger(
+    subsystem: "com.serydoo.PhotoMemo",
+    category: "commerce"
+)
 #endif

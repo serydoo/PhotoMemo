@@ -148,14 +148,12 @@
 "commerce.purchase.price_note.launch" = "Launch offer · One purchase, lifetime access";
 "commerce.purchase.price_note.standard" = "One purchase, lifetime access";
 "commerce.purchase.connecting" = "Connecting to the App Store";
+"commerce.purchase.retry" = "Reconnect to the App Store";
 "commerce.purchase.primary_format.launch" = "Become a First Recorder · %@";
 "commerce.purchase.primary_format.standard" = "Unlock Forever · %@";
 "commerce.purchase.pending" = "This purchase is awaiting approval and will unlock automatically when complete.";
 "commerce.purchase.apple_code" = "Redeem a MemoMark+ Offer Code";
 "commerce.purchase.restore" = "Restore Purchases";
-"commerce.purchase.testflight.activate" = "Activate MemoMark+ TestFlight Access";
-"commerce.purchase.testflight.activate_note" = "Available only in TestFlight / Sandbox. It does not transfer to the App Store version.";
-"commerce.purchase.testflight.purchase" = "Test the Sandbox Purchase Flow";
 "commerce.purchase.testflight.deactivate" = "Exit Temporary TestFlight Access";
 "commerce.purchase.trust.local_processing" = "Every photo is processed on this device";
 "commerce.purchase.trust.quality" = "Full quality · No ads · Originals stay unchanged";
@@ -195,7 +193,7 @@
 "settings.version.release_notes_detail" = "See what has changed in MemoMark.";
 "settings.release_notes.header" = "This update closes V3 with more consistent recording, settings, and final results.";
 "settings.release_notes.version_format" = "Version %@";
-"settings.release_notes.positioning" = "Version 2.0.1 continues MemoMark's local-first memory presentation: photos stay on this device, are never uploaded, and never replace originals in Apple Photos. This release focuses on making existing flows more reliable and keeping Preview, saving, and final results aligned.";
+"settings.release_notes.positioning" = "Version 2.0 continues MemoMark's local-first memory presentation: photos stay on this device, are never uploaded, and never replace originals in Apple Photos. This release focuses on making existing flows more reliable, keeping Preview, saving, and final results aligned, and repairing the MemoMark+ purchase entry.";
 "settings.release_notes.reliable_recording.title" = "More reliable recording";
 "settings.release_notes.reliable_recording.item_one" = "Share intake, saving, recovery, and retry behavior are more dependable, so interrupted records are easier to continue.";
 "settings.release_notes.reliable_recording.item_two" = "Background work now distinguishes waiting, recoverable, permission, and completed states instead of treating a temporary interruption as a final failure.";
@@ -233,10 +231,10 @@
 "settings.release_notes.verification.item_one" = "Settings, background processing, responsive layout, narrative language, configuration lifecycle, Share UI, time display, and media output all have focused contract coverage.";
 "settings.release_notes.verification.item_two" = "The complete macOS test regression passed 1,214 tests, with 1 skipped and 0 failed.";
 "settings.release_notes.verification.item_three" = "macOS, generic iOS, and signed iOS Debug builds passed, including strict embedded-signature checks for the app and extensions.";
-"settings.release_notes.verification.item_four" = "Version 2.0.1 (48) was installed in place on one iPhone 17 Pro Max and two iPhone 15 Pro devices without clearing app data.";
+"settings.release_notes.verification.item_four" = "Version 2.0 (65) completes MemoMark+ purchase-entry repair before resubmission: purchasing requests Apple's StoreKit service, while an unavailable service explains the issue and keeps retry available.";
 "settings.release_notes.verification.item_five" = "Final acceptance of Apple Photos sharing, system background scheduling, VoiceOver, Dynamic Type, Live Photo, and visual details remains tied to the release candidate on physical devices.";
 "settings.release_notes.next_stage.title" = "What comes next";
-"settings.release_notes.next_stage.item_one" = "Version 2.0.1 closes V3. V4 starts with Expression Style research and continues refining the main interface, existing features, interaction logic, and device fit without a large-scale core-flow or architecture rewrite.";
+"settings.release_notes.next_stage.item_one" = "Version 2.0 closes V3 product-quality delivery. V4 starts with Expression Style research and continues refining the main interface, existing features, interaction logic, and device fit without a large-scale core-flow or architecture rewrite.";
 "settings.release_notes.next_stage.item_two" = "After V4, if no material issues affect normal use, MemoMark will stop routine version updates and retain only necessary maintenance.";
 "settings.release_notes.next_stage.item_three" = "Future maintenance will be limited to required compatibility work, Apple platform changes, and material issues affecting normal use.";
 "settings.release_notes.closing" = "Thank you for trusting MemoMark with real moments from your life.";

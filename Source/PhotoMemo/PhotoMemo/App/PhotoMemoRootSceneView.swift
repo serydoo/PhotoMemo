@@ -85,6 +85,7 @@ struct PhotoMemoRootSceneView: View {
         PhotoMemoiOSV1View(
             backgroundStatusService:
                 runtime.backgroundStatusService,
+            commerceStore: runtime.commerceStore,
             refreshExternalIntake: {
                 runtime.refreshExternalIntakeState()
             },

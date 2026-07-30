@@ -86,14 +86,50 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("2.0.1 标志着 V3 收尾"))
+        #expect(
+            simplifiedChinese.contains(
+                "2.0 标志着 V3 的产品质量收口"
+            )
+        )
         #expect(simplifiedChinese.contains("日期会与预览一致地保留星期"))
         #expect(simplifiedChinese.contains("完整 macOS 测试回归通过 1,214 项"))
-        #expect(simplifiedChinese.contains("两台 iPhone 15 Pro"))
-        #expect(english.contains("Version 2.0.1 closes V3"))
+        #expect(
+            simplifiedChinese.contains(
+                "2.0 (65) 在提交审核前完成 MemoMark+ 购买入口"
+            )
+        )
+        #expect(
+            english.contains(
+                "Version 2.0 closes V3 product-quality delivery"
+            )
+        )
         #expect(english.contains("Daily Record dates keep their weekday"))
         #expect(english.contains("complete macOS test regression passed 1,214 tests"))
-        #expect(english.contains("two iPhone 15 Pro devices"))
+        #expect(
+            english.contains(
+                "Version 2.0 (65) completes MemoMark+ purchase-entry"
+            )
+        )
+    }
+
+    @Test("release build settings stay on the App Review version train")
+    func releaseBuildSettingsStayOnTheAppReviewVersionTrain() throws {
+        let projectSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj"
+        )
+
+        #expect(!projectSource.contains("MARKETING_VERSION = 2.0.1;"))
+        #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 48;"))
+        #expect(
+            projectSource.components(
+                separatedBy: "MARKETING_VERSION = 2.0;"
+            ).count == 9
+        )
+        #expect(
+            projectSource.components(
+                separatedBy: "CURRENT_PROJECT_VERSION = 65;"
+            ).count == 11
+        )
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

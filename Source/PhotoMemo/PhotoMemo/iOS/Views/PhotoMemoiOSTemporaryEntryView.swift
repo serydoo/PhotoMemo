@@ -86,6 +86,9 @@ struct PhotoMemoiOSTemporaryEntryView: View {
             PhotoMemoiOSV1View(
                 backgroundStatusService:
                     backgroundStatusService,
+                commerceStore:
+                    configurationCenterRuntime
+                    .commerceStore,
                 refreshExternalIntake:
                     refreshExternalIntake,
                 previewCoordinator:

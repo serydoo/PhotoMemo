@@ -172,36 +172,9 @@ struct MemoMarkPlusPurchaseView: View {
 
     private var actionSection: some View {
         VStack(spacing: 12) {
-            if store.canActivateTestFlightExperience {
-                Button {
-                    store.activateTestFlightExperience()
-                } label: {
-                    Text(
-                        localized(
-                            "commerce.purchase.testflight.activate",
-                            fallback: "激活 MemoMark+ TestFlight 体验"
-                        )
-                    )
-                    .font(.headline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 50)
-                }
-                .buttonStyle(.borderedProminent)
-
-                Text(
-                    localized(
-                        "commerce.purchase.testflight.activate_note",
-                        fallback: "仅在 TestFlight / Sandbox 中生效，不会转移到 App Store 正式版。"
-                    )
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-                sandboxPurchaseButton
-            } else if !store.isPlus {
+            if !store.hasVerifiedPlusEntitlement {
                 VStack(spacing: 4) {
-                    Text(store.displayPrice)
+                    Text(purchasePrice)
                         .font(.largeTitle.weight(.bold))
                         .monospacedDigit()
                     Text(
@@ -211,14 +184,9 @@ struct MemoMarkPlusPurchaseView: View {
                         .foregroundStyle(warmGold)
                 }
 
-                Button {
-                    Task {
-                        await store.purchasePlus()
-                    }
-                } label: {
+                Button(action: purchase) {
                     HStack {
-                        if store.purchaseState
-                            == .purchasing {
+                        if store.isPurchaseActionInProgress {
                             ProgressView()
                                 .tint(.white)
                         }
@@ -230,23 +198,21 @@ struct MemoMarkPlusPurchaseView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(
-                    store.product == nil
-                    || store.purchaseState
-                        == .purchasing
+                    store.isPurchaseActionInProgress
                 )
-            } else if store.isTestFlightExperienceActive {
-                sandboxPurchaseButton
 
-                Button(
-                    localized(
-                        "commerce.purchase.testflight.deactivate",
-                        fallback: "退出 TestFlight 临时体验"
-                    ),
-                    role: .destructive
-                ) {
-                    store.deactivateTestFlightExperience()
+                if store.isTestFlightExperienceActive {
+                    Button(
+                        localized(
+                            "commerce.purchase.testflight.deactivate",
+                            fallback: "退出 TestFlight 临时体验"
+                        ),
+                        role: .destructive
+                    ) {
+                        store.deactivateTestFlightExperience()
+                    }
+                    .font(.subheadline)
                 }
-                .font(.subheadline)
             }
 
             if case .failed(let message) =
@@ -360,6 +326,13 @@ struct MemoMarkPlusPurchaseView: View {
 
     private var primaryButtonTitle: String {
         guard store.displayPrice != "—" else {
+            if case .failed = store.purchaseState {
+                return localized(
+                    "commerce.purchase.retry",
+                    fallback: "重新连接 App Store"
+                )
+            }
+
             return localized(
                 "commerce.purchase.connecting",
                 fallback: "正在连接 App Store"
@@ -379,6 +352,15 @@ struct MemoMarkPlusPurchaseView: View {
             fallback: "永久解锁 · %@",
             store.displayPrice
         )
+    }
+
+    private var purchasePrice: String {
+        store.displayPrice == "—"
+        ? localized(
+            "commerce.purchase.connecting",
+            fallback: "正在连接 App Store"
+        )
+        : store.displayPrice
     }
 
     private var purchasePriceNote: String {
@@ -423,25 +405,10 @@ struct MemoMarkPlusPurchaseView: View {
         )
     }
 
-    private var sandboxPurchaseButton: some View {
-        Button {
-            Task {
-                await store.purchasePlus()
-            }
-        } label: {
-            Text(
-                localized(
-                    "commerce.purchase.testflight.purchase",
-                    fallback: "测试 Sandbox 购买流程"
-                )
-            )
-            .font(.subheadline.weight(.semibold))
+    private func purchase() {
+        Task {
+            await store.purchasePlus()
         }
-        .buttonStyle(.bordered)
-        .disabled(
-            store.product == nil
-            || store.purchaseState == .purchasing
-        )
     }
 
     private var firstRecorderDateText: String {
