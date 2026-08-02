@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.0 (66) Commerce v1 Internal Closure Candidate - 2026-08-03
+
+### Fixed
+- Separated current MemoMark+ Access from historical First Recorder identity in
+  the Settings projection. A retained commemorative date no longer claims
+  unlimited recording after current Plus Access is absent.
+- Added matching Simplified Chinese, English, and VoiceOver presentation for
+  the historical First Recorder keepsake.
+
+### Changed
+- Raised the shared app, extension, macOS host, and test-target Build Number
+  from `65` to `66` without changing marketing version `2.0`.
+- Reconciled the test-only iOS root-size guard with the accepted Build 65
+  purchase-flow coordination that had already moved the root past its old
+  threshold; no root-view source changed in this candidate.
+- Recorded Commerce v1 internal closure and its Release Candidate identity gate.
+  Commerce feature expansion remains unauthorized.
+
+### Candidate Scope
+- This candidate is based on the existing `2.0 (65)` App Review purchase-entry
+  repair and adds only FRI-002 projection closure plus its contracts and release
+  governance.
+- Uncommitted V4 Expression Style research and M01 time-determinism work from
+  the primary workspace are explicitly excluded.
+- Sandbox, TestFlight, App Review, refund/revocation, Offer Code, and Family
+  Sharing remain external evidence and are not implied by local validation.
+
 ## 2.0 (65) App Review Recovery Candidate - 2026-07-30
 
 ### Changed

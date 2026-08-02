@@ -167,6 +167,26 @@ For example:
 
 The user's wording remains their own.
 
+## Commerce Identity And Capability
+
+First Recorder is a historical commemoration. MemoMark+ unlimited recording is
+a current capability. User-facing copy must never infer one from the other.
+
+Use these accepted Settings projections:
+
+- Current Plus Access with a First Recorder date: `首批记录者 · 无限记录` /
+  `First Recorder · Unlimited Records`.
+- Current Plus Access without a First Recorder date: the standard MemoMark+
+  unlimited status.
+- Free Access with a historical First Recorder date: `首批记录纪念 · <本地化原始日期>` /
+  `First Recorder Keepsake · <localized original date>`.
+- Free Access without a First Recorder date: the standard free or remaining-
+  allowance status.
+
+The historical free state may invite a person to learn about MemoMark+, but it
+must not describe unlimited recording as a current capability. Visible copy and
+VoiceOver must preserve the same distinction.
+
 ## Review Checklist
 
 Before accepting user-facing copy, ask:

@@ -133,9 +133,11 @@
 "commerce.settings.accessibility.plus_standard" = "查看 MemoMark+ 永久权益";
 "commerce.settings.accessibility.testflight" = "查看 TestFlight 临时体验权益";
 "commerce.settings.accessibility.free" = "了解 MemoMark+ 完整记录能力";
+"commerce.settings.accessibility.first_recorder_commemoration" = "查看首批记录纪念，并了解 MemoMark+";
 "commerce.settings.hero_detail" = "继续保存那些未来值得回看的瞬间";
 "commerce.settings.testflight_status" = "TestFlight 体验 · 无限记录";
 "commerce.settings.first_recorder_status" = "首批记录者 · 无限记录";
+"commerce.settings.first_recorder_commemoration_status_format" = "首批记录纪念 · %@";
 "commerce.settings.plus_status" = "已解锁 · 无限记录";
 "commerce.settings.remaining_status" = "免费剩余：%lld 张";
 "commerce.settings.free_status" = "当前为免费体验";

@@ -319,6 +319,14 @@ struct V1SettingsPageSurface: View {
             .background(memoMarkPlusBackground)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("MemoMark+")
+        .accessibilityValue(
+            Text(
+                verbatim:
+                    "\(memoMarkPlusStatus). "
+                    + memoMarkPlusStatusDetail
+            )
+        )
         .accessibilityHint(
             memoMarkPlusAccessibilityHint
         )
@@ -332,17 +340,33 @@ struct V1SettingsPageSurface: View {
             )
         }
 
-        if commerceSnapshot.firstRecorderDate != nil {
-            return localized(
-                "commerce.settings.first_recorder_status",
-                fallback: "首批记录者 · 无限记录"
-            )
-        }
-
         if commerceSnapshot.isPlus {
+            if commerceSnapshot.firstRecorderDate != nil {
+                return localized(
+                    "commerce.settings.first_recorder_status",
+                    fallback: "首批记录者 · 无限记录"
+                )
+            }
+
             return localized(
                 "commerce.settings.plus_status",
                 fallback: "已解锁 · 无限记录"
+            )
+        }
+
+        if let firstRecorderDate =
+                commerceSnapshot.firstRecorderDate {
+            let dateText = firstRecorderDate.formatted(
+                .dateTime
+                    .year()
+                    .month(.twoDigits)
+                    .day(.twoDigits)
+                    .locale(interfaceLanguage.locale)
+            )
+            return formatted(
+                "commerce.settings.first_recorder_commemoration_status_format",
+                fallback: "首批记录纪念 · %@",
+                dateText
             )
         }
 
@@ -407,17 +431,24 @@ struct V1SettingsPageSurface: View {
             )
         }
 
-        if commerceSnapshot.firstRecorderDate != nil {
-            return localized(
-                "commerce.settings.accessibility.plus",
-                fallback: "查看权益与首批记录者纪念印记"
-            )
-        }
-
         if commerceSnapshot.isPlus {
+            if commerceSnapshot.firstRecorderDate != nil {
+                return localized(
+                    "commerce.settings.accessibility.plus",
+                    fallback: "查看权益与首批记录者纪念印记"
+                )
+            }
+
             return localized(
                 "commerce.settings.accessibility.plus_standard",
                 fallback: "查看 MemoMark+ 永久权益"
+            )
+        }
+
+        if commerceSnapshot.firstRecorderDate != nil {
+            return localized(
+                "commerce.settings.accessibility.first_recorder_commemoration",
+                fallback: "查看首批记录纪念，并了解 MemoMark+"
             )
         }
 

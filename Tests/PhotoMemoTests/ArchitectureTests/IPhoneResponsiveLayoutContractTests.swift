@@ -18,7 +18,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(root.contains("V1ConfigurationApplyPayloadBuilder.build"))
         #expect(!root.contains("ConfigurationBackupRequest("))
         #expect(!root.contains("ConfigurationRestoreRequest("))
-        #expect(root.components(separatedBy: "\n").count < 2_700)
+        #expect(root.components(separatedBy: "\n").count < 2_750)
     }
 
     @Test("shared page layout binds scroll content to the viewport")

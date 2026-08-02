@@ -172,9 +172,11 @@
 "commerce.settings.accessibility.plus_standard" = "View permanent MemoMark+ access";
 "commerce.settings.accessibility.testflight" = "View temporary TestFlight benefits";
 "commerce.settings.accessibility.free" = "Learn about complete MemoMark+ recording";
+"commerce.settings.accessibility.first_recorder_commemoration" = "View the First Recorder keepsake and learn about MemoMark+";
 "commerce.settings.hero_detail" = "Keep the moments worth returning to";
 "commerce.settings.testflight_status" = "TestFlight Access · Unlimited Records";
 "commerce.settings.first_recorder_status" = "First Recorder · Unlimited Records";
+"commerce.settings.first_recorder_commemoration_status_format" = "First Recorder Keepsake · %@";
 "commerce.settings.plus_status" = "Unlocked · Unlimited Records";
 "commerce.settings.remaining_status" = "%lld free records remaining";
 "commerce.settings.free_status" = "Free access";

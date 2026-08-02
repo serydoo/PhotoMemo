@@ -1,6 +1,63 @@
 # MemoMark Current Status
 
-Last updated: 2026-07-30
+Last updated: 2026-08-03
+
+## 2026-08-03 MemoMark+ Commerce v1 Internal Closure Prepared For Candidate
+
+- Closed FRI-002 inside the Settings Presentation Projection Layer. Current
+  Plus Access now owns all unlimited-capability language, while a retained
+  First Recorder date without Plus Access appears only as a localized historical
+  keepsake.
+- Added paired Simplified Chinese and English copy, explicit VoiceOver label,
+  value, and state-specific hint semantics, plus a focused Access-first UI
+  contract.
+- Preserved StoreKit, entitlement resolution, transaction verification,
+  First Recorder persistence, allowance, counting, purchase, and restore
+  ownership without modification.
+- Recorded the Commerce v1 contract, Production Acceptance Checklist, product-
+  language rule, and bounded P1 implementation pass. Commerce feature expansion
+  requires a separate v1.1 proposal.
+- Candidate scope is isolated from the dirty primary workspace and excludes
+  uncommitted V4 Expression Style and M01 time-determinism changes. Build Number
+  is `66`; marketing version remains `2.0`.
+- The isolated candidate tree passed the complete serialized macOS suite with
+  `1,220` tests passed, `1` skipped, and `0` failed before candidate commit.
+  Exact-commit regression and signed packaging remain part of the identity gate.
+- Candidate identity remains `Not Frozen` until the scoped commit, exact-
+  candidate regression, signed Archive, and Installation Source are recorded.
+  External StoreKit Evidence remains `Pending`; Release Authorization remains
+  `Not Authorized`.
+
+```text
+MemoMark+ Commercial Model v1
+
+Product Model:
+Frozen
+
+Product Contract:
+PASS / Accepted / Reconciled
+
+Implementation:
+Baseline Complete
+
+Known Issue:
+None (FRI-002 Closed)
+
+Commerce v1 Internal Closure:
+PASS
+
+Release Evidence Preparation:
+ACTIVE
+
+Candidate Identity:
+Not Frozen
+
+External Evidence:
+Pending
+
+Release Authorization:
+Not Authorized
+```
 
 ## 2026-07-30 V4 Expression Style System Formally Started
 

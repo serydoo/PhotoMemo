@@ -194,6 +194,111 @@ struct MemoMarkCommerceUIContractTests {
         #expect(source.contains("accessSource"))
     }
 
+    @Test("Settings separates First Recorder identity from current Access")
+    func settingsFirstRecorderProjectionIsAccessFirst() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let simplifiedChinese = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings"
+        )
+        let english = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings"
+        )
+
+        let statusStart = try #require(
+            source.range(
+                of: "    private var memoMarkPlusStatus: String {"
+            )
+        )
+        let detailStart = try #require(
+            source.range(
+                of: "    private var memoMarkPlusStatusDetail: String {"
+            )
+        )
+        let statusSource = String(
+            source[
+                statusStart.lowerBound
+                ..< detailStart.lowerBound
+            ]
+        )
+        let plusAccessPosition = try #require(
+            statusSource.range(
+                of: "if commerceSnapshot.isPlus"
+            )?.lowerBound
+        )
+        let historicalIdentityPosition = try #require(
+            statusSource.range(
+                of: "commerce.settings.first_recorder_commemoration_status_format"
+            )?.lowerBound
+        )
+        let hintStart = try #require(
+            source.range(
+                of: "    private var memoMarkPlusAccessibilityHint: String {"
+            )
+        )
+        let testFlightAccessStart = try #require(
+            source.range(
+                of: "    private var isTestFlightExperienceActive: Bool {"
+            )
+        )
+        let hintSource = String(
+            source[
+                hintStart.lowerBound
+                ..< testFlightAccessStart.lowerBound
+            ]
+        )
+        let plusAccessibilityPosition = try #require(
+            hintSource.range(
+                of: "if commerceSnapshot.isPlus"
+            )?.lowerBound
+        )
+        let historicalAccessibilityPosition = try #require(
+            hintSource.range(
+                of: "commerce.settings.accessibility.first_recorder_commemoration"
+            )?.lowerBound
+        )
+
+        #expect(plusAccessPosition < historicalIdentityPosition)
+        #expect(
+            plusAccessibilityPosition
+            < historicalAccessibilityPosition
+        )
+        #expect(
+            source.contains(
+                "commerce.settings.accessibility.first_recorder_commemoration"
+            )
+        )
+        #expect(source.contains("firstRecorderDate.formatted("))
+        #expect(source.contains(".locale(interfaceLanguage.locale)"))
+        #expect(source.contains(".accessibilityLabel(\"MemoMark+\")"))
+        #expect(source.contains(".accessibilityValue("))
+
+        for resource in [simplifiedChinese, english] {
+            #expect(
+                resource.contains(
+                    "\"commerce.settings.first_recorder_commemoration_status_format\""
+                )
+            )
+            #expect(
+                resource.contains(
+                    "\"commerce.settings.accessibility.first_recorder_commemoration\""
+                )
+            )
+        }
+
+        #expect(
+            simplifiedChinese.contains(
+                "\"commerce.settings.first_recorder_commemoration_status_format\" = \"首批记录纪念 · %@\";"
+            )
+        )
+        #expect(
+            english.contains(
+                "\"commerce.settings.first_recorder_commemoration_status_format\" = \"First Recorder Keepsake · %@\";"
+            )
+        )
+    }
+
     @Test("interface language appears immediately before version information")
     func interfaceLanguagePrecedesVersionInformation() throws {
         let source = try sourceText(
