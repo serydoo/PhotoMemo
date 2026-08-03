@@ -2,6 +2,52 @@
 
 Last updated: 2026-08-03
 
+## 2026-08-03 MemoMark+ Home Identity Projection Repair
+
+- Treated physical redemption evidence as a bounded Product Loop P1 finding:
+  Apple completed the MemoMark+ redemption and the purchase surface projected
+  the verified First Recorder date, while the production Home header showed no
+  purchased identity mark.
+- Confirmed the original 2026-07-23 implementation placed
+  `MemoMarkPlusBadge` in the non-production `ConfigurationCenteriOSView` path.
+  The current iOS root uses `PhotoMemoiOSV1View` and its
+  `V1HomePageSurface`, which had no Commerce presentation input.
+- Connected the current Home header to the existing verified Commerce truth
+  without changing StoreKit, entitlement, allowance, First Recorder
+  persistence, Family Sharing, purchase, restore, Renderer, Export, PhotoKit,
+  or Share Extension behavior. Only current `verifiedPlus` Access displays the
+  warm-gold MemoMark+ badge; a durable First Recorder date adds the localized
+  commemorative VoiceOver identity. Free, retained historical identity without
+  Access, and TestFlight temporary Access do not project a purchased Home mark.
+- The Home badge opens the existing live `MemoMarkPlusPurchaseView`. Its title
+  row uses a horizontal composition with a `ViewThatFits` vertical fallback so
+  the app name, badge, Settings entry, and existing compact header remain
+  reachable at narrow widths and larger text sizes.
+- TDD evidence: the production-Home Commerce contract failed before the repair
+  and passed afterward. Final focused evidence is `10/10`
+  `MemoMarkCommerceUIContractTests` and `25/25`
+  `IPhoneResponsiveLayoutContractTests`; both localization files passed
+  `plutil -lint`, `git diff --check` passed, and the unsigned generic iOS
+  Simulator Debug build produced MemoMark `2.0 (66)` successfully.
+- A new Apple Development-signed arm64 Debug build from this working tree was
+  produced for the paired physical iPhone 17 Pro Max. The main app, Share
+  Extension, and Widget Extension passed strict signature verification; the
+  device then confirmed the installed app as `com.serydoo.PhotoMemo.iOS`,
+  MemoMark `2.0 (66)`.
+- The repaired build was installed in place without uninstalling the existing
+  app or clearing its container, preserving the existing local app data.
+  Automated foreground launch succeeded. The Development-signed runtime did
+  not project the prior App Store production entitlement before a Sandbox
+  transaction, as expected for the environment boundary.
+- The user then completed the MemoMark+ Sandbox purchase on the physical
+  iPhone 17 Pro Max and confirmed that the warm-gold MemoMark+ Home badge
+  appeared immediately afterward. This manually accepts the verified
+  entitlement-to-Home projection in Sandbox. Production App Store receipt
+  projection, Home badge tap, retained First Recorder date, and VoiceOver
+  acceptance remain separate pending evidence. The retained 2.0 (66) Commerce
+  candidate Archive predates this repair and must not be used as evidence for
+  it. Release Authorization remains `Not Authorized`.
+
 ## 2026-08-03 iPhone Landscape Navigation And Centered Content Pass
 
 - Treated physical iPhone landscape screenshots as Product Loop evidence. In

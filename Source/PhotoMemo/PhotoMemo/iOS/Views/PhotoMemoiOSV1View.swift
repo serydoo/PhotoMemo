@@ -185,6 +185,9 @@ struct PhotoMemoiOSV1View: View {
     private var showsMemoMarkPlus = false
 
     @State
+    private var showsHomeMemoMarkPlus = false
+
+    @State
     private var switchPresentation =
         V1ConfigurationSwitchPresentationState()
 
@@ -888,6 +891,10 @@ struct PhotoMemoiOSV1View: View {
                 hasSavedConfigurationForSelectedSubject,
             isSavingConfiguration:
                 isSavingConfiguration,
+            showsMemoMarkPlusBadge:
+                commerceStore.hasVerifiedPlusEntitlement,
+            isFirstRecorder:
+                commerceStore.hasFirstRecorderIdentity,
             onOpenSubject: {
                 entryFlowState =
                     V1EntryFlowCoordinator
@@ -915,6 +922,9 @@ struct PhotoMemoiOSV1View: View {
                     presentation: entryPresentation
                 )
             },
+            onOpenMemoMarkPlus: {
+                showsHomeMemoMarkPlus = true
+            },
             onSelectMemoryPreset: activateHomePreset,
             onRenameMemoryPreset: beginEditingMemoryPresetTitle,
             onSaveMemoryPreset: backupHomePreset,
@@ -924,6 +934,14 @@ struct PhotoMemoiOSV1View: View {
             onDismissKeyboard: dismissKeyboard,
             profileTrackingBackground: offsetReader(for: .profile)
         )
+        .sheet(isPresented: $showsHomeMemoMarkPlus) {
+            MemoMarkPlusPurchaseView(
+                store: commerceStore,
+                onDismiss: {
+                    showsHomeMemoMarkPlus = false
+                }
+            )
+        }
     }
 
     private var editorPage: some View {

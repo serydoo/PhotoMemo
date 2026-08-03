@@ -164,18 +164,39 @@ struct MemoMarkCommerceUIContractTests {
         #expect(!source.contains("func activateTestFlightExperience"))
     }
 
-    @Test("warm-gold badge remains app chrome")
-    func warmGoldBadgeLivesOutsideRenderer() throws {
+    @Test("verified MemoMark+ identity appears in current Home chrome")
+    func verifiedMemoMarkPlusIdentityAppearsInCurrentHomeChrome() throws {
         let badgeSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/MemoMarkPlusBadge.swift"
         )
-        let headerSource = try sourceText(
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterTopPreviewSection.swift"
+        let homeSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let rootSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
         )
 
         #expect(badgeSource.contains("MemoMark+"))
         #expect(badgeSource.contains("sparkles"))
-        #expect(headerSource.contains("MemoMarkPlusBadge"))
+        #expect(
+            badgeSource.contains(
+                "commerce.badge.accessibility.first_recorder_label"
+            )
+        )
+        #expect(homeSource.contains("MemoMarkPlusBadge"))
+        #expect(homeSource.contains("showsMemoMarkPlusBadge"))
+        #expect(homeSource.contains("isFirstRecorder"))
+        #expect(rootSource.contains("showsHomeMemoMarkPlus"))
+        #expect(
+            rootSource.contains(
+                "commerceStore.hasVerifiedPlusEntitlement"
+            )
+        )
+        #expect(
+            rootSource.contains(
+                "commerceStore.hasFirstRecorderIdentity"
+            )
+        )
     }
 
     @Test("Settings Hero makes the current membership state visible")

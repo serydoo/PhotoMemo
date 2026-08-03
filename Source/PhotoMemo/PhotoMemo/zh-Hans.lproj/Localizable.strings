@@ -408,6 +408,7 @@
 "welcome.workflow.return.title" = "回到相册";
 "welcome.workflow.return.detail" = "完成后，新的照片会保存回 Apple Photos。";
 "commerce.badge.accessibility.label" = "MemoMark+ 已解锁";
+"commerce.badge.accessibility.first_recorder_label" = "MemoMark+ 已解锁，首批记录者";
 "commerce.badge.accessibility.hint" = "查看 MemoMark+ 权益";
 "commerce.queue.allowance_completed" = "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。";
 "commerce.queue.maximum_admission_format" = "当前一次最多可以加入 %lld 张照片。";

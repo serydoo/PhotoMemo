@@ -25,12 +25,15 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     let memoryPresetTitleFieldFocused: FocusState<Bool>.Binding
     let isConfigurationReady: Bool
     let isSavingConfiguration: Bool
+    let showsMemoMarkPlusBadge: Bool
+    let isFirstRecorder: Bool
     let onOpenSubject: () -> Void
     let onOpenProcessing: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onOpenWorkflowGuide: () -> Void
     let onOpenPhotoPicker: () -> Void
     let onOpenSettings: () -> Void
+    let onOpenMemoMarkPlus: () -> Void
     let onSelectMemoryPreset: (MemoryPreset) -> Void
     let onRenameMemoryPreset: () -> Void
     let onSaveMemoryPreset: (MemoryPreset) -> Void
@@ -241,15 +244,45 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private var brandIdentity: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("时光记")
-                .font(.title2.weight(.bold))
-                .foregroundStyle(.primary)
+            brandTitle
 
             Text("让照片记得，它在人生里的位置。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    @ViewBuilder
+    private var brandTitle: some View {
+        if showsMemoMarkPlusBadge {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    productTitle
+                    memoMarkPlusBadge
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    productTitle
+                    memoMarkPlusBadge
+                }
+            }
+        } else {
+            productTitle
+        }
+    }
+
+    private var productTitle: some View {
+        Text("时光记")
+            .font(.title2.weight(.bold))
+            .foregroundStyle(.primary)
+    }
+
+    private var memoMarkPlusBadge: some View {
+        MemoMarkPlusBadge(
+            isFirstRecorder: isFirstRecorder,
+            action: onOpenMemoMarkPlus
+        )
     }
 
     private var settingsButton: some View {

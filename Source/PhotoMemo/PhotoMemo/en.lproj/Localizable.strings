@@ -447,6 +447,7 @@
 "welcome.workflow.return.title" = "Back to Apple Photos";
 "welcome.workflow.return.detail" = "When it is ready, the new photo is saved to Apple Photos.";
 "commerce.badge.accessibility.label" = "MemoMark+ unlocked";
+"commerce.badge.accessibility.first_recorder_label" = "MemoMark+ unlocked, First Recorder";
 "commerce.badge.accessibility.hint" = "View MemoMark+ benefits";
 "commerce.queue.allowance_completed" = "Your free Growth Records are complete. Open MemoMark to learn about MemoMark+.";
 "commerce.queue.maximum_admission_format" = "You can add up to %lld photos right now.";

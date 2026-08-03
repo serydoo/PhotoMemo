@@ -10,7 +10,16 @@ struct MemoMarkPlusBadge: View {
     private var interfaceLanguagePreferenceRawValue =
         MemoMarkInterfaceLanguagePreference.system.rawValue
 
+    let isFirstRecorder: Bool
     let action: () -> Void
+
+    init(
+        isFirstRecorder: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.isFirstRecorder = isFirstRecorder
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -54,17 +63,26 @@ struct MemoMarkPlusBadge: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(
-            localized(
-                "commerce.badge.accessibility.label",
-                fallback: "MemoMark+ 已解锁"
-            )
-        )
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(
             localized(
                 "commerce.badge.accessibility.hint",
                 fallback: "查看 MemoMark+ 权益"
             )
+        )
+    }
+
+    private var accessibilityLabel: String {
+        if isFirstRecorder {
+            return localized(
+                "commerce.badge.accessibility.first_recorder_label",
+                fallback: "MemoMark+ 已解锁，首批记录者"
+            )
+        }
+
+        return localized(
+            "commerce.badge.accessibility.label",
+            fallback: "MemoMark+ 已解锁"
         )
     }
 
