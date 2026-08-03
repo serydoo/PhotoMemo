@@ -2,6 +2,73 @@
 
 Last updated: 2026-08-03
 
+## 2026-08-03 First-Run Memory Subject Home Projection Repair
+
+- Classified the report as a Product Loop P1 primary-workflow consistency bug:
+  after deferring first-run configuration, editing a Memory Subject updates the
+  live subject and object-detail surface, but Home continues to prefer the
+  earlier nickname over the edited object display name.
+- Scope is limited to the iOS object-identity presentation projection and its
+  focused contract tests. `MemorySubject` and the durable configuration
+  aggregate remain the canonical state; no persistence schema, onboarding
+  flow, Configuration Center architecture, Renderer, Export, PhotoKit, Share
+  Extension, permission, privacy, or original-photo behavior changes.
+- Apple-native evaluation found no framework capability involved: this was a
+  local Swift presentation-order defect. Home now uses the object display name
+  as its primary identity and retains nickname only as the empty-name fallback.
+  The same projection is reused by the Configuration Center top summary and
+  subject-overview presenter so those surfaces cannot independently restore the
+  stale nickname-first rule; expression-source behavior and every stored
+  subject field remain unchanged.
+- The follow-up audit confirmed Home relationship, anchor count, avatar, and
+  subject-scoped preset count already read the current selected subject without
+  a stale fallback. Remaining nickname-first preview paths belong to the
+  explicitly selected expression/nickname output contract and were not changed.
+- The adjacent overview regression failed before the shared repair and passed
+  afterward. A no-preset edit-save-Home regression now covers object name,
+  relationship label, and anchor title together. Final evidence: `23/23`
+  focused identity projection and edit-flow tests passed; unsigned macOS and
+  generic iOS Simulator Debug builds passed; `git diff --check` passed.
+  Physical-device and post-install first-run acceptance remain manual
+  verification boundaries.
+
+## 2026-08-03 MemoMark 2.0.1 (67) Version Train Repair
+
+- Classified the failed Xcode Cloud synchronization as an Engineering Loop P1
+  release-reliability issue. Build 66 compiled, archived, signed, and completed
+  App Store, Development, and Ad Hoc exports with no test, warning, or analysis
+  failures; the final App Store Connect preparation step returned
+  `action_required` after public version `2.0` had already closed that version
+  train.
+- Reopened the App Store version train as MemoMark `2.0.1 (67)`. All Debug and
+  Release configurations for the macOS app, iOS app, Share Extension, and
+  Widget Extension now use `MARKETING_VERSION = 2.0.1`; those product targets
+  and the test target use `CURRENT_PROJECT_VERSION = 67`.
+- Included commit `8439edf7` in the same synchronization boundary. Verified
+  MemoMark+ Access now projects the warm-gold identity badge on the production
+  Home surface, while First Recorder identity remains commemorative and is
+  shown there only with current verified Plus Access. The same boundary now
+  includes the first-run Memory Subject Home projection repair recorded above.
+  The in-app Simplified Chinese and English release notes describe both bounded
+  Home repairs.
+- Preserved StoreKit, entitlement resolution, First Recorder persistence,
+  allowance, Renderer, Export, PhotoKit, Share Extension processing, original
+  photos, and frozen Configuration Center architecture. V4 Expression Style
+  and BrandMark research remain local-only and outside this release.
+- The release version contract was observed failing against `2.0 (66)` and
+  passes against `2.0.1 (67)`. Final local evidence: `61/61` focused release,
+  Commerce, responsive-layout, identity-projection, and edit-flow tests passed;
+  the complete serialized macOS suite passed `1,221`, skipped `1`, and failed
+  `0`; macOS and generic iOS Simulator Debug unsigned builds passed; their
+  built Info.plists report `2.0.1 (67)` for the macOS app, iOS app, Share
+  Extension, and Widget Extension. Project and localization plist lint plus
+  whitespace validation passed. Existing media-type declaration and test QoS
+  runtime warnings remain recorded.
+- Xcode Cloud Build 67 and App Store Connect acceptance are external evidence,
+  not implied by local validation. Release Authorization remains
+  `Not Authorized` until the new commit receives superseding cloud and store
+  evidence.
+
 ## 2026-08-03 MemoMark+ Home Identity Projection Repair
 
 - Treated physical redemption evidence as a bounded Product Loop P1 finding:

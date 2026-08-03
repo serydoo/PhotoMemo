@@ -156,7 +156,7 @@
 "settings.version.release_notes_detail" = "看看时光记最近有哪些变化。";
 "settings.release_notes.header" = "这一次，时光记完成 V3 收尾，让记录、设置与最终结果更加一致。";
 "settings.release_notes.version_format" = "版本 %@";
-"settings.release_notes.positioning" = "2.0 延续本地优先的记忆呈现方式：照片只在设备上处理，不上传，也不修改 Apple Photos 中的原始照片。本次重点是让既有流程更可靠，让预览、保存和最终结果保持一致，并修复 MemoMark+ 的购买入口。";
+"settings.release_notes.positioning" = "2.0.1 延续本地优先的记忆呈现方式：照片只在设备上处理，不上传，也不修改 Apple Photos 中的原始照片。本次重点是让既有流程更可靠，让预览、保存和最终结果保持一致，并补齐首页身份与记忆对象同步。";
 "settings.release_notes.reliable_recording.title" = "记录更稳定";
 "settings.release_notes.reliable_recording.item_one" = "加强 Apple Photos 分享后的保存、恢复与失败重试，让中断的记录更容易继续。";
 "settings.release_notes.reliable_recording.item_two" = "后台处理会区分等待、可恢复、需要权限和已完成状态，避免把暂时中断误报成失败。";
@@ -192,9 +192,9 @@
 "settings.release_notes.unchanged.item_five" = "配置中心、记忆引擎、呈现、布局、渲染和输出的既有职责边界保持不变。";
 "settings.release_notes.verification.title" = "验证与发布边界";
 "settings.release_notes.verification.item_one" = "设置、后台处理、响应式布局、叙事语言、配置生命周期、分享界面、时间显示和媒体输出均有对应契约验证。";
-"settings.release_notes.verification.item_two" = "完整 macOS 测试回归通过 1,214 项，跳过 1 项，失败 0 项。";
-"settings.release_notes.verification.item_three" = "macOS、通用 iOS 和签名 iOS Debug 构建通过，主应用及扩展的嵌入签名通过校验。";
-"settings.release_notes.verification.item_four" = "2.0 (65) 在提交审核前完成 MemoMark+ 购买入口修复：购买会请求 Apple 的 StoreKit 服务；服务暂时不可用时会给出说明并可重新尝试。";
+"settings.release_notes.verification.item_two" = "完整 macOS 测试回归通过 1,221 项，跳过 1 项，失败 0 项。";
+"settings.release_notes.verification.item_three" = "macOS 与通用 iOS Simulator Debug 无签名构建通过，主应用与两个扩展的版本字段统一为 2.0.1 (67)。";
+"settings.release_notes.verification.item_four" = "2.0.1 将经过验证的 MemoMark+ 购买身份带到首页；首批记录者的纪念身份会继续保留，并在当前 Plus 权限有效时一并呈现。编辑记忆对象后，首页、配置摘要与对象概览也会统一显示最新对象名称。";
 "settings.release_notes.verification.item_five" = "完整 Apple Photos 分享、系统后台调度、VoiceOver、动态字体、Live Photo 与最终视觉仍以发布候选包的实体机验收为准。";
 "settings.release_notes.next_stage.title" = "接下来的版本节奏";
 "settings.release_notes.next_stage.item_one" = "2.0 标志着 V3 的产品质量收口。V4 从表达方式研究开始，继续打磨主界面、既有功能、操作逻辑和设备适配，不做大规模核心流程或架构重构。";

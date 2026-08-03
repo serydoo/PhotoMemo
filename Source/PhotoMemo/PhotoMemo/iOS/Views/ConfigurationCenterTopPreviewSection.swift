@@ -511,27 +511,10 @@ struct ConfigurationCenterTopPreviewSection<
     }
 
     private var currentSubjectTitle: String {
-        let shortName =
-            session.state.selectedSubject?
-            .identity.shortName
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        if !shortName.isEmpty {
-            return shortName
-        }
-
-        let displayName =
-            session.state.selectedSubject?
-            .identity.displayName
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        return displayName.isEmpty
-            ? "记忆对象"
-            : displayName
+        V1IOSHomeProjection
+            .subjectTitle(
+                session.state.selectedSubject
+            )
     }
 
     private var currentAnchorTitle: String {

@@ -31,7 +31,7 @@ enum V1IOSHomeProjection {
     ) -> V1IOSHomeSubjectSummaryProjection {
 
         let title =
-            normalizedSubjectTitle(
+            subjectTitle(
                 subject
             )
 
@@ -174,21 +174,9 @@ enum V1IOSHomeProjection {
         )
     }
 
-    private static func normalizedSubjectTitle(
+    static func subjectTitle(
         _ subject: MemorySubject?
     ) -> String {
-
-        let shortName =
-            subject?
-            .identity
-            .shortName
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        if !shortName.isEmpty {
-            return shortName
-        }
 
         let displayName =
             subject?
@@ -200,6 +188,18 @@ enum V1IOSHomeProjection {
 
         if !displayName.isEmpty {
             return displayName
+        }
+
+        let shortName =
+            subject?
+            .identity
+            .shortName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        if !shortName.isEmpty {
+            return shortName
         }
 
         return "记忆对象"

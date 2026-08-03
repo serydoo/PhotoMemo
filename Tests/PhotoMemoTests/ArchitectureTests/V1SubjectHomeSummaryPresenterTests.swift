@@ -6,8 +6,8 @@ import Testing
 @Suite("V1 subject home summary presenter")
 struct V1SubjectHomeSummaryPresenterTests {
 
-    @Test("presentation prefers short subject name and preserves home summary facts")
-    func presentationPrefersShortSubjectNameAndPreservesFacts() {
+    @Test("presentation uses the object display name and preserves home summary facts")
+    func presentationUsesObjectDisplayNameAndPreservesFacts() {
         let subject =
             MemorySubject(
                 identity:
@@ -52,7 +52,7 @@ struct V1SubjectHomeSummaryPresenterTests {
         )
         #expect(
             presentation.subjectTitle
-            == "示例昵称"
+            == "示例对象"
         )
         #expect(
             presentation.relationshipSummary

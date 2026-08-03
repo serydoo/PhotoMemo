@@ -183,15 +183,15 @@ struct V1ReleaseNotesSheet: View {
                     ),
                     localized(
                         "settings.release_notes.verification.item_two",
-                        fallback: "完整 macOS 测试回归通过 1,214 项，跳过 1 项，失败 0 项。"
+                        fallback: "完整 macOS 测试回归通过 1,221 项，跳过 1 项，失败 0 项。"
                     ),
                     localized(
                         "settings.release_notes.verification.item_three",
-                        fallback: "macOS、通用 iOS 和签名 iOS Debug 构建通过，主应用及扩展的嵌入签名通过校验。"
+                        fallback: "macOS 与通用 iOS Simulator Debug 无签名构建通过，主应用与两个扩展的版本字段统一为 2.0.1 (67)。"
                     ),
                     localized(
                         "settings.release_notes.verification.item_four",
-                        fallback: "2.0 (65) 在提交审核前完成 MemoMark+ 购买入口修复：购买会请求 Apple 的 StoreKit 服务；服务暂时不可用时会给出说明并可重新尝试。"
+                        fallback: "2.0.1 将经过验证的 MemoMark+ 购买身份带到首页；首批记录者的纪念身份会继续保留，并在当前 Plus 权限有效时一并呈现。编辑记忆对象后，首页、配置摘要与对象概览也会统一显示最新对象名称。"
                     ),
                     localized(
                         "settings.release_notes.verification.item_five",
@@ -250,7 +250,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.positioning",
-                                    fallback: "2.0 延续本地优先的记忆呈现方式，重点让既有流程更可靠，让预览、保存和最终结果保持一致，并修复 MemoMark+ 的购买入口。"
+                                    fallback: "2.0.1 延续本地优先的记忆呈现方式，重点让既有流程更可靠，让预览、保存和最终结果保持一致，并补齐首页身份与记忆对象同步。"
                                 )
                             )
                             .font(.caption)

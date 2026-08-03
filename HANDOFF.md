@@ -1,5 +1,36 @@
 # MemoMark Handoff
 
+## 2026-08-03 MemoMark 2.0.1 (67) synchronization
+
+- The current release boundary is MemoMark `2.0.1 (67)`. It reopens the App
+  Store version train after Xcode Cloud Build 66 successfully compiled,
+  archived, signed, and exported but received `action_required` while preparing
+  the already-public `2.0` version for App Store Connect.
+- The synchronization includes `8439edf7 Project verified MemoMark+ identity
+  on Home`: only current verified Plus Access shows the purchased Home badge,
+  and First Recorder identity remains attached to that verified state. The
+  existing purchase sheet remains the badge destination.
+- It also includes the first-run Memory Subject projection repair: after setup
+  is deferred, saved object names, relationship labels, and anchor titles now
+  return to Home from the current subject, while object-title surfaces share
+  the same display-name-first rule.
+- All product targets and extensions share marketing version `2.0.1`; all
+  product and test target configurations use Build `67`. The in-app What's New
+  copy is aligned in Simplified Chinese and English.
+- V4 Expression Style research, BrandMark work, private media, screenshots,
+  retained archives, signed packages, and local Codex configuration remain
+  excluded from GitHub synchronization.
+- Local release gates pass: `61/61` focused tests; `1,221` complete macOS tests
+  passed with `1` skipped and `0` failed; macOS and generic iOS Simulator Debug
+  unsigned builds passed; the macOS app, iOS app, Share Extension, and Widget
+  Extension products all report `2.0.1 (67)`. Final architecture, behavior,
+  data/privacy, Apple-release, and verification review found no blocking issue.
+  After main synchronization, the new Xcode Cloud and App Store Connect result
+  remains the external gate.
+- Do not rebuild Build 66. Evaluate only the final Build 67 commit. Release
+  Authorization remains `Not Authorized` until external cloud and App Store
+  evidence supersedes the failed version-train attempt.
+
 ## 2026-07-30 MemoMark+ App Review candidate 2.0 (65)
 
 - The Guideline 2.1(b) purchase-entry repair now has an aligned App Review

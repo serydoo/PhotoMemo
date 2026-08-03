@@ -6,13 +6,13 @@ import Testing
 @Suite("V1 iOS home projection")
 struct V1IOSHomeProjectionTests {
 
-    @Test("subject summary prefers short name and reflects current anchor context")
-    func subjectSummaryPrefersShortName() {
+    @Test("subject summary reflects the edited object name instead of a stale nickname")
+    func subjectSummaryReflectsEditedObjectName() {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "小宝成长记录",
-                    shortName: "小宝"
+                    displayName: "小宝",
+                    shortName: "儿子啊"
                 ),
                 relationship: .init(
                     role: "家庭",
@@ -59,6 +59,86 @@ struct V1IOSHomeProjectionTests {
 
         #expect(projection.title == "小宝")
         #expect(projection.subtitle == "成长记录")
+        #expect(projection.anchorTitle == "生日")
+    }
+
+    @Test("deferred first-run subject edits project current facts to Home")
+    @MainActor
+    func deferredFirstRunSubjectEditsProjectCurrentFactsToHome() throws {
+        let anchor =
+            MemorySubject.TimeAnchor(
+                title: "默认锚点",
+                date: Date(timeIntervalSince1970: 0),
+                note: "默认说明"
+            )
+        let subject =
+            MemorySubject(
+                identity: .init(
+                    displayName: "默认对象",
+                    shortName: "儿子啊"
+                ),
+                relationship: .init(
+                    role: "家庭",
+                    label: "默认称呼"
+                ),
+                referenceDate: anchor.date,
+                timeAnchors: [anchor],
+                activeTimeAnchorID: anchor.id,
+                behavior: .init(
+                    primaryAnchor: anchor.title,
+                    iconStrategy: .autoMatch,
+                    badgeStrategy: .fixed,
+                    memoryExpression: .init(
+                        title: "默认表达",
+                        blocks: []
+                    )
+                ),
+                decorations: []
+            )
+        let session =
+            ConfigurationSession(
+                state: ConfigurationCenterState(
+                    subjects: [subject],
+                    selectedSubjectID: subject.id,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil,
+                    cardSelection: .init(
+                        selectedRegion: .subject
+                    ),
+                    selectedBlockID: nil,
+                    tokenLibrary: .init(),
+                    availableDecorations: [],
+                    regionPreviewTexts: [:]
+                )
+            )
+        let flow = try #require(
+            V1IOSSubjectConfigurationFlowState(
+                liveSession: session
+            )
+        )
+        var editedSubject = try #require(
+            flow.draftSession.state.selectedSubject
+        )
+        editedSubject.identity.displayName = "小宝"
+        editedSubject.relationship.label = "家人"
+        editedSubject.timeAnchors[0].title = "生日"
+        editedSubject.behavior.primaryAnchor = "生日"
+        flow.draftSession.updateSelectedSubject(
+            editedSubject
+        )
+
+        #expect(flow.saveChanges())
+
+        let projection =
+            V1IOSHomeProjection
+            .subjectSummary(
+                subject: session.state.selectedSubject,
+                selectedAnchorTitle:
+                    session.currentTimeAnchorTitle
+            )
+
+        #expect(projection.title == "小宝")
+        #expect(projection.subtitle == "家人")
         #expect(projection.anchorTitle == "生日")
     }
 

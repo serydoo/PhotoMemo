@@ -6,13 +6,13 @@ import Testing
 @Suite("V1 iOS subject overview presenter")
 struct V1IOSSubjectOverviewPresenterTests {
 
-    @Test("presentation reflects selected anchor and subject facts")
-    func presentationReflectsSelectedAnchorAndSubjectFacts() {
+    @Test("presentation uses the edited object name instead of a stale nickname")
+    func presentationUsesEditedObjectNameInsteadOfStaleNickname() {
         let subject =
             MemorySubject(
                 identity: .init(
-                    displayName: "小宝成长记录",
-                    shortName: "小宝"
+                    displayName: "小宝",
+                    shortName: "儿子啊"
                 ),
                 relationship: .init(
                     role: "family",
@@ -70,7 +70,7 @@ struct V1IOSSubjectOverviewPresenterTests {
         #expect(presentation.title == "小宝")
         #expect(presentation.subtitle == "成长记录")
         #expect(presentation.expressionSubjectTitle == "显示名称")
-        #expect(presentation.expressionSubjectValue == "小宝成长记录")
+        #expect(presentation.expressionSubjectValue == "小宝")
         #expect(presentation.anchorTitle == "生日")
         #expect(
             presentation.anchorDateLabel

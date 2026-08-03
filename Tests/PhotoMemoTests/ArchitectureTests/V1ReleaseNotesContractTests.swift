@@ -88,46 +88,50 @@ struct V1ReleaseNotesContractTests {
 
         #expect(
             simplifiedChinese.contains(
-                "2.0 标志着 V3 的产品质量收口"
+                "2.0.1 延续本地优先的记忆呈现方式"
             )
         )
+        #expect(simplifiedChinese.contains("2.0 标志着 V3 的产品质量收口"))
         #expect(simplifiedChinese.contains("日期会与预览一致地保留星期"))
-        #expect(simplifiedChinese.contains("完整 macOS 测试回归通过 1,214 项"))
+        #expect(simplifiedChinese.contains("完整 macOS 测试回归通过 1,221 项"))
         #expect(
             simplifiedChinese.contains(
-                "2.0 (65) 在提交审核前完成 MemoMark+ 购买入口"
+                "统一显示最新对象名称"
             )
         )
+        #expect(simplifiedChinese.contains("首批记录者的纪念身份会继续保留"))
         #expect(
             english.contains(
-                "Version 2.0 closes V3 product-quality delivery"
+                "Version 2.0.1 continues MemoMark's local-first memory presentation"
             )
         )
+        #expect(english.contains("Version 2.0 closes V3 product-quality delivery"))
         #expect(english.contains("Daily Record dates keep their weekday"))
-        #expect(english.contains("complete macOS test regression passed 1,214 tests"))
+        #expect(english.contains("complete macOS test regression passed 1,221 tests"))
         #expect(
             english.contains(
-                "Version 2.0 (65) completes MemoMark+ purchase-entry"
+                "latest object name consistently"
             )
         )
+        #expect(english.contains("First Recorder identity remains preserved"))
     }
 
-    @Test("release build settings stay on the App Review version train")
-    func releaseBuildSettingsStayOnTheAppReviewVersionTrain() throws {
+    @Test("release build settings reopen the App Store version train")
+    func releaseBuildSettingsReopenTheAppStoreVersionTrain() throws {
         let projectSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj"
         )
 
-        #expect(!projectSource.contains("MARKETING_VERSION = 2.0.1;"))
-        #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 48;"))
+        #expect(!projectSource.contains("MARKETING_VERSION = 2.0;"))
+        #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 66;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.0;"
+                separatedBy: "MARKETING_VERSION = 2.0.1;"
             ).count == 9
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 66;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 67;"
             ).count == 11
         )
     }

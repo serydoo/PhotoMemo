@@ -30,7 +30,8 @@ enum V1IOSSubjectOverviewPresenter {
 
         return V1IOSSubjectOverviewPresentation(
             title:
-                normalizedTitle(
+                V1IOSHomeProjection
+                .subjectTitle(
                     subject
                 ),
             subtitle:
@@ -80,18 +81,6 @@ enum V1IOSSubjectOverviewPresenter {
             $0.title == currentTimeAnchorTitle
         }
         ?? subject.timeAnchors.first
-    }
-
-    private static func normalizedTitle(
-        _ subject: MemorySubject?
-    ) -> String {
-        normalizedOptionalText(
-            subject?.identity.shortName
-        )
-        ?? normalizedOptionalText(
-            subject?.identity.displayName
-        )
-        ?? "记忆对象"
     }
 
     private static func normalizedSubtitle(

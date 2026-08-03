@@ -195,7 +195,7 @@
 "settings.version.release_notes_detail" = "See what has changed in MemoMark.";
 "settings.release_notes.header" = "This update closes V3 with more consistent recording, settings, and final results.";
 "settings.release_notes.version_format" = "Version %@";
-"settings.release_notes.positioning" = "Version 2.0 continues MemoMark's local-first memory presentation: photos stay on this device, are never uploaded, and never replace originals in Apple Photos. This release focuses on making existing flows more reliable, keeping Preview, saving, and final results aligned, and repairing the MemoMark+ purchase entry.";
+"settings.release_notes.positioning" = "Version 2.0.1 continues MemoMark's local-first memory presentation: photos stay on this device, are never uploaded, and never replace originals in Apple Photos. This release focuses on making existing flows more reliable, keeping Preview, saving, and final results aligned, and completing Home identity and Memory Subject synchronization.";
 "settings.release_notes.reliable_recording.title" = "More reliable recording";
 "settings.release_notes.reliable_recording.item_one" = "Share intake, saving, recovery, and retry behavior are more dependable, so interrupted records are easier to continue.";
 "settings.release_notes.reliable_recording.item_two" = "Background work now distinguishes waiting, recoverable, permission, and completed states instead of treating a temporary interruption as a final failure.";
@@ -231,9 +231,9 @@
 "settings.release_notes.unchanged.item_five" = "The established ownership boundaries across Configuration Center, Memory Engine, presentation, layout, rendering, and export remain unchanged.";
 "settings.release_notes.verification.title" = "Verification and release boundaries";
 "settings.release_notes.verification.item_one" = "Settings, background processing, responsive layout, narrative language, configuration lifecycle, Share UI, time display, and media output all have focused contract coverage.";
-"settings.release_notes.verification.item_two" = "The complete macOS test regression passed 1,214 tests, with 1 skipped and 0 failed.";
-"settings.release_notes.verification.item_three" = "macOS, generic iOS, and signed iOS Debug builds passed, including strict embedded-signature checks for the app and extensions.";
-"settings.release_notes.verification.item_four" = "Version 2.0 (65) completes MemoMark+ purchase-entry repair before resubmission: purchasing requests Apple's StoreKit service, while an unavailable service explains the issue and keeps retry available.";
+"settings.release_notes.verification.item_two" = "The complete macOS test regression passed 1,221 tests, with 1 skipped and 0 failed.";
+"settings.release_notes.verification.item_three" = "Unsigned macOS and generic iOS Simulator Debug builds passed, and the app plus both extensions report version 2.0.1 (67).";
+"settings.release_notes.verification.item_four" = "Version 2.0.1 brings verified MemoMark+ purchase identity to Home. First Recorder identity remains preserved and appears with it while current Plus access is active. After editing a Memory Subject, Home, configuration summaries, and subject overview also show the latest object name consistently.";
 "settings.release_notes.verification.item_five" = "Final acceptance of Apple Photos sharing, system background scheduling, VoiceOver, Dynamic Type, Live Photo, and visual details remains tied to the release candidate on physical devices.";
 "settings.release_notes.next_stage.title" = "What comes next";
 "settings.release_notes.next_stage.item_one" = "Version 2.0 closes V3 product-quality delivery. V4 starts with Expression Style research and continues refining the main interface, existing features, interaction logic, and device fit without a large-scale core-flow or architecture rewrite.";

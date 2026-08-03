@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.0.1 (67) App Store Version Train Repair - 2026-08-03
+
+### Fixed
+- Reopened App Store delivery on marketing version `2.0.1` after public version
+  `2.0` closed its upload train and Xcode Cloud Build 66 returned
+  `action_required` during App Store Connect preparation.
+- Projected verified MemoMark+ purchase identity on the production Home header.
+  First Recorder identity remains preserved and is presented there only while
+  current verified Plus Access is active.
+- Kept edited Memory Subject names synchronized across Home, the Configuration
+  Center top summary, and subject overview after first-run setup is deferred.
+
+### Changed
+- Raised the macOS app, iOS app, Share Extension, and Widget Extension to
+  `MARKETING_VERSION = 2.0.1` and raised all product and test target
+  configurations to `CURRENT_PROJECT_VERSION = 67`.
+- Updated the in-app Simplified Chinese and English What's New copy for the
+  current maintenance release, Home identity, and Memory Subject repair.
+
+### Release Boundary
+- StoreKit, entitlement resolution, allowance, durable identity, Renderer,
+  Export, PhotoKit, Share Extension processing, and original-photo behavior are
+  unchanged.
+- V4 Expression Style and BrandMark research, private media, screenshots,
+  signed packages, and retained archives remain local-only.
+- Local verification does not claim Xcode Cloud Build 67 or App Store Connect
+  acceptance. Release Authorization remains `Not Authorized` pending that
+  external evidence.
+
+### Verification
+- `61/61` focused release-note, Commerce, responsive-layout, identity
+  projection, and edit-flow tests passed.
+- The complete serialized macOS suite passed `1,221` tests, skipped `1`, and
+  failed `0`; macOS and generic iOS Simulator Debug unsigned builds passed.
+- Built Info.plists for the macOS app, iOS app, Share Extension, and Widget
+  Extension all report `2.0.1 (67)`. Project/localization plist lint and
+  whitespace validation passed.
+
 ## 2.0 (66) Commerce v1 Internal Closure Candidate - 2026-08-03
 
 ### Fixed
