@@ -10,6 +10,9 @@ struct PhotoMemoiOSV1View: View {
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
 
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
+
     @ObservedObject
     private var backgroundStatusService:
         PhotoMemoBackgroundStatusService
@@ -758,7 +761,7 @@ struct PhotoMemoiOSV1View: View {
             V1RootChangeObservationModifier(
                 session: session,
                 scenePhase: scenePhase,
-                horizontalSizeClass: horizontalSizeClass,
+                entryPresentation: entryPresentation,
                 isApplyingBootstrapState: isApplyingBootstrapState,
                 isApplyingSavedOutputConfiguration:
                     isApplyingSavedOutputConfiguration,
@@ -795,7 +798,7 @@ struct PhotoMemoiOSV1View: View {
     @ViewBuilder
     private var rootNavigation: some View {
         V1EntryNavigationSurface(
-            usesSidebarNavigation: usesSidebarNavigation,
+            navigationStyle: entryNavigationStyle,
             selection: entryBinding(\.selectedTab)
         ) {
             homePage
@@ -841,19 +844,25 @@ struct PhotoMemoiOSV1View: View {
 
     private var entryPresentation:
         V1EntryPresentation {
-        usesSidebarNavigation
-        ? .regular
-        : .compact
+        switch entryNavigationStyle {
+        case .bottomTabBar:
+            return .compact
+        case .compactSidebar, .regularSidebar:
+            return .regular
+        }
     }
 
-    private var usesSidebarNavigation: Bool {
+    private var entryNavigationStyle:
+        V1EntryNavigationStyle {
         V1AdaptivePageLayout
-            .usesSidebarNavigation(
+            .navigationStyle(
                 isPad:
                     UIDevice.current
                     .userInterfaceIdiom == .pad,
                 hasRegularHorizontalSizeClass:
-                    horizontalSizeClass == .regular
+                    horizontalSizeClass == .regular,
+                hasCompactVerticalSizeClass:
+                    verticalSizeClass == .compact
             )
     }
 

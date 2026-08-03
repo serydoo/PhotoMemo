@@ -9,7 +9,7 @@ struct V1EntryNavigationSurface<
     SettingsContent: View
 >: View {
 
-    let usesSidebarNavigation: Bool
+    let navigationStyle: V1EntryNavigationStyle
 
     @Binding
     var selection: V1EntryTab
@@ -21,7 +21,7 @@ struct V1EntryNavigationSurface<
     private let settingsContent: SettingsContent
 
     init(
-        usesSidebarNavigation: Bool,
+        navigationStyle: V1EntryNavigationStyle,
         selection: Binding<V1EntryTab>,
         @ViewBuilder homeContent: () -> HomeContent,
         @ViewBuilder editorContent: () -> EditorContent,
@@ -29,7 +29,7 @@ struct V1EntryNavigationSurface<
         @ViewBuilder taskContent: () -> TaskContent,
         @ViewBuilder settingsContent: () -> SettingsContent
     ) {
-        self.usesSidebarNavigation = usesSidebarNavigation
+        self.navigationStyle = navigationStyle
         _selection = selection
         self.homeContent = homeContent()
         self.editorContent = editorContent()
@@ -39,10 +39,13 @@ struct V1EntryNavigationSurface<
     }
 
     var body: some View {
-        if usesSidebarNavigation {
-            regularNavigation
-        } else {
+        switch navigationStyle {
+        case .bottomTabBar:
             compactNavigation
+        case .compactSidebar:
+            compactSidebarNavigation
+        case .regularSidebar:
+            regularSidebarNavigation
         }
     }
 
@@ -89,23 +92,43 @@ struct V1EntryNavigationSurface<
         }
     }
 
-    private var regularNavigation: some View {
-        HStack(spacing: 0) {
+    private var compactSidebarNavigation: some View {
+        sidebarNavigation(width: 64) {
+            V1EntryCompactSidebar(selection: $selection)
+        }
+    }
+
+    private var regularSidebarNavigation: some View {
+        sidebarNavigation(width: 220) {
             V1EntrySidebar(selection: $selection)
-                .frame(width: 220)
+        }
+    }
+
+    private func sidebarNavigation<Sidebar: View>(
+        width: CGFloat,
+        @ViewBuilder sidebar: () -> Sidebar
+    ) -> some View {
+        HStack(spacing: 0) {
+            sidebar()
+                .frame(width: width)
 
             Rectangle()
                 .fill(ConfigurationUI.faintHairline)
                 .frame(width: 0.5)
 
             NavigationStack {
-                regularDestination
+                sidebarDestination
             }
             .frame(
                 maxWidth: .infinity,
                 maxHeight: .infinity
             )
         }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .leading
+        )
         .background(
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
@@ -113,7 +136,7 @@ struct V1EntryNavigationSurface<
     }
 
     @ViewBuilder
-    private var regularDestination: some View {
+    private var sidebarDestination: some View {
         switch selection {
         case .home:
             homeContent
@@ -129,36 +152,109 @@ struct V1EntryNavigationSurface<
     }
 }
 
+struct V1EntryCompactSidebar: View {
+
+    @Binding
+    var selection: V1EntryTab
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ForEach(V1EntryTab.allCases) { destination in
+                Button {
+                    selection = destination
+                } label: {
+                    Image(systemName: destination.symbolName)
+                        .font(.system(size: 19, weight: .semibold))
+                        .frame(width: 48, height: 48)
+                        .foregroundStyle(
+                            selection == destination
+                            ? Color.accentColor
+                            : Color.secondary
+                        )
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: 8,
+                                style: .continuous
+                            )
+                            .fill(
+                                selection == destination
+                                ? Color.accentColor.opacity(0.12)
+                                : Color.clear
+                            )
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(destination.title)
+                .accessibilityAddTraits(
+                    selection == destination
+                    ? .isSelected
+                    : []
+                )
+            }
+        }
+        .frame(maxHeight: .infinity, alignment: .center)
+        .padding(.vertical, 12)
+        .background(ConfigurationUI.appBackground)
+    }
+}
+
 struct V1EntrySidebar: View {
 
     @Binding
     var selection: V1EntryTab
 
     var body: some View {
-        List(
-            V1EntryTab.allCases,
-            selection: selectionBinding
-        ) { destination in
-            Label(
-                destination.title,
-                systemImage: destination.symbolName
-            )
-            .tag(destination)
-        }
-        .navigationTitle("时光记")
-        .listStyle(.sidebar)
-    }
+        ZStack(alignment: .topLeading) {
+            ConfigurationUI.appBackground
 
-    private var selectionBinding:
-        Binding<V1EntryTab?> {
-        Binding(
-            get: { selection },
-            set: { destination in
-                if let destination {
-                    selection = destination
+            Text("时光记")
+                .font(.headline.weight(.semibold))
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+
+            VStack(spacing: 10) {
+                ForEach(V1EntryTab.allCases) { destination in
+                    Button {
+                        selection = destination
+                    } label: {
+                        Label(
+                            destination.title,
+                            systemImage: destination.symbolName
+                        )
+                        .font(.body.weight(.medium))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: 48)
+                        .padding(.horizontal, 14)
+                        .foregroundStyle(
+                            selection == destination
+                            ? Color.accentColor
+                            : Color.primary
+                        )
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: 8,
+                                style: .continuous
+                            )
+                            .fill(
+                                selection == destination
+                                ? Color.accentColor.opacity(0.12)
+                                : Color.clear
+                            )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(destination.title)
+                    .accessibilityAddTraits(
+                        selection == destination
+                        ? .isSelected
+                        : []
+                    )
                 }
             }
-        )
+            .padding(.horizontal, 12)
+            .frame(maxHeight: .infinity, alignment: .center)
+        }
+        .padding(.vertical, 12)
     }
 }
 

@@ -31,6 +31,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("containerRelativeFrame(.horizontal)"))
         #expect(source.contains("func v1AdaptiveScrollContent"))
         #expect(source.contains("func v1AdaptivePageContent"))
+        #expect(source.contains("alignment: .center"))
     }
 
     @Test("primary vertical pages adopt the shared viewport contract")
@@ -205,6 +206,40 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!editor.contains(".overlay(alignment: .bottom)"))
         #expect(anchors.contains(".presentationDetents([.height(390), .large])"))
         #expect(anchors.contains("ScrollView"))
+    }
+
+    @Test("configuration preview stays above the inspector at every viewport")
+    func configurationPreviewStaysAboveInspector() throws {
+        let editor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPageSurface.swift"
+        )
+
+        #expect(editor.contains("private var stackedContent"))
+        #expect(editor.contains("previewPane"))
+        #expect(editor.contains("editorScrollView"))
+        #expect(!editor.contains("sideBySideContent"))
+        #expect(!editor.contains("availableWidth * 0.46"))
+    }
+
+    @Test("configuration preview fills the centered readable column")
+    func configurationPreviewFillsCenteredReadableColumn() throws {
+        let editor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPageSurface.swift"
+        )
+        let previewStart = try #require(
+            editor.range(of: "private var previewPane")?.lowerBound
+        )
+        let previewEnd = try #require(
+            editor.range(
+                of: "    private var editorScrollView",
+                range: previewStart..<editor.endIndex
+            )?.lowerBound
+        )
+        let previewBody = String(editor[previewStart..<previewEnd])
+
+        #expect(previewBody.contains("previewContent"))
+        #expect(previewBody.contains("maxWidth: .infinity"))
+        #expect(previewBody.contains("alignment: .center"))
     }
 
     @Test("region composer preserves chip size and reflows its action header")
@@ -387,7 +422,11 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(navigationSource.contains("struct V1EntryNavigationSurface<"))
         #expect(navigationSource.contains("@Binding\n    var selection: V1EntryTab"))
+        #expect(navigationSource.contains("let navigationStyle: V1EntryNavigationStyle"))
         #expect(navigationSource.contains("TabView(selection: $selection)"))
+        #expect(navigationSource.contains("compactSidebarNavigation"))
+        #expect(navigationSource.contains("V1EntryCompactSidebar(selection: $selection)"))
+        #expect(navigationSource.contains("V1EntrySidebar(selection: $selection)"))
         #expect(navigationSource.contains(".tag(V1EntryTab.home)"))
         #expect(navigationSource.contains(".tag(V1EntryTab.editor)"))
         #expect(navigationSource.contains(".tag(V1EntryTab.output)"))
@@ -396,6 +435,30 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!navigationSource.contains("@State"))
         #expect(!navigationSource.contains("ConfigurationSession"))
         #expect(rootSource.contains("V1EntryNavigationSurface("))
+        #expect(rootSource.contains("@Environment(\\.verticalSizeClass)"))
+        #expect(rootSource.contains("navigationStyle: entryNavigationStyle"))
+        #expect(rootSource.contains("hasCompactVerticalSizeClass:"))
+    }
+
+    @Test("sidebar navigation fills the host viewport")
+    func sidebarNavigationFillsHostViewport() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AdaptiveNavigationShell.swift"
+        )
+        let sidebarStart = try #require(
+            source.range(of: "private func sidebarNavigation")?.lowerBound
+        )
+        let sidebarEnd = try #require(
+            source.range(
+                of: "    @ViewBuilder\n    private var sidebarDestination",
+                range: sidebarStart..<source.endIndex
+            )?.lowerBound
+        )
+        let sidebarBody = String(source[sidebarStart..<sidebarEnd])
+
+        #expect(sidebarBody.contains("maxWidth: .infinity"))
+        #expect(sidebarBody.contains("maxHeight: .infinity"))
+        #expect(sidebarBody.contains("alignment: .leading"))
     }
 }
 

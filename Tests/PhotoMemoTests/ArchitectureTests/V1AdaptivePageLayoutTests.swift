@@ -5,111 +5,97 @@ import Testing
 @Suite("V1 adaptive page layout")
 struct V1AdaptivePageLayoutTests {
 
-    @Test("regular detail width uses side by side editor composition")
-    func regularWidthUsesSideBySideComposition() {
+    @Test("regular-height iPhone keeps the bottom tab bar")
+    func regularHeightIPhoneKeepsBottomTabBar() {
         #expect(
             V1AdaptivePageLayout
-                .editorComposition(for: 900)
-            == .sideBySide
-        )
-    }
-
-    @Test("narrow split view uses stacked editor composition")
-    func narrowWidthUsesStackedComposition() {
-        #expect(
-            V1AdaptivePageLayout
-                .editorComposition(for: 640)
-            == .stacked
-        )
-    }
-
-    @Test("editor threshold remains stacked at its lower edge")
-    func thresholdLowerEdgeRemainsStacked() {
-        #expect(
-            V1AdaptivePageLayout
-                .editorComposition(for: 759)
-            == .stacked
-        )
-    }
-
-    @Test("editor threshold becomes side by side at its upper edge")
-    func thresholdUpperEdgeBecomesSideBySide() {
-        #expect(
-            V1AdaptivePageLayout
-                .editorComposition(for: 760)
-            == .sideBySide
-        )
-    }
-
-    @Test("regular width iPhone keeps compact navigation")
-    func regularWidthIPhoneKeepsCompactNavigation() {
-        #expect(
-            V1AdaptivePageLayout
-                .usesSidebarNavigation(
+                .navigationStyle(
                     isPad: false,
-                    hasRegularHorizontalSizeClass: true
+                    hasRegularHorizontalSizeClass: false,
+                    hasCompactVerticalSizeClass: false
                 )
-            == false
+            == .bottomTabBar
         )
     }
 
-    @Test("regular width iPad uses sidebar navigation")
-    func regularWidthIPadUsesSidebarNavigation() {
+    @Test("compact-height iPhone moves navigation to a compact sidebar")
+    func compactHeightIPhoneUsesCompactSidebar() {
         #expect(
             V1AdaptivePageLayout
-                .usesSidebarNavigation(
-                    isPad: true,
-                    hasRegularHorizontalSizeClass: true
+                .navigationStyle(
+                    isPad: false,
+                    hasRegularHorizontalSizeClass: true,
+                    hasCompactVerticalSizeClass: true
                 )
-            == true
+            == .compactSidebar
         )
     }
 
-    @Test("compact split view iPad keeps compact navigation")
-    func compactIPadKeepsCompactNavigation() {
+    @Test("regular-width iPad uses the full sidebar")
+    func regularWidthIPadUsesRegularSidebar() {
         #expect(
             V1AdaptivePageLayout
-                .usesSidebarNavigation(
+                .navigationStyle(
                     isPad: true,
-                    hasRegularHorizontalSizeClass: false
+                    hasRegularHorizontalSizeClass: true,
+                    hasCompactVerticalSizeClass: true
                 )
-            == false
+            == .regularSidebar
         )
     }
 
-    @Test("regular width iPhone keeps scroll content clear of the tab bar")
-    func regularWidthIPhoneUsesExpandedBottomPadding() {
+    @Test("regular-height compact iPad window keeps the bottom tab bar")
+    func regularHeightCompactIPadKeepsBottomTabBar() {
+        #expect(
+            V1AdaptivePageLayout
+                .navigationStyle(
+                    isPad: true,
+                    hasRegularHorizontalSizeClass: false,
+                    hasCompactVerticalSizeClass: false
+                )
+            == .bottomTabBar
+        )
+    }
+
+    @Test("short compact iPad window uses the compact sidebar")
+    func shortCompactIPadUsesCompactSidebar() {
+        #expect(
+            V1AdaptivePageLayout
+                .navigationStyle(
+                    isPad: true,
+                    hasRegularHorizontalSizeClass: false,
+                    hasCompactVerticalSizeClass: true
+                )
+            == .compactSidebar
+        )
+    }
+
+    @Test("bottom tab bar keeps scroll content clear of navigation")
+    func bottomTabBarUsesExpandedBottomPadding() {
         #expect(
             V1AdaptivePageLayout
                 .scrollBottomPadding(
-                    isPad: false,
-                    hasRegularHorizontalSizeClass: true
+                    for: .bottomTabBar
                 )
             == 96
         )
     }
 
-    @Test("regular iPad sidebar avoids unnecessary bottom whitespace")
-    func regularIPadUsesStandardBottomPadding() {
+    @Test("sidebars avoid unnecessary bottom whitespace")
+    func sidebarsUseStandardBottomPadding() {
         #expect(
             V1AdaptivePageLayout
                 .scrollBottomPadding(
-                    isPad: true,
-                    hasRegularHorizontalSizeClass: true
+                    for: .compactSidebar
                 )
             == 26
         )
-    }
-
-    @Test("compact iPad keeps scroll content clear of the tab bar")
-    func compactIPadUsesExpandedBottomPadding() {
         #expect(
             V1AdaptivePageLayout
                 .scrollBottomPadding(
-                    isPad: true,
-                    hasRegularHorizontalSizeClass: false
+                    for: .regularSidebar
                 )
-            == 96
+            == 26
         )
     }
 }

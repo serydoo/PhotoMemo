@@ -6,7 +6,7 @@ struct V1RootChangeObservationModifier: ViewModifier {
     @ObservedObject var session: ConfigurationSession
 
     let scenePhase: ScenePhase
-    let horizontalSizeClass: UserInterfaceSizeClass?
+    let entryPresentation: V1EntryPresentation
     let isApplyingBootstrapState: Bool
     let isApplyingSavedOutputConfiguration: Bool
 
@@ -65,8 +65,8 @@ struct V1RootChangeObservationModifier: ViewModifier {
                 guard newTab == .output else { return }
                 Task { await loadAlbumOptions() }
             }
-            .onChange(of: horizontalSizeClass) { _, sizeClass in
-                guard sizeClass == .compact else { return }
+            .onChange(of: entryPresentation) { _, presentation in
+                guard presentation == .compact else { return }
                 flowState = V1EntryFlowCoordinator
                     .prepareForCompactPresentation(from: flowState)
             }

@@ -2,6 +2,40 @@
 
 Last updated: 2026-08-03
 
+## 2026-08-03 iPhone Landscape Navigation And Centered Content Pass
+
+- Treated physical iPhone landscape screenshots as Product Loop evidence. In
+  compact-height environments, the four-tab bottom bar now becomes a fixed
+  `64 pt` leading icon navigation rail; regular-width iPad keeps its `220 pt`
+  labeled sidebar. All five destinations use stable touch geometry and share
+  the available vertical space instead of clustering at the top.
+- Kept Configuration Center in the accepted stacked composition at every
+  viewport: real Memory Card preview above, Object Inspector below. No
+  side-by-side editor path was restored.
+- Bound the sidebar shell to the full host viewport and made the shared
+  `720 pt` maximum readable column explicitly center-aligned. The Configuration
+  Center preview now fills that centered readable column while preserving its
+  existing renderer-derived aspect ratio; the Inspector and other primary page
+  cards retain their existing dimensions and horizontal padding.
+- Preserved Configuration Session state, Renderer, Layout Engine, Metadata,
+  Export, PhotoKit, Share Extension, commerce, entitlement, allowance, and
+  persistence ownership without modification.
+- The centered-preview contract was observed RED before the implementation.
+  The focused adaptive-layout and iPhone responsive suites then passed `32/32`;
+  `git diff --check` and the unsigned generic iOS Simulator Debug build passed.
+- A signed MemoMark `2.0 (66)` Debug build passed strict code-sign verification
+  and was installed in place on `IPhone5` (iPhone 15 Pro) without uninstalling
+  the app or clearing its container. Automated launch was denied while the
+  device was locked; the user subsequently opened the installed build and
+  accepted the iPhone landscape navigation and centered-content result.
+- CoreSimulator did not boot the selected iPad Air simulator and its lifecycle
+  commands became unresponsive. The generic iOS build proves device-family
+  compilation only; iPad landscape rendering is not recorded as manually
+  verified in this pass.
+- This is a bounded post-candidate implementation checkpoint, not a frozen
+  Release Candidate identity. MemoMark+ External Evidence remains `Pending`
+  and Release Authorization remains `Not Authorized`.
+
 ## 2026-08-03 MemoMark+ Commerce v1 Internal Closure Prepared For Candidate
 
 - Closed FRI-002 inside the Settings Presentation Projection Layer. Current

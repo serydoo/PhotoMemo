@@ -1,8 +1,9 @@
 import CoreGraphics
 
-enum V1EditorComposition {
-    case stacked
-    case sideBySide
+enum V1EntryNavigationStyle {
+    case bottomTabBar
+    case compactSidebar
+    case regularSidebar
 }
 
 enum V1AdaptivePageLayout {
@@ -10,38 +11,33 @@ enum V1AdaptivePageLayout {
     static let maximumReadableContentWidth:
         CGFloat = 720
 
-    static let sideBySideEditorMinimumWidth:
-        CGFloat = 760
-
-    static func editorComposition(
-        for availableWidth: CGFloat
-    ) -> V1EditorComposition {
-        availableWidth
-            >= sideBySideEditorMinimumWidth
-        ? .sideBySide
-        : .stacked
-    }
-
-    static func usesSidebarNavigation(
+    static func navigationStyle(
         isPad: Bool,
-        hasRegularHorizontalSizeClass: Bool
-    ) -> Bool {
-        isPad
-            && hasRegularHorizontalSizeClass
+        hasRegularHorizontalSizeClass: Bool,
+        hasCompactVerticalSizeClass: Bool
+    ) -> V1EntryNavigationStyle {
+        if isPad && hasRegularHorizontalSizeClass {
+            return .regularSidebar
+        }
+
+        if hasCompactVerticalSizeClass {
+            return .compactSidebar
+        }
+
+        return .bottomTabBar
     }
 
     static func scrollBottomPadding(
-        isPad: Bool,
-        hasRegularHorizontalSizeClass: Bool
+        for navigationStyle: V1EntryNavigationStyle
     ) -> CGFloat {
-        usesSidebarNavigation(
-            isPad: isPad,
-            hasRegularHorizontalSizeClass:
-                hasRegularHorizontalSizeClass
-        )
-        ? 26
-        : 96
+        switch navigationStyle {
+        case .bottomTabBar:
+            return 96
+        case .compactSidebar, .regularSidebar:
+            return 26
+        }
     }
+
 }
 
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
@@ -58,7 +54,10 @@ extension View {
                     V1AdaptivePageLayout
                     .maximumReadableContentWidth
             )
-            .frame(maxWidth: .infinity)
+            .frame(
+                maxWidth: .infinity,
+                alignment: .center
+            )
             .padding(
                 .horizontal,
                 horizontalPadding

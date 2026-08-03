@@ -11,6 +11,9 @@ struct V1EditorPageSurface<
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
 
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
+
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
     let pageTitle: String
@@ -41,22 +44,7 @@ struct V1EditorPageSurface<
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            Group {
-                switch V1AdaptivePageLayout
-                    .editorComposition(
-                        for: proxy.size.width
-                    ) {
-                case .stacked:
-                    stackedContent
-
-                case .sideBySide:
-                    sideBySideContent(
-                        availableWidth:
-                            proxy.size.width
-                    )
-                }
-            }
+        stackedContent
             .frame(
                 maxWidth: .infinity,
                 maxHeight: .infinity,
@@ -70,7 +58,6 @@ struct V1EditorPageSurface<
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 accessoryContent
             }
-        }
     }
 
     private var stackedContent: some View {
@@ -82,38 +69,6 @@ struct V1EditorPageSurface<
         }
     }
 
-    private func sideBySideContent(
-        availableWidth: CGFloat
-    ) -> some View {
-        let previewWidth =
-            min(
-                max(
-                    availableWidth * 0.46,
-                    350
-                ),
-                520
-            )
-
-        return HStack(spacing: 0) {
-            previewPane
-                .frame(width: previewWidth)
-                .frame(
-                    maxHeight: .infinity,
-                    alignment: .top
-                )
-
-            Rectangle()
-                .fill(ConfigurationUI.faintHairline)
-                .frame(width: 0.5)
-
-            editorScrollView
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity
-                )
-        }
-    }
-
     private var previewPane: some View {
         VStack(alignment: .leading, spacing: 12) {
             V1PageHeader(
@@ -122,6 +77,10 @@ struct V1EditorPageSurface<
             )
 
             previewContent
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .center
+                )
         }
         .padding(.top, 10)
         .padding(.bottom, 10)
@@ -143,11 +102,7 @@ struct V1EditorPageSurface<
                 .bottom,
                 V1AdaptivePageLayout
                     .scrollBottomPadding(
-                        isPad:
-                            UIDevice.current
-                            .userInterfaceIdiom == .pad,
-                        hasRegularHorizontalSizeClass:
-                            horizontalSizeClass == .regular
+                        for: navigationStyle
                     )
             )
             .v1AdaptiveScrollContent(
@@ -155,6 +110,19 @@ struct V1EditorPageSurface<
             )
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    private var navigationStyle:
+        V1EntryNavigationStyle {
+        V1AdaptivePageLayout.navigationStyle(
+            isPad:
+                UIDevice.current
+                .userInterfaceIdiom == .pad,
+            hasRegularHorizontalSizeClass:
+                horizontalSizeClass == .regular,
+            hasCompactVerticalSizeClass:
+                verticalSizeClass == .compact
+        )
     }
 }
 #endif

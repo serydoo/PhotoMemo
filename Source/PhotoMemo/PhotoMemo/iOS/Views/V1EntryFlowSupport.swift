@@ -1,7 +1,7 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
-enum V1EntryPresentation {
+enum V1EntryPresentation: Equatable {
     case compact
     case regular
 }
