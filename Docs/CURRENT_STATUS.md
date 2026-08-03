@@ -36,6 +36,71 @@ Last updated: 2026-08-03
   Release Candidate identity. MemoMark+ External Evidence remains `Pending`
   and Release Authorization remains `Not Authorized`.
 
+## 2026-08-03 MemoMark+ Commerce v1 Candidate Identity Frozen
+
+- Froze the first post-FRI-002 Commerce v1 candidate from the isolated
+  `codex/commerce-v1-rc` worktree. The dirty primary V4/M01 workspace did not
+  enter the candidate commit or Archive.
+- Candidate identity: MemoMark `2.0`, Build `66`, commit
+  `ea1827cb2481d754b0b425a670f511afdf14e461`, retained Archive
+  `/Users/rui/Desktop/PhotoMemoReleaseCandidates/2.0-66/MemoMark-2.0-66-ea1827cb.xcarchive`.
+- Installation Source is the retained Archive's
+  `Products/Applications/PhotoMemoiOS.app`, installed in place with
+  `xcrun devicectl` on a physical iPhone 17 Pro Max. The installed bundle
+  reported `2.0 (66)`; existing app data was not deleted.
+- **Verified:** the exact candidate tree passed 33 focused Commerce tests,
+  bilingual localization and plist validation, macOS Debug and generic iOS
+  Release unsigned builds, and the complete serialized macOS suite with
+  `1,220` passed, `1` skipped, and `0` failed. Existing media-type declaration
+  and test QoS runtime warnings remain recorded.
+- **Verified packaging:** the Apple Development-signed Release Archive contains
+  the main app, Share Extension, and Widget Extension at `2.0 (66)` under the
+  same Team; all three passed strict signature verification. The main app Code
+  Directory hash is `22a446b7e227f98eca039fcf15f6a3ebf515c173`.
+  This is the retained local candidate and installation source, not an Apple
+  Distribution upload artifact.
+- **Not claimed:** the device was locked when launch was attempted. No runtime,
+  UI, VoiceOver, App Store Connect, StoreKit Sandbox, Offer Code, Family
+  Sharing, refund/revocation, TestFlight, or App Review result is inferred from
+  the successful installation.
+- Candidate Identity and Candidate Automated Regression are now `PASS`.
+  External Evidence remains `Pending`; Release Authorization remains
+  `Not Authorized`; Commerce feature expansion remains closed.
+
+```text
+MemoMark+ Commercial Model v1
+
+Product Model:
+Frozen
+
+Product Contract:
+PASS / Accepted / Reconciled
+
+Implementation:
+Baseline Complete
+
+Known Issue:
+None (FRI-002 Closed)
+
+Commerce v1 Internal Closure:
+PASS
+
+Release Evidence Preparation:
+ACTIVE
+
+Candidate Identity:
+Frozen
+
+Candidate Automated Regression:
+PASS
+
+External Evidence:
+Pending
+
+Release Authorization:
+Not Authorized
+```
+
 ## 2026-08-03 MemoMark+ Commerce v1 Internal Closure Prepared For Candidate
 
 - Closed FRI-002 inside the Settings Presentation Projection Layer. Current
