@@ -1,17 +1,24 @@
 # MemoMark Handoff
 
-## MemoMark 2.0.2 (68) release handoff
+## MemoMark 2.0.2 (69) release handoff
 
-- Version fields are unified at `2.0.2 (68)` for the macOS app, iOS app, Share
+- Version fields are unified at `2.0.2 (69)` for the macOS app, iOS app, Share
   Extension, Widget Extension, and test target. The release scope combines
   module/configuration compatibility, actionable local diagnostics, and Live
   Photo motion preservation.
+- Xcode Cloud Build 68 failed because Xcode 26.6 crashed in the Swift Release
+  optimizer while generating the Share Extension's generic continuation-gate
+  destructor. Build 69 removes that compiler-sensitive generic reference
+  shape while retaining normal Release optimization, the 15-second provider
+  timeout, exactly-once completion, diagnostics, and Live Photo policy.
 - Conflict review found no cross-boundary conflict: configuration identity,
   diagnostics persistence, and media routing remain separate owners; Renderer,
   Layout Engine, Export, and original-photo protection are unchanged.
 - `CHANGELOG.md`, the bilingual in-app release notes, and
   `Docs/07_Releases/2026-08-04-2.0.2-production-reliability.md` are aligned.
-- Full tests and all four product-target Debug builds passed. Physical Apple
+- Full tests, the Xcode 26.6 optimized Share Extension build and complete
+  generic-iOS Release archive, and all four product-target builds passed.
+  Physical Apple
   Photos Live Photo round-trip remains pending until `IPhone5` reconnects as an
   available device; no uninstall or data reset is part of the release step.
 

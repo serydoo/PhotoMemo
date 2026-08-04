@@ -266,6 +266,47 @@ struct ShareIntakeResponsibilitySplitTests {
         )
     }
 
+    @Test("Provider completion arbitration keeps continuations and timeout tasks out of generic reference types")
+    func providerCompletionGateAvoidsGenericReferenceState() throws {
+        let source = try sourceText(
+            relativePath:
+                "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
+        )
+        let gateStart = try #require(
+            source.range(
+                of:
+                    "private final class ShareProviderCompletionGate"
+            )?.lowerBound
+        )
+        let importerStart = try #require(
+            source.range(
+                of: "@MainActor\nstruct ShareManagedFileImporter"
+            )?.lowerBound
+        )
+        let gateSource = source[gateStart..<importerStart]
+
+        #expect(
+            source.contains(
+                "private final class ShareProviderTimeoutTask"
+            )
+        )
+        #expect(
+            !source.contains(
+                "ShareProviderContinuationGate<Value>"
+            )
+        )
+        #expect(
+            !gateSource.contains(
+                "CheckedContinuation"
+            )
+        )
+        #expect(
+            !gateSource.contains(
+                "Task<Void, Never>?"
+            )
+        )
+    }
+
     private func sourceText(
         relativePath: String
     ) throws -> String {

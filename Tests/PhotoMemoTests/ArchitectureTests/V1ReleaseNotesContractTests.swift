@@ -131,7 +131,7 @@ struct V1ReleaseNotesContractTests {
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 68;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 69;"
             ).count == 11
         )
     }

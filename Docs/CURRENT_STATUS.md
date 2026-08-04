@@ -2,6 +2,60 @@
 
 Last updated: 2026-08-04
 
+## 2026-08-04 MemoMark 2.0.2 (69) Xcode Cloud Resubmission Candidate
+
+- Raised every app, extension, and test-target build setting from `68` to `69`
+  while retaining marketing version `2.0.2`. Build 69 is a new source revision;
+  it must be evaluated instead of rebuilding the failed Build 68 commit.
+- The candidate includes only the Xcode 26.6 Share Extension compiler-crash
+  repair, its compiler-shape regression contract, aligned release records, and
+  the already accepted `2.0.2` reliability scope. No product feature,
+  persistence schema, Renderer, Layout Engine, Export, PhotoKit save, privacy,
+  or feedback-channel behavior is expanded.
+- Local release evidence includes the focused Share suites, Xcode 26.6 normal
+  optimized Release Share Extension build and complete unsigned generic-iOS
+  Release archive, Xcode 27 beta optimized Share Extension build, complete
+  `PhotoMemoTests` suite (`1272` passed, `1` skipped, `0` failed), and the
+  required Debug build. The final Build 69 verification pass is complete;
+  Xcode Cloud remains the external archive/sign/upload gate after GitHub
+  synchronization.
+
+## 2026-08-04 Xcode Cloud Build 68 Compiler Crash Repair
+
+- Classified the Xcode Cloud `2.0.2 (68)` archive failure as a V4 Engineering
+  Loop P1 release-reliability issue. Cloud evidence identified Xcode 26.6
+  (`17F113`) `swift-frontend` crashing in `EarlyPerfInliner` while compiling
+  the Share Extension's generated generic continuation-gate destructor; this
+  was not a signing, provisioning, dependency, syntax, or App Store Connect
+  failure.
+- Reproduced the crash locally with the same Xcode 26.6 Release optimizer.
+  Single-file compilation did not avoid it. Disabling Release optimization
+  with `-Onone` passed but was rejected as a production workaround because it
+  would hide the compiler shape instead of removing it.
+- Replaced the generic reference type that retained a typed
+  `CheckedContinuation` and timeout task with two non-generic, lock-protected
+  responsibilities: one-shot completion arbitration and timeout-task
+  cancellation. Typed continuations remain local to the Apple provider
+  callback and timeout task. The callback/timeout winner resumes exactly once,
+  synchronous provider callbacks remain safe, and timed-out file
+  representations still cancel their `Progress`.
+- Preserved the existing 15-second timeout, failure diagnostics and codes
+  `3010`/`3011`, temporary provider-file copy timing, original-format Live
+  Photo failure policy, local-first boundary, and all downstream Share intake
+  behavior. Renderer, Layout Engine, Export, persistence, and PhotoKit save
+  ownership are unchanged.
+- Verification passed: the focused Share responsibility suite (`8/8`), the
+  broader Share intake contracts (`19/19`), Xcode 26.6 optimized Release Share
+  Extension build, Xcode 26.6 complete unsigned generic-iOS Release archive,
+  Xcode 27 beta optimized Release Share Extension build, and the complete
+  Xcode 27 beta `PhotoMemoTests` suite (`1272` passed, `1` existing
+  platform-conditional skip, `0` failed).
+- Remaining external evidence: publish the fix in a new source revision and
+  run a new Xcode Cloud archive; rebuilding the failed Build 68 revision will
+  not contain this change. Physical Apple Photos -> Share -> MemoMark
+  acceptance also remains pending. The failed upload did not consume an App
+  Store build. Build `69` is prepared as the superseding source revision.
+
 ## 2026-08-04 MemoMark 2.0.2 (68) Release Consolidation
 
 - Consolidated yesterday's configuration/module compatibility work and

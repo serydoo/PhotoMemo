@@ -4,75 +4,53 @@ import Foundation
 import UniformTypeIdentifiers
 import UIKit
 
-private final class ShareProviderContinuationGate<Value>:
+private final class ShareProviderTimeoutTask:
     @unchecked Sendable {
 
     private let lock = NSLock()
-    private var continuation:
-        CheckedContinuation<Value, Never>?
-    private var callbackClaimed = false
-    private var timeoutTask:
-        Task<Void, Never>?
+    private var isCancelled = false
+    private var task: Task<Void, Never>?
 
-    init(
-        continuation:
-            CheckedContinuation<Value, Never>
-    ) {
-        self.continuation = continuation
-    }
-
-    func beginCallback() -> Bool {
+    func install(_ task: Task<Void, Never>) {
         lock.lock()
-        defer { lock.unlock() }
-        guard continuation != nil,
-              !callbackClaimed else {
-            return false
-        }
-        callbackClaimed = true
-        return true
-    }
-
-    func resume(returning value: Value) {
-        lock.lock()
-        guard callbackClaimed,
-              let continuation else {
-            lock.unlock()
-            return
-        }
-        self.continuation = nil
-        let timeoutTask = self.timeoutTask
-        self.timeoutTask = nil
-        lock.unlock()
-
-        timeoutTask?.cancel()
-        continuation.resume(returning: value)
-    }
-
-    func resumeIfPending(returning value: Value) {
-        lock.lock()
-        guard !callbackClaimed,
-              let continuation else {
-            lock.unlock()
-            return
-        }
-        self.continuation = nil
-        self.timeoutTask = nil
-        lock.unlock()
-
-        continuation.resume(returning: value)
-    }
-
-    func setTimeoutTask(
-        _ task: Task<Void, Never>
-    ) {
-        lock.lock()
-        guard continuation != nil else {
+        guard !isCancelled else {
             lock.unlock()
             task.cancel()
             return
         }
-        timeoutTask = task
+        self.task = task
         lock.unlock()
+    }
+
+    func cancel() {
+        lock.lock()
+        isCancelled = true
+        let task = self.task
+        self.task = nil
+        lock.unlock()
+
+        task?.cancel()
+    }
+
+    deinit {
+        cancel()
+    }
+}
+
+private final class ShareProviderCompletionGate:
+    @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var isClaimed = false
+
+    func claim() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !isClaimed else {
+            return false
+        }
+        isClaimed = true
+        return true
     }
 }
 
@@ -479,17 +457,16 @@ private extension ShareManagedFileImporter {
                     >
             ) in
 
+            let timeoutTask =
+                ShareProviderTimeoutTask()
             let gate =
-                ShareProviderContinuationGate(
-                    continuation:
-                        continuation
-                )
+                ShareProviderCompletionGate()
             let progress =
                 provider.loadFileRepresentation(
                 forTypeIdentifier:
                     requestedTypeIdentifier
             ) { [intakeStore] url, error in
-                guard gate.beginCallback() else {
+                guard gate.claim() else {
                     return
                 }
 
@@ -518,7 +495,8 @@ private extension ShareManagedFileImporter {
                         "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation failed.\n\(failureContext.debugDescription)"
                     )
 
-                    gate.resume(
+                    timeoutTask.cancel()
+                    continuation.resume(
                         returning:
                             FileRepresentationLoadResult(
                                 importRecord: nil,
@@ -549,7 +527,8 @@ private extension ShareManagedFileImporter {
                         "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returned nil URL.\n\(failureContext.debugDescription)"
                     )
 
-                    gate.resume(
+                    timeoutTask.cancel()
+                    continuation.resume(
                         returning:
                             FileRepresentationLoadResult(
                                 importRecord: nil,
@@ -614,7 +593,8 @@ private extension ShareManagedFileImporter {
                             index:
                                 index
                         )
-                    gate.resume(
+                    timeoutTask.cancel()
+                    continuation.resume(
                         returning:
                             FileRepresentationLoadResult(
                                 importRecord: nil,
@@ -655,7 +635,8 @@ private extension ShareManagedFileImporter {
                         index: index
                     )
 
-                gate.resume(
+                timeoutTask.cancel()
+                continuation.resume(
                     returning:
                         FileRepresentationLoadResult(
                             importRecord:
@@ -680,12 +661,15 @@ private extension ShareManagedFileImporter {
                 )
             }
 
-            let timeoutTask = Task {
+            let task = Task {
                 try? await Task.sleep(
                     nanoseconds:
                         providerLoadTimeoutNanoseconds
                 )
                 guard !Task.isCancelled else {
+                    return
+                }
+                guard gate.claim() else {
                     return
                 }
 
@@ -717,7 +701,7 @@ private extension ShareManagedFileImporter {
                         "operation=loadFileRepresentation, providerIndex=\(index), requestedType=\(requestedTypeIdentifier)",
                     requestID: requestID
                 )
-                gate.resumeIfPending(
+                continuation.resume(
                     returning:
                         FileRepresentationLoadResult(
                             importRecord: nil,
@@ -726,7 +710,7 @@ private extension ShareManagedFileImporter {
                         )
                 )
             }
-            gate.setTimeoutTask(timeoutTask)
+            timeoutTask.install(task)
         }
     }
 
@@ -762,17 +746,16 @@ private extension ShareManagedFileImporter {
                     >
             ) in
 
+            let timeoutTask =
+                ShareProviderTimeoutTask()
             let gate =
-                ShareProviderContinuationGate(
-                    continuation:
-                        continuation
-                )
+                ShareProviderCompletionGate()
             provider.loadItem(
                 forTypeIdentifier:
                     UTType.image.identifier,
                 options: nil
             ) { [intakeStore] item, error in
-                guard gate.beginCallback() else {
+                guard gate.claim() else {
                     return
                 }
 
@@ -800,7 +783,8 @@ private extension ShareManagedFileImporter {
                         "Provider[\(index)] loadItem failed.\n\(failureContext.debugDescription)"
                     )
 
-                    gate.resume(
+                    timeoutTask.cancel()
+                    continuation.resume(
                         returning:
                             .failed(
                                 failureContext
@@ -866,7 +850,8 @@ private extension ShareManagedFileImporter {
                                 index:
                                     index
                             )
-                        gate.resume(
+                        timeoutTask.cancel()
+                        continuation.resume(
                             returning:
                                 .failed(
                                     copyResult
@@ -905,7 +890,8 @@ private extension ShareManagedFileImporter {
                             index: index
                         )
 
-                    gate.resume(
+                    timeoutTask.cancel()
+                    continuation.resume(
                         returning:
                             .imported(
                                 ManagedImportRecord(
@@ -953,7 +939,8 @@ private extension ShareManagedFileImporter {
                     guard let managedURL =
                         copyResult.managedURL
                     else {
-                        gate.resume(
+                        timeoutTask.cancel()
+                        continuation.resume(
                             returning:
                                 .failed(
                                     copyResult
@@ -983,7 +970,8 @@ private extension ShareManagedFileImporter {
                         return
                     }
 
-                    gate.resume(
+                    timeoutTask.cancel()
+                    continuation.resume(
                         returning:
                             .imported(
                                 ManagedImportRecord(
@@ -1042,7 +1030,8 @@ private extension ShareManagedFileImporter {
                     "Provider[\(index)] loadItem returned unsupported payload.\n\(failureContext.debugDescription)"
                 )
 
-                gate.resume(
+                timeoutTask.cancel()
+                continuation.resume(
                     returning:
                         .failed(
                             failureContext
@@ -1050,12 +1039,15 @@ private extension ShareManagedFileImporter {
                 )
             }
 
-            let timeoutTask = Task {
+            let task = Task {
                 try? await Task.sleep(
                     nanoseconds:
                         providerLoadTimeoutNanoseconds
                 )
                 guard !Task.isCancelled else {
+                    return
+                }
+                guard gate.claim() else {
                     return
                 }
 
@@ -1086,14 +1078,14 @@ private extension ShareManagedFileImporter {
                         "operation=loadItem, providerIndex=\(index), requestedType=\(UTType.image.identifier)",
                     requestID: requestID
                 )
-                gate.resumeIfPending(
+                continuation.resume(
                     returning:
                         .failed(
                             failureContext
                         )
                 )
             }
-            gate.setTimeoutTask(timeoutTask)
+            timeoutTask.install(task)
         }
     }
 

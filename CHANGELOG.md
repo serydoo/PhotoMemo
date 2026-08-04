@@ -1,8 +1,12 @@
 # Changelog
 
-## 2.0.2 (68) Production Reliability And Compatibility - 2026-08-04
+## 2.0.2 (69) Production Reliability And Compatibility - 2026-08-04
 
 ### Fixed
+- Removed a generic continuation-holder shape that crashed the Xcode 26.6
+  Swift Release optimizer while compiling the Share Extension. Completion and
+  timeout arbitration now use non-generic, lock-protected responsibilities
+  without disabling production optimization.
 - Repaired Live Photo preservation across Apple Photos Share intake, queue
   routing, identity recovery, processing, and PhotoKit save-back. An
   `originalFormat` Live Photo no longer silently succeeds as a still image.
@@ -40,11 +44,13 @@
   available before installation.
 
 ### Verification
-- Focused Live Photo, diagnostics, configuration compatibility, and release
-  note tests passed; the complete `PhotoMemoTests` suite passed with `1,221`
-  tests passed, `1` skipped, and `0` failed.
-- macOS, iOS, Share Extension, and Widget Extension Debug builds passed; all
-  product and test target version fields report `2.0.2 (68)`.
+- Focused Live Photo, diagnostics, configuration compatibility, Share intake,
+  and release-note tests passed; the complete `PhotoMemoTests` suite passed
+  with `1,272` tests passed, `1` skipped, and `0` failed.
+- The Xcode 26.6 optimized Release Share Extension build and complete unsigned
+  generic-iOS Release archive passed. macOS, iOS, Share Extension, and Widget
+  Extension builds passed; all product and test target version fields report
+  `2.0.2 (69)`.
 - `git diff --check` and Chinese/English `Localizable.strings` plist lint
   passed.
 
