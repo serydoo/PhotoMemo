@@ -20,10 +20,31 @@ enum BatchTaskFailurePolicy {
             case .unsupportedInput:
                 return .unsupportedInput
             case .imageLoadFailed,
+                 .sourceMissing,
+                 .sourceUnreadable,
+                 .cloudDownloadTimedOut,
                  .temporaryImportPreparationFailed:
                 return .interrupted
             case .rawDisplayRenderFailed:
                 return .processingFailure
+            }
+        }
+
+        if let photoMemoError = error as? PhotoMemoError,
+           let diagnosticCode = photoMemoError.diagnosticCode {
+            if PhotoProcessingInputPolicy.RejectionReason(
+                rawValue: diagnosticCode
+            ) != nil {
+                return .unsupportedInput
+            }
+            if [
+                "imageLoadFailed",
+                "sourceMissing",
+                "sourceUnreadable",
+                "cloudDownloadTimedOut",
+                "temporaryImportPreparationFailed"
+            ].contains(diagnosticCode) {
+                return .interrupted
             }
         }
 

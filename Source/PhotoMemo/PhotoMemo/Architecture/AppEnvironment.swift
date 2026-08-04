@@ -47,6 +47,9 @@ struct PhotoMemoRepositoryContainer {
     let diagnostics:
         DiagnosticsRepository
 
+    let productionDiagnostics:
+        ProductionDiagnosticsRepository
+
     let photo:
         PhotoRepository
 
@@ -169,6 +172,8 @@ final class AppEnvironment {
             SharedBatchConfigurationSnapshotService(
                 defaults: defaults
             )
+        let productionDiagnosticsRepository =
+            ProductionDiagnosticsRepository()
         let photoRepository =
             PhotoRepository(
                 importService:
@@ -235,6 +240,8 @@ final class AppEnvironment {
                     previewCoordinator,
                 exportCoordinator:
                     exportCoordinator,
+                productionDiagnostics:
+                    productionDiagnosticsRepository,
                 automaticallyStartsProcessing:
                     automaticallyStartsBatchProcessing
             )
@@ -281,6 +288,8 @@ final class AppEnvironment {
                         sharedQueueSnapshotService:
                             sharedQueueSnapshotService
                     ),
+                productionDiagnostics:
+                    productionDiagnosticsRepository,
                 photo:
                     photoRepository,
                 photoLibrary:
@@ -329,6 +338,8 @@ final class AppEnvironment {
                         configurationRepository:
                             repositories
                             .configuration,
+                        productionDiagnostics:
+                            productionDiagnosticsRepository,
                         applyLiveDefaultConfiguration: {
                             snapshot in
                             resolvedBatchQueueStore

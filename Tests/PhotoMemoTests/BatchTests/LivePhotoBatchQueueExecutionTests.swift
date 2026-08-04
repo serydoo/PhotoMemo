@@ -38,11 +38,7 @@ struct LivePhotoBatchQueueExecutionTests {
                 budget: budget
             )
 
-        #expect(
-            message.contains(
-                "fileName=IMG_4800.HEIC"
-            )
-        )
+        #expect(!message.contains("IMG_4800.HEIC"))
         #expect(message.contains("isRAW=false"))
         #expect(message.contains("pixelWidth=8064"))
         #expect(message.contains("pixelHeight=6048"))
@@ -178,11 +174,7 @@ struct LivePhotoBatchQueueExecutionTests {
             )
         )
         #expect(identityMessage.contains("route=livePhoto"))
-        #expect(
-            bundleMessage.contains(
-                "fileName=SharedLivePhoto.livephoto"
-            )
-        )
+        #expect(!bundleMessage.contains("SharedLivePhoto.livephoto"))
         #expect(
             bundleMessage.contains(
                 "hasSourceIdentifier=false"
@@ -655,8 +647,8 @@ struct LivePhotoBatchQueueExecutionTests {
     }
 
     @MainActor
-    @Test("Live Photo content type without asset identity falls back to still processing")
-    func livePhotoPayloadWithoutAssetIdentityDoesNotUseInternalLivePhotoProcessor() async throws {
+    @Test("Original-format Live Photo without asset identity fails instead of silently saving a still image")
+    func originalFormatLivePhotoWithoutAssetIdentityFailsWithoutStaticFallback() async throws {
         let suiteName =
             "PhotoMemo.LivePhotoBatchQueueExecutionTests.\(UUID().uuidString)"
         let defaults =
@@ -756,7 +748,65 @@ struct LivePhotoBatchQueueExecutionTests {
         #expect(processor.requests.isEmpty)
         #expect(
             store.jobs.first?.tasks.first?.phase
-            == .completed
+            == .failed
+        )
+        #expect(
+            store.jobs.first?.tasks.first?.failure?
+                .diagnosticCode
+            == ProductionDiagnosticErrorCode
+                .processingUnsupportedLivePhoto
+                .rawValue
+        )
+        #expect(
+            store.jobs.first?.tasks.first?.failure?
+                .message
+                .contains("实况照片")
+            == true
+        )
+    }
+
+    @Test("Only explicit static output permits a Live Photo task to use the still-image route")
+    func staticFallbackPolicyRequiresExplicitStaticOutput() throws {
+        let livePhotoType =
+            try #require(
+                UTType("com.apple.live-photo")
+            )
+        let sourceURL =
+            try SyntheticFixtureLibrary.fixtureURL(
+                .portraitJPEG
+            )
+        let task =
+            BatchTask(
+                sourceURL: sourceURL,
+                fileName: "IMG_6093.jpeg",
+                sourceIdentifier: nil,
+                contentTypeIdentifier:
+                    livePhotoType.identifier
+            )
+
+        #expect(
+            BatchTaskMemoryPolicy
+                .shouldRejectUnavailableLivePhotoMotion(
+                    for: task,
+                    usesLivePhotoProcessing: false,
+                    outputMode: .originalFormat
+                )
+        )
+        #expect(
+            !BatchTaskMemoryPolicy
+            .shouldRejectUnavailableLivePhotoMotion(
+                for: task,
+                usesLivePhotoProcessing: false,
+                outputMode: .staticImage
+            )
+        )
+        #expect(
+            !BatchTaskMemoryPolicy
+            .shouldRejectUnavailableLivePhotoMotion(
+                for: task,
+                usesLivePhotoProcessing: true,
+                outputMode: .originalFormat
+            )
         )
     }
 

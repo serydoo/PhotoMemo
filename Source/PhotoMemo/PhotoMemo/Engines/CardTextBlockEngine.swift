@@ -173,10 +173,14 @@ final class CardTextBlockEngine {
             enabledItems.map { item in
                 InlineContentTextComposer.Piece(
                     kind: item.type == .variable ? .token : .text,
-                    value: variableEngine.render(
-                        item.value,
-                        lookup: lookup
-                    )
+                    value: item.type == .variable
+                        || item.moduleID != .custom
+                        && item.value.contains("{{")
+                        ? variableEngine.render(
+                            item.value,
+                            lookup: lookup
+                        )
+                        : item.value
                 )
             }
         )

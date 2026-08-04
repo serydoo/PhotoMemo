@@ -61,16 +61,25 @@ enum V1ModuleUsageTracker {
     }
 
     static func categoryTitle(
-        for module: IOSInsertableModule
+        for module: IOSInsertableModule,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> String {
 
         switch module {
         case .subjectNickname,
              .smartTime,
              .captureSummary:
-            return "时光记"
+            return language.localized(
+                key: "module.category.memory",
+                fallback: language == .simplifiedChinese
+                    ? "时光记"
+                    : "Memory"
+            )
         default:
-            return "EXIF"
+            return language.localized(
+                key: "module.category.metadata",
+                fallback: "EXIF"
+            )
         }
     }
 

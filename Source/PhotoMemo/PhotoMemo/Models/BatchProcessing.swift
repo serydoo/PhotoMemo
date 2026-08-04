@@ -780,6 +780,10 @@ struct BatchTaskFailure:
 
     var canRetry: Bool
 
+    var diagnosticCode: String?
+
+    var supportID: String?
+
     var timestamp: Date
 
     init(
@@ -788,6 +792,8 @@ struct BatchTaskFailure:
         classification:
             Classification? = nil,
         canRetry: Bool = true,
+        diagnosticCode: String? = nil,
+        supportID: String? = nil,
         timestamp: Date = Date()
     ) {
         self.phase = phase
@@ -795,6 +801,8 @@ struct BatchTaskFailure:
         self.classification =
             classification
         self.canRetry = canRetry
+        self.diagnosticCode = diagnosticCode
+        self.supportID = supportID
         self.timestamp = timestamp
     }
 }

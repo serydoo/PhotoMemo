@@ -926,8 +926,8 @@ struct ShareDrainMigrationRegressionTests {
     }
 
     @MainActor
-    @Test("ProcessShareIntent keeps static fallback when Live Photo recovery is ambiguous")
-    func processShareIntentKeepsStaticFallbackWhenLivePhotoRecoveryIsAmbiguous() async throws {
+    @Test("ProcessShareIntent preserves Live Photo media truth when identity recovery is ambiguous")
+    func processShareIntentPreservesLivePhotoTypeWhenRecoveryIsAmbiguous() async throws {
 
         let context = try Self.makeContext(
             named:
@@ -1014,7 +1014,7 @@ struct ShareDrainMigrationRegressionTests {
         #expect(task.sourceIdentifier == nil)
         #expect(
             task.contentTypeIdentifier
-            == UTType.jpeg.identifier
+            == "com.apple.live-photo"
         )
     }
 
@@ -1208,8 +1208,8 @@ struct ShareDrainMigrationRegressionTests {
         )
     }
 
-    @Test("Live Photo identity matcher rejects capture-date and pixel matches without filename agreement")
-    func livePhotoIdentityMatcherRejectsCaptureDateAndPixelMatchesWithoutFilenameAgreement() throws {
+    @Test("Live Photo identity matcher recovers a uniquely timed and sized asset when the provider renames the still image")
+    func livePhotoIdentityMatcherRecoversRenamedUniqueCandidate() throws {
 
         let captureDate =
             try #require(
@@ -1239,6 +1239,60 @@ struct ShareDrainMigrationRegressionTests {
                 pixelHeight: 3024
             )
 
+        let renamedCandidate =
+            LivePhotoAssetIdentityCandidate(
+                localIdentifier:
+                    "asset-renamed-provider-payload",
+                originalFileNames: [
+                    "IMG_1200.HEIC",
+                    "IMG_1200.MOV"
+                ],
+                creationDate:
+                    captureDate
+                    .addingTimeInterval(0.8),
+                pixelWidth: 4032,
+                pixelHeight: 3024,
+                isLivePhoto: true
+            )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher
+                .resolve(
+                    hint: hint,
+                    candidates: [
+                        renamedCandidate
+                    ]
+                )
+            == .matched(
+                "asset-renamed-provider-payload"
+            )
+        )
+
+        #expect(
+            LivePhotoAssetIdentityMatcher
+                .resolve(
+                    hint: hint,
+                    candidates: [
+                        renamedCandidate,
+                        LivePhotoAssetIdentityCandidate(
+                            localIdentifier:
+                                "asset-equally-plausible",
+                            originalFileNames: [
+                                "IMG_1201.HEIC",
+                                "IMG_1201.MOV"
+                            ],
+                            creationDate:
+                                captureDate
+                                .addingTimeInterval(-0.4),
+                            pixelWidth: 4032,
+                            pixelHeight: 3024,
+                            isLivePhoto: true
+                        )
+                    ]
+                )
+            == .ambiguous(candidateCount: 2)
+        )
+
         #expect(
             LivePhotoAssetIdentityMatcher
                 .resolve(
@@ -1246,13 +1300,14 @@ struct ShareDrainMigrationRegressionTests {
                     candidates: [
                         LivePhotoAssetIdentityCandidate(
                             localIdentifier:
-                                "asset-wrong-name",
+                                "asset-renamed-but-too-far-away",
                             originalFileNames: [
-                                "IMG_1200.HEIC",
-                                "IMG_1200.MOV"
+                                "IMG_1202.HEIC",
+                                "IMG_1202.MOV"
                             ],
                             creationDate:
-                                captureDate,
+                                captureDate
+                                .addingTimeInterval(30),
                             pixelWidth: 4032,
                             pixelHeight: 3024,
                             isLivePhoto: true

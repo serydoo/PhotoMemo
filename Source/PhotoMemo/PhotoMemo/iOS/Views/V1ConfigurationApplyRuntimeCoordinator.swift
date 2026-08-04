@@ -52,6 +52,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         () -> Void
     private let updateStatus:
         (V1ConfigurationApplyViewStatus) -> Void
+    private let recordDiagnostic:
+        (ProductionDiagnosticEvent) async -> Void
 
     init(
         applyRequest: @escaping (
@@ -94,7 +96,10 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         applySelectedMemoryPreset: @escaping () -> Void,
         updateStatus: @escaping (
             V1ConfigurationApplyViewStatus
-        ) -> Void
+        ) -> Void,
+        recordDiagnostic: @escaping (
+            ProductionDiagnosticEvent
+        ) async -> Void = { _ in }
     ) {
         self.applyRequest = applyRequest
         self.applyAggregateRequest =
@@ -117,6 +122,7 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         self.applySelectedMemoryPreset =
             applySelectedMemoryPreset
         self.updateStatus = updateStatus
+        self.recordDiagnostic = recordDiagnostic
     }
 
     init(
@@ -150,7 +156,10 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         applySelectedMemoryPreset: @escaping () -> Void,
         updateStatus: @escaping (
             V1ConfigurationApplyViewStatus
-        ) -> Void
+        ) -> Void,
+        recordDiagnostic: @escaping (
+            ProductionDiagnosticEvent
+        ) async -> Void = { _ in }
     ) {
         self.init(
             applyRequest: { request in
@@ -180,7 +189,8 @@ struct V1ConfigurationApplyRuntimeCoordinator {
                 applySavedConfigurationProjection,
             applySelectedMemoryPreset:
                 applySelectedMemoryPreset,
-            updateStatus: updateStatus
+            updateStatus: updateStatus,
+            recordDiagnostic: recordDiagnostic
         )
     }
 
@@ -202,6 +212,13 @@ struct V1ConfigurationApplyRuntimeCoordinator {
 
         updateStatus(.init(status: .saving))
 
+        let runtimeOperationID = UUID()
+        let diagnosticContext =
+            ProductionDiagnosticContext
+            .configurationLibrary(
+                configurationLibrary
+            )
+
         let candidate: V1ConfigurationAggregateCandidate
         do {
             candidate = try V1ConfigurationAggregateCandidateBuilder
@@ -210,10 +227,27 @@ struct V1ConfigurationApplyRuntimeCoordinator {
                     draft: aggregateDraft
                 )
         } catch {
+            let failure = ProductionDiagnosticFailureClassifier
+                .candidateConstruction(
+                    error,
+                    operationID: runtimeOperationID,
+                    language: .interfaceStored
+                )
+            await recordDiagnostic(
+                ProductionDiagnosticEvent(
+                    operationID: runtimeOperationID,
+                    category: .configuration,
+                    stage: "configuration.candidate",
+                    outcome: .failed,
+                    errorCode: failure.code,
+                    systemError: failure.systemError,
+                    context: diagnosticContext
+                )
+            )
             updateStatus(
                 .init(
                     status: .failure(
-                        message: "保存配置失败。"
+                        message: failure.userMessage
                     )
                 )
             )
@@ -221,10 +255,31 @@ struct V1ConfigurationApplyRuntimeCoordinator {
         }
 
         guard let applyAggregateRequest else {
+            let unavailableError = PhotoMemoError(
+                code: .configurationUnavailable,
+                message: "Configuration service unavailable."
+            )
+            let failure = ProductionDiagnosticFailureClassifier
+                .configurationSave(
+                    unavailableError,
+                    operationID: runtimeOperationID,
+                    language: .interfaceStored
+                )
+            await recordDiagnostic(
+                ProductionDiagnosticEvent(
+                    operationID: runtimeOperationID,
+                    category: .configuration,
+                    stage: "configuration.service",
+                    outcome: .failed,
+                    errorCode: failure.code,
+                    systemError: failure.systemError,
+                    context: diagnosticContext
+                )
+            )
             updateStatus(
                 .init(
                     status: .failure(
-                        message: "保存配置失败。"
+                        message: failure.userMessage
                     )
                 )
             )
@@ -236,9 +291,39 @@ struct V1ConfigurationApplyRuntimeCoordinator {
             availableAlbums
         ) {
         case .failure(let error):
+            let displayedError: PhotoMemoError
+            if error.supportID != nil {
+                displayedError = error
+            } else {
+                let failure = ProductionDiagnosticFailureClassifier
+                    .configurationSave(
+                        error,
+                        operationID: runtimeOperationID,
+                        language: .interfaceStored
+                    )
+                await recordDiagnostic(
+                    ProductionDiagnosticEvent(
+                        operationID: runtimeOperationID,
+                        category: .configuration,
+                        stage: "configuration.apply",
+                        outcome: .failed,
+                        errorCode: failure.code,
+                        systemError: failure.systemError,
+                        context: diagnosticContext
+                    )
+                )
+                displayedError = PhotoMemoError(
+                    code: error.code,
+                    message: failure.userMessage,
+                    diagnosticCode: failure.code.rawValue,
+                    supportID: failure.supportID
+                )
+            }
             updateStatus(
                 .init(
-                    status: .failure(message: error.message)
+                    status: .failure(
+                        message: displayedError.message
+                    )
                 )
             )
             return false
@@ -261,13 +346,25 @@ struct V1ConfigurationApplyRuntimeCoordinator {
                     receipt.candidate.configuration
                 )
             }
-            updateStatus(
-                .init(
-                    status: outcome == .applied
+            let status: V1ConfigurationStatus
+            if let operationID = receipt.saveReceipt
+                .diagnosticOperationID,
+               receipt.saveReceipt
+                .compatibilityProjectionFailure != nil {
+                let failure = ProductionDiagnosticFailureClassifier
+                    .compatibilityProjection(
+                        operationID: operationID,
+                        language: .interfaceStored
+                    )
+                status = .savedWithWarning(
+                    message: failure.userMessage
+                )
+            } else {
+                status = outcome == .applied
                     ? .saved
                     : .dirty
-                )
-            )
+            }
+            updateStatus(.init(status: status))
             return true
         }
     }

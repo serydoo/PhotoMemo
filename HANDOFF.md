@@ -1,5 +1,84 @@
 # MemoMark Handoff
 
+## MemoMark 2.0.2 (68) release handoff
+
+- Version fields are unified at `2.0.2 (68)` for the macOS app, iOS app, Share
+  Extension, Widget Extension, and test target. The release scope combines
+  module/configuration compatibility, actionable local diagnostics, and Live
+  Photo motion preservation.
+- Conflict review found no cross-boundary conflict: configuration identity,
+  diagnostics persistence, and media routing remain separate owners; Renderer,
+  Layout Engine, Export, and original-photo protection are unchanged.
+- `CHANGELOG.md`, the bilingual in-app release notes, and
+  `Docs/07_Releases/2026-08-04-2.0.2-production-reliability.md` are aligned.
+- Full tests and all four product-target Debug builds passed. Physical Apple
+  Photos Live Photo round-trip remains pending until `IPhone5` reconnects as an
+  available device; no uninstall or data reset is part of the release step.
+
+## 2026-08-04 Live Photo motion preservation repair
+
+- Final stable-toolchain verification passed: focused Live Photo/diagnostics
+  tests, the complete `PhotoMemoTests` suite, unsigned iOS targets, and the
+  signed generic iOS package all passed. The current direct install attempt
+  to `IPhone5` returned CoreDevice error 4016 (`unavailable`), so the next
+  physical-device acceptance step is to unlock/reconnect the paired phone and
+  rerun installation without uninstalling the existing app.
+- Provider timeout or failed identity recovery no longer turns an
+  `originalFormat` Live Photo into a successful static task. Static output
+  remains available only when the user explicitly selects `staticImage`.
+- The main App preserves Live Photo media truth after Share Extension static
+  payloads, so `notFound`, `ambiguous`, and `unavailable` outcomes reach the
+  queue as `processing.input.unsupportedLivePhoto` with iCloud/readability/
+  permission guidance.
+- Identity matching accepts a uniquely identified renamed provider payload
+  with close capture time and exact pixel dimensions, but never guesses among
+  multiple candidates.
+- PhotoKit Live Photo Writer verifies the saved asset after bounded indexing
+  retries. It requires `.photoLive`, valid dimensions and duration, still
+  resource, and paired-video resource. A static or incomplete readback is a
+  failure with `photoLibrary.livePhoto.verificationFailed`, not success.
+- Exported diagnostics include safe allowlisted Live Photo recovery/readback
+  details and still exclude photos, custom text, names, filenames, paths,
+  identifiers, locations, and unrelated free-form legacy messages.
+- Focused Live Photo/diagnostics suites and the complete `PhotoMemoTests` suite
+  pass. Remaining acceptance is a signed physical-device Apple Photos share ->
+  MemoMark -> Apple Photos Live Photo round trip.
+
+## 2026-08-04 production diagnostics mechanism
+
+- MemoMark now has a local-first production diagnostics path for configuration
+  saves and terminal photo-processing failures. It records structured,
+  bounded, recoverable events in the App Group and mirrors safe identifiers to
+  OSLog; it does not automatically upload data. A corrupt primary copy recovers
+  from last-known-good data, while simultaneous corruption self-heals on the
+  next event and remains visible as a sanitized recovery record.
+- Save and processing errors shown to users now include a specific reason,
+  recovery action, and short support ID. Canonical save success with failed
+  compatibility projection is represented as `savedWithWarning`, not as a
+  complete failure or silent success.
+- Users can open Settings -> Feedback -> `导出诊断信息` and share the sanitized
+  JSON file. Support should ask for this file and the visible `CFG-`, `JOB-`, or
+  `DIA-` identifier instead of requesting screenshots of internal paths or
+  asking users to reproduce technical wording from memory.
+- The export excludes photos, authored text, subject/album names, locations,
+  filenames, paths, and raw error descriptions. Legacy Share diagnostics are
+  reduced to stage/time/request/job timeline fields, with only allowlisted safe
+  Live Photo recovery/readback detail added for motion-preservation diagnosis.
+- Long renderer content is not a save-failure trigger. Region character and
+  newline counts are included only as non-content metrics; visual fit remains
+  future Layout Engine preflight work.
+- Wrapped file-system errors retain only safe domain/code metadata, preserving
+  specific permission and storage-space guidance without exporting raw paths or
+  localized descriptions.
+- Focused tests and unsigned macOS, iOS, Share Extension, and Widget Extension
+  Debug builds pass. Manual iPhone/iPad acceptance should verify the Settings
+  export share sheet, one forced configuration write failure, one processing
+  failure, Dynamic Type, and VoiceOver reading of the new feedback action.
+- A signed `2.0.1 (67)` Debug build was installed in place and launched on the
+  wired `IPhone5` iPhone 15 Pro running iOS 27.0. The main process and Widget
+  Extension were running, embedded signatures were valid, and a screenshot
+  confirmed the existing Configuration Center data remained available.
+
 ## 2026-08-03 MemoMark 2.0.1 (67) synchronization
 
 - The current release boundary is MemoMark `2.0.1 (67)`. It reopens the App

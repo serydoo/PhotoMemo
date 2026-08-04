@@ -25,18 +25,32 @@ struct V1ConfigurationDraftProjection: Hashable {
     let route: MemoryConfigurationRecord.Presentation.Route
     let selectedTimeAnchorID: UUID?
     let language: MemoMarkLanguage
+    let interfaceLanguage: MemoMarkLanguage
 
     var regionDrafts: [CardRegion: V1EditorDraft] {
         [
-            .slotA: Self.draft(from: template.leftTopArea),
-            .slotB: Self.draft(from: template.leftBottomArea),
-            .slotC: Self.draft(from: template.rightTopArea),
-            .slotD: Self.draft(from: template.rightBottomArea)
+            .slotA: Self.draft(
+                from: template.leftTopArea,
+                interfaceLanguage: interfaceLanguage
+            ),
+            .slotB: Self.draft(
+                from: template.leftBottomArea,
+                interfaceLanguage: interfaceLanguage
+            ),
+            .slotC: Self.draft(
+                from: template.rightTopArea,
+                interfaceLanguage: interfaceLanguage
+            ),
+            .slotD: Self.draft(
+                from: template.rightBottomArea,
+                interfaceLanguage: interfaceLanguage
+            )
         ]
     }
 
     init(
-        configuration: MemoryConfigurationRecord
+        configuration: MemoryConfigurationRecord,
+        interfaceLanguage: MemoMarkLanguage = .interfaceStored
     ) {
         configurationID = configuration.id
         configurationRevision = configuration.revision
@@ -72,6 +86,7 @@ struct V1ConfigurationDraftProjection: Hashable {
         selectedTimeAnchorID =
             configuration.selectedTimeAnchorID
         language = configuration.language
+        self.interfaceLanguage = interfaceLanguage
     }
 }
 
@@ -336,43 +351,89 @@ enum V1ConfigurationAggregateCandidateBuilder {
         var result = template
         result.name = title
         result.leftTopArea = area(
-            named: "Recorder",
+            basedOn: template.leftTopArea,
             draft: regionDrafts[.slotA]
         )
         result.leftBottomArea = area(
-            named: "Timeline",
+            basedOn: template.leftBottomArea,
             draft: regionDrafts[.slotB]
         )
         result.rightTopArea = area(
-            named: "Capture Summary",
+            basedOn: template.rightTopArea,
             draft: regionDrafts[.slotC]
         )
         result.rightBottomArea = area(
-            named: "Memory",
+            basedOn: template.rightBottomArea,
             draft: regionDrafts[.slotD]
         )
         return result
     }
 
     private static func area(
-        named name: String,
+        basedOn existingArea: TemplateArea,
         draft: V1EditorDraft?
     ) -> TemplateArea {
-        TemplateArea(
-            name: name,
-            items: (draft?.items ?? []).compactMap { item in
-                let value = item.templateValue
+        var itemGroups: [[V1ContentItem]] = []
+        for item in draft?.items ?? [] {
+            if let sourceItemID = item.sourceItemID,
+               itemGroups.last?.first?.sourceItemID == sourceItemID {
+                itemGroups[itemGroups.count - 1].append(item)
+            } else {
+                itemGroups.append([item])
+            }
+        }
+        let editableItems: [TemplateItem] =
+            itemGroups.compactMap { group -> TemplateItem? in
+                guard let firstItem = group.first else {
+                    return nil
+                }
+                let value = group.map(\.templateValue).joined()
                 guard !value.isEmpty else {
                     return nil
                 }
                 return TemplateItem(
-                    id: item.id,
-                    type: item.kind == .token ? .variable : .text,
-                    name: item.title,
+                    id: firstItem.sourceItemID ?? firstItem.id,
+                    type: group.contains(where: { $0.kind == .token })
+                        && value.contains("{{")
+                        ? .variable
+                        : .text,
+                    name: persistedItemName(
+                        for: firstItem,
+                        value: value
+                    ),
                     value: value,
-                    isEnabled: true
+                    isEnabled: true,
+                    moduleID: group.contains(where: {
+                        $0.kind == .token
+                    })
+                        ? MemoryCardTemplateTokenCatalog.module(
+                            matching: value
+                        )
+                        : .custom
                 )
             }
+        var mergedItems: [TemplateItem] = []
+        var editableIndex = 0
+        for existingItem in existingArea.items {
+            if existingItem.isEnabled {
+                guard editableIndex < editableItems.count else {
+                    continue
+                }
+                mergedItems.append(editableItems[editableIndex])
+                editableIndex += 1
+            } else {
+                mergedItems.append(existingItem)
+            }
+        }
+        if editableIndex < editableItems.count {
+            mergedItems.append(
+                contentsOf: editableItems[editableIndex...]
+            )
+        }
+        return TemplateArea(
+            id: existingArea.id,
+            name: existingArea.name,
+            items: mergedItems
         )
     }
 
@@ -394,6 +455,23 @@ enum V1ConfigurationAggregateCandidateBuilder {
                 }
             )
         }
+    }
+
+    private static func persistedItemName(
+        for item: V1ContentItem,
+        value: String
+    ) -> String {
+        guard item.kind == .token else {
+            return "Text"
+        }
+        if let module = MemoryCardTemplateTokenCatalog.module(
+            matching: value
+        ) {
+            return module.rawValue
+        }
+        return MemoryCardTemplateTokenCatalog.tokenName(
+            from: value
+        ) ?? "UnsupportedToken"
     }
 
     private static func albumDescriptor(
@@ -459,13 +537,17 @@ private extension V1ConfigurationDraftProjection {
     }
 
     static func draft(
-        from area: TemplateArea
+        from area: TemplateArea,
+        interfaceLanguage: MemoMarkLanguage
     ) -> V1EditorDraft {
         var items: [V1ContentItem] = []
         for item in area.items where item.isEnabled {
-            if let contentItem = contentItem(from: item) {
-                items.append(contentItem)
-            }
+            items.append(
+                contentsOf: contentItems(
+                    from: item,
+                    interfaceLanguage: interfaceLanguage
+                )
+            )
         }
         var draft = V1EditorDraft(
             items: items
@@ -474,42 +556,219 @@ private extension V1ConfigurationDraftProjection {
         return draft
     }
 
-    static func contentItem(
-        from item: TemplateItem
-    ) -> V1ContentItem? {
+    static func contentItems(
+        from item: TemplateItem,
+        interfaceLanguage: MemoMarkLanguage
+    ) -> [V1ContentItem] {
         switch item.type {
         case .text:
-            return V1ContentItem(
+            return [textItem(
                 id: item.id,
-                kind: .text,
-                title: item.name,
                 value: item.value,
-                savedValue: item.value,
-                systemImage: MemoMarkSymbol.expressionFormula.name
-            )
+                sourceItemID: item.id,
+                interfaceLanguage: interfaceLanguage
+            )]
         case .variable:
-            let module = module(for: item)
-            return V1ContentItem(
-                id: item.id,
-                kind: .token,
-                title: module?.title ?? item.name,
-                value: item.value,
-                savedValue: item.value,
-                systemImage: module?.systemImage ?? "curlybraces"
+            return variableItems(
+                from: item,
+                interfaceLanguage: interfaceLanguage
             )
         case .badge:
-            return nil
+            return []
         }
     }
 
-    static func module(
-        for item: TemplateItem
-    ) -> IOSInsertableModule? {
-        IOSInsertableModule.allCases.first { module in
-            item.value == module.rendererToken
-            || item.value == module.token
-            || item.name == module.title
+    static func variableItems(
+        from item: TemplateItem,
+        interfaceLanguage: MemoMarkLanguage
+    ) -> [V1ContentItem] {
+        if item.moduleID == .custom {
+            return [textItem(
+                id: item.id,
+                value: item.value,
+                sourceItemID: item.id,
+                interfaceLanguage: interfaceLanguage
+            )]
         }
+        if let module = item.moduleID
+            ?? MemoryCardTemplateTokenCatalog.module(
+                matching: item.value
+            ) {
+            return [tokenItem(
+                id: item.id,
+                expression: item.value,
+                module: module,
+                sourceItemID: item.id,
+                interfaceLanguage: interfaceLanguage
+            )]
+        }
+
+        let expression = item.value as NSString
+        let pattern = #"\{\{[a-zA-Z0-9_\-]+\}\}"#
+        guard let regex = try? NSRegularExpression(pattern: pattern)
+        else {
+            return [textItem(
+                id: item.id,
+                value: item.value,
+                sourceItemID: item.id,
+                interfaceLanguage: interfaceLanguage
+            )]
+        }
+        let matches = regex.matches(
+            in: item.value,
+            range: NSRange(location: 0, length: expression.length)
+        )
+        guard !matches.isEmpty else {
+            return [textItem(
+                id: item.id,
+                value: item.value,
+                sourceItemID: item.id,
+                interfaceLanguage: interfaceLanguage
+            )]
+        }
+
+        var result: [V1ContentItem] = []
+        var cursor = 0
+        var componentIndex = 0
+        for match in matches {
+            if match.range.location > cursor {
+                let literalRange = NSRange(
+                    location: cursor,
+                    length: match.range.location - cursor
+                )
+                result.append(
+                    textItem(
+                        id: derivedID(
+                            from: item.id,
+                            componentIndex: componentIndex
+                        ),
+                        value: expression.substring(with: literalRange),
+                        sourceItemID: item.id,
+                        interfaceLanguage: interfaceLanguage
+                    )
+                )
+                componentIndex += 1
+            }
+
+            let savedExpression = expression.substring(
+                with: match.range
+            )
+            let module = MemoryCardTemplateTokenCatalog.module(
+                matching: savedExpression
+            )
+            result.append(
+                tokenItem(
+                    id: derivedID(
+                        from: item.id,
+                        componentIndex: componentIndex
+                    ),
+                    expression: savedExpression,
+                    module: module,
+                    sourceItemID: item.id,
+                    interfaceLanguage: interfaceLanguage
+                )
+            )
+            componentIndex += 1
+            cursor = NSMaxRange(match.range)
+        }
+
+        if cursor < expression.length {
+            result.append(
+                textItem(
+                    id: derivedID(
+                        from: item.id,
+                        componentIndex: componentIndex
+                    ),
+                    value: expression.substring(
+                        from: cursor
+                    ),
+                    sourceItemID: item.id,
+                    interfaceLanguage: interfaceLanguage
+                )
+            )
+        }
+        return result
+    }
+
+    static func textItem(
+        id: UUID,
+        value: String,
+        sourceItemID: UUID? = nil,
+        interfaceLanguage: MemoMarkLanguage
+    ) -> V1ContentItem {
+        let kind: V1ContentItem.Kind = value == "\n"
+            ? .lineBreak
+            : .text
+        return V1ContentItem(
+            id: id,
+            sourceItemID: sourceItemID,
+            kind: kind,
+            title: interfaceLanguage.localized(
+                key: "module.literal_text",
+                fallback: interfaceLanguage == .simplifiedChinese
+                    ? "文字"
+                    : "Text"
+            ),
+            value: value,
+            savedValue: value,
+            systemImage: MemoMarkSymbol.expressionFormula.name
+        )
+    }
+
+    static func tokenItem(
+        id: UUID,
+        expression: String,
+        module: MemoryCardModuleID?,
+        sourceItemID: UUID? = nil,
+        interfaceLanguage: MemoMarkLanguage
+    ) -> V1ContentItem {
+        let unsupportedTitle = interfaceLanguage.localized(
+            key: "module.unsupported_content",
+            fallback: interfaceLanguage == .simplifiedChinese
+                ? "无法识别的内容"
+                : "Unsupported content"
+        )
+        let title = module?.title(for: interfaceLanguage)
+            ?? MemoryCardTemplateTokenCatalog.title(
+                for: expression,
+                language: interfaceLanguage
+            )
+            ?? unsupportedTitle
+        return V1ContentItem(
+            id: id,
+            sourceItemID: sourceItemID,
+            kind: .token,
+            title: title,
+            value: title,
+            savedValue: expression,
+            systemImage: module?.systemImage ?? "curlybraces"
+        )
+    }
+
+    static func derivedID(
+        from sourceID: UUID,
+        componentIndex: Int
+    ) -> UUID {
+        let seed = "\(sourceID.uuidString)#\(componentIndex)"
+        var firstHash: UInt64 = 14_695_981_039_346_656_037
+        var secondHash: UInt64 = 10_995_116_282_112
+        for byte in seed.utf8 {
+            firstHash ^= UInt64(byte)
+            firstHash &*= 1_099_511_628_211
+        }
+        for byte in seed.utf8.reversed() {
+            secondHash ^= UInt64(byte)
+            secondHash &*= 1_099_511_628_211
+        }
+        let value = String(
+            format: "%08llX-%04llX-5%03llX-A%03llX-%012llX",
+            firstHash >> 32,
+            (firstHash >> 16) & 0xFFFF,
+            firstHash & 0x0FFF,
+            (secondHash >> 48) & 0x0FFF,
+            secondHash & 0x0000_FFFF_FFFF_FFFF
+        )
+        return UUID(uuidString: value) ?? sourceID
     }
 }
 #endif

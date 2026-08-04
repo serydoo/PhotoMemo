@@ -42,6 +42,8 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "app.enqueue.taskRoute")
     nonisolated static let appLivePhotoIdentityRecovery =
         Self(rawValue: "app.livePhotoIdentityRecovery")
+    nonisolated static let appBackgroundTimeExpired =
+        Self(rawValue: "app.background.timeExpired")
     nonisolated static let configurationReferenceAccepted =
         Self(rawValue: "configuration.reference.accepted")
     nonisolated static let configurationCompatibilityRecovery =
@@ -56,6 +58,8 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "livePhoto.outputFilename.resolved")
     nonisolated static let livePhotoOutputFilenameFailed =
         Self(rawValue: "livePhoto.outputFilename.failed")
+    nonisolated static let livePhotoAssetReadback =
+        Self(rawValue: "livePhoto.assetReadback")
     nonisolated static let batchTaskAdmission =
         Self(rawValue: "batch.task.admission")
     nonisolated static let batchTaskRoute =
@@ -101,6 +105,8 @@ struct PhotoMemoShareDiagnosticStage:
         Self(rawValue: "extension.persisted")
     nonisolated static let extensionProviderObserved =
         Self(rawValue: "extension.provider.observed")
+    nonisolated static let extensionProviderLoadTimedOut =
+        Self(rawValue: "extension.provider.loadTimedOut")
     nonisolated static let extensionRequestCreated =
         Self(rawValue: "extension.request.created")
     nonisolated static let extensionRequestPersisted =

@@ -83,7 +83,7 @@ struct ShareIntakeDiagnostics {
             PhotoMemoShareDiagnostics.record(
                 stage: .extensionProviderObserved,
                 message:
-                    "index=\(index), suggestedName=\(provider.suggestedName ?? "nil"), preferredImportType=\(preferredImportType ?? "nil"), preferredImageType=\(preferredImageType ?? "nil"), supportsLivePhoto=\(supportsLivePhoto), supportsMovie=\(supportsMovie), registeredTypes=\(joinedIdentifiers)",
+                    "index=\(index), preferredImportType=\(preferredImportType ?? "nil"), preferredImageType=\(preferredImageType ?? "nil"), supportsLivePhoto=\(supportsLivePhoto), supportsMovie=\(supportsMovie), registeredTypes=\(joinedIdentifiers)",
                 requestID: requestID
             )
         }
@@ -96,7 +96,7 @@ struct ShareIntakeDiagnostics {
 
         PhotoMemoShareDiagnostics.record(
             stage: .extensionItemImported,
-            message: fileName,
+            message: "imported",
             requestID: requestID
         )
     }
@@ -165,7 +165,7 @@ struct ShareIntakeDiagnostics {
             stage:
                 .extensionLivePhotoRepresentationStaticPayload,
             message:
-                "index=\(index), requestedType=\(requestedTypeIdentifier), fileName=\(item.originalFileName), contentType=\(item.contentTypeIdentifier ?? "nil"), \(readinessDiagnosticMessage), routeWillFallbackToStaticWithoutAssetIdentity=true",
+                "index=\(index), requestedType=\(requestedTypeIdentifier), contentType=\(item.contentTypeIdentifier ?? "nil"), \(readinessDiagnosticMessage), routeWillFallbackToStaticWithoutAssetIdentity=true",
             requestID: requestID
         )
     }

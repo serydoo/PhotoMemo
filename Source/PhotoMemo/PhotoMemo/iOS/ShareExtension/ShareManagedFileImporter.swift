@@ -4,6 +4,78 @@ import Foundation
 import UniformTypeIdentifiers
 import UIKit
 
+private final class ShareProviderContinuationGate<Value>:
+    @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var continuation:
+        CheckedContinuation<Value, Never>?
+    private var callbackClaimed = false
+    private var timeoutTask:
+        Task<Void, Never>?
+
+    init(
+        continuation:
+            CheckedContinuation<Value, Never>
+    ) {
+        self.continuation = continuation
+    }
+
+    func beginCallback() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard continuation != nil,
+              !callbackClaimed else {
+            return false
+        }
+        callbackClaimed = true
+        return true
+    }
+
+    func resume(returning value: Value) {
+        lock.lock()
+        guard callbackClaimed,
+              let continuation else {
+            lock.unlock()
+            return
+        }
+        self.continuation = nil
+        let timeoutTask = self.timeoutTask
+        self.timeoutTask = nil
+        lock.unlock()
+
+        timeoutTask?.cancel()
+        continuation.resume(returning: value)
+    }
+
+    func resumeIfPending(returning value: Value) {
+        lock.lock()
+        guard !callbackClaimed,
+              let continuation else {
+            lock.unlock()
+            return
+        }
+        self.continuation = nil
+        self.timeoutTask = nil
+        lock.unlock()
+
+        continuation.resume(returning: value)
+    }
+
+    func setTimeoutTask(
+        _ task: Task<Void, Never>
+    ) {
+        lock.lock()
+        guard continuation != nil else {
+            lock.unlock()
+            task.cancel()
+            return
+        }
+        timeoutTask = task
+        lock.unlock()
+    }
+}
+
 @MainActor
 struct ShareManagedFileImporter {
 
@@ -68,15 +140,22 @@ struct ShareManagedFileImporter {
     private let livePhotoRecovery:
         ShareLivePhotoRecovery
 
+    private let providerLoadTimeoutNanoseconds:
+        UInt64
+
     init(
         intakeStore: ExternalPhotoIntakeStore,
         providerLoader: ShareItemProviderLoader,
-        livePhotoRecovery: ShareLivePhotoRecovery
+        livePhotoRecovery: ShareLivePhotoRecovery,
+        providerLoadTimeoutNanoseconds:
+            UInt64 = 15_000_000_000
     ) {
         self.intakeStore = intakeStore
         self.providerLoader = providerLoader
         self.livePhotoRecovery =
             livePhotoRecovery
+        self.providerLoadTimeoutNanoseconds =
+            providerLoadTimeoutNanoseconds
     }
 
     func loadManagedURL(
@@ -85,6 +164,8 @@ struct ShareManagedFileImporter {
         index: Int,
         itemProviderCount: Int,
         supportedProviderCount: Int,
+        mediaOutputModeRawValue: String?,
+        livePhotoPolicyRawValue: String?,
         seenSourceKeys: inout Set<String>
     ) async -> ManagedImportOutcome {
 
@@ -184,6 +265,27 @@ struct ShareManagedFileImporter {
 
                 return .imported(
                     resolvedImportRecord
+                )
+            }
+
+            if
+                let failureContext =
+                    liveFileLoadResult
+                    .failureContext,
+                LivePhotoStaticFallbackPolicy
+                .shouldStopAfterLiveRepresentationFailure(
+                    errorCode:
+                        failureContext
+                        .errorSummary?
+                        .code,
+                    mediaOutputModeRawValue:
+                        mediaOutputModeRawValue,
+                    livePhotoPolicyRawValue:
+                        livePhotoPolicyRawValue
+                )
+            {
+                return .failed(
+                    failureContext
                 )
             }
         }
@@ -377,10 +479,19 @@ private extension ShareManagedFileImporter {
                     >
             ) in
 
-            provider.loadFileRepresentation(
+            let gate =
+                ShareProviderContinuationGate(
+                    continuation:
+                        continuation
+                )
+            let progress =
+                provider.loadFileRepresentation(
                 forTypeIdentifier:
                     requestedTypeIdentifier
             ) { [intakeStore] url, error in
+                guard gate.beginCallback() else {
+                    return
+                }
 
                 if let error {
                     let wrappedError =
@@ -407,7 +518,7 @@ private extension ShareManagedFileImporter {
                         "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation failed.\n\(failureContext.debugDescription)"
                     )
 
-                    continuation.resume(
+                    gate.resume(
                         returning:
                             FileRepresentationLoadResult(
                                 importRecord: nil,
@@ -438,7 +549,7 @@ private extension ShareManagedFileImporter {
                         "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returned nil URL.\n\(failureContext.debugDescription)"
                     )
 
-                    continuation.resume(
+                    gate.resume(
                         returning:
                             FileRepresentationLoadResult(
                                 importRecord: nil,
@@ -450,7 +561,7 @@ private extension ShareManagedFileImporter {
                 }
 
                 ShareIntakeDiagnostics.notice(
-                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returnedURL=\(url.standardizedFileURL.path)"
+                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returned a file URL."
                 )
 
                 let sourceReadiness =
@@ -487,7 +598,7 @@ private extension ShareManagedFileImporter {
                         )
 
                 ShareIntakeDiagnostics.notice(
-                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
+                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
                 )
 
                 guard let managedURL =
@@ -503,7 +614,7 @@ private extension ShareManagedFileImporter {
                             index:
                                 index
                         )
-                    continuation.resume(
+                    gate.resume(
                         returning:
                             FileRepresentationLoadResult(
                                 importRecord: nil,
@@ -544,7 +655,7 @@ private extension ShareManagedFileImporter {
                         index: index
                     )
 
-                continuation.resume(
+                gate.resume(
                     returning:
                         FileRepresentationLoadResult(
                             importRecord:
@@ -568,6 +679,54 @@ private extension ShareManagedFileImporter {
                         )
                 )
             }
+
+            let timeoutTask = Task {
+                try? await Task.sleep(
+                    nanoseconds:
+                        providerLoadTimeoutNanoseconds
+                )
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                progress.cancel()
+                let failureContext =
+                    diagnosticsSeed
+                    .failureContext(
+                        stage: .load,
+                        operation:
+                            "loadFileRepresentation.timeout",
+                        supportID:
+                            ProductionDiagnosticSupportID
+                            .make(
+                                prefix: "SHR",
+                                operationID: requestID
+                            ),
+                        error:
+                            PhotoMemoShareIntakeDiagnosticError
+                            .make(
+                                description:
+                                    "The source app did not provide the photo within 15 seconds.",
+                                code: 3010
+                            )
+                    )
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionProviderLoadTimedOut,
+                    message:
+                        "operation=loadFileRepresentation, providerIndex=\(index), requestedType=\(requestedTypeIdentifier)",
+                    requestID: requestID
+                )
+                gate.resumeIfPending(
+                    returning:
+                        FileRepresentationLoadResult(
+                            importRecord: nil,
+                            failureContext:
+                                failureContext
+                        )
+                )
+            }
+            gate.setTimeoutTask(timeoutTask)
         }
     }
 
@@ -603,11 +762,19 @@ private extension ShareManagedFileImporter {
                     >
             ) in
 
+            let gate =
+                ShareProviderContinuationGate(
+                    continuation:
+                        continuation
+                )
             provider.loadItem(
                 forTypeIdentifier:
                     UTType.image.identifier,
                 options: nil
             ) { [intakeStore] item, error in
+                guard gate.beginCallback() else {
+                    return
+                }
 
                 if let error {
                     let wrappedError =
@@ -633,7 +800,7 @@ private extension ShareManagedFileImporter {
                         "Provider[\(index)] loadItem failed.\n\(failureContext.debugDescription)"
                     )
 
-                    continuation.resume(
+                    gate.resume(
                         returning:
                             .failed(
                                 failureContext
@@ -647,7 +814,7 @@ private extension ShareManagedFileImporter {
                         url.standardizedFileURL
 
                     ShareIntakeDiagnostics.notice(
-                        "Provider[\(index)] loadItem returnedURL=\(normalizedURL.path)"
+                        "Provider[\(index)] loadItem returned a file URL."
                     )
 
                     let sourceReadiness =
@@ -683,7 +850,7 @@ private extension ShareManagedFileImporter {
                         )
 
                     ShareIntakeDiagnostics.notice(
-                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
+                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
                     )
 
                     guard let managedURL =
@@ -699,7 +866,7 @@ private extension ShareManagedFileImporter {
                                 index:
                                     index
                             )
-                        continuation.resume(
+                        gate.resume(
                             returning:
                                 .failed(
                                     copyResult
@@ -738,7 +905,7 @@ private extension ShareManagedFileImporter {
                             index: index
                         )
 
-                    continuation.resume(
+                    gate.resume(
                         returning:
                             .imported(
                                 ManagedImportRecord(
@@ -780,13 +947,13 @@ private extension ShareManagedFileImporter {
                         )
 
                     ShareIntakeDiagnostics.notice(
-                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") sharedContainerDestination=\(copyResult.sharedContainerDestination?.path ?? "nil")"
+                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
                     )
 
                     guard let managedURL =
                         copyResult.managedURL
                     else {
-                        continuation.resume(
+                        gate.resume(
                             returning:
                                 .failed(
                                     copyResult
@@ -816,7 +983,7 @@ private extension ShareManagedFileImporter {
                         return
                     }
 
-                    continuation.resume(
+                    gate.resume(
                         returning:
                             .imported(
                                 ManagedImportRecord(
@@ -875,13 +1042,58 @@ private extension ShareManagedFileImporter {
                     "Provider[\(index)] loadItem returned unsupported payload.\n\(failureContext.debugDescription)"
                 )
 
-                continuation.resume(
+                gate.resume(
                     returning:
                         .failed(
                             failureContext
                         )
                 )
             }
+
+            let timeoutTask = Task {
+                try? await Task.sleep(
+                    nanoseconds:
+                        providerLoadTimeoutNanoseconds
+                )
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                let failureContext =
+                    diagnosticsSeed
+                    .failureContext(
+                        stage: .load,
+                        operation:
+                            "loadItem.timeout",
+                        supportID:
+                            ProductionDiagnosticSupportID
+                            .make(
+                                prefix: "SHR",
+                                operationID: requestID
+                            ),
+                        error:
+                            PhotoMemoShareIntakeDiagnosticError
+                            .make(
+                                description:
+                                    "The source app did not provide the photo within 15 seconds.",
+                                code: 3011
+                            )
+                    )
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionProviderLoadTimedOut,
+                    message:
+                        "operation=loadItem, providerIndex=\(index), requestedType=\(UTType.image.identifier)",
+                    requestID: requestID
+                )
+                gate.resumeIfPending(
+                    returning:
+                        .failed(
+                            failureContext
+                        )
+                )
+            }
+            gate.setTimeoutTask(timeoutTask)
         }
     }
 

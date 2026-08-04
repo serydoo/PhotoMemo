@@ -158,18 +158,37 @@ struct V1ContentItem: Identifiable, Hashable {
     }
 
     let id: UUID
+    let sourceItemID: UUID?
     let kind: Kind
     var title: String
     var value: String
     var savedValue: String
     var systemImage: String
 
+    nonisolated init(
+        id: UUID,
+        sourceItemID: UUID? = nil,
+        kind: Kind,
+        title: String,
+        value: String,
+        savedValue: String,
+        systemImage: String
+    ) {
+        self.id = id
+        self.sourceItemID = sourceItemID
+        self.kind = kind
+        self.title = title
+        self.value = value
+        self.savedValue = savedValue
+        self.systemImage = systemImage
+    }
+
     var displayValue: String {
         switch kind {
         case .text, .token, .separator:
             return value
         case .lineBreak:
-            return " "
+            return "\n"
         }
     }
 
@@ -180,7 +199,7 @@ struct V1ContentItem: Identifiable, Hashable {
         case .token:
             return savedValue
         case .lineBreak:
-            return " "
+            return "\n"
         }
     }
 

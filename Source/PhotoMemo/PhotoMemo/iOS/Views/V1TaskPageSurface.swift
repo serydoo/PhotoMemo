@@ -22,6 +22,7 @@ struct V1TaskPageSurface: View {
     let events: [PhotoMemoShareDiagnosticEvent]
     let fallbackConfigurationName: String
     let onOpenPhotoLibrary: (V1TaskPhotoLibraryLink) -> Void
+    let onRetryFailedTasks: () -> Void
     let onDismissKeyboard: () -> Void
 
     @State
@@ -198,6 +199,17 @@ struct V1TaskPageSurface: View {
 
             if !presentation.currentTask.stepRows.isEmpty {
                 pipelineRows
+            }
+
+            if presentation.currentTask.canRetryFailures {
+                Button(
+                    "再次尝试",
+                    action: onRetryFailedTasks
+                )
+                .buttonStyle(.borderedProminent)
+                .accessibilityHint(
+                    "重新处理这次失败的照片"
+                )
             }
         }
     }

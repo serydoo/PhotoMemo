@@ -636,7 +636,13 @@ struct ConfigurationCenteriOSView: View {
                     showsSettingsSheet = false
                     showsWelcomePage = true
                 },
-                onDismissKeyboard: dismissKeyboard
+                onDismissKeyboard: dismissKeyboard,
+                onExportDiagnostics: {
+                    try await runtime.environment
+                        .repositories
+                        .productionDiagnostics
+                        .makeExport()
+                }
             )
             .toolbar {
                 ToolbarItem(
@@ -1293,8 +1299,20 @@ struct ConfigurationCenteriOSView: View {
         )
         .modules()
         .first {
-            $0.title == IOSInsertableModule.location.title
-            && $0.systemImage == IOSInsertableModule.location.systemImage
+            $0.moduleID == .location
+            || (
+                $0.moduleID == nil
+                && $0.systemImage
+                    == IOSInsertableModule.location.systemImage
+                && [
+                    IOSInsertableModule.location.title(
+                        for: .simplifiedChinese
+                    ),
+                    IOSInsertableModule.location.title(
+                        for: .english
+                    )
+                ].contains($0.title)
+            )
         }
     }
 

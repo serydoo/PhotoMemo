@@ -39,6 +39,9 @@ struct PhotoMemoiOSV1View: View {
     private let diagnosticsRepository:
         DiagnosticsRepository?
 
+    private let productionDiagnosticsRepository:
+        ProductionDiagnosticsRepository?
+
     private let localConfigurationLibraryCoordinator:
         LocalConfigurationLibraryCoordinator
 
@@ -437,6 +440,10 @@ struct PhotoMemoiOSV1View: View {
                     status.status
                 isSavingConfiguration =
                     status.status.isSaving
+            },
+            recordDiagnostic: { event in
+                await productionDiagnosticsRepository?
+                    .record(event)
             }
         )
     }
@@ -584,7 +591,9 @@ struct PhotoMemoiOSV1View: View {
         externalIntakeCenter:
             ExternalPhotoIntakeCenter? = nil,
         diagnosticsRepository:
-            DiagnosticsRepository? = nil
+            DiagnosticsRepository? = nil,
+        productionDiagnosticsRepository:
+            ProductionDiagnosticsRepository? = nil
     ) {
         self._backgroundStatusService =
             ObservedObject(
@@ -620,6 +629,8 @@ struct PhotoMemoiOSV1View: View {
             ?? .shared
         self.diagnosticsRepository =
             diagnosticsRepository
+        self.productionDiagnosticsRepository =
+            productionDiagnosticsRepository
         self.localConfigurationLibraryCoordinator =
             LocalConfigurationLibraryCoordinator(
                 appVersion:
@@ -833,7 +844,17 @@ struct PhotoMemoiOSV1View: View {
                     showsWelcomeInformation = true
                 }
             },
-            onDismissKeyboard: dismissKeyboard
+            onDismissKeyboard: dismissKeyboard,
+            onExportDiagnostics: {
+                guard let productionDiagnosticsRepository else {
+                    throw PhotoMemoError(
+                        code: .configurationUnavailable,
+                        message: "Diagnostics unavailable."
+                    )
+                }
+                return try await productionDiagnosticsRepository
+                    .makeExport()
+            }
         )
         .sheet(isPresented: $showsMemoMarkPlus) {
             MemoMarkPlusPurchaseView(
@@ -1093,6 +1114,17 @@ struct PhotoMemoiOSV1View: View {
                 session.currentMemoryPresetTitle,
             onOpenPhotoLibrary:
                 openPhotoLibrary,
+            onRetryFailedTasks: {
+                guard let jobID =
+                    backgroundStatusService
+                    .currentSnapshot?.jobID else {
+                    return
+                }
+                _ = queueCoordinator?
+                    .retryFailedTasks(
+                        in: jobID
+                    )
+            },
             onDismissKeyboard: dismissKeyboard
         )
     }
@@ -1573,11 +1605,27 @@ struct PhotoMemoiOSV1View: View {
                 session.updateConfigurationLibraryReference(
                     durableCandidate
                 )
-                activeConfigurationStatus = .subjectSynced
+                if receipt.compatibilityProjectionFailure != nil,
+                   let operationID = receipt.diagnosticOperationID {
+                    let failure =
+                        ProductionDiagnosticFailureClassifier
+                        .compatibilityProjection(
+                            operationID: operationID,
+                            language: .interfaceStored
+                        )
+                    activeConfigurationStatus =
+                        .savedWithWarning(
+                            message: failure.userMessage
+                        )
+                } else {
+                    activeConfigurationStatus = .subjectSynced
+                }
                 refreshDynamicPreview()
             } catch {
                 activeConfigurationStatus = .failure(
-                    message: "记忆对象保存失败，请重试。"
+                    message:
+                        (error as? PhotoMemoError)?.message
+                        ?? "记忆对象保存失败，请重试。"
                 )
             }
         }
@@ -2223,7 +2271,8 @@ struct PhotoMemoiOSV1View: View {
             locationDisplayConfiguration:
                 locationDisplayConfiguration,
             timeDisplayConfiguration:
-                timeDisplayConfiguration
+                timeDisplayConfiguration,
+            language: session.language
         )
     }
 

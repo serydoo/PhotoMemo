@@ -432,7 +432,7 @@ private extension ShareCoordinator {
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
-                    "result=matched, fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), contentType=\(context.payload.contentTypeIdentifier ?? "nil"), assetIdentifierRecovered=true",
+                    "result=matched, contentType=\(context.payload.contentTypeIdentifier ?? "nil"), assetIdentifierRecovered=true",
                 requestID: requestID,
                 defaults: diagnosticsDefaults
             )
@@ -456,34 +456,60 @@ private extension ShareCoordinator {
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
-                    "result=notFound, fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
+                    "result=notFound, motionUnavailable=true",
                 requestID: requestID,
                 defaults: diagnosticsDefaults
             )
-            return context
+            return contextPreservingLivePhotoMediaTruth(
+                context,
+                hint: hint
+            )
 
         case .ambiguous(let candidateCount):
             _ = PhotoMemoShareDiagnostics.recordResult(
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
-                    "result=ambiguous, candidateCount=\(candidateCount), fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
+                    "result=ambiguous, candidateCount=\(candidateCount), motionUnavailable=true",
                 requestID: requestID,
                 defaults: diagnosticsDefaults
             )
-            return context
+            return contextPreservingLivePhotoMediaTruth(
+                context,
+                hint: hint
+            )
 
         case .unavailable(let reason):
             _ = PhotoMemoShareDiagnostics.recordResult(
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
-                    "result=unavailable, reason=\(reason), fileName=\(context.payload.fileName ?? context.payload.sourceURL.lastPathComponent), fallback=static",
+                    "result=unavailable, reason=\(reason), motionUnavailable=true",
                 requestID: requestID,
                 defaults: diagnosticsDefaults
             )
-            return context
+            return contextPreservingLivePhotoMediaTruth(
+                context,
+                hint: hint
+            )
         }
+    }
+
+    func contextPreservingLivePhotoMediaTruth(
+        _ context: PayloadContext,
+        hint: LivePhotoStaticFallbackRecoveryHint
+    ) -> PayloadContext {
+
+        var payload = context.payload
+        payload.contentTypeIdentifier =
+            UTType("com.apple.live-photo")?
+            .identifier
+            ?? hint.advertisedLivePhotoTypeIdentifier
+        return PayloadContext(
+            payload: payload,
+            livePhotoRecoveryHint:
+                context.livePhotoRecoveryHint
+        )
     }
 
     func resolvedRequestTitle(

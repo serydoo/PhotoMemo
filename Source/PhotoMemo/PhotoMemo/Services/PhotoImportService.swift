@@ -156,12 +156,33 @@ final class PhotoImportService {
             }
         }
 
+        guard FileManager.default.fileExists(
+            atPath: url.standardizedFileURL.path
+        ) else {
+            throw PhotoImportError.sourceMissing
+        }
+
+        guard FileManager.default.isReadableFile(
+            atPath: url.standardizedFileURL.path
+        ) else {
+            throw PhotoImportError.sourceUnreadable
+        }
+
         guard PhotoMemoImageFileReadiness
             .waitForReadableImageFile(
                 at: url,
                 timeout: 5,
                 pollInterval: 0.12
             ) else {
+            let probe = PhotoMemoImageFileReadiness.probe(
+                at: url
+            )
+            if probe.isUbiquitousItem,
+               probe.ubiquitousDownloadStatus
+                != URLUbiquitousItemDownloadingStatus
+                    .current.rawValue {
+                throw PhotoImportError.cloudDownloadTimedOut
+            }
             throw PhotoImportError.imageLoadFailed
         }
 

@@ -114,8 +114,8 @@ struct PreviewCompositionMigrationTests {
     }
 
     @MainActor
-    @Test("BuildV1PreviewRenderModelIntent resolves renderer tokens and keeps unknown token values unchanged")
-    func buildRenderModelIntentResolvesRendererTokensAndKeepsUnknownTokenValues() {
+    @Test("BuildV1PreviewRenderModelIntent resolves known tokens and mirrors production removal for unknown tokens")
+    func buildRenderModelIntentMirrorsProductionUnknownTokenBehavior() {
 
         let engine =
             V1PreviewCompositionEngine()
@@ -185,7 +185,7 @@ struct PreviewCompositionMigrationTests {
         )
         #expect(
             unknownItemModel.displayText
-            == "保持原样"
+            == ""
         )
     }
 
@@ -237,6 +237,52 @@ struct PreviewCompositionMigrationTests {
         )
         #expect(
             model.displayText == "小宝"
+        )
+    }
+
+    @Test("Dynamic preview modules save production renderer tokens")
+    func dynamicPreviewModulesSaveProductionRendererTokens() {
+        let engine = V1PreviewCompositionEngine()
+        let context = V1PreviewCompositionContext(
+            subject: previewSubject(),
+            birthdayDate: Date(timeIntervalSince1970: 0)
+        )
+
+        for module in V1PreviewCompositionModule.allCases
+            where module != .custom {
+            let item = engine.makeModuleItem(
+                module,
+                context: context
+            )
+
+            #expect(
+                item.savedValue == module.rendererToken,
+                "\(module.rawValue) saved preview sample \(item.savedValue)"
+            )
+        }
+    }
+
+    @Test("Custom preview module remains literal content")
+    func customPreviewModuleRemainsLiteralContent() {
+        let engine = V1PreviewCompositionEngine()
+        let context = V1PreviewCompositionContext(
+            subject: nil,
+            birthdayDate: Date(timeIntervalSince1970: 0)
+        )
+        let item = engine.makeModuleItem(
+            .custom,
+            context: context
+        )
+
+        #expect(item.savedValue == item.value)
+        #expect(
+            item.savedValue
+            != V1PreviewCompositionModule.custom.rendererToken
+        )
+        #expect(
+            engine.templateText(
+                for: V1PreviewDraft(items: [item])
+            ) == item.value
         )
     }
 

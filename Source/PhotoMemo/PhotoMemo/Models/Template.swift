@@ -41,6 +41,33 @@ struct Template: Identifiable, Codable, Hashable {
 
 extension Template {
 
+    func repairingDuplicateItemIDs() -> Template {
+        var repaired = self
+        var seenIDs: Set<UUID> = []
+
+        func repair(_ area: inout TemplateArea) {
+            area.items = area.items.map { item in
+                guard seenIDs.insert(item.id).inserted else {
+                    return TemplateItem(
+                        type: item.type,
+                        name: item.name,
+                        value: item.value,
+                        isEnabled: item.isEnabled,
+                        moduleID: item.moduleID
+                    )
+                }
+                return item
+            }
+        }
+
+        repair(&repaired.leftTopArea)
+        repair(&repaired.leftBottomArea)
+        repair(&repaired.rightTopArea)
+        repair(&repaired.rightBottomArea)
+        repair(&repaired.badgeArea)
+        return repaired
+    }
+
     static let classicWhite = Template(
         preset: .classicWhite,
         name: TemplatePreset.classicWhite.rawValue,
@@ -121,14 +148,23 @@ extension Template {
             to newItem: TemplateItem
         ) {
 
-            guard let currentValue =
-                area.items.first?.value,
-                currentValue == oldValue
+            guard area.items.count == 1,
+                area.items[0].value == oldValue
             else {
                 return
             }
 
-            area.items = [newItem]
+            let existingItem = area.items[0]
+            area.items = [
+                TemplateItem(
+                    id: existingItem.id,
+                    type: newItem.type,
+                    name: newItem.name,
+                    value: newItem.value,
+                    isEnabled: existingItem.isEnabled,
+                    moduleID: newItem.moduleID
+                )
+            ]
         }
 
         migrateArea(

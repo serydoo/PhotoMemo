@@ -45,6 +45,8 @@ enum LivePhotoAssetWritingError:
     case albumNotFound
     case albumCreateFailed
     case assetSaveFailed
+    case savedAssetReadbackFailed
+    case savedAssetNotLivePhoto
 
     var errorDescription: String? {
         switch self {
@@ -66,6 +68,10 @@ enum LivePhotoAssetWritingError:
             return "Unable to create the destination album."
         case .assetSaveFailed:
             return "The Live Photo was prepared, but saving to the photo library failed."
+        case .savedAssetReadbackFailed:
+            return "The saved Live Photo could not be verified in the photo library."
+        case .savedAssetNotLivePhoto:
+            return "The photo library did not preserve the saved result as a Live Photo."
         }
     }
 }

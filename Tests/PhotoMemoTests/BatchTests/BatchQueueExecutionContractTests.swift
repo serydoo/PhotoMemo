@@ -83,6 +83,19 @@ struct BatchQueueExecutionContractTests {
             ) == .processingFailure
         )
         #expect(
+            BatchTaskFailurePolicy.failureClassification(
+                for: PhotoMemoError(
+                    code: .importFailed,
+                    message: "wrapped",
+                    diagnosticCode:
+                        PhotoProcessingInputPolicy
+                        .RejectionReason
+                        .oversizedPixelCount
+                        .rawValue
+                )
+            ) == .unsupportedInput
+        )
+        #expect(
             BatchTaskFailurePolicy.shouldResumeAfterCancellation(
                 error: CancellationError(),
                 taskIsCancelled: false

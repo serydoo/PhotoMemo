@@ -6,6 +6,7 @@ enum V1ConfigurationStatus: Hashable {
     case dirty
     case saving
     case saved
+    case savedWithWarning(message: String)
     case subjectSynced
     case failure(message: String)
 }
@@ -22,7 +23,7 @@ extension V1ConfigurationStatus {
         switch self {
         case .saved, .subjectSynced:
             return .accent
-        case .dirty, .failure:
+        case .dirty, .failure, .savedWithWarning:
             return .warning
         case .saving, .idle:
             return .neutral
@@ -55,6 +56,8 @@ extension V1ConfigurationStatus {
             case .preset:
                 return "当前生效"
             }
+        case .savedWithWarning(let message):
+            return message
         case .subjectSynced:
             return "记忆对象已同步"
         case .failure(let message):
@@ -74,7 +77,8 @@ extension V1ConfigurationStatus {
         switch self {
         case .dirty, .failure:
             return true
-        case .idle, .saving, .saved, .subjectSynced:
+        case .idle, .saving, .saved,
+             .savedWithWarning, .subjectSynced:
             return false
         }
     }

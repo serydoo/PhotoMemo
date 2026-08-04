@@ -35,11 +35,42 @@ struct TimeDisplayModuleContractTests {
         let result = TimeExpressionProvider.dateText(
             for: date,
             configuration: TimeDisplayConfiguration(baseStyle: .daily),
-            timeZone: calendar.timeZone
+            timeZone: calendar.timeZone,
+            language: .simplifiedChinese
         )
 
         #expect(result.contains("星期三"))
         #expect(result == "2026年7月29日 星期三")
+    }
+
+    @Test("English output localizes weekday lunar date and solar term")
+    func englishOutputLocalizesSupplements() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = calendar.date(
+            from: DateComponents(
+                calendar: calendar,
+                year: 2026,
+                month: 6,
+                day: 21,
+                hour: 12
+            )
+        )!
+        let result = TimeExpressionProvider.dateText(
+            for: date,
+            configuration: TimeDisplayConfiguration(
+                baseStyle: .daily,
+                supplement: .lunarAndSolarTerm
+            ),
+            timeZone: calendar.timeZone,
+            language: .english
+        )
+
+        #expect(result.contains("Sunday"))
+        #expect(result.contains("Lunar"))
+        #expect(result.contains("Summer Solstice"))
+        #expect(!result.contains("农历"))
+        #expect(!result.contains("夏至"))
     }
 
     @Test("solar term is appended only when the date is a solar-term date")
@@ -77,5 +108,31 @@ struct TimeDisplayModuleContractTests {
         )
 
         #expect(result == "2026年10月3日 星期六 下午2:18 · 国庆节 · 国庆假期")
+    }
+
+    @Test("English output localizes traditional and statutory holidays")
+    func englishOutputLocalizesTraditionalAndStatutoryHolidays() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let nationalDay = calendar.date(
+            from: DateComponents(
+                calendar: calendar,
+                year: 2026,
+                month: 10,
+                day: 3
+            )
+        )!
+        let result = TimeExpressionProvider.dateText(
+            for: nationalDay,
+            configuration: TimeDisplayConfiguration(
+                baseStyle: .daily,
+                supplement: .statutoryHoliday
+            ),
+            timeZone: calendar.timeZone,
+            language: .english
+        )
+
+        #expect(result.contains("National Day holiday"))
+        #expect(!result.contains("国庆假期"))
     }
 }

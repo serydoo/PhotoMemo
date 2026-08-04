@@ -56,6 +56,100 @@ struct ShareIntakeResponsibilitySplitTests {
         )
     }
 
+    @Test("Original-format Live Photo intake stops after a provider timeout instead of silently becoming static")
+    func originalFormatStopsAfterLivePhotoProviderTimeout() {
+        #expect(
+            LivePhotoStaticFallbackPolicy
+                .shouldStopAfterLiveRepresentationFailure(
+                    errorCode: 3010,
+                    mediaOutputModeRawValue:
+                        V1MediaOutputMode
+                        .originalFormat
+                        .rawValue
+                )
+        )
+        #expect(
+            LivePhotoStaticFallbackPolicy
+                .shouldStopAfterLiveRepresentationFailure(
+                    errorCode: 3010,
+                    mediaOutputModeRawValue: nil
+                )
+        )
+        #expect(
+            !LivePhotoStaticFallbackPolicy
+            .shouldStopAfterLiveRepresentationFailure(
+                errorCode: 3010,
+                mediaOutputModeRawValue:
+                    V1MediaOutputMode
+                    .staticImage
+                    .rawValue
+            )
+        )
+        #expect(
+            !LivePhotoStaticFallbackPolicy
+            .shouldStopAfterLiveRepresentationFailure(
+                errorCode: 3010,
+                mediaOutputModeRawValue: nil,
+                livePhotoPolicyRawValue:
+                    MemoryConfigurationRecord
+                    .Output
+                    .LivePhotoPolicy
+                    .staticImageOnly
+                    .rawValue
+            )
+        )
+        #expect(
+            !LivePhotoStaticFallbackPolicy
+            .shouldStopAfterLiveRepresentationFailure(
+                errorCode: 3001,
+                mediaOutputModeRawValue:
+                    V1MediaOutputMode
+                    .originalFormat
+                    .rawValue
+            )
+        )
+    }
+
+    @Test("Share intake freezes the output policy before loading providers and stops original-format timeout fallback")
+    func shareIntakeConnectsOutputPolicyToProviderTimeoutHandling() throws {
+        let source = try [
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift",
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
+        ]
+        .map {
+            try sourceText(
+                relativePath: $0
+            )
+        }
+        .joined(separator: "\n")
+
+        #expect(
+            source.contains(
+                "let configurationSnapshot ="
+            )
+        )
+        #expect(
+            source.contains(
+                "mediaOutputModeRawValue:"
+            )
+        )
+        #expect(
+            source.contains(
+                "livePhotoPolicyRawValue:"
+            )
+        )
+        #expect(
+            source.contains(
+                "shouldStopAfterLiveRepresentationFailure("
+            )
+        )
+        #expect(
+            source.contains(
+                "return .failed(\n                    failureContext"
+            )
+        )
+    }
+
     @Test("Share intake declares four focused collaborators")
     func shareIntakeDeclaresFourFocusedCollaborators() throws {
         let expectations = [
@@ -130,6 +224,45 @@ struct ShareIntakeResponsibilitySplitTests {
         #expect(
             fileRepresentationIndex
             < itemFallbackIndex
+        )
+    }
+
+    @Test("Managed importer bounds provider waits and records timeout reasons")
+    func managedImporterBoundsProviderWaits() throws {
+        let source = try sourceText(
+            relativePath:
+                "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
+        )
+
+        #expect(
+            source.contains(
+                "providerLoadTimeoutNanoseconds"
+            )
+        )
+        #expect(
+            source.contains(
+                "15_000_000_000"
+            )
+        )
+        #expect(
+            source.contains(
+                "loadFileRepresentation.timeout"
+            )
+        )
+        #expect(
+            source.contains(
+                "loadItem.timeout"
+            )
+        )
+        #expect(
+            source.contains(
+                "progress.cancel()"
+            )
+        )
+        #expect(
+            source.contains(
+                "extensionProviderLoadTimedOut"
+            )
         )
     }
 

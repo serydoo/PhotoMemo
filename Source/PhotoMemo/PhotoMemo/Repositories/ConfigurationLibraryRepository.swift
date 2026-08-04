@@ -58,6 +58,43 @@ nonisolated struct ConfigurationLibrarySaveReceipt:
     let configurationRevision: Int
     let compatibilityProjectionFailure:
         ConfigurationLibraryProjectionFailure?
+
+    let diagnosticOperationID: UUID?
+
+    init(
+        revision: Int,
+        subjectID: UUID,
+        configurationID: UUID,
+        configurationRevision: Int,
+        compatibilityProjectionFailure:
+            ConfigurationLibraryProjectionFailure?,
+        diagnosticOperationID: UUID? = nil
+    ) {
+        self.revision = revision
+        self.subjectID = subjectID
+        self.configurationID = configurationID
+        self.configurationRevision =
+            configurationRevision
+        self.compatibilityProjectionFailure =
+            compatibilityProjectionFailure
+        self.diagnosticOperationID =
+            diagnosticOperationID
+    }
+
+    func attachingDiagnosticOperationID(
+        _ operationID: UUID
+    ) -> Self {
+        Self(
+            revision: revision,
+            subjectID: subjectID,
+            configurationID: configurationID,
+            configurationRevision:
+                configurationRevision,
+            compatibilityProjectionFailure:
+                compatibilityProjectionFailure,
+            diagnosticOperationID: operationID
+        )
+    }
 }
 
 enum ConfigurationLibraryLoadSource:
@@ -156,7 +193,7 @@ enum ConfigurationLibraryRecordRecovery {
         let aggregate = try JSONDecoder().decode(
             ConfigurationLibraryRecord.self,
             from: data
-        )
+        ).repairingDuplicateTemplateItemIDs()
         try validate(aggregate)
         return aggregate
     }

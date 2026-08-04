@@ -236,7 +236,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         var restoredDrafts = try draftsAfterStartupBootstrap()
         #expect(
             restoredDrafts[.slotA]?.items.map(\.value)
-            == ["生日保存内容", "生日保存内容补充", ""]
+            == ["生日保存内容", "生日保存内容补充"]
         )
 
         let firstPreset = try #require(
@@ -249,7 +249,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         #expect(
             restoredDrafts[.slotA]?.items.map(\.value)
-            == ["海边保存内容", "海边保存内容补充", ""]
+            == ["海边保存内容", "海边保存内容补充"]
         )
     }
 
@@ -1115,7 +1115,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         ).regionDrafts
         #expect(
             restoredDrafts[.slotA]?.items.map(\.value)
-            == ["对象二智能模块", "对象二智能模块补充", ""]
+            == ["对象二智能模块", "对象二智能模块补充"]
         )
     }
 

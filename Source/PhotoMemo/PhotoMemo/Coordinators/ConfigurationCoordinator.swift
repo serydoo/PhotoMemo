@@ -10,6 +10,9 @@ final class ConfigurationCoordinator {
     private let configurationRepository:
         ConfigurationRepository
 
+    private let productionDiagnostics:
+        ProductionDiagnosticsRepository
+
     private let applyLiveDefaultConfiguration:
         (BatchConfigurationSnapshot) -> Void
 
@@ -27,6 +30,8 @@ final class ConfigurationCoordinator {
             SettingsRepository,
         configurationRepository:
             ConfigurationRepository,
+        productionDiagnostics:
+            ProductionDiagnosticsRepository? = nil,
         applyLiveDefaultConfiguration:
             @escaping (BatchConfigurationSnapshot) -> Void = { _ in },
         applyConfigurationLibrarySnapshot:
@@ -41,6 +46,9 @@ final class ConfigurationCoordinator {
             settingsRepository
         self.configurationRepository =
             configurationRepository
+        self.productionDiagnostics =
+            productionDiagnostics
+            ?? ProductionDiagnosticsRepository()
         self.applyLiveDefaultConfiguration =
             applyLiveDefaultConfiguration
         self.applyConfigurationLibrarySnapshot =
@@ -260,27 +268,139 @@ final class ConfigurationCoordinator {
     func saveConfigurationLibrary(
         _ aggregate: ConfigurationLibraryRecord
     ) async throws -> ConfigurationLibrarySaveReceipt {
-        let receipt = try await settingsRepository
-            .saveConfigurationLibrary(
-                aggregate,
-                afterSuccessfulProjection: {
-                    [applyConfigurationLibrarySnapshot]
-                    snapshot,
-                    provisionalReceipt in
-                    applyConfigurationLibrarySnapshot(
-                        snapshot,
-                        provisionalReceipt
-                    )
-                }
+        let operationID = UUID()
+        let startedAt = Date()
+        let context = ProductionDiagnosticContext
+            .configurationLibrary(aggregate)
+        await productionDiagnostics.record(
+            ProductionDiagnosticEvent(
+                operationID: operationID,
+                category: .configuration,
+                stage: "configuration.save",
+                outcome: .started,
+                context: context
             )
-        onConfigurationLibrarySaved(receipt)
-        return receipt
+        )
+
+        do {
+            let receipt = try await settingsRepository
+                .saveConfigurationLibrary(
+                    aggregate,
+                    afterSuccessfulProjection: {
+                        [applyConfigurationLibrarySnapshot]
+                        snapshot,
+                        provisionalReceipt in
+                        applyConfigurationLibrarySnapshot(
+                            snapshot,
+                            provisionalReceipt
+                                .attachingDiagnosticOperationID(
+                                    operationID
+                                )
+                        )
+                    }
+                )
+                .attachingDiagnosticOperationID(
+                    operationID
+                )
+            let duration = Self.durationMilliseconds(
+                since: startedAt
+            )
+            if receipt.compatibilityProjectionFailure != nil {
+                await productionDiagnostics.record(
+                    ProductionDiagnosticEvent(
+                        operationID: operationID,
+                        category: .configuration,
+                        stage:
+                            "configuration.compatibilityProjection",
+                        outcome: .degraded,
+                        errorCode:
+                            .configurationCompatibilityProjectionFailed,
+                        durationMilliseconds: duration,
+                        context: context
+                    )
+                )
+            } else {
+                await productionDiagnostics.record(
+                    ProductionDiagnosticEvent(
+                        operationID: operationID,
+                        category: .configuration,
+                        stage: "configuration.save",
+                        outcome: .succeeded,
+                        durationMilliseconds: duration,
+                        context: context
+                    )
+                )
+            }
+            onConfigurationLibrarySaved(receipt)
+            return receipt
+        } catch {
+            let failure = ProductionDiagnosticFailureClassifier
+                .configurationSave(
+                    error,
+                    operationID: operationID,
+                    language: .interfaceStored
+                )
+            await productionDiagnostics.record(
+                ProductionDiagnosticEvent(
+                    operationID: operationID,
+                    category: .configuration,
+                    stage: "configuration.save",
+                    outcome: .failed,
+                    errorCode: failure.code,
+                    systemError: failure.systemError,
+                    durationMilliseconds:
+                        Self.durationMilliseconds(
+                            since: startedAt
+                        ),
+                    context: context
+                )
+            )
+            throw PhotoMemoError(
+                code: Self.photoMemoErrorCode(
+                    for: failure.code
+                ),
+                message: failure.userMessage,
+                diagnosticCode: failure.code.rawValue,
+                supportID: failure.supportID
+            )
+        }
     }
 
     func loadConfigurationLibrary()
     async throws -> ConfigurationLibraryLoadReceipt {
         try await settingsRepository
             .loadConfigurationLibrary()
+    }
+}
+
+private extension ConfigurationCoordinator {
+
+    static func durationMilliseconds(
+        since date: Date
+    ) -> Int {
+        Int(
+            max(Date().timeIntervalSince(date), 0)
+            * 1_000
+        )
+    }
+
+    static func photoMemoErrorCode(
+        for diagnosticCode:
+            ProductionDiagnosticErrorCode
+    ) -> PhotoMemoErrorCode {
+        switch diagnosticCode {
+        case .configurationReadFailed,
+             .configurationCorrupted:
+            return .persistenceReadFailed
+        case .configurationUnavailable:
+            return .configurationUnavailable
+        case .configurationCandidateInvalid,
+             .configurationSelectionMissing,
+             .configurationValidationFailed:
+            return .invalidInput
+        default:
+            return .persistenceWriteFailed
+        }
     }
 }
 

@@ -15,6 +15,8 @@ struct V1PreviewCompositionContext: Hashable {
     let timeDisplayConfiguration:
         ExpressionModuleConfiguration?
 
+    let language: MemoMarkLanguage
+
     init(
         subject: MemorySubject?,
         birthdayDate: Date,
@@ -22,7 +24,8 @@ struct V1PreviewCompositionContext: Hashable {
         locationDisplayConfiguration:
             ExpressionModuleConfiguration? = nil,
         timeDisplayConfiguration:
-            ExpressionModuleConfiguration? = nil
+            ExpressionModuleConfiguration? = nil,
+        language: MemoMarkLanguage = .stored
     ) {
         self.subject = subject
         self.birthdayDate = birthdayDate
@@ -31,6 +34,7 @@ struct V1PreviewCompositionContext: Hashable {
             locationDisplayConfiguration
         self.timeDisplayConfiguration =
             timeDisplayConfiguration
+        self.language = language
     }
 
     var subjectNameFallback: String {
@@ -99,6 +103,7 @@ struct V1PreviewDraftItem:
     }
 
     let id: UUID
+    let sourceItemID: UUID?
 
     let kind: Kind
 
@@ -110,6 +115,24 @@ struct V1PreviewDraftItem:
 
     var systemImage: String
 
+    nonisolated init(
+        id: UUID,
+        sourceItemID: UUID? = nil,
+        kind: Kind,
+        title: String,
+        value: String,
+        savedValue: String,
+        systemImage: String
+    ) {
+        self.id = id
+        self.sourceItemID = sourceItemID
+        self.kind = kind
+        self.title = title
+        self.value = value
+        self.savedValue = savedValue
+        self.systemImage = systemImage
+    }
+
     var displayValue: String {
         switch kind {
         case .text,
@@ -117,7 +140,7 @@ struct V1PreviewDraftItem:
              .separator:
             return value
         case .lineBreak:
-            return " "
+            return "\n"
         }
     }
 
@@ -129,7 +152,7 @@ struct V1PreviewDraftItem:
         case .token:
             return savedValue
         case .lineBreak:
-            return " "
+            return "\n"
         }
     }
 
@@ -195,230 +218,7 @@ private extension V1PreviewDraftItem.Kind {
     }
 }
 
-enum V1PreviewCompositionModule:
-    String,
-    CaseIterable,
-    Identifiable {
-
-    case subjectNickname
-    case smartTime
-    case captureDate
-    case captureTime
-    case cameraMaker
-    case cameraModel
-    case lensModel
-    case focalLength
-    case aperture
-    case shutterSpeed
-    case iso
-    case exposureBias
-    case meteringMode
-    case flash
-    case whiteBalance
-    case captureSummary
-    case location
-    case altitude
-    case imageSize
-    case orientation
-    case fileFormat
-    case custom
-
-    var id: String {
-        rawValue
-    }
-
-    var title: String {
-        switch self {
-        case .subjectNickname:
-            return "对象昵称"
-        case .smartTime:
-            return "智能结果"
-        case .captureDate:
-            return "拍摄日期"
-        case .captureTime:
-            return "拍摄时间"
-        case .cameraMaker:
-            return "设备厂商"
-        case .cameraModel:
-            return "设备型号"
-        case .lensModel:
-            return "镜头型号"
-        case .focalLength:
-            return "焦距"
-        case .aperture:
-            return "光圈"
-        case .shutterSpeed:
-            return "快门"
-        case .iso:
-            return "ISO"
-        case .exposureBias:
-            return "曝光补偿"
-        case .meteringMode:
-            return "测光模式"
-        case .flash:
-            return "闪光灯"
-        case .whiteBalance:
-            return "白平衡"
-        case .captureSummary:
-            return "拍摄参数汇总"
-        case .location:
-            return "位置"
-        case .altitude:
-            return "海拔"
-        case .imageSize:
-            return "图片尺寸"
-        case .orientation:
-            return "方向"
-        case .fileFormat:
-            return "文件格式"
-        case .custom:
-            return "自定义"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .subjectNickname:
-            return "person.fill"
-        case .smartTime:
-            return "calendar.badge.clock"
-        case .captureDate:
-            return "calendar"
-        case .captureTime:
-            return "clock"
-        case .cameraMaker:
-            return "apple.logo"
-        case .cameraModel:
-            return "camera.fill"
-        case .lensModel:
-            return "camera.macro"
-        case .focalLength:
-            return "scope"
-        case .aperture:
-            return "camera.aperture"
-        case .shutterSpeed:
-            return "timer"
-        case .iso:
-            return "dial.low"
-        case .exposureBias:
-            return "plusminus"
-        case .meteringMode:
-            return "camera.metering.center.weighted"
-        case .flash:
-            return "bolt.fill"
-        case .whiteBalance:
-            return "sun.max"
-        case .captureSummary:
-            return "camera.metering.center.weighted"
-        case .location:
-            return "location.fill"
-        case .altitude:
-            return "mountain.2.fill"
-        case .imageSize:
-            return "rectangle.inset.filled"
-        case .orientation:
-            return "rectangle.rotate"
-        case .fileFormat:
-            return "doc.fill"
-        case .custom:
-            return "plus.circle"
-        }
-    }
-
-    var token: String {
-        switch self {
-        case .subjectNickname:
-            return "{{subject_nickname}}"
-        case .smartTime:
-            return "{{age_result}}"
-        case .captureDate:
-            return "{{capture_date}}"
-        case .captureTime:
-            return "{{capture_time}}"
-        case .cameraMaker:
-            return "{{camera_make}}"
-        case .cameraModel:
-            return "{{camera_model}}"
-        case .lensModel:
-            return "{{lens_model}}"
-        case .focalLength:
-            return "{{focal_length}}"
-        case .aperture:
-            return "{{aperture}}"
-        case .shutterSpeed:
-            return "{{shutter_speed}}"
-        case .iso:
-            return "{{iso}}"
-        case .exposureBias:
-            return "{{exposure_bias}}"
-        case .meteringMode:
-            return "{{metering_mode}}"
-        case .flash:
-            return "{{flash}}"
-        case .whiteBalance:
-            return "{{white_balance}}"
-        case .captureSummary:
-            return "{{capture_parameters_summary}}"
-        case .location:
-            return "{{location}}"
-        case .altitude:
-            return "{{altitude}}"
-        case .imageSize:
-            return "{{image_size}}"
-        case .orientation:
-            return "{{orientation}}"
-        case .fileFormat:
-            return "{{file_format}}"
-        case .custom:
-            return "{{custom}}"
-        }
-    }
-
-    var rendererToken: String {
-        switch self {
-        case .subjectNickname:
-            return "{{subject_nickname}}"
-        case .smartTime:
-            return "{{memory_summary}}"
-        case .captureDate:
-            return "{{capture_date_short}}"
-        case .captureTime:
-            return "{{capture_time_short}}"
-        case .cameraMaker:
-            return "{{brand}}"
-        case .cameraModel:
-            return "{{model}}"
-        case .lensModel:
-            return "{{lens}}"
-        case .focalLength:
-            return "{{focal_length}}"
-        case .aperture:
-            return "{{aperture}}"
-        case .shutterSpeed:
-            return "{{shutter}}"
-        case .iso:
-            return "{{iso}}"
-        case .captureSummary:
-            return "{{camera_summary}}"
-        case .location:
-            return "{{location_display}}"
-        case .altitude:
-            return "{{altitude}}"
-        case .imageSize:
-            return "{{width}} × {{height}}"
-        case .orientation:
-            return "{{orientation}}"
-        case .fileFormat:
-            return "{{file_format}}"
-        case .exposureBias,
-             .meteringMode,
-             .flash,
-             .whiteBalance,
-             .custom:
-            return token
-        }
-    }
-}
+typealias V1PreviewCompositionModule = MemoryCardModuleID
 
 struct V1PreviewCompositionEngine {
 
@@ -631,18 +431,18 @@ struct V1PreviewCompositionEngine {
             return item.displayValue
         }
 
-        guard let module =
-            V1PreviewCompositionModule.allCases.first(where: {
-                $0.rendererToken == item.savedValue
-                || $0.token == item.savedValue
-            })
-        else {
-            return item.displayValue
+        if let module = MemoryCardTemplateTokenCatalog.module(
+            matching: item.savedValue
+        ) {
+            return moduleDisplayText(
+                module,
+                context: context
+            )
         }
 
-        return moduleDisplayText(
-            module,
-            context: context
+        return TemplateVariableEngine().render(
+            item.savedValue,
+            context: previewMetadataContext(context)
         )
     }
 
@@ -650,6 +450,10 @@ struct V1PreviewCompositionEngine {
         _ module: V1PreviewCompositionModule,
         context: V1PreviewCompositionContext
     ) -> String {
+
+        guard module.isProductionBacked else {
+            return ""
+        }
 
         switch module {
         case .subjectNickname:
@@ -696,9 +500,13 @@ struct V1PreviewCompositionEngine {
         case .meteringMode:
             return "Pattern"
         case .flash:
-            return "未开启"
+            return context.language == .simplifiedChinese
+                ? "未开启"
+                : "Off"
         case .whiteBalance:
-            return "自动"
+            return context.language == .simplifiedChinese
+                ? "自动"
+                : "Auto"
         case .captureSummary:
             return "20mm f/1.9 1/117s ISO80"
         case .location:
@@ -717,11 +525,15 @@ struct V1PreviewCompositionEngine {
         case .imageSize:
             return "4032 × 3024"
         case .orientation:
-            return "横向"
+            return context.language == .simplifiedChinese
+                ? "横向"
+                : "Landscape"
         case .fileFormat:
             return "HEIC"
         case .custom:
-            return "自定义内容"
+            return context.language == .simplifiedChinese
+                ? "自定义内容"
+                : "Custom content"
         }
     }
 
@@ -730,18 +542,14 @@ struct V1PreviewCompositionEngine {
         context: V1PreviewCompositionContext
     ) -> String {
 
-        let token = module.rendererToken
-
-        if module == .subjectNickname {
-            return token
-        }
-
-        return token == module.token
-            ? moduleDisplayText(
+        if module == .custom {
+            return moduleDisplayText(
                 module,
                 context: context
             )
-            : token
+        }
+
+        return module.rendererToken
     }
 
     private func previewExpressionContext(
@@ -803,6 +611,117 @@ struct V1PreviewCompositionEngine {
         )
     }
 
+    private func previewMetadataContext(
+        _ context: V1PreviewCompositionContext
+    ) -> MetadataContext {
+        let calendar = context.smartTimeCalendar
+        let components = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second],
+            from: context.captureDate
+        )
+        let relationshipLabel = context.subject?
+            .relationship.label
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedRelationshipLabel: String
+        if let relationshipLabel, !relationshipLabel.isEmpty {
+            resolvedRelationshipLabel = relationshipLabel
+        } else {
+            resolvedRelationshipLabel =
+                context.language == .simplifiedChinese
+                ? "记录者"
+                : "Recorder"
+        }
+        let location = previewExpressionContext(
+            expressionConfiguration:
+                context.locationDisplayConfiguration
+        )?
+            .value(for: LocationExpressionProvider.locationToken)?
+            .resolvedText
+            ?? ""
+        let captureDateFormatter = DateFormatter()
+        captureDateFormatter.locale = context.language.locale
+        captureDateFormatter.timeZone = calendar.timeZone
+        captureDateFormatter.dateStyle = .medium
+        captureDateFormatter.timeStyle = .short
+        let captureDateDisplay = captureDateFormatter.string(
+            from: context.captureDate
+        )
+        let weekdayFormatter = DateFormatter()
+        weekdayFormatter.locale = context.language.locale
+        weekdayFormatter.timeZone = calendar.timeZone
+        weekdayFormatter.dateFormat = "EEEE"
+
+        return MetadataContext(values: [
+            MetadataContext.Key.title:
+                context.language == .simplifiedChinese
+                ? "回忆标题"
+                : "Memory title",
+            MetadataContext.Key.story:
+                context.language == .simplifiedChinese
+                ? "回忆故事"
+                : "Memory story",
+            MetadataContext.Key.tags: "MemoMark",
+            MetadataContext.Key.subjectNickname:
+                context.subjectNameFallback,
+            MetadataContext.Key.relationshipLabel:
+                resolvedRelationshipLabel,
+            MetadataContext.Key.brand: "Apple",
+            MetadataContext.Key.model: "iPhone 17 Pro Max",
+            MetadataContext.Key.lens: "iPhone Wide Camera",
+            MetadataContext.Key.iso: "80",
+            MetadataContext.Key.aperture: "1.9",
+            MetadataContext.Key.shutter: "1/117",
+            MetadataContext.Key.focalLength: "20mm",
+            MetadataContext.Key.focalLength35mm: "24",
+            MetadataContext.Key.width: "4032",
+            MetadataContext.Key.height: "3024",
+            MetadataContext.Key.aspectRatio: "4:3",
+            MetadataContext.Key.megapixels: "12 MP",
+            MetadataContext.Key.orientation:
+                context.language == .simplifiedChinese
+                ? "横向"
+                : "Landscape",
+            MetadataContext.Key.latitude: "31.2304°N",
+            MetadataContext.Key.longitude: "121.4737°E",
+            MetadataContext.Key.altitude: "42m",
+            MetadataContext.Key.location: location,
+            MetadataContext.Key.locationDisplay: location,
+            MetadataContext.Key.year: "\(components.year ?? 2026)",
+            MetadataContext.Key.month:
+                String(format: "%02d", components.month ?? 6),
+            MetadataContext.Key.day:
+                String(format: "%02d", components.day ?? 1),
+            MetadataContext.Key.hour:
+                String(format: "%02d", components.hour ?? 12),
+            MetadataContext.Key.minute:
+                String(format: "%02d", components.minute ?? 0),
+            MetadataContext.Key.second:
+                String(format: "%02d", components.second ?? 0),
+            MetadataContext.Key.weekday:
+                "\(calendar.component(.weekday, from: context.captureDate))",
+            MetadataContext.Key.weekdayName:
+                weekdayFormatter.string(from: context.captureDate),
+            MetadataContext.Key.captureDateDisplay:
+                captureDateDisplay,
+            MetadataContext.Key.captureTimezone:
+                "UTC\(calendar.timeZone.secondsFromGMT() >= 0 ? "+" : "-")\(String(format: "%02d:%02d", abs(calendar.timeZone.secondsFromGMT()) / 3600, abs(calendar.timeZone.secondsFromGMT()) % 3600 / 60))",
+            MetadataContext.Key.captureDateShort:
+                timeDisplayText(
+                    for: context.captureDate,
+                    component: .date,
+                    context: context
+                ),
+            MetadataContext.Key.captureTimeShort:
+                timeDisplayText(
+                    for: context.captureDate,
+                    component: .time,
+                    context: context
+                ),
+            MetadataContext.Key.cameraSummary:
+                "20mm f/1.9 1/117s ISO80"
+        ])
+    }
+
     private enum TimeDisplayComponent {
         case date
         case time
@@ -827,13 +746,15 @@ struct V1PreviewCompositionEngine {
             return TimeExpressionProvider.dateText(
                 for: date,
                 configuration: configuration,
-                timeZone: context.smartTimeCalendar.timeZone
+                timeZone: context.smartTimeCalendar.timeZone,
+                language: context.language
             )
         case .time:
             return TimeExpressionProvider.timeText(
                 for: date,
                 configuration: configuration,
-                timeZone: context.smartTimeCalendar.timeZone
+                timeZone: context.smartTimeCalendar.timeZone,
+                language: context.language
             )
         }
     }

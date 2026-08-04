@@ -28,6 +28,9 @@ struct BackgroundProcessingContractTests {
         let runtime = try sourceText(
             "Source/PhotoMemo/PhotoMemo/App/PhotoMemoAppRuntime.swift"
         )
+        let executionService = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/App/PhotoMemoiOSBackgroundExecutionService.swift"
+        )
 
         #expect(plist.contains("BGTaskSchedulerPermittedIdentifiers"))
         #expect(plist.contains("com.serydoo.PhotoMemo.batch-processing"))
@@ -47,6 +50,11 @@ struct BackgroundProcessingContractTests {
         #expect(permissionSurface.contains("允许完成提醒"))
         #expect(permissionSurface.contains("authorizeNotificationWorkflow"))
         #expect(runtime.contains("guard permissionCenter.canAccessPhotoLibrary"))
+        #expect(executionService.contains("pendingTaskCount > 0"))
+        #expect(executionService.contains("PhotoMemoBackgroundTaskSubmission"))
+        #expect(executionService.contains("stopProcessingForBackgroundExpiration"))
+        #expect(executionService.contains("processing.background.expired"))
+        #expect(executionService.contains("processingBackgroundExpired"))
     }
 
     @Test("Share completion does not depend on host app handoff")

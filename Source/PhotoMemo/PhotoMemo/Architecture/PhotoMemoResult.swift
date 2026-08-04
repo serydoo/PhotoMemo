@@ -30,15 +30,23 @@ struct PhotoMemoError:
 
     let underlyingDescription: String?
 
+    let diagnosticCode: String?
+
+    let supportID: String?
+
     init(
         code: PhotoMemoErrorCode,
         message: String,
-        underlyingDescription: String? = nil
+        underlyingDescription: String? = nil,
+        diagnosticCode: String? = nil,
+        supportID: String? = nil
     ) {
         self.code = code
         self.message = message
         self.underlyingDescription =
             underlyingDescription
+        self.diagnosticCode = diagnosticCode
+        self.supportID = supportID
     }
 
     static func wrapped(

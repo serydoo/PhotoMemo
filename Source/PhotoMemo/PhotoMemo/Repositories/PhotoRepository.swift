@@ -37,12 +37,16 @@ final class PhotoRepository {
                 )
             )
         } catch {
+            let importError = error as? PhotoImportError
             return .failure(
-                .wrapped(
-                    error,
+                PhotoMemoError(
                     code: .importFailed,
                     message:
-                        "Unable to import the selected photo."
+                        "Unable to import the selected photo.",
+                    underlyingDescription:
+                        String(describing: error),
+                    diagnosticCode:
+                        importError?.diagnosticCode
                 )
             )
         }
@@ -71,12 +75,16 @@ final class PhotoRepository {
                 )
             )
         } catch {
+            let importError = error as? PhotoImportError
             return .failure(
-                .wrapped(
-                    error,
+                PhotoMemoError(
                     code: .importFailed,
                     message:
-                        "Unable to import the selected photo data."
+                        "Unable to import the selected photo data.",
+                    underlyingDescription:
+                        String(describing: error),
+                    diagnosticCode:
+                        importError?.diagnosticCode
                 )
             )
         }

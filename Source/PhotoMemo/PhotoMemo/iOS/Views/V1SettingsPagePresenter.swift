@@ -44,6 +44,7 @@ struct V1SettingsCurrentTaskPresentation:
         PhotoMemoiOSQueueDiagnosticsTint
     let updatedAt: Date?
     let progressFraction: Double?
+    let canRetryFailures: Bool
     let configurationName: String
     let templateName: String
     let previewSourceURL: URL?
@@ -224,6 +225,8 @@ private extension V1SettingsPagePresenter {
                         ),
                         1
                     ),
+                canRetryFailures:
+                    snapshot.canRetryFailures,
                 configurationName:
                     snapshot.configurationName,
                 templateName:
@@ -271,6 +274,7 @@ private extension V1SettingsPagePresenter {
                 header.tint,
             updatedAt: nil,
             progressFraction: nil,
+            canRetryFailures: false,
             configurationName:
                 fallbackConfigurationName,
             templateName:

@@ -48,6 +48,9 @@ final class BatchQueueStore: ObservableObject {
     private let saveReceiptStore:
         PhotoLibrarySaveReceiptStore
 
+    private let productionDiagnostics:
+        ProductionDiagnosticsRepository?
+
     private var processingTask:
         Task<Void, Never>?
 
@@ -77,6 +80,8 @@ final class BatchQueueStore: ObservableObject {
         persistence: BatchQueuePersistence? = nil,
         saveReceiptStore:
             PhotoLibrarySaveReceiptStore? = nil,
+        productionDiagnostics:
+            ProductionDiagnosticsRepository? = nil,
         automaticallyStartsProcessing: Bool = true,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
@@ -116,6 +121,8 @@ final class BatchQueueStore: ObservableObject {
                     outputFilenameSequenceStore,
                 diagnosticsDefaults:
                     resolvedDefaults,
+                productionDiagnostics:
+                    productionDiagnostics,
                 renderHealthValidator:
                     renderHealthValidator
             )
@@ -143,6 +150,8 @@ final class BatchQueueStore: ObservableObject {
             ?? PhotoLibrarySaveReceiptStore(
                 defaults: resolvedDefaults
             )
+        self.productionDiagnostics =
+            productionDiagnostics
         self.commerceSnapshot =
             self.commercePersistence
             .loadSharedSnapshot(
@@ -589,6 +598,12 @@ extension BatchQueueStore {
 
     func normalizeJobsForResume() {
 
+        let existingFailureTaskIDs = Set(
+            jobs.flatMap(\.tasks)
+                .filter { $0.failure != nil }
+                .map(\.id)
+        )
+
         guard persistence.normalizeJobsForResume(
             &jobs,
             deriveJobState:
@@ -598,6 +613,56 @@ extension BatchQueueStore {
         }
 
         persistJobs()
+
+        guard let productionDiagnostics else {
+            return
+        }
+        let recoveredFailures:
+            [(UUID, BatchTask, BatchTaskFailure)] =
+            jobs.flatMap { job in
+            job.tasks.compactMap { task in
+                guard !existingFailureTaskIDs.contains(task.id),
+                      let failure = task.failure else {
+                    return nil
+                }
+                return (job.id, task, failure)
+            }
+        }
+        Task {
+            for (jobID, task, failure) in recoveredFailures {
+                let pixelSize = MediaPixelSize(
+                    fileURL: task.sourceURL
+                )
+                await productionDiagnostics.record(
+                    ProductionDiagnosticEvent(
+                        operationID: task.id,
+                        category: .processing,
+                        stage:
+                            "processing.recovery.\(failure.phase.rawValue)",
+                        outcome: .failed,
+                        errorCode:
+                            failure.diagnosticCode.flatMap {
+                                ProductionDiagnosticErrorCode(
+                                    rawValue: $0
+                                )
+                            },
+                        context:
+                            ProductionDiagnosticContext(
+                                jobID: jobID,
+                                taskID: task.id,
+                                mediaContentTypeIdentifier:
+                                    task.contentTypeIdentifier,
+                                mediaPixelWidth:
+                                    pixelSize?.width,
+                                mediaPixelHeight:
+                                    pixelSize?.height,
+                                processingPhase:
+                                    failure.phase.rawValue
+                            )
+                    )
+                )
+            }
+        }
     }
 
     @discardableResult

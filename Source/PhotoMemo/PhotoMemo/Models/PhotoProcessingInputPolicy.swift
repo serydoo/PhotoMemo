@@ -316,6 +316,12 @@ private extension PhotoProcessingInputPolicy {
             return declaredType
         }
 
+        if let detectedType = detectedImageContentType(
+            at: fileURL
+        ) {
+            return detectedType
+        }
+
         if let declaredType,
            Self.supportedImageTypes.contains(where: {
                declaredType.conforms(to: $0)
@@ -335,6 +341,21 @@ private extension PhotoProcessingInputPolicy {
         }
 
         return extensionType ?? declaredType
+    }
+
+    nonisolated func detectedImageContentType(
+        at fileURL: URL
+    ) -> UTType? {
+        guard let source = CGImageSourceCreateWithURL(
+            fileURL as CFURL,
+            [kCGImageSourceShouldCache: false]
+                as CFDictionary
+        ),
+        let typeIdentifier = CGImageSourceGetType(source)
+        else {
+            return nil
+        }
+        return UTType(typeIdentifier as String)
     }
 
     nonisolated func imagePixelSize(

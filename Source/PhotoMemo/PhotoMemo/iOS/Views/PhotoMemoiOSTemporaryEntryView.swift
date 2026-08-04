@@ -114,7 +114,11 @@ struct PhotoMemoiOSTemporaryEntryView: View {
                 diagnosticsRepository:
                     environment?
                     .repositories
-                    .diagnostics
+                    .diagnostics,
+                productionDiagnosticsRepository:
+                    environment?
+                    .repositories
+                    .productionDiagnostics
             )
         case .configurationCenter:
             ConfigurationCenteriOSView(

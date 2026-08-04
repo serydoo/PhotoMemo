@@ -46,7 +46,7 @@ struct PhotoMemoRootSceneView: View {
                 )
                 PhotoMemoShareDiagnostics.record(
                     stage: .appOpenURLFile,
-                    message: url.lastPathComponent
+                    message: "fileURLReceived=true"
                 )
             }
             .onReceive(
@@ -100,7 +100,10 @@ struct PhotoMemoRootSceneView: View {
             externalIntakeCenter:
                 runtime.environment.externalIntakeCenter,
             diagnosticsRepository:
-                runtime.environment.repositories.diagnostics
+                runtime.environment.repositories.diagnostics,
+            productionDiagnosticsRepository:
+                runtime.environment.repositories
+                .productionDiagnostics
         )
         #else
         ConfigurationCenterView()

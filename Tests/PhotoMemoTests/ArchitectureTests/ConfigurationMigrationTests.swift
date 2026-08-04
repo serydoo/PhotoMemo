@@ -1758,11 +1758,18 @@ struct ConfigurationMigrationTests {
         var aggregate = Self.makeConfigurationLibraryAggregate()
         aggregate.activeConfigurationID = UUID()
 
-        await #expect(
-            throws: ConfigurationLibraryPersistenceError.self
-        ) {
+        do {
             _ = try await coordinator
                 .saveConfigurationLibrary(aggregate)
+            Issue.record("Expected validation failure")
+        } catch let error as PhotoMemoError {
+            #expect(
+                error.diagnosticCode
+                == "configuration.validation.failed"
+            )
+            #expect(error.supportID?.hasPrefix("CFG-") == true)
+        } catch {
+            Issue.record("Expected PhotoMemoError, got \(error)")
         }
 
         #expect(refreshCount == 0)
@@ -1795,12 +1802,19 @@ struct ConfigurationMigrationTests {
             }
         )
 
-        await #expect(
-            throws: ConfigurationLibraryPersistenceError.self
-        ) {
+        do {
             _ = try await coordinator.saveConfigurationLibrary(
                 Self.makeConfigurationLibraryAggregate()
             )
+            Issue.record("Expected encoding failure")
+        } catch let error as PhotoMemoError {
+            #expect(
+                error.diagnosticCode
+                == "configuration.encoding.failed"
+            )
+            #expect(error.supportID?.hasPrefix("CFG-") == true)
+        } catch {
+            Issue.record("Expected PhotoMemoError, got \(error)")
         }
 
         #expect(refreshCount == 0)
@@ -1834,12 +1848,19 @@ struct ConfigurationMigrationTests {
             }
         )
 
-        await #expect(
-            throws: ConfigurationLibraryPersistenceError.self
-        ) {
+        do {
             _ = try await coordinator.saveConfigurationLibrary(
                 Self.makeConfigurationLibraryAggregate()
             )
+            Issue.record("Expected write failure")
+        } catch let error as PhotoMemoError {
+            #expect(
+                error.diagnosticCode
+                == "configuration.write.failed"
+            )
+            #expect(error.supportID?.hasPrefix("CFG-") == true)
+        } catch {
+            Issue.record("Expected PhotoMemoError, got \(error)")
         }
 
         #expect(refreshCount == 0)
@@ -1933,6 +1954,16 @@ struct ConfigurationMigrationTests {
                         guard case .staleAggregate = error else {
                             Issue.record(
                                 "Expected staleAggregate, got \(error)"
+                            )
+                            return -1
+                        }
+                        return nil
+                    } catch let error as PhotoMemoError {
+                        guard error.diagnosticCode
+                            == "configuration.revision.conflict"
+                        else {
+                            Issue.record(
+                                "Expected revision conflict, got \(error)"
                             )
                             return -1
                         }

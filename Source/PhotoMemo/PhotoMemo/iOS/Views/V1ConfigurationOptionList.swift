@@ -499,6 +499,7 @@ struct V1ConfigurationOptionList: View {
         case .dirty: return "有未保存的修改"
         case .saving: return "正在保存当前配置"
         case .saved: return "当前配置已保存"
+        case .savedWithWarning: return "配置已保存，但需要留意"
         case .subjectSynced: return "记忆对象已同步，等待保存"
         case .failure: return "保存失败"
         }
@@ -510,6 +511,7 @@ struct V1ConfigurationOptionList: View {
         case .dirty: return "pencil.circle.fill"
         case .saving: return "hourglass"
         case .saved: return "checkmark.circle.fill"
+        case .savedWithWarning: return "exclamationmark.triangle.fill"
         case .subjectSynced: return "person.crop.circle.badge.checkmark"
         case .failure: return "exclamationmark.triangle.fill"
         }
@@ -518,6 +520,7 @@ struct V1ConfigurationOptionList: View {
     private var configurationStatusColor: Color {
         switch configurationStatus {
         case .failure: return Color.red
+        case .savedWithWarning: return Color.orange
         case .idle, .dirty, .saving, .saved, .subjectSynced:
             return Color.secondary
         }

@@ -116,6 +116,79 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         )
     }
 
+    @Test("compatibility projection failure reports saved configuration with a concrete warning")
+    @MainActor
+    func compatibilityProjectionFailureReportsWarning() async throws {
+        let aggregate = try Self.makeAggregate()
+        let draft = Self.makeAggregateDraft(title: "After")
+        let operationID = UUID(
+            uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"
+        )!
+        let receipt = ConfigurationLibrarySaveReceipt(
+            revision: 12,
+            subjectID: try #require(aggregate.activeSubjectID),
+            configurationID:
+                try #require(aggregate.activeConfigurationID),
+            configurationRevision: 4,
+            compatibilityProjectionFailure:
+                ConfigurationLibraryProjectionFailure(
+                    underlyingDescription: "projection failed"
+                ),
+            diagnosticOperationID: operationID
+        )
+        var statuses: [V1ConfigurationApplyViewStatus] = []
+        let coordinator = V1ConfigurationApplyRuntimeCoordinator(
+            applyRequest: { _ in
+                Issue.record("Aggregate apply must not use legacy save.")
+                return .failure(
+                    PhotoMemoError(
+                        code: .invalidState,
+                        message: "Unexpected legacy save."
+                    )
+                )
+            },
+            applyAggregateRequest: { candidate, _ in
+                .success(
+                    V1ConfigurationAggregateApplyReceipt(
+                        candidate: candidate,
+                        saveReceipt: receipt,
+                        albumSelection: .init(
+                            identifier: "",
+                            title: "",
+                            pickerSelectionIdentifier: nil
+                        )
+                    )
+                )
+            },
+            reloadAlbums: {},
+            setSelectedExistingAlbumIdentifier: { _ in },
+            restoreSubject: { _ in },
+            reconcileConfigurationLibrary: { _, _ in .applied },
+            applySelectedMemoryPreset: {},
+            updateStatus: { statuses.append($0) }
+        )
+
+        let wasSuccessful = await coordinator.apply(
+            configurationLibrary: aggregate,
+            aggregateDraft: draft,
+            legacyRequest: Self.makeRequest(
+                subject: ConfigurationCenterState.mock.selectedSubject
+            ),
+            outputTarget: .automatic,
+            availableAlbums: []
+        )
+
+        #expect(wasSuccessful)
+        #expect(statuses.count == 2)
+        guard case .savedWithWarning(let message) =
+            statuses.last?.status else {
+            Issue.record("Expected a saved-with-warning status.")
+            return
+        }
+        #expect(message.contains("配置已保存"))
+        #expect(message.contains("CFG-AAAAAAAA"))
+    }
+
     @Test("aggregate apply does not project a stale receipt when newer edits win reconciliation")
     @MainActor
     func aggregateApplyDoesNotProjectStaleReceipt() async throws {
@@ -291,12 +364,15 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         )
         #expect(session.state.configurationLibrary?.revision == 11)
         #expect(session.selectedMemoryPresetIsApplied == false)
-        #expect(
-            statuses == [
-                .init(status: .saving),
-                .init(status: .failure(message: "保存配置失败。"))
-            ]
-        )
+        #expect(statuses.count == 2)
+        #expect(statuses.first == .init(status: .saving))
+        guard case .failure(let message) =
+            statuses.last?.status else {
+            Issue.record("Expected a detailed save failure status.")
+            return
+        }
+        #expect(message.contains("写入设备存储"))
+        #expect(message.contains("故障编号：CFG-"))
     }
 
     @Test("missing aggregate uses the legacy apply path")

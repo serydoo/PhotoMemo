@@ -1,6 +1,116 @@
 # MemoMark Current Status
 
-Last updated: 2026-08-03
+Last updated: 2026-08-04
+
+## 2026-08-04 MemoMark 2.0.2 (68) Release Consolidation
+
+- Consolidated yesterday's configuration/module compatibility work and
+  today's production diagnostics and Live Photo preservation repair into the
+  `2.0.2 (68)` release boundary.
+- Conflict audit found no ownership conflict: module compatibility remains in
+  configuration/projection paths, diagnostics observes failure state without
+  uploading user content, and Live Photo changes remain in Share, queue, and
+  PhotoKit media paths. Renderer and Layout Engine ownership are unchanged.
+- Updated project, app, extension, and test-target version fields to
+  `MARKETING_VERSION = 2.0.2` and `CURRENT_PROJECT_VERSION = 68`. Updated the
+  in-app bilingual release notes, `CHANGELOG.md`, and the scoped release note
+  at `Docs/07_Releases/2026-08-04-2.0.2-production-reliability.md`.
+- Stable Xcode focused suites and the complete `PhotoMemoTests` suite passed;
+  macOS, iOS, Share Extension, and Widget Extension builds passed. Physical
+  Live Photo round-trip remains a device-evidence boundary until the paired
+  iPhone reconnects as available.
+
+## 2026-08-04 Local-First Production Diagnostics And Actionable Failures
+
+- Classified the increase in untraceable multi-device save and processing
+  reports as an Engineering Loop P1 production-reliability issue. The bounded
+  implementation specification is
+  `Docs/06_Development/Production_Diagnostics_Spec_2026-08-04.md`.
+- Added a structured production event contract, stable failure codes and short
+  support IDs, OSLog forwarding, and an actor-owned bounded App Group file
+  store with atomic writes, last-known-good recovery, and full-corruption
+  self-healing. Events retain safe
+  operation, stage, revision, count, duration, media-geometry, and per-region
+  character/newline metrics; they do not retain photos, authored text, subject
+  or album names, location values, filenames, raw paths, or free-form errors.
+- Configuration candidate, durable-save, and compatibility-projection paths
+  now distinguish validation, missing selection, revision conflict, encoding,
+  read, write, permission, storage-space, corruption, service, and unknown
+  failures. Wrapped file-system errors retain only safe domain/code metadata
+  so these categories survive the persistence boundary. User-facing states
+  provide the concrete reason, recovery action, and matching `CFG-` support ID.
+  A canonical save with failed compatibility projection is no longer presented
+  as full success: it reports a saved-with-warning state and allows retry.
+- Batch terminal failures now preserve the processing phase and stable
+  classification in the structured store. The task UI receives an actionable
+  import, preparation, export, or Apple Photos reason plus a matching `JOB-`
+  support ID instead of an unfiltered system error description.
+- Settings -> Feedback now offers `导出诊断信息`. It creates a sanitized JSON
+  report containing app/build/OS/device-family context and structured events,
+  then opens the Apple-native share sheet. Existing Share diagnostics
+  contribute only stage timestamps and anonymous request/job IDs; a small
+  allowlist now also exports safe, structured Live Photo recovery and
+  readback details without filenames, paths, asset IDs, or user content.
+- Renderer overflow remains separate from persistence: long custom content is
+  saved and may be scaled or truncated by current presentation constraints;
+  it does not itself cause configuration save failure. Future fit warnings
+  remain Layout Engine preflight work and must not discard authored content.
+- Verification passed: `20/20` focused production-diagnostics and configuration
+  runtime tests, including corruption recovery, bounded retention, privacy
+  redaction, wrapped file-system classification, full-corruption self-healing,
+  detailed save failures, and compatibility degradation; required unsigned
+  macOS Debug build; unsigned generic iOS,
+  Share Extension, and Widget Extension Debug builds; and
+  `git diff --check`. The Settings share-sheet interaction and representative
+  failure messages still require physical-device/manual acceptance.
+- Signed-device deployment passed on the wired `IPhone5` iPhone 15 Pro running
+  iOS 27.0: automatic development signing, embedded Share/Widget validation,
+  in-place installation of `2.0.1 (67)`, and foreground launch all succeeded.
+  A device screenshot confirmed the Configuration Center remained active with
+  its existing configuration data. Manual diagnostics sharing and forced
+  failure-message acceptance remain outstanding.
+
+## 2026-08-04 Live Photo Motion Preservation Regression Repair
+
+- Final verification update: stable Xcode focused Live Photo and diagnostics
+  tests passed, the complete `PhotoMemoTests` suite passed, and signed generic
+  iOS Debug products for the main App, Share Extension, and Widget Extension
+  passed build and codesign verification. A direct install attempt to the
+  paired `IPhone5` iPhone 15 Pro was rejected with CoreDevice error 4016
+  because the device is currently `unavailable`; physical Apple Photos
+  Live Photo round-trip acceptance remains pending until the device is
+  unlocked and reconnects as available.
+- Classified the report as a V4 Engineering Loop P1 production-reliability
+  regression at the Apple Photos -> Share -> processing -> Photos boundary;
+  Renderer and layout are not involved. The root causes were provider timeout
+  fallback, fragile identity recovery, and missing PhotoKit post-save
+  verification.
+- Share intake now freezes the output policy before provider loading. In
+  `originalFormat`, a Live Photo representation timeout is a retryable failure;
+  only an explicit `staticImage` choice may use the still-image fallback.
+- If the Share Extension receives only a still representation, the main App
+  preserves Live Photo media truth when identity recovery is `notFound`,
+  `ambiguous`, or `unavailable`. The queue therefore fails with
+  `processing.input.unsupportedLivePhoto` instead of silently completing a
+  static output.
+- Identity recovery accepts a uniquely matching renamed provider payload only
+  when capture time and pixel dimensions agree; ambiguous candidates remain
+  failure-safe.
+- PhotoKit Live Photo saves now perform bounded readback retries and require
+  an image asset marked `.photoLive` with valid dimensions, positive duration,
+  still resource, and paired-video resource before reporting success. Invalid
+  readback retains the idempotency receipt during the short recovery window
+  and records
+  `photoLibrary.livePhoto.verificationFailed`.
+- Production diagnostics export allowlisted Live Photo recovery/readback
+  details, while unrelated legacy free-form messages remain excluded. User
+  guidance now distinguishes missing motion resources, iCloud readiness,
+  permission/readability recovery, and explicit static output.
+- Live Photo routing, timeout, identity recovery, readback, diagnostics, and
+  sanitized export suites passed, followed by the complete `PhotoMemoTests`
+  suite. Physical-device Apple Photos Live Photo share/save-back acceptance
+  remains required because provider and PhotoKit behavior cannot be fully
+  proven by macOS tests.
 
 ## 2026-08-03 First-Run Memory Subject Home Projection Repair
 

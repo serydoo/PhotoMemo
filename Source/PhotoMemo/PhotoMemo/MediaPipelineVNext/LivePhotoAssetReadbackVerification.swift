@@ -313,6 +313,8 @@ struct LivePhotoAssetReadbackReport:
     var satisfiesLivePhotoPairingContract: Bool {
         isImageAsset
             && isLivePhoto
+            && pixelWidth > 0
+            && pixelHeight > 0
             && hasStillPhotoResource
             && hasPairedVideoResource
     }

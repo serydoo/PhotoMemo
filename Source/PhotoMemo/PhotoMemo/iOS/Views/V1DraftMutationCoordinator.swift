@@ -11,6 +11,7 @@ struct V1DraftMutationItem: Identifiable, Hashable {
     }
 
     let id: UUID
+    let sourceItemID: UUID?
     let kind: Kind
     var title: String
     var value: String
@@ -19,6 +20,7 @@ struct V1DraftMutationItem: Identifiable, Hashable {
 
     nonisolated init(
         id: UUID = UUID(),
+        sourceItemID: UUID? = nil,
         kind: Kind,
         title: String,
         value: String,
@@ -26,6 +28,7 @@ struct V1DraftMutationItem: Identifiable, Hashable {
         systemImage: String
     ) {
         self.id = id
+        self.sourceItemID = sourceItemID
         self.kind = kind
         self.title = title
         self.value = value

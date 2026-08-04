@@ -6,11 +6,19 @@ final class BatchTaskDiagnosticsRecorder {
 
     private let defaults: UserDefaults
 
+    private let productionDiagnostics:
+        ProductionDiagnosticsRepository
+
     init(
         defaults: UserDefaults =
-            PhotoMemoSharedContainer.sharedUserDefaults
+            PhotoMemoSharedContainer.sharedUserDefaults,
+        productionDiagnostics:
+            ProductionDiagnosticsRepository? = nil
     ) {
         self.defaults = defaults
+        self.productionDiagnostics =
+            productionDiagnostics
+            ?? ProductionDiagnosticsRepository()
     }
 
     static func routeDiagnosticMessage(
@@ -20,7 +28,6 @@ final class BatchTaskDiagnosticsRecorder {
     ) -> String {
         [
             "taskID=\(task.id.uuidString)",
-            "fileName=\(task.fileName)",
             "contentType=\(task.contentTypeIdentifier ?? "nil")",
             "hasSourceIdentifier=\(task.sourceIdentifier?.isEmpty == false)",
             "sourceURLIsLivePhotoBundle=\(sourceURLIsLivePhotoBundle)",
@@ -37,7 +44,6 @@ final class BatchTaskDiagnosticsRecorder {
 
         return [
             "taskID=\(task.id.uuidString)",
-            "fileName=\(task.fileName)",
             "contentType=\(task.contentTypeIdentifier ?? "nil")",
             "isRAW=\(budget.cost.isRAW)",
             "pixelWidth=\(pixelSize?.width ?? 0)",
@@ -133,8 +139,53 @@ final class BatchTaskDiagnosticsRecorder {
         PhotoMemoShareDiagnostics.record(
             stage: .batchTaskDuration,
             message:
-                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), runtimeStage=total, phase=\(phase.rawValue), durationSeconds=\(String(format: "%.3f", durationSeconds))",
+                "taskID=\(task.id.uuidString), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), runtimeStage=total, phase=\(phase.rawValue), durationSeconds=\(String(format: "%.3f", durationSeconds))",
             jobID: jobID
+        )
+    }
+
+    func recordTerminalFailure(
+        failure: ProductionDiagnosticFailure,
+        phase: BatchTaskPhase,
+        task: BatchTask,
+        jobID: UUID?,
+        startedAt: Date
+    ) async {
+        await productionDiagnostics.record(
+            ProductionDiagnosticEvent(
+                operationID: task.id,
+                category:
+                    phase == .savingToPhotoLibrary
+                    ? .photoLibrary
+                    : .processing,
+                stage:
+                    "processing.\(phase.rawValue)",
+                outcome: .failed,
+                errorCode: failure.code,
+                systemError: failure.systemError,
+                durationMilliseconds:
+                    Int(
+                        max(
+                            Date().timeIntervalSince(startedAt),
+                            0
+                        ) * 1_000
+                    ),
+                context: ProductionDiagnosticContext(
+                    jobID: jobID,
+                    taskID: task.id,
+                    mediaContentTypeIdentifier:
+                        task.contentTypeIdentifier,
+                    mediaPixelWidth:
+                        MediaPixelSize(
+                            fileURL: task.sourceURL
+                        )?.width,
+                    mediaPixelHeight:
+                        MediaPixelSize(
+                            fileURL: task.sourceURL
+                        )?.height,
+                    processingPhase: phase.rawValue
+                )
+            )
         )
     }
 
@@ -215,7 +266,7 @@ final class BatchTaskDiagnosticsRecorder {
         PhotoMemoShareDiagnostics.record(
             stage: .batchTaskStageDuration,
             message:
-                "taskID=\(task.id.uuidString), fileName=\(task.fileName), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), stageName=\(stageName), outcome=\(outcome), durationSeconds=\(String(format: "%.3f", durationSeconds))\(suffix)",
+                "taskID=\(task.id.uuidString), contentType=\(task.contentTypeIdentifier ?? "nil"), route=\(route), stageName=\(stageName), outcome=\(outcome), durationSeconds=\(String(format: "%.3f", durationSeconds))\(suffix)",
             jobID: jobID
         )
     }

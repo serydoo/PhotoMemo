@@ -67,5 +67,21 @@ enum BatchTaskMemoryPolicy {
                 .lowercased()
         )?.identifier
     }
+
+    static func shouldRejectUnavailableLivePhotoMotion(
+        for task: BatchTask,
+        usesLivePhotoProcessing: Bool,
+        outputMode: V1MediaOutputMode
+    ) -> Bool {
+
+        outputMode == .originalFormat
+            && !usesLivePhotoProcessing
+            && PhotoProcessingInputPolicy
+            .isLivePhotoContentType(
+                task
+                    .contentTypeIdentifier
+                    .flatMap(UTType.init)
+            )
+    }
 }
 #endif

@@ -44,81 +44,64 @@ enum LivePhotoAssetIdentityMatcher {
     private static let captureDateTolerance:
         TimeInterval = 300
 
+    private static let renamedPayloadCaptureDateTolerance:
+        TimeInterval = 2
+
     static func resolve(
         hint: LivePhotoStaticFallbackRecoveryHint,
         candidates: [LivePhotoAssetIdentityCandidate]
     ) -> LivePhotoAssetIdentityResolution {
 
-        let matches =
+        let datedLivePhotoCandidates =
             candidates.filter {
-                matchScore(
-                    hint: hint,
-                    candidate: $0
-                ) >= 4
+                $0.isLivePhoto
+                && matchesCaptureDate(
+                    hint.captureDate,
+                    $0.creationDate,
+                    tolerance:
+                        captureDateTolerance
+                )
+            }
+        let matchingFileNameCandidates =
+            datedLivePhotoCandidates.filter {
+                matchesFileName(
+                    hint.originalFileName,
+                    candidateFileNames:
+                        $0.originalFileNames
+                )
             }
 
-        guard !matches.isEmpty else {
-            return .notFound
-        }
-
-        guard matches.count == 1,
-              let match = matches.first else {
-            return .ambiguous(
-                candidateCount:
-                    matches.count
+        if !matchingFileNameCandidates.isEmpty {
+            return uniqueResolution(
+                matchingFileNameCandidates
             )
         }
 
-        return .matched(
-            match.localIdentifier
+        let renamedPayloadCandidates =
+            datedLivePhotoCandidates.filter {
+                matchesCaptureDate(
+                    hint.captureDate,
+                    $0.creationDate,
+                    tolerance:
+                        renamedPayloadCaptureDateTolerance
+                )
+                && matchesPixelSize(
+                    hintWidth: hint.pixelWidth,
+                    hintHeight: hint.pixelHeight,
+                    candidateWidth: $0.pixelWidth,
+                    candidateHeight: $0.pixelHeight
+                )
+            }
+
+        return uniqueResolution(
+            renamedPayloadCandidates
         )
-    }
-
-    private static func matchScore(
-        hint: LivePhotoStaticFallbackRecoveryHint,
-        candidate: LivePhotoAssetIdentityCandidate
-    ) -> Int {
-
-        guard candidate.isLivePhoto else {
-            return 0
-        }
-
-        guard matchesCaptureDate(
-            hint.captureDate,
-            candidate.creationDate
-        ) else {
-            return 0
-        }
-
-        var score = 0
-
-        score += 2
-
-        guard matchesFileName(
-            hint.originalFileName,
-            candidateFileNames:
-                candidate.originalFileNames
-        ) else {
-            return 0
-        }
-
-        score += 3
-
-        if matchesPixelSize(
-            hintWidth: hint.pixelWidth,
-            hintHeight: hint.pixelHeight,
-            candidateWidth: candidate.pixelWidth,
-            candidateHeight: candidate.pixelHeight
-        ) {
-            score += 2
-        }
-
-        return score
     }
 
     private static func matchesCaptureDate(
         _ hintDate: Date?,
-        _ candidateDate: Date?
+        _ candidateDate: Date?,
+        tolerance: TimeInterval
     ) -> Bool {
 
         guard let hintDate,
@@ -130,7 +113,29 @@ enum LivePhotoAssetIdentityMatcher {
             hintDate.timeIntervalSince(
                 candidateDate
             )
-        ) <= captureDateTolerance
+        ) <= tolerance
+    }
+
+    private static func uniqueResolution(
+        _ candidates:
+            [LivePhotoAssetIdentityCandidate]
+    ) -> LivePhotoAssetIdentityResolution {
+
+        guard !candidates.isEmpty else {
+            return .notFound
+        }
+
+        guard candidates.count == 1,
+              let match = candidates.first else {
+            return .ambiguous(
+                candidateCount:
+                    candidates.count
+            )
+        }
+
+        return .matched(
+            match.localIdentifier
+        )
     }
 
     private static func matchesPixelSize(
@@ -190,6 +195,40 @@ enum LivePhotoAssetIdentityMatcher {
         return (trimmed as NSString)
             .deletingPathExtension
             .lowercased()
+    }
+}
+
+enum LivePhotoStaticFallbackPolicy {
+
+    private static let providerTimeoutErrorCode = 3010
+
+    private static let staticImageOutputModeRawValue =
+        "staticImage"
+
+    private static let staticImageOnlyPolicyRawValue =
+        "staticImageOnly"
+
+    static func shouldStopAfterLiveRepresentationFailure(
+        errorCode: Int?,
+        mediaOutputModeRawValue: String?,
+        livePhotoPolicyRawValue: String? = nil
+    ) -> Bool {
+
+        guard errorCode == providerTimeoutErrorCode else {
+            return false
+        }
+
+        if let mediaOutputModeRawValue {
+            return mediaOutputModeRawValue
+                != staticImageOutputModeRawValue
+        }
+
+        if let livePhotoPolicyRawValue {
+            return livePhotoPolicyRawValue
+                != staticImageOnlyPolicyRawValue
+        }
+
+        return true
     }
 }
 

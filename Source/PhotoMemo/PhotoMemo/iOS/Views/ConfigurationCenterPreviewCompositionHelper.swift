@@ -86,6 +86,7 @@ struct ConfigurationCenterPreviewCompositionHelper {
             updatedStore.modules(for: region)
         currentModules.append(
             IOSInsertedModule(
+                moduleID: module,
                 title: module.title,
                 value: moduleDisplayText(
                     module,
@@ -176,6 +177,7 @@ struct ConfigurationCenterPreviewCompositionHelper {
         let updatedModule =
             IOSInsertedModule(
                 id: module.id,
+                moduleID: module.moduleID,
                 title: module.title,
                 value:
                     moduleDisplayText(
@@ -377,8 +379,17 @@ struct ConfigurationCenterPreviewCompositionHelper {
 
 private extension IOSInsertedModule {
     var representsLocationModule: Bool {
-        title == IOSInsertableModule.location.title
-        && systemImage == IOSInsertableModule.location.systemImage
+        moduleID == .location
+        || (
+            moduleID == nil
+            && systemImage == IOSInsertableModule.location.systemImage
+            && [
+                IOSInsertableModule.location.title(
+                    for: .simplifiedChinese
+                ),
+                IOSInsertableModule.location.title(for: .english)
+            ].contains(title)
+        )
     }
 }
 #endif

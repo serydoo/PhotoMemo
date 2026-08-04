@@ -17,6 +17,8 @@ final class BatchQueueExecution {
         outputFilenameSequenceStore:
             LivePhotoOutputFilenameSequenceStore? = nil,
         diagnosticsDefaults: UserDefaults = PhotoMemoSharedContainer.sharedUserDefaults,
+        productionDiagnostics:
+            ProductionDiagnosticsRepository? = nil,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
                 ProductionRenderHealthCheck.validate
@@ -46,7 +48,11 @@ final class BatchQueueExecution {
             photoLibraryRepository: resolvedPhotoLibraryRepository
         )
         let resolvedExternalIntakeStore = externalIntakeStore ?? .shared
-        let resolvedDiagnosticsRecorder = BatchTaskDiagnosticsRecorder(defaults: diagnosticsDefaults)
+        let resolvedDiagnosticsRecorder = BatchTaskDiagnosticsRecorder(
+            defaults: diagnosticsDefaults,
+            productionDiagnostics:
+                productionDiagnostics
+        )
         let resolvedResourceLifecycle = BatchTaskResourceLifecycle(
             coordinator: resolvedCoordinator,
             externalIntakeStore: resolvedExternalIntakeStore

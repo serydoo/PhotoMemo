@@ -260,6 +260,8 @@ struct PhotoMemoShareIntakeFailureContext:
 
     let persistedRequestID: String?
 
+    let supportID: String?
+
     let importSummary:
         ExternalPhotoImportSummary?
 
@@ -324,6 +326,12 @@ struct PhotoMemoShareIntakeFailureContext:
             )
         }
 
+        if let supportID {
+            lines.append(
+                "supportID: \(supportID)"
+            )
+        }
+
         if let importSummary {
             lines.append(
                 "importSummary: imported=\(importSummary.importedCount), skipped=\(importSummary.skippedCount), failed=\(importSummary.failedCount)"
@@ -383,6 +391,7 @@ struct PhotoMemoShareIntakeOperationSeed:
         sharedContainerDestination:
             URL? = nil,
         persistedRequestID: UUID? = nil,
+        supportID: String? = nil,
         importSummary:
             ExternalPhotoImportSummary? = nil,
         error: Error? = nil
@@ -414,6 +423,8 @@ struct PhotoMemoShareIntakeOperationSeed:
             persistedRequestID:
                 persistedRequestID?
                 .uuidString,
+            supportID:
+                supportID,
             importSummary:
                 importSummary,
             errorSummary:
@@ -460,7 +471,7 @@ enum PhotoMemoShareIntakeLog {
         _ message: String
     ) {
         logger.notice(
-            "\(message, privacy: .public)"
+            "\(message, privacy: .private(mask: .hash))"
         )
     }
 
@@ -468,7 +479,7 @@ enum PhotoMemoShareIntakeLog {
         _ message: String
     ) {
         logger.error(
-            "\(message, privacy: .public)"
+            "\(message, privacy: .private(mask: .hash))"
         )
     }
 }

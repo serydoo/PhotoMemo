@@ -39,13 +39,17 @@ struct TimeExpressionProvider {
         let format: String
         switch configuration.baseStyle {
         case .daily:
-            format = "yyyy年M月d日 EEEE"
+            format = language == .simplifiedChinese
+                ? "yyyy年M月d日 EEEE"
+                : "MMM d, yyyy EEEE"
         case .precise, .minimal:
             format = "yyyy.MM.dd"
         case .photography:
             format = "dd MMM yyyy"
         case .weekdayContext:
-            format = "yyyy年M月d日"
+            format = language == .simplifiedChinese
+                ? "yyyy年M月d日"
+                : "MMM d, yyyy"
         }
 
         let base = formattedDate(
@@ -57,21 +61,11 @@ struct TimeExpressionProvider {
         let additions = supplementText(
             for: date,
             supplement: configuration.supplement,
-            calendar: calendar(timeZone: timeZone)
+            calendar: calendar(timeZone: timeZone),
+            language: language
         )
 
-        return compose(
-            base: base,
-            lunar: additions.first(where: { $0.hasPrefix("农历") }),
-            solarTerm: additions.first(where: {
-                !$0.hasPrefix("农历") && !$0.hasSuffix("假期")
-                    && $0 != "元旦" && $0 != "劳动节" && $0 != "国庆节"
-            }),
-            holiday: additions.first(where: {
-                ["元旦", "劳动节", "国庆节"].contains($0)
-            }),
-            statutoryHoliday: additions.first(where: { $0.hasSuffix("假期") })
-        )
+        return ([base] + additions).joined(separator: " · ")
     }
 
     static func timeText(
@@ -131,7 +125,8 @@ struct TimeExpressionProvider {
     static func supplementText(
         for date: Date,
         supplement: TimeDisplayConfiguration.Supplement,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        language: MemoMarkLanguage = .stored
     ) -> [String] {
         var values: [String] = []
         if supplement == .lunar || supplement == .lunarAndSolarTerm {
@@ -139,19 +134,61 @@ struct TimeExpressionProvider {
             chinese.locale = Locale(identifier: "zh_CN")
             let components = chinese.dateComponents([.month, .day], from: date)
             if let month = components.month, let day = components.day {
-                values.append("农历\(chineseMonthName(month))月\(chineseDayName(day))")
+                values.append(
+                    language == .simplifiedChinese
+                    ? "农历\(chineseMonthName(month))月\(chineseDayName(day))"
+                    : "Lunar \(month)/\(day)"
+                )
             }
         }
         if supplement == .lunarAndSolarTerm, let term = solarTerm(for: date, calendar: calendar) {
-            values.append(term)
+            values.append(localizedSupplement(term, language: language))
         }
         if supplement == .holiday, let holiday = holidayName(for: date, calendar: calendar) {
-            values.append(holiday)
+            values.append(localizedSupplement(holiday, language: language))
         }
         if supplement == .statutoryHoliday, let holiday = statutoryHolidayName(for: date, calendar: calendar) {
-            values.append(holiday)
+            values.append(localizedSupplement(holiday, language: language))
         }
         return values
+    }
+
+    private static func localizedSupplement(
+        _ value: String,
+        language: MemoMarkLanguage
+    ) -> String {
+        guard language == .english else {
+            return value
+        }
+        let translations = [
+            "元旦": "New Year's Day",
+            "春节": "Spring Festival",
+            "清明节": "Qingming Festival",
+            "端午节": "Dragon Boat Festival",
+            "中秋节": "Mid-Autumn Festival",
+            "劳动节": "Labor Day",
+            "国庆节": "National Day",
+            "元旦假期": "New Year holiday",
+            "清明假期": "Qingming holiday",
+            "端午假期": "Dragon Boat holiday",
+            "中秋假期": "Mid-Autumn holiday",
+            "劳动节假期": "Labor Day holiday",
+            "国庆节假期": "National Day holiday",
+            "国庆假期": "National Day holiday",
+            "小寒": "Minor Cold", "大寒": "Major Cold",
+            "立春": "Start of Spring", "雨水": "Rain Water",
+            "惊蛰": "Awakening of Insects", "春分": "Spring Equinox",
+            "清明": "Clear and Bright", "谷雨": "Grain Rain",
+            "立夏": "Start of Summer", "小满": "Grain Buds",
+            "芒种": "Grain in Ear", "夏至": "Summer Solstice",
+            "小暑": "Minor Heat", "大暑": "Major Heat",
+            "立秋": "Start of Autumn", "处暑": "End of Heat",
+            "白露": "White Dew", "秋分": "Autumn Equinox",
+            "寒露": "Cold Dew", "霜降": "Frost's Descent",
+            "立冬": "Start of Winter", "小雪": "Minor Snow",
+            "大雪": "Major Snow", "冬至": "Winter Solstice"
+        ]
+        return translations[value] ?? value
     }
 
     private static func chineseMonthName(_ month: Int) -> String {

@@ -26,9 +26,8 @@ final class PhotoLibraryRepository {
             )
         } catch {
             return .failure(
-                .wrapped(
+                wrappedPhotoLibraryError(
                     error,
-                    code: .photoLibrarySaveFailed,
                     message:
                         "Unable to load system photo albums."
                 )
@@ -51,9 +50,8 @@ final class PhotoLibraryRepository {
             )
         } catch {
             return .failure(
-                .wrapped(
+                wrappedPhotoLibraryError(
                     error,
-                    code: .photoLibrarySaveFailed,
                     message:
                         "Unable to prepare the destination album."
                 )
@@ -83,9 +81,8 @@ final class PhotoLibraryRepository {
             )
         } catch {
             return .failure(
-                .wrapped(
+                wrappedPhotoLibraryError(
                     error,
-                    code: .photoLibrarySaveFailed,
                     message:
                         "Unable to save the rendered photo to the system photo library."
                 )
@@ -115,9 +112,8 @@ final class PhotoLibraryRepository {
             )
         } catch {
             return .failure(
-                .wrapped(
+                wrappedPhotoLibraryError(
                     error,
-                    code: .photoLibrarySaveFailed,
                     message:
                         "Unable to save the rendered photo to the system photo library."
                 )
@@ -145,6 +141,22 @@ final class PhotoLibraryRepository {
 }
 
 private extension PhotoLibraryRepository {
+
+    func wrappedPhotoLibraryError(
+        _ error: Error,
+        message: String
+    ) -> PhotoMemoError {
+
+        PhotoMemoError(
+            code: .photoLibrarySaveFailed,
+            message: message,
+            underlyingDescription:
+                String(describing: error),
+            diagnosticCode:
+                (error as? PhotoLibraryExportError)?
+                .diagnosticCode
+        )
+    }
 
     func normalizedAlbumIdentifier(
         _ preferredAlbumIdentifier: String?

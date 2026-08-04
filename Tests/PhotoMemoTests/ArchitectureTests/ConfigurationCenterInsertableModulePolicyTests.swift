@@ -83,7 +83,11 @@ struct ConfigurationCenterInsertableModulePolicyTests {
         )
         #expect(
             visible.union(additional)
-            == Set(IOSInsertableModule.allCases)
+            == Set(
+                IOSInsertableModule.allCases.filter(
+                    \.isProductionBacked
+                )
+            )
         )
     }
 }

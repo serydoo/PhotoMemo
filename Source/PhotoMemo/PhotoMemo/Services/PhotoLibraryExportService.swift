@@ -43,6 +43,25 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         }
     }
 
+    func recordedAt(
+        for idempotencyKey: String
+    ) -> Date? {
+        guard let key = storageKey(
+            for: idempotencyKey
+        ) else {
+            return nil
+        }
+
+        return lock.withLock {
+            defaults.object(
+                forKey:
+                    timestampStorageKey(
+                        forStorageKey: key
+                    )
+            ) as? Date
+        }
+    }
+
     func record(
         assetIdentifier: String,
         for idempotencyKey: String
@@ -64,6 +83,13 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
                 normalizedIdentifier,
                 forKey: key
             )
+            defaults.set(
+                Date(),
+                forKey:
+                    timestampStorageKey(
+                        forStorageKey: key
+                    )
+            )
         }
     }
 
@@ -78,6 +104,12 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
 
         lock.withLock {
             defaults.removeObject(forKey: key)
+            defaults.removeObject(
+                forKey:
+                    timestampStorageKey(
+                        forStorageKey: key
+                    )
+            )
         }
     }
 
@@ -91,6 +123,12 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         lock.withLock {
             for key in keys {
                 defaults.removeObject(forKey: key)
+                defaults.removeObject(
+                    forKey:
+                        timestampStorageKey(
+                            forStorageKey: key
+                        )
+                )
             }
         }
     }
@@ -99,9 +137,18 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         retaining idempotencyKeys: Set<String>
     ) {
         let retainedStorageKeys = Set(
-            idempotencyKeys.compactMap {
-                storageKey(for: $0)
-            }
+            idempotencyKeys
+                .compactMap {
+                    storageKey(for: $0)
+                }
+                .flatMap {
+                    [
+                        $0,
+                        timestampStorageKey(
+                            forStorageKey: $0
+                        )
+                    ]
+                }
         )
 
         lock.withLock {
@@ -136,6 +183,12 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         }
 
         return "\(keyPrefix).\(normalizedKey)"
+    }
+
+    private func timestampStorageKey(
+        forStorageKey storageKey: String
+    ) -> String {
+        "\(storageKey).recordedAt"
     }
 }
 
@@ -213,6 +266,19 @@ enum PhotoLibraryExportError: LocalizedError {
     case albumCreateFailed
 
     case assetSaveFailed
+
+    var diagnosticCode: String {
+        switch self {
+        case .unauthorized:
+            return "photoLibrary.permission.denied"
+        case .albumNotFound:
+            return "photoLibrary.album.notFound"
+        case .albumCreateFailed:
+            return "photoLibrary.album.createFailed"
+        case .assetSaveFailed:
+            return "photoLibrary.asset.saveFailed"
+        }
+    }
 
     var errorDescription: String? {
 

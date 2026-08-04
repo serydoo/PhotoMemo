@@ -12,28 +12,28 @@ struct V1ReleaseNotesSheet: View {
                 id: "reliable-recording",
                 title: localized(
                     "settings.release_notes.reliable_recording.title",
-                    fallback: "记录更稳定"
+                        fallback: "记录更稳定，也更容易定位问题"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.reliable_recording.item_one",
-                        fallback: "加强 Apple Photos 分享后的保存、恢复与失败重试，让中断的记录更容易继续。"
+                        fallback: "保存失败现在会说明具体原因，并提供恢复建议与支持编号。"
                     ),
                     localized(
                         "settings.release_notes.reliable_recording.item_two",
-                        fallback: "后台处理会区分等待、可恢复、需要权限和已完成状态，避免把暂时中断误报成失败。"
+                        fallback: "新增本地诊断记录与脱敏导出，方便定位不同设备上的保存和处理问题。"
                     ),
                     localized(
                         "settings.release_notes.reliable_recording.item_three",
-                        fallback: "减少大图库保存时的阻塞，并继续保护重复保存和原图不变。"
+                        fallback: "Live Photo 在动态资源不可用、配对失败或保存后未保真时不再静默降级为静态图片。"
                     ),
                     localized(
                         "settings.release_notes.reliable_recording.item_four",
-                        fallback: "收紧队列启动、恢复、重试、通知附件和来源文件清理边界，降低请求丢失与恢复状态被覆盖的风险。"
+                        fallback: "超大、超宽、无法读取或格式不兼容的图片会给出可理解的失败原因，而不是只显示处理中。"
                     ),
                     localized(
                         "settings.release_notes.reliable_recording.item_five",
-                        fallback: "分享半屏交接界面改为四个原生说明行，补齐主要操作触达区域、VoiceOver 语义和中英文内容。"
+                        fallback: "保留重试、通知、来源文件清理和重复保存保护，降低中断后状态不一致的风险。"
                     )
                 ]
             ),
@@ -41,20 +41,20 @@ struct V1ReleaseNotesSheet: View {
                 id: "configuration-center",
                 title: localized(
                     "settings.release_notes.configuration_center.title",
-                    fallback: "配置中心更清楚"
+                        fallback: "配置中心更稳定"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.configuration_center.item_one",
-                        fallback: "保存、切换记忆对象、重命名配置、备份与恢复之间的状态衔接更可靠。"
+                        fallback: "模块使用稳定身份保存，旧配置可以安全恢复，不再因内部名称变化丢失标题。"
                     ),
                     localized(
                         "settings.release_notes.configuration_center.item_two",
-                        fallback: "保存的时间显示现在会进入最终结果；选择日常记录时，日期会与预览一致地保留星期。"
+                        fallback: "组合变量可以在恢复与预览时完整解析，最终内容不再原样显示占位符。"
                     ),
                     localized(
                         "settings.release_notes.configuration_center.item_three",
-                        fallback: "配置预览继续使用真实 Memory Card，并与最终输出共享同一时间格式化路径。"
+                        fallback: "模块标题统一从本地化目录读取，中文目录不再分散在多套硬编码列表中。"
                     )
                 ]
             ),
@@ -62,28 +62,28 @@ struct V1ReleaseNotesSheet: View {
                 id: "advanced-modules",
                 title: localized(
                     "settings.release_notes.advanced_modules.title",
-                    fallback: "高级模块与小屏体验"
+                        fallback: "模块与小屏体验"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.advanced_modules.item_one",
-                        fallback: "高级模块继续集中地理显示和时间显示，没有扩展新的功能表面。"
+                        fallback: "记忆、时间、拍摄参数和位置模块统一使用稳定身份、展示名称和渲染令牌。"
                     ),
                     localized(
                         "settings.release_notes.advanced_modules.item_two",
-                        fallback: "弹窗使用紧凑的默认高度并支持继续展开，地理显示和时间显示整理为两个原生列表行。"
+                        fallback: "配置、预览与最终输出共用模块兼容规则，减少不同界面显示不一致。"
                     ),
                     localized(
                         "settings.release_notes.advanced_modules.item_three",
-                        fallback: "两个高级模块获得更充足的垂直留白，同时保留原生菜单、动态字体和辅助功能行为。"
+                        fallback: "长自定义内容仍然保存用户原文；显示适配与配置持久化保持边界分离。"
                     ),
                     localized(
                         "settings.release_notes.advanced_modules.item_four",
-                        fallback: "记忆表达在较小 iPhone 的正常文字尺寸下尽量保持标题与选择项同一行。"
+                        fallback: "较小 iPhone、窄屏和较大文字继续使用稳定的垂直布局与原生菜单回退。"
                     ),
                     localized(
                         "settings.release_notes.advanced_modules.item_five",
-                        fallback: "空间不足或使用辅助功能字号时自动回退为垂直布局，选择项按内容宽度呈现。"
+                        fallback: "保留动态字体、VoiceOver 和原生交互行为。"
                     )
                 ]
             ),
@@ -91,28 +91,28 @@ struct V1ReleaseNotesSheet: View {
                 id: "iphone-and-settings",
                 title: localized(
                     "settings.release_notes.iphone_and_settings.title",
-                    fallback: "iPhone 界面与设置中心"
+                        fallback: "iPhone 界面与反馈中心"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.iphone_and_settings.item_one",
-                        fallback: "优化首页、配置、保存、处理、输出、记忆对象和时间锚点的层级、行布局和主要操作。"
+                        fallback: "设置中的反馈入口可以导出不含照片、文字和位置的诊断文件。"
                     ),
                     localized(
                         "settings.release_notes.iphone_and_settings.item_two",
-                        fallback: "紧凑设备、窄屏、较大文字和辅助功能字号拥有更稳定的垂直布局与原生菜单回退。"
+                        fallback: "失败状态会显示阶段、具体原因、恢复建议和支持编号。"
                     ),
                     localized(
                         "settings.release_notes.iphone_and_settings.item_three",
-                        fallback: "设置页整理为开始使用、照片处理、数据安全、反馈、社区、界面语言和关于。"
+                        fallback: "诊断记录保存在本地 App Group，不会自动上传照片或用户内容。"
                     ),
                     localized(
                         "settings.release_notes.iphone_and_settings.item_four",
-                        fallback: "更新日志现在直接在应用内显示，不再跳转到 GitHub Releases。"
+                        fallback: "更新日志继续直接在应用内显示，不依赖外部网页。"
                     ),
                     localized(
                         "settings.release_notes.iphone_and_settings.item_five",
-                        fallback: "界面拆分继续保留 ConfigurationSession 作为编辑真相，没有重新设计冻结的配置中心架构。"
+                        fallback: "Configuration Center、Memory Engine、Renderer、Layout Engine 和 Export 的职责边界保持不变。"
                     )
                 ]
             ),
@@ -120,24 +120,24 @@ struct V1ReleaseNotesSheet: View {
                 id: "expression-and-language",
                 title: localized(
                     "settings.release_notes.expression_and_language.title",
-                    fallback: "记忆表达与文字整理"
+                        fallback: "表达、兼容与隐私"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.expression_and_language.item_one",
-                        fallback: "记忆对象、重要时刻和表达方式使用更自然、克制的叙事语言。"
+                        fallback: "模块标题面向用户显示自然的中文或英文，不再回退到内部英文名称。"
                     ),
                     localized(
                         "settings.release_notes.expression_and_language.item_two",
-                        fallback: "设置中的记忆表达说明、时间结果示例和界面语言支持中英文切换。"
+                        fallback: "组合变量继续只提供时间结果，最终句子仍由用户控制。"
                     ),
                     localized(
                         "settings.release_notes.expression_and_language.item_three",
-                        fallback: "智能内容继续提供可编辑的时间结果，最终文字仍由你决定。"
+                        fallback: "超出预览区域的文字不会直接导致配置保存失败。"
                     ),
                     localized(
                         "settings.release_notes.expression_and_language.item_four",
-                        fallback: "权限、隐私、错误、恢复、购买和删除等状态继续使用直接、准确的表达。"
+                        fallback: "权限、隐私、错误、恢复和诊断导出继续使用直接、准确的表达。"
                     )
                 ]
             ),
@@ -158,7 +158,7 @@ struct V1ReleaseNotesSheet: View {
                     ),
                     localized(
                         "settings.release_notes.unchanged.item_three",
-                        fallback: "Live Photo 的既有处理与输出策略没有降级或重构。"
+                        fallback: "原始照片不被修改，Live Photo 输出现在会经过动态资源和 PhotoKit 回读确认。"
                     ),
                     localized(
                         "settings.release_notes.unchanged.item_four",
@@ -166,7 +166,7 @@ struct V1ReleaseNotesSheet: View {
                     ),
                     localized(
                         "settings.release_notes.unchanged.item_five",
-                        fallback: "配置中心、记忆引擎、呈现、布局、渲染和输出的既有职责边界保持不变。"
+                        fallback: "照片仍然只在设备本地处理，不上传，也不替换 Apple Photos 中的原始照片。"
                     )
                 ]
             ),
@@ -179,7 +179,7 @@ struct V1ReleaseNotesSheet: View {
                 bullets: [
                     localized(
                         "settings.release_notes.verification.item_one",
-                        fallback: "设置、后台处理、响应式布局、叙事语言、配置生命周期、分享界面、时间显示和媒体输出均有对应契约验证。"
+                        fallback: "配置兼容、诊断脱敏、Live Photo 路由、保存回读和处理失败分类均有对应契约验证。"
                     ),
                     localized(
                         "settings.release_notes.verification.item_two",
@@ -187,11 +187,11 @@ struct V1ReleaseNotesSheet: View {
                     ),
                     localized(
                         "settings.release_notes.verification.item_three",
-                        fallback: "macOS 与通用 iOS Simulator Debug 无签名构建通过，主应用与两个扩展的版本字段统一为 2.0.1 (67)。"
+                        fallback: "macOS、iOS、Share Extension 与 Widget Extension 构建通过，版本字段统一为 2.0.2 (68)。"
                     ),
                     localized(
                         "settings.release_notes.verification.item_four",
-                        fallback: "2.0.1 将经过验证的 MemoMark+ 购买身份带到首页；首批记录者的纪念身份会继续保留，并在当前 Plus 权限有效时一并呈现。编辑记忆对象后，首页、配置摘要与对象概览也会统一显示最新对象名称。"
+                        fallback: "专项测试覆盖静态降级阻断、Live Photo 回读、配置失败分类、诊断隐私和模块兼容恢复。"
                     ),
                     localized(
                         "settings.release_notes.verification.item_five",
@@ -208,15 +208,15 @@ struct V1ReleaseNotesSheet: View {
                 bullets: [
                     localized(
                         "settings.release_notes.next_stage.item_one",
-                        fallback: "2.0 标志着 V3 的产品质量收口。V4 从表达方式研究开始，继续打磨主界面、既有功能、操作逻辑和设备适配，不做大规模核心流程或架构重构。"
+                        fallback: "2.0.2 是 V4 阶段面向生产可靠性和兼容性的维护版本，不改变冻结的核心架构。"
                     ),
                     localized(
                         "settings.release_notes.next_stage.item_two",
-                        fallback: "V4 完成且没有影响正常使用的重大问题后，时光记将停止常规版本更新，只保留必要维护。"
+                        fallback: "后续工作继续优先处理真实用户故障、Apple 平台兼容性和隐私可靠性问题。"
                     ),
                     localized(
                         "settings.release_notes.next_stage.item_three",
-                        fallback: "后续维护只面向必要兼容性、Apple 系统变化和影响正常使用的重大问题。"
+                        fallback: "V4 表达方式研究与后续维护仍需遵循既有产品和架构边界。"
                     )
                 ]
             )
@@ -232,7 +232,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.header",
-                                    fallback: "这一次，时光记完成 V3 收尾，让记录、设置与最终结果更加一致。"
+                                    fallback: "这一次，时光记把真实用户故障变成可定位、可恢复的记录。"
                                 )
                             )
                             .font(.subheadline.weight(.semibold))
@@ -250,7 +250,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.positioning",
-                                    fallback: "2.0.1 延续本地优先的记忆呈现方式，重点让既有流程更可靠，让预览、保存和最终结果保持一致，并补齐首页身份与记忆对象同步。"
+                                    fallback: "2.0.2 延续本地优先的记忆呈现方式，重点修复配置兼容、故障反馈和 Live Photo 保真问题。"
                                 )
                             )
                             .font(.caption)

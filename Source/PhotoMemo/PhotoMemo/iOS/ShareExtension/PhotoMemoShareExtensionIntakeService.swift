@@ -118,6 +118,13 @@ struct PhotoMemoShareExtensionError:
 
     var recoverySuggestion: String {
 
+        if let code =
+            resolvedFailureContext?
+            .errorSummary?.code,
+           code == 3010 || code == 3011 {
+            return "照片来源没有及时响应，接收已停止。请返回系统相册，确认原图已从 iCloud 下载完成后重新分享。"
+        }
+
         switch kind {
 
         case .noSupportedImages:
@@ -147,6 +154,13 @@ struct PhotoMemoShareExtensionError:
                 failureContext.errorSummary {
                 parts.append(
                     "\(errorSummary.domain) / \(errorSummary.code)"
+                )
+            }
+
+            if let supportID =
+                failureContext.supportID {
+                parts.append(
+                    "故障编号：\(supportID)"
                 )
             }
 
@@ -330,6 +344,8 @@ final class PhotoMemoShareExtensionIntakeService {
         }
 
         let requestID = UUID()
+        let configurationSnapshot =
+            snapshotService.loadSnapshot()
         diagnostics.recordRequestCreated(
             itemProviderCount:
                 itemProviders.count,
@@ -367,6 +383,12 @@ final class PhotoMemoShareExtensionIntakeService {
                         itemProviders.count,
                     supportedProviderCount:
                         providers.count,
+                    mediaOutputModeRawValue:
+                        configurationSnapshot
+                        .mediaOutputModeRawValue,
+                    livePhotoPolicyRawValue:
+                        configurationSnapshot
+                        .livePhotoPolicyRawValue,
                     seenSourceKeys:
                         &seenSourceKeys
                 )
@@ -488,8 +510,7 @@ final class PhotoMemoShareExtensionIntakeService {
                 importSummary:
                     importSummary,
                 configurationSnapshot:
-                    snapshotService
-                    .loadSnapshot(),
+                    configurationSnapshot,
                 diagnosticsSeed:
                     persistSeed
             )

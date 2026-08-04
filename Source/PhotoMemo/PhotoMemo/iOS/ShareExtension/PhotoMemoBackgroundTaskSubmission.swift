@@ -41,6 +41,7 @@ enum PhotoMemoBackgroundTaskSubmission {
 #endif
             return true
         } catch {
+            let errorSummary = error as NSError
 #if PHOTOMEMO_SHARE_EXTENSION
             let diagnosticStage:
                 PhotoMemoShareDiagnosticStage =
@@ -53,7 +54,7 @@ enum PhotoMemoBackgroundTaskSubmission {
             PhotoMemoShareDiagnostics.record(
                 stage: diagnosticStage,
                 message:
-                    "Background processing request failed: \(error.localizedDescription)"
+                    "Background processing request failed: domain=\(errorSummary.domain), code=\(errorSummary.code)"
             )
             return false
         }

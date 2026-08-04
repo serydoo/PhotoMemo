@@ -229,5 +229,75 @@ struct ExternalPhotoIntakeCenterTests {
         }
         #expect(center.drainPendingRequests().isEmpty)
     }
+
+    @MainActor
+    @Test("Unacknowledged requests keep their managed source files referenced")
+    func unacknowledgedRequestsKeepManagedSourcesReferenced() throws {
+        let suiteName =
+            "PhotoMemo.ExternalPhotoIntakeCenterTests.ManagedReferences.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        let intakeDirectoryURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+            try? FileManager.default.removeItem(
+                at: intakeDirectoryURL
+            )
+        }
+
+        let sourceURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo-source-\(UUID().uuidString).jpg"
+            )
+        try Data([1]).write(to: sourceURL)
+        defer {
+            try? FileManager.default.removeItem(
+                at: sourceURL
+            )
+        }
+
+        let store = ExternalPhotoIntakeStore(
+            defaults: defaults,
+            intakeDirectoryURL: intakeDirectoryURL
+        )
+        let center = ExternalPhotoIntakeCenter(
+            intakeStore: store,
+            settingsService:
+                SettingsService(defaults: defaults)
+        )
+        center.submit(
+            urls: [sourceURL],
+            source: .shareExtension
+        )
+
+        let managedURL = try #require(
+            center.drainPendingRequests()
+                .first?.intakePayloads
+                .first?.sourceURL
+        )
+        let references = try #require(
+            center.referencedManagedSourceURLs()
+        )
+
+        store.cleanupOrphanedManagedContent(
+            keepingReferencedURLs: references
+        )
+
+        #expect(references.contains(managedURL))
+        #expect(
+            FileManager.default.fileExists(
+                atPath: managedURL.path
+            )
+        )
+    }
 }
 #endif

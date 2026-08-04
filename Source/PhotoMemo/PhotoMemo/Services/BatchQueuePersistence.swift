@@ -198,6 +198,21 @@ struct BatchQueuePersistence {
                         .tasks[taskIndex]
                         .sourceURL
                 ) {
+                    let taskID = jobs[jobIndex]
+                        .tasks[taskIndex].id
+                    let failure =
+                        ProductionDiagnosticFailureClassifier
+                        .processing(
+                            phase: phase.rawValue,
+                            classification:
+                                BatchTaskFailure
+                                .Classification
+                                .interrupted.rawValue,
+                            operationID: taskID,
+                            error:
+                                CocoaError(.fileNoSuchFile),
+                            language: .interfaceStored
+                        )
                     jobs[jobIndex]
                         .tasks[taskIndex]
                         .phase = .failed
@@ -209,8 +224,13 @@ struct BatchQueuePersistence {
                         .failure =
                         BatchTaskFailure(
                             phase: phase,
-                            message: "原始临时文件已不可用",
-                            canRetry: false
+                            message: failure.userMessage,
+                            classification: .interrupted,
+                            canRetry: false,
+                            diagnosticCode:
+                                failure.code.rawValue,
+                            supportID:
+                                failure.supportID
                         )
                     jobs[jobIndex]
                         .tasks[taskIndex]
@@ -219,7 +239,7 @@ struct BatchQueuePersistence {
                             currentUnit: 0,
                             totalUnits: 1,
                             statusMessage:
-                                "原始临时文件已不可用"
+                                failure.userMessage
                         )
                     changed = true
                     continue

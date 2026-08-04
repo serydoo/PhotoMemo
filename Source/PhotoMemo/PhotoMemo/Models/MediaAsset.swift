@@ -275,11 +275,21 @@ struct MediaCost: Hashable, Codable {
             return 0
         }
 
-        return pixelSize.width * pixelSize.height
+        let result = pixelSize.width
+            .multipliedReportingOverflow(
+                by: pixelSize.height
+            )
+        return result.overflow
+            ? Int.max
+            : result.partialValue
     }
 
     var estimatedDecodedByteCount: Int {
-        pixelCount * 4
+        let result = pixelCount
+            .multipliedReportingOverflow(by: 4)
+        return result.overflow
+            ? Int.max
+            : result.partialValue
     }
 }
 

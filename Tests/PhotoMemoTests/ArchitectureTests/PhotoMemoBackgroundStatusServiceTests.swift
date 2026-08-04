@@ -318,6 +318,73 @@ struct PhotoMemoBackgroundStatusServiceTests {
         )
     }
 
+    @Test("Terminal intake failure exposes its concrete reason and failed step")
+    func terminalIntakeFailureExposesConcreteReason() throws {
+        let suiteName =
+            "PhotoMemo.BackgroundStatusServiceTests.failure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let supportID = "JOB-1234567890AB"
+        let failureMessage =
+            "接收的照片副本已不可用，请从 Apple Photos 重新分享。（故障编号：\(supportID)）"
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let failedJob = BatchJob(
+            title: "恢复失败",
+            state: .failed,
+            launchSource: .shareExtension,
+            configuration: configuration,
+            tasks: [
+                BatchTask(
+                    sourceURL: URL(fileURLWithPath: "/tmp/missing.heic"),
+                    phase: .failed,
+                    failure: BatchTaskFailure(
+                        phase: .queued,
+                        message: failureMessage,
+                        classification: .interrupted,
+                        canRetry: false,
+                        diagnosticCode:
+                            ProductionDiagnosticErrorCode
+                            .processingSourceMissing
+                            .rawValue,
+                        supportID: supportID
+                    )
+                )
+            ]
+        )
+        defaults.set(
+            try JSONEncoder().encode([failedJob]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            automaticallyStartsProcessing: false
+        )
+        let snapshot = try #require(
+            PhotoMemoBackgroundStatusService(
+                batchQueueStore: store
+            ).currentSnapshot
+        )
+
+        #expect(snapshot.statusMessage == failureMessage)
+        #expect(snapshot.currentFileName == "missing.heic")
+        #expect(snapshot.pipelineSteps.first?.state == .needsAttention)
+        #expect(snapshot.activePipelineStepIndex == 0)
+    }
+
     private func makeJob(
         id: UUID = UUID(),
         title: String,

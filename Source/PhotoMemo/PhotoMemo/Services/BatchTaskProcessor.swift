@@ -91,6 +91,27 @@ final class BatchTaskProcessor {
                 jobID: store.currentJob(at: reference)?.id
             )
 
+            if BatchTaskMemoryPolicy
+                .shouldRejectUnavailableLivePhotoMotion(
+                    for: task,
+                    usesLivePhotoProcessing:
+                        usesLivePhotoProcessing,
+                    outputMode:
+                        context.configuration
+                        .v1MediaOutputMode
+                ) {
+                throw PhotoMemoError(
+                    code: .importFailed,
+                    message:
+                        "The source did not provide the Live Photo motion resource.",
+                    diagnosticCode:
+                        PhotoProcessingInputPolicy
+                        .RejectionReason
+                        .livePhoto
+                        .rawValue
+                )
+            }
+
             if usesLivePhotoProcessing {
                 try await diagnosticsRecorder.measureStageDuration(
                     "livePhotoProcessing",
@@ -338,6 +359,20 @@ final class BatchTaskProcessor {
             }
 
             let failurePhase = store.currentTaskPhase(at: reference) ?? .queued
+            let jobID = store.currentJobID(at: reference)
+            let failureClassification =
+                BatchTaskFailurePolicy
+                .failureClassification(for: error)
+            let diagnosticFailure =
+                ProductionDiagnosticFailureClassifier
+                .processing(
+                    phase: failurePhase.rawValue,
+                    classification:
+                        failureClassification.rawValue,
+                    operationID: initialTask.id,
+                    error: error,
+                    language: .interfaceStored
+                )
             resourceLifecycle.cleanupTemporaryFile(at: temporaryFileURL)
             store.updateTask(at: reference) { task in
                 let canRetry = BatchTaskFailurePolicy.canRetryTaskAfterFailure(
@@ -348,9 +383,13 @@ final class BatchTaskProcessor {
                 task.phase = .failed
                 task.failure = BatchTaskFailure(
                     phase: failurePhase,
-                    message: (error as? LocalizedError)?.errorDescription ?? error.localizedDescription,
-                    classification: BatchTaskFailurePolicy.failureClassification(for: error),
-                    canRetry: canRetry
+                    message: diagnosticFailure.userMessage,
+                    classification: failureClassification,
+                    canRetry: canRetry,
+                    diagnosticCode:
+                        diagnosticFailure.code.rawValue,
+                    supportID:
+                        diagnosticFailure.supportID
                 )
                 task.progress = BatchTaskProgress(
                     currentUnit: 0,
@@ -365,16 +404,23 @@ final class BatchTaskProcessor {
                 }
             }
             store.setLastErrorMessage(
-                (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                diagnosticFailure.userMessage
             )
             diagnosticsRecorder.recordTaskDuration(
                 startedAt: startedAt,
                 route: route,
                 phase: .failed,
                 task: initialTask,
-                jobID: store.currentJobID(at: reference)
+                jobID: jobID
             )
-            if let jobID = store.currentJobID(at: reference) {
+            await diagnosticsRecorder.recordTerminalFailure(
+                failure: diagnosticFailure,
+                phase: failurePhase,
+                task: initialTask,
+                jobID: jobID,
+                startedAt: startedAt
+            )
+            if let jobID {
                 await store.deliverFinalNotificationIfNeeded(for: jobID)
             }
         }
@@ -434,17 +480,12 @@ final class BatchTaskProcessor {
         }
     }
 
-    private struct IntentExecutionError: LocalizedError {
-        let error: PhotoMemoError
-        var errorDescription: String? { error.message }
-    }
-
     private func requireValue<Value>(_ result: PhotoMemoResult<Value>) throws -> Value {
         switch result {
         case .success(let value):
             return value
         case .failure(let error):
-            throw IntentExecutionError(error: error)
+            throw error
         }
     }
 

@@ -31,7 +31,8 @@ struct ConfigurationCenterInsertableModulePolicy {
     ) -> [IOSInsertableModule] {
         IOSInsertableModule.allCases
             .filter {
-                !visibleModules(
+                $0.isProductionBacked
+                && !visibleModules(
                     for: region
                 )
                 .contains($0)

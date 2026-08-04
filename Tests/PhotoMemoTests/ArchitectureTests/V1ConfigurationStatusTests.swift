@@ -35,6 +35,11 @@ struct V1ConfigurationStatusTests {
         #expect(V1ConfigurationStatus.saved.tone == .accent)
         #expect(V1ConfigurationStatus.subjectSynced.tone == .accent)
         #expect(V1ConfigurationStatus.dirty.tone == .warning)
+        #expect(
+            V1ConfigurationStatus
+                .savedWithWarning(message: "同步失败")
+                .tone == .warning
+        )
         #expect(V1ConfigurationStatus.failure(message: "保存失败").tone == .warning)
         #expect(V1ConfigurationStatus.saving.tone == .neutral)
     }
@@ -50,6 +55,11 @@ struct V1ConfigurationStatusTests {
         #expect(!V1ConfigurationStatus.idle.hasUncommittedChanges)
         #expect(!V1ConfigurationStatus.saving.hasUncommittedChanges)
         #expect(!V1ConfigurationStatus.saved.hasUncommittedChanges)
+        #expect(
+            !V1ConfigurationStatus
+                .savedWithWarning(message: "同步失败")
+                .hasUncommittedChanges
+        )
     }
 }
 #endif

@@ -106,13 +106,11 @@ final class ShareExtensionIntakeCoordinator {
             return .received(result)
         } catch let shareError as PhotoMemoShareExtensionError {
             PhotoMemoShareIntakeLog.error(
-                "Share extension caught PhotoMemoShareExtensionError.\n\(shareError.diagnosticsDescription ?? "no diagnostics")"
+                "Share extension caught a categorized intake error."
             )
             PhotoMemoShareDiagnostics.record(
                 stage: .extensionError,
-                message:
-                    shareError.errorDescription
-                    ?? shareError.failureTitle
+                message: "categorizedIntakeError=true"
             )
             return .failed(
                 ShareExtensionIntakeFailure(
@@ -128,18 +126,11 @@ final class ShareExtensionIntakeCoordinator {
         } catch {
             let nsError = error as NSError
             PhotoMemoShareIntakeLog.error(
-                """
-                Share extension caught unexpected error.
-                localizedDescription: \(nsError.localizedDescription)
-                domain: \(nsError.domain)
-                code: \(nsError.code)
-                underlyingError: \(((nsError.userInfo[NSUnderlyingErrorKey] as? NSError)?.localizedDescription) ?? "nil")
-                """
+                "Share extension caught an unexpected intake error. domain=\(nsError.domain), code=\(nsError.code)"
             )
             PhotoMemoShareDiagnostics.record(
                 stage: .extensionErrorUnexpected,
-                message:
-                    "\(nsError.domain) / \(nsError.code): \(nsError.localizedDescription)"
+                message: "domain=\(nsError.domain), code=\(nsError.code)"
             )
             return .failed(
                 ShareExtensionIntakeFailure(

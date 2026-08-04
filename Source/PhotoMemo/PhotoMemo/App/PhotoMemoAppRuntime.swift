@@ -77,7 +77,10 @@ final class PhotoMemoAppRuntime:
         self.backgroundExecutionService =
             PhotoMemoiOSBackgroundExecutionService(
                 batchQueueStore:
-                    self.batchQueueStore
+                    self.batchQueueStore,
+                productionDiagnostics:
+                    environment.repositories
+                    .productionDiagnostics
             )
 #if canImport(ActivityKit)
         self.liveActivityBridgeService =
@@ -194,7 +197,7 @@ final class PhotoMemoAppRuntime:
             PhotoMemoShareDiagnostics.record(
                 stage: .appDrain,
                 message:
-                    "requestPersistenceReadFailed storageKey=\(failure.storageKey) bytes=\(failure.payloadByteCount) reason=\(failure.underlyingDescription)"
+                    "requestPersistenceReadFailed storageKey=\(failure.storageKey) bytes=\(failure.payloadByteCount)"
             )
         }
 
@@ -328,7 +331,7 @@ final class PhotoMemoAppRuntime:
             stage:
                 .appRequestAcknowledgementFailed,
             message:
-                "storageKey=\(failure.storageKey) reason=\(failure.underlyingDescription)",
+                "storageKey=\(failure.storageKey)",
             requestID:
                 requestID
         )
@@ -356,11 +359,18 @@ final class PhotoMemoAppRuntime:
             return
         }
 
+        guard let intakeReferencedURLs =
+            externalIntakeCenter
+            .referencedManagedSourceURLs() else {
+            return
+        }
+
         externalIntakeStore
             .cleanupOrphanedManagedContent(
                 keepingReferencedURLs:
                     batchQueueStore
                     .referencedManagedSourceURLs
+                    .union(intakeReferencedURLs)
             )
     }
 
@@ -406,7 +416,7 @@ final class PhotoMemoAppRuntime:
             PhotoMemoShareDiagnostics.record(
                 stage: .appEnqueueTaskRoute,
                 message:
-                    "fileName=\(task.fileName), contentType=\(contentType), hasSourceIdentifier=\(hasSourceIdentifier)",
+                    "taskID=\(task.id.uuidString), contentType=\(contentType), hasSourceIdentifier=\(hasSourceIdentifier)",
                 requestID: requestID,
                 jobID: job.id
             )

@@ -88,32 +88,32 @@ struct V1ReleaseNotesContractTests {
 
         #expect(
             simplifiedChinese.contains(
-                "2.0.1 延续本地优先的记忆呈现方式"
+                "2.0.2 延续本地优先的记忆呈现方式"
             )
         )
-        #expect(simplifiedChinese.contains("2.0 标志着 V3 的产品质量收口"))
-        #expect(simplifiedChinese.contains("日期会与预览一致地保留星期"))
+        #expect(simplifiedChinese.contains("配置兼容、故障反馈和 Live Photo 保真问题"))
+        #expect(simplifiedChinese.contains("动态资源不可用、配对失败或保存后未保真"))
         #expect(simplifiedChinese.contains("完整 macOS 测试回归通过 1,221 项"))
         #expect(
             simplifiedChinese.contains(
-                "统一显示最新对象名称"
+                "组合变量可以在恢复与预览时完整解析"
             )
         )
-        #expect(simplifiedChinese.contains("首批记录者的纪念身份会继续保留"))
+        #expect(simplifiedChinese.contains("模块使用稳定身份保存"))
         #expect(
             english.contains(
-                "Version 2.0.1 continues MemoMark's local-first memory presentation"
+                "Version 2.0.2 continues MemoMark's local-first memory presentation"
             )
         )
-        #expect(english.contains("Version 2.0 closes V3 product-quality delivery"))
-        #expect(english.contains("Daily Record dates keep their weekday"))
+        #expect(english.contains("configuration compatibility, actionable diagnostics, and Live Photo fidelity"))
+        #expect(english.contains("Live Photos no longer silently fall back to still images"))
         #expect(english.contains("complete macOS test regression passed 1,221 tests"))
         #expect(
             english.contains(
-                "latest object name consistently"
+                "Composed variables resolve completely during restore and Preview"
             )
         )
-        #expect(english.contains("First Recorder identity remains preserved"))
+        #expect(english.contains("Modules now persist with stable identities"))
     }
 
     @Test("release build settings reopen the App Store version train")
@@ -126,12 +126,12 @@ struct V1ReleaseNotesContractTests {
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 66;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.0.1;"
+                separatedBy: "MARKETING_VERSION = 2.0.2;"
             ).count == 9
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 67;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 68;"
             ).count == 11
         )
     }

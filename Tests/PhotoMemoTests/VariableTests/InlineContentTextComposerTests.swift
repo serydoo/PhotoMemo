@@ -51,6 +51,17 @@ struct InlineContentTextComposerTests {
         #expect(text == "2026.06.27·11:24:25")
     }
 
+    @Test("Preserves spaces intentionally stored around literal separators")
+    func preservesSpacesAroundLiteralSeparators() {
+        let text = InlineContentTextComposer.compose([
+            .init(kind: .token, value: "iPhone"),
+            .init(kind: .text, value: " · "),
+            .init(kind: .token, value: "20mm f/1.9")
+        ])
+
+        #expect(text == "iPhone · 20mm f/1.9")
+    }
+
     @Test("Composes formal configuration text modules and continuation naturally")
     func composesFormalConfigurationPartsNaturally() {
         let text =

@@ -553,6 +553,15 @@ private extension PhotoMemoBackgroundStatusService {
             ?? job.tasks.first {
                 !$0.phase.isTerminal
             }
+            ?? job.tasks
+                .filter { $0.failure != nil }
+                .max {
+                    ($0.failure?.timestamp ?? .distantPast)
+                    < ($1.failure?.timestamp ?? .distantPast)
+                }
+            ?? job.tasks.first {
+                $0.phase == .cancelled
+            }
 
         let presentationState =
             resolvedPresentationState(
@@ -820,6 +829,12 @@ private extension PhotoMemoBackgroundStatusService {
             return .needsAttention
         }
 
+        if job.tasks.contains(where: {
+            $0.phase == .cancelled
+        }) {
+            return .needsAttention
+        }
+
         return .completed
     }
 
@@ -827,6 +842,19 @@ private extension PhotoMemoBackgroundStatusService {
         for job: BatchJob,
         activeTask: BatchTask?
     ) -> String {
+
+        if let failureMessage = activeTask?
+            .failure?.message
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ),
+           !failureMessage.isEmpty {
+            return failureMessage
+        }
+
+        if activeTask?.phase == .cancelled {
+            return "这次处理已停止。需要时请从 Apple Photos 重新分享照片。"
+        }
 
         if let activeTask,
            !activeTask.progress.statusMessage
@@ -925,6 +953,12 @@ private extension PhotoMemoBackgroundStatusService {
         }
 
         if job.failedTaskCount > 0 {
+            return .needsAttention
+        }
+
+        if job.tasks.contains(where: {
+            $0.phase == .cancelled
+        }) {
             return .needsAttention
         }
 
@@ -1051,6 +1085,7 @@ private extension PhotoMemoBackgroundStatusService {
     ) -> PhotoMemoBackgroundPipelineStepState {
 
         if activeTask?.phase == .failed
+            || activeTask?.phase == .cancelled
             || job.failedTaskCount > 0,
            index == activeIndex {
             return .needsAttention

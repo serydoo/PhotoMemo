@@ -16,6 +16,12 @@ struct LivePhotoAssetWriterContractTests {
                 StubLivePhotoPairingIdentityVerifier(
                     outcome: .success
                 ),
+            assetReadbackVerifier:
+                SequenceLivePhotoAssetReadbackVerifier(
+                    outcomes: [
+                        .success(.validLivePhoto)
+                    ]
+                ),
             runtimeGate:
                 .internalTesting(
                     allowedRoutes: [.livePhoto],
@@ -419,6 +425,184 @@ struct LivePhotoAssetWriterContractTests {
                 .isEmpty
         )
     }
+
+    @Test("Rejects a saved asset that Photos exposes as static and retains its idempotency receipt")
+    func rejectsStaticPhotoKitReadbackAndRetainsReceipt() async throws {
+        let suiteName =
+            "PhotoMemo.LivePhotoAssetWriterContractTests.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(suiteName: suiteName)
+            )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+        let receiptStore =
+            PhotoLibrarySaveReceiptStore(
+                defaults: defaults
+            )
+        receiptStore.record(
+            assetIdentifier: "live-photo-1",
+            for: "task-static-readback"
+        )
+        let readbackVerifier =
+            SequenceLivePhotoAssetReadbackVerifier(
+                outcomes: [
+                    .success(.staticAsset),
+                    .success(.staticAsset)
+                ]
+            )
+        let writer =
+            PhotoKitLivePhotoAssetWriter(
+                savePerformer:
+                    StubLivePhotoAssetSavePerformer(),
+                pairingIdentityVerifier:
+                    StubLivePhotoPairingIdentityVerifier(
+                        outcome: .success
+                    ),
+                assetReadbackVerifier:
+                    readbackVerifier,
+                receiptStore:
+                    receiptStore,
+                readbackAttemptCount: 2,
+                readbackRetryDelayNanoseconds: 0,
+                runtimeGate:
+                    .internalTesting(
+                        allowedRoutes: [.livePhoto],
+                        permitsPhotoLibraryWrites: true
+                    )
+            )
+        let pair = try makeTemporaryPair()
+        defer {
+            try? FileManager.default.removeItem(
+                at: pair.folderURL
+            )
+        }
+
+        do {
+            _ = try await writer.saveAsset(
+                makeSaveRequest(
+                    pair: pair,
+                    idempotencyKey:
+                        "task-static-readback"
+                )
+            )
+            Issue.record(
+                "Expected static PhotoKit readback to fail"
+            )
+        } catch let error as LivePhotoAssetWritingError {
+            #expect(
+                error == .savedAssetNotLivePhoto
+            )
+        }
+
+        #expect(readbackVerifier.callCount == 2)
+        #expect(
+            receiptStore.assetIdentifier(
+                for: "task-static-readback"
+            ) == "live-photo-1"
+        )
+    }
+
+    @Test("Retries PhotoKit readback while the new Live Photo is being indexed")
+    func retriesPhotoKitReadbackUntilLivePhotoAppears() async throws {
+        let readbackVerifier =
+            SequenceLivePhotoAssetReadbackVerifier(
+                outcomes: [
+                    .failure(.assetNotFound),
+                    .success(.validLivePhoto)
+                ]
+            )
+        let writer =
+            PhotoKitLivePhotoAssetWriter(
+                savePerformer:
+                    StubLivePhotoAssetSavePerformer(),
+                pairingIdentityVerifier:
+                    StubLivePhotoPairingIdentityVerifier(
+                        outcome: .success
+                    ),
+                assetReadbackVerifier:
+                    readbackVerifier,
+                readbackAttemptCount: 2,
+                readbackRetryDelayNanoseconds: 0,
+                runtimeGate:
+                    .internalTesting(
+                        allowedRoutes: [.livePhoto],
+                        permitsPhotoLibraryWrites: true
+                    )
+            )
+        let pair = try makeTemporaryPair()
+        defer {
+            try? FileManager.default.removeItem(
+                at: pair.folderURL
+            )
+        }
+
+        let result =
+            try await writer.saveAsset(
+                makeSaveRequest(
+                    pair: pair,
+                    idempotencyKey:
+                        "task-indexing-delay"
+                )
+            )
+
+        #expect(
+            result.assetLocalIdentifier
+            == "live-photo-1"
+        )
+        #expect(readbackVerifier.callCount == 2)
+    }
+}
+
+private extension LivePhotoAssetWriterContractTests {
+
+    struct TemporaryPair {
+        let folderURL: URL
+        let stillPhotoURL: URL
+        let pairedVideoURL: URL
+    }
+
+    func makeTemporaryPair() throws -> TemporaryPair {
+        let folderURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "LivePhotoAssetWriterReadbackTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        try FileManager.default.createDirectory(
+            at: folderURL,
+            withIntermediateDirectories: true
+        )
+        let stillPhotoURL =
+            folderURL.appendingPathComponent("LIVE.HEIC")
+        let pairedVideoURL =
+            folderURL.appendingPathComponent("LIVE.MOV")
+        try Data("still".utf8).write(to: stillPhotoURL)
+        try Data("video".utf8).write(to: pairedVideoURL)
+        return TemporaryPair(
+            folderURL: folderURL,
+            stillPhotoURL: stillPhotoURL,
+            pairedVideoURL: pairedVideoURL
+        )
+    }
+
+    func makeSaveRequest(
+        pair: TemporaryPair,
+        idempotencyKey: String
+    ) -> LivePhotoSaveRequest {
+        LivePhotoSaveRequest(
+            stillPhotoFileURL: pair.stillPhotoURL,
+            pairedVideoFileURL: pair.pairedVideoURL,
+            captureDate: nil,
+            preferredAlbumIdentifier: nil,
+            stillPhotoOriginalFilename: "LIVE.HEIC",
+            pairedVideoOriginalFilename: "LIVE.MOV",
+            idempotencyKey: idempotencyKey
+        )
+    }
 }
 
 @MainActor
@@ -471,4 +655,80 @@ private struct StubLivePhotoPairingIdentityVerifier:
             throw error
         }
     }
+}
+
+@MainActor
+private final class SequenceLivePhotoAssetReadbackVerifier:
+    LivePhotoAssetReadbackVerifying {
+
+    enum Outcome {
+        case success(LivePhotoAssetReadbackReport)
+        case failure(LivePhotoAssetReadbackVerificationError)
+    }
+
+    private var outcomes: [Outcome]
+    private(set) var callCount = 0
+
+    init(outcomes: [Outcome]) {
+        self.outcomes = outcomes
+    }
+
+    func verifyAsset(
+        localIdentifier: String
+    ) throws -> LivePhotoAssetReadbackReport {
+        callCount += 1
+        guard !outcomes.isEmpty else {
+            throw LivePhotoAssetReadbackVerificationError
+                .assetNotFound
+        }
+        switch outcomes.removeFirst() {
+        case .success(let report):
+            return report
+        case .failure(let error):
+            throw error
+        }
+    }
+}
+
+private extension LivePhotoAssetReadbackReport {
+
+    static let staticAsset =
+        LivePhotoAssetReadbackReport(
+            localIdentifier: "live-photo-1",
+            pixelWidth: 4032,
+            pixelHeight: 3024,
+            duration: 0,
+            isImageAsset: true,
+            isLivePhoto: false,
+            resources: [
+                LivePhotoAssetReadbackResource(
+                    kind: .photo,
+                    originalFilename: "LIVE.HEIC",
+                    uniformTypeIdentifier: "public.heic"
+                )
+            ]
+        )
+
+    static let validLivePhoto =
+        LivePhotoAssetReadbackReport(
+            localIdentifier: "live-photo-1",
+            pixelWidth: 4032,
+            pixelHeight: 3024,
+            duration: 2.7,
+            isImageAsset: true,
+            isLivePhoto: true,
+            resources: [
+                LivePhotoAssetReadbackResource(
+                    kind: .photo,
+                    originalFilename: "LIVE.HEIC",
+                    uniformTypeIdentifier: "public.heic"
+                ),
+                LivePhotoAssetReadbackResource(
+                    kind: .pairedVideo,
+                    originalFilename: "LIVE.MOV",
+                    uniformTypeIdentifier:
+                        "com.apple.quicktime-movie"
+                )
+            ]
+        )
 }

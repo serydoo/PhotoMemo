@@ -42,6 +42,10 @@ struct ConfigurationCenterPreviewCompositionHelperTests {
             == IOSInsertableModule.cameraModel.title
         )
         #expect(
+            update.store.modules(for: .slotA).first?.moduleID
+            == .cameraModel
+        )
+        #expect(
             update.store.modules(for: .slotA).first?.value
             == "iPhone 17 Pro Max"
         )

@@ -56,7 +56,9 @@ struct V1ConfigurationSelectionPersistenceCoordinator {
             )
         } catch {
             return .failed(
-                message: "当前配置切换保存失败，请重试。"
+                message:
+                    (error as? PhotoMemoError)?.message
+                    ?? "当前配置切换保存失败，请重试。"
             )
         }
     }

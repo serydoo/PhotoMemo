@@ -84,6 +84,7 @@ struct V1DraftBridge {
     ) -> V1ContentItem {
         V1ContentItem(
             id: item.id,
+            sourceItemID: item.sourceItemID,
             kind:
                 editorKind(
                     from: item.kind
@@ -100,6 +101,7 @@ struct V1DraftBridge {
     ) -> V1PreviewDraftItem {
         V1PreviewDraftItem(
             id: item.id,
+            sourceItemID: item.sourceItemID,
             kind:
                 previewKind(
                     from: item.kind
@@ -116,6 +118,7 @@ struct V1DraftBridge {
     ) -> V1DraftMutationItem {
         V1DraftMutationItem(
             id: item.id,
+            sourceItemID: item.sourceItemID,
             kind:
                 mutationKind(
                     from: item.kind
@@ -132,6 +135,7 @@ struct V1DraftBridge {
     ) -> V1ContentItem {
         V1ContentItem(
             id: item.id,
+            sourceItemID: item.sourceItemID,
             kind:
                 editorKind(
                     from: item.kind

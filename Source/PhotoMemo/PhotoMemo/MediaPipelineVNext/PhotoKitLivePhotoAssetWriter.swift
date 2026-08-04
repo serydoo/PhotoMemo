@@ -11,6 +11,11 @@ final class PhotoKitLivePhotoAssetWriter:
         any LivePhotoAssetSavePerforming
     private let pairingIdentityVerifier:
         any LivePhotoPairingIdentityVerifying
+    private let assetReadbackVerifier:
+        any LivePhotoAssetReadbackVerifying
+    private let readbackAttemptCount: Int
+    private let readbackRetryDelayNanoseconds:
+        UInt64
     private let fileManager: FileManager
     private let runtimeGate:
         MediaPipelineRuntimeGate
@@ -20,16 +25,33 @@ final class PhotoKitLivePhotoAssetWriter:
             (any LivePhotoAssetSavePerforming)? = nil,
         pairingIdentityVerifier:
             (any LivePhotoPairingIdentityVerifying)? = nil,
+        assetReadbackVerifier:
+            (any LivePhotoAssetReadbackVerifying)? = nil,
+        receiptStore:
+            PhotoLibrarySaveReceiptStore =
+                PhotoLibrarySaveReceiptStore(),
+        readbackAttemptCount: Int = 8,
+        readbackRetryDelayNanoseconds:
+            UInt64 = 250_000_000,
         fileManager: FileManager = .default,
         runtimeGate:
             MediaPipelineRuntimeGate = .defaultOff
     ) {
         self.savePerformer =
             savePerformer
-            ?? PhotoKitLivePhotoAssetSavePerformer()
+            ?? PhotoKitLivePhotoAssetSavePerformer(
+                receiptStore: receiptStore
+            )
         self.pairingIdentityVerifier =
             pairingIdentityVerifier
             ?? LivePhotoPairingIdentityVerifier()
+        self.assetReadbackVerifier =
+            assetReadbackVerifier
+            ?? PhotoKitLivePhotoAssetReadbackVerifier()
+        self.readbackAttemptCount =
+            max(readbackAttemptCount, 1)
+        self.readbackRetryDelayNanoseconds =
+            readbackRetryDelayNanoseconds
         self.fileManager = fileManager
         self.runtimeGate =
             runtimeGate
@@ -100,7 +122,9 @@ final class PhotoKitLivePhotoAssetWriter:
                 .photoLibraryWritesDisabledByRuntimeGate
         }
 
-        return try await savePerformer
+        try Task.checkCancellation()
+
+        let saveResult = try await savePerformer
             .save(
                 operation:
                     LivePhotoAssetWriteOperation(
@@ -130,10 +154,79 @@ final class PhotoKitLivePhotoAssetWriter:
                             request.idempotencyKey
                     )
             )
+
+        try await verifySavedLivePhoto(
+            saveResult
+        )
+        return saveResult
     }
 }
 
 private extension PhotoKitLivePhotoAssetWriter {
+
+    func verifySavedLivePhoto(
+        _ saveResult: PhotoLibrarySaveResult
+    ) async throws {
+
+        var didReadInvalidAsset = false
+
+        for attempt in 0..<readbackAttemptCount {
+            try Task.checkCancellation()
+            do {
+                let report =
+                    try assetReadbackVerifier
+                    .verifyAsset(
+                        localIdentifier:
+                            saveResult
+                            .assetLocalIdentifier
+                    )
+                if report
+                    .satisfiesLivePhotoPairingContract {
+                    PhotoMemoShareDiagnostics.record(
+                        stage: .livePhotoAssetReadback,
+                        message:
+                            "result=verified, attempt=\(attempt + 1), livePhoto=true, stillResource=true, pairedVideoResource=true, positiveDuration=true, positivePixelSize=true"
+                    )
+                    return
+                }
+                didReadInvalidAsset = true
+                PhotoMemoShareDiagnostics.record(
+                    stage: .livePhotoAssetReadback,
+                    message:
+                        "result=invalid, attempt=\(attempt + 1), livePhoto=\(report.isLivePhoto), stillResource=\(report.hasStillPhotoResource), pairedVideoResource=\(report.hasPairedVideoResource), positiveDuration=\(report.duration > 0), positivePixelSize=\(report.pixelWidth > 0 && report.pixelHeight > 0)"
+                )
+            } catch {
+                if Task.isCancelled {
+                    throw CancellationError()
+                }
+                let systemError = error as NSError
+                PhotoMemoShareDiagnostics.record(
+                    stage: .livePhotoAssetReadback,
+                    message:
+                        "result=unavailable, attempt=\(attempt + 1), errorDomain=\(systemError.domain), errorCode=\(systemError.code)"
+                )
+            }
+
+            if attempt < readbackAttemptCount - 1,
+               readbackRetryDelayNanoseconds > 0 {
+                try await Task.sleep(
+                    nanoseconds:
+                        readbackRetryDelayNanoseconds
+                )
+            }
+        }
+
+        PhotoMemoShareDiagnostics.record(
+            stage: .livePhotoAssetReadback,
+            message:
+                "result=failed, attempts=\(readbackAttemptCount), reason=\(didReadInvalidAsset ? "invalidLivePhotoContract" : "assetUnavailable")"
+        )
+        throw didReadInvalidAsset
+            ? LivePhotoAssetWritingError
+                .savedAssetNotLivePhoto
+            : LivePhotoAssetWritingError
+                .savedAssetReadbackFailed
+    }
 
     func resolvedOriginalFilename(
         preferred: String?,
@@ -180,8 +273,17 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
     private let defaultAlbumTitle =
         PhotoMemoAlbumSelection
         .defaultAlbumTitle
-    private let receiptStore =
-        PhotoLibrarySaveReceiptStore()
+    private let receiptStore:
+        PhotoLibrarySaveReceiptStore
+    private let pendingReceiptGraceInterval:
+        TimeInterval = 30
+
+    init(
+        receiptStore:
+            PhotoLibrarySaveReceiptStore
+    ) {
+        self.receiptStore = receiptStore
+    }
 
     func save(
         operation: LivePhotoAssetWriteOperation
@@ -203,7 +305,9 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 )
 
             if let idempotencyKey = operation.idempotencyKey,
-               let existingAsset = existingAsset(for: idempotencyKey) {
+               let existingAsset = try existingAsset(
+                   for: idempotencyKey
+               ) {
                 return PhotoLibrarySaveResult(
                     albumTitle: album?.localizedTitle ?? "",
                     assetLocalIdentifier: existingAsset.localIdentifier
@@ -285,7 +389,7 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
 
     func existingAsset(
         for idempotencyKey: String
-    ) -> PHAsset? {
+    ) throws -> PHAsset? {
         guard let assetIdentifier =
                 receiptStore.assetIdentifier(
                     for: idempotencyKey
@@ -301,6 +405,17 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
                 options: nil
             )
             .firstObject
+
+        if asset == nil,
+           let recordedAt =
+            receiptStore.recordedAt(
+                for: idempotencyKey
+            ),
+           Date().timeIntervalSince(recordedAt)
+            < pendingReceiptGraceInterval {
+            throw LivePhotoAssetWritingError
+                .savedAssetReadbackFailed
+        }
 
         if asset == nil {
             receiptStore.removeReceipt(

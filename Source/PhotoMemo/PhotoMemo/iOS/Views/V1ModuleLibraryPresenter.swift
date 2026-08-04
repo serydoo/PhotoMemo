@@ -12,8 +12,7 @@ enum V1ModuleLibraryPresenter {
             .captureTime,
             .cameraModel,
             .location,
-            .imageSize,
-            .fileFormat
+            .imageSize
         ]
 
     static func modules(

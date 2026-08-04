@@ -9,6 +9,13 @@ private enum V1SettingsSectionEmphasis {
 
 struct V1SettingsPageSurface: View {
 
+    private struct DiagnosticExportItem:
+        Identifiable {
+
+        let id = UUID()
+        let fileURL: URL
+    }
+
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
@@ -85,12 +92,29 @@ struct V1SettingsPageSurface: View {
     @State
     private var showsReleaseNotes = false
 
+    @State
+    private var diagnosticExportItem:
+        DiagnosticExportItem?
+
+    @State
+    private var diagnosticExportErrorMessage: String?
+
+    @State
+    private var isPreparingDiagnosticExport = false
+
     let commerceSnapshot:
         MemoMarkCommerceSnapshot
     let onOpenMemoMarkPlus: () -> Void
 
     let onShowWelcome: () -> Void
     let onDismissKeyboard: () -> Void
+    var onExportDiagnostics:
+        () async throws -> URL = {
+            throw PhotoMemoError(
+                code: .configurationUnavailable,
+                message: "Diagnostics unavailable."
+            )
+        }
 
     var body: some View {
         ScrollView {
@@ -174,6 +198,39 @@ struct V1SettingsPageSurface: View {
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $diagnosticExportItem) { item in
+            V1DiagnosticsShareSheet(
+                fileURL: item.fileURL
+            )
+        }
+        .alert(
+            localized(
+                "settings.feedback.diagnostics.error_title",
+                fallback: "无法导出诊断信息"
+            ),
+            isPresented: Binding(
+                get: {
+                    diagnosticExportErrorMessage != nil
+                },
+                set: { isPresented in
+                    if !isPresented {
+                        diagnosticExportErrorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button(
+                localized(
+                    "common.ok",
+                    fallback: "好"
+                ),
+                role: .cancel
+            ) {}
+        } message: {
+            Text(
+                diagnosticExportErrorMessage ?? ""
+            )
         }
     }
 
@@ -893,6 +950,29 @@ struct V1SettingsPageSurface: View {
             emphasis: .secondary
         ) {
             VStack(spacing: 0) {
+                Button {
+                    prepareDiagnosticExport()
+                } label: {
+                    settingsActionRow(
+                        title: localized(
+                            "settings.feedback.diagnostics.title",
+                            fallback: "导出诊断信息"
+                        ),
+                        detail: localized(
+                            "settings.feedback.diagnostics.detail",
+                            fallback: "生成不含照片、文字内容和位置的故障记录，用于定位保存与处理问题。"
+                        ),
+                        systemImage:
+                            isPreparingDiagnosticExport
+                            ? "clock"
+                            : "doc.badge.gearshape",
+                        tint: .orange,
+                        showsDivider: true
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isPreparingDiagnosticExport)
+
                 settingsLinkRow(
                     title: localized(
                         "settings.feedback.email.title",
@@ -951,6 +1031,40 @@ struct V1SettingsPageSurface: View {
                 }
             }
             .background(settingsInsetBackground)
+        }
+    }
+
+    private func prepareDiagnosticExport() {
+        guard !isPreparingDiagnosticExport else {
+            return
+        }
+        isPreparingDiagnosticExport = true
+        Task { @MainActor in
+            defer {
+                isPreparingDiagnosticExport = false
+            }
+            do {
+                diagnosticExportItem =
+                    DiagnosticExportItem(
+                        fileURL:
+                            try await onExportDiagnostics()
+                    )
+            } catch {
+                if let error = error as? PhotoMemoError {
+                    diagnosticExportErrorMessage = error.message
+                } else {
+                    let supportID =
+                        ProductionDiagnosticSupportID.make(
+                            prefix: "DIA",
+                            operationID: UUID()
+                        )
+                    diagnosticExportErrorMessage = formatted(
+                        "settings.feedback.diagnostics.error_detail",
+                        fallback: "诊断文件暂时无法准备，请重新打开 MemoMark 后重试。（故障编号：%@）",
+                        supportID
+                    )
+                }
+            }
         }
     }
 

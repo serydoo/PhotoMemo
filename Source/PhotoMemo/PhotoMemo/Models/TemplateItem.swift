@@ -12,18 +12,68 @@ struct TemplateItem: Identifiable, Codable, Hashable {
 
     var isEnabled: Bool
 
+    var moduleID: MemoryCardModuleID?
+
     init(
         id: UUID = UUID(),
         type: TemplateItemType,
         name: String,
         value: String,
-        isEnabled: Bool = true
+        isEnabled: Bool = true,
+        moduleID: MemoryCardModuleID? = nil
     ) {
         self.id = id
         self.type = type
         self.name = name
         self.value = value
         self.isEnabled = isEnabled
+        self.moduleID = moduleID
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case name
+        case value
+        case isEnabled
+        case moduleID
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(
+            keyedBy: CodingKeys.self
+        )
+        id = try container.decode(UUID.self, forKey: .id)
+        type = try container.decode(
+            TemplateItemType.self,
+            forKey: .type
+        )
+        name = try container.decode(String.self, forKey: .name)
+        value = try container.decode(String.self, forKey: .value)
+        isEnabled = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .isEnabled
+        ) ?? true
+        let rawModuleID = try container.decodeIfPresent(
+            String.self,
+            forKey: .moduleID
+        )
+        moduleID = rawModuleID.flatMap(MemoryCardModuleID.init)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(
+            keyedBy: CodingKeys.self
+        )
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encode(name, forKey: .name)
+        try container.encode(value, forKey: .value)
+        try container.encode(isEnabled, forKey: .isEnabled)
+        try container.encodeIfPresent(
+            moduleID?.rawValue,
+            forKey: .moduleID
+        )
     }
 }
 

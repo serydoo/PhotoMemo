@@ -237,6 +237,42 @@ final class ExternalPhotoIntakeCenter:
         revision = UUID()
         return result
     }
+
+    func referencedManagedSourceURLs()
+    -> Set<URL>? {
+
+        let persistedRequests:
+            [ExternalPhotoIntakeRequest]
+        switch intakeStore
+            .loadRequestsForProcessingResult() {
+        case .success(let requests):
+            intakePersistenceError = nil
+            persistedRequests = requests
+        case .noValue:
+            intakePersistenceError = nil
+            persistedRequests = []
+        case .decodingFailed(let failure):
+            intakePersistenceError = failure
+            return nil
+        }
+
+        let pendingIDs = Set(
+            pendingRequests.map(\.id)
+        )
+        let requests =
+            pendingRequests
+            + persistedRequests.filter {
+                !pendingIDs.contains($0.id)
+            }
+
+        return Set(
+            requests.flatMap(\.intakePayloads)
+                .map {
+                    $0.sourceURL
+                        .standardizedFileURL
+                }
+        )
+    }
 }
 
 private extension ExternalPhotoIntakeCenter {

@@ -76,6 +76,20 @@ struct BatchQueueRecoveryTests {
         #expect(changed)
         #expect(jobs[0].tasks[0].phase == BatchTaskPhase.failed)
         #expect(jobs[0].tasks[0].failure?.canRetry == false)
+        #expect(
+            jobs[0].tasks[0].failure?.diagnosticCode
+            == ProductionDiagnosticErrorCode
+                .processingSourceMissing
+                .rawValue
+        )
+        #expect(
+            jobs[0].tasks[0].failure?.supportID?
+                .hasPrefix("JOB-") == true
+        )
+        #expect(
+            jobs[0].tasks[0].failure?.message
+                .contains("接收的照片副本已不可用") == true
+        )
         #expect(jobs[0].state == BatchJobState.failed)
     }
 }

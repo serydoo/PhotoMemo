@@ -1,5 +1,53 @@
 # Changelog
 
+## 2.0.2 (68) Production Reliability And Compatibility - 2026-08-04
+
+### Fixed
+- Repaired Live Photo preservation across Apple Photos Share intake, queue
+  routing, identity recovery, processing, and PhotoKit save-back. An
+  `originalFormat` Live Photo no longer silently succeeds as a still image.
+- Restored composed-variable compatibility during configuration restore and
+  Preview so legacy combined expressions do not fall back to internal English
+  names or render raw placeholders.
+- Replaced duplicated module identity and title catalogs with stable module
+  identities and localized display names shared by configuration, Preview, and
+  final output.
+
+### Added
+- Added concrete configuration-save and photo-processing failure reasons,
+  recovery guidance, and short support IDs.
+- Added bounded, local-first, sanitized diagnostics export for Settings ->
+  Feedback. Reports exclude photos, authored text, locations, filenames,
+  paths, asset identifiers, and free-form system descriptions.
+- Added actionable input classification for oversized, extreme-aspect-ratio,
+  unreadable, unsupported, permission, storage, and Live Photo failures.
+
+### Changed
+- Long custom content remains durable user-authored content; visual fitting is
+  separate from configuration persistence and does not itself cause save
+  failure.
+- PhotoKit Live Photo saves require post-save verification of `.photoLive`,
+  still and paired-video resources, valid dimensions, and motion duration
+  before reporting success.
+
+### Release Boundary
+- This is a V4 Engineering Loop maintenance release. It preserves the
+  local-first workflow, original-photo protection, Configuration Center
+  architecture, Memory Engine, Layout Engine, Renderer, Export, and Share
+  Extension ownership boundaries.
+- Physical Apple Photos Live Photo round-trip acceptance remains a separate
+  device-evidence step; the currently paired iPhone may need to reconnect as
+  available before installation.
+
+### Verification
+- Focused Live Photo, diagnostics, configuration compatibility, and release
+  note tests passed; the complete `PhotoMemoTests` suite passed with `1,221`
+  tests passed, `1` skipped, and `0` failed.
+- macOS, iOS, Share Extension, and Widget Extension Debug builds passed; all
+  product and test target version fields report `2.0.2 (68)`.
+- `git diff --check` and Chinese/English `Localizable.strings` plist lint
+  passed.
+
 ## 2.0.1 (67) App Store Version Train Repair - 2026-08-03
 
 ### Fixed

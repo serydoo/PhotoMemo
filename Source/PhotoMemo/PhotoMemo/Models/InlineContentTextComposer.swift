@@ -62,8 +62,9 @@ enum InlineContentTextComposer {
     ) -> String {
         switch piece.kind {
         case .text,
-             .token,
              .separator:
+            return piece.value
+        case .token:
             return piece.value.trimmingCharacters(
                 in: .whitespacesAndNewlines
             )

@@ -188,6 +188,43 @@ struct RendererDependencyIsolationTests {
         #expect(blocks.first?.value == "iPhone 17 Pro ·")
     }
 
+    @Test("CardTextBlockEngine keeps brace syntax in literal text")
+    func cardTextBlockEngineKeepsBraceSyntaxInLiteralText() throws {
+        let literal = "Keep {{model}} and {{future_token}}"
+        let template = Template(
+            preset: .classicWhite,
+            name: "Literal",
+            leftTopArea: TemplateArea(
+                name: "Left Top",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "Literal",
+                        value: literal,
+                        moduleID: .custom
+                    )
+                ]
+            ),
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: .empty,
+            badgeArea: .empty
+        )
+        let card = RecordCard(
+            template: template,
+            metadata: PhotoMetadata(),
+            context: MetadataContext(
+                values: ["model": "iPhone"]
+            )
+        )
+
+        let block = try #require(
+            CardTextBlockEngine().build(from: card).first
+        )
+
+        #expect(block.value == literal)
+    }
+
     @Test("CardTextBlockEngine composes every custom field and module in each region")
     func cardTextBlockEngineComposesEveryItemInEachRegion() throws {
         func area(

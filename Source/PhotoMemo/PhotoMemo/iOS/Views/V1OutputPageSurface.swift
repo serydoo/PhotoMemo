@@ -143,6 +143,8 @@ private struct V1OutputSaveConfigurationButton: View {
         switch configurationStatus {
         case .saved:
             return "已保存"
+        case .savedWithWarning:
+            return "再次保存"
         case .failure:
             return "重新保存"
         case .idle,
@@ -161,6 +163,8 @@ private struct V1OutputSaveConfigurationButton: View {
         switch configurationStatus {
         case .saved:
             return "checkmark.circle.fill"
+        case .savedWithWarning:
+            return "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"
         case .failure:
             return "arrow.clockwise.circle.fill"
         case .idle,

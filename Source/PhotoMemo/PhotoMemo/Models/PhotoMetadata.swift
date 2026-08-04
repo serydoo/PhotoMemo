@@ -119,16 +119,32 @@ extension PhotoMetadata {
 
         var displayValue: String {
 
-            switch self {
+            displayValue(for: .simplifiedChinese)
+        }
 
-            case .portrait:
+        func displayValue(
+            for language: MemoMarkLanguage
+        ) -> String {
+
+            switch (language, self) {
+
+            case (.simplifiedChinese, .portrait):
                 return "纵向"
 
-            case .landscape:
+            case (.simplifiedChinese, .landscape):
                 return "横向"
 
-            case .square:
+            case (.simplifiedChinese, .square):
                 return "方形"
+
+            case (.english, .portrait):
+                return "Portrait"
+
+            case (.english, .landscape):
+                return "Landscape"
+
+            case (.english, .square):
+                return "Square"
             }
         }
     }
@@ -572,6 +588,12 @@ extension PhotoMetadata {
     var orientationText: String {
 
         orientation?.displayValue ?? ""
+    }
+
+    func orientationText(
+        for language: MemoMarkLanguage
+    ) -> String {
+        orientation?.displayValue(for: language) ?? ""
     }
 
     var aspectRatioText: String {

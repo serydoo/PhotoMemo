@@ -92,7 +92,8 @@ private extension RecordCardBuildService {
                 memorySubject:
                     memoryPayload.subject,
                 timeDisplayConfiguration:
-                    configuration.timeDisplayConfiguration
+                    configuration.timeDisplayConfiguration,
+                language: configuration.language
             )
         let title =
             resolvedTitle(
@@ -110,7 +111,8 @@ private extension RecordCardBuildService {
                 from: selectedPhoto.metadata,
                 configuration: configuration,
                 timeDisplayConfiguration:
-                    configuration.timeDisplayConfiguration
+                    configuration.timeDisplayConfiguration,
+                language: configuration.language
             )
         let anchor =
             configuration.legacyAnchor
@@ -466,13 +468,18 @@ private extension RecordCardBuildService {
         from metadata: PhotoMetadata,
         memorySubject: MemorySubject,
         timeDisplayConfiguration:
-            ExpressionModuleConfiguration?
+            ExpressionModuleConfiguration?,
+        language: MemoMarkLanguage
     ) -> MetadataContext {
 
         var context =
             MetadataContext.build(
                 from: metadata
             )
+        context.replace(
+            metadata.orientationText(for: language),
+            for: MetadataContext.Key.orientation
+        )
 
         context.set(
             memorySubject
@@ -498,7 +505,8 @@ private extension RecordCardBuildService {
         applyTimeDisplayConfiguration(
             timeDisplayConfiguration,
             to: &context,
-            metadata: metadata
+            metadata: metadata,
+            language: language
         )
 
         return context
@@ -508,17 +516,23 @@ private extension RecordCardBuildService {
         from metadata: PhotoMetadata,
         configuration: BatchConfigurationSnapshot,
         timeDisplayConfiguration:
-            ExpressionModuleConfiguration?
+            ExpressionModuleConfiguration?,
+        language: MemoMarkLanguage
     ) -> MetadataContext {
 
         var context = MetadataContext.build(
             from: metadata
         )
+        context.replace(
+            metadata.orientationText(for: language),
+            for: MetadataContext.Key.orientation
+        )
 
         applyTimeDisplayConfiguration(
             timeDisplayConfiguration,
             to: &context,
-            metadata: metadata
+            metadata: metadata,
+            language: language
         )
 
         return context
@@ -528,12 +542,34 @@ private extension RecordCardBuildService {
     func applyTimeDisplayConfiguration(
         _ configuration: ExpressionModuleConfiguration?,
         to context: inout MetadataContext,
-        metadata: PhotoMetadata
+        metadata: PhotoMetadata,
+        language: MemoMarkLanguage
     ) {
         guard
-            let date = metadata.captureDate,
-            let configuration
+            let date = metadata.captureDate
         else {
+            return
+        }
+
+        let dateTimeFormatter = DateFormatter()
+        dateTimeFormatter.locale = language.locale
+        dateTimeFormatter.timeZone = metadata.captureTimeZone
+        dateTimeFormatter.dateStyle = .medium
+        dateTimeFormatter.timeStyle = .short
+        context.set(
+            dateTimeFormatter.string(from: date),
+            for: MetadataContext.Key.captureDateDisplay
+        )
+        let weekdayFormatter = DateFormatter()
+        weekdayFormatter.locale = language.locale
+        weekdayFormatter.timeZone = metadata.captureTimeZone
+        weekdayFormatter.dateFormat = "EEEE"
+        context.set(
+            weekdayFormatter.string(from: date),
+            for: MetadataContext.Key.weekdayName
+        )
+
+        guard let configuration else {
             return
         }
 
@@ -550,7 +586,8 @@ private extension RecordCardBuildService {
             TimeExpressionProvider.dateText(
                 for: date,
                 configuration: timeConfiguration,
-                timeZone: timeZone
+                timeZone: timeZone,
+                language: language
             ),
             for: MetadataContext.Key.captureDateShort
         )
@@ -558,7 +595,8 @@ private extension RecordCardBuildService {
             TimeExpressionProvider.timeText(
                 for: date,
                 configuration: timeConfiguration,
-                timeZone: timeZone
+                timeZone: timeZone,
+                language: language
             ),
             for: MetadataContext.Key.captureTimeShort
         )

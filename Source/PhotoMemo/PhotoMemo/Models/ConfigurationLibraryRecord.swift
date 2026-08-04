@@ -114,6 +114,11 @@ struct ConfigurationLibraryRecord:
                         )
                     )
                 }
+                issues.append(
+                    contentsOf:
+                        PortableMemoryConfigurationDocument
+                        .templateItemIssues(configuration)
+                )
             }
         }
 
@@ -336,6 +341,26 @@ struct ConfigurationLibraryRecord:
             activeConfigurationID,
             forKey: .activeConfigurationID
         )
+    }
+}
+
+extension ConfigurationLibraryRecord {
+
+    func repairingDuplicateTemplateItemIDs()
+    -> ConfigurationLibraryRecord {
+        var repaired = self
+        for subjectIndex in repaired.subjects.indices {
+            for configurationIndex in
+                repaired.subjects[subjectIndex]
+                    .configurations.indices {
+                repaired.subjects[subjectIndex]
+                    .configurations[configurationIndex]
+                    .editor.template = repaired.subjects[subjectIndex]
+                    .configurations[configurationIndex]
+                    .editor.template.repairingDuplicateItemIDs()
+            }
+        }
+        return repaired
     }
 }
 

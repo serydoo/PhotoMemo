@@ -245,6 +245,10 @@ nonisolated enum ConfigurationRecordValidationIssue:
     case activeConfigurationWithoutActiveSubject(UUID)
     case duplicateSubjectID(UUID)
     case duplicateConfigurationID(UUID)
+    case duplicateTemplateItemID(
+        configurationID: UUID,
+        itemID: UUID
+    )
     case invalidLibraryRevision(Int)
     case invalidConfigurationRevision(
         configurationID: UUID,
@@ -306,6 +310,9 @@ struct PortableMemoryConfigurationDocument:
             )
         }
         issues.append(contentsOf: Self.subjectAssetIssues(subject))
+        issues.append(
+            contentsOf: Self.templateItemIssues(configuration)
+        )
         issues.append(
             contentsOf: Self.manifestIssues(
                 subject: subject,
@@ -407,6 +414,32 @@ extension PortableMemoryConfigurationDocument {
             return .absoluteSubjectAsset(
                 subjectID: subject.id,
                 path: path
+            )
+        }
+    }
+
+    static func templateItemIssues(
+        _ configuration: MemoryConfigurationRecord
+    ) -> [ConfigurationRecordValidationIssue] {
+        let template = configuration.editor.template
+        let items = [
+            template.leftTopArea,
+            template.leftBottomArea,
+            template.rightTopArea,
+            template.rightBottomArea,
+            template.badgeArea
+        ].flatMap(\.items)
+        var seenIDs: Set<UUID> = []
+        var reportedIDs: Set<UUID> = []
+        return items.compactMap { item in
+            guard !seenIDs.insert(item.id).inserted,
+                  reportedIDs.insert(item.id).inserted
+            else {
+                return nil
+            }
+            return .duplicateTemplateItemID(
+                configurationID: configuration.id,
+                itemID: item.id
             )
         }
     }

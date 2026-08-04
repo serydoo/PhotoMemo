@@ -231,8 +231,11 @@ nonisolated enum ConfigurationLibrarySynchronousStorageLoader {
                     try storage.loadLastKnownGoodData()
             )
         } catch {
+            let error = error as NSError
             throw ConfigurationLibraryPersistenceTransportError
-                .readFailed(String(describing: error))
+                .readFailed(
+                    "domain=\(error.domain);code=\(error.code)"
+                )
         }
     }
 }
@@ -273,8 +276,11 @@ actor ConfigurationLibraryPersistence {
             ConfigurationLibraryPersistenceTransportError {
             throw error
         } catch {
+            let error = error as NSError
             throw ConfigurationLibraryPersistenceTransportError
-                .writeFailed(String(describing: error))
+                .writeFailed(
+                    "domain=\(error.domain);code=\(error.code)"
+                )
         }
     }
 }
