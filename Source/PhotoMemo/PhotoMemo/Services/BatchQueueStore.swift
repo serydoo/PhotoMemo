@@ -48,6 +48,9 @@ final class BatchQueueStore: ObservableObject {
     private let saveReceiptStore:
         PhotoLibrarySaveReceiptStore
 
+    private let photoLibraryReceiptAssetLocator:
+        any PhotoLibraryReceiptAssetLocating
+
     private let productionDiagnostics:
         ProductionDiagnosticsRepository?
 
@@ -80,6 +83,8 @@ final class BatchQueueStore: ObservableObject {
         persistence: BatchQueuePersistence? = nil,
         saveReceiptStore:
             PhotoLibrarySaveReceiptStore? = nil,
+        photoLibraryReceiptAssetLocator:
+            (any PhotoLibraryReceiptAssetLocating)? = nil,
         productionDiagnostics:
             ProductionDiagnosticsRepository? = nil,
         automaticallyStartsProcessing: Bool = true,
@@ -145,10 +150,16 @@ final class BatchQueueStore: ObservableObject {
             MemoMarkCommercePersistence(
                 defaults: resolvedDefaults
             )
-        self.saveReceiptStore =
+        let resolvedSaveReceiptStore =
             saveReceiptStore
             ?? PhotoLibrarySaveReceiptStore(
                 defaults: resolvedDefaults
+            )
+        self.saveReceiptStore = resolvedSaveReceiptStore
+        self.photoLibraryReceiptAssetLocator =
+            photoLibraryReceiptAssetLocator
+            ?? PhotoLibrarySaveReceiptAssetLocator(
+                receiptStore: resolvedSaveReceiptStore
             )
         self.productionDiagnostics =
             productionDiagnostics
@@ -178,6 +189,10 @@ final class BatchQueueStore: ObservableObject {
             return
         }
 
+        reconcileCommittedPhotoLibraryReceiptsForResume()
+        guard !persistenceBlocked else {
+            return
+        }
         normalizeJobsForResume()
         guard !persistenceBlocked else {
             return
@@ -431,6 +446,11 @@ final class BatchQueueStore: ObservableObject {
             return
         }
 
+        reconcileCommittedPhotoLibraryReceiptsForResume()
+        guard !persistenceBlocked else {
+            return
+        }
+
         guard nextPendingTaskReference() != nil else {
             clearProcessingIndicators()
             return
@@ -588,6 +608,96 @@ final class BatchQueueStore: ObservableObject {
 
 extension BatchQueueStore {
 
+    func reconcileCommittedPhotoLibraryReceiptsForResume() {
+
+        let jobsBeforeReconciliation = jobs
+        let pendingReceiptRemovalsBeforeReconciliation =
+            pendingSaveReceiptRemovalKeys
+        let savingTaskReferences:
+            [BatchQueueExecution.TaskReference] = jobs.flatMap { job in
+            job.tasks.compactMap { task in
+                guard task.phase
+                        == BatchTaskPhase
+                        .savingToPhotoLibrary else {
+                    return nil
+                }
+                return BatchQueueExecution.TaskReference(
+                    jobID: job.id,
+                    taskID: task.id
+                )
+            }
+        }
+        var didReconcile = false
+        var reconciledTasks: [BatchTask] = []
+        var reconciledResourceURLs:
+            [(rendered: URL?, source: URL)] = []
+
+        for reference in savingTaskReferences {
+            guard let task = currentTask(at: reference),
+                  task.phase
+                    == BatchTaskPhase
+                    .savingToPhotoLibrary,
+                  let assetIdentifier =
+                    photoLibraryReceiptAssetLocator
+                    .visibleAssetIdentifier(
+                        for: task.id.uuidString
+                    ) else {
+                continue
+            }
+
+            reconciledResourceURLs.append(
+                (
+                    rendered: task.renderedFileURL,
+                    source: task.sourceURL
+                )
+            )
+
+            updateTask(
+                at: reference,
+                persist: false,
+                recordsSuccessfulSave: false
+            ) { task in
+                task.renderedFileURL = nil
+                task.savedAssetIdentifier = assetIdentifier
+                task.failure = nil
+                task.phase = .completed
+                task.progress = BatchTaskProgress(
+                    currentUnit: task.progress.totalUnits,
+                    totalUnits: task.progress.totalUnits,
+                    statusMessage: "处理完成"
+                )
+            }
+            if let completedTask = currentTask(at: reference) {
+                reconciledTasks.append(completedTask)
+            }
+            didReconcile = true
+        }
+
+        guard didReconcile else {
+            return
+        }
+
+        guard persistJobs() else {
+            jobs = jobsBeforeReconciliation
+            pendingSaveReceiptRemovalKeys =
+                pendingReceiptRemovalsBeforeReconciliation
+            return
+        }
+
+        for task in reconciledTasks {
+            recordSuccessfulSaveIfNeeded(for: task)
+        }
+
+        for resourceURLs in reconciledResourceURLs {
+            execution.cleanupTemporaryFileIfNeeded(
+                at: resourceURLs.rendered
+            )
+            execution.cleanupManagedSourceIfNeeded(
+                at: resourceURLs.source
+            )
+        }
+    }
+
     func nextPendingTaskReference()
     -> BatchQueueExecution.TaskReference? {
 
@@ -603,9 +713,12 @@ extension BatchQueueStore {
                 .filter { $0.failure != nil }
                 .map(\.id)
         )
+        let protectedTaskIDs =
+            unresolvedReceiptBackedSavingTaskIDs()
 
         guard persistence.normalizeJobsForResume(
             &jobs,
+            protectedTaskIDs: protectedTaskIDs,
             deriveJobState:
                 execution.derivedJobState
         ) else {
@@ -663,6 +776,25 @@ extension BatchQueueStore {
                 )
             }
         }
+    }
+
+    func unresolvedReceiptBackedSavingTaskIDs()
+    -> Set<UUID> {
+
+        Set(
+            jobs.flatMap(\.tasks)
+                .compactMap { task in
+                    guard task.phase
+                            == BatchTaskPhase
+                            .savingToPhotoLibrary,
+                          saveReceiptStore.assetIdentifier(
+                            for: task.id.uuidString
+                          ) != nil else {
+                        return nil
+                    }
+                    return task.id
+                }
+        )
     }
 
     @discardableResult
@@ -857,6 +989,7 @@ extension BatchQueueStore {
         at reference:
             BatchQueueExecution.TaskReference,
         persist: Bool = true,
+        recordsSuccessfulSave: Bool = true,
         mutate: (inout BatchTask) -> Void
     ) {
 
@@ -880,45 +1013,10 @@ extension BatchQueueStore {
 
         if previousTask.phase != .completed,
            updatedTask.phase == .completed,
-           updatedTask.savedAssetIdentifier != nil,
-           !commerceSnapshot.isPlus,
-           commercePersistence
-            .recordSuccessfulSave(
-                taskID: updatedTask.id,
-                environment:
-                    commerceSnapshot.environment
-            ) {
-            let bonus =
-                commercePersistence
-                .bonusAllowance(
-                    environment:
-                        commerceSnapshot.environment
-                )
-            commerceSnapshot =
-                MemoMarkCommerceSnapshot(
-                    environment:
-                        commerceSnapshot.environment,
-                    accessSource: .free,
-                    successfulRecordCount:
-                        commercePersistence
-                        .successfulRecordCount(
-                            environment:
-                                commerceSnapshot.environment
-                        ),
-                    totalAllowance:
-                        MemoMarkCommercePolicy
-                        .baseFreeAllowance
-                        + bonus,
-                    batchLimit:
-                        MemoMarkCommercePolicy
-                        .freeBatchLimit,
-                    firstRecorderDate: nil,
-                    updatedAt: Date()
-                )
-            commercePersistence
-                .saveSharedSnapshot(
-                    commerceSnapshot
-                )
+           recordsSuccessfulSave {
+            recordSuccessfulSaveIfNeeded(
+                for: updatedTask
+            )
         }
 
         guard persist else {
@@ -926,6 +1024,54 @@ extension BatchQueueStore {
         }
 
         persistJobs()
+    }
+
+    func recordSuccessfulSaveIfNeeded(
+        for task: BatchTask
+    ) {
+
+        guard task.savedAssetIdentifier != nil,
+              !commerceSnapshot.isPlus,
+              commercePersistence
+                .recordSuccessfulSave(
+                    taskID: task.id,
+                    environment:
+                        commerceSnapshot.environment
+                ) else {
+            return
+        }
+
+        let bonus =
+            commercePersistence
+            .bonusAllowance(
+                environment:
+                    commerceSnapshot.environment
+            )
+        commerceSnapshot =
+            MemoMarkCommerceSnapshot(
+                environment:
+                    commerceSnapshot.environment,
+                accessSource: .free,
+                successfulRecordCount:
+                    commercePersistence
+                    .successfulRecordCount(
+                        environment:
+                            commerceSnapshot.environment
+                    ),
+                totalAllowance:
+                    MemoMarkCommercePolicy
+                    .baseFreeAllowance
+                    + bonus,
+                batchLimit:
+                    MemoMarkCommercePolicy
+                    .freeBatchLimit,
+                firstRecorderDate: nil,
+                updatedAt: Date()
+            )
+        commercePersistence
+            .saveSharedSnapshot(
+                commerceSnapshot
+            )
     }
 
     func jobIndex(

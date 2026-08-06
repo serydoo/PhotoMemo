@@ -174,6 +174,7 @@ struct BatchQueuePersistence {
 
     func normalizeJobsForResume(
         _ jobs: inout [BatchJob],
+        protectedTaskIDs: Set<UUID> = [],
         deriveJobState:
             ([BatchTask]) -> BatchJobState
     ) -> Bool {
@@ -190,6 +191,14 @@ struct BatchQueuePersistence {
                     .phase
 
                 guard !phase.isTerminal else {
+                    continue
+                }
+
+                // A durable receipt means Apple Photos may already own the
+                // output even when direct readback is temporarily unavailable.
+                guard !protectedTaskIDs.contains(
+                    jobs[jobIndex].tasks[taskIndex].id
+                ) else {
                     continue
                 }
 
@@ -263,10 +272,14 @@ struct BatchQueuePersistence {
                 changed = true
             }
 
-            jobs[jobIndex].state =
+            let derivedState =
                 deriveJobState(
                     jobs[jobIndex].tasks
                 )
+            if jobs[jobIndex].state != derivedState {
+                jobs[jobIndex].state = derivedState
+                changed = true
+            }
         }
 
         return changed

@@ -137,6 +137,15 @@ final class BatchQueueCoordinator {
             )
     }
 
+    func cleanupTemporaryFileIfNeeded(
+        at url: URL?
+    ) {
+        resourceLifecycle
+            .cleanupTemporaryFile(
+                at: url
+            )
+    }
+
     func processingLoop(in store: BatchQueueStore) async {
         store.markProcessingStarted()
         defer {

@@ -114,6 +114,15 @@ final class BatchQueueExecution {
             )
     }
 
+    func cleanupTemporaryFileIfNeeded(
+        at url: URL?
+    ) {
+        queueCoordinator
+            .cleanupTemporaryFileIfNeeded(
+                at: url
+            )
+    }
+
     func processingLoop(in store: BatchQueueStore) async {
         await queueCoordinator.processingLoop(in: store)
     }

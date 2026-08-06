@@ -136,6 +136,64 @@ struct BatchQueueExecutionContractTests {
     }
 
     @MainActor
+    @Test("Photo library readback pending remains recoverable for static and Live Photo saves")
+    func photoLibraryReadbackPendingRemainsRecoverable() {
+        #expect(
+            BatchTaskFailurePolicy
+                .shouldAwaitPhotoLibraryReadback(
+                    error:
+                        PhotoLibraryExportError
+                        .savedAssetReadbackPending
+                )
+        )
+        #expect(
+            BatchTaskFailurePolicy
+                .shouldAwaitPhotoLibraryReadback(
+                    error:
+                        LivePhotoAssetWritingError
+                        .savedAssetReadbackPending
+                )
+        )
+        #expect(
+            BatchTaskFailurePolicy
+                .shouldAwaitPhotoLibraryReadback(
+                    error:
+                        LivePhotoAssetWritingError
+                        .savedAssetReadbackFailed
+                )
+        )
+        #expect(
+            !BatchTaskFailurePolicy
+                .shouldAwaitPhotoLibraryReadback(
+                    error:
+                        LivePhotoAssetWritingError
+                        .savedAssetNotLivePhoto
+                )
+        )
+        #expect(
+            BatchTaskFailurePolicy
+                .shouldAwaitPhotoLibraryReadback(
+                    error: PhotoMemoError(
+                        code: .photoLibrarySaveFailed,
+                        message: "wrapped",
+                        diagnosticCode:
+                            ProductionDiagnosticErrorCode
+                            .photoLibraryAssetReadbackPending
+                            .rawValue
+                    )
+                )
+        )
+        #expect(
+            !BatchTaskFailurePolicy
+                .shouldAwaitPhotoLibraryReadback(
+                    error:
+                        PhotoLibraryExportError
+                        .assetSaveFailed
+                )
+        )
+    }
+
+    @MainActor
     @Test("Deferred queue admission stays queued until an owner starts processing")
     func deferredAdmissionDoesNotStartProcessing() async throws {
         let context = try makeStoreContext(

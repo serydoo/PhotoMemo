@@ -358,6 +358,30 @@ final class BatchTaskProcessor {
                 return
             }
 
+            if BatchTaskFailurePolicy
+                .shouldAwaitPhotoLibraryReadback(
+                    error: error
+                ) {
+                resourceLifecycle.cleanupTemporaryFile(
+                    at: temporaryFileURL
+                )
+                store.updateTask(at: reference) { task in
+                    task.renderedFileURL = nil
+                    task.notificationAttachmentURL = nil
+                    task.failure = nil
+                    task.phase = .savingToPhotoLibrary
+                    task.progress = BatchTaskProgress(
+                        currentUnit:
+                            max(task.progress.totalUnits - 1, 0),
+                        totalUnits:
+                            max(task.progress.totalUnits, 1),
+                        statusMessage:
+                            "正在确认系统图库写入"
+                    )
+                }
+                return
+            }
+
             let failurePhase = store.currentTaskPhase(at: reference) ?? .queued
             let jobID = store.currentJobID(at: reference)
             let failureClassification =

@@ -109,6 +109,464 @@ struct BatchQueueStorePersistenceTests {
     }
 
     @MainActor
+    @Test("Startup completes a saving task when its receipt-backed Photos asset is visible")
+    func startupCompletesVisibleReceiptBackedSavingTask() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptCompletion.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        let job = savingJob(taskID: taskID)
+        defaults.set(
+            try JSONEncoder().encode([job]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "receipt-backed-asset",
+            for: taskID.uuidString
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [
+                        taskID.uuidString:
+                            "receipt-backed-asset"
+                    ]
+                ),
+            automaticallyStartsProcessing: false
+        )
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .completed)
+        #expect(
+            task.savedAssetIdentifier
+            == "receipt-backed-asset"
+        )
+        #expect(task.renderedFileURL == nil)
+        #expect(task.failure == nil)
+        #expect(task.progress.fractionCompleted == 1)
+
+        let persistedTask = try #require(
+            BatchQueuePersistence(defaults: defaults)
+            .loadPersistedJobsResult()
+            .value?
+            .first?
+            .tasks
+            .first
+        )
+        #expect(persistedTask.phase == .completed)
+        #expect(
+            persistedTask.savedAssetIdentifier
+            == "receipt-backed-asset"
+        )
+    }
+
+    @MainActor
+    @Test("Startup receipt completion cleans rendered output and managed source after persistence")
+    func startupReceiptCompletionCleansDurableResources() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptCleanup.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        let rootURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let intakeDirectoryURL = rootURL
+            .appendingPathComponent(
+                "ExternalIntake",
+                isDirectory: true
+            )
+        let renderedDirectoryURL = rootURL
+            .appendingPathComponent(
+                "Rendered",
+                isDirectory: true
+            )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        try FileManager.default.createDirectory(
+            at: intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(
+            at: renderedDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let sourceURL = intakeDirectoryURL
+            .appendingPathComponent("source.jpg")
+        let renderedURL = renderedDirectoryURL
+            .appendingPathComponent("rendered.jpg")
+        try Data("source".utf8).write(to: sourceURL)
+        try Data("rendered".utf8).write(to: renderedURL)
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(
+                    taskID: taskID,
+                    sourceURL: sourceURL,
+                    renderedFileURL: renderedURL
+                )
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "receipt-backed-asset",
+            for: taskID.uuidString
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            externalIntakeStore: ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: intakeDirectoryURL
+            ),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [
+                        taskID.uuidString:
+                            "receipt-backed-asset"
+                    ]
+                ),
+            automaticallyStartsProcessing: false
+        )
+
+        #expect(store.jobs.first?.tasks.first?.phase == .completed)
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: renderedURL.path
+            )
+        )
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: sourceURL.path
+            )
+        )
+    }
+
+    @MainActor
+    @Test("Startup receipt completion keeps files when terminal persistence fails")
+    func startupReceiptCompletionDefersCleanupUntilPersistence() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptCleanupFailure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        let rootURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let intakeDirectoryURL = rootURL
+            .appendingPathComponent(
+                "ExternalIntake",
+                isDirectory: true
+            )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        try FileManager.default.createDirectory(
+            at: intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let sourceURL = intakeDirectoryURL
+            .appendingPathComponent("source.jpg")
+        let renderedURL = rootURL
+            .appendingPathComponent("rendered.jpg")
+        try Data("source".utf8).write(to: sourceURL)
+        try Data("rendered".utf8).write(to: renderedURL)
+
+        let taskID = UUID()
+        let persistedData = try JSONEncoder().encode([
+            savingJob(
+                taskID: taskID,
+                sourceURL: sourceURL,
+                renderedFileURL: renderedURL
+            )
+        ])
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "receipt-backed-asset",
+            for: taskID.uuidString
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            externalIntakeStore: ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: intakeDirectoryURL
+            ),
+            persistence: BatchQueuePersistence(
+                backend: SaveRejectingBackend(
+                    persistedData: persistedData
+                )
+            ),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [
+                        taskID.uuidString:
+                            "receipt-backed-asset"
+                    ]
+                ),
+            automaticallyStartsProcessing: false
+        )
+
+        #expect(store.startupPersistenceError == nil)
+        #expect(!store.lastErrorMessage.isEmpty)
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .savingToPhotoLibrary)
+        #expect(task.savedAssetIdentifier == nil)
+        #expect(task.renderedFileURL == renderedURL)
+        #expect(
+            FileManager.default.fileExists(
+                atPath: renderedURL.path
+            )
+        )
+        #expect(
+            FileManager.default.fileExists(
+                atPath: sourceURL.path
+            )
+        )
+    }
+
+    @MainActor
+    @Test("Startup preserves an unresolved receipt-backed saving task without requeueing")
+    func startupPreservesMissingReceiptBackedSavingTask() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptMissing.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(taskID: taskID)
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "missing-asset",
+            for: taskID.uuidString
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [:]
+                ),
+            automaticallyStartsProcessing: false
+        )
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .savingToPhotoLibrary)
+        #expect(task.savedAssetIdentifier == nil)
+        #expect(
+            task.renderedFileURL
+            == URL(
+                fileURLWithPath:
+                    "/tmp/rendered-receipt-recovery.jpg"
+            )
+        )
+        #expect(
+            receiptStore.assetIdentifier(for: taskID.uuidString)
+            == "missing-asset"
+        )
+    }
+
+    @MainActor
+    @Test("Automatic startup does not rerender an unresolved receipt-backed saving task")
+    func automaticStartupDoesNotRerenderMissingReceiptBackedSavingTask() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptMissingAutomatic.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        let rootURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent(
+                suiteName,
+                isDirectory: true
+            )
+        let intakeDirectoryURL = rootURL
+            .appendingPathComponent(
+                "ExternalIntake",
+                isDirectory: true
+            )
+        let renderedDirectoryURL = rootURL
+            .appendingPathComponent(
+                "Rendered",
+                isDirectory: true
+            )
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        try FileManager.default.createDirectory(
+            at: intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(
+            at: renderedDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let sourceURL = intakeDirectoryURL
+            .appendingPathComponent("source.jpg")
+        let renderedURL = renderedDirectoryURL
+            .appendingPathComponent("rendered.jpg")
+        try Data("source".utf8).write(to: sourceURL)
+        try Data("rendered".utf8).write(to: renderedURL)
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(
+                    taskID: taskID,
+                    sourceURL: sourceURL,
+                    renderedFileURL: renderedURL
+                )
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "missing-asset",
+            for: taskID.uuidString
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            externalIntakeStore: ExternalPhotoIntakeStore(
+                defaults: defaults,
+                intakeDirectoryURL: intakeDirectoryURL
+            ),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [:]
+                )
+        )
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .savingToPhotoLibrary)
+        #expect(task.renderedFileURL == renderedURL)
+        #expect(task.savedAssetIdentifier == nil)
+        #expect(store.isProcessing == false)
+        #expect(
+            FileManager.default.fileExists(
+                atPath: sourceURL.path
+            )
+        )
+        #expect(
+            FileManager.default.fileExists(
+                atPath: renderedURL.path
+            )
+        )
+        #expect(
+            receiptStore.assetIdentifier(for: taskID.uuidString)
+            == "missing-asset"
+        )
+    }
+
+    @MainActor
+    @Test("A later exact Photos readback completes a protected saving task without requeueing")
+    func laterReceiptVisibilityCompletesProtectedSavingTask() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptLaterVisibility.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(taskID: taskID)
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        receiptStore.record(
+            assetIdentifier: "receipt-backed-asset",
+            for: taskID.uuidString
+        )
+        let assetLocator =
+            MutablePhotoLibraryReceiptAssetLocator()
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator: assetLocator,
+            automaticallyStartsProcessing: false
+        )
+
+        #expect(
+            store.jobs.first?.tasks.first?.phase
+            == .savingToPhotoLibrary
+        )
+        assetLocator.visibleAssetIdentifiers[
+            taskID.uuidString
+        ] = "receipt-backed-asset"
+
+        store.startProcessingIfNeeded()
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .completed)
+        #expect(
+            task.savedAssetIdentifier
+            == "receipt-backed-asset"
+        )
+        #expect(task.renderedFileURL == nil)
+    }
+
+    @MainActor
     @Test("Clearing persisted terminal history removes only its durable receipt")
     func clearingTerminalHistoryRemovesReceiptAfterQueuePersistence() throws {
         let suiteName =
@@ -429,6 +887,66 @@ struct BatchQueueStorePersistenceTests {
                 )
             ]
         )
+    }
+
+    private func savingJob(
+        taskID: UUID,
+        sourceURL: URL = URL(
+            fileURLWithPath: "/tmp/receipt-recovery.jpg"
+        ),
+        renderedFileURL: URL = URL(
+            fileURLWithPath: "/tmp/rendered-receipt-recovery.jpg"
+        )
+    ) -> BatchJob {
+        BatchJob(
+            title: "Receipt recovery",
+            launchSource: .shareExtension,
+            configuration: BatchConfigurationSnapshot(
+                template: .classicWhite,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            ),
+            tasks: [
+                BatchTask(
+                    id: taskID,
+                    sourceURL: sourceURL,
+                    phase: .savingToPhotoLibrary,
+                    renderedFileURL: renderedFileURL,
+                    progress: BatchTaskProgress(
+                        currentUnit: 5,
+                        totalUnits: 6,
+                        statusMessage: "正在写入系统图库"
+                    )
+                )
+            ]
+        )
+    }
+
+    private struct StubPhotoLibraryReceiptAssetLocator:
+        PhotoLibraryReceiptAssetLocating {
+
+        let visibleAssetIdentifiers: [String: String]
+
+        func visibleAssetIdentifier(
+            for idempotencyKey: String
+        ) -> String? {
+            visibleAssetIdentifiers[idempotencyKey]
+        }
+    }
+
+    private final class MutablePhotoLibraryReceiptAssetLocator:
+        PhotoLibraryReceiptAssetLocating {
+
+        var visibleAssetIdentifiers: [String: String] = [:]
+
+        func visibleAssetIdentifier(
+            for idempotencyKey: String
+        ) -> String? {
+            visibleAssetIdentifiers[idempotencyKey]
+        }
     }
 
     @MainActor

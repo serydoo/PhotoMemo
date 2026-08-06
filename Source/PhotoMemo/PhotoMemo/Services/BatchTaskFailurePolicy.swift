@@ -11,6 +11,36 @@ enum BatchTaskFailurePolicy {
         taskIsCancelled || error is CancellationError
     }
 
+    static func shouldAwaitPhotoLibraryReadback(
+        error: Error
+    ) -> Bool {
+        if let exportError =
+            error as? PhotoLibraryExportError {
+            if case .savedAssetReadbackPending =
+                exportError {
+                return true
+            }
+            return false
+        }
+
+        if let livePhotoError =
+            error as? LivePhotoAssetWritingError {
+            switch livePhotoError {
+            case .savedAssetReadbackPending,
+                 .savedAssetReadbackFailed:
+                return true
+            default:
+                return false
+            }
+        }
+
+        return (error as? PhotoMemoError)?
+            .diagnosticCode
+            == ProductionDiagnosticErrorCode
+            .photoLibraryAssetReadbackPending
+            .rawValue
+    }
+
     static func failureClassification(
         for error: Error
     ) -> BatchTaskFailure.Classification {
