@@ -40,8 +40,8 @@ struct MemoryResultContractTests {
         #expect(result.source == .displayName)
     }
 
-    @Test("Expression subject resolver preserves the existing fallback chain")
-    func expressionSubjectResolverPreservesFallbackChain() {
+    @Test("Expression subject resolver never substitutes optional fields for an invalid object name")
+    func expressionSubjectResolverFallsBackOnlyToObjectName() {
         #expect(
             MemorySubject.resolveExpressionSubjectText(
                 source: .displayName,
@@ -49,7 +49,7 @@ struct MemoryResultContractTests {
                 shortName: "  小宝  ",
                 relationshipRole: "宝宝",
                 relationshipLabel: "专属称呼"
-            ) == "小宝"
+            ) == "记忆对象"
         )
         #expect(
             MemorySubject.resolveExpressionSubjectText(
@@ -58,7 +58,7 @@ struct MemoryResultContractTests {
                 shortName: "",
                 relationshipRole: "  宝宝  ",
                 relationshipLabel: "专属称呼"
-            ) == "宝宝"
+            ) == "记忆对象"
         )
         #expect(
             MemorySubject.resolveExpressionSubjectText(
@@ -67,7 +67,7 @@ struct MemoryResultContractTests {
                 shortName: "",
                 relationshipRole: "",
                 relationshipLabel: "  专属称呼  "
-            ) == "专属称呼"
+            ) == "记忆对象"
         )
         #expect(
             MemorySubject.resolveExpressionSubjectText(

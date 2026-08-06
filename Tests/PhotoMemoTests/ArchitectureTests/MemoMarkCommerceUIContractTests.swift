@@ -320,19 +320,19 @@ struct MemoMarkCommerceUIContractTests {
         )
     }
 
-    @Test("interface language appears immediately before version information")
-    func interfaceLanguagePrecedesVersionInformation() throws {
+    @Test("interface preferences appear immediately before version information")
+    func interfacePreferencesPrecedeVersionInformation() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
         )
-        let languagePosition = try #require(
-            source.range(of: "interfaceLanguageSection")?.lowerBound
+        let interfacePosition = try #require(
+            source.range(of: "interfacePreferencesSection")?.lowerBound
         )
         let aboutPosition = try #require(
             source.range(of: "aboutSection")?.lowerBound
         )
 
-        #expect(languagePosition < aboutPosition)
+        #expect(interfacePosition < aboutPosition)
     }
 
     @Test("English and Simplified Chinese resources expose the same keys")
