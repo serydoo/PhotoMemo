@@ -45,6 +45,7 @@ enum LivePhotoAssetWritingError:
     case albumNotFound
     case albumCreateFailed
     case assetSaveFailed
+    case savedAssetReadbackPending
     case savedAssetReadbackFailed
     case savedAssetNotLivePhoto
 
@@ -68,6 +69,8 @@ enum LivePhotoAssetWritingError:
             return "Unable to create the destination album."
         case .assetSaveFailed:
             return "The Live Photo was prepared, but saving to the photo library failed."
+        case .savedAssetReadbackPending:
+            return "The photo library is still confirming the saved Live Photo."
         case .savedAssetReadbackFailed:
             return "The saved Live Photo could not be verified in the photo library."
         case .savedAssetNotLivePhoto:

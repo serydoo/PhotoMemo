@@ -106,6 +106,8 @@ nonisolated enum ProductionDiagnosticErrorCode:
         "photoLibrary.album.createFailed"
     case photoLibraryAssetSaveFailed =
         "photoLibrary.asset.saveFailed"
+    case photoLibraryAssetReadbackPending =
+        "photoLibrary.asset.readbackPending"
     case photoLibraryLivePhotoVerificationFailed =
         "photoLibrary.livePhoto.verificationFailed"
     case processingFailed =
@@ -633,6 +635,8 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                 return .photoLibraryAlbumNotFound
             case .albumCreateFailed:
                 return .photoLibraryAlbumCreateFailed
+            case .savedAssetReadbackPending:
+                return .photoLibraryAssetReadbackPending
             case .savedAssetReadbackFailed,
                  .savedAssetNotLivePhoto:
                 return .photoLibraryLivePhotoVerificationFailed
@@ -656,7 +660,8 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
            code == .photoLibraryUnauthorized
             || code == .photoLibraryAlbumNotFound
             || code == .photoLibraryAlbumCreateFailed
-            || code == .photoLibraryAssetSaveFailed {
+            || code == .photoLibraryAssetSaveFailed
+            || code == .photoLibraryAssetReadbackPending {
             return code
         }
         guard let exportError =
@@ -672,6 +677,8 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
             return .photoLibraryAlbumCreateFailed
         case .assetSaveFailed:
             return .photoLibraryAssetSaveFailed
+        case .savedAssetReadbackPending:
+            return .photoLibraryAssetReadbackPending
         }
 #else
         return nil
@@ -1060,6 +1067,11 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                 "图片已生成，但写入系统图库失败。",
                 "请确认照片权限和设备存储空间后重试。"
             )
+        case .photoLibraryAssetReadbackPending:
+            return (
+                "系统图库仍在确认这张照片。",
+                "请稍后重试；时光记不会在结果未确认时重复保存。"
+            )
         case .photoLibraryLivePhotoVerificationFailed:
             return (
                 "系统没有把处理结果保留为实况照片。",
@@ -1259,6 +1271,11 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
             return (
                 "The image was created but could not be written to Photos.",
                 "Check Photos access and available storage, then try again."
+            )
+        case .photoLibraryAssetReadbackPending:
+            return (
+                "Photos is still confirming this image.",
+                "Try again shortly; MemoMark will not save a duplicate while the result is unknown."
             )
         case .photoLibraryLivePhotoVerificationFailed:
             return (

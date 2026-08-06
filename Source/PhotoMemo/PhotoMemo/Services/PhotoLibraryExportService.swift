@@ -5,16 +5,172 @@ actor PhotoLibrarySaveGate {
 
     static let shared = PhotoLibrarySaveGate()
 
+    private struct Waiter {
+
+        let id: UUID
+        let continuation:
+            CheckedContinuation<Void, any Error>
+    }
+
+    private var isSaving = false
+    private var waiters: [Waiter] = []
+
     func run<Result>(
         _ operation: () async throws -> Result
-    ) async rethrows -> Result {
+    ) async throws -> Result {
 
-        try await operation()
+        try await acquire()
+
+        do {
+            try Task.checkCancellation()
+            let result = try await operation()
+            release()
+            return result
+        } catch {
+            release()
+            throw error
+        }
+    }
+
+    private func acquire() async throws {
+        try Task.checkCancellation()
+
+        guard !isSaving else {
+            let waiterID = UUID()
+            try await withTaskCancellationHandler(
+                operation: {
+                    try await withCheckedThrowingContinuation {
+                        (continuation:
+                            CheckedContinuation<
+                                Void,
+                                any Error
+                            >) in
+
+                        guard !Task.isCancelled else {
+                            continuation.resume(
+                                throwing:
+                                    CancellationError()
+                            )
+                            return
+                        }
+
+                        waiters.append(
+                            Waiter(
+                                id: waiterID,
+                                continuation: continuation
+                            )
+                        )
+                    }
+                },
+                onCancel: {
+                    Task<Void, Never> {
+                        await self.cancelWaiter(
+                            id: waiterID
+                        )
+                    }
+                }
+            )
+            return
+        }
+
+        isSaving = true
+    }
+
+    private func release() {
+        guard !waiters.isEmpty else {
+            isSaving = false
+            return
+        }
+
+        let waiter = waiters.removeFirst()
+        waiter.continuation.resume()
+    }
+
+    private func cancelWaiter(id: UUID) {
+        guard let index = waiters.firstIndex(
+            where: { $0.id == id }
+        ) else {
+            return
+        }
+
+        let waiter = waiters.remove(at: index)
+        waiter.continuation.resume(
+            throwing: CancellationError()
+        )
+    }
+}
+
+enum PhotoLibrarySaveReceiptReconciliationDecision:
+    Equatable {
+
+    case reuseAsset
+    case awaitVisibility
+}
+
+struct PhotoLibrarySaveReceiptReconciliationPolicy {
+
+    func decision(
+        assetExists: Bool,
+        recordedAt: Date?
+    ) -> PhotoLibrarySaveReceiptReconciliationDecision {
+
+        if assetExists {
+            return .reuseAsset
+        }
+
+        // A missing fetch result does not prove that PhotoKit failed to
+        // commit. Permission and visibility can change independently.
+        _ = recordedAt
+        return .awaitVisibility
+    }
+}
+
+protocol PhotoLibraryReceiptAssetLocating {
+
+    func visibleAssetIdentifier(
+        for idempotencyKey: String
+    ) -> String?
+}
+
+struct PhotoLibrarySaveReceiptAssetLocator:
+    PhotoLibraryReceiptAssetLocating {
+
+    private let receiptStore:
+        PhotoLibrarySaveReceiptStore
+
+    init(
+        receiptStore: PhotoLibrarySaveReceiptStore
+    ) {
+        self.receiptStore = receiptStore
+    }
+
+    func visibleAssetIdentifier(
+        for idempotencyKey: String
+    ) -> String? {
+        guard let recordedIdentifier =
+                receiptStore.assetIdentifier(
+                    for: idempotencyKey
+                ) else {
+            return nil
+        }
+
+        return PHAsset.fetchAssets(
+            withLocalIdentifiers: [recordedIdentifier],
+            options: nil
+        )
+        .firstObject?
+        .localIdentifier
     }
 }
 
 nonisolated final class PhotoLibrarySaveReceiptStore:
     @unchecked Sendable {
+
+    private struct StoredReceipt: Codable {
+
+        let assetIdentifier: String
+        let recordedAt: Date?
+    }
 
     private let defaults: UserDefaults
     private let lock = NSLock()
@@ -39,7 +195,8 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         }
 
         return lock.withLock {
-            defaults.string(forKey: key)
+            storedReceipt(forStorageKey: key)?
+                .assetIdentifier
         }
     }
 
@@ -53,12 +210,8 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         }
 
         return lock.withLock {
-            defaults.object(
-                forKey:
-                    timestampStorageKey(
-                        forStorageKey: key
-                    )
-            ) as? Date
+            storedReceipt(forStorageKey: key)?
+                .recordedAt
         }
     }
 
@@ -78,13 +231,18 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
             return
         }
 
+        let receipt = StoredReceipt(
+            assetIdentifier: normalizedIdentifier,
+            recordedAt: Date()
+        )
+        guard let encodedReceipt = try? JSONEncoder()
+            .encode(receipt) else {
+            return
+        }
+
         lock.withLock {
-            defaults.set(
-                normalizedIdentifier,
-                forKey: key
-            )
-            defaults.set(
-                Date(),
+            defaults.set(encodedReceipt, forKey: key)
+            defaults.removeObject(
                 forKey:
                     timestampStorageKey(
                         forStorageKey: key
@@ -141,23 +299,24 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
                 .compactMap {
                     storageKey(for: $0)
                 }
-                .flatMap {
-                    [
-                        $0,
-                        timestampStorageKey(
-                            forStorageKey: $0
-                        )
-                    ]
-                }
         )
 
         lock.withLock {
+            for key in retainedStorageKeys {
+                migrateLegacyReceiptIfNeeded(
+                    forStorageKey: key
+                )
+            }
+
             let staleStorageKeys = defaults
                 .dictionaryRepresentation()
                 .keys
                 .filter {
                     $0.hasPrefix(keyPrefix + ".")
-                    && !retainedStorageKeys.contains($0)
+                    && (
+                        $0.hasSuffix(".recordedAt")
+                        || !retainedStorageKeys.contains($0)
+                    )
                 }
 
             for key in staleStorageKeys {
@@ -189,6 +348,47 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
         forStorageKey storageKey: String
     ) -> String {
         "\(storageKey).recordedAt"
+    }
+
+    private func storedReceipt(
+        forStorageKey storageKey: String
+    ) -> StoredReceipt? {
+        if let data = defaults.data(forKey: storageKey),
+           let receipt = try? JSONDecoder()
+            .decode(StoredReceipt.self, from: data) {
+            return receipt
+        }
+
+        guard let legacyIdentifier = defaults
+            .string(forKey: storageKey) else {
+            return nil
+        }
+
+        return StoredReceipt(
+            assetIdentifier: legacyIdentifier,
+            recordedAt:
+                defaults.object(
+                    forKey:
+                        timestampStorageKey(
+                            forStorageKey: storageKey
+                        )
+                ) as? Date
+        )
+    }
+
+    private func migrateLegacyReceiptIfNeeded(
+        forStorageKey storageKey: String
+    ) {
+        guard defaults.data(forKey: storageKey) == nil,
+              let receipt = storedReceipt(
+                forStorageKey: storageKey
+              ),
+              let encodedReceipt = try? JSONEncoder()
+                .encode(receipt) else {
+            return
+        }
+
+        defaults.set(encodedReceipt, forKey: storageKey)
     }
 }
 
@@ -267,6 +467,8 @@ enum PhotoLibraryExportError: LocalizedError {
 
     case assetSaveFailed
 
+    case savedAssetReadbackPending
+
     var diagnosticCode: String {
         switch self {
         case .unauthorized:
@@ -277,6 +479,8 @@ enum PhotoLibraryExportError: LocalizedError {
             return "photoLibrary.album.createFailed"
         case .assetSaveFailed:
             return "photoLibrary.asset.saveFailed"
+        case .savedAssetReadbackPending:
+            return "photoLibrary.asset.readbackPending"
         }
     }
 
@@ -295,6 +499,9 @@ enum PhotoLibraryExportError: LocalizedError {
 
         case .assetSaveFailed:
             return "图片已生成，但写入系统相册失败。"
+
+        case .savedAssetReadbackPending:
+            return "照片正在写入系统相册，请稍后重试。"
         }
     }
 }
@@ -311,6 +518,8 @@ final class PhotoLibraryExportService:
         PhotoMetadataReader()
     private let receiptStore:
         PhotoLibrarySaveReceiptStore
+    private let receiptReconciliationPolicy =
+        PhotoLibrarySaveReceiptReconciliationPolicy()
 
     init(
         receiptStore:
@@ -462,7 +671,9 @@ final class PhotoLibraryExportService:
 
             if let idempotencyKey,
                let existingAsset =
-                existingAsset(for: idempotencyKey) {
+                try existingAsset(
+                    for: idempotencyKey
+                ) {
                 return PhotoLibrarySaveResult(
                     albumTitle:
                         album?.localizedTitle
@@ -471,6 +682,8 @@ final class PhotoLibraryExportService:
                         existingAsset.localIdentifier
                 )
             }
+
+            try Task.checkCancellation()
 
             var placeholderIdentifier: String?
 
@@ -593,7 +806,7 @@ private extension PhotoLibraryExportService {
 
     func existingAsset(
         for idempotencyKey: String
-    ) -> PHAsset? {
+    ) throws -> PHAsset? {
         guard let assetIdentifier =
                 receiptStore.assetIdentifier(
                     for: idempotencyKey
@@ -610,13 +823,21 @@ private extension PhotoLibraryExportService {
             )
             .firstObject
 
-        if asset == nil {
-            receiptStore.removeReceipt(
-                for: idempotencyKey
-            )
-        }
+        switch receiptReconciliationPolicy
+            .decision(
+                assetExists: asset != nil,
+                recordedAt:
+                    receiptStore.recordedAt(
+                        for: idempotencyKey
+                    )
+            ) {
+        case .reuseAsset:
+            return asset
 
-        return asset
+        case .awaitVisibility:
+            throw PhotoLibraryExportError
+                .savedAssetReadbackPending
+        }
     }
 
     func isAuthorized(

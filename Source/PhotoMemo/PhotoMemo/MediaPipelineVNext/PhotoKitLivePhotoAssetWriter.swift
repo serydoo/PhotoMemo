@@ -275,8 +275,8 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
         .defaultAlbumTitle
     private let receiptStore:
         PhotoLibrarySaveReceiptStore
-    private let pendingReceiptGraceInterval:
-        TimeInterval = 30
+    private let receiptReconciliationPolicy =
+        PhotoLibrarySaveReceiptReconciliationPolicy()
 
     init(
         receiptStore:
@@ -313,6 +313,8 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                     assetLocalIdentifier: existingAsset.localIdentifier
                 )
             }
+
+            try Task.checkCancellation()
 
             var placeholderIdentifier: String?
 
@@ -406,24 +408,21 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
             )
             .firstObject
 
-        if asset == nil,
-           let recordedAt =
-            receiptStore.recordedAt(
-                for: idempotencyKey
-            ),
-           Date().timeIntervalSince(recordedAt)
-            < pendingReceiptGraceInterval {
+        switch receiptReconciliationPolicy
+            .decision(
+                assetExists: asset != nil,
+                recordedAt:
+                    receiptStore.recordedAt(
+                        for: idempotencyKey
+                    )
+            ) {
+        case .reuseAsset:
+            return asset
+
+        case .awaitVisibility:
             throw LivePhotoAssetWritingError
-                .savedAssetReadbackFailed
+                .savedAssetReadbackPending
         }
-
-        if asset == nil {
-            receiptStore.removeReceipt(
-                for: idempotencyKey
-            )
-        }
-
-        return asset
     }
 
     func isAuthorized(

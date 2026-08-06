@@ -242,11 +242,56 @@ struct ProductionDiagnosticsTests {
                 error: PhotoLibraryExportError.albumNotFound,
                 language: .english
             )
+        let pendingReadback =
+            ProductionDiagnosticFailureClassifier
+            .processing(
+                phase:
+                    BatchTaskPhase
+                    .savingToPhotoLibrary
+                    .rawValue,
+                classification: "photoLibrary",
+                operationID: UUID(),
+                error:
+                    PhotoLibraryExportError
+                    .savedAssetReadbackPending,
+                language: .english
+            )
 
         #expect(unauthorized.code == .photoLibraryUnauthorized)
         #expect(unauthorized.userMessage.contains("permission"))
         #expect(missingAlbum.code == .photoLibraryAlbumNotFound)
         #expect(missingAlbum.userMessage.contains("no longer exists"))
+        #expect(
+            pendingReadback.code
+            == .photoLibraryAssetReadbackPending
+        )
+        #expect(
+            pendingReadback.userMessage
+                .contains("still confirming")
+        )
+
+        let pendingLivePhotoReadback =
+            ProductionDiagnosticFailureClassifier
+            .processing(
+                phase:
+                    BatchTaskPhase
+                    .savingToPhotoLibrary
+                    .rawValue,
+                classification: "photoLibrary",
+                operationID: UUID(),
+                error:
+                    LivePhotoAssetWritingError
+                    .savedAssetReadbackPending,
+                language: .english
+            )
+        #expect(
+            pendingLivePhotoReadback.code
+            == .photoLibraryAssetReadbackPending
+        )
+        #expect(
+            pendingLivePhotoReadback.userMessage
+                .contains("still confirming")
+        )
 
         let livePhotoReadback =
             ProductionDiagnosticFailureClassifier

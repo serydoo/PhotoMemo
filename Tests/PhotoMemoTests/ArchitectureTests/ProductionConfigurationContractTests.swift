@@ -497,8 +497,8 @@ struct ProductionConfigurationContractTests {
         }
     }
 
-    @Test("custom memory copy appends to the renderer smart text")
-    func customMemoryCopyAppendsToRendererSmartText() throws {
+    @Test("custom memory copy remains newline-separated from renderer smart text")
+    func customMemoryCopyRemainsNewlineSeparatedFromRendererSmartText() throws {
         let fixture = try Self.makeFixture()
         var aggregate = fixture.aggregate
         aggregate.subjects[0].configurations[0]
