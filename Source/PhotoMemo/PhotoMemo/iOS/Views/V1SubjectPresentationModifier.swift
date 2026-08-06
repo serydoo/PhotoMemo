@@ -8,6 +8,8 @@ struct V1SubjectPresentationModifier: ViewModifier {
         V1ConfigurationSwitchPresentationState
 
     let birthdayDate: Date
+    let availableConfigurationCount: Int
+    let completedPhotoCount: Int
     let shouldSaveSubjectLibrary: Bool
     let configurationCoordinator: ConfigurationCoordinator?
     let onRequestSubjectSelection: (MemorySubject.ID) -> Void
@@ -50,6 +52,10 @@ private extension V1SubjectPresentationModifier {
         V1IOSSubjectOverviewSheet(
             subjects: session.state.subjects,
             subject: session.state.selectedSubject,
+            availableConfigurationCount:
+                availableConfigurationCount,
+            completedPhotoCount:
+                completedPhotoCount,
             session: session,
             selectedSubjectID: session.state.selectedSubjectID,
             onSelectSubject: onRequestSubjectSelection,
@@ -65,6 +71,10 @@ private extension V1SubjectPresentationModifier {
     ) -> some View {
         V1IOSSubjectConfigurationFlow(
             flowState: flowState,
+            availableConfigurationCount:
+                availableConfigurationCount,
+            completedPhotoCount:
+                completedPhotoCount,
             onDeleteSubject: {
                 deleteCurrentSubject()
                 var nextState = V1EntryFlowCoordinator

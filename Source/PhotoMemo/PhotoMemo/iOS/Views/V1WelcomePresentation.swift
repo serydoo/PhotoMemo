@@ -316,14 +316,19 @@ struct V1FirstRunConfigurationSheet: View {
     @State private var birthday = Date()
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var showsNameRequiredAlert = false
 
     let onSave: (String, Date) async -> Bool
     let onDefer: () -> Void
 
     private var isFirstRunConfigurationReady: Bool {
+        hasValidSubjectName && birthday <= Date()
+    }
+
+    private var hasValidSubjectName: Bool {
         !subjectName.trimmingCharacters(
             in: .whitespacesAndNewlines
-        ).isEmpty && birthday <= Date()
+        ).isEmpty
     }
 
     var body: some View {
@@ -338,7 +343,7 @@ struct V1FirstRunConfigurationSheet: View {
                         Text("从一个人和一个重要时刻开始。")
                             .font(.title2.weight(.semibold))
 
-                        Text("告诉时光记你想围绕谁记录，以及从哪个重要时刻开始。")
+                        Text("告诉时光记这段回忆围绕谁，以及哪个重要日子最重要。")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -346,16 +351,23 @@ struct V1FirstRunConfigurationSheet: View {
                     .padding(.vertical, 6)
                 }
 
-                Section("想围绕谁记录") {
+                Section {
                     TextField(
                         "例如：小宝、妈妈、团团",
                         text: $subjectName
                     )
+                    .accessibilityLabel("对象名称，必填")
                     .textInputAutocapitalization(.never)
 
                     Text("这个名字会陪着这段回忆一起被记住。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    HStack(spacing: 2) {
+                        Text("对象名称")
+                        Text("*")
+                            .foregroundStyle(.red)
+                    }
                 }
 
                 Section("重要日期") {
@@ -372,7 +384,7 @@ struct V1FirstRunConfigurationSheet: View {
 
                 Section("接下来会发生") {
                     Label(
-                        "按这个重要时刻记录变化",
+                        "按这个重要时刻呈现时间变化",
                         systemImage: "rectangle.and.text.magnifyingglass"
                     )
                     Label(
@@ -402,14 +414,12 @@ struct V1FirstRunConfigurationSheet: View {
                             if isSaving {
                                 ProgressView()
                             }
-                            Text(isSaving ? "正在保存" : "开始记录")
+                            Text(isSaving ? "正在保存" : "完成设置")
                                 .fontWeight(.semibold)
                             Spacer()
                         }
                     }
-                    .disabled(
-                        !isFirstRunConfigurationReady || isSaving
-                    )
+                    .disabled(isSaving)
                 }
             }
             .formStyle(.grouped)
@@ -422,10 +432,28 @@ struct V1FirstRunConfigurationSheet: View {
                 }
             }
             .interactiveDismissDisabled(isSaving)
+            .alert(
+                "填写对象名称",
+                isPresented: $showsNameRequiredAlert
+            ) {
+                Button("好", role: .cancel) {}
+            } message: {
+                Text("对象名称是完成首次配置的必填信息。")
+            }
         }
     }
 
     private func save() {
+        guard hasValidSubjectName else {
+            showsNameRequiredAlert = true
+            return
+        }
+
+        guard isFirstRunConfigurationReady else {
+            errorMessage = "请选择有效的重要日期。"
+            return
+        }
+
         isSaving = true
         errorMessage = nil
         Task {
@@ -555,7 +583,7 @@ private struct V1WelcomeFeatureRow: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.94))
+                .fill(ConfigurationUI.panelBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -617,23 +645,14 @@ private struct V1WelcomeHeroSection: View {
         .padding(22)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white,
-                            Color.white.opacity(0.92)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(ConfigurationUI.panelBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .stroke(ConfigurationUI.faintHairline)
         )
         .shadow(
-            color: Color.black.opacity(0.06),
+            color: ConfigurationUI.cardShadow,
             radius: 18,
             y: 8
         )
@@ -712,8 +731,8 @@ private struct V1WelcomeHeroMark: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.08), radius: 18, y: 8)
+                .fill(MemoMarkDesignTokens.Semantic.fixedLightBackground)
+                .shadow(color: ConfigurationUI.cardShadow, radius: 18, y: 8)
 
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.black, lineWidth: 8)

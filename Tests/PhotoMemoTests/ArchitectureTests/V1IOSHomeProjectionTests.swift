@@ -260,11 +260,14 @@ struct V1IOSHomeProjectionTests {
         #expect(!projection.emphasizesAppliedState)
     }
 
-    @Test("saved status value falls back cleanly and respects the provided time zone")
+    @Test("saved status identifies the timestamp as a saved preset in each interface language")
     func savedStatusValueSupportsUnsavedAndSavedStates() {
         #expect(
             V1IOSHomeProjection
-                .savedStatusValue(savedAt: nil)
+                .savedStatusValue(
+                    savedAt: nil,
+                    language: .simplifiedChinese
+                )
             == "尚未保存"
         )
 
@@ -272,18 +275,30 @@ struct V1IOSHomeProjectionTests {
             V1IOSHomeProjection
                 .savedStatusValue(
                     savedAt: Date(timeIntervalSince1970: 0),
-                    timeZone: TimeZone(secondsFromGMT: 0)!
+                    timeZone: TimeZone(secondsFromGMT: 0)!,
+                    language: .simplifiedChinese
                 )
-            == "1月1日 00:00"
+            == "1月1日 00:00 保存"
         )
 
         #expect(
             V1IOSHomeProjection
                 .savedStatusValue(
                     savedAt: Date(timeIntervalSince1970: 0),
-                    timeZone: TimeZone(identifier: "Asia/Shanghai")!
+                    timeZone: TimeZone(identifier: "Asia/Shanghai")!,
+                    language: .simplifiedChinese
                 )
-            == "1月1日 08:00"
+            == "1月1日 08:00 保存"
+        )
+
+        #expect(
+            V1IOSHomeProjection
+                .savedStatusValue(
+                    savedAt: Date(timeIntervalSince1970: 0),
+                    timeZone: TimeZone(secondsFromGMT: 0)!,
+                    language: .english
+                )
+            == "Saved Jan 1, 00:00"
         )
     }
 }

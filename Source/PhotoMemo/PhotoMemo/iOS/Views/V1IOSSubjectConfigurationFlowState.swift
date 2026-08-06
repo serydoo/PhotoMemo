@@ -62,6 +62,8 @@ final class V1IOSSubjectConfigurationFlowState:
             updatedSubject.expressionSubjectSource
         committedSubject.decorations = updatedSubject.decorations
         committedSubject.timeAnchors = updatedSubject.timeAnchors
+        committedSubject.activeTimeAnchorID =
+            updatedSubject.activeTimeAnchorID
         committedSubject.referenceDate = updatedSubject.referenceDate
         committedSubject.behavior = updatedSubject.behavior
 

@@ -221,56 +221,96 @@ struct MemorySubjectEditorView: View {
             identitySnapshotCard
             avatarEditor
             identityFieldsPanel
+
+            if !hasValidObjectName {
+                Text("对象名称不能为空")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .accessibilityLabel("对象名称不能为空")
+            }
         }
     }
 
     private var identityOverviewEditor: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            adaptiveIdentityOverviewHeader
-                .padding(12)
-                .subjectIdentityInnerCardChrome()
+        VStack(alignment: .leading, spacing: 14) {
+            contactAvatarEditor
+                .frame(maxWidth: .infinity, alignment: .center)
 
             if let identityOverviewAccessory {
                 identityOverviewAccessory
             }
+
+            expressionSubjectCard
+                .subjectIdentityInnerCardChrome()
 
             compactIdentityFieldsPanel
                 .subjectIdentityInnerCardChrome()
         }
     }
 
-    private var adaptiveIdentityOverviewHeader: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 8) {
-                identityOverviewText
-                expressionSubjectMenuRow
+    @ViewBuilder
+    private var contactAvatarEditor: some View {
+#if canImport(PhotosUI)
+        VStack(spacing: 8) {
+            ZStack(alignment: .topTrailing) {
+                subjectAvatarPreview(size: 96)
+
+                if hasAvatar {
+                    Button(role: .destructive) {
+                        removeAvatarFromDraft()
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 24, height: 24)
+                            .background(
+                                Circle()
+                                    .fill(Color.red)
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white, lineWidth: 2)
+                            )
+                            .frame(
+                                width: ConfigurationUI.minimumInteractiveHeight,
+                                height: ConfigurationUI.minimumInteractiveHeight
+                            )
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("删除对象头像")
+                    .offset(x: 14, y: -14)
+                    .disabled(isOptimizingAvatar)
+                }
             }
-            .layoutPriority(1)
 
-            compactAvatarPicker
+            PhotosPicker(
+                selection: $selectedAvatarItem,
+                matching: .images
+            ) {
+                HStack(spacing: 5) {
+                    if isOptimizingAvatar {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    Text(hasAvatar ? "编辑" : "添加照片")
+                        .font(.subheadline.weight(.medium))
+                }
+                .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+            .disabled(isOptimizingAvatar)
+            .accessibilityLabel(hasAvatar ? "编辑对象头像" : "添加对象照片")
         }
+#else
+        subjectAvatarPreview(size: 96)
+#endif
     }
 
-    private var identityOverviewText: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(
-                displayName
-                    .trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                    )
-                    .isEmpty
-                ? "记忆对象"
-                : displayName
-            )
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(.primary)
-            .lineLimit(1)
-            .multilineTextAlignment(.leading)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var expressionSubjectMenuRow: some View {
+    private var expressionSubjectCard: some View {
         Menu {
             ForEach(
                 MemorySubjectExpressionSubjectSource.allCases
@@ -285,189 +325,190 @@ struct MemorySubjectEditorView: View {
                             ? "checkmark"
                             : expressionSubjectSourceIcon(for: source)
                     )
+                    .accessibilityLabel(
+                        "\(source.displayTitle)，\(expressionSubjectSourceValue(for: source) ?? "未填写")"
+                    )
                 }
                 .disabled(expressionSubjectSourceValue(for: source) == nil)
             }
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "person.text.rectangle")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 24, height: 24)
-                    .background(
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.11))
-                    )
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("记忆表达主体")
+                            .font(.body)
+                            .foregroundStyle(.primary)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("锚点内表达主体")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        expressionSubjectSelectionLabel
+                            .frame(
+                                maxWidth: .infinity,
+                                alignment: .leading
+                            )
+                    }
+                } else {
+                    HStack(alignment: .center, spacing: 12) {
+                        Text("记忆表达主体")
+                            .font(.body)
+                            .foregroundStyle(.primary)
 
-                    if dynamicTypeSize.isAccessibilitySize {
-                        VStack(alignment: .leading, spacing: 2) {
-                            expressionSubjectValueText
-                            expressionSubjectSourceText
-                        }
-                    } else {
-                        HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            expressionSubjectValueText
-                            expressionSubjectSourceText
-                        }
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                        Spacer(minLength: 12)
+
+                        expressionSubjectSelectionLabel
                     }
                 }
-
-                Spacer(minLength: 8)
-
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
             .frame(
-                maxWidth: 300,
-                minHeight: 44,
+                maxWidth: .infinity,
+                minHeight: ConfigurationUI.minimumInteractiveHeight,
                 alignment: .leading
-            )
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 12,
-                    style: .continuous
-                )
-                .fill(ConfigurationUI.selectedBackground)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("选择锚点内表达主体")
         .accessibilityValue(
-            "\(expressionSubjectDisplayValue)，来自\(expressionSubjectDisplaySourceTitle)"
+            expressionSubjectSelectionTitle
         )
     }
 
-    private var expressionSubjectValueText: some View {
-        Text(expressionSubjectDisplayValue)
-            .font(.body.weight(.semibold))
-            .foregroundStyle(.primary)
-            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+    private var expressionSubjectSelectionLabel: some View {
+        HStack(spacing: 6) {
+            Text(expressionSubjectSelectionTitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(.trailing)
+
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+        .contentShape(Rectangle())
     }
 
-    private var expressionSubjectSourceText: some View {
-        Text("· 来自“\(expressionSubjectDisplaySourceTitle)”")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
+    private var expressionSubjectSelectionTitle: String {
+        guard let source = expressionSubjectResolution.source else {
+            return "默认 · 对象名称"
+        }
+
+        if source == .displayName {
+            return "默认 · 对象名称"
+        }
+
+        return source.displayTitle
     }
 
     private var compactIdentityFieldsPanel: some View {
         VStack(spacing: 0) {
-            compactLabeledTextField(
+            contactTextField(
                 "对象名称",
                 text: $displayName,
                 focus: .displayName,
-                systemImage: "person.fill",
-                tint: .blue
+                placeholder: "请输入对象名称",
+                isRequired: true
             )
 
-            compactDivider
+            contactDivider
 
-            compactLabeledTextField(
+            contactTextField(
                 "昵称",
                 text: $shortName,
                 focus: .shortName,
-                systemImage: "person.text.rectangle",
-                tint: .purple
+                placeholder: "选填"
             )
 
-            compactDivider
+            contactDivider
 
-            compactLabeledTextField(
+            contactTextField(
                 "与我的关系",
                 text: $relationshipRole,
                 focus: .relationshipRole,
-                systemImage: "person.2.fill",
-                tint: .orange
+                placeholder: "选填"
             )
 
-            compactDivider
+            contactDivider
 
-            compactLabeledTextField(
+            contactTextField(
                 "专属称呼",
                 text: $relationshipLabel,
                 focus: .relationshipLabel,
-                systemImage: "heart.fill",
-                tint: .pink
+                placeholder: "选填"
             )
         }
-        .padding(.vertical, 2)
     }
 
-    private func compactLabeledTextField(
+    private func contactTextField(
         _ title: String,
         text: Binding<String>,
         focus: SubjectFocusedField,
-        systemImage: String,
-        tint: Color
+        placeholder: String,
+        isRequired: Bool = false
     ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 8) {
-                compactIdentityTextField(
-                    title,
-                    text: text,
-                    focus: focus,
-                    alignment: .leading
-                )
-                .font(.body)
-
-                if !text.wrappedValue.isEmpty {
-                    Button {
-                        text.wrappedValue = ""
-                        focusedField = focus
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24, height: 24)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("清除\(title)")
-                }
-            }
-            .configurationFieldChrome(
-                isActive: focusedField == focus
+        HStack(spacing: 8) {
+            contactFieldPrompt(
+                title: title,
+                isRequired: isRequired
             )
+            .frame(width: 104, alignment: .leading)
+
+            TextField(placeholder, text: text)
+                .textFieldStyle(.plain)
+                .font(.body)
+                .focused($focusedField, equals: focus)
+                .submitLabel(
+                    focus == .relationshipLabel
+                    ? .done
+                    : .next
+                )
+                .onSubmit {
+                    advanceIdentityFocus(from: focus)
+                }
+                .accessibilityLabel(
+                    isRequired ? "\(title)，必填" : title
+                )
+
+            if !text.wrappedValue.isEmpty {
+                Button {
+                    text.wrappedValue = ""
+                    focusedField = focus
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .frame(
+                            width: ConfigurationUI.minimumInteractiveHeight,
+                            height: ConfigurationUI.minimumInteractiveHeight
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("清除\(title)")
+            }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 7)
+        .frame(minHeight: SubjectIdentityMetrics.contactFieldRowHeight)
+        .contentShape(Rectangle())
     }
 
-    private func compactIdentityTextField(
-        _ title: String,
-        text: Binding<String>,
-        focus: SubjectFocusedField,
-        alignment: TextAlignment
+    private func contactFieldPrompt(
+        title: String,
+        isRequired: Bool
     ) -> some View {
-        TextField(title, text: text)
-            .textFieldStyle(.plain)
-            .font(.body)
-            .multilineTextAlignment(alignment)
-            .focused($focusedField, equals: focus)
-            .submitLabel(
-                focus == .relationshipLabel
-                ? .done
-                : .next
-            )
-            .onSubmit {
-                advanceIdentityFocus(from: focus)
+        HStack(spacing: 2) {
+            Text(title)
+                .font(.body)
+                .foregroundStyle(.secondary)
+
+            if isRequired {
+                Text("*")
+                    .foregroundStyle(.red)
             }
+        }
     }
 
     private var expressionSubjectDisplayValue: String {
@@ -553,50 +594,6 @@ struct MemorySubjectEditorView: View {
         default:
             focusedField = nil
         }
-    }
-
-    @ViewBuilder
-    private var compactAvatarPicker: some View {
-#if canImport(PhotosUI)
-        PhotosPicker(
-            selection: $selectedAvatarItem,
-            matching: .images
-        ) {
-            compactAvatarContent
-        }
-        .buttonStyle(.plain)
-        .disabled(isOptimizingAvatar)
-        .accessibilityLabel("选择对象头像")
-#else
-        compactAvatarContent
-#endif
-    }
-
-    private var compactAvatarContent: some View {
-        subjectAvatarPreview
-            .scaleEffect(130.0 / 64.0)
-            .frame(width: 130, height: 130)
-            .overlay(alignment: .bottomTrailing) {
-                Image(
-                    systemName:
-                        isOptimizingAvatar
-                        ? "hourglass"
-                        : "camera.fill"
-                )
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
-                .background(
-                    Circle()
-                        .fill(Color.black.opacity(0.78))
-                )
-                .overlay(
-                    Circle()
-                        .stroke(Color.white, lineWidth: 2)
-                )
-                .padding(0)
-                .accessibilityHidden(true)
-            }
     }
 
     private var identitySnapshotCard: some View {
@@ -795,7 +792,7 @@ struct MemorySubjectEditorView: View {
             )
         }
         .padding(.vertical, 4)
-        .background(Color.white.opacity(0.94))
+        .background(ConfigurationUI.controlBackground)
         .clipShape(
             RoundedRectangle(
                 cornerRadius: 18,
@@ -1364,6 +1361,12 @@ struct MemorySubjectEditorView: View {
             return
         }
 
+        // The full Configuration Center writes directly to the live session.
+        // Keep its last valid identity intact while the user replaces the name.
+        guard mode != .full || hasValidObjectName else {
+            return
+        }
+
         updated.identity.displayName = displayName
         updated.identity.shortName = shortName
         updated.identity.avatarImagePath = avatarImagePath
@@ -1390,7 +1393,43 @@ struct MemorySubjectEditorView: View {
         session.updateSelectedSubject(updated)
     }
 
+    private var hasValidObjectName: Bool {
+        !displayName
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            .isEmpty
+    }
+
+    private var hasAvatar: Bool {
+        avatarImagePath?.isEmpty == false
+        || avatarBadgeImagePath?.isEmpty == false
+        || avatarPreviewImagePath?.isEmpty == false
+    }
+
+    private func removeAvatarFromDraft() {
+        guard var identity = session.state.selectedSubject?.identity else {
+            return
+        }
+
+        identity.removeAvatarAssets()
+        avatarImagePath = identity.avatarImagePath
+        avatarBadgeImagePath = identity.avatarBadgeImagePath
+        avatarPreviewImagePath = identity.avatarPreviewImagePath
+#if canImport(PhotosUI)
+        selectedAvatarItem = nil
+#endif
+        avatarStatusMessage = normalizedAvatarStatusMessage(from: nil)
+        syncDraftToSession()
+    }
+
     private var subjectAvatarPreview: some View {
+        subjectAvatarPreview(size: 64)
+    }
+
+    private func subjectAvatarPreview(
+        size: CGFloat
+    ) -> some View {
         ZStack {
             Circle()
                 .fill(Color.accentColor.opacity(0.10))
@@ -1403,11 +1442,16 @@ struct MemorySubjectEditorView: View {
                     .clipShape(Circle())
             } else {
                 Image(systemName: "person.crop.circle.fill")
-                    .font(.title2.weight(.medium))
+                    .font(
+                        .system(
+                            size: size * 0.38,
+                            weight: .medium
+                        )
+                    )
                     .foregroundStyle(Color.accentColor)
             }
         }
-        .frame(width: 64, height: 64)
+        .frame(width: size, height: size)
         .overlay(
             Circle()
                 .stroke(ConfigurationUI.faintHairline)
@@ -1426,7 +1470,7 @@ struct MemorySubjectEditorView: View {
             .padding(.vertical, 7)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.88))
+                    .fill(ConfigurationUI.controlBackground)
             )
             .overlay(
                 Capsule(style: .continuous)
@@ -1457,7 +1501,7 @@ struct MemorySubjectEditorView: View {
                 .fill(
                     isReady
                     ? Color.accentColor.opacity(0.10)
-                    : Color.white.opacity(0.88)
+                    : ConfigurationUI.controlBackground
                 )
         )
         .overlay(
@@ -1482,7 +1526,7 @@ struct MemorySubjectEditorView: View {
             .padding(.vertical, 7)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.88))
+                    .fill(ConfigurationUI.controlBackground)
             )
             .overlay(
                 Capsule(style: .continuous)
@@ -1534,6 +1578,13 @@ struct MemorySubjectEditorView: View {
             .fill(ConfigurationUI.faintHairline)
             .frame(height: 0.5)
             .padding(.leading, 58)
+    }
+
+    private var contactDivider: some View {
+        Rectangle()
+            .fill(ConfigurationUI.faintHairline)
+            .frame(height: 0.5)
+            .padding(.leading, 12)
     }
 
     private func normalizedAvatarStatusMessage(
@@ -1621,6 +1672,11 @@ struct MemorySubjectEditorView: View {
 
         isOptimizingAvatar = false
     }
+}
+
+private enum SubjectIdentityMetrics {
+
+    static let contactFieldRowHeight: CGFloat = 54
 }
 
 private enum SubjectFocusedField: Hashable {
@@ -1811,22 +1867,6 @@ private struct SubjectTimeAnchorRow: View {
 
     private var rowContent: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(
-                cornerRadius: 11,
-                style: .continuous
-            )
-            .fill(
-                isEditing
-                ? anchorTypeTint.opacity(0.16)
-                : anchorTypeTint.opacity(0.10)
-            )
-            .frame(width: 36, height: 36)
-            .overlay {
-                Image(systemName: anchorTypeIconName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(anchorTypeTint)
-            }
-
             VStack(alignment: .leading, spacing: 3) {
                 Text(anchor.title)
                     .font(.subheadline.weight(.semibold))
@@ -1839,26 +1879,22 @@ private struct SubjectTimeAnchorRow: View {
                     .lineLimit(1)
 
                 if dynamicTypeSize.isAccessibilitySize {
-                    Text(anchor.resolvedAnchorType.displayName)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                    Text(anchor.resolvedAnchorType.compactDisplayName)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(anchorTypeTint)
                         .lineLimit(2)
+                        .accessibilityLabel(anchorTypeAccessibilityLabel)
                 }
             }
 
             Spacer(minLength: 0)
 
             if !dynamicTypeSize.isAccessibilitySize {
-                Text(anchor.resolvedAnchorType.displayName)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                Text(anchor.resolvedAnchorType.compactDisplayName)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(anchorTypeTint)
                     .lineLimit(1)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(Color.primary.opacity(0.045))
-                    )
+                    .accessibilityLabel(anchorTypeAccessibilityLabel)
             }
 
             Menu {
@@ -1877,7 +1913,10 @@ private struct SubjectTimeAnchorRow: View {
                 Image(systemName: "ellipsis.circle")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.accentColor.opacity(0.78))
-                    .frame(width: 32, height: 32)
+                    .frame(
+                        width: ConfigurationUI.minimumInteractiveHeight,
+                        height: ConfigurationUI.minimumInteractiveHeight
+                    )
             }
             .accessibilityLabel("时间锚点操作")
 
@@ -1885,7 +1924,7 @@ private struct SubjectTimeAnchorRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 8 : 0)
         .frame(minHeight: SubjectTimeAnchorMetrics.rowHeight)
-        .background(Color.white.opacity(0.94))
+        .background(ConfigurationUI.controlBackground)
     }
 
     private var anchorDateText: String {
@@ -1898,19 +1937,13 @@ private struct SubjectTimeAnchorRow: View {
         )
     }
 
-    private var anchorTypeIconName: String {
-        switch anchor.resolvedAnchorType {
-        case .birthday:
-            return "birthday.cake.fill"
-        case .relationship:
-            return "heart.fill"
-        case .marriage:
-            return "sparkles"
-        case .exam:
-            return "flag.checkered"
-        case .custom:
-            return "calendar"
-        }
+    private var anchorTypeAccessibilityLabel: String {
+        let typeName = anchor.resolvedAnchorType.localizedDisplayName(
+            for: .interfaceStored
+        )
+        return MemoMarkLanguage.interfaceStored == .simplifiedChinese
+            ? "类型，\(typeName)"
+            : "Type, \(typeName)"
     }
 
     private var anchorTypeTint: Color {

@@ -40,9 +40,12 @@ enum V1IOSSubjectOverviewPresenter {
                 ),
             expressionSubjectTitle:
                 subject?
-                .expressionSubjectSource
+                .resolvedExpressionSubject
+                .source?
                 .displayTitle
-                ?? "显示名称",
+                ?? MemorySubjectExpressionSubjectSource
+                    .displayName
+                    .displayTitle,
             expressionSubjectValue:
                 normalizedOptionalText(
                     subject?

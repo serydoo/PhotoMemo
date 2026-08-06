@@ -140,11 +140,18 @@ enum V1IOSHomeProjection {
 
     static func savedStatusValue(
         savedAt: Date?,
-        timeZone: TimeZone = .autoupdatingCurrent
+        timeZone: TimeZone = .autoupdatingCurrent,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> String {
 
         guard let savedAt else {
-            return "尚未保存"
+            return language.localized(
+                key: "home.preset.not_saved",
+                fallback:
+                    language == .simplifiedChinese
+                    ? "尚未保存"
+                    : "Not saved"
+            )
         }
 
         var calendar = Calendar(identifier: .gregorian)
@@ -162,16 +169,45 @@ enum V1IOSHomeProjection {
             let hour = components.hour,
             let minute = components.minute
         else {
-            return "尚未保存"
+            return language.localized(
+                key: "home.preset.not_saved",
+                fallback:
+                    language == .simplifiedChinese
+                    ? "尚未保存"
+                    : "Not saved"
+            )
         }
 
-        return String(
-            format: "%d月%d日 %02d:%02d",
-            month,
-            day,
-            hour,
-            minute
-        )
+        switch language {
+        case .simplifiedChinese:
+            let format = language.localized(
+                key: "home.preset.saved_status_format",
+                fallback: "%d月%d日 %02d:%02d 保存"
+            )
+            return String(
+                format: format,
+                locale: language.locale,
+                month,
+                day,
+                hour,
+                minute
+            )
+
+        case .english:
+            let formatter = DateFormatter()
+            formatter.locale = language.locale
+            formatter.timeZone = timeZone
+            formatter.dateFormat = "MMM d, HH:mm"
+            let format = language.localized(
+                key: "home.preset.saved_status_format",
+                fallback: "Saved %@"
+            )
+            return String(
+                format: format,
+                locale: language.locale,
+                formatter.string(from: savedAt)
+            )
+        }
     }
 
     static func subjectTitle(

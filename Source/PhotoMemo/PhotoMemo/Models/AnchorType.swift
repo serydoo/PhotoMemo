@@ -31,6 +31,61 @@ extension AnchorType {
         }
     }
 
+    var compactDisplayName: String {
+
+        compactDisplayName(for: .interfaceStored)
+    }
+
+    func compactDisplayName(
+        for language: MemoMarkLanguage
+    ) -> String {
+
+        let fallback: String
+
+        switch self {
+
+        case .birthday:
+            fallback = language == .simplifiedChinese
+                ? "生日/出生"
+                : "Birthday/Birth"
+
+        case .relationship:
+            fallback = language == .simplifiedChinese
+                ? "恋爱"
+                : "Love"
+
+        case .marriage:
+            fallback = language == .simplifiedChinese
+                ? "结婚"
+                : "Marriage"
+
+        case .exam:
+            fallback = language == .simplifiedChinese
+                ? "目标"
+                : "Goal"
+
+        case .custom:
+            fallback = language == .simplifiedChinese
+                ? "自定义"
+                : "Custom"
+        }
+
+        return language.localized(
+            key: "anchor.type.\(rawValue).compact",
+            fallback: fallback
+        )
+    }
+
+    func localizedDisplayName(
+        for language: MemoMarkLanguage
+    ) -> String {
+
+        language.localized(
+            key: "settings.expression.anchor.\(rawValue).title",
+            fallback: displayName
+        )
+    }
+
     var suggestedTitle: String {
 
         switch self {

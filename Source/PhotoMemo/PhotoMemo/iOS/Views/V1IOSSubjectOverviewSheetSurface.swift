@@ -5,6 +5,8 @@ struct V1IOSSubjectOverviewSheet: View {
 
     let subjects: [MemorySubject]
     let subject: MemorySubject?
+    let availableConfigurationCount: Int
+    let completedPhotoCount: Int
 
     @ObservedObject
     var session: ConfigurationSession
@@ -46,7 +48,7 @@ struct V1IOSSubjectOverviewSheet: View {
 
                     V1TitledSectionCard(
                         title: "时间锚点",
-                        subtitle: "用于计算记忆对象的时间参考"
+                        subtitle: "这些重要时刻会影响照片中的时间表达。"
                     ) {
                         V1IOSSubjectAnchorDetailSection(
                             session: session,
@@ -55,6 +57,13 @@ struct V1IOSSubjectOverviewSheet: View {
                                 onPersistSubjectChanges
                         )
                     }
+
+                    V1IOSSubjectStatisticsStrip(
+                        availableConfigurationCount:
+                            availableConfigurationCount,
+                        completedPhotoCount:
+                            completedPhotoCount
+                    )
                 }
                 .padding(.top, 12)
                 .padding(.bottom, 34)
@@ -90,6 +99,10 @@ struct V1IOSSubjectOverviewSheet: View {
         .sheet(item: $configurationFlowState) { flowState in
             V1IOSSubjectConfigurationFlow(
                 flowState: flowState,
+                availableConfigurationCount:
+                    availableConfigurationCount,
+                completedPhotoCount:
+                    completedPhotoCount,
                 onDeleteSubject: {
                     onDeleteCurrentSubject()
                     configurationFlowState = nil
@@ -166,7 +179,7 @@ struct V1IOSSubjectOverviewSheet: View {
                 ) {
                     V1HorizontalDivider(horizontalInset: 14)
                     V1IOSSubjectFactRow(
-                        title: "与我关系",
+                        title: "与我的关系",
                         value: relationship
                     )
                 }

@@ -7,6 +7,9 @@ struct V1IOSSubjectConfigurationFlow: View {
     private let flowState:
         V1IOSSubjectConfigurationFlowState
 
+    private let availableConfigurationCount: Int
+    private let completedPhotoCount: Int
+
     private let onDeleteSubject: () -> Void
     private let onCancel: () -> Void
     private let onSave: () -> Void
@@ -19,11 +22,15 @@ struct V1IOSSubjectConfigurationFlow: View {
 
     init(
         flowState: V1IOSSubjectConfigurationFlowState,
+        availableConfigurationCount: Int,
+        completedPhotoCount: Int,
         onDeleteSubject: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         onSave: @escaping () -> Void
     ) {
         self.flowState = flowState
+        self.availableConfigurationCount = availableConfigurationCount
+        self.completedPhotoCount = completedPhotoCount
         self.onDeleteSubject = onDeleteSubject
         self.onCancel = onCancel
         self.onSave = onSave
@@ -45,7 +52,7 @@ struct V1IOSSubjectConfigurationFlow: View {
 
                     V1TitledSectionCard(
                         title: "时间锚点",
-                        subtitle: "管理用于计算的时间参考"
+                        subtitle: "维护与这个对象有关的重要时刻。"
                     ) {
                         V1IOSSubjectAnchorDetailSection(
                             session: flowState.draftSession,
@@ -54,6 +61,13 @@ struct V1IOSSubjectConfigurationFlow: View {
                             allowsSwipeDeletion: true
                         )
                     }
+
+                    V1IOSSubjectStatisticsStrip(
+                        availableConfigurationCount:
+                            availableConfigurationCount,
+                        completedPhotoCount:
+                            completedPhotoCount
+                    )
 
                     Button("删除记忆对象", role: .destructive) {
                         showsDeleteConfirmation = true

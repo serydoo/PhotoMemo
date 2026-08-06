@@ -6,6 +6,56 @@ import Testing
 @Suite("Time Anchor editing transaction")
 struct TimeAnchorEditingTransactionTests {
 
+    @Test("iOS add and edit share a titled compact Time Anchor editor")
+    func iosAddAndEditShareTitledCompactEditor() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+
+        #expect(source.contains("private struct V1IOSSubjectAnchorCompactEditor: View"))
+        #expect(
+            source.components(
+                separatedBy: "editingDraft = AnchorDraft("
+            ).count >= 3
+        )
+        #expect(
+            source.components(
+                separatedBy: "V1IOSSubjectAnchorCompactEditor("
+            ).count == 2
+        )
+        #expect(source.contains("NavigationStack {"))
+        #expect(source.contains(".navigationTitle(\"时间锚点\")"))
+        #expect(source.contains(".navigationBarTitleDisplayMode(.inline)"))
+        #expect(source.contains("V1ConfigurationSheetSubtitle("))
+        #expect(source.contains(".safeAreaInset(edge: .top, spacing: 0)"))
+        #expect(
+            source.contains(
+                "选择一个时间起点，让照片拥有时间答案。"
+            )
+        )
+        let nameRow = try sourceSection(
+            in: source,
+            from: "private var adaptiveNameRow",
+            to: "private var nameLabel"
+        )
+        let categoryRow = try sourceSection(
+            in: source,
+            from: "private var categoryRow",
+            to: "private var categoryLabel"
+        )
+        #expect(nameRow.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(nameRow.contains("HStack(alignment: .center"))
+        #expect(!nameRow.contains("ViewThatFits(in: .horizontal)"))
+        #expect(categoryRow.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(categoryRow.contains("HStack(alignment: .center"))
+        #expect(
+            categoryRow.contains(
+                ".frame(maxWidth: .infinity, alignment: .trailing)"
+            )
+        )
+        #expect(!categoryRow.contains("ViewThatFits(in: .horizontal)"))
+    }
+
     @Test("Time Anchor rows expose native configure and delete swipe actions")
     func timeAnchorRowsExposeConfigureAndDeleteSwipeActions() throws {
         let repositoryRoot = URL(fileURLWithPath: #filePath)
@@ -96,8 +146,8 @@ struct TimeAnchorEditingTransactionTests {
         #expect(!sheetSource.contains(".navigationTitle(anchorBinding.wrappedValue.title)"))
     }
 
-    @Test("anchor list uses neutral chrome and type-derived symbols")
-    func anchorListUsesNeutralChromeAndTypeDerivedSymbols() throws {
+    @Test("anchor list uses neutral chrome and semantic-color compact type labels")
+    func anchorListUsesSemanticColorCompactTypeLabels() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
@@ -114,10 +164,13 @@ struct TimeAnchorEditingTransactionTests {
 
         #expect(!listSource.contains(".configurationPanelChrome(isSelected: true)"))
         #expect(!listSource.contains(".frame(height:"))
-        #expect(rowSource.contains("Image(systemName: anchorTypeIconName)"))
+        #expect(rowSource.contains("anchor.resolvedAnchorType.compactDisplayName"))
+        #expect(rowSource.contains(".foregroundStyle(anchorTypeTint)"))
         #expect(rowSource.contains("switch anchor.resolvedAnchorType"))
         #expect(rowSource.contains("Menu {"))
         #expect(rowSource.contains("accessibilityLabel(\"时间锚点操作\")"))
+        #expect(!rowSource.contains("anchorTypeIconName"))
+        #expect(!rowSource.contains("Capsule(style: .continuous)"))
         #expect(!rowSource.contains("Text(\"\\(index)\")"))
     }
 

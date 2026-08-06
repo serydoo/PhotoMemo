@@ -4,6 +4,9 @@ import UIKit
 
 struct V1PageHeader: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     let title: String
     let subtitle: String?
 
@@ -17,17 +20,17 @@ struct V1PageHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title)
+            Text(localized(title))
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
 
             if let subtitle,
                !subtitle.isEmpty {
-                Text(subtitle)
+                Text(localized(subtitle))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -36,6 +39,86 @@ struct V1PageHeader: View {
             alignment: .topLeading
         )
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func localized(_ value: String) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: value,
+            fallback: value
+        )
+    }
+}
+
+struct V1ConfigurationSheetSubtitle: View {
+
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(localized(text))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+            .padding(.top, ConfigurationUI.sheetSubtitleTopPadding)
+            .padding(.bottom, ConfigurationUI.sheetSubtitleBottomPadding)
+            .background(ConfigurationUI.appBackground)
+    }
+
+    private func localized(_ value: String) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: value,
+            fallback: value
+        )
+    }
+}
+
+struct V1CompactSelectionLabel: View {
+
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .minimumScaleFactor(
+                    dynamicTypeSize.isAccessibilitySize ? 1 : 0.76
+                )
+                .allowsTightening(!dynamicTypeSize.isAccessibilitySize)
+                .truncationMode(.tail)
+
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.smallCornerRadius,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.controlBackground)
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.smallCornerRadius,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+        .contentShape(Rectangle())
     }
 }
 
@@ -136,6 +219,38 @@ struct V1CardChrome: ViewModifier {
     }
 }
 
+struct V1ConfigurationSheetPanelChrome: ViewModifier {
+
+    @Environment(\.colorSchemeContrast)
+    private var accessibilityContrast
+
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .continuous
+                )
+                .fill(ConfigurationUI.panelBackground)
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .continuous
+                )
+                .stroke(panelHairline)
+            )
+    }
+
+    private var panelHairline: Color {
+        accessibilityContrast == .increased
+            ? ConfigurationUI.hairline
+            : ConfigurationUI.faintHairline
+    }
+}
+
 extension View {
 
     func v1CardChrome(
@@ -150,6 +265,16 @@ extension View {
                 shadowRadius: shadowRadius,
                 shadowY: shadowY,
                 background: background
+            )
+        )
+    }
+
+    func v1ConfigurationSheetPanelChrome(
+        cornerRadius: CGFloat = ConfigurationUI.sheetPanelCornerRadius
+    ) -> some View {
+        modifier(
+            V1ConfigurationSheetPanelChrome(
+                cornerRadius: cornerRadius
             )
         )
     }
@@ -198,7 +323,7 @@ extension View {
 
     func v1CompactBottomPrimaryAction() -> some View {
         self
-            .foregroundStyle(Color.white)
+            .foregroundStyle(MemoMarkDesignTokens.Semantic.onAccent)
             .padding(.horizontal, 14)
             .frame(
                 width: V1CompactBottomActionMetrics.width,
@@ -386,7 +511,7 @@ struct V1TitledSectionCard<
     }
 
     private var titleText: some View {
-        Text(title)
+        Text(localized(title))
             .font(.headline.weight(.semibold))
             .foregroundStyle(.primary)
             .fixedSize(horizontal: false, vertical: true)
@@ -397,11 +522,18 @@ struct V1TitledSectionCard<
     private var subtitleText: some View {
         if let subtitle,
            !subtitle.isEmpty {
-            Text(subtitle)
+            Text(localized(subtitle))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func localized(_ value: String) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: value,
+            fallback: value
+        )
     }
 }
 
@@ -782,6 +914,9 @@ struct V1PreviewCard: View {
 
 struct V1RegionEditorCard: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     let region: CardRegion
     @Binding var isExpanded: Bool
     let showsDivider: Bool
@@ -845,14 +980,14 @@ struct V1RegionEditorCard: View {
                 }
                 .background(
                     RoundedRectangle(
-                        cornerRadius: 10,
+                        cornerRadius: ConfigurationUI.smallCornerRadius,
                         style: .continuous
                     )
                     .fill(Color(uiColor: .secondarySystemBackground))
                 )
                 .overlay(
                     RoundedRectangle(
-                        cornerRadius: 10,
+                        cornerRadius: ConfigurationUI.smallCornerRadius,
                         style: .continuous
                     )
                     .stroke(Color.primary.opacity(0.08))
@@ -884,16 +1019,19 @@ struct V1RegionEditorCard: View {
         }
     }
 
+    @ViewBuilder
     private var adaptiveComposerHeader: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                composerHeading
-                Spacer()
-                addModuleButton
-            }
-
+        if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 8) {
                 composerHeading
+
+                addModuleButton
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        } else {
+            HStack(alignment: .center, spacing: 10) {
+                composerHeading
+                Spacer()
                 addModuleButton
             }
         }
@@ -916,7 +1054,8 @@ struct V1RegionEditorCard: View {
             )
         }
         .buttonStyle(.bordered)
-        .controlSize(.small)
+        .controlSize(.regular)
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
     }
 
     private func moduleChip(
@@ -947,10 +1086,9 @@ struct V1RegionEditorCard: View {
         .font(.caption.weight(.semibold))
         .padding(.leading, 9)
         .padding(.trailing, 4)
-        .padding(.vertical, 4)
         .background(
             RoundedRectangle(
-                cornerRadius: 9,
+                cornerRadius: ConfigurationUI.smallCornerRadius,
                 style: .continuous
             )
             .fill(
@@ -962,7 +1100,7 @@ struct V1RegionEditorCard: View {
         )
         .overlay(
             RoundedRectangle(
-                cornerRadius: 9,
+                cornerRadius: ConfigurationUI.smallCornerRadius,
                 style: .continuous
             )
             .stroke(
@@ -1084,7 +1222,10 @@ private struct V1ModuleChipRemoveButtonStyle:
                 ? Color.primary
                 : Color.secondary
             )
-            .frame(width: 24, height: 24)
+            .frame(
+                width: ConfigurationUI.minimumInteractiveHeight,
+                height: ConfigurationUI.minimumInteractiveHeight
+            )
             .contentShape(Circle())
             .scaleEffect(
                 configuration.isPressed && !reduceMotion

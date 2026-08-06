@@ -117,16 +117,7 @@ struct SubjectAvatarCropSheet: View {
                     cornerRadius: 30,
                     style: .continuous
                 )
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white,
-                            Color.black.opacity(0.04)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(ConfigurationUI.controlBackground)
 
                 Image(uiImage: image)
                     .resizable()
@@ -161,7 +152,7 @@ struct SubjectAvatarCropSheet: View {
                     style: .continuous
                 )
                     .stroke(
-                        Color.black.opacity(0.07),
+                        ConfigurationUI.faintHairline,
                         lineWidth: 1
                     )
             )
@@ -331,11 +322,11 @@ struct SubjectAvatarCropSheet: View {
         .padding(.vertical, 8)
         .background(
             Capsule(style: .continuous)
-                .fill(Color.white)
+                .fill(ConfigurationUI.panelBackground)
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(Color.black.opacity(0.08))
+                .stroke(ConfigurationUI.faintHairline)
         )
     }
 }

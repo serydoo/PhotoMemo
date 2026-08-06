@@ -340,10 +340,14 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             V1IOSSubjectHomeEntryContent(
                 subjectSummary: subjectSummary,
                 subject: subject,
-                availableConfigurationCount:
-                    memoryPresets.count,
-                completedPhotoCount: completedPhotoCount,
-                onOpenSubject: onOpenSubject
+                onOpenSubject: onOpenSubject,
+                statisticsStrip:
+                    V1IOSSubjectStatisticsStrip(
+                        availableConfigurationCount:
+                            memoryPresets.count,
+                        completedPhotoCount:
+                            completedPhotoCount
+                    )
             )
         }
     }
@@ -364,7 +368,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     private var currentPresetSection: some View {
         V1TitledSectionCard(
             title: "我的预设",
-            subtitle: "下一次分享，要用哪种方式记录。",
+            subtitle: "下一次分享，照片会怎样呈现。",
             trailingAccessory: {
                 V1CardHeaderIconButton(
                     systemImage: "ellipsis",
@@ -757,7 +761,7 @@ private struct V1HomeMemoryPresetRow: View {
                 .stroke(ConfigurationUI.faintHairline)
             )
             .shadow(
-                color: Color.black.opacity(0.045),
+                color: ConfigurationUI.cardShadow,
                 radius: 12,
                 y: 5
             )
@@ -874,11 +878,9 @@ private struct V1HomeMemoryPresetRow: View {
             return preset.summary
         }
 
-        return Self.savedStatusValue(savedAt)
-    }
-
-    private static func savedStatusValue(_ date: Date) -> String {
-        V1UserFacingDateFormatter.compactDateTime(date)
+        return V1IOSHomeProjection.savedStatusValue(
+            savedAt: savedAt
+        )
     }
 
     private var presetIdentityMark: some View {
@@ -914,7 +916,7 @@ private struct V1HomeMemoryPresetRow: View {
     private var logoBadge: some View {
         ZStack {
             Circle()
-                .fill(Color.white)
+                .fill(MemoMarkDesignTokens.Semantic.fixedLightBackground)
                 .overlay(
                     Circle()
                         .stroke(ConfigurationUI.faintHairline)
@@ -946,7 +948,8 @@ private struct V1HomeMemoryPresetRow: View {
             }
         }
         .frame(width: 19, height: 19)
-        .shadow(color: Color.black.opacity(0.08), radius: 3, y: 1)
+        .shadow(color: ConfigurationUI.cardShadow, radius: 3, y: 1)
+        .environment(\.colorScheme, .light)
     }
 
     private var anchorSystemImage: String {
@@ -1024,7 +1027,10 @@ private struct V1HomeProcessPhotoIcon: View {
                 cornerRadius: 8,
                 style: .continuous
             )
-            .stroke(Color.white.opacity(0.92), lineWidth: 1.6)
+            .stroke(
+                MemoMarkDesignTokens.Semantic.onAccent.opacity(0.92),
+                lineWidth: 1.6
+            )
             .frame(width: 20, height: 16)
 
             Image(systemName: "sparkles")
@@ -1067,7 +1073,7 @@ private struct V1HomeAppMark: View {
                 )
             )
             .shadow(
-                color: Color.black.opacity(0.08),
+                color: ConfigurationUI.cardShadow,
                 radius: 8,
                 y: 3
             )

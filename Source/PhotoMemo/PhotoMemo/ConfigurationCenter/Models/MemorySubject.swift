@@ -20,13 +20,13 @@ enum MemorySubjectExpressionSubjectSource:
     var displayTitle: String {
         switch self {
         case .displayName:
-            return "显示名称"
+            return "对象名称"
         case .shortName:
             return "昵称"
         case .relationshipRole:
-            return "关系"
+            return "与我的关系"
         case .relationshipLabel:
-            return "关系备注"
+            return "专属称呼"
         }
     }
 }
@@ -64,6 +64,12 @@ struct MemorySubject:
             self.avatarImagePath = avatarImagePath
             self.avatarBadgeImagePath = avatarBadgeImagePath
             self.avatarPreviewImagePath = avatarPreviewImagePath
+        }
+
+        mutating func removeAvatarAssets() {
+            avatarImagePath = nil
+            avatarBadgeImagePath = nil
+            avatarPreviewImagePath = nil
         }
     }
 
@@ -222,20 +228,11 @@ extension MemorySubject {
             )
         }
 
-        let fallbackSources: [MemorySubjectExpressionSubjectSource] = [
-            .displayName,
-            .shortName,
-            .relationshipRole,
-            .relationshipLabel
-        ]
-
-        for fallbackSource in fallbackSources {
-            if let text = normalizedOptionalText(candidates[fallbackSource]) {
-                return MemorySubjectExpressionSubjectResolution(
-                    text: text,
-                    source: fallbackSource
-                )
-            }
+        if let displayName = normalizedOptionalText(displayName) {
+            return MemorySubjectExpressionSubjectResolution(
+                text: displayName,
+                source: .displayName
+            )
         }
 
         return MemorySubjectExpressionSubjectResolution(
@@ -272,6 +269,53 @@ extension MemorySubject {
         timeAnchors.first {
             $0.title == title
         }
+    }
+
+    func removingTimeAnchor(
+        id: TimeAnchor.ID
+    ) -> MemorySubject? {
+        guard timeAnchors.count > 1,
+              timeAnchor(id: id) != nil else {
+            return nil
+        }
+
+        let removesPrimaryAnchor = primaryTimeAnchor?.id == id
+        var updatedSubject = self
+        updatedSubject.timeAnchors.removeAll {
+            $0.id == id
+        }
+
+        if removesPrimaryAnchor,
+           let fallbackAnchor = updatedSubject.timeAnchors.first {
+            updatedSubject.activeTimeAnchorID = fallbackAnchor.id
+            updatedSubject.behavior.primaryAnchor = fallbackAnchor.title
+            updatedSubject.referenceDate = fallbackAnchor.date
+        }
+
+        return updatedSubject
+    }
+
+    func replacingTimeAnchor(
+        _ anchor: TimeAnchor
+    ) -> MemorySubject? {
+        guard let anchorIndex = timeAnchors.firstIndex(
+            where: { $0.id == anchor.id }
+        ) else {
+            return nil
+        }
+
+        let replacesPrimaryAnchor =
+            primaryTimeAnchor?.id == anchor.id
+        var updatedSubject = self
+        updatedSubject.timeAnchors[anchorIndex] = anchor
+
+        if replacesPrimaryAnchor {
+            updatedSubject.activeTimeAnchorID = anchor.id
+            updatedSubject.behavior.primaryAnchor = anchor.title
+            updatedSubject.referenceDate = anchor.date
+        }
+
+        return updatedSubject
     }
 
     private static func normalizedOptionalText(

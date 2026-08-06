@@ -9,46 +9,39 @@ import AppKit
 
 #if os(iOS)
 
-struct V1IOSSubjectHomeEntryContent: View {
+struct V1IOSSubjectHomeEntryContent<StatisticsStrip: View>: View {
 
     let subjectSummary:
         V1IOSHomeSubjectSummaryProjection
 
     let subject: MemorySubject?
 
-    let availableConfigurationCount: Int
-
-    let completedPhotoCount: Int
-
     let onOpenSubject: () -> Void
+
+    let statisticsStrip: StatisticsStrip
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             V1IOSSubjectPrimaryCard(
                 summary: subjectSummary,
                 subject: subject,
-                availableConfigurationCount:
-                    availableConfigurationCount,
-                completedPhotoCount:
-                    completedPhotoCount,
-                action: onOpenSubject
+                action: onOpenSubject,
+                statisticsStrip: statisticsStrip
             )
         }
     }
 }
 
-private struct V1IOSSubjectPrimaryCard: View {
+private struct V1IOSSubjectPrimaryCard<StatisticsStrip: View>: View {
 
     let summary:
         V1IOSHomeSubjectSummaryProjection
 
     let subject: MemorySubject?
 
-    let availableConfigurationCount: Int
-
-    let completedPhotoCount: Int
-
     let action: () -> Void
+
+    let statisticsStrip: StatisticsStrip
 
     var body: some View {
         Button(action: action) {
@@ -59,7 +52,7 @@ private struct V1IOSSubjectPrimaryCard: View {
                     cornerRadius: ConfigurationUI.cornerRadius,
                     style: .continuous
                 )
-                .fill(Color.white.opacity(0.92))
+                .fill(ConfigurationUI.panelBackground)
             )
             .overlay(
                 RoundedRectangle(
@@ -86,7 +79,7 @@ private struct V1IOSSubjectPrimaryCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 subjectTitle
                 subjectMetaRow
-                memoryRecordStrip
+                statisticsStrip
             }
             .layoutPriority(1)
 
@@ -110,7 +103,7 @@ private struct V1IOSSubjectPrimaryCard: View {
                 disclosureIndicator
             }
 
-            memoryRecordStrip
+            statisticsStrip
         }
     }
 
@@ -175,17 +168,49 @@ private struct V1IOSSubjectPrimaryCard: View {
         )
     }
 
-    private var memoryRecordStrip: some View {
-        HStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(statisticsTint.opacity(0.12))
+}
 
-                Image(systemName: "sparkles")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(statisticsTint)
+struct V1IOSSubjectStatisticsStrip: View {
+
+    let availableConfigurationCount: Int
+    let completedPhotoCount: Int
+
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    var body: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                accessibilityStatisticsContent
+            } else {
+                regularStatisticsContent
             }
-            .frame(width: 24, height: 24)
+        }
+        .padding(.horizontal, 9)
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 10,
+                style: .continuous
+            )
+            .fill(statisticsTint.opacity(0.07))
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 10,
+                style: .continuous
+            )
+            .stroke(statisticsTint.opacity(0.12))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "可用配置 \(max(availableConfigurationCount, 0)) 个，累计完成 \(max(completedPhotoCount, 0)) 张"
+        )
+    }
+
+    private var regularStatisticsContent: some View {
+        HStack(spacing: 10) {
+            statisticsIcon
 
             statText(
                 title: "可用配置",
@@ -203,22 +228,40 @@ private struct V1IOSSubjectPrimaryCard: View {
                     "\(max(completedPhotoCount, 0)) 张"
             )
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 10,
-                style: .continuous
-            )
-            .fill(statisticsTint.opacity(0.07))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 10,
-                style: .continuous
-            )
-            .stroke(statisticsTint.opacity(0.12))
-        )
+    }
+
+    private var accessibilityStatisticsContent: some View {
+        HStack(alignment: .top, spacing: 10) {
+            statisticsIcon
+
+            VStack(alignment: .leading, spacing: 5) {
+                statText(
+                    title: "可用配置",
+                    value:
+                        "\(max(availableConfigurationCount, 0)) 个"
+                )
+                statText(
+                    title: "累计完成",
+                    value:
+                        "\(max(completedPhotoCount, 0)) 张"
+                )
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var statisticsIcon: some View {
+        ZStack {
+            Circle()
+                .fill(statisticsTint.opacity(0.12))
+
+            Image(systemName: "sparkles")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(statisticsTint)
+        }
+        .frame(width: 24, height: 24)
     }
 
     private var statisticsTint: Color {

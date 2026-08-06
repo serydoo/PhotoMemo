@@ -100,7 +100,10 @@ struct V1IOSSubjectAnchorDetailSection: View {
                         commitEditingDraft()
                     }
                 )
-                .presentationDetents([.height(390), .large])
+                .presentationDetents([
+                    .height(ConfigurationUI.compactSheetHeight),
+                    .large
+                ])
                 .presentationDragIndicator(.visible)
             }
             .alert(
@@ -200,15 +203,13 @@ struct V1IOSSubjectAnchorDetailSection: View {
 
     private func deletePendingAnchor() {
         guard let anchor = pendingDeleteAnchor,
-              var updatedSubject = session.state.selectedSubject,
-              updatedSubject.timeAnchors.count > 1 else {
+              let updatedSubject =
+                session.state.selectedSubject?
+                .removingTimeAnchor(id: anchor.id) else {
             pendingDeleteAnchor = nil
             return
         }
 
-        updatedSubject.timeAnchors.removeAll {
-            $0.id == anchor.id
-        }
         session.updateSelectedSubject(updatedSubject)
         pendingDeleteAnchor = nil
         onPersistSubjectChanges()
@@ -228,11 +229,10 @@ struct V1IOSSubjectAnchorDetailSection: View {
             ? anchor.resolvedAnchorType.suggestedTitle
             : trimmedTitle
 
-        if let originalID = editingDraft.originalID,
-           let index = updatedSubject.timeAnchors.firstIndex(
-                where: { $0.id == originalID }
-           ) {
-            updatedSubject.timeAnchors[index] = anchor
+        if editingDraft.originalID != nil,
+           let replacementSubject =
+            updatedSubject.replacingTimeAnchor(anchor) {
+            updatedSubject = replacementSubject
         } else if updatedSubject.timeAnchors.count < 5 {
             updatedSubject.timeAnchors.append(anchor)
         }
@@ -252,6 +252,8 @@ private struct AnchorDraft: Identifiable {
 
 struct V1IOSSubjectAnchorDetailModule: View {
 
+    static let ordinaryMinimumHeight: CGFloat = 64
+
     let anchor: MemorySubject.TimeAnchor
     let onConfigure: () -> Void
     let onDelete: () -> Void
@@ -265,20 +267,24 @@ struct V1IOSSubjectAnchorDetailModule: View {
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 8) {
                     anchorFacts
-                    categoryText
+                    anchorTypeMarker
                 }
             } else {
                 HStack(alignment: .center, spacing: 16) {
                     anchorFacts
                     Spacer(minLength: 8)
-                    categoryText
+                    anchorTypeMarker
                 }
             }
         }
         .padding(.leading, 16 + leadingContentInset)
         .padding(.trailing, 16)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
+        .padding(.vertical, 9)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: Self.ordinaryMinimumHeight,
+            alignment: .leading
+        )
         .background(
             RoundedRectangle(
                 cornerRadius: ConfigurationUI.cardCornerRadius,
@@ -300,7 +306,7 @@ struct V1IOSSubjectAnchorDetailModule: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(anchor.title)，\(dateText)，\(anchor.resolvedAnchorType.displayName)"
+            "\(anchor.title)，\(dateText)，\(anchorTypeAccessibilityLabel)"
         )
         .accessibilityAction(named: "配置锚点") {
             onConfigure()
@@ -323,12 +329,42 @@ struct V1IOSSubjectAnchorDetailModule: View {
         }
     }
 
-    private var categoryText: some View {
-        Text(anchor.resolvedAnchorType.displayName)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.trailing)
+    private var anchorTypeMarker: some View {
+        Text(anchor.resolvedAnchorType.compactDisplayName)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(anchorTypeTint)
+            .multilineTextAlignment(
+                dynamicTypeSize.isAccessibilitySize
+                ? .leading
+                : .trailing
+            )
             .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(anchorTypeAccessibilityLabel)
+    }
+
+    private var anchorTypeAccessibilityLabel: String {
+        let typeName = anchor.resolvedAnchorType.localizedDisplayName(
+            for: .interfaceStored
+        )
+        return MemoMarkLanguage.interfaceStored == .simplifiedChinese
+            ? "类型，\(typeName)"
+            : "Type, \(typeName)"
+    }
+
+    private var anchorTypeTint: Color {
+        switch anchor.resolvedAnchorType {
+        case .birthday:
+            return .orange
+        case .relationship:
+            return .pink
+        case .marriage:
+            return .purple
+        case .exam:
+            return .green
+        case .custom:
+            return .blue
+        }
     }
 
     private var dateText: String {
@@ -340,6 +376,9 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
 
     @State
     private var anchor: MemorySubject.TimeAnchor
+
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
 
     let onChange: (MemorySubject.TimeAnchor) -> Void
     let onSave: () -> Void
@@ -355,61 +394,65 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                categoryRow
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 12) {
+                    categoryRow
 
-                CompactSubjectAnchorDatePicker(
-                    selection: Binding(
-                        get: { anchor.date },
-                        set: { newDate in
-                            anchor.date = newDate
-                            onChange(anchor)
-                        }
+                    CompactSubjectAnchorDatePicker(
+                        selection: Binding(
+                            get: { anchor.date },
+                            set: { newDate in
+                                anchor.date = newDate
+                                onChange(anchor)
+                            }
+                        )
                     )
-                )
 
-                adaptiveNameRow
+                    adaptiveNameRow
+                }
+                .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+                .padding(.bottom, 20)
             }
-            .padding(.horizontal, ConfigurationUI.contentColumnPadding)
-            .padding(.top, 12)
-            .padding(.bottom, 20)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                V1ConfigurationSheetSubtitle(
+                    "选择一个时间起点，让照片拥有时间答案。"
+                )
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(ConfigurationUI.appBackground)
+            .navigationTitle("时间锚点")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .scrollDismissesKeyboard(.interactively)
-        .background(ConfigurationUI.appBackground)
     }
 
     private var adaptiveNameRow: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
-                nameLabel
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    nameLabel
+                    nameField
+                    saveButton
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            } else {
+                HStack(alignment: .center, spacing: 12) {
+                    nameLabel
 
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(width: 1, height: 24)
+                    Rectangle()
+                        .fill(ConfigurationUI.faintHairline)
+                        .frame(width: 1, height: 24)
 
-                nameField
+                    nameField
 
-                saveButton
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                nameLabel
-                nameField
-                saveButton
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    saveButton
+                }
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .frame(minHeight: 50)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.panelBackground)
-        )
+        .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+        .padding(.vertical, ConfigurationUI.compactRowVerticalPadding)
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+        .v1ConfigurationSheetPanelChrome()
     }
 
     private var nameLabel: some View {
@@ -442,41 +485,48 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
         .font(.subheadline.weight(.semibold))
-        .frame(minWidth: 44, minHeight: 44)
+        .frame(
+            minWidth: ConfigurationUI.minimumInteractiveHeight,
+            minHeight: ConfigurationUI.minimumInteractiveHeight
+        )
     }
 
     private var categoryRow: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
-                categoryLabel
-                categoryMenu
-
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(width: 1, height: 24)
-
-                selectedDateText
-                    .padding(.leading, 12)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                categoryLabel
-                HStack(spacing: 12) {
-                    categoryMenu
-                    selectedDateText
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 8) {
+                    categoryLabel
+                    categorySelection
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            } else {
+                HStack(alignment: .center, spacing: 12) {
+                    categoryLabel
+                    Spacer(minLength: 12)
+                    categorySelection
                 }
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
-        .background(
-            RoundedRectangle(
-                cornerRadius: 14,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.panelBackground)
+        .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+        .padding(.vertical, ConfigurationUI.compactRowVerticalPadding)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: ConfigurationUI.minimumInteractiveHeight,
+            alignment: .leading
         )
+        .v1ConfigurationSheetPanelChrome()
+    }
+
+    private var categorySelection: some View {
+        HStack(alignment: .center, spacing: 12) {
+            categoryMenu
+
+            Rectangle()
+                .fill(ConfigurationUI.faintHairline)
+                .frame(width: 1, height: 24)
+
+            selectedDateText
+        }
     }
 
     private var categoryLabel: some View {
@@ -501,17 +551,9 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
-                Text(anchor.resolvedAnchorType.displayName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(minHeight: 44)
+            V1CompactSelectionLabel(
+                title: anchor.resolvedAnchorType.displayName
+            )
         }
         .tint(.secondary)
     }

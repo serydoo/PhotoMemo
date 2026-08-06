@@ -276,18 +276,7 @@ struct V1IOSHomeActionTileButton: View {
                     cornerRadius: 18,
                     style: .continuous
                 )
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white,
-                            ConfigurationUI
-                                .controlBackground
-                                .opacity(0.92)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(ConfigurationUI.panelBackground)
             )
             .overlay(
                 RoundedRectangle(
@@ -297,7 +286,7 @@ struct V1IOSHomeActionTileButton: View {
                 .stroke(ConfigurationUI.faintHairline)
             )
             .shadow(
-                color: Color.black.opacity(0.04),
+                color: ConfigurationUI.cardShadow,
                 radius: 10,
                 y: 5
             )

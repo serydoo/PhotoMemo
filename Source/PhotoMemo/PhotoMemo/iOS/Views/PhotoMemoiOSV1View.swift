@@ -762,6 +762,11 @@ struct PhotoMemoiOSV1View: View {
                 flowState: $entryNavigationState.flowState,
                 switchPresentation: $switchPresentation,
                 birthdayDate: birthdayDate,
+                availableConfigurationCount: homeAvailablePresets.count,
+                completedPhotoCount:
+                    backgroundStatusService
+                    .taskOverview
+                    .completedPhotoCount,
                 shouldSaveSubjectLibrary: shouldSaveSubjectLibrary,
                 configurationCoordinator: configurationCoordinator,
                 onRequestSubjectSelection: requestSubjectSelection,

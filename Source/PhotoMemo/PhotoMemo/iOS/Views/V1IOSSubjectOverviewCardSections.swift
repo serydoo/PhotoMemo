@@ -191,7 +191,7 @@ struct V1IOSSubjectAnchorSection: View {
                             }
                         }
                     }
-                    .background(Color.white.opacity(0.94))
+                    .background(ConfigurationUI.controlBackground)
                     .clipShape(
                         RoundedRectangle(
                             cornerRadius:
