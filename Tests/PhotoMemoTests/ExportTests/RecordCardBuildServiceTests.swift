@@ -342,6 +342,11 @@ struct RecordCardBuildServiceTests {
                 .resolvedText
             == "今天小宝9个月14天\n第一次一起看海"
         )
+        #expect(
+            card.exportDescriptionOverride
+            == "今天小宝9个月14天\n第一次一起看海"
+        )
+        #expect(card.exportDescriptionOverride?.contains("\n") == true)
     }
 
     @Test("Legacy anchor card result uses the photo capture calendar")

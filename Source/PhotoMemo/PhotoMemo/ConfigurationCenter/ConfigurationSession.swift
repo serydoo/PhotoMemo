@@ -243,19 +243,14 @@ final class ConfigurationSession: ObservableObject {
     }
 
     var resolvedMemoryWriteText: String {
-        let customText = customMemoryWriteText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if usesCustomMemoryWriteText,
-           !customText.isEmpty {
-            return customText
-        }
-
         let memoryText = generatedMemoryModule?.renderedText
             ?? generatedMemoryModuleText
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-        return memoryText.isEmpty
-            ? "当前智能模块暂无内容"
-            : memoryText
+
+        return MemoryWriteTextComposer.compose(
+            smartText: memoryText,
+            usesCustomText: usesCustomMemoryWriteText,
+            customText: customMemoryWriteText
+        ) ?? "当前智能模块暂无内容"
     }
 
     var generatedMemoryModuleText: String {

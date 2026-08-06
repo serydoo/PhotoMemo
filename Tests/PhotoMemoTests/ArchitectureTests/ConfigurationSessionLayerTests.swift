@@ -7,6 +7,23 @@ import Testing
 @Suite("Configuration session responsibility layers")
 struct ConfigurationSessionLayerTests {
 
+    @Test("custom memory copy follows the complete resolved expression")
+    @MainActor
+    func customMemoryCopySupplementsResolvedExpression() {
+        let session = ConfigurationSession()
+        let defaultText = session.resolvedMemoryWriteText
+
+        session.usesCustomMemoryWriteText = true
+        session.customMemoryWriteText = "  第一次一起看海  "
+
+        #expect(!defaultText.isEmpty)
+        #expect(
+            session.resolvedMemoryWriteText
+            == "\(defaultText)\n第一次一起看海"
+        )
+        #expect(session.resolvedMemoryWriteText.contains("\n"))
+    }
+
     @Test("facade publishes editing-state mutations")
     @MainActor
     func facadePublishesEditingStateMutations() {

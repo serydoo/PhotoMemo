@@ -86,6 +86,7 @@ struct V1ResolvedMemoryWriteTextPresenterTests {
             resolvedText
             == "今天小宝18天\n第一次一起看海"
         )
+        #expect(resolvedText.contains("\n"))
     }
 
     @Test("returns placeholder when no memory expression can be resolved")
