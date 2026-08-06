@@ -210,3 +210,14 @@ enum MemoMarkInterfaceLanguagePreference:
         }
     }
 }
+
+enum MemoMarkAppearancePreference:
+    String, Codable, CaseIterable, Hashable {
+
+    static let storageKey =
+        "photomemo.interface.appearance.preference"
+
+    case system
+    case light
+    case dark
+}

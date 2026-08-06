@@ -25,7 +25,7 @@ struct V1SettingsPageSurface: View {
         case dataSafety
         case feedback
         case community
-        case interfaceLanguage
+        case interfacePreferences
         case about
     }
 
@@ -37,6 +37,13 @@ struct V1SettingsPageSurface: View {
     )
     private var interfaceLanguagePreferenceRawValue =
         MemoMarkInterfaceLanguagePreference.system.rawValue
+
+    @AppStorage(
+        MemoMarkAppearancePreference.storageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var appearancePreferenceRawValue =
+        MemoMarkAppearancePreference.system.rawValue
 
     @AppStorage(
         "memomark.settings.productCenter.gettingStartedExpanded",
@@ -72,7 +79,7 @@ struct V1SettingsPageSurface: View {
         "memomark.settings.productCenter.interfaceLanguageExpanded",
         store: PhotoMemoSharedContainer.sharedUserDefaults
     )
-    private var isInterfaceLanguageExpanded = false
+    private var isInterfacePreferencesExpanded = false
 
     @AppStorage(
         "memomark.settings.productCenter.aboutExpanded",
@@ -135,7 +142,7 @@ struct V1SettingsPageSurface: View {
                 .padding(.top, 18)
 
                 VStack(spacing: 12) {
-                    interfaceLanguageSection
+                    interfacePreferencesSection
                     aboutSection
                 }
                 .padding(.top, 18)
@@ -234,28 +241,94 @@ struct V1SettingsPageSurface: View {
         }
     }
 
-    private var interfaceLanguageSection: some View {
+    private var interfacePreferencesSection: some View {
         settingsDisclosureSection(
-            section: .interfaceLanguage,
+            section: .interfacePreferences,
             title: localized(
-                "settings.interface.title",
-                fallback: "应用界面语言"
+                "settings.interface_preferences.title",
+                fallback: "界面"
             ),
-            trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle,
+            trailingValue: interfacePreferencesSummary,
             emphasis: .system
         ) {
-            VStack(alignment: .leading, spacing: 12) {
-                adaptiveInterfaceLanguagePicker
+            VStack(alignment: .leading, spacing: 14) {
+                interfacePreferenceControl(
+                    title: localized(
+                        "settings.appearance.title",
+                        fallback: "外观"
+                    ),
+                    description: localized(
+                        "settings.appearance.description",
+                        fallback: "跟随 iPhone 的外观，或始终使用浅色或深色。"
+                    )
+                ) {
+                    adaptiveAppearancePicker
+                }
 
-                Text(
-                    localized(
+                V1HorizontalDivider()
+
+                interfacePreferenceControl(
+                    title: localized(
+                        "settings.interface.title",
+                        fallback: "界面语言"
+                    ),
+                    description: localized(
                         "settings.interface.description",
                         fallback: "控制时光记中支持切换的菜单、设置与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。"
                     )
-                )
+                ) {
+                    adaptiveInterfaceLanguagePicker
+                }
+            }
+        }
+    }
+
+    private func interfacePreferenceControl<Control: View>(
+        title: String,
+        description: String,
+        @ViewBuilder control: () -> Control
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            control()
+
+            Text(description)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var adaptiveAppearancePicker: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            appearancePicker
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        } else {
+            appearancePicker
+                .pickerStyle(.segmented)
+        }
+    }
+
+    private var appearancePicker: some View {
+        Picker(
+            localized(
+                "settings.appearance.title",
+                fallback: "外观"
+            ),
+            selection: appearancePreferenceBinding
+        ) {
+            ForEach(
+                MemoMarkAppearancePreference.allCases,
+                id: \.self
+            ) { preference in
+                Text(appearanceDisplayTitle(preference))
+                    .tag(preference)
             }
         }
     }
@@ -276,7 +349,7 @@ struct V1SettingsPageSurface: View {
         Picker(
             localized(
                 "settings.interface.title",
-                fallback: "应用界面语言"
+                fallback: "界面语言"
             ),
             selection: interfaceLanguageBinding
         ) {
@@ -284,10 +357,34 @@ struct V1SettingsPageSurface: View {
                 MemoMarkInterfaceLanguagePreference.allCases,
                 id: \.self
             ) { preference in
-                Text(preference.displayTitle)
+                Text(interfaceLanguageDisplayTitle(preference))
                     .tag(preference)
             }
         }
+    }
+
+    private var interfacePreferencesSummary: String {
+        let appearance = appearanceDisplayTitle(
+            appearancePreferenceBinding.wrappedValue
+        )
+        let language = interfaceLanguageDisplayTitle(
+            interfaceLanguageBinding.wrappedValue
+        )
+        return "\(appearance) · \(language)"
+    }
+
+    private var appearancePreferenceBinding:
+        Binding<MemoMarkAppearancePreference> {
+        Binding(
+            get: {
+                MemoMarkAppearancePreference(
+                    rawValue: appearancePreferenceRawValue
+                ) ?? .system
+            },
+            set: { preference in
+                appearancePreferenceRawValue = preference.rawValue
+            }
+        )
     }
 
     private var interfaceLanguageBinding:
@@ -302,6 +399,44 @@ struct V1SettingsPageSurface: View {
                 interfaceLanguagePreferenceRawValue = preference.rawValue
             }
         )
+    }
+
+    private func appearanceDisplayTitle(
+        _ preference: MemoMarkAppearancePreference
+    ) -> String {
+        switch preference {
+        case .system:
+            localized(
+                "settings.appearance.system",
+                fallback: "跟随系统"
+            )
+        case .light:
+            localized(
+                "settings.appearance.light",
+                fallback: "浅色"
+            )
+        case .dark:
+            localized(
+                "settings.appearance.dark",
+                fallback: "深色"
+            )
+        }
+    }
+
+    private func interfaceLanguageDisplayTitle(
+        _ preference: MemoMarkInterfaceLanguagePreference
+    ) -> String {
+        switch preference {
+        case .system:
+            localized(
+                "settings.appearance.system",
+                fallback: "跟随系统"
+            )
+        case .simplifiedChinese:
+            MemoMarkLanguage.simplifiedChinese.displayTitle
+        case .english:
+            MemoMarkLanguage.english.displayTitle
+        }
     }
 
     private var memoMarkPlusSection: some View {
@@ -593,8 +728,8 @@ struct V1SettingsPageSurface: View {
             $isFeedbackExpanded
         case .community:
             $isCommunityExpanded
-        case .interfaceLanguage:
-            $isInterfaceLanguageExpanded
+        case .interfacePreferences:
+            $isInterfacePreferencesExpanded
         case .about:
             $isAboutExpanded
         }

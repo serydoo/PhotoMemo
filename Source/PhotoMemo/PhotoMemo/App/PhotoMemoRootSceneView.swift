@@ -12,13 +12,19 @@ struct PhotoMemoRootSceneView: View {
     private var interfaceLanguagePreferenceRawValue =
         MemoMarkInterfaceLanguagePreference.system.rawValue
 
+    @AppStorage(
+        MemoMarkAppearancePreference.storageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var appearancePreferenceRawValue =
+        MemoMarkAppearancePreference.system.rawValue
+
     @ObservedObject
     var runtime: PhotoMemoAppRuntime
 
     var body: some View {
 
         rootConfigurationCenter
-            .preferredColorScheme(.light)
             .environment(
                 \.locale,
                 interfaceLanguagePreference.resolvedLanguage.locale
@@ -79,6 +85,23 @@ struct PhotoMemoRootSceneView: View {
         ) ?? .system
     }
 
+    private var preferredColorScheme: ColorScheme? {
+        switch appearancePreference {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
+
+    private var appearancePreference: MemoMarkAppearancePreference {
+        MemoMarkAppearancePreference(
+            rawValue: appearancePreferenceRawValue
+        ) ?? .system
+    }
+
     @ViewBuilder
     private var rootConfigurationCenter: some View {
         #if os(iOS)
@@ -105,6 +128,7 @@ struct PhotoMemoRootSceneView: View {
                 runtime.environment.repositories
                 .productionDiagnostics
         )
+        .preferredColorScheme(preferredColorScheme)
         #else
         ConfigurationCenterView()
         #endif

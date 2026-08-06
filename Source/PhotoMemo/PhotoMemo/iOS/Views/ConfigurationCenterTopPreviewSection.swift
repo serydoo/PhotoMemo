@@ -558,6 +558,7 @@ struct ConfigurationCenterTopPreviewSection<
             RoundedRectangle(cornerRadius: 10)
                 .stroke(ConfigurationUI.hairline)
         )
+        .environment(\.colorScheme, .light)
     }
 
     private var regionStripExpanded: some View {

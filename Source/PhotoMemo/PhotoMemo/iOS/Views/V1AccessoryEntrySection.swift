@@ -109,7 +109,7 @@ struct V1AccessoryEntrySection: View {
     private var logoPreview: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
+                .fill(MemoMarkDesignTokens.Semantic.fixedLightBackground)
                 .frame(width: 74, height: 54)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
@@ -168,6 +168,7 @@ struct V1AccessoryEntrySection: View {
                 }
             }
         }
+        .environment(\.colorScheme, .light)
     }
 }
 #endif

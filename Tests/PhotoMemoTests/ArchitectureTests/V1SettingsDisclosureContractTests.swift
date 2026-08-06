@@ -18,7 +18,7 @@ struct V1SettingsDisclosureContractTests {
         #expect(source.contains("private var isDataSafetyExpanded = false"))
         #expect(source.contains("private var isFeedbackExpanded = false"))
         #expect(source.contains("private var isCommunityExpanded = false"))
-        #expect(source.contains("private var isInterfaceLanguageExpanded = false"))
+        #expect(source.contains("private var isInterfacePreferencesExpanded = false"))
         #expect(source.contains("private var isAboutExpanded = false"))
         #expect(!source.contains("expandedSections: Set<SettingsSection>"))
         #expect(source.contains("private func settingsDisclosureSection"))
@@ -167,7 +167,7 @@ struct V1SettingsDisclosureContractTests {
             source.range(of: "var body: some View")?.lowerBound
         )
         let bodyEnd = try #require(
-            source.range(of: "private var interfaceLanguageSection")?.lowerBound
+            source.range(of: "private var interfacePreferencesSection")?.lowerBound
         )
         let body = source[bodyStart..<bodyEnd]
         let orderedSections = [
@@ -177,7 +177,7 @@ struct V1SettingsDisclosureContractTests {
             "dataSafetySection",
             "feedbackSection",
             "communitySection",
-            "interfaceLanguageSection",
+            "interfacePreferencesSection",
             "aboutSection"
         ]
         let positions = try orderedSections.map { section in
@@ -185,6 +185,44 @@ struct V1SettingsDisclosureContractTests {
         }
 
         #expect(positions == positions.sorted())
+    }
+
+    @Test("settings combines appearance and language with matching adaptive controls")
+    func settingsCombinesAppearanceAndLanguageWithMatchingAdaptiveControls() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let simplifiedChinese = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings"
+        )
+        let english = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings"
+        )
+
+        #expect(source.contains("private var interfacePreferencesSection"))
+        #expect(source.contains("private var adaptiveAppearancePicker"))
+        #expect(source.contains("private var adaptiveInterfaceLanguagePicker"))
+        #expect(source.contains("MemoMarkAppearancePreference.allCases"))
+        #expect(source.contains("appearancePreferenceBinding"))
+        #expect(source.contains("interfaceLanguageBinding"))
+        #expect(source.contains("interfacePreferenceControl("))
+        #expect(source.components(separatedBy: ".pickerStyle(.segmented)").count - 1 >= 2)
+        #expect(source.components(separatedBy: ".pickerStyle(.menu)").count - 1 >= 2)
+
+        for key in [
+            "settings.interface_preferences.title",
+            "settings.appearance.title",
+            "settings.appearance.description",
+            "settings.appearance.system",
+            "settings.appearance.light",
+            "settings.appearance.dark",
+            "settings.interface.title",
+            "settings.interface.description"
+        ] {
+            #expect(source.contains(key))
+            #expect(simplifiedChinese.contains("\"\(key)\""))
+            #expect(english.contains("\"\(key)\""))
+        }
     }
 
     @Test("workflow tutorial stays inside settings and closes back to settings")
