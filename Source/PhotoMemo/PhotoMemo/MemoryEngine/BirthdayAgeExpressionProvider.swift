@@ -10,7 +10,13 @@ struct BirthdayAgeExpressionProvider:
         anchor: MemoryAnchor,
         context: MemoryExpressionContext
     ) -> String {
-        "今天\(subjectText)\(semanticResult.displayText)"
+        if semanticResult.relativeSnapshot.isOnAnchorDay {
+            return context.language == .english
+                ? "\(subjectText) arrived in the world today"
+                : "\(subjectText)今天来到这个世界啦！"
+        }
+
+        return "今天\(subjectText)\(semanticResult.displayText)"
     }
 }
 #endif

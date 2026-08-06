@@ -129,6 +129,7 @@ private extension MemoryResultVariableProjector {
         }
 
         projectPastAnchorValues(
+            anchorResult: anchorResult,
             elapsed: elapsed,
             language: language,
             into: &context
@@ -219,6 +220,7 @@ private extension MemoryResultVariableProjector {
     }
 
     static func projectPastAnchorValues(
+        anchorResult: MemoryAnchorResult,
         elapsed: MemoryElapsedTime,
         language: MemoMarkLanguage,
         into context: inout MetadataContext
@@ -228,8 +230,12 @@ private extension MemoryResultVariableProjector {
             from: &context
         )
         context.set(
-            MemoryAnchorVariableTextFormatter.babyAgeText(
+            anchorResult.anchorType == .birthday
+            ? MemoryAnchorVariableTextFormatter.babyAgeText(
                 from: elapsed,
+                language: language
+            )
+            : elapsed.relativeSnapshot.ageText(
                 language: language
             ),
             for:

@@ -7,8 +7,13 @@ enum MemoryAnchorVariableTextFormatter {
         from elapsed: MemoryElapsedTime,
         language: MemoMarkLanguage
     ) -> String {
+        if elapsed.relativeSnapshot.isOnAnchorDay {
+            return language == .english
+                ? "day of birth"
+                : "出生当天"
+        }
 
-        elapsed.relativeSnapshot.ageText(
+        return elapsed.relativeSnapshot.ageText(
             language: language
         )
     }

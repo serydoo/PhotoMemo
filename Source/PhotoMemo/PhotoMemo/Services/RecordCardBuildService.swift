@@ -2,9 +2,6 @@ import Foundation
 
 final class RecordCardBuildService {
 
-    private let anchorEngine =
-        AnchorEngine()
-
 #if !PHOTOMEMO_SHARE_EXTENSION
     private let productionMemoryResolver:
         ProductionMemoryResolver
@@ -190,7 +187,13 @@ private extension RecordCardBuildService {
         }
 
         return anchor.map {
-            anchorEngine.build(
+            AnchorEngine(
+                calendar:
+                    selectedPhoto
+                    .metadata
+                    .captureCalendar
+            )
+            .build(
                 from: $0,
                 photoDate:
                     captureDate

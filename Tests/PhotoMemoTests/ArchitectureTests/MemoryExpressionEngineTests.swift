@@ -211,6 +211,99 @@ struct MemoryExpressionEngineTests {
         #expect(elapsed.days == 1)
     }
 
+    @Test("uses the capture calendar in the registered relative-time calculator")
+    func usesCaptureCalendarInRegisteredRelativeTimeCalculator() throws {
+        let originalDefaultTimeZone =
+            NSTimeZone.default
+        NSTimeZone.default =
+            try #require(
+                TimeZone(secondsFromGMT: -8 * 60 * 60)
+            )
+        defer {
+            NSTimeZone.default =
+                originalDefaultTimeZone
+        }
+
+        var captureCalendar =
+            Calendar(identifier: .gregorian)
+        captureCalendar.timeZone =
+            try #require(
+                TimeZone(secondsFromGMT: 8 * 60 * 60)
+            )
+        let birthday =
+            try #require(
+                captureCalendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1,
+                        hour: 0,
+                        minute: 5
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                captureCalendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1,
+                        hour: 23,
+                        minute: 30
+                    )
+                )
+            )
+        let subject =
+            MemorySubject(
+                identity: .init(
+                    displayName: "示例对象",
+                    shortName: "小宝"
+                ),
+                relationship: .init(
+                    role: "宝宝",
+                    label: "妈妈眼里的宝宝"
+                ),
+                definition: "测试对象",
+                referenceDate: birthday,
+                behavior: MemoryBehavior(
+                    primaryAnchor: "生日",
+                    iconStrategy: .autoMatch,
+                    badgeStrategy: .autoMatch,
+                    memoryExpression: MemoryExpression(
+                        title: "生日记忆",
+                        blocks: [.text("生日智能模块")]
+                    )
+                ),
+                decorations: []
+            )
+        let snapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject,
+                smartModuleCarrierRegion: .slotD
+            )
+        let result =
+            RelativeTimeMemoryCalculator()
+            .calculate(
+                context: MemoryExpressionContext(
+                    subject: subject,
+                    snapshot: snapshot,
+                    captureDate: captureDate,
+                    captureCalendar: captureCalendar
+                ),
+                anchor: MemoryAnchor(
+                    title: "生日",
+                    date: birthday,
+                    anchorType: .birthday
+                )
+            )
+        let semanticResult =
+            try #require(result)
+
+        #expect(semanticResult.relativeSnapshot.totalDays == 0)
+        #expect(semanticResult.displayText == "出生当天")
+    }
+
     @Test("falls back to display name when selected expression subject text is empty")
     func fallsBackToDisplayNameWhenExpressionSubjectIsEmpty() {
         let birthday =
@@ -629,7 +722,8 @@ struct MemoryExpressionEngineTests {
             .resolve(
                 anchorDate: birthday,
                 captureDate: captureDate,
-                calendar: calendar
+                calendar: calendar,
+                comparesByCalendarDay: true
             )
         let occurrence =
             try #require(
@@ -690,7 +784,8 @@ struct MemoryExpressionEngineTests {
             .resolve(
                 anchorDate: marriageDate,
                 captureDate: captureDate,
-                calendar: calendar
+                calendar: calendar,
+                comparesByCalendarDay: true
             )
         let occurrence =
             try #require(

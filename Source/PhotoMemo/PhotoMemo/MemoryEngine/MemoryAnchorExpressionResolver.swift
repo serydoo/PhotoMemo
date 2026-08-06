@@ -29,18 +29,25 @@ struct MemoryAnchorRelativeSnapshot:
     static func resolve(
         anchorDate: Date,
         captureDate: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        comparesByCalendarDay: Bool
     ) -> Self {
+        let anchorDay = comparesByCalendarDay
+            ? calendar.startOfDay(for: anchorDate)
+            : anchorDate
+        let captureDay = comparesByCalendarDay
+            ? calendar.startOfDay(for: captureDate)
+            : captureDate
         let isFutureRelative =
-            captureDate < anchorDate
+            captureDay < anchorDay
         let startDate =
             isFutureRelative
-            ? captureDate
-            : anchorDate
+            ? captureDay
+            : anchorDay
         let endDate =
             isFutureRelative
-            ? anchorDate
-            : captureDate
+            ? anchorDay
+            : captureDay
         let components =
             calendar.dateComponents(
                 [.year, .month, .day],
@@ -91,6 +98,10 @@ struct MemoryAnchorRelativeSnapshot:
         }
 
         return "\(days)天"
+    }
+
+    var isOnAnchorDay: Bool {
+        !isFutureRelative && totalDays == 0
     }
 
     var durationText: String {
@@ -259,6 +270,11 @@ enum MemoryAnchorExpressionResolver {
 
         switch anchorType {
         case .birthday:
+            if relativeSnapshot.isOnAnchorDay {
+                return language == .english
+                    ? "day of birth"
+                    : "出生当天"
+            }
             return relativeSnapshot.ageText(language: language)
         case .relationship,
              .marriage,
@@ -308,6 +324,11 @@ enum MemoryAnchorExpressionResolver {
         let resolvedAnchorTitle =
             normalizedText(anchorTitle)
             ?? anchorType.suggestedTitle
+
+        if anchorType == .birthday,
+           relativeSnapshot.isOnAnchorDay {
+            return "\(resolvedSubject)今天来到这个世界啦！"
+        }
 
         if prefersAnnualOccurrence,
            !relativeSnapshot.isFutureRelative,
@@ -537,6 +558,11 @@ private extension MemoryAnchorExpressionResolver {
         )
         let subject = normalizedText(subjectText) ?? normalizedText(anchorTitle) ?? "this memory"
         let title = normalizedText(anchorTitle) ?? anchorType.suggestedTitle
+
+        if anchorType == .birthday,
+           relativeSnapshot.isOnAnchorDay {
+            return "\(subject) arrived in the world today"
+        }
 
         if prefersAnnualOccurrence,
            !relativeSnapshot.isFutureRelative,

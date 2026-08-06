@@ -21,7 +21,9 @@ struct RelativeTimeMemoryCalculator:
             .resolve(
                 anchorDate: anchor.date,
                 captureDate: captureDate,
-                calendar: Calendar.current
+                calendar: context.captureCalendar,
+                comparesByCalendarDay:
+                    true
             )
 
         return MemorySemanticResult(

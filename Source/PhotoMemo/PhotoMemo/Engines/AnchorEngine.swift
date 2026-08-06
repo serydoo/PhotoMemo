@@ -2,14 +2,29 @@ import Foundation
 
 final class AnchorEngine {
 
-    private let calendar = Calendar.current
+    private let calendar: Calendar
+
+    init(
+        calendar: Calendar = .current
+    ) {
+        self.calendar = calendar
+    }
 
     func build(
         from anchor: Anchor,
         photoDate: Date
     ) -> AnchorResult {
+        let isAnchorCalendarDay =
+            calendar.isDate(
+                photoDate,
+                inSameDayAs: anchor.date
+            )
+        let isBirthdayAnchorDay =
+            anchor.type == .birthday
+            && isAnchorCalendarDay
 
-        if photoDate < anchor.date {
+        if photoDate < anchor.date,
+           !isAnchorCalendarDay {
 
             return buildFutureResult(
                 from: anchor,
@@ -34,10 +49,19 @@ final class AnchorEngine {
             durationText(from: metrics)
 
         let ageText =
-            ageText(from: metrics)
+            isBirthdayAnchorDay
+            ? "出生当天"
+            : ageText(from: metrics)
 
         let elapsedText =
-            elapsedText(from: metrics.totalDays)
+            isBirthdayAnchorDay
+            ? "出生当天"
+            : elapsedText(from: metrics.totalDays)
+
+        let resolvedDurationText =
+            isBirthdayAnchorDay
+            ? "出生当天"
+            : durationText
 
         let dayIndexText =
             dayIndexText(from: metrics.totalDays)
@@ -59,6 +83,13 @@ final class AnchorEngine {
 
         case .birthday:
 
+            let resolvedSubject =
+                anchor.title.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ).isEmpty
+                ? "记忆对象"
+                : anchor.title
+
             return AnchorResult(
                 title: anchor.title,
                 isFutureRelative: false,
@@ -67,15 +98,17 @@ final class AnchorEngine {
                     ? durationText
                     : ageText,
                 secondaryText:
-                    durationText.isEmpty
+                    resolvedDurationText.isEmpty
                     ? formattedDateTime(anchor.date)
-                    : durationText,
+                    : resolvedDurationText,
                 summaryText:
-                    anchor.title.isEmpty
-                    ? ageText
-                    : "\(anchor.title)今天\(ageText)啦！",
+                    isBirthdayAnchorDay
+                    ? "\(resolvedSubject)今天来到这个世界啦！"
+                    : anchor.title.isEmpty
+                        ? ageText
+                        : "\(anchor.title)今天\(ageText)啦！",
                 ageText: ageText,
-                durationText: durationText,
+                durationText: resolvedDurationText,
                 countdownText: "",
                 elapsedText: elapsedText,
                 dayIndexText: dayIndexText,
@@ -264,10 +297,23 @@ private extension AnchorEngine {
             return AnchorMetrics()
         }
 
-        let components = calendar.dateComponents(
+        let startDay = calendar.startOfDay(
+            for: startDate
+        )
+        let endDay = calendar.startOfDay(
+            for: endDate
+        )
+        let dayComponents = calendar.dateComponents(
             [
                 .year,
                 .month,
+                .day
+            ],
+            from: startDay,
+            to: endDay
+        )
+        let timeComponents = calendar.dateComponents(
+            [
                 .day,
                 .hour,
                 .minute,
@@ -280,17 +326,17 @@ private extension AnchorEngine {
         let totalDays =
             calendar.dateComponents(
                 [.day],
-                from: startDate,
-                to: endDate
+                from: startDay,
+                to: endDay
             ).day ?? 0
 
         return AnchorMetrics(
-            years: components.year ?? 0,
-            months: components.month ?? 0,
-            days: components.day ?? 0,
-            hours: components.hour ?? 0,
-            minutes: components.minute ?? 0,
-            seconds: components.second ?? 0,
+            years: dayComponents.year ?? 0,
+            months: dayComponents.month ?? 0,
+            days: dayComponents.day ?? 0,
+            hours: timeComponents.hour ?? 0,
+            minutes: timeComponents.minute ?? 0,
+            seconds: timeComponents.second ?? 0,
             totalDays: totalDays
         )
     }

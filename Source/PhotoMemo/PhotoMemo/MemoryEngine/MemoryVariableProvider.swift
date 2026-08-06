@@ -97,52 +97,12 @@ private extension MemoryVariableProvider {
             return nil
         }
 
-        let isFutureRelative =
-            photoDate < anchor.date
-
-        let startDate =
-            isFutureRelative
-            ? photoDate
-            : anchor.date
-
-        let endDate =
-            isFutureRelative
-            ? anchor.date
-            : photoDate
-
-        let components =
-            context.calendar.dateComponents(
-                [
-                    .year,
-                    .month,
-                    .day
-                ],
-                from: startDate,
-                to: endDate
-            )
-
-            let totalDays =
-            context.calendar.dateComponents(
-                [.day],
-                from: startDate,
-                to: endDate
-            ).day ?? 0
-
-        return MemoryAnchorRelativeSnapshot(
-            years: max(
-                components.year ?? 0,
-                0
-            ),
-            months: max(
-                components.month ?? 0,
-                0
-            ),
-            days: max(
-                components.day ?? 0,
-                0
-            ),
-            totalDays: max(totalDays, 0),
-            isFutureRelative: isFutureRelative
+        return MemoryAnchorRelativeSnapshot.resolve(
+            anchorDate: anchor.date,
+            captureDate: photoDate,
+            calendar: context.calendar,
+            comparesByCalendarDay:
+                true
         )
     }
 
@@ -164,6 +124,9 @@ private extension MemoryVariableProvider {
         from snapshot:
             MemoryAnchorRelativeSnapshot
     ) -> String {
+        if snapshot.isOnAnchorDay {
+            return "出生当天"
+        }
 
         if snapshot.years > 0 {
             return [

@@ -328,16 +328,12 @@ enum MemoryAnchorExpressionStyle:
         anchorTitle: String
     ) -> String {
         switch self {
-        case .birthdayNatural:
-            return "今天是\(subjectText)的生日"
-        case .birthdayCeremonial:
-            return "今天是\(subjectText)来到世界的日子"
-        case .birthdayGrowth:
-            return "\(subjectText)今天来到世界"
-        case .birthdayWarm:
-            return "今天陪\(subjectText)迎来这一天"
-        case .birthdayMinimal:
-            return "\(subjectText) · 生日"
+        case .birthdayNatural,
+             .birthdayCeremonial,
+             .birthdayGrowth,
+             .birthdayWarm,
+             .birthdayMinimal:
+            return "\(subjectText)今天来到这个世界啦！"
         case .marriageNatural,
              .marriageCeremonial:
             return "今天是结婚的日子"

@@ -178,10 +178,89 @@ struct MemoryEngineTests {
             from: card
         )
 
-        #expect(context[MetadataContext.Key.daysSince] == "0")
+        #expect(context[MetadataContext.Key.daysSince] == "1")
         #expect(context[MetadataContext.Key.weeksSince] == "0")
-        #expect(context[MetadataContext.Key.babyAge] == "0天")
-        #expect(context[MetadataContext.Key.memorySummary] == "今天宝宝0天")
+        #expect(context[MetadataContext.Key.babyAge] == "1天")
+        #expect(context[MetadataContext.Key.memorySummary] == "今天宝宝1天")
+    }
+
+    @Test("Counts local-midnight crossing as the next day for every anchor type")
+    func countsMidnightCrossingForEveryAnchorType() throws {
+        let anchor = Anchor(
+            type: .relationship,
+            title: "我们",
+            date: try date(
+                year: 2026,
+                month: 6,
+                day: 1,
+                hour: 23,
+                minute: 30,
+                timeZoneOffsetSeconds: 8 * 3600
+            )
+        )
+        let metadata = PhotoMetadata(
+            captureDate: try date(
+                year: 2026,
+                month: 6,
+                day: 2,
+                hour: 0,
+                minute: 15,
+                timeZoneOffsetSeconds: 8 * 3600
+            ),
+            captureTimezoneOffsetSeconds: 8 * 3600
+        )
+
+        let variables = MemoryVariableProvider().build(
+            from: MemoryContext(
+                metadata: metadata,
+                anchor: anchor
+            )
+        )
+        let anchorResult = AnchorEngine().build(
+            from: anchor,
+            photoDate: try #require(metadata.captureDate)
+        )
+
+        #expect(variables.daysSince == "1")
+        #expect(anchorResult.totalDays == 1)
+        #expect(!anchorResult.isFutureRelative)
+        #expect(anchorResult.hours == 0)
+        #expect(anchorResult.minutes == 45)
+    }
+
+    @Test("Keeps sub-day anchor metrics as bounded residual components")
+    func keepsSubDayAnchorMetricsBounded() throws {
+        let anchor = Anchor(
+            type: .custom,
+            title: "起点",
+            date: try date(
+                year: 2025,
+                month: 1,
+                day: 1,
+                hour: 10,
+                minute: 20,
+                timeZoneOffsetSeconds: 8 * 3600
+            )
+        )
+        let result = AnchorEngine().build(
+            from: anchor,
+            photoDate: try date(
+                year: 2026,
+                month: 1,
+                day: 2,
+                hour: 11,
+                minute: 22,
+                timeZoneOffsetSeconds: 8 * 3600
+            )
+        )
+
+        #expect(result.totalDays == 366)
+        #expect(result.hours == 1)
+        #expect(result.minutes == 2)
+        #expect(result.seconds == 0)
+        #expect(result.hours >= 0 && result.hours < 24)
+        #expect(result.minutes >= 0 && result.minutes < 60)
+        #expect(result.seconds >= 0 && result.seconds < 60)
     }
 
     @Test("Projects explicit memory module into variable and template flow when legacy memory inputs are absent")

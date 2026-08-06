@@ -220,6 +220,19 @@ Examples:
 - past: `宝宝今天 2岁3个月18天`
 - future: `距离高考还有 6210 天`
 
+Birthday anchor day is a separate expression case. When the photo capture date
+and the birth anchor date fall on the same calendar day, the result is not a
+zero-length age string. The complete expression is:
+
+```text
+宝宝今天来到这个世界啦！
+```
+
+The reusable Anchor Result remains a time result and is exposed as
+`出生当天`; it does not become a complete sentence. The capture calendar is
+the authority for the calendar-day comparison, so a photo after midnight is
+on the next day even when less than 24 hours have elapsed.
+
 Unified ownership:
 
 ```text

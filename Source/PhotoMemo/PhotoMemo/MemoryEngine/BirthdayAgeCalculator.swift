@@ -21,13 +21,22 @@ struct BirthdayAgeCalculator:
             .resolve(
                 anchorDate: anchor.date,
                 captureDate: captureDate,
-                calendar: calendar
+                calendar: calendar,
+                comparesByCalendarDay: true
             )
 
         return MemorySemanticResult(
             kind: .birthdayAge,
             displayText:
-                relativeSnapshot.ageText,
+                MemoryAnchorVariableTextFormatter.babyAgeText(
+                    from:
+                        MemoryElapsedTime(
+                            relativeSnapshot:
+                                relativeSnapshot
+                        ),
+                    language:
+                        context.language
+                ),
             relativeSnapshot:
                 relativeSnapshot
         )

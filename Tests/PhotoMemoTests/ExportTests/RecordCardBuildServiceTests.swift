@@ -344,6 +344,109 @@ struct RecordCardBuildServiceTests {
         )
     }
 
+    @Test("Legacy anchor card result uses the photo capture calendar")
+    func legacyAnchorCardResultUsesPhotoCaptureCalendar() throws {
+        for timezoneOffsetSeconds in [
+            -10 * 60 * 60,
+            10 * 60 * 60
+        ] {
+            var captureCalendar =
+                Calendar(identifier: .gregorian)
+            captureCalendar.timeZone =
+                try #require(
+                    TimeZone(
+                        secondsFromGMT:
+                            timezoneOffsetSeconds
+                    )
+                )
+
+            let birthday =
+                try #require(
+                    captureCalendar.date(
+                        from: DateComponents(
+                            year: 2026,
+                            month: 6,
+                            day: 1,
+                            hour: 0,
+                            minute: 0
+                        )
+                    )
+                )
+            let captureDate =
+                try #require(
+                    captureCalendar.date(
+                        from: DateComponents(
+                            year: 2026,
+                            month: 6,
+                            day: 1,
+                            hour: 23,
+                            minute: 59
+                        )
+                    )
+                )
+            let anchor =
+                Anchor(
+                    type: .birthday,
+                    title: "宝宝",
+                    date: birthday,
+                    isCountdown: false
+                )
+            let photo =
+                SelectedPhoto(
+                    sourceURL:
+                        URL(
+                            fileURLWithPath:
+                                "/tmp/capture-calendar-birthday.jpg"
+                        ),
+                    image:
+                        NSImage(
+                            size:
+                                NSSize(
+                                    width: 32,
+                                    height: 32
+                                )
+                        ),
+                    metadata:
+                        PhotoMetadata(
+                            captureDate: captureDate,
+                            captureTimezoneOffsetSeconds:
+                                timezoneOffsetSeconds
+                        )
+                )
+            let configuration =
+                BatchConfigurationSnapshot(
+                    template:
+                        .classicWhite
+                        .normalizedForEditing,
+                    badge: nil,
+                    anchor: anchor,
+                    shouldWritePhotoDescription: false,
+                    photoDescriptionOverride: "",
+                    selectedAlbumIdentifier: ""
+                )
+
+            let card =
+                RecordCardBuildService()
+                .buildCard(
+                    from: photo,
+                    configuration: configuration
+                )
+            let anchorResult =
+                try #require(
+                    card.anchorResult
+                )
+
+            #expect(anchorResult.totalDays == 0)
+            #expect(anchorResult.ageText == "出生当天")
+            #expect(
+                card
+                .memoryResult?
+                .primaryAnchorResult?
+                .elapsed
+                .totalDays == 0
+            )
+        }
+    }
     @Test("English frozen configuration projects English anchor variables")
     func englishFrozenConfigurationProjectsEnglishAnchorVariables() throws {
 

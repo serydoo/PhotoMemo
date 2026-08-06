@@ -86,6 +86,161 @@ struct MemoryAnchorTextFormatterTests {
         )
     }
 
+    @Test("Treats the birthday calendar day as a distinct memory expression")
+    func treatsBirthdayCalendarDayAsDistinctMemoryExpression() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(
+            TimeZone(secondsFromGMT: 8 * 60 * 60)
+        )
+        let birthday = try #require(
+            calendar.date(
+                from: DateComponents(
+                    year: 2026,
+                    month: 6,
+                    day: 1,
+                    hour: 0,
+                    minute: 5
+                )
+            )
+        )
+        let captureDate = try #require(
+            calendar.date(
+                from: DateComponents(
+                    year: 2026,
+                    month: 6,
+                    day: 1,
+                    hour: 23,
+                    minute: 30
+                )
+            )
+        )
+        let snapshot = MemoryAnchorRelativeSnapshot.resolve(
+            anchorDate: birthday,
+            captureDate: captureDate,
+            calendar: calendar,
+            comparesByCalendarDay: true
+        )
+
+        #expect(!snapshot.isFutureRelative)
+        #expect(snapshot.totalDays == 0)
+        #expect(
+            MemoryAnchorVariableTextFormatter.babyAgeText(
+                from: MemoryElapsedTime(relativeSnapshot: snapshot),
+                language: .simplifiedChinese
+            ) == "出生当天"
+        )
+
+        for style in MemoryAnchorExpressionStyle.availableStyles(
+            for: .birthday
+        ) {
+            #expect(
+                MemoryAnchorExpressionResolver.renderedText(
+                    subjectText: "宝宝",
+                    anchorTitle: "出生",
+                    anchorType: .birthday,
+                    expressionStyle: style,
+                    relativeSnapshot: snapshot
+                ) == "宝宝今天来到这个世界啦！"
+            )
+        }
+
+        #expect(
+            MemoryAnchorExpressionResolver.renderedText(
+                subjectText: "Mia",
+                anchorTitle: "Birthday",
+                anchorType: .birthday,
+                expressionStyle: .birthdayNatural,
+                relativeSnapshot: snapshot,
+                language: .english
+            ) == "Mia arrived in the world today"
+        )
+    }
+
+    @Test("Keeps the legacy anchor path aligned with the birthday-day expression")
+    func keepsLegacyAnchorPathAlignedWithBirthdayDayExpression() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(
+            TimeZone(secondsFromGMT: 8 * 60 * 60)
+        )
+        let birthday = try #require(
+            calendar.date(
+                from: DateComponents(
+                    year: 2026,
+                    month: 6,
+                    day: 1,
+                    hour: 0,
+                    minute: 5
+                )
+            )
+        )
+        let captureDate = try #require(
+            calendar.date(
+                from: DateComponents(
+                    year: 2026,
+                    month: 6,
+                    day: 1,
+                    hour: 23,
+                    minute: 30
+                )
+            )
+        )
+        let result = AnchorEngine().build(
+            from: Anchor(
+                type: .birthday,
+                title: "宝宝",
+                date: birthday,
+                expressionStyle: .birthdayNatural
+            ),
+            photoDate: captureDate
+        )
+
+        #expect(result.ageText == "出生当天")
+        #expect(result.secondaryText == "出生当天")
+        #expect(result.elapsedText == "出生当天")
+        #expect(result.summaryText == "宝宝今天来到这个世界啦！")
+        #expect(!result.summaryText.contains("0天"))
+    }
+
+    @Test("Treats every anchor on the same calendar day as the anchor day")
+    func treatsEveryAnchorOnSameCalendarDayAsAnchorDay() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(
+            TimeZone(secondsFromGMT: 8 * 60 * 60)
+        )
+        let anchorDate = try #require(
+            calendar.date(
+                from: DateComponents(
+                    year: 2026,
+                    month: 6,
+                    day: 1,
+                    hour: 23,
+                    minute: 30
+                )
+            )
+        )
+        let captureDate = try #require(
+            calendar.date(
+                from: DateComponents(
+                    year: 2026,
+                    month: 6,
+                    day: 1,
+                    hour: 0,
+                    minute: 5
+                )
+            )
+        )
+
+        let snapshot = MemoryAnchorRelativeSnapshot.resolve(
+            anchorDate: anchorDate,
+            captureDate: captureDate,
+            calendar: calendar,
+            comparesByCalendarDay: true
+        )
+
+        #expect(!snapshot.isFutureRelative)
+        #expect(snapshot.totalDays == 0)
+    }
+
     @Test("Defaults legacy batch snapshots to Simplified Chinese")
     func defaultsLegacyBatchSnapshotsToChinese() throws {
         let snapshot = BatchConfigurationSnapshot(
