@@ -190,9 +190,9 @@ Primary source and records:
 - `Docs/06_Development/2026-08-06-overall-change-stability-and-structure-audit.md`
 - `Docs/06_Development/2026-08-06-release-package-scope-and-p1-evidence-plan.md`
 - `Docs/06_Development/2026-08-06-local-change-package-inventory.md`
-- `Docs/07_Releases/2026-08-06-next-release-app-store-whats-new.md`
-- `Docs/07_Releases/2026-08-06-next-release-internal-changelog.md`
-- `Docs/07_Releases/2026-08-06-next-release-testflight-notes.md`
+- `Docs/07_Releases/2026-08-06-2.0.3-app-store-whats-new.md`
+- `Docs/07_Releases/2026-08-06-2.0.3-internal-changelog.md`
+- `Docs/07_Releases/2026-08-06-2.0.3-testflight-notes.md`
 - `Source/PhotoMemo/PhotoMemo/Models/MemoMarkLanguage.swift`
 - `Source/PhotoMemo/PhotoMemo/en.lproj/Localizable.strings`
 - `Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings`
@@ -215,22 +215,25 @@ chosen.
 4. Review the staged diff for private data and accidental generated artifacts.
 5. Commit with one behavioral subject. Do not amend unrelated commits.
 6. Re-run the full suite and required builds after all slices are integrated.
-7. Select the final marketing version and build only after the package is
-   stable, then update the two `TBD` fields in the release drafts.
-8. Do not push until physical-device acceptance covers the applicable Apple
-   Photos recovery, appearance, Dynamic Type, VoiceOver, and language paths.
+7. Keep the locked `2.0.3 (70)` identity consistent across project settings,
+   release records, and build products.
+8. GitHub synchronization may preserve this reviewed source checkpoint;
+   physical-device Apple Photos recovery, appearance, Dynamic Type, VoiceOver,
+   and language acceptance remain gates for release authorization.
 
-## Current Push Gate
+## Current Source Checkpoint Gate
 
-Push remains blocked by package review and release evidence, not by an
-unresolved source merge conflict:
+The GitHub source checkpoint is approved after package review, version lock,
+and automated verification. Release authorization remains separate:
 
 - Slice A is preserved in `aaaa99da`;
 - Slice B is preserved in `301e1366`;
 - Slice C is preserved in `94ffa9b`, `bdd1086`, and `6c413c8`;
-- Slice D is preserved in `2c92fe0` and `d2a4a5c`; Slice E remains the active
-  worktree slice;
-- final marketing version and build number are not selected;
+- Slice D is preserved in `2c92fe0` and `d2a4a5c`; Slice E is preserved in
+  `dd5a197` and `47bb375`;
+- marketing version `2.0.3` and build `70` are locked and verified across all
+  product bundles;
+- the complete test suite and unsigned macOS/generic-iOS Debug builds pass;
 - physical-device evidence for Apple Photos interruption and delayed visibility
   remains open;
 - final visual, accessibility, and TestFlight-candidate acceptance remains

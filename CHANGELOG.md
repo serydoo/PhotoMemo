@@ -1,5 +1,39 @@
 # Changelog
 
+## 2.0.3 (70) Memory Expression And Save Recovery - 2026-08-06
+
+### Fixed
+- Aligned Memory Expression and compatibility paths with the photo capture
+  time zone's calendar day, including a natural birthday-day result instead
+  of `0 days`.
+- Preserved exact receipt-backed Apple Photos saves across ambiguous readback,
+  startup recovery, and later asset visibility without rerendering or creating
+  replacement output.
+- Unified the complete Memory Expression and optional user-authored Photo
+  Description text through one newline-separated composition contract.
+
+### Changed
+- Refined Configuration Center device fit, Memory Subject and Time Anchor
+  state consistency, adaptive presentation tokens, and Output presentation.
+- Added persistent System, Light, and Dark appearance preferences while
+  preserving the fixed visual semantics of rendered photos.
+- Raised the macOS app, iOS app, Share Extension, Widget Extension, and test
+  target configurations to `2.0.3 (70)`.
+
+### Release Boundary
+- This GitHub source checkpoint does not close `TX-001` signed-device Apple
+  Photos interruption, restart, or delayed-visibility evidence.
+- `BP-001` 48MP/RAW peak-memory evidence remains open. The production
+  certification verdict remains `FAIL (Conditional)` and must not be
+  represented as complete.
+
+### Verification
+- The complete macOS `PhotoMemoTests` run passed `1,317` tests, skipped `1`,
+  and failed `0`.
+- Unsigned macOS and generic-iOS Debug builds passed. Built Info.plists for the
+  macOS app, iOS app, Share Extension, and Widget Extension all report
+  `2.0.3 (70)`.
+
 ## 2.0.2 (69) Production Reliability And Compatibility - 2026-08-04
 
 ### Fixed

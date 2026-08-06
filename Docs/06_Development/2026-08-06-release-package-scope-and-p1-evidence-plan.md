@@ -2,7 +2,7 @@
 
 Date: 2026-08-06
 
-Status: Active Release-Preparation Record; D1/D2 Local Commits Preserved
+Status: Source Checkpoint Approved; Release Evidence Remains Open
 
 Primary loop: Engineering Loop
 
@@ -12,10 +12,11 @@ Photos workflow.
 ## Current State
 
 The initial 110-file package has been split into independently reviewable local
-commits. Slices A, B, and C are already preserved in local history; the Apple
-Photos slice is preserved as D1 `2c92fe0` and D2 `d2a4a5c`. Slice E remains in
-the worktree for final language, release-copy, localization, and state-record
-review. GitHub has not been pushed.
+commits. Slices A through E are preserved in local history, and a dedicated
+version-lock checkpoint sets the release identity to `2.0.3 (70)`. The user
+authorized GitHub synchronization as a source checkpoint before the next
+optimization round. This decision does not authorize TestFlight, App Store, or
+production release.
 
 ## Observed Evidence
 
@@ -33,10 +34,10 @@ that belong in internal records rather than in Settings -> About.
 
 ## Boundaries
 
-- Do not change the marketing version or build number in this preparation
-  slice. The final release identity is still `TBD`.
-- Do not stage the remaining E files until their inventory and logical
-  boundaries are reviewed.
+- Keep the locked `2.0.3 (70)` identity consistent across every product and
+  test target, release record, and built bundle.
+- Preserve the existing commit slices; the version lock remains a separate,
+  reviewable checkpoint.
 - Do not claim that TX-001, BP-001, physical Apple Photos interruption
   evidence, or the superseding production certification is closed.
 - Do not turn the full worktree into a generic cleanup commit, and do not use
@@ -177,8 +178,9 @@ ownership boundary, private-data check, and focused verification evidence.
   contract assertion failed before the wording repair and passed afterward.
   Focused `V1ReleaseNotesContractTests`, localization syntax/key parity, and
   `git diff --check` pass.
-- Slice E does not satisfy the final staging or push gate. Final version/build
-  identity and all physical-device release-candidate evidence remain open; the
+- Slice E does not by itself satisfy the final source-checkpoint gate. The
+  version identity is now locked, while physical-device release-candidate
+  evidence remains open; the
   copy does not claim TX-001, BP-001, Apple Photos interruption evidence, or
   superseding production certification closure.
 
@@ -200,8 +202,7 @@ Before any push:
 2. Review each proposed commit slice separately, with its source, tests, docs,
    and evidence.
 3. Confirm the final version and build identity.
-4. Complete the required physical-device acceptance that applies to the
-   release candidate, especially the remaining Apple Photos recovery,
-   accessibility, and appearance checks.
+4. Record any deferred physical-device acceptance explicitly and keep GitHub
+   synchronization separate from release authorization.
 5. Re-run the final test, build, diff, and package review. A push is permitted
    only after those checks and an explicit user-facing release decision.

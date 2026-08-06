@@ -68,16 +68,16 @@ struct V1ReleaseNotesContractTests {
             "Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj"
         )
 
-        #expect(!projectSource.contains("MARKETING_VERSION = 2.0;"))
-        #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 66;"))
+        #expect(!projectSource.contains("MARKETING_VERSION = 2.0.2;"))
+        #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 69;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.0.2;"
+                separatedBy: "MARKETING_VERSION = 2.0.3;"
             ).count == 9
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 69;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 70;"
             ).count == 11
         )
     }
@@ -85,15 +85,18 @@ struct V1ReleaseNotesContractTests {
     @Test("next release drafts keep internal TestFlight and App Store boundaries distinct")
     func nextReleaseDraftsKeepAudienceBoundariesDistinct() throws {
         let internalNotes = try sourceText(
-            "Docs/07_Releases/2026-08-06-next-release-internal-changelog.md"
+            "Docs/07_Releases/2026-08-06-2.0.3-internal-changelog.md"
         )
         let testFlightNotes = try sourceText(
-            "Docs/07_Releases/2026-08-06-next-release-testflight-notes.md"
+            "Docs/07_Releases/2026-08-06-2.0.3-testflight-notes.md"
         )
         let appStoreNotes = try sourceText(
-            "Docs/07_Releases/2026-08-06-next-release-app-store-whats-new.md"
+            "Docs/07_Releases/2026-08-06-2.0.3-app-store-whats-new.md"
         )
 
+        #expect(internalNotes.contains("目标版本与构建号：`2.0.3 (70)`"))
+        #expect(testFlightNotes.contains("目标版本与构建号：`2.0.3 (70)`"))
+        #expect(appStoreNotes.contains("目标版本：`2.0.3`"))
         #expect(internalNotes.contains("FAIL (Conditional)"))
         #expect(internalNotes.contains("TX-001"))
         #expect(internalNotes.contains("BP-001"))

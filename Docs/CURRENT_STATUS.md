@@ -4,20 +4,36 @@ Last updated: 2026-08-06
 
 ## Current Local Packaging State
 
-- The local work is now split into reviewable commits instead of one large
-  package. Calendar-day expression and compatibility work is retained in
-  `aaaa99da`; Configuration Center/device-fit work is retained in
-  `301e1366`; Appearance and Photo Description work is retained in
-  `94ffa9b`, `bdd1086`, and `6c413c8`; and Apple Photos receipt/queue
-  recovery is retained in `2c92fe0` and `d2a4a5c`.
-- Release language, bilingual resources, Settings -> About copy, three next
-  release drafts, and the final state-record updates remain the active
-  worktree slice. No push has been performed.
-- The remaining release gate is evidence and review, not an unbounded source
-  cleanup: final version/build identity, physical-device Apple Photos
-  interruption and delayed-visibility evidence, final accessibility/appearance
-  acceptance, `TX-001`, `BP-001`, and superseding production certification
-  remain open. The 2026-07-20 verdict remains `FAIL (Conditional)`.
+- The former 110-file package is preserved as twelve reviewable local commits
+  instead of one undifferentiated change. A final version-lock checkpoint
+  raises every product target to `2.0.3` and every product/test build setting
+  to `70` before GitHub synchronization.
+- Settings -> About copy and the three audience-specific release records are
+  locked to `2.0.3 (70)`. GitHub synchronization is authorized as a source
+  checkpoint before the next optimization round; it is not TestFlight,
+  App Store, or production release authorization.
+- Physical-device Apple Photos interruption, restart, and delayed-visibility
+  evidence remains open under `TX-001`. `BP-001` 48MP/RAW peak-memory evidence
+  and superseding production certification also remain open. The 2026-07-20
+  verdict remains `FAIL (Conditional)`.
+
+## 2026-08-06 MemoMark 2.0.3 (70) Source Checkpoint
+
+- Locked the macOS app, iOS app, Share Extension, and Widget Extension to
+  marketing version `2.0.3`, and all product/test configurations to build
+  `70`. Built Info.plists for all four product bundles report the same
+  `2.0.3 (70)` identity.
+- Renamed the three release records from generic next-release filenames to
+  versioned `2.0.3` filenames. App Store copy remains concise and user-facing;
+  TestFlight retains practical device checks; the internal record alone keeps
+  issue identifiers, evidence gaps, and certification status.
+- The focused four-test release-note contract passed. The final complete
+  macOS suite contains `1,318` tests: `1,317` passed, `1` existing test was
+  skipped, and `0` failed. Unsigned macOS and generic-iOS Debug builds passed.
+- This checkpoint records and synchronizes the source before another
+  optimization round. It does not close `TX-001`, `BP-001`, signed-device
+  acceptance, or the superseding production certification, and it does not
+  change the historical `FAIL (Conditional)` verdict.
 
 ## 2026-08-06 P1 Slice A Calendar-Day Memory Expression Review
 
@@ -152,8 +168,8 @@ Last updated: 2026-08-06
   assertion failed against the prior draft and passed after the wording repair.
   The focused `V1ReleaseNotesContractTests`, localization syntax/key-parity
   check, and `git diff --check` pass.
-- Slice E remains in the worktree for its own isolated review. Marketing
-  version and build remain `TBD` for the next package, and no release copy claims TX-001, BP-001, Apple Photos
+- Slice E is preserved in the release-copy and governance commits. Marketing
+  version and build are now locked to `2.0.3 (70)`, and no release copy claims TX-001, BP-001, Apple Photos
   interruption evidence, or a superseding production certification is closed.
   The 2026-07-20 verdict remains `FAIL (Conditional)`.
 
