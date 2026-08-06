@@ -1,6 +1,6 @@
 # MemoMark Product Language Guide
 
-Last updated: 2026-07-29
+Last updated: 2026-08-06
 
 ## Status
 
@@ -59,7 +59,7 @@ safe or informed decision.
 The product should guide one coherent act of remembering:
 
 1. 你想围绕谁开展回忆。
-2. 从哪个重要时刻开始记录。
+2. 选择一个时间起点，让照片拥有时间答案。
 3. 让回忆拥有属于自己的表达方式。
 4. 决定这段回忆最终如何呈现。
 5. 保存这段回忆。
@@ -67,6 +67,68 @@ The product should guide one coherent act of remembering:
 This is a narrative sequence, not a new workflow or feature model. It should
 remain compatible with the frozen `Library -> Interactive Memory Card ->
 Object Inspector` architecture.
+
+## Title And Subtitle Roles
+
+A title names the stable object, destination, or action that the user can
+recognize. A subtitle explains either the decision made in that area or its
+visible effect. It should not restate the title or inventory every child row.
+
+Use stable titles such as `配置中心`, `记忆来源`, `记忆对象`, `时间锚点`,
+`记忆表达`, `预设`, `卡片内容`, and `Apple Photos`. Keep the explanation in
+the subtitle:
+
+| Title | Subtitle role |
+| --- | --- |
+| `时间锚点` editor | `选择一个时间起点，让照片拥有时间答案。` |
+| `记忆表达` | `让回忆拥有属于自己的表达方式。` |
+| `我的预设` | `下一次分享，照片会怎样呈现。` |
+
+When the title and controls already make the result clear, omit the subtitle.
+Do not add helper copy only to make a section look complete.
+
+### Memory Subject Identity Terms
+
+Use one stable four-field vocabulary wherever a Memory Subject is viewed or
+edited: `对象名称` is required; `昵称`, `与我的关系`, and `专属称呼` are optional.
+Optional values stay absent from the reading surface until the user fills them
+in. `记忆表达主体` names the separate choice that decides which populated
+identity value appears in memory expressions; it is not another identity field.
+If a selected optional value becomes unavailable, expression text and its
+visible source label both return directly to the required `对象名称`. Do not
+continue through other optional identity fields as fallback candidates.
+
+### Time Anchor Type Labels
+
+Use complete type names in selection and explanatory contexts: `生日 / 出生`,
+`恋爱纪念`, `结婚纪念`, `未来目标 / 高考 / 毕业`, and `自定义`. In compact Time
+Anchor list rows, use the localized short labels `生日/出生`, `恋爱`, `结婚`,
+`目标`, and `自定义`. The short label inherits the established semantic color
+for its type and does not repeat an icon, capsule, or visible `类型：` prefix.
+VoiceOver announces `类型，<完整类别>` instead of the shortened visual label.
+
+### Compact Control Rows
+
+In a width-constrained control row, a subtitle may be a short relational phrase
+when the adjacent title and control make its meaning clear. This exception
+protects the control's stable trailing position and does not authorize
+implementation vocabulary or an incomplete page-level explanation.
+
+The accepted Time Anchor row uses `回忆对象重要时刻`; its editor provides the
+complete prompt `选择一个时间起点，让照片拥有时间答案。`. Sentence-ending
+punctuation is optional for the compact phrase and remains expected for the
+full prompt.
+
+Configuration sheets may use one centered, secondary `footnote` subtitle below
+the native navigation title when the sheet needs context. The accepted active
+sheet subtitles are:
+
+- `时间锚点`: `选择一个时间起点，让照片拥有时间答案。`
+- `更多信息`: `更多内容会根据实际需要逐步加入。`
+- `卡片内容`: `探索不同组合，也欢迎告诉我们你的自定义想法。`
+
+These lines are quiet context, not banners, roadmap promises, or a substitute
+for a feedback action.
 
 ## Five Rules
 
@@ -91,9 +153,10 @@ description of the implementation.
 
 ### 3. 永远围绕人和回忆
 
-Prefer `记忆对象`, `重要时刻`, `记忆表达`, `成长`, `记录`, `呈现`, and
+Prefer `记忆对象`, `重要时刻`, `记忆表达`, `成长`, `呈现`, and
 `保存这段回忆` over labels that foreground state, modules, algorithms, or
-metadata.
+metadata. Use `记录` only where its context actually describes a record or the
+act of preserving one.
 
 ### 4. 不替程序说话
 
@@ -119,7 +182,7 @@ MemoMark's language should have `生活感`, not `文学腔` or advertising poli
 Good copy sounds like a thoughtful person nearby saying one useful sentence:
 
 - `你想围绕谁开展回忆。`
-- `从哪个重要时刻开始记录。`
+- `选择一个时间起点，让照片拥有时间答案。`
 - `让回忆拥有属于自己的表达方式。`
 
 These lines have warmth and a visual idea without exaggerated imagery,
@@ -130,7 +193,7 @@ sentimentality, or decorative wording.
 | Program-centered | Memory-centered |
 | --- | --- |
 | `已生成智能内容。` | `让回忆拥有属于自己的表达方式。` |
-| `设置时间参考。` | `从哪个重要时刻开始记录。` |
+| `设置时间参考。` | `选择一个时间起点，让照片拥有时间答案。` |
 | `选择对象。` | `你想围绕谁开展回忆。` |
 | `当前对象` | `记忆对象` |
 | `当前表达` | `记忆表达` |
@@ -141,6 +204,26 @@ These are writing examples, not a request to rename architecture symbols or
 internal APIs. User-facing `Configuration Center` remains the frozen product
 surface name, while explanatory copy should avoid narrating the user as
 "configuring a system".
+
+## Contextual Verb Boundary
+
+`记录`, `计算`, and `生成` are contextual verbs, not globally preferred or
+forbidden words.
+
+- Use `记录` for accepted output nouns such as `时光记录`, factual history,
+  `记录于`, user-authored wording, and established commerce identity. Do not
+  use it for a button or prompt whose actual action is choosing or saving
+  configuration.
+- Use `计算` when a factual explanation, diagnostic, or recovery step requires
+  precision. In ordinary configuration copy, describe the visible result,
+  such as a photo's time relationship, instead of narrating an algorithm.
+- Use `生成` for an explicit output action or processing state, such as
+  `生成时光记录`. Do not use it as the primary explanation of Memory
+  Expression or as a claim that MemoMark authors the user's story.
+
+The test is semantic: the word must match what happens next. Replacing every
+occurrence mechanically would make permission, output, commerce, and recovery
+copy less accurate.
 
 ## Precision Boundary
 
@@ -166,6 +249,33 @@ For example:
 - `{{anchor_countdown_text}}` -> `还有86天`
 
 The user's wording remains their own.
+
+### Birthday Anchor Day
+
+When a photo's capture date and a configured birth anchor fall on the same
+calendar day, this is a distinct memory moment, not an age duration of `0天`.
+The complete Simplified Chinese birthday expression is:
+
+> `{主体}今天来到这个世界啦！`
+
+All birthday expression styles use this same anchor-day meaning. The reusable
+age result remains a result rather than a sentence and is expressed as
+`出生当天`. The English complete expression is `{Subject} arrived in the
+world today`, and its reusable result is `day of birth`.
+
+The date comparison follows the capture calendar. A photo captured shortly
+after midnight belongs to the next calendar day even when fewer than 24 hours
+have elapsed.
+
+### Photo Description Composition
+
+Photo Description begins with the complete resolved Memory Expression shown in
+the Memory Card's right-bottom region. When the user enables `补充一段话`, the
+trimmed custom text follows that complete expression on a separate line.
+
+Do not replace the Memory Expression or rewrite the user's punctuation. If the
+resolved expression is empty, the non-empty custom text may stand alone.
+Preview and final output must use the same newline-separated composition rule.
 
 ## Commerce Identity And Capability
 
@@ -194,7 +304,9 @@ Before accepting user-facing copy, ask:
 - Does it speak about a person, a moment, a memory, or the result the user wants?
 - Is it short enough to leave room for the interface and the user's own story?
 - Does it sound natural when read aloud?
+- Does the title name the object while the subtitle explains the decision or visible effect?
 - Could an internal implementation term be removed without losing meaning?
+- Do `记录`, `计算`, and `生成` match the action in this specific context?
 - Is it warm without trying to make the user emotional?
 - Are permissions, errors, privacy, purchases, and destructive actions still exact?
 - Does the copy preserve the Apple Photos lifecycle and the frozen product nouns?

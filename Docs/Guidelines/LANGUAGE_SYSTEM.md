@@ -1,6 +1,6 @@
 # Language System
 
-Last updated: 2026-07-29
+Last updated: 2026-08-05
 
 ## Status
 
@@ -26,6 +26,23 @@ All user-facing language should be:
 Narrative copy should describe people, important moments, memories, and the
 intended result. It should not explain modules, algorithms, metadata, or layout
 mechanics as the primary user experience.
+
+## Interface Hierarchy
+
+Titles name a stable object, destination, or action. Subtitles explain the
+decision made there or its visible effect, without repeating the title or
+listing every child control. Omit helper text when the interface is already
+clear.
+
+Compact control rows may use a short relational phrase when the adjacent title
+and control already complete the meaning and a full sentence would displace the
+control. The matching editor or destination should carry the complete prompt.
+This is a layout-aware exception, not a general preference for fragments.
+
+`记录`, `计算`, and `生成` are judged by context rather than removed
+mechanically. The canonical roles and examples are defined in
+`PRODUCT_LANGUAGE_GUIDE.md` under `Title And Subtitle Roles` and
+`Contextual Verb Boundary`.
 
 ## Progress Language
 

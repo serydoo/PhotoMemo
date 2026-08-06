@@ -1,6 +1,623 @@
 # MemoMark Current Status
 
-Last updated: 2026-08-04
+Last updated: 2026-08-06
+
+## Current Local Packaging State
+
+- The local work is now split into reviewable commits instead of one large
+  package. Calendar-day expression and compatibility work is retained in
+  `aaaa99da`; Configuration Center/device-fit work is retained in
+  `301e1366`; Appearance and Photo Description work is retained in
+  `94ffa9b`, `bdd1086`, and `6c413c8`; and Apple Photos receipt/queue
+  recovery is retained in `2c92fe0` and `d2a4a5c`.
+- Release language, bilingual resources, Settings -> About copy, three next
+  release drafts, and the final state-record updates remain the active
+  worktree slice. No push has been performed.
+- The remaining release gate is evidence and review, not an unbounded source
+  cleanup: final version/build identity, physical-device Apple Photos
+  interruption and delayed-visibility evidence, final accessibility/appearance
+  acceptance, `TX-001`, `BP-001`, and superseding production certification
+  remain open. The 2026-07-20 verdict remains `FAIL (Conditional)`.
+
+## 2026-08-06 P1 Slice A Calendar-Day Memory Expression Review
+
+- Completed the independent five-axis review of the calendar-day Memory
+  Expression slice before any staging. The active Memory Engine already used
+  the photo capture calendar, but the active legacy card compatibility path
+  still built `AnchorResult` with the device calendar. A photo and birthday
+  on the same capture-calendar day could therefore disagree between the
+  canonical and compatibility results when the capture and device time zones
+  differed.
+- Fixed that concrete P1 consistency gap by injecting the photo metadata
+  capture calendar into the compatibility `AnchorEngine` at card construction.
+  The repair does not change Renderer, Layout Engine, metadata extraction,
+  durable configuration, PhotoKit, export lifecycle, original-photo behavior,
+  or privacy boundaries.
+- The pre-staging review also found that the registered
+  `RelativeTimeMemoryCalculator` had adopted calendar-day semantics but still
+  read `Calendar.current`. It now reads the existing
+  `MemoryExpressionContext.captureCalendar`, keeping that registered
+  production path aligned with capture-time semantics instead of the device
+  time zone.
+- Red/green coverage first reproduced the mismatch, then verified that two
+  distant capture time zones both resolve a birthday anchor and a same-day
+  photo to day zero and `出生当天` in both result paths. A separate red/green
+  regression verifies that the registered relative-time calculator preserves
+  a capture-calendar day even when the device default time zone differs. The
+  focused Slice A Memory Expression and card-build suites pass, followed by
+  an unsigned generic-iOS `PhotoMemoiOS` Debug build. `git diff --check`
+  remains clean.
+- Slice A is now preserved in local commit `aaaa99da`, with the related
+  adaptive-token and birthday-contract compatibility commits retained as
+  separate local history. This does not close TX-001, BP-001, physical-device
+  Apple Photos validation, final release identity, or the superseding
+  production certification. The 2026-07-20 verdict remains `FAIL (Conditional)`.
+
+## 2026-08-06 P1 Slice D Apple Photos Recovery Review
+
+- Completed the independent review of the Apple Photos receipt and queue
+  recovery slice before any staging. The review confirmed direct
+  `PHAsset.localIdentifier` lookup, fail-closed treatment of a non-visible
+  receipt-backed asset, terminal queue persistence before resource cleanup,
+  and serial save-gate cancellation checks. No complete-library scan,
+  replacement write, original-photo mutation, or new transaction identity was
+  introduced.
+- Fixed one concrete P1 recovery gap found during review: after a Live Photo
+  write has a durable receipt, a temporarily unavailable exact readback now
+  remains a recoverable `.savingToPhotoLibrary` state. It no longer becomes a
+  terminal failure solely because the asset has not become visible after the
+  bounded in-process verification attempts. A confirmed non-Live-Photo result
+  remains a terminal verification failure.
+- Red/green coverage first demonstrated the incorrect terminal classification,
+  then verified the repaired policy. The focused receipt, queue-persistence,
+  queue-execution, and Live Photo writer suites pass. `git diff --check`
+  remains clean.
+- Slice D is preserved in local commits `2c92fe0` and `d2a4a5c`. It is
+  not a TX-001 closure: signed-device interruption and delayed-visibility evidence,
+  broader failure injection, `BP-001`, final release identity, and a
+  superseding production certification remain open. The 2026-07-20 verdict
+  remains `FAIL (Conditional)`.
+
+## 2026-08-06 P1 Slice B Configuration Center State Review
+
+- Completed the independent five-axis review of the bounded Configuration
+  Center and iPhone device-fit slice before any staging. The review keeps the
+  frozen `Library -> Interactive Memory Card -> Object Inspector` architecture:
+  the UI projects a draft Configuration Session and does not take ownership of
+  Memory Engine meaning, durable persistence, Layout Engine, Renderer, Export,
+  PhotoKit, or original-photo behavior.
+- Repaired the subject-editor direct-write path so an all-whitespace Object
+  Name cannot overwrite the last valid Configuration Center identity. The
+  draft-based iPhone object flow still permits temporary text editing but
+  rejects the empty trimmed value on its explicit parent-level save action.
+- Repaired two Time Anchor projection inconsistencies. Deleting the current
+  anchor now selects the first remaining anchor in stable array order and
+  synchronizes `activeTimeAnchorID`, the behavior's primary-anchor title, and
+  the reference date. Editing the current anchor's title or date synchronizes
+  the same three projections. Deleting a noncurrent anchor leaves all three
+  current-anchor projections unchanged.
+- The focused macOS command passed all eight selected Configuration Center,
+  device-fit, and Settings contract suites, including the current-delete,
+  current-edit, empty-name, and noncurrent-delete regressions. The unsigned
+  generic-iOS `PhotoMemoiOS` Debug build also passed, and `git diff --check`
+  was clean before this status record update.
+- Slice B is preserved in local commit `301e1366`. Real iPhone acceptance is still required for
+  visual layout, Dynamic Type, VoiceOver traversal, and the expected meaning
+  of dismissing the nested Time Anchor sheet. This bounded UI/state repair
+  does not close TX-001, BP-001, final release identity, Apple Photos
+  interruption evidence, or the superseding production certification. The
+  2026-07-20 verdict remains `FAIL (Conditional)`.
+
+## 2026-08-06 P1 Slice C Appearance And Photo Description Review
+
+- Completed an independent five-axis review of the bounded Appearance and
+  Photo Description refinement before any staging. The review confirmed that
+  `MemoryWriteTextComposer` is the single owner of the trimmed,
+  newline-separated composition rule. Configuration preview, the card's
+  Memory Module, the production expression context, and the final right-bottom
+  Photo Description resolve the optional user text exactly once.
+- The appearance preference has one local, durable source of truth and is
+  projected only at the iOS main-app root. The Share Extension, macOS
+  Configuration Center, and Apple-owned system controllers receive no forced
+  application appearance. Semantic application surfaces migrate with the
+  preference, while real white Memory Card and Logo calibration previews keep
+  their explicit local light presentation.
+- The focused macOS review command passed the selected appearance, output,
+  configuration, responsive-layout, narrative-language, and card-build
+  suites. The unsigned generic-iOS `PhotoMemoiOS` Debug build passed.
+  Simplified Chinese and English resources passed `plutil -lint` and expose
+  the same 618 keys; `git diff --check` remains clean.
+- Slice C is now preserved in local commit `94ffa9b`. Real iPhone acceptance
+  is still required for System, Light, and Dark appearance, Dynamic Type, VoiceOver traversal,
+  Photo Description interaction, and Apple Photos display/search behavior.
+  This review does not close TX-001, BP-001, final release identity, Apple
+  Photos interruption evidence, or the superseding production certification.
+  The 2026-07-20 verdict remains `FAIL (Conditional)`.
+
+## 2026-08-06 P1 Slice E Release Copy And Governance Review
+
+- Completed the independent five-axis review of the audience-specific release
+  package before any staging. Settings -> About keeps a short, localized
+  update sheet for ordinary users; the App Store draft stays concise and
+  nontechnical; TestFlight retains clear device-validation requests; and the
+  internal changelog alone records architecture, P0 boundaries, and evidence
+  detail.
+- Repaired one concrete P1 release-truth issue found by the review. The
+  TestFlight draft previously described time relationships as using a "local
+  calendar day", which could be read as the device's current time zone. It now
+  correctly states that the rule uses the photo capture time zone's calendar
+  day. The App Store and in-app copy remain intentionally simpler because
+  their statements do not depend on that technical distinction.
+- Added the precise TestFlight wording to the release-note contract. The new
+  assertion failed against the prior draft and passed after the wording repair.
+  The focused `V1ReleaseNotesContractTests`, localization syntax/key-parity
+  check, and `git diff --check` pass.
+- Slice E remains in the worktree for its own isolated review. Marketing
+  version and build remain `TBD` for the next package, and no release copy claims TX-001, BP-001, Apple Photos
+  interruption evidence, or a superseding production certification is closed.
+  The 2026-07-20 verdict remains `FAIL (Conditional)`.
+
+## 2026-08-06 P1 Release Package Governance And Audience Copy
+
+- Completed a bounded Engineering Loop P1 release-preparation slice without
+  changing product behavior, marketing version, build number, signing, or Git
+  history. Settings -> About -> What's New now presents three short,
+  user-readable themes: more natural time expression, clearer configuration
+  and Photo Description presentation, and stronger recovery after saving back
+  to Apple Photos. Simplified Chinese and English content remain paired.
+- Prepared distinct next-release drafts for the three intended audiences:
+  concise App Store customer copy, a more complete TestFlight verification
+  guide, and the existing internal change record. General-user copy excludes
+  issue identifiers, test counts, internal implementation names, and
+  certification claims. TestFlight retains the actionable time, appearance,
+  accessibility, Apple Photos recovery, privacy-feedback, and known-boundary
+  checks in plain tester language.
+- Recorded the release scope and an exact 110-file local-package inventory in
+  `Docs/06_Development/2026-08-06-release-package-scope-and-p1-evidence-plan.md`
+  and
+  `Docs/06_Development/2026-08-06-local-change-package-inventory.md`. The
+  inventory assigns each local change a primary review slice instead of
+  permitting an undifferentiated all-at-once commit.
+- Focused `V1ReleaseNotesContractTests` passed all four tests. The unsigned
+  generic-iOS `PhotoMemoiOS` Debug build passed. Both localization files pass
+  syntax validation, and `git diff --check` passes.
+- At the initial inventory snapshot, no files had yet been staged, committed,
+  or pushed. The package remained blocked from push by independent review of
+  the five slices, final version/build selection, remaining physical-device
+  Apple Photos recovery evidence, TestFlight-candidate
+  appearance/accessibility acceptance, `TX-001`, `BP-001`, and a superseding
+  production certification. The later local commits are recorded above.
+
+## 2026-08-06 TX-001 P0 Fail-Closed Queue Recovery Stabilization
+
+- Completed a bounded Engineering Loop P0 correction for the confirmed
+  receipt-recovery loop. A persisted `.savingToPhotoLibrary` task with a
+  durable PhotoKit receipt but no directly visible exact asset now remains in
+  its saving/reconciliation state. Startup and later queue wakeups retain the
+  receipt and any already-persisted recoverable source or rendered-output
+  references, skip generic requeueing, and do not rerender or issue a
+  replacement Photos write.
+- When the exact receipt-backed `PHAsset.localIdentifier` later becomes
+  visible, the existing task completes through the existing durable
+  reconciliation path before terminal resource cleanup. The queue continues to
+  use direct identifier lookup only; it does not scan the photo library or
+  create another transaction identity.
+- Red/green coverage first reproduced the former requeue path, then verified
+  protected startup, automatic-start non-rerendering, and later exact-readback
+  completion. This is a targeted stabilization of the P0 failure mode, not
+  TX-001 closure: signed-device interruption and delayed-visibility evidence,
+  remaining failure injection, `BP-001`, and superseding production
+  certification remain open. The 2026-07-20 verdict remains `FAIL
+  (Conditional)`.
+
+## 2026-08-06 V4 Memory Subject Editing And Device-Fit Refinement
+
+- Completed a bounded Product Loop P1 refinement from physical iPhone 15 Pro
+  and iPhone 17 Pro Max observations. The Memory Subject editor now uses a
+  compact Apple-native identity hierarchy: a centered `96pt` avatar area sits
+  above the form, presents `添加照片` when empty and `编辑` when populated, and
+  retains a separate destructive remove action with a `44pt` interaction
+  target. The accepted Photos Picker, crop, and three-derived-resource avatar
+  pipeline remains unchanged.
+- Basic Information now uses one continuous Contacts-inspired four-row form:
+  `对象名称`, `昵称`, `与我的关系`, and `专属称呼`. Object Name is visibly
+  required with a red asterisk; both the existing-subject transaction and the
+  first-run configuration reject an empty trimmed name with an explicit alert.
+  Optional values appear in the read-only Memory Subject surface only when the
+  user has entered them.
+- `记忆表达主体` is a separate compact selection card. Its menu exposes the
+  four identity sources together with their current values, disables empty
+  optional sources, and returns directly to the required Object Name when a
+  selected optional value is cleared or unavailable. It does not cascade
+  through other optional fields. This keeps the visible source label aligned
+  with the expression text that the existing Memory pipeline actually resolves.
+- Time Anchor rows now use a compact `64pt` minimum row with title and date on
+  the left, a semantic-color short type label on the right, and a `44pt`
+  trailing action target where applicable. The visible labels are
+  `生日/出生`, `恋爱`, `结婚`, `目标`, and `自定义`; they do not repeat SF
+  Symbols, capsules, or a visible `类型：` prefix. Accessibility Dynamic Type
+  expands vertically, while VoiceOver announces the complete localized type.
+  The same `可用配置 / 累计完成` projection is reused on Home, Memory Subject
+  overview, and Memory Subject editing. Home preset timestamps explicitly end
+  with `保存` in Simplified Chinese.
+- Product-language guidance now standardizes `对象名称`, `昵称`, `与我的关系`,
+  `专属称呼`, `记忆表达主体`, and compact Time Anchor type labels. Simplified
+  Chinese and English localization files remain syntax-valid, duplicate-free,
+  and key-symmetric. `git diff --check` passes.
+- The final complete `PhotoMemoTests` run contains `1,311` tests: `1,310`
+  passed, `1` existing platform-conditional test was skipped, and `0` failed.
+  The required unsigned `PhotoMemo` Debug build and unsigned generic-iOS
+  `PhotoMemoiOS` build pass. Existing test-environment ProRAW/Live Photo
+  declaration and QoS warnings remain outside this pass.
+- The signed `2.0.2 (69)` package passed strict verification for the main app,
+  Share Extension, and Widget Extension, then was overwrite-installed and
+  launched successfully on the paired physical `iPhone7` iPhone 17 Pro Max.
+  The app was not uninstalled and local data was not cleared. No simulator was
+  started or used; final visual and VoiceOver acceptance remains with the
+  product owner on that device.
+- IA-002, Memory Engine time semantics, Layout Engine, Renderer, Export,
+  PhotoKit save lifecycle, durable configuration schema, Share Extension,
+  privacy, and original-photo behavior are unchanged. The existing
+  `MemorySubjectEditorView.swift` remains a documented future responsibility
+  split candidate; this pass does not perform line-count-driven refactoring.
+
+## 2026-08-06 V4 Overall Stability, Semantics, And Structure Remediation
+
+- Completed the bounded Engineering Loop audit and remediation recorded in
+  `Docs/06_Development/2026-08-06-overall-change-stability-and-structure-audit.md`.
+  This entry supersedes same-day interim completion counts and behavior claims
+  below while preserving them as chronological records of their earlier slices.
+- All production Time Anchor paths now compare capture and anchor dates by the
+  capture calendar day. Crossing local midnight advances to the next day, and
+  same-day time-of-day ordering alone cannot create a countdown. Before this
+  2026-08-06 amendment, non-birthday anchors compared exact timestamps; that
+  rule is retained only as historical context and may return for a specific
+  anchor type only through a bounded requirement and verification plan.
+- Photo Description now has one shared non-UI `MemoryWriteTextComposer` for
+  Configuration Session, iOS preview, production Memory Module, Expression
+  Context, and final output. Optional trimmed custom text follows the complete
+  right-bottom Memory Expression on the next line; MemoMark does not replace
+  the expression or rewrite the user's punctuation.
+  The separate legacy `photoDescriptionOverride` compatibility boundary remains
+  unchanged.
+- PhotoKit recovery hardening now fails closed when a receipt-backed asset is
+  not visible, stores receipt identity and time as one Codable value, removes
+  cancelled save-gate waiters, rechecks cancellation before external mutation,
+  keeps readback-pending tasks recoverable, and persists terminal queue state
+  before idempotent resource cleanup. Static and Live Photo paths share the
+  pending-readback diagnostic meaning and do not scan the full photo library.
+- Runtime-localized shared headings, accessibility Dynamic Type wrapping,
+  Reduce Motion behavior, and the iOS-only System/Light/Dark appearance
+  projection are covered by source and behavior contracts. Simplified Chinese
+  and English localization files pass syntax validation, have no duplicate or
+  asymmetric keys, and each contain `618` keys.
+- The final complete `PhotoMemoTests` run contains `1,303` tests: `1,302`
+  passed, `1` existing platform-conditional test was skipped, and `0` failed.
+  `git diff --check`, the required unsigned `PhotoMemo` Debug build, and the
+  unsigned generic-iOS `PhotoMemoiOS` build pass. Existing test-environment
+  ProRAW/Live Photo declaration and QoS warnings remain outside this pass.
+- A signed `2.0.2 (69)` device build for the paired `IPhone5` iPhone 15 Pro
+  passed strict verification for the main app, Share Extension, and Widget
+  Extension and was overwrite-installed without uninstalling the app or
+  clearing local data. After the device was unlocked, the final package
+  launched successfully. Visual acceptance remains with the product owner. No
+  simulator was started or used.
+- The only immediate structure extraction was the shared pure Memory Copy
+  composer because it removed a proven cross-layer source-of-truth conflict.
+  `PhotoLibraryExportService.swift` remains the highest-priority future
+  responsibility split candidate; startup receipt reconciliation inside the
+  stable `BatchQueueStore` facade is a later candidate after TX-001 stabilizes.
+  Large SwiftUI files require responsibility maps before extraction and are not
+  authorized for line-count-driven refactoring.
+- `TX-001`, `BP-001`, signed-device interruption and delayed-visibility
+  evidence, the final marketing/build lock, and a superseding production
+  certification remain open. The 2026-07-20 verdict remains
+  `FAIL (Conditional)`; this pass does not claim production certification.
+
+## 2026-08-06 V4 Output Photo Description Card Refinement
+
+- Completed the bounded Product Loop P1 Output-page pass recorded in
+  `Docs/01_Product/V4_Output_Photo_Description_Card_Refinement_2026-08-06.md`.
+  `新照片`, `照片说明`, and `回到哪里` are now three sibling titled cards using
+  the same established card primitive, spacing, semantic colors, typography,
+  corner radius, Dynamic Type behavior, and dark-mode behavior.
+- `新照片` now owns only photo format, retained capture information, and Live
+  Photo retention. The existing Photo Description preview, custom-content
+  toggle, conditional input, and animation moved together into the standalone
+  card. `usesCustomMemoryWriteText`, `customMemoryWriteText`, and
+  `resolvedMemoryWriteText` remain the only UI inputs. This visual extraction
+  did not add view-owned composition; the later stability remediation above
+  centralized the pre-existing conflicting composition paths.
+- Added a localized secondary note that Apple Photos display and search support
+  may differ by iOS version. MemoMark continues to deploy to iOS 18 and preserve
+  the description through established compatibility metadata. iOS 18-26 have
+  no public `PHAssetChangeRequest.caption` setter; iOS 27 introduces that API,
+  but adopting it remains a separate PhotoKit lifecycle change and is not
+  claimed by this UI pass.
+- Configuration persistence, Memory Engine, Renderer, metadata writers, Export,
+  PhotoKit save transactions, album behavior, Live Photo resources, privacy,
+  and original photos were unchanged by this visual extraction.
+- Focused design, Apple-native, responsive-layout, narrative-language, Memory
+  Write presenter, and release-note contracts passed. The complete
+  `PhotoMemoTests` result contains 1,291 tests: 1,290 passed, 1 existing skip,
+  and 0 failures. Both localization files pass syntax validation and contain
+  the same 597 keys; `git diff --check` and the required unsigned Debug build
+  pass.
+- The signed `2.0.2 (69)` iPhone package passed strict signature verification,
+  was overwrite-installed, and launched successfully on the paired `IPhone5`
+  iPhone 15 Pro without uninstalling the app or clearing local data. No
+  simulator visual acceptance was performed. Final visual and interaction
+  acceptance remains with the product owner on that physical device.
+
+## 2026-08-06 V4 System Appearance Refinement
+
+- Completed the bounded Product Loop P1 appearance pass recorded in
+  `Docs/01_Product/V4_System_Appearance_Refinement_2026-08-06.md`. The iOS main
+  application now follows system appearance by default and supports explicit
+  Light or Dark selection; the former root-level forced-light override is
+  removed.
+- Settings now combines Appearance and Interface Language in one collapsible
+  `界面` section. Both use the same native segmented control at ordinary
+  Dynamic Type sizes and the same native menu fallback at accessibility sizes.
+  The collapsed summary presents both current choices, and the existing
+  interface-language disclosure key is retained so user expansion state is not
+  reset.
+- Active Welcome, Home, Configuration Center, Memory Subject, Time Anchor,
+  More Information, Card Content, Processing, Output, and Settings application
+  surfaces use semantic system backgrounds and appearance-aware elevation.
+  Real white Memory Card output previews, Logo canvases, renderer-owned text,
+  crop overlays, primary-action foregrounds, and brand geometry retain
+  explicit fixed-output or overlay semantics.
+- Appearance persistence is local and uses the shared app-group defaults. The
+  Settings view edits one canonical three-state preference, while
+  `PhotoMemoRootSceneView` remains the only main-application projection
+  boundary. Share Extension, system controllers, Renderer, Layout Engine,
+  Memory Engine, export output, PhotoKit lifecycle, and original-photo behavior
+  are unchanged.
+- Focused appearance, Settings, commerce, and iPhone-responsive contracts
+  passed. The complete `PhotoMemoTests` result passed `1,290` tests with `1`
+  existing skip and `0` failures (`1,291` total). Both localization files pass
+  syntax validation and contain the same `596` keys; `git diff --check` and the
+  required unsigned Debug build pass. Existing QoS, UTType, AVFoundation, and
+  geocoding warnings remain outside this appearance pass.
+- The signed `2.0.2 (69)` build passed strict signature verification, was
+  overwrite-installed, and launched successfully on the paired `IPhone5`
+  iPhone 15 Pro. The app was not uninstalled and local data was not cleared.
+  No simulator visual acceptance was performed; final System, Light, Dark,
+  Dynamic Type, and VoiceOver visual acceptance remains with the user on that
+  physical device.
+
+## 2026-08-05 V4 Configuration Control And Sheet Consistency Pass
+
+- Completed the bounded Product Loop P1 pass from physical screenshots
+  `IMG_6674.PNG`, `IMG_6676.PNG`, `IMG_6677.PNG`, `IMG_6678.PNG`,
+  `IMG_6679.PNG`, and `IMG_6680.PNG`. The global inventory found `32` SwiftUI
+  sheet entry points, `17` detent policies, `15` explicit drag-indicator
+  policies, and no `fullScreenCover`; the accepted system classifies sheets by
+  task instead of forcing them into one universal container.
+- Configuration-row menus now share `V1CompactSelectionLabel`, the existing
+  control radius and surfaces, a `44pt` minimum touch height, and a standard
+  `128pt` trailing column at ordinary text sizes. This supersedes the temporary
+  `112pt` Memory Expression exception. Accessibility-size and narrow layouts
+  keep the existing vertical fallback and allow selectors to use the full
+  available width without shrinking accessibility text.
+- The three target sheets now share one subtitle component with the accepted
+  `16pt / 4pt / 8pt` horizontal, top, and bottom rhythm. Time Anchor and Card
+  Content custom panels share token-backed panel fill, radius, hairline,
+  padding, and divider insets. The follow-up visual correction moved More
+  Information from `List(.insetGrouped)` to the shared continuous sheet canvas
+  and compact entry panel, so its header and content no longer have competing
+  grouped backgrounds. Location and Time use the same adaptive compact control;
+  Time Supplement remains a distinct full-width selector.
+- Card Content disclosure rows now move to a two-level vertical presentation
+  at accessibility sizes instead of truncating both sides of one HStack.
+  Embedded add/remove actions also meet the shared minimum touch target.
+  Toolbar confirmation actions and the anchor editor's primary Save action
+  remain Apple-native and keep their distinct transaction semantics.
+- Focused red/green source contracts and the final complete `PhotoMemoTests`
+  suite passed with `1,287` passed, `1` existing skip, and `0` failed.
+  Localization syntax and key symmetry, `git diff --check`, the generic iOS
+  unsigned build, the required unsigned `PhotoMemo` Debug build, and the
+  signed `PhotoMemoiOS` device build passed. Existing test-environment and
+  platform-deprecation warnings remain outside this UI pass.
+- The signed `2.0.2 (69)` build was overwrite-installed and successfully
+  launched on the paired `IPhone5` iPhone 15 Pro. The app was not uninstalled
+  and local data was not cleared. No simulator visual acceptance was
+  performed; final visual acceptance remains with the user on that device.
+- IA-002, navigation and state ownership, Memory Engine, Layout Engine,
+  Renderer, Export, PhotoKit, Share Extension, persistence, privacy, and
+  original-photo behavior are unchanged.
+
+## 2026-08-05 V4 Configuration Sheet Subtitle Refinement
+
+- Completed the follow-up Product Loop P1 polish pass from physical screenshots
+  `IMG_6670.PNG`, `IMG_6671.PNG`, and `IMG_6672.PNG`. The native centered
+  navigation titles remain unchanged, while Time Anchor, More Information, and
+  Card Content now share one centered secondary `footnote` subtitle treatment
+  inserted directly below the navigation title.
+- Time Anchor now presents `选择一个时间起点，让照片拥有时间答案。` as quiet
+  secondary context instead of a blue bold action banner. More Information now
+  says `更多内容会根据实际需要逐步加入。`; Card Content now says
+  `探索不同组合，也欢迎告诉我们你的自定义想法。`. The copy is localized in
+  Simplified Chinese and English and avoids internal module/development terms.
+- The shared subtitle is implemented as a presentation-only SwiftUI component;
+  all three sheets use the same `safeAreaInset` spacing (`4pt` above, `8pt`
+  below). Existing sheet actions, detents, state ownership, persistence, and
+  editor internals are unchanged. The follow-up decision is recorded in
+  `Docs/01_Product/V4_Configuration_Center_Anchor_Preview_Refinement_2026-08-05.md`.
+- Focused contracts and the complete `PhotoMemoTests` suite passed. The final
+  full run passed with `1,286` passed, `1` existing skip, and `0` failed.
+  Localization lint and key symmetry, `git diff --check`, the unsigned
+  `PhotoMemo` Debug build, and the signed `PhotoMemoiOS` device build passed.
+- The signed `2.0.2 (69)` build was overwrite-installed on the paired `IPhone5`
+  iPhone 15 Pro without uninstalling or clearing local data. A launch attempt
+  was rejected because the device was locked; `devicectl` cannot unlock it.
+  The installed build is ready to open after the device is unlocked. No
+  simulator visual acceptance was performed.
+- IA-002, Memory Engine, Layout Engine, Renderer, Export, PhotoKit, Share
+  Extension, privacy, and original-photo behavior are unchanged.
+
+## 2026-08-05 V4 Configuration Center Anchor Preview Refinement
+
+- Completed a bounded V4 Product Loop P1 Configuration Center polish pass from
+  physical iPhone 15 Pro screenshots `IMG_6666.PNG` through `IMG_6669.PNG`.
+  The Memory Source subtitle is restored to `你想围绕谁开展回忆。`, and the
+  compact Time Anchor row now uses `回忆对象重要时刻`.
+- Confirmed that the displaced Time Anchor and Memory Expression controls were
+  caused by long subtitles and the expression detail forcing the existing
+  `ViewThatFits` row into its vertical fallback. Memory Expression now keeps a
+  bounded `112pt` trailing menu, while its real `之前 / 当时 / 之后` presenter
+  output appears in a separate full-width compact preview below the row. The
+  retired detail sheet, truncated first-phase label, and associated state were
+  removed.
+- The shared iOS add/edit Time Anchor sheet now presents the inline navigation
+  title `时间锚点` and highlighted prompt
+  `选择一个时间起点，让照片拥有时间答案。`. Time Anchor, More Information,
+  and Card Content sheets use an `8pt` title-to-content rhythm while preserving
+  the internal spacing of their controls and editor cards.
+- Updated Simplified Chinese and English resources, the canonical product
+  language guide, the compact-row exception in the language system, and source
+  contracts. The bounded decision record is
+  `Docs/01_Product/V4_Configuration_Center_Anchor_Preview_Refinement_2026-08-05.md`.
+- Red/green focused contracts passed. The final complete `PhotoMemoTests` run
+  passed with `1,285` passed, `1` existing skip, and `0` failed. Localization
+  plist lint and key symmetry, `git diff --check`, and the required unsigned
+  `PhotoMemo` Debug build passed. Existing CoreLocation / AVFoundation
+  deprecation and test-environment runtime warnings remain outside this pass.
+- The signed `2.0.2 (69)` `PhotoMemoiOS` build was overwrite-installed and
+  launched on the online `IPhone5` iPhone 15 Pro without uninstalling the app
+  or clearing its local data. No simulator visual acceptance was performed;
+  final spacing, text fit, and interaction acceptance remain for manual review
+  on that physical device.
+- IA-002, state ownership, configuration persistence, Memory Engine, Layout
+  Engine, Renderer, Export, PhotoKit, Share Extension, privacy, and
+  original-photo behavior are unchanged.
+
+## 2026-08-05 V4 Interface Language Refinement
+
+- Completed a bounded V4 Product Loop P1 language pass across the active iOS
+  Configuration Center, Memory Subject, Home, Output, Processing, and first-run
+  surfaces. Stable product nouns remain `配置中心`, `记忆来源`, `记忆对象`,
+  `时间锚点`, `记忆表达`, `预设`, and `Apple Photos`; only inaccurate,
+  implementation-centered, repetitive, or action-mismatched copy changed.
+- Configuration prompts now describe the decision or visible photo result.
+  `高级模块` is presented as `更多信息`, `区域内容设置` as `卡片内容`, first-run
+  completion as `完成设置`, and Output explicitly names the `新照片`. Matching
+  VoiceOver copy and Simplified Chinese / English resources were updated.
+- Refined the canonical product-language guide with explicit title/subtitle
+  roles and contextual boundaries for `记录`, `计算`, and `生成`. These words
+  are not mechanically banned: accepted output nouns, user wording, commerce
+  identity, factual history, diagnostics, and explicit generation states remain
+  intact. The bounded decision record is
+  `Docs/01_Product/V4_Interface_Language_Refinement_2026-08-05.md`.
+- Red/green language contracts, the final complete `PhotoMemoTests` suite,
+  localization syntax and key symmetry, `git diff --check`, the required
+  unsigned `PhotoMemo` Debug build, and signed `PhotoMemoiOS` device build all
+  passed. The complete suite initially found one stale responsive-layout copy
+  assertion; it was aligned and the final complete rerun passed.
+- The signed `2.0.2 (69)` build was overwrite-installed and launched on the
+  paired `IPhone5` iPhone 15 Pro without uninstalling the app or clearing local
+  data. No simulator visual acceptance is claimed. The user will manually
+  review compact layout, Dynamic Type, English, and VoiceOver on that device.
+- IA-002, navigation, state ownership, persistence, Memory Engine, Renderer,
+  Layout Engine, Export, PhotoKit, privacy, and original-photo behavior are
+  unchanged.
+
+## 2026-08-05 TX-001 Export Commit Protocol Slice 2
+
+- Completed the narrow V4 Engineering Loop P0 recovery slice specified in
+  `Docs/06_Development/TX-001_Queue_Receipt_Reconciliation_Spec_2026-08-05.md`.
+  On startup, a task persisted in `.savingToPhotoLibrary` is completed only
+  when its durable receipt's exact `PHAsset.localIdentifier` resolves to a
+  visible asset. The completed task retains that identifier, clears only its
+  transient rendered-file reference, and persists through the existing terminal
+  queue transition before normal resume processing.
+- The lookup is an injectable direct-identifier adapter. It does not search by
+  filename, date, album, or library contents; it does not render, write to
+  Photos, modify original media, or change Renderer, Layout Engine, Memory
+  Engine, metadata, Share intake, or privacy ownership. Missing or ambiguous
+  assets remain non-terminal, retain their receipt, and proceed through the
+  established recovery policy.
+- Added red/green startup-recovery coverage for both branches: a visible
+  receipt-backed asset becomes durably completed without another save, while a
+  missing asset remains queued after ordinary resume normalization and retains
+  its receipt. The complete `PhotoMemoTests` suite passed with `1,283` passed,
+  `1` existing skip, and `0` failed. Unsigned Debug builds passed for
+  `PhotoMemo`, `PhotoMemoiOS`, `PhotoMemoShareExtension`, and
+  `PhotoMemoWidgetExtension`; `git diff --check` also passed. Existing macOS
+  geocoding deprecation and test-environment runtime warnings remain outside
+  this slice.
+- Slice 2 is complete, but `TX-001` remains open P0 work. Signed-device
+  evidence for Photos visibility after interruption, final static output
+  readback, cancellation after PhotoKit acceptance, durable receipt-write
+  failure handling, and the superseding production certification remain open.
+  The deferred, privacy-preserving check protocol is
+  `Docs/06_Development/TX-001_Physical_Device_Validation_Protocol_2026-08-05.md`.
+  The V3 certification verdict remains `FAIL (Conditional)`.
+
+## 2026-08-05 TX-001 Export Commit Protocol Slice 1
+
+- Classified the work as a V4 Engineering Loop P0 reliability slice. The
+  bounded specification is
+  `Docs/06_Development/TX-001_Export_Commit_Protocol_Spec_2026-08-05.md`.
+  Its scope is receipt reconciliation during ambiguous Apple Photos commit
+  outcomes; it does not alter Renderer, Layout Engine, Memory Engine,
+  metadata, Share intake, original-media behavior, or privacy boundaries.
+- Static-image and Live Photo writers now share one deterministic receipt
+  reconciliation policy. A visible recorded `PHAsset.localIdentifier` is
+  reused through direct local-identifier lookup. A recent missing asset, or a
+  partial receipt without a timestamp, retains the receipt and blocks a new
+  Photos write rather than treating the external outcome as absent. Only a
+  timestamped receipt outside the bounded visibility window is eligible for
+  stale-receipt removal and normal retry.
+- Replaced the actor's reentrant wrapper with an actor-owned FIFO gate, so a
+  suspending save operation retains exclusive access until it returns or
+  throws. This prevents concurrent static-image and Live Photo attempts from
+  both passing receipt reconciliation before one can record the PhotoKit
+  placeholder receipt.
+- Added an actionable static-image diagnostic for the pending-readback state,
+  plus regression coverage for the three reconciliation decisions, incomplete
+  receipt fail-closed behavior, gate serialization, shared static/Live Photo
+  policy use, and diagnostic classification. The new integrity tests failed
+  against the prior implementation and passed after the fix.
+- Verification passed: focused receipt/diagnostic coverage, related queue
+  persistence and recovery coverage, the complete `PhotoMemoTests` suite with
+  `1,281` passed, `1` existing skip, and `0` failed, unsigned Debug builds for
+  `PhotoMemo`, `PhotoMemoiOS`, `PhotoMemoShareExtension`, and
+  `PhotoMemoWidgetExtension`, and `git diff --check`. Existing macOS API
+  deprecation warnings remain outside this slice.
+- This is partial hardening only. `TX-001` remains open P0 work: the bounded
+  30-second visibility assumption lacks signed-device evidence, a committed
+  receipt is not yet reconciled directly to queue completion after process
+  termination, cancellation and receipt-write failure boundaries remain
+  unproven, static output lacks a final PhotoKit readback contract, and the
+  superseding production certification is still pending. The V3 certification
+  verdict remains `FAIL (Conditional)`.
+
+## 2026-08-04 Birthday Anchor-Day Expression Repair
+
+- Classified the report as a V4 Product Loop P1 memory-expression defect: a
+  photo captured on the same calendar day as a configured birth anchor was
+  rendered through the ordinary age-duration branch and exposed mechanical
+  `0天` wording.
+- Added the bounded specification at
+  `Docs/06_Development/Birthday_Anchor_Day_Expression_Spec_2026-08-04.md`.
+  The Memory Engine now compares birthday anchor and capture dates by the
+  capture calendar day while preserving non-birthday time ordering. Same-day
+  birth photos use the single expression
+  `主体今天来到这个世界啦！`; the reusable age result is `出生当天`.
+  English output uses `Subject arrived in the world today`.
+- Updated the legacy `AnchorEngine` compatibility path and the settings formula
+  preview so they remain aligned with the canonical Memory Expression path.
+  Renderer, Layout Engine, Export, persistence, PhotoKit, Share Extension,
+  original-photo, and privacy boundaries are unchanged.
+- Verification passed: the new same-day regression tests failed before the
+  implementation and pass after it; focused Memory Engine, Expression Engine,
+  and Time Anchor Presenter suites pass. The complete `PhotoMemoTests` suite
+  passed with `1275` passed, `1` skipped, and `0` failed; the required unsigned
+  `PhotoMemo` Debug build and `git diff --check` also passed. Runtime warnings
+  were limited to the existing test-environment ProRAW/Live Photo declaration
+  and QoS diagnostics.
 
 ## 2026-08-04 MemoMark 2.0.2 (69) Xcode Cloud Resubmission Candidate
 

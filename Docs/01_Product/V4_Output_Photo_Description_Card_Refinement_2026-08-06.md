@@ -146,7 +146,7 @@ behavior, or original-asset mutation is introduced.
   `PhotoMemoTests` result contains 1,303 tests: 1,302 passed, 1 existing skip,
   and 0 failures.
 - Simplified Chinese and English localization files pass `plutil -lint`, each
-  contains the same 645 keys, and `git diff --check` passes. The required
+  contains the same 618 keys, and `git diff --check` passes. The required
   unsigned Debug build and signed iPhone Debug build pass; strict signature
   verification succeeds for `2.0.2 (69)`.
 - The signed app was overwrite-installed and launched on the paired `IPhone5`
