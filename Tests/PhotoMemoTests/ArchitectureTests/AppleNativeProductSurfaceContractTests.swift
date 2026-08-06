@@ -5,14 +5,118 @@ import Testing
 @Suite("Apple native product surface contract")
 struct AppleNativeProductSurfaceContractTests {
 
-    @Test("App keeps a light appearance until dark surfaces are complete")
-    func appKeepsLightAppearanceUntilDarkSurfacesAreComplete() throws {
+    @Test("App projects the persisted appearance without forcing global light")
+    func appProjectsPersistedAppearanceWithoutForcingGlobalLight() throws {
         let root = try sourceText(
             "Source/PhotoMemo/PhotoMemo/App/PhotoMemoRootSceneView.swift"
         )
+        let preference = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/Models/MemoMarkLanguage.swift"
+        )
 
-        #expect(root.contains(".preferredColorScheme(.light)"))
+        #expect(root.contains("MemoMarkAppearancePreference.storageKey"))
+        #expect(root.contains(".preferredColorScheme(preferredColorScheme)"))
+        #expect(
+            root.contains(
+                "#if os(iOS)\n        PhotoMemoiOSV1View("
+            )
+        )
+        #expect(root.contains("case .system:"))
+        #expect(root.contains("case .light:"))
+        #expect(root.contains("case .dark:"))
+        #expect(!root.contains(".preferredColorScheme(.light)"))
         #expect(!root.contains("overrideUserInterfaceStyle"))
+        #expect(preference.contains("enum MemoMarkAppearancePreference"))
+        #expect(preference.contains("photomemo.interface.appearance.preference"))
+        #expect(preference.contains("case system"))
+        #expect(preference.contains("case light"))
+        #expect(preference.contains("case dark"))
+    }
+
+    @Test("shared runtime headings resolve through the selected interface language")
+    func sharedRuntimeHeadingsResolveLocalization() throws {
+        let support = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+        let configuration = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let advanced = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AdvancedModulesSheet.swift"
+        )
+
+        let pageHeaderStart = try #require(
+            support.range(of: "struct V1PageHeader: View")
+        )
+        let pageHeaderEnd = try #require(
+            support.range(of: "struct V1ConfigurationSheetSubtitle: View")
+        )
+        let pageHeader = support[
+            pageHeaderStart.lowerBound..<pageHeaderEnd.lowerBound
+        ]
+
+        let sheetSubtitleStart = pageHeaderEnd
+        let sheetSubtitleEnd = try #require(
+            support.range(of: "struct V1CompactSelectionLabel: View")
+        )
+        let sheetSubtitle = support[
+            sheetSubtitleStart.lowerBound..<sheetSubtitleEnd.lowerBound
+        ]
+
+        let rowHeadingStart = try #require(
+            configuration.range(of: "private func configurationRowHeading")
+        )
+        let rowHeadingEnd = try #require(
+            configuration.range(
+                of: "private func configurationRowTrailing",
+                range: rowHeadingStart.upperBound..<configuration.endIndex
+            )
+        )
+        let rowHeading = configuration[
+            rowHeadingStart.lowerBound..<rowHeadingEnd.lowerBound
+        ]
+
+        #expect(
+            pageHeader.contains("Text(localized(title))")
+        )
+        #expect(
+            pageHeader.contains(
+                ".lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)"
+            )
+        )
+        #expect(sheetSubtitle.contains("Text(localized(text))"))
+        #expect(rowHeading.contains("Text(localized(title))"))
+        #expect(rowHeading.contains("Text(localized(subtitle))"))
+        #expect(advanced.contains("Text(localized(\"时间显示\"))"))
+        #expect(advanced.contains("Text(localized(option.title))"))
+        #expect(
+            advanced.contains(
+                "return localized(\"农历 · 节气\")"
+            )
+        )
+    }
+
+    @Test("photo description supports accessibility text and reduced motion")
+    func photoDescriptionSupportsAccessibilityPreferences() throws {
+        let output = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
+        )
+        let reduceMotionEnvironmentCount = output.components(
+            separatedBy: "@Environment(\\.accessibilityReduceMotion)"
+        ).count - 1
+
+        #expect(reduceMotionEnvironmentCount >= 2)
+        #expect(
+            output.contains(
+                ".lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)"
+            )
+        )
+        #expect(output.contains("reduceMotion ? .opacity"))
+        #expect(
+            output.contains(
+                "reduceMotion\n                ? nil\n                : .easeOut"
+            )
+        )
     }
 
     @Test("MemoMark Design System freezes memory-first restrained UI rules")
@@ -79,7 +183,7 @@ struct AppleNativeProductSurfaceContractTests {
             ).count - 1
 
         #expect(textFirstRowCount == 5)
-        #expect(configuration.contains("Text(detail)"))
+        #expect(configuration.contains("Text(localized(detail))"))
         #expect(configuration.contains(".foregroundStyle(.secondary)"))
         #expect(!processing.contains(".fill(Color.accentColor)"))
         #expect(!processing.contains("Color.accentColor.opacity(0.16)"))
@@ -121,7 +225,7 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         #expect(output.contains("V1TitledSectionCard(\n            title: \"回到哪里\""))
-        #expect(output.contains("V1TitledSectionCard(\n            title: \"最终结果\""))
+        #expect(output.contains("V1TitledSectionCard(\n            title: \"新照片\""))
         #expect(output.contains("Picker(\"照片形式\""))
         #expect(output.contains("V1OutputRetentionRow("))
         #expect(!output.contains("private struct V1OutputContentCard"))
@@ -180,7 +284,7 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         #expect(home.contains("title: \"记忆对象\",\n            subtitle: \"回忆正围绕谁展开。\""))
-        #expect(home.contains("title: \"我的预设\",\n            subtitle: \"下一次分享，要用哪种方式记录。\""))
+        #expect(home.contains("title: \"我的预设\",\n            subtitle: \"下一次分享，照片会怎样呈现。\""))
         #expect(home.contains("勾选切换当前配置"))
         #expect(
             !home.contains(
@@ -254,8 +358,8 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
     }
 
-    @Test("memory subject cards and language settings use nested disclosure hierarchy")
-    func memorySubjectCardsAndLanguageSettingsUseNestedHierarchy() throws {
+    @Test("memory subject cards and interface preferences use nested disclosure hierarchy")
+    func memorySubjectCardsAndInterfacePreferencesUseNestedHierarchy() throws {
         let overview = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
         )
@@ -277,15 +381,55 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(overview.contains(".padding(.vertical, 7)"))
         #expect(editorFlow.contains("title: \"基础资料\""))
         #expect(editorFlow.contains("title: \"时间锚点\""))
-        #expect(editor.contains("adaptiveIdentityOverviewHeader\n                .padding(12)\n                .subjectIdentityInnerCardChrome()"))
+        #expect(editor.contains("contactAvatarEditor"))
+        #expect(editor.contains("expressionSubjectCard\n                .subjectIdentityInnerCardChrome()"))
         #expect(editor.contains("compactIdentityFieldsPanel\n                .subjectIdentityInnerCardChrome()"))
         #expect(editor.contains("func subjectIdentityInnerCardChrome()"))
-        #expect(settings.contains("case interfaceLanguage"))
-        #expect(settings.contains("section: .interfaceLanguage"))
-        #expect(settings.contains("trailingValue: interfaceLanguageBinding.wrappedValue.displayTitle"))
+        #expect(settings.contains("case interfacePreferences"))
+        #expect(settings.contains("section: .interfacePreferences"))
+        #expect(settings.contains("trailingValue: interfacePreferencesSummary"))
         #expect(settings.contains("private var adaptiveDisclosureHeader"))
         #expect(settings.contains("private var verticalDisclosureHeader"))
         #expect(settings.contains("if let trailingValue,"))
+    }
+
+    @Test("Application surfaces are semantic while fixed output previews stay light")
+    func applicationSurfacesAreSemanticAndOutputPreviewsStayLight() throws {
+        let welcome = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1WelcomePresentation.swift"
+        )
+        let subjectOverview = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+        )
+        let subjectAnchors = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewCardSections.swift"
+        )
+        let subjectEditor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let cropSheet = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/SubjectAvatarCropSheet.swift"
+        )
+        let configurationPreview = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterTopPreviewSection.swift"
+        )
+        let accessory = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AccessoryEntrySection.swift"
+        )
+        let home = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+
+        #expect(!welcome.contains(".fill(Color.white.opacity(0.94))"))
+        #expect(!subjectOverview.contains(".fill(Color.white.opacity(0.92))"))
+        #expect(!subjectAnchors.contains(".background(Color.white.opacity(0.94))"))
+        #expect(!subjectEditor.contains(".background(Color.white.opacity(0.94))"))
+        #expect(!subjectEditor.contains(".fill(Color.white.opacity(0.88))"))
+        #expect(!cropSheet.contains(".fill(Color.white)"))
+
+        #expect(configurationPreview.contains(".environment(\\.colorScheme, .light)"))
+        #expect(accessory.contains(".environment(\\.colorScheme, .light)"))
+        #expect(home.contains(".environment(\\.colorScheme, .light)"))
     }
 
     @Test("processing surface avoids dashboard and import-first language")

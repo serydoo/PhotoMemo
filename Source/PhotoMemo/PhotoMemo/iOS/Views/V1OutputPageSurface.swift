@@ -40,9 +40,11 @@ struct V1OutputPageSurface: View {
                 pageHeader
 
                 V1OutputResultSection(
-                    mediaOutputMode: $mediaOutputMode,
-                    usesCustomMemoryWriteText:
-                        $usesCustomMemoryWriteText,
+                    mediaOutputMode: $mediaOutputMode
+                )
+
+                V1OutputPhotoDescriptionSection(
+                    usesCustomMemoryWriteText: $usesCustomMemoryWriteText,
                     customMemoryWriteText: $customMemoryWriteText,
                     resolvedMemoryWriteText: resolvedMemoryWriteText
                 )
@@ -84,7 +86,7 @@ struct V1OutputPageSurface: View {
     private var pageHeader: some View {
         V1PageHeader(
             "保存这段回忆",
-            subtitle: "决定最后留下的照片，也选择它回到哪里。"
+            subtitle: "决定新照片如何留下，也选择它回到哪里。"
         )
     }
 
@@ -188,7 +190,11 @@ private struct V1OutputSaveButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(isSaved ? Color.secondary : Color.white)
+            .foregroundStyle(
+                isSaved
+                ? Color.secondary
+                : MemoMarkDesignTokens.Semantic.onAccent
+            )
             .padding(.horizontal, 14)
             .frame(
                 width: V1CompactBottomActionMetrics.width,
@@ -235,23 +241,10 @@ private struct V1OutputResultSection: View {
     @Binding
     var mediaOutputMode: V1MediaOutputMode
 
-    @Binding
-    var usesCustomMemoryWriteText: Bool
-
-    @Binding
-    var customMemoryWriteText: String
-
-    let resolvedMemoryWriteText: String
-
     var body: some View {
-        let presentation = MemoryWriteOptionPresenter.presentation(
-            usesCustomText: usesCustomMemoryWriteText,
-            resolvedText: resolvedMemoryWriteText
-        )
-
         V1TitledSectionCard(
-            title: "最终结果",
-            subtitle: "先看看这段回忆会以什么样子留下。"
+            title: "新照片",
+            subtitle: "选择照片形式与需要保留的信息。"
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 mediaModePicker
@@ -273,57 +266,7 @@ private struct V1OutputResultSection: View {
                         ? "原格式会保留动态效果。"
                         : "静态图片只留下单张图片。"
                 )
-
-                V1HorizontalDivider()
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("照片说明")
-                        .font(.subheadline.weight(.semibold))
-
-                    Text(presentation.resolvedDescription)
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(presentation.fallbackNote)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 2)
-
-                Toggle(isOn: $usesCustomMemoryWriteText) {
-                    V1OutputRetentionLabel(
-                        title: presentation.toggleTitle,
-                        subtitle: presentation.toggleDescription
-                    )
-                }
-                .toggleStyle(.switch)
-                .padding(.vertical, 2)
-
-                if usesCustomMemoryWriteText {
-                    TextField(
-                        presentation.inputPlaceholder,
-                        text: $customMemoryWriteText,
-                        axis: .vertical
-                    )
-                    .textFieldStyle(.plain)
-                    .font(.subheadline)
-                    .lineLimit(1...3)
-                    .submitLabel(.done)
-                    .configurationFieldChrome(isActive: true)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-
-                Text("最终会写入 Apple Photos")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
             }
-            .animation(
-                .easeOut(duration: MemoMarkDesignTokens.Motion.standard),
-                value: usesCustomMemoryWriteText
-            )
         }
     }
 
@@ -352,6 +295,96 @@ private struct V1OutputResultSection: View {
             return "普通照片照常保留；Live Photo 会带着动态效果一起留下。"
         case .staticImage:
             return "普通照片照常保留；Live Photo 会留下加边框后的静态图片。"
+        }
+    }
+}
+
+private struct V1OutputPhotoDescriptionSection: View {
+
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
+    @Binding
+    var usesCustomMemoryWriteText: Bool
+
+    @Binding
+    var customMemoryWriteText: String
+
+    let resolvedMemoryWriteText: String
+
+    var body: some View {
+        let presentation = MemoryWriteOptionPresenter.presentation(
+            usesCustomText: usesCustomMemoryWriteText,
+            resolvedText: resolvedMemoryWriteText
+        )
+
+        V1TitledSectionCard(
+            title: presentation.defaultContentTitle,
+            subtitle: presentation.defaultContentDescription
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(presentation.resolvedTitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Text(presentation.resolvedDescription)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(presentation.fallbackNote)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.vertical, 2)
+
+                V1HorizontalDivider()
+
+                Toggle(isOn: $usesCustomMemoryWriteText) {
+                    V1OutputRetentionLabel(
+                        title: presentation.toggleTitle,
+                        subtitle: presentation.toggleDescription
+                    )
+                }
+                .toggleStyle(.switch)
+                .padding(.vertical, 2)
+
+                if usesCustomMemoryWriteText {
+                    TextField(
+                        presentation.inputPlaceholder,
+                        text: $customMemoryWriteText,
+                        axis: .vertical
+                    )
+                    .textFieldStyle(.plain)
+                    .font(.subheadline)
+                    .lineLimit(1...3)
+                    .submitLabel(.done)
+                    .configurationFieldChrome(isActive: true)
+                    .transition(
+                        reduceMotion ? .opacity : .opacity.combined(
+                            with: .move(edge: .top)
+                        )
+                    )
+                }
+
+                Text(
+                    "Apple Photos 对照片说明的显示与搜索支持，可能因 iOS 版本不同而有所差异。"
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
+            }
+            .animation(
+                reduceMotion
+                ? nil
+                : .easeOut(
+                    duration: MemoMarkDesignTokens.Motion.standard
+                ),
+                value: usesCustomMemoryWriteText
+            )
         }
     }
 }
@@ -571,6 +604,9 @@ private struct V1OutputRetentionRow: View {
 
 private struct V1OutputRetentionLabel: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     let title: String
     let subtitle: String
 
@@ -582,7 +618,7 @@ private struct V1OutputRetentionLabel: View {
             Text(subtitle)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

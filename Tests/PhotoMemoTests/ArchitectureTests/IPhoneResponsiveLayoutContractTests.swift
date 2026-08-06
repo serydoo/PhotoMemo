@@ -125,7 +125,10 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!processing.contains(".frame(height: 28)"))
         #expect(anchors.contains("private var categoryMenu"))
         #expect(anchors.contains("private var selectedDateText"))
-        #expect(anchors.contains("ViewThatFits(in: .horizontal)"))
+        #expect(anchors.contains("@Environment(\\.dynamicTypeSize)"))
+        #expect(anchors.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(!anchors.contains("ViewThatFits(in: .horizontal)"))
+        #expect(anchors.contains("V1CompactSelectionLabel("))
     }
 
     @Test("shared headings and semantic tokens support system accessibility")
@@ -191,7 +194,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(optionListSource.contains("adaptiveConfigurationRow"))
         #expect(optionListSource.contains("horizontalConfigurationRow"))
         #expect(optionListSource.contains("verticalConfigurationRow"))
-        #expect(optionListSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(!optionListSource.contains("ViewThatFits(in: .horizontal)"))
     }
 
     @Test("configuration footer and anchor editor remain reachable in short environments")
@@ -205,7 +208,11 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(editor.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
         #expect(!editor.contains(".overlay(alignment: .bottom)"))
-        #expect(anchors.contains(".presentationDetents([.height(390), .large])"))
+        #expect(
+            anchors.contains(
+                ".height(ConfigurationUI.compactSheetHeight)"
+            )
+        )
         #expect(anchors.contains("ScrollView"))
     }
 
@@ -249,8 +256,28 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
         )
 
+        let headerStart = try #require(
+            support.range(of: "private var adaptiveComposerHeader")
+        )
+        let headerEnd = try #require(
+            support.range(
+                of: "private var composerHeading",
+                range: headerStart.upperBound..<support.endIndex
+            )
+        )
+        let headerSource = support[
+            headerStart.lowerBound..<headerEnd.lowerBound
+        ]
+
         #expect(support.contains("private var adaptiveComposerHeader"))
-        #expect(support.contains("ViewThatFits(in: .horizontal)"))
+        #expect(headerSource.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(headerSource.contains("HStack(alignment: .center"))
+        #expect(
+            headerSource.contains(
+                ".frame(maxWidth: .infinity, alignment: .trailing)"
+            )
+        )
+        #expect(!headerSource.contains("ViewThatFits(in: .horizontal)"))
         #expect(support.contains("ScrollView(.horizontal, showsIndicators: false)"))
     }
 
@@ -271,8 +298,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(processing.contains("dynamicTypeSize.isAccessibilitySize ? 3 : 1"))
     }
 
-    @Test("subject anchors and language settings provide vertical accessibility fallbacks")
-    func subjectAnchorsAndLanguageSettingsProvideVerticalFallbacks() throws {
+    @Test("subject anchors and interface preferences provide vertical accessibility fallbacks")
+    func subjectAnchorsAndInterfacePreferencesProvideVerticalFallbacks() throws {
         let subjectAnchors = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewCardSections.swift"
         )
@@ -283,6 +310,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(subjectAnchors.contains("private func anchorTypePill"))
         #expect(subjectAnchors.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(subjectAnchors.contains("ViewThatFits(in: .horizontal)"))
+        #expect(settings.contains("private var adaptiveAppearancePicker"))
         #expect(settings.contains("private var adaptiveInterfaceLanguagePicker"))
         #expect(settings.contains(".pickerStyle(.segmented)"))
         #expect(settings.contains(".pickerStyle(.menu)"))
@@ -299,7 +327,7 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(
             configurationPageSource.contains(
-                "pageSubtitle: \"从一个人和一个重要时刻开始，让回忆慢慢成形。\""
+                "pageSubtitle: \"围绕一个人和一个重要时刻，决定照片如何呈现。\""
             )
         )
 
@@ -324,15 +352,107 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!previewBody.contains(".v1CardChrome()"))
     }
 
-    @Test("subject identity overview does not force intrinsic horizontal width")
-    func subjectIdentityOverviewAvoidsForcedIntrinsicWidth() throws {
+    @Test("subject editor uses a vertical Contacts hierarchy without a duplicated identity header")
+    func subjectEditorUsesVerticalContactsHierarchy() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
+        let editor = try sourceSection(
+            in: source,
+            from: "private var identityOverviewEditor",
+            to: "private var expressionSubjectCard"
+        )
 
-        #expect(source.contains("adaptiveIdentityOverviewHeader"))
-        #expect(source.contains("ViewThatFits(in: .horizontal)"))
-        #expect(!source.contains(".fixedSize(horizontal: true, vertical: false)"))
+        #expect(editor.contains("contactAvatarEditor"))
+        #expect(editor.contains("expressionSubjectCard"))
+        #expect(editor.contains("compactIdentityFieldsPanel"))
+        #expect(editor.contains("frame(maxWidth: .infinity, alignment: .center)"))
+        #expect(!source.contains("private var adaptiveIdentityOverviewHeader"))
+        #expect(!source.contains("private var identityOverviewText"))
+        #expect(!source.contains(".scaleEffect(130.0 / 64.0)"))
+    }
+
+    @Test("subject anchor modules use compact semantic-color type labels")
+    func subjectAnchorModulesUseCompactSemanticColorTypeLabels() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let editorSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        let module = try sourceSection(
+            in: source,
+            from: "struct V1IOSSubjectAnchorDetailModule",
+            to: "private struct V1IOSSubjectAnchorCompactEditor"
+        )
+        let editorRow = try sourceSection(
+            in: editorSource,
+            from: "private struct SubjectTimeAnchorRow",
+            to: "private struct PlatformAvatarImage"
+        )
+
+        #expect(module.contains("static let ordinaryMinimumHeight: CGFloat = 64"))
+        #expect(module.contains("anchorTypeMarker"))
+        #expect(module.contains("anchor.resolvedAnchorType.compactDisplayName"))
+        #expect(module.contains("anchorTypeTint"))
+        #expect(module.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(module.contains("accessibilityLabel(anchorTypeAccessibilityLabel)"))
+        #expect(module.contains("localizedDisplayName("))
+        #expect(module.contains("类型，\\(typeName)"))
+        #expect(module.contains("Type, \\(typeName)"))
+        #expect(!module.contains("anchorTypeSystemImage"))
+        #expect(!module.contains("Text(\"类型："))
+        #expect(!module.contains("minHeight: 76"))
+
+        #expect(editorRow.contains("SubjectTimeAnchorMetrics.rowHeight"))
+        #expect(editorRow.contains("anchor.resolvedAnchorType.compactDisplayName"))
+        #expect(editorRow.contains("anchorTypeTint"))
+        #expect(editorRow.contains("accessibilityLabel(anchorTypeAccessibilityLabel)"))
+        #expect(!editorRow.contains("anchorTypeIconName"))
+        #expect(!editorRow.contains("Capsule(style: .continuous)"))
+    }
+
+    @Test("Home and Memory Subject flows reuse one statistics strip and one count source")
+    func homeAndSubjectFlowsReuseOneStatisticsStrip() throws {
+        let support = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+        )
+        let home = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let overview = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+        )
+        let editor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+        )
+        let modifier = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SubjectPresentationModifier.swift"
+        )
+        let root = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        #expect(support.contains("struct V1IOSSubjectStatisticsStrip: View"))
+        #expect(support.contains("minHeight: ConfigurationUI.minimumInteractiveHeight"))
+        #expect(support.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(support.contains("accessibilityStatisticsContent"))
+        #expect(home.contains("V1IOSSubjectStatisticsStrip("))
+        #expect(overview.contains("V1IOSSubjectStatisticsStrip("))
+        #expect(editor.contains("V1IOSSubjectStatisticsStrip("))
+        #expect(modifier.contains("availableConfigurationCount"))
+        #expect(modifier.contains("completedPhotoCount"))
+        #expect(root.contains("availableConfigurationCount: homeAvailablePresets.count"))
+        #expect(root.contains("completedPhotoCount:"))
+
+        let subjectEditor = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        )
+        #expect(
+            subjectEditor.contains(
+                "width: ConfigurationUI.minimumInteractiveHeight"
+            )
+        )
     }
 
     @Test("subject overview uses the configuration-center card hierarchy")
@@ -478,5 +598,20 @@ private extension IPhoneResponsiveLayoutContractTests {
             contentsOf: repositoryRoot.appendingPathComponent(relativePath),
             encoding: .utf8
         )
+    }
+
+    func sourceSection(
+        in source: String,
+        from startMarker: String,
+        to endMarker: String
+    ) throws -> String {
+        let start = try #require(source.range(of: startMarker))
+        let end = try #require(
+            source.range(
+                of: endMarker,
+                range: start.upperBound..<source.endIndex
+            )
+        )
+        return String(source[start.lowerBound..<end.lowerBound])
     }
 }

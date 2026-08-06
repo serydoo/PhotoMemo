@@ -5,10 +5,10 @@ import Foundation
 enum ConfigurationCenterSessionBindingPresenter {
 
     static let memoryWriteToggleTitle =
-        "单独录入相册说明"
+        "补充一段话"
 
     static let customMemoryWritePlaceholder =
-        "输入要单独写入图库说明的文字"
+        "写下想补充的话"
 
     private static func presetStatusFormatter() -> DateFormatter {
         let formatter = DateFormatter()
@@ -77,18 +77,16 @@ enum ConfigurationCenterSessionBindingPresenter {
         session: ConfigurationSession
     ) -> String {
         if session.usesCustomMemoryWriteText {
-            return "开启后，会把你单独录入的文字写入相册说明。关闭时，默认写入当前生成的智能模块完整结果。"
+            return "会把这段回忆和你补充的话一起写进照片说明。"
         }
 
-        return "当前未单独录入文字，默认会把当前生成的智能模块完整结果写入相册说明。"
+        return "会把照片中的记忆表达完整写进照片说明。"
     }
 
     static func memoryWritePreviewTitle(
         session: ConfigurationSession
     ) -> String {
-        session.usesCustomMemoryWriteText
-        ? "实际写入"
-        : "默认写入（当前智能模块）"
+        "即将写下的内容"
     }
 
     static func presetStatusText(

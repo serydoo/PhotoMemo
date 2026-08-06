@@ -80,7 +80,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "会根据照片拍摄时间、记忆对象和时间锚点写下这段回忆。"
+            == "会根据拍摄时间、记忆对象和时间锚点，写入对应的记忆表达。"
         )
     }
 

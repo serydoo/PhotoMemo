@@ -29,7 +29,7 @@ struct V1DesignFreezePolishContractTests {
         #expect(backups.contains("最近保存的配置会留在这里"))
         #expect(backups.contains("恢复时会保留当前配置"))
         #expect(anchors.contains(".buttonStyle(.borderedProminent)"))
-        #expect(anchors.contains("Image(systemName: \"chevron.down\")"))
+        #expect(anchors.contains("V1CompactSelectionLabel("))
     }
 
     @Test("configuration center uses preview and state-aware save treatment")
@@ -41,9 +41,17 @@ struct V1DesignFreezePolishContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ModuleLibrarySurface.swift"
         )
 
-        #expect(options.contains("V1MemoryExpressionPreviewSheet"))
-        #expect(options.contains(".presentationDetents([.height(320), .medium])"))
-        #expect(!options.contains("memoryDisplayAlertMessage"))
+        #expect(options.contains("memoryExpressionPreview"))
+        #expect(options.contains("memoryExpressionPreviewLines"))
+        #expect(options.contains(".split(separator: \"｜\""))
+        #expect(
+            options.contains(
+                "ConfigurationUI.compactTrailingControlWidth"
+            )
+        )
+        #expect(!options.contains("horizontalTrailingWidth: 112"))
+        #expect(!options.contains("V1MemoryExpressionPreviewSheet"))
+        #expect(!options.contains("showsMemoryDisplayDetail"))
         #expect(options.contains("saveActionButtonStyle"))
         #expect(options.contains("configurationStatus == .saved"))
         #expect(options.contains(".disabled(isSavingConfiguration || configurationStatus == .saved)"))
@@ -58,13 +66,46 @@ struct V1DesignFreezePolishContractTests {
         )
 
         #expect(output.contains("V1OutputResultSection("))
+        #expect(output.contains("V1OutputPhotoDescriptionSection("))
         #expect(output.contains("mediaOutputMode: $mediaOutputMode"))
-        #expect(output.contains("title: \"最终结果\""))
+        #expect(
+            output.contains(
+                "usesCustomMemoryWriteText: $usesCustomMemoryWriteText"
+            )
+        )
+        #expect(
+            output.contains(
+                "customMemoryWriteText: $customMemoryWriteText"
+            )
+        )
+        #expect(
+            output.contains(
+                "resolvedMemoryWriteText: resolvedMemoryWriteText"
+            )
+        )
+        #expect(output.contains("title: \"新照片\""))
+        #expect(
+            output.contains(
+                "title: presentation.defaultContentTitle"
+            )
+        )
+        #expect(
+            output.contains(
+                "subtitle: presentation.defaultContentDescription"
+            )
+        )
+        #expect(output.contains("Text(presentation.resolvedTitle)"))
         #expect(output.contains("Picker(\"照片形式\""))
         #expect(output.contains("case .originalFormat:"))
         #expect(output.contains("case .staticImage:"))
-        #expect(output.contains("最终会写入 Apple Photos\""))
-        #expect(output.contains(".transition(.opacity.combined(with: .move(edge: .top)))"))
+        #expect(
+            output.contains(
+                "Apple Photos 对照片说明的显示与搜索支持，可能因 iOS 版本不同而有所差异。"
+            )
+        )
+        #expect(output.contains("@Environment(\\.accessibilityReduceMotion)"))
+        #expect(output.contains("reduceMotion ? .opacity : .opacity.combined("))
+        #expect(output.contains("with: .move(edge: .top)"))
         #expect(output.contains(".animation("))
         #expect(output.contains("@FocusState"))
         #expect(output.contains(".focused($isNewAlbumNameFocused)"))
@@ -123,11 +164,14 @@ struct V1DesignFreezePolishContractTests {
         #expect(task.contains("Text(\"查看 Apple Photos\")"))
         #expect(task.contains(".foregroundStyle(.secondary)"))
         #expect(task.contains("systemImage: \"clock\""))
-        #expect(welcome.contains("Section(\"想围绕谁记录\")"))
+        #expect(welcome.contains("Text(\"对象名称\")"))
+        #expect(welcome.contains("Text(\"*\")"))
+        #expect(welcome.contains(".foregroundStyle(.red)"))
+        #expect(welcome.contains("showsNameRequiredAlert = true"))
         #expect(welcome.contains("Section(\"重要日期\")"))
         #expect(welcome.contains("Text(\"从一个人和一个重要时刻开始。\")"))
         #expect(welcome.contains("isFirstRunConfigurationReady"))
-        #expect(welcome.contains("Text(isSaving ? \"正在保存\" : \"开始记录\")"))
+        #expect(welcome.contains("Text(isSaving ? \"正在保存\" : \"完成设置\")"))
     }
 }
 

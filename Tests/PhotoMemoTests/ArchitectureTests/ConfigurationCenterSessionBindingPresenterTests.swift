@@ -110,46 +110,46 @@ struct ConfigurationCenterSessionBindingPresenterTests {
         )
     }
 
-    @Test("memory write copy explains the default smart-module fallback when separate text is off")
+    @Test("memory write copy explains the complete default expression")
     func memoryWriteCopyForDefaultFallback() {
         let session = ConfigurationSession()
 
         #expect(
             ConfigurationCenterSessionBindingPresenter
                 .memoryWriteToggleTitle
-            == "单独录入相册说明"
+            == "补充一段话"
         )
         #expect(
             ConfigurationCenterSessionBindingPresenter
                 .memoryWritePreviewTitle(session: session)
-            == "默认写入（当前智能模块）"
+            == "即将写下的内容"
         )
         #expect(
             ConfigurationCenterSessionBindingPresenter
                 .memoryWriteDescription(session: session)
-                .contains("当前生成的智能模块完整结果")
+                .contains("记忆表达完整写进照片说明")
         )
         #expect(
             ConfigurationCenterSessionBindingPresenter
                 .customMemoryWritePlaceholder
-            == "输入要单独写入图库说明的文字"
+            == "写下想补充的话"
         )
     }
 
-    @Test("memory write copy switches to custom-entry wording when separate text is on")
-    func memoryWriteCopyForSeparateText() {
+    @Test("memory write copy explains that custom text follows the expression")
+    func memoryWriteCopyForSupplementalText() {
         let session = ConfigurationSession()
         session.usesCustomMemoryWriteText = true
 
         #expect(
             ConfigurationCenterSessionBindingPresenter
                 .memoryWritePreviewTitle(session: session)
-            == "实际写入"
+            == "即将写下的内容"
         )
         #expect(
             ConfigurationCenterSessionBindingPresenter
                 .memoryWriteDescription(session: session)
-                .contains("单独录入的文字")
+                .contains("这段回忆和你补充的话")
         )
     }
 
