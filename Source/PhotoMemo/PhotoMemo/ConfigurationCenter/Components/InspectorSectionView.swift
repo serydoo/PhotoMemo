@@ -16,6 +16,21 @@ enum ConfigurationUI {
     static let compactRowVerticalPadding: CGFloat = 9
     static let contentSpacing = MemoMarkDesignTokens.Spacing.large
     static let sectionSpacing = MemoMarkDesignTokens.Spacing.extraLarge
+    static let compactTrailingControlWidth =
+        MemoMarkDesignTokens.Layout.compactTrailingControlWidth
+    static let minimumInteractiveHeight =
+        MemoMarkDesignTokens.ControlState.minimumTouchTarget
+    static let sheetSubtitleTopPadding =
+        MemoMarkDesignTokens.Spacing.extraSmall
+    static let sheetSubtitleBottomPadding =
+        MemoMarkDesignTokens.Spacing.small
+    static let sheetPanelCornerRadius = cornerRadius
+    static let sheetPanelPadding = innerPanelPadding
+    static let sheetDividerInset = innerPanelPadding
+    static let compactSheetHeight =
+        MemoMarkDesignTokens.Layout.configurationSheetCompactHeight
+    static let contentSheetFraction =
+        MemoMarkDesignTokens.Layout.configurationSheetContentFraction
     #else
     static let cornerRadius: CGFloat = 12
     static let smallCornerRadius: CGFloat = 10
@@ -29,6 +44,15 @@ enum ConfigurationUI {
     static let compactRowVerticalPadding: CGFloat = 9
     static let contentSpacing: CGFloat = 16
     static let sectionSpacing: CGFloat = 20
+    static let compactTrailingControlWidth: CGFloat = 128
+    static let minimumInteractiveHeight: CGFloat = 44
+    static let sheetSubtitleTopPadding: CGFloat = 4
+    static let sheetSubtitleBottomPadding: CGFloat = 8
+    static let sheetPanelCornerRadius = cornerRadius
+    static let sheetPanelPadding = innerPanelPadding
+    static let sheetDividerInset = innerPanelPadding
+    static let compactSheetHeight: CGFloat = 390
+    static let contentSheetFraction: CGFloat = 0.58
     #endif
 
     #if os(iOS)

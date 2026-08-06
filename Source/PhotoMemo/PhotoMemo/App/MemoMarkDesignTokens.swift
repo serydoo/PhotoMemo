@@ -64,7 +64,15 @@ enum MemoMarkDesignTokens {
     }
 
     enum Elevation {
-        static let cardColor = Color.black.opacity(0.05)
+        static let cardColor = Color(
+            uiColor: UIColor { traitCollection in
+                UIColor.black.withAlphaComponent(
+                    traitCollection.userInterfaceStyle == .dark
+                    ? 0.30
+                    : 0.05
+                )
+            }
+        )
         static let cardRadius: CGFloat = 4
         static let cardOffsetY: CGFloat = 1
         static let previewRadius: CGFloat = 8
@@ -87,6 +95,8 @@ enum MemoMarkDesignTokens {
         static let danger = Color(uiColor: .systemRed)
         static let warning = Color(uiColor: .systemOrange)
         static let quietInformation = Color.secondary
+        static let onAccent = Color.white
+        static let fixedLightBackground = Color.white
         static let pageBackground =
             Color(uiColor: .systemGroupedBackground)
         static let cardBackground =
@@ -112,6 +122,9 @@ enum MemoMarkDesignTokens {
         static let compactInnerCardCornerRadius: CGFloat = 18
         static let compactInnerCardPadding: CGFloat = 12
         static let dividerInset: CGFloat = 12
+        static let compactTrailingControlWidth: CGFloat = 128
+        static let configurationSheetCompactHeight: CGFloat = 390
+        static let configurationSheetContentFraction: CGFloat = 0.58
         static let brandLineSpacing: CGFloat = 3
         static let compactPrimaryActionWidth: CGFloat = 184
         static let compactPrimaryActionHeight: CGFloat = 40
