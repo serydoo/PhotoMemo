@@ -50,7 +50,7 @@ struct V1ConfigurationPageSurface<
             previewPinProgress: previewPinProgress,
             editorRevealProgress: editorRevealProgress,
             pageTitle: "配置中心",
-            pageSubtitle: "从一个人和一个重要时刻开始，让回忆慢慢成形。",
+            pageSubtitle: "围绕一个人和一个重要时刻，决定照片如何呈现。",
             onDismissKeyboard: onDismissKeyboard
         ) {
             previewContent

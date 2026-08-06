@@ -515,27 +515,27 @@ private extension V1SettingsExpressionGuide {
     static let formulas: [MemoryAnchorExpressionStyle: Formula] = [
         .birthdayNatural: .init(
             before: "还有[[anchorResult:锚点结果]]，[[subject:主体]]就要出生了",
-            onAnchor: "[[smartOutput:今天]]是[[subject:主体]]的生日",
+            onAnchor: "[[subject:主体]]今天来到这个世界啦！",
             after: "[[smartOutput:今天]][[subject:主体]][[anchorResult:锚点结果]]"
         ),
         .birthdayCeremonial: .init(
             before: "再过[[anchorResult:锚点结果]]，就是[[subject:主体]]来到世界的日子",
-            onAnchor: "[[smartOutput:今天]]是[[subject:主体]]来到世界的日子",
+            onAnchor: "[[subject:主体]]今天来到这个世界啦！",
             after: "[[smartOutput:今天]]是[[subject:主体]][[anchorResult:锚点结果]]"
         ),
         .birthdayGrowth: .init(
             before: "距离第一次见面还有[[anchorResult:锚点结果]]",
-            onAnchor: "[[subject:主体]][[smartOutput:今天]]来到世界",
+            onAnchor: "[[subject:主体]]今天来到这个世界啦！",
             after: "[[subject:主体]]长到[[anchorResult:锚点结果]]了"
         ),
         .birthdayWarm: .init(
             before: "等待[[subject:主体]]到来，还有[[anchorResult:锚点结果]]",
-            onAnchor: "[[smartOutput:今天]]陪[[subject:主体]]迎来这一天",
+            onAnchor: "[[subject:主体]]今天来到这个世界啦！",
             after: "陪[[subject:主体]]走到[[anchorResult:锚点结果]]"
         ),
         .birthdayMinimal: .init(
             before: "[[subject:主体]]出生倒计时：[[anchorResult:锚点结果]]",
-            onAnchor: "[[subject:主体]] · 生日",
+            onAnchor: "[[subject:主体]]今天来到这个世界啦！",
             after: "[[subject:主体]] · [[anchorResult:锚点结果]]"
         ),
         .marriageNatural: .init(

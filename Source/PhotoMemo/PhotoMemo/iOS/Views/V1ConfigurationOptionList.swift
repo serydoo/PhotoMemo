@@ -9,9 +9,6 @@ struct V1ConfigurationOptionList: View {
     private var dynamicTypeSize
 
     @State
-    private var showsMemoryDisplayDetail = false
-
-    @State
     private var showsAdvancedModulesSheet = false
 
     let subject: MemorySubject?
@@ -50,7 +47,7 @@ struct V1ConfigurationOptionList: View {
 
             groupedSection(
                 title: "卡片布局与内容",
-                subtitle: "决定卡片各区域的内容与显示形式"
+                subtitle: "决定卡片里的内容与显示方式。"
             ) {
                 borderStyleRow
                 V1HorizontalDivider(
@@ -75,14 +72,6 @@ struct V1ConfigurationOptionList: View {
                 configurationStatusCard
             }
 
-        }
-        .sheet(isPresented: $showsMemoryDisplayDetail) {
-            V1MemoryExpressionPreviewSheet(
-                memoryDisplayValue: memoryDisplayValue,
-                memoryDisplayDetail: memoryDisplayDetail
-            )
-            .presentationDetents([.height(320), .medium])
-            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showsAdvancedModulesSheet) {
             V1AdvancedModulesSheet(
@@ -112,6 +101,7 @@ struct V1ConfigurationOptionList: View {
                             V1CompactInformationRowMetrics.horizontalPadding
                     )
                     memoryDisplayRow
+                    memoryExpressionPreview
                 } else {
                     memorySourceSummaryRow
                 }
@@ -135,16 +125,19 @@ struct V1ConfigurationOptionList: View {
         .v1CardChrome()
     }
 
+    @ViewBuilder
     private var memorySourceSectionHeader: some View {
-        ViewThatFits(in: .horizontal) {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                memorySourceHeading
+
+                memorySourceDisclosureButton
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        } else {
             HStack(alignment: .center, spacing: 10) {
                 memorySourceHeading
                 Spacer(minLength: 8)
-                memorySourceDisclosureButton
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                memorySourceHeading
                 memorySourceDisclosureButton
             }
         }
@@ -162,7 +155,9 @@ struct V1ConfigurationOptionList: View {
             isMemorySourceExpanded.toggle()
         } label: {
             Label(
-                isMemorySourceExpanded ? "收起" : "展开",
+                localized(
+                    isMemorySourceExpanded ? "收起" : "展开"
+                ),
                 systemImage:
                     isMemorySourceExpanded
                     ? "chevron.up"
@@ -172,11 +167,19 @@ struct V1ConfigurationOptionList: View {
         }
         .buttonStyle(.borderless)
         .foregroundStyle(Color.accentColor)
+        .frame(
+            minWidth: ConfigurationUI.minimumInteractiveHeight,
+            minHeight: ConfigurationUI.minimumInteractiveHeight,
+            alignment: .trailing
+        )
+        .contentShape(Rectangle())
         .padding(.trailing, 8)
         .accessibilityLabel(
-            isMemorySourceExpanded
-            ? "收起记忆来源"
-            : "展开记忆来源"
+            localized(
+                isMemorySourceExpanded
+                ? "收起记忆来源"
+                : "展开记忆来源"
+            )
         )
     }
 
@@ -193,14 +196,14 @@ struct V1ConfigurationOptionList: View {
 
             Spacer(minLength: 8)
 
-            Text("已生效")
+            Text(localized("已生效"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 13)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("当前记忆来源")
+        .accessibilityLabel(localized("当前记忆来源"))
         .accessibilityValue(memorySourceSummary)
     }
 
@@ -208,9 +211,9 @@ struct V1ConfigurationOptionList: View {
         [
             subjectDisplayName,
             availableTimeAnchors.isEmpty
-                ? "暂无时间锚点"
+                ? localized("暂无时间锚点")
                 : timeAnchorTitle,
-            memoryDisplayValue
+            localized(memoryDisplayValue)
         ]
         .joined(separator: " · ")
     }
@@ -248,16 +251,18 @@ struct V1ConfigurationOptionList: View {
                             logoMode = mode
                         } label: {
                             menuOptionLabel(
-                                mode.title,
+                                localized(mode.title),
                                 isSelected: mode == logoMode
                             )
                         }
                     }
                 } label: {
-                    optionSelectionPill(title: logoValue)
+                    V1CompactSelectionLabel(
+                        title: localized(logoValue)
+                    )
                 }
-                .accessibilityLabel("Logo 标识")
-                .accessibilityValue(logoValue)
+                .accessibilityLabel(localized("Logo 标识"))
+                .accessibilityValue(localized(logoValue))
 
                 if logoMode == .customUpload {
                     PhotosPicker(
@@ -283,11 +288,18 @@ struct V1ConfigurationOptionList: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .tint(Color.accentColor)
+                    .frame(
+                        minWidth: ConfigurationUI.minimumInteractiveHeight,
+                        minHeight: ConfigurationUI.minimumInteractiveHeight
+                    )
+                    .contentShape(Rectangle())
                     .disabled(isOptimizingLogo)
                     .accessibilityLabel(
-                        isOptimizingLogo
-                        ? "正在优化 Logo"
-                        : "选择 Logo"
+                        localized(
+                            isOptimizingLogo
+                            ? "正在优化 Logo"
+                            : "选择 Logo"
+                        )
                     )
                 }
             }
@@ -297,20 +309,19 @@ struct V1ConfigurationOptionList: View {
     private var timeAnchorRow: some View {
         configurationTextRow(
             title: "时间锚点",
-            subtitle: "从哪个重要时刻开始记录。",
+            subtitle: "回忆对象重要时刻",
             value:
                 availableTimeAnchors.isEmpty
                 ? "暂无"
                 : timeAnchorTitle,
-            detail:
-                "\(timeAnchorCount) 个锚点",
+            detail: timeAnchorCountDetail,
             showsTrailingChevron: false
         ) {
             if availableTimeAnchors.isEmpty {
-                optionSelectionPill(title: "暂无")
+                V1CompactSelectionLabel(title: localized("暂无"))
                     .opacity(0.56)
-                    .accessibilityLabel("时间锚点")
-                    .accessibilityValue("暂无")
+                    .accessibilityLabel(localized("时间锚点"))
+                    .accessibilityValue(localized("暂无"))
             } else {
                 Menu {
                     ForEach(availableTimeAnchors) { anchor in
@@ -328,9 +339,9 @@ struct V1ConfigurationOptionList: View {
                         }
                     }
                 } label: {
-                    optionSelectionPill(title: timeAnchorTitle)
+                    V1CompactSelectionLabel(title: timeAnchorTitle)
                 }
-                .accessibilityLabel("时间锚点")
+                .accessibilityLabel(localized("时间锚点"))
                 .accessibilityValue(timeAnchorTitle)
             }
         }
@@ -341,18 +352,14 @@ struct V1ConfigurationOptionList: View {
             title: "记忆表达",
             subtitle: "让回忆拥有属于自己的表达方式。",
             value: memoryDisplayValue,
-            detail: memoryDisplayDetail,
-            showsTrailingChevron: false,
-            horizontalTrailingWidth: 112,
-            onDetailTap: {
-                showsMemoryDisplayDetail = true
-            }
+            detail: "",
+            showsTrailingChevron: false
         ) {
             if availableMemoryDisplayStyles.isEmpty {
-                optionSelectionPill(title: "暂无")
+                V1CompactSelectionLabel(title: localized("暂无"))
                     .opacity(0.56)
-                    .accessibilityLabel("记忆表达")
-                    .accessibilityValue("暂无")
+                    .accessibilityLabel(localized("记忆表达"))
+                    .accessibilityValue(localized("暂无"))
             } else {
                 Menu {
                     ForEach(
@@ -364,7 +371,7 @@ struct V1ConfigurationOptionList: View {
                                 style
                         } label: {
                             menuOptionLabel(
-                                style.displayTitle,
+                                localized(style.displayTitle),
                                 isSelected:
                                     style
                                     == selectedMemoryDisplayStyle
@@ -373,15 +380,71 @@ struct V1ConfigurationOptionList: View {
                         }
                     }
                 } label: {
-                    optionSelectionPill(
-                        title: memoryDisplayValue,
-                        expandsToRowWidth: false
+                    V1CompactSelectionLabel(
+                        title: localized(memoryDisplayValue)
                     )
                 }
-                .accessibilityLabel("记忆表达")
-                .accessibilityValue(memoryDisplayValue)
+                .accessibilityLabel(localized("记忆表达"))
+                .accessibilityValue(localized(memoryDisplayValue))
             }
         }
+    }
+
+    private var memoryExpressionPreviewLines: [String] {
+        let lines =
+            memoryDisplayDetail
+            .split(separator: "｜", omittingEmptySubsequences: true)
+            .map(String.init)
+
+        return lines.isEmpty ? [localized("暂无表达预览")] : lines
+    }
+
+    private var memoryExpressionPreview: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("表达预览")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 8)
+
+                Text(localized(memoryDisplayValue))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .lineLimit(1)
+            }
+
+            ForEach(
+                Array(memoryExpressionPreviewLines.enumerated()),
+                id: \.offset
+            ) { _, line in
+                Text(line)
+                    .font(.caption2)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.smallCornerRadius,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.controlBackground)
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.smallCornerRadius,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+        .padding(.horizontal, V1CompactInformationRowMetrics.horizontalPadding)
+        .padding(.bottom, 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(localized("记忆表达预览"))
+        .accessibilityValue(memoryExpressionPreviewLines.joined(separator: "，"))
     }
 
     private var borderStyleRow: some View {
@@ -434,8 +497,8 @@ struct V1ConfigurationOptionList: View {
             showsAdvancedModulesSheet = true
         } label: {
             configurationTextRow(
-                title: "高级模块",
-                subtitle: "部分高级模块的展示形式选择",
+                title: "更多信息",
+                subtitle: "调整地点与拍摄时间的显示方式。",
                 value: "编辑",
                 detail: "",
                 showsTrailingChevron: false
@@ -460,8 +523,8 @@ struct V1ConfigurationOptionList: View {
         .buttonStyle(
             V1ConfigurationNavigationRowButtonStyle()
         )
-        .accessibilityLabel("编辑高级模块")
-        .accessibilityHint("部分高级模块的展示形式选择")
+        .accessibilityLabel("编辑更多信息")
+        .accessibilityHint("调整地点与拍摄时间的显示方式。")
     }
 
     private var configurationStatusCard: some View {
@@ -472,7 +535,7 @@ struct V1ConfigurationOptionList: View {
                 .frame(width: 20)
                 .accessibilityHidden(true)
 
-            Text(configurationStatusTitle)
+            Text(localized(configurationStatusTitle))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(configurationStatusColor)
 
@@ -566,11 +629,11 @@ struct V1ConfigurationOptionList: View {
     ) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(localized(title))
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text(subtitle)
+                Text(localized(subtitle))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(
@@ -583,12 +646,12 @@ struct V1ConfigurationOptionList: View {
                 alignment: .firstTextBaseline,
                 spacing: 8
             ) {
-                Text(title)
+                Text(localized(title))
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: true, vertical: false)
 
-                Text(subtitle)
+                Text(localized(subtitle))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -597,6 +660,21 @@ struct V1ConfigurationOptionList: View {
                     .layoutPriority(1)
             }
         }
+    }
+
+    private func localized(_ value: String) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: value,
+            fallback: value
+        )
+    }
+
+    private var timeAnchorCountDetail: String {
+        String(
+            format: localized("%d 个锚点"),
+            locale: MemoMarkLanguage.interfaceStored.locale,
+            timeAnchorCount
+        )
     }
 
     private var subjectDisplayName: String {
@@ -610,7 +688,7 @@ struct V1ConfigurationOptionList: View {
 
         guard let name,
               !name.isEmpty else {
-            return "记忆对象"
+            return localized("记忆对象")
         }
 
         return name
@@ -697,8 +775,8 @@ struct V1ConfigurationOptionList: View {
         value: String,
         detail: String,
         showsTrailingChevron: Bool = true,
-        horizontalTrailingWidth: CGFloat = 128,
-        onDetailTap: (() -> Void)? = nil,
+        horizontalTrailingWidth: CGFloat =
+            ConfigurationUI.compactTrailingControlWidth,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         configurationRow(
@@ -710,7 +788,6 @@ struct V1ConfigurationOptionList: View {
             showsTrailingChevron:
                 showsTrailingChevron,
             horizontalTrailingWidth: horizontalTrailingWidth,
-            onDetailTap: onDetailTap,
             trailing: trailing
         )
     }
@@ -722,8 +799,8 @@ struct V1ConfigurationOptionList: View {
         value: String,
         detail: String,
         showsTrailingChevron: Bool = true,
-        horizontalTrailingWidth: CGFloat = 128,
-        onDetailTap: (() -> Void)? = nil,
+        horizontalTrailingWidth: CGFloat =
+            ConfigurationUI.compactTrailingControlWidth,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         let trailingSpacing: CGFloat =
@@ -739,7 +816,6 @@ struct V1ConfigurationOptionList: View {
             trailingSpacing: trailingSpacing,
             horizontalTrailingWidth: horizontalTrailingWidth,
             showsTrailingChevron: showsTrailingChevron,
-            onDetailTap: onDetailTap,
             trailing: trailing
         )
         .padding(
@@ -762,7 +838,6 @@ struct V1ConfigurationOptionList: View {
         trailingSpacing: CGFloat,
         horizontalTrailingWidth: CGFloat,
         showsTrailingChevron: Bool,
-        onDetailTap: (() -> Void)?,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
@@ -773,34 +848,19 @@ struct V1ConfigurationOptionList: View {
                 detail: detail,
                 trailingSpacing: trailingSpacing,
                 showsTrailingChevron: showsTrailingChevron,
-                onDetailTap: onDetailTap,
                 trailing: trailing
             )
         } else {
-            ViewThatFits(in: .horizontal) {
-                horizontalConfigurationRow(
-                    icon: icon,
-                    title: title,
-                    subtitle: subtitle,
-                    detail: detail,
-                    trailingSpacing: trailingSpacing,
-                    horizontalTrailingWidth: horizontalTrailingWidth,
-                    showsTrailingChevron: showsTrailingChevron,
-                    onDetailTap: onDetailTap,
-                    trailing: trailing
-                )
-
-                verticalConfigurationRow(
-                    icon: icon,
-                    title: title,
-                    subtitle: subtitle,
-                    detail: detail,
-                    trailingSpacing: trailingSpacing,
-                    showsTrailingChevron: showsTrailingChevron,
-                    onDetailTap: onDetailTap,
-                    trailing: trailing
-                )
-            }
+            horizontalConfigurationRow(
+                icon: icon,
+                title: title,
+                subtitle: subtitle,
+                detail: detail,
+                trailingSpacing: trailingSpacing,
+                horizontalTrailingWidth: horizontalTrailingWidth,
+                showsTrailingChevron: showsTrailingChevron,
+                trailing: trailing
+            )
         }
     }
 
@@ -812,7 +872,6 @@ struct V1ConfigurationOptionList: View {
         trailingSpacing: CGFloat,
         horizontalTrailingWidth: CGFloat,
         showsTrailingChevron: Bool,
-        onDetailTap: (() -> Void)?,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         HStack(
@@ -831,7 +890,6 @@ struct V1ConfigurationOptionList: View {
                 detail: detail,
                 trailingSpacing: trailingSpacing,
                 showsTrailingChevron: showsTrailingChevron,
-                onDetailTap: onDetailTap,
                 trailing: trailing
             )
             .frame(
@@ -849,7 +907,6 @@ struct V1ConfigurationOptionList: View {
         detail: String,
         trailingSpacing: CGFloat,
         showsTrailingChevron: Bool,
-        onDetailTap: (() -> Void)?,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -863,7 +920,6 @@ struct V1ConfigurationOptionList: View {
                 detail: detail,
                 trailingSpacing: trailingSpacing,
                 showsTrailingChevron: showsTrailingChevron,
-                onDetailTap: onDetailTap,
                 trailing: trailing
             )
             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -884,12 +940,12 @@ struct V1ConfigurationOptionList: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(localized(title))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
 
-                Text(subtitle)
+                Text(localized(subtitle))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -902,25 +958,13 @@ struct V1ConfigurationOptionList: View {
         detail: String,
         trailingSpacing: CGFloat,
         showsTrailingChevron: Bool,
-        onDetailTap: (() -> Void)?,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         VStack(alignment: .trailing, spacing: trailingSpacing) {
             trailing()
 
             if !detail.isEmpty {
-                if let onDetailTap {
-                    Button(action: onDetailTap) {
-                        interactiveConfigurationRowDetailLabel(
-                            detail
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("查看记忆表达完整说明")
-                    .accessibilityHint("显示完整内容")
-                } else {
-                    configurationRowDetailLabel(detail)
-                }
+                configurationRowDetailLabel(detail)
             }
 
             if showsTrailingChevron {
@@ -931,52 +975,21 @@ struct V1ConfigurationOptionList: View {
         }
     }
 
-    private func interactiveConfigurationRowDetailLabel(
-        _ detail: String
-    ) -> some View {
-        HStack(spacing: 1) {
-            Text(compactConfigurationDetail(detail))
-                .foregroundStyle(.secondary)
-
-            Text("…")
-                .foregroundStyle(Color.accentColor)
-        }
-        .font(.caption.weight(.semibold))
-        .lineLimit(1)
-    }
-
     private func configurationRowDetailLabel(
         _ detail: String
     ) -> some View {
-        Text(detail)
+        Text(localized(detail))
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
             .lineLimit(1)
             .truncationMode(.tail)
     }
 
-    private func compactConfigurationDetail(
-        _ detail: String
-    ) -> String {
-        let firstPhase =
-            detail
-            .split(
-                separator: "｜",
-                maxSplits: 1,
-                omittingEmptySubsequences: false
-            )
-            .first
-            .map(String.init)
-            ?? detail
-
-        return String(firstPhase.prefix(10))
-    }
-
     private func rowValueText(
         _ title: String,
         isAction: Bool = false
     ) -> some View {
-        Text(title)
+        Text(localized(title))
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(
                 isAction
@@ -986,47 +999,6 @@ struct V1ConfigurationOptionList: View {
             .lineLimit(1)
             .minimumScaleFactor(0.82)
             .frame(maxWidth: .infinity, alignment: .trailing)
-    }
-
-    private func optionSelectionPill(
-        title: String,
-        expandsToRowWidth: Bool = true
-    ) -> some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
-                .allowsTightening(true)
-                .truncationMode(.tail)
-
-            Image(systemName: "chevron.down")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 6)
-        .frame(
-            maxWidth: expandsToRowWidth ? CGFloat.infinity : nil,
-            alignment: .trailing
-        )
-        .background(
-            RoundedRectangle(
-                cornerRadius:
-                    ConfigurationUI.smallCornerRadius,
-                style: .continuous
-            )
-            .fill(ConfigurationUI.controlBackground)
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius:
-                    ConfigurationUI.smallCornerRadius,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        )
     }
 
     @ViewBuilder
@@ -1167,92 +1139,6 @@ struct V1ConfigurationActionFooter: View {
 
 }
 
-struct V1MemoryExpressionPreviewSheet: View {
-
-    @Environment(\.dismiss)
-    private var dismiss
-
-    let memoryDisplayValue: String
-    let memoryDisplayDetail: String
-
-    private var detailLines: [String] {
-        memoryDisplayDetail
-            .split(separator: "｜", omittingEmptySubsequences: true)
-            .map(String.init)
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("让回忆拥有属于自己的表达方式。")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
-
-                        Text("当前选择：\(memoryDisplayValue)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
-                    }
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("一段回忆会这样呈现")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        ForEach(
-                            Array(detailLines.enumerated()),
-                            id: \.offset
-                        ) { _, line in
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Image(systemName: "text.quote")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 18)
-
-                                Text(line)
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                                    .fixedSize(
-                                        horizontal: false,
-                                        vertical: true
-                                    )
-                            }
-                        }
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(
-                            cornerRadius: ConfigurationUI.smallCornerRadius,
-                            style: .continuous
-                        )
-                        .fill(ConfigurationUI.controlBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: ConfigurationUI.smallCornerRadius,
-                            style: .continuous
-                        )
-                        .stroke(ConfigurationUI.faintHairline)
-                    )
-                }
-                .padding(.horizontal, ConfigurationUI.contentColumnPadding)
-                .padding(.vertical, 18)
-            }
-            .navigationTitle("记忆表达")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
 private struct V1ConfigurationSaveButtonStyle: ButtonStyle {
 
     @Environment(\.accessibilityReduceMotion)
@@ -1268,7 +1154,7 @@ private struct V1ConfigurationSaveButtonStyle: ButtonStyle {
             .foregroundStyle(
                 isRestrained
                 ? Color.primary.opacity(0.58)
-                : Color.white
+                : MemoMarkDesignTokens.Semantic.onAccent
             )
             .padding(.horizontal, 14)
             .frame(

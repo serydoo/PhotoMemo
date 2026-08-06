@@ -16,7 +16,9 @@ struct V1RegionEditorCluster: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            IOSCompactEntryListGroup {
+            IOSCompactEntryListGroup(
+                cornerRadius: ConfigurationUI.sheetPanelCornerRadius
+            ) {
                 ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
                     let regionDraft = draft(region)
 

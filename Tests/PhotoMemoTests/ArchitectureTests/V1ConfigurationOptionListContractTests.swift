@@ -84,42 +84,76 @@ struct V1ConfigurationOptionListContractTests {
         #expect(editorClusterSource.contains("照片里的时间、地点和拍摄信息"))
     }
 
-    @Test("memory display row previews one line and reveals full detail")
-    func memoryDisplayRowPreviewsOneLineAndRevealsFullDetail() throws {
+    @Test("memory display keeps a compact trailing control and previews every phase below")
+    func memoryDisplayKeepsCompactControlAndPreviewsEveryPhaseBelow() throws {
         let optionListSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
+        let supportSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+        let selectorStart = try #require(
+            supportSource.range(of: "struct V1CompactSelectionLabel")
+        )
+        let selectorEnd = try #require(
+            supportSource.range(
+                of: "enum V1CompactInformationRowMetrics",
+                range: selectorStart.upperBound..<supportSource.endIndex
+            )
+        )
+        let selectorSource = supportSource[
+            selectorStart.lowerBound..<selectorEnd.lowerBound
+        ]
 
         #expect(optionListSource.contains("title: \"记忆表达\""))
-        #expect(optionListSource.contains("detail: memoryDisplayDetail"))
-        #expect(optionListSource.contains("onDetailTap: {\n                showsMemoryDisplayDetail = true"))
-        #expect(optionListSource.contains("V1MemoryExpressionPreviewSheet("))
-        #expect(optionListSource.contains(".presentationDetents([.height(320), .medium])"))
-        #expect(!optionListSource.contains("memoryDisplayAlertMessage"))
-        #expect(optionListSource.contains("private func interactiveConfigurationRowDetailLabel("))
-        #expect(optionListSource.contains("Text(\"…\")"))
-        #expect(optionListSource.contains(".foregroundStyle(Color.accentColor)"))
-        #expect(optionListSource.contains(".lineLimit(1)"))
+        #expect(optionListSource.contains("detail: \"\""))
+        #expect(!optionListSource.contains("detail: memoryDisplayDetail"))
+        #expect(!optionListSource.contains("showsMemoryDisplayDetail"))
+        #expect(!optionListSource.contains("V1MemoryExpressionPreviewSheet"))
+        #expect(!optionListSource.contains("interactiveConfigurationRowDetailLabel"))
+        #expect(!optionListSource.contains("compactConfigurationDetail"))
+        #expect(optionListSource.contains("memoryExpressionPreview"))
         #expect(
             optionListSource.contains(
-                "title: memoryDisplayValue,\n                        expandsToRowWidth: false"
+                ".split(separator: \"｜\", omittingEmptySubsequences: true)"
+            )
+        )
+        #expect(optionListSource.contains("ForEach("))
+        #expect(optionListSource.contains("Text(line)"))
+        #expect(optionListSource.contains(".font(.caption2)"))
+        #expect(optionListSource.contains("ConfigurationUI.controlBackground"))
+        #expect(optionListSource.contains("ConfigurationUI.faintHairline"))
+        #expect(
+            optionListSource.contains(
+                ".accessibilityLabel(localized(\"记忆表达预览\"))"
             )
         )
         #expect(
             optionListSource.contains(
-                "horizontalTrailingWidth: 112,"
+                "V1CompactSelectionLabel(\n                        title: localized(memoryDisplayValue)"
             )
         )
+        #expect(!optionListSource.contains("horizontalTrailingWidth: 112"))
+        #expect(!optionListSource.contains(".frame(width: 112)"))
+        #expect(!optionListSource.contains("optionSelectionPill"))
         #expect(
             optionListSource.contains(
-                "horizontalTrailingWidth: CGFloat = 128"
+                "horizontalTrailingWidth: CGFloat =\n            ConfigurationUI.compactTrailingControlWidth"
             )
         )
-        #expect(
-            optionListSource.contains(
-                "expandsToRowWidth: Bool = true"
+        #expect(selectorSource.contains(".font(.caption.weight(.semibold))"))
+        #expect(selectorSource.contains(".padding(.horizontal, 9)"))
+        #expect(selectorSource.contains(".padding(.vertical, 6)"))
+        #expect(!selectorSource.contains("maxWidth: .infinity"))
+        let selectorBackground = try #require(
+            selectorSource.range(of: ".background(")
+        )
+        let selectorTouchTarget = try #require(
+            selectorSource.range(
+                of: ".frame(minHeight: ConfigurationUI.minimumInteractiveHeight)"
             )
         )
+        #expect(selectorBackground.lowerBound < selectorTouchTarget.lowerBound)
     }
 
     @Test("saved configuration uses a restrained disabled action")
@@ -203,6 +237,9 @@ struct V1ConfigurationOptionListContractTests {
         let sheetSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AdvancedModulesSheet.swift"
         )
+        let supportSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
         let contentRange = try #require(
             optionListSource.range(of: "regionContentRow")
         )
@@ -217,12 +254,12 @@ struct V1ConfigurationOptionListContractTests {
         #expect(advancedRange.lowerBound < statusRange.lowerBound)
         #expect(
             optionListSource.contains(
-                "title: \"高级模块\""
+                "title: \"更多信息\""
             )
         )
         #expect(
             optionListSource.contains(
-                "subtitle: \"部分高级模块的展示形式选择\""
+                "subtitle: \"调整地点与拍摄时间的显示方式。\""
             )
         )
         #expect(
@@ -241,16 +278,12 @@ struct V1ConfigurationOptionListContractTests {
             )
         )
         #expect(sheetSource.contains("NavigationStack"))
-        #expect(sheetSource.contains(".listStyle(.insetGrouped)"))
-        #expect(!sheetSource.contains("VStack(spacing: 0)"))
-        #expect(!sheetSource.contains("V1HorizontalDivider(horizontalInset: 0)"))
-        #expect(
-            sheetSource.components(
-                separatedBy:
-                    "MemoMarkDesignTokens.Spacing.medium"
-            ).count >= 5
-        )
-        #expect(sheetSource.contains("Text(\"地理显示\")"))
+        #expect(sheetSource.contains("ScrollView"))
+        #expect(sheetSource.contains("IOSCompactEntryListGroup"))
+        #expect(!sheetSource.contains("List {"))
+        #expect(!sheetSource.contains(".listStyle(.insetGrouped)"))
+        #expect(sheetSource.contains("ConfigurationUI.sheetPanelPadding"))
+        #expect(sheetSource.contains("Text(localized(\"地理显示\"))"))
         #expect(
             sheetSource.contains(
                 ".font(.subheadline.weight(.semibold))"
@@ -272,32 +305,34 @@ struct V1ConfigurationOptionListContractTests {
                 "dynamicTypeSize.isAccessibilitySize"
             )
         )
-        #expect(
-            sheetSource.contains(
-                "ViewThatFits(in: .horizontal)"
-            )
-        )
+        #expect(!sheetSource.contains("ViewThatFits(in: .horizontal)"))
         #expect(
             sheetSource.contains(
                 "private var verticalLocationDisplayRow"
             )
         )
+        #expect(sheetSource.contains("private var timeSupplementRow"))
+        #expect(
+            sheetSource.components(
+                separatedBy: "V1HorizontalDivider("
+            ).count >= 3
+        )
         #expect(sheetSource.contains("Button(\"完成\")"))
         #expect(sheetSource.contains("Menu {"))
-        #expect(sheetSource.contains("Image(systemName: \"chevron.down\")"))
+        #expect(sheetSource.contains("V1CompactSelectionLabel"))
         #expect(sheetSource.contains("systemImage: \"checkmark\""))
         #expect(
-            sheetSource.contains(
+            supportSource.contains(
                 "ConfigurationUI.smallCornerRadius"
             )
         )
         #expect(
-            sheetSource.contains(
+            supportSource.contains(
                 "ConfigurationUI.controlBackground"
             )
         )
         #expect(
-            sheetSource.contains(
+            supportSource.contains(
                 "ConfigurationUI.faintHairline"
             )
         )
@@ -322,7 +357,7 @@ struct V1ConfigurationOptionListContractTests {
 
         let headerStart = try #require(
             optionListSource.range(
-                of: "private var memorySourceDisclosureButton: some View"
+                of: "private var memorySourceSectionHeader: some View"
             )
         )
         let headerEnd = try #require(
@@ -334,7 +369,53 @@ struct V1ConfigurationOptionListContractTests {
             headerStart.lowerBound..<headerEnd.lowerBound
         ]
 
+        #expect(headerSource.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(headerSource.contains("HStack(alignment: .center"))
+        #expect(
+            headerSource.contains(
+                ".frame(maxWidth: .infinity, alignment: .trailing)"
+            )
+        )
+        #expect(!headerSource.contains("ViewThatFits(in: .horizontal)"))
         #expect(!headerSource.contains(".frame(minHeight: 44)"))
+        #expect(
+            headerSource.contains(
+                "minHeight: ConfigurationUI.minimumInteractiveHeight"
+            )
+        )
+        #expect(headerSource.contains(".contentShape(Rectangle())"))
+    }
+
+    @Test("custom Logo picker keeps compact chrome with a minimum hit target")
+    func customLogoPickerKeepsCompactChromeWithMinimumHitTarget() throws {
+        let optionListSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let logoStart = try #require(
+            optionListSource.range(of: "if logoMode == .customUpload")
+        )
+        let logoEnd = try #require(
+            optionListSource.range(
+                of: "private var timeAnchorRow",
+                range: logoStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let logoSource = optionListSource[
+            logoStart.lowerBound..<logoEnd.lowerBound
+        ]
+
+        #expect(logoSource.contains(".frame(width: 24, height: 24)"))
+        #expect(
+            logoSource.contains(
+                "minWidth: ConfigurationUI.minimumInteractiveHeight"
+            )
+        )
+        #expect(
+            logoSource.contains(
+                "minHeight: ConfigurationUI.minimumInteractiveHeight"
+            )
+        )
+        #expect(logoSource.contains(".contentShape(Rectangle())"))
     }
 
     @Test("advanced modules sheet uses a compact default detent and one heading")
@@ -345,7 +426,7 @@ struct V1ConfigurationOptionListContractTests {
 
         #expect(
             sheetSource.contains(
-                ".presentationDetents([.height(390), .large])"
+                ".presentationDetents([\n            .height(ConfigurationUI.compactSheetHeight),\n            .large\n        ])"
             )
         )
         #expect(
@@ -353,19 +434,108 @@ struct V1ConfigurationOptionListContractTests {
                 "} header: {\n                    Text(\"高级模块\")"
             )
         )
+        #expect(sheetSource.contains(".navigationTitle(\"更多信息\")"))
+        #expect(sheetSource.contains(".safeAreaInset(edge: .top, spacing: 0)"))
         #expect(
             sheetSource.contains(
                 "VStack(\n            alignment: .leading,\n            spacing: MemoMarkDesignTokens.Spacing.extraSmall\n        )"
             )
         )
+        #expect(sheetSource.contains("ConfigurationUI.compactTrailingControlWidth"))
+        #expect(sheetSource.contains("ConfigurationUI.compactRowVerticalPadding"))
+        #expect(!sheetSource.contains("minHeight: ConfigurationUI.minimumInteractiveHeight"))
+    }
+
+    @Test("card content sheet uses the shared compact title-to-content rhythm")
+    func cardContentSheetUsesCompactTitleToContentRhythm() throws {
+        let editorSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPresentationModifier.swift"
+        )
+        let entryRowSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/IOSCompactEntryRow.swift"
+        )
+
+        #expect(editorSource.contains(".navigationTitle(\"卡片内容\")"))
+        #expect(editorSource.contains(".safeAreaInset(edge: .top, spacing: 0)"))
         #expect(
-            sheetSource.contains(
-                "locationDisplayRow\n                        .padding("
+            editorSource.contains(
+                "探索不同组合，也欢迎告诉我们你的自定义想法。"
+            )
+        )
+        #expect(!editorSource.contains(".padding(.top, 4)"))
+        #expect(!editorSource.contains(".padding(.bottom, 8)"))
+        #expect(!editorSource.contains(".padding(.top, 16)"))
+        #expect(entryRowSource.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(entryRowSource.contains("horizontalDisclosureLabel"))
+        #expect(entryRowSource.contains("verticalDisclosureLabel"))
+        #expect(!entryRowSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(
+            entryRowSource.components(
+                separatedBy: ".fixedSize(horizontal: false, vertical: true)"
+            ).count >= 5
+        )
+        #expect(
+            entryRowSource.components(
+                separatedBy: ".lineLimit(1)"
+            ).count >= 5
+        )
+    }
+
+    @Test("configuration sheets share a native centered subtitle treatment")
+    func configurationSheetsShareNativeCenteredSubtitleTreatment() throws {
+        let supportSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+        let anchorSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let informationSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AdvancedModulesSheet.swift"
+        )
+        let cardSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPresentationModifier.swift"
+        )
+
+        #expect(
+            supportSource.contains(
+                "struct V1ConfigurationSheetSubtitle: View"
+            )
+        )
+        #expect(supportSource.contains(".font(.footnote)"))
+        #expect(supportSource.contains(".foregroundStyle(.secondary)"))
+        #expect(supportSource.contains(".multilineTextAlignment(.center)"))
+        #expect(
+            supportSource.contains(
+                ".padding(.top, ConfigurationUI.sheetSubtitleTopPadding)"
             )
         )
         #expect(
-            sheetSource.contains(
-                "timeDisplayRow\n                        .padding("
+            supportSource.contains(
+                ".padding(.bottom, ConfigurationUI.sheetSubtitleBottomPadding)"
+            )
+        )
+        #expect(anchorSource.contains("V1ConfigurationSheetSubtitle("))
+        #expect(anchorSource.contains(".safeAreaInset(edge: .top, spacing: 0)"))
+        #expect(
+            anchorSource.contains(
+                "选择一个时间起点，让照片拥有时间答案。"
+            )
+        )
+        #expect(informationSource.contains("V1ConfigurationSheetSubtitle("))
+        #expect(
+            informationSource.contains(
+                ".safeAreaInset(edge: .top, spacing: 0)"
+            )
+        )
+        #expect(
+            informationSource.contains(
+                "更多内容会根据实际需要逐步加入。"
+            )
+        )
+        #expect(cardSource.contains("V1ConfigurationSheetSubtitle("))
+        #expect(
+            cardSource.contains(
+                "探索不同组合，也欢迎告诉我们你的自定义想法。"
             )
         )
     }
@@ -393,6 +563,146 @@ struct V1ConfigurationOptionListContractTests {
         #expect(
             verticalRowSource.contains(
                 ".frame(maxWidth: .infinity, alignment: .trailing)"
+            )
+        )
+    }
+
+    @Test("ordinary configuration rows keep compact controls on the right")
+    func ordinaryConfigurationRowsKeepCompactControlsOnTheRight() throws {
+        let optionListSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let adaptiveStart = try #require(
+            optionListSource.range(
+                of: "private func adaptiveConfigurationRow"
+            )
+        )
+        let horizontalStart = try #require(
+            optionListSource.range(
+                of: "private func horizontalConfigurationRow",
+                range: adaptiveStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let adaptiveSource = optionListSource[
+            adaptiveStart.lowerBound..<horizontalStart.lowerBound
+        ]
+        let verticalStart = try #require(
+            optionListSource.range(
+                of: "private func verticalConfigurationRow",
+                range: horizontalStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let horizontalSource = optionListSource[
+            horizontalStart.lowerBound..<verticalStart.lowerBound
+        ]
+
+        #expect(adaptiveSource.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(adaptiveSource.contains("horizontalConfigurationRow("))
+        #expect(!adaptiveSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(
+            horizontalSource.contains(
+                ".frame(\n                minWidth: 72,\n                maxWidth: horizontalTrailingWidth"
+            )
+        )
+        #expect(horizontalSource.contains("HStack(\n            alignment: .center"))
+    }
+
+    @Test("configuration controls and sheets use one shared metric system")
+    func configurationControlsAndSheetsUseOneMetricSystem() throws {
+        let tokenSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/MemoMarkDesignTokens.swift"
+        )
+        let configurationUISource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Components/InspectorSectionView.swift"
+        )
+        let optionListSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let supportSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+        let anchorSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let informationSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1AdvancedModulesSheet.swift"
+        )
+        let editorSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPresentationModifier.swift"
+        )
+        let entryRowSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/IOSCompactEntryRow.swift"
+        )
+        let regionSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1RegionEditorCluster.swift"
+        )
+
+        #expect(
+            tokenSource.contains(
+                "static let compactTrailingControlWidth: CGFloat = 128"
+            )
+        )
+        #expect(
+            configurationUISource.contains(
+                "static let compactTrailingControlWidth =\n        MemoMarkDesignTokens.Layout.compactTrailingControlWidth"
+            )
+        )
+        #expect(
+            configurationUISource.contains(
+                "static let minimumInteractiveHeight =\n        MemoMarkDesignTokens.ControlState.minimumTouchTarget"
+            )
+        )
+        #expect(
+            supportSource.contains(
+                "struct V1ConfigurationSheetPanelChrome: ViewModifier"
+            )
+        )
+        #expect(
+            optionListSource.contains(
+                "ConfigurationUI.compactTrailingControlWidth"
+            )
+        )
+        #expect(!optionListSource.contains("horizontalTrailingWidth: 112"))
+        #expect(!optionListSource.contains(".frame(width: 112)"))
+        #expect(
+            anchorSource.components(
+                separatedBy: ".v1ConfigurationSheetPanelChrome()"
+            ).count >= 3
+        )
+        #expect(!anchorSource.contains("cornerRadius: 14"))
+        #expect(informationSource.contains("ScrollView"))
+        #expect(informationSource.contains("IOSCompactEntryListGroup"))
+        #expect(
+            informationSource.contains(
+                "ConfigurationUI.appBackground.ignoresSafeArea()"
+            )
+        )
+        #expect(!informationSource.contains(".listStyle(.insetGrouped)"))
+        #expect(
+            informationSource.contains(
+                "ConfigurationUI.compactTrailingControlWidth"
+            )
+        )
+        #expect(
+            informationSource.contains(
+                "ConfigurationUI.compactRowVerticalPadding"
+            )
+        )
+        #expect(
+            editorSource.contains(
+                "ConfigurationUI.contentSheetFraction"
+            )
+        )
+        #expect(
+            entryRowSource.contains(
+                ".v1ConfigurationSheetPanelChrome("
+            )
+        )
+        #expect(entryRowSource.contains("@Environment(\\.dynamicTypeSize)"))
+        #expect(!entryRowSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(
+            regionSource.contains(
+                "cornerRadius: ConfigurationUI.sheetPanelCornerRadius"
             )
         )
     }

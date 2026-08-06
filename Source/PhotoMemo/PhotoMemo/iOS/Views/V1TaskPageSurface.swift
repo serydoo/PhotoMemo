@@ -137,7 +137,7 @@ struct V1TaskPageSurface: View {
                     Text("准备就绪")
                         .font(.subheadline.weight(.semibold))
 
-                    Text("从 Apple Photos 分享照片，就能开始记录。")
+                    Text("从 Apple Photos 分享照片，即可开始生成。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

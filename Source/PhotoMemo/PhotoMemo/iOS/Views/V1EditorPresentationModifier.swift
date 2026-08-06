@@ -36,12 +36,17 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
                 NavigationStack {
                     ScrollView {
                         editorContent
-                            .padding(.top, 16)
+                            .padding(.top, 0)
                             .padding(.bottom, 28)
                             .v1AdaptiveScrollContent(
                                 horizontalPadding:
                                     ConfigurationUI.contentColumnPadding
                             )
+                    }
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        V1ConfigurationSheetSubtitle(
+                            "探索不同组合，也欢迎告诉我们你的自定义想法。"
+                        )
                     }
                     .scrollDismissesKeyboard(.interactively)
                     .simultaneousGesture(
@@ -52,7 +57,7 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
                     .background(
                         ConfigurationUI.appBackground.ignoresSafeArea()
                     )
-                    .navigationTitle("区域内容设置")
+                    .navigationTitle("卡片内容")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
@@ -73,10 +78,17 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
                         }
                     }
                 }
-                .presentationDetents([.fraction(0.58), .large])
+                .presentationDetents([
+                    .fraction(ConfigurationUI.contentSheetFraction),
+                    .large
+                ])
                 .presentationDragIndicator(.visible)
                 .presentationBackgroundInteraction(
-                    .enabled(upThrough: .fraction(0.58))
+                    .enabled(
+                        upThrough: .fraction(
+                            ConfigurationUI.contentSheetFraction
+                        )
+                    )
                 )
             }
     }
