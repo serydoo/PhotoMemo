@@ -1013,12 +1013,14 @@ struct V1RegionEditorCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(region.editorTitle)
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .accessibilityAddTraits(.isHeader)
-            if let subtitle = region.editorSubtitle {
-                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(region.editorTitle)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .accessibilityAddTraits(.isHeader)
+                if let subtitle = region.editorSubtitle {
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                }
             }
 
             compositionField
