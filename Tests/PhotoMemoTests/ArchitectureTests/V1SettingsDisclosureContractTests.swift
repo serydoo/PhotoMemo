@@ -187,6 +187,31 @@ struct V1SettingsDisclosureContractTests {
         #expect(positions == positions.sorted())
     }
 
+    @Test("settings modules and expanded content share compact spacing")
+    func settingsUsesOneCompactModuleRhythm() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let bodyStart = try #require(
+            source.range(of: "var body: some View")?.lowerBound
+        )
+        let bodyEnd = try #require(
+            source.range(of: "private var interfacePreferencesSection")?.lowerBound
+        )
+        let body = source[bodyStart..<bodyEnd]
+        let disclosureStart = try #require(
+            source.range(of: "private struct V1SettingsDisclosureSection")?.lowerBound
+        )
+        let disclosure = source[disclosureStart...]
+
+        #expect(body.contains("VStack(spacing: V1SectionCardMetrics.sectionSpacing)"))
+        #expect(!body.contains(".padding(.top, 18)"))
+        #expect(disclosure.contains("spacing: V1SectionCardMetrics.headerContentSpacing"))
+        #expect(source.contains("private var memoMarkPlusStatusRow"))
+        #expect(source.contains("private var memoMarkPlusBenefitsLabel"))
+        #expect(source.contains("HStack(alignment: .top, spacing: 12)"))
+    }
+
     @Test("settings combines appearance and language with matching adaptive controls")
     func settingsCombinesAppearanceAndLanguageWithMatchingAdaptiveControls() throws {
         let source = try sourceText(

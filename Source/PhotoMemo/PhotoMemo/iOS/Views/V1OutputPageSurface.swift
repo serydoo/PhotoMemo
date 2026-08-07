@@ -259,6 +259,8 @@ private struct V1OutputResultSection: View {
                     subtitle: "新照片会带上能够保留的拍摄信息。"
                 )
 
+                V1OutputDashedDivider()
+
                 V1OutputRetentionRow(
                     title: "保留 Live Photo",
                     subtitle:
@@ -370,10 +372,10 @@ private struct V1OutputPhotoDescriptionSection: View {
                 }
 
                 Text(
-                    "Apple Photos 对照片说明的显示与搜索支持，可能因 iOS 版本不同而有所差异。"
+                    "图库中的照片说明显示和搜索能力，可能随 iOS 版本有所不同。"
                 )
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(Color.primary.opacity(0.72))
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 2)
             }
@@ -386,6 +388,29 @@ private struct V1OutputPhotoDescriptionSection: View {
                 value: usesCustomMemoryWriteText
             )
         }
+    }
+}
+
+private struct V1OutputDashedDivider: View {
+
+    var body: some View {
+        Canvas { context, size in
+            var path = Path()
+            path.move(to: CGPoint(x: 0, y: size.height / 2))
+            path.addLine(
+                to: CGPoint(x: size.width, y: size.height / 2)
+            )
+            context.stroke(
+                path,
+                with: .color(Color.secondary.opacity(0.18)),
+                style: StrokeStyle(
+                    lineWidth: 0.7,
+                    dash: [3, 3]
+                )
+            )
+        }
+        .frame(height: 1)
+        .accessibilityHidden(true)
     }
 }
 

@@ -311,6 +311,39 @@ struct MemorySubjectEditorView: View {
     }
 
     private var expressionSubjectCard: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    expressionSubjectTitle
+                    expressionSubjectMenu
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                HStack(alignment: .center, spacing: 12) {
+                    expressionSubjectTitle
+
+                    Spacer(minLength: 12)
+
+                    expressionSubjectMenu
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: ConfigurationUI.minimumInteractiveHeight,
+            alignment: .leading
+        )
+    }
+
+    private var expressionSubjectTitle: some View {
+        Text("记忆表达主体")
+            .font(.body)
+            .foregroundStyle(.primary)
+    }
+
+    private var expressionSubjectMenu: some View {
         Menu {
             ForEach(
                 MemorySubjectExpressionSubjectSource.allCases
@@ -332,58 +365,24 @@ struct MemorySubjectEditorView: View {
                 .disabled(expressionSubjectSourceValue(for: source) == nil)
             }
         } label: {
-            Group {
-                if dynamicTypeSize.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("记忆表达主体")
-                            .font(.body)
-                            .foregroundStyle(.primary)
-
-                        expressionSubjectSelectionLabel
-                            .frame(
-                                maxWidth: .infinity,
-                                alignment: .leading
-                            )
-                    }
-                } else {
-                    HStack(alignment: .center, spacing: 12) {
-                        Text("记忆表达主体")
-                            .font(.body)
-                            .foregroundStyle(.primary)
-
-                        Spacer(minLength: 12)
-
-                        expressionSubjectSelectionLabel
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .frame(
-                maxWidth: .infinity,
-                minHeight: ConfigurationUI.minimumInteractiveHeight,
-                alignment: .leading
-            )
-            .contentShape(Rectangle())
+            expressionSubjectSelectionLabel
         }
         .buttonStyle(.plain)
         .accessibilityLabel("选择锚点内表达主体")
-        .accessibilityValue(
-            expressionSubjectSelectionTitle
-        )
+        .accessibilityValue(expressionSubjectSelectionTitle)
     }
 
     private var expressionSubjectSelectionLabel: some View {
         HStack(spacing: 6) {
             Text(expressionSubjectSelectionTitle)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.accentColor)
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                 .multilineTextAlignment(.trailing)
 
             Image(systemName: "chevron.up.chevron.down")
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.accentColor)
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 6)
@@ -1676,7 +1675,8 @@ struct MemorySubjectEditorView: View {
 
 private enum SubjectIdentityMetrics {
 
-    static let contactFieldRowHeight: CGFloat = 54
+    static let contactFieldRowHeight =
+        ConfigurationUI.compactInputRowMinimumHeight
 }
 
 private enum SubjectFocusedField: Hashable {
@@ -1816,7 +1816,7 @@ private struct CompactAnchorDatePicker: View {
 
 private enum SubjectTimeAnchorMetrics {
 
-    static let rowHeight: CGFloat = 64
+    static let rowHeight: CGFloat = 52
 }
 
 private struct SubjectTimeAnchorRow: View {

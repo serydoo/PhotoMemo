@@ -205,7 +205,10 @@ struct V1IOSHomeNavigationRowButton: View {
                 }
                 .contentShape(Rectangle())
                 .padding(.horizontal, 14)
-                .padding(.vertical, 13)
+                .padding(
+                    .vertical,
+                    ConfigurationUI.compactRowVerticalPadding
+                )
             }
             .buttonStyle(.plain)
 

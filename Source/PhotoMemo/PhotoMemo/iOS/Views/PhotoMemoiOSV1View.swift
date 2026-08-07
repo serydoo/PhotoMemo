@@ -58,7 +58,28 @@ struct PhotoMemoiOSV1View: View {
     private var activeModuleRegion: CardRegion?
 
     @State
+    private var focusedEditorRegion: CardRegion?
+
+    @State
     private var activeTextItemIDs: [CardRegion: UUID] = [:]
+
+    @State
+    private var recentInsertionRegion: CardRegion?
+
+    @State
+    private var recentInsertionItemID: UUID?
+
+    @State
+    private var slotATextKitCommandBus = V1TextKitCommandBus()
+
+    @State
+    private var slotBTextKitCommandBus = V1TextKitCommandBus()
+
+    @State
+    private var slotCTextKitCommandBus = V1TextKitCommandBus()
+
+    @State
+    private var slotDTextKitCommandBus = V1TextKitCommandBus()
 
     @State
     private var entryNavigationState =
@@ -233,6 +254,8 @@ struct PhotoMemoiOSV1View: View {
     private var modulePanelState:
         V1ModulePanelCoordinator.State {
         V1ModulePanelCoordinator.State(
+            focusedRegion:
+                focusedEditorRegion,
             activeRegion:
                 activeModuleRegion,
             usageStorage:
@@ -729,31 +752,18 @@ struct PhotoMemoiOSV1View: View {
         }
         .modifier(
             V1EditorPresentationModifier(
-                isModuleSheetPresented: moduleSheetPresented,
                 showsRegionContentSheet: $showsRegionContentSheet,
-                activeModuleRegion: activeModuleRegion,
                 editorContent: editorCluster,
-                modules: modules(for:),
-                categoryTitle: moduleCategoryTitle,
-                valueText: moduleDisplayText,
-                onSelectModule: { module, region in
-                    applyModulePanelState(
-                        V1ModulePanelCoordinator.selectModule(
-                            module,
-                            state: modulePanelState
-                        )
-                    )
-                    insert(module, into: region)
-                },
-                onCloseModuleSheet: {
-                    applyModulePanelState(
-                        V1ModulePanelCoordinator.setSheetPresented(
-                            false,
-                            state: modulePanelState
-                        )
-                    )
-                },
-                onDismissKeyboard: dismissKeyboard
+                onDismissKeyboard: dismissKeyboard,
+                onToggleModuleLibrary:
+                    toggleModuleLibraryFromToolbar,
+                canToggleModuleLibrary:
+                    focusedEditorRegion != nil
+                    || activeModuleRegion != nil,
+                isModuleLibraryPresented:
+                    activeModuleRegion != nil,
+                onDismissEditor:
+                    resetCardEditorState
             )
         )
         .modifier(
@@ -1026,7 +1036,6 @@ struct PhotoMemoiOSV1View: View {
             logoMode: $logoMode,
             selectedLogoItem: $mediaPickerPresentation.selectedLogoItem,
             logoValue: logoMode.title,
-            logoDetail: logoRowDetail,
             customLogoImagePath:
                 customLogoBadge?.imagePath,
             isOptimizingLogo: mediaPickerPresentation.isOptimizingLogo,
@@ -1070,6 +1079,7 @@ struct PhotoMemoiOSV1View: View {
             configurationStatus:
                 activeConfigurationStatus,
             onOpenRegionContent: {
+                resetCardEditorState()
                 showsRegionContentSheet = true
             }
         )
@@ -1665,22 +1675,32 @@ struct PhotoMemoiOSV1View: View {
 
     private var editorCluster: some View {
         V1RegionEditorCluster(
-            expansionBinding: { region in
-                expansionBinding(for: .region(region))
-            },
+            slotATextKitCommandBus: slotATextKitCommandBus,
+            slotBTextKitCommandBus: slotBTextKitCommandBus,
+            slotCTextKitCommandBus: slotCTextKitCommandBus,
+            slotDTextKitCommandBus: slotDTextKitCommandBus,
             draft: { region in
                 draft(for: region)
             },
-            resolvedText: { draft in
-                composedText(for: draft)
+            onFocus: { region in
+                focusRegionEditor(for: region)
             },
-            onFocus: focusRegionEditor,
             onFocusTextItem: { region, item in
                 setActiveTextItem(item.id, for: region)
-                focusRegionEditor()
+                focusRegionEditor(for: region)
+            },
+            onFocusTrailingText: { region in
+                // A default module-only region uses a transient trailing
+                // text field. Clearing a stale text anchor ensures insertion
+                // appends after the visible module instead of jumping left.
+                setActiveTextItem(nil, for: region)
+                focusRegionEditor(for: region)
             },
             onUpdateTextItem: { region, item, text in
                 updateTextItem(item.id, text: text, for: region)
+            },
+            onReplaceDraft: { region, draft in
+                draftRuntimeCoordinator.replaceDraft(draft, for: region)
             },
             onPrependText: { region, text in
                 prependText(text, to: region)
@@ -1692,10 +1712,66 @@ struct PhotoMemoiOSV1View: View {
                 removeItem(item.id, from: region)
                 refreshPreview(for: region)
             },
-            onShowModules: { region in
+            onRemovePreviousComposedItem: { region, itemID in
+                let removed = draftRuntimeCoordinator.removePreviousComposedItem(before: itemID, from: region)
+                if removed {
+                    refreshPreview(for: region)
+                }
+                return removed
+            },
+            activeModuleRegion: activeModuleRegion,
+            modules: modules(for:),
+            categoryTitle: moduleCategoryTitle,
+            valueText: moduleDisplayText,
+            insertionMarkerID: { region in
+                if recentInsertionRegion == region {
+                    return recentInsertionItemID
+                }
+
+                // While the candidate surface is open, keep one quiet marker
+                // beside the active text node so the saved insertion context
+                // remains visible after the keyboard has been dismissed.
+                guard activeModuleRegion == region else {
+                    return nil
+                }
+                return activeTextItemIDs[region]
+            },
+            showsInsertionMarkerAtEnd: { region in
+                activeModuleRegion == region
+                    && activeTextItemIDs[region] == nil
+            },
+            onSelectModule: { module, region in
+                if region == .slotA {
+                    slotATextKitCommandBus.insert(moduleItem(module))
+                    recentInsertionRegion = nil
+                    recentInsertionItemID = nil
+                } else if region == .slotB {
+                    slotBTextKitCommandBus.insert(moduleItem(module))
+                    recentInsertionRegion = nil
+                    recentInsertionItemID = nil
+                } else if region == .slotC {
+                    slotCTextKitCommandBus.insert(moduleItem(module))
+                    recentInsertionRegion = nil
+                    recentInsertionItemID = nil
+                } else if region == .slotD {
+                    slotDTextKitCommandBus.insert(moduleItem(module))
+                    recentInsertionRegion = nil
+                    recentInsertionItemID = nil
+                } else {
+                    recentInsertionRegion = region
+                    recentInsertionItemID = insert(module, into: region)
+                }
                 applyModulePanelState(
-                    V1ModulePanelCoordinator.showModules(
-                        for: region,
+                    V1ModulePanelCoordinator.selectModule(
+                        module,
+                        state: modulePanelState
+                    )
+                )
+            },
+            onCloseModuleLibrary: {
+                applyModulePanelState(
+                    V1ModulePanelCoordinator.setSheetPresented(
+                        false,
                         state: modulePanelState
                     )
                 )
@@ -1703,27 +1779,45 @@ struct PhotoMemoiOSV1View: View {
         )
     }
 
-    private func focusRegionEditor() {
+    private func focusRegionEditor(
+        for region: CardRegion
+    ) {
+        recentInsertionRegion = nil
+        recentInsertionItemID = nil
         applyModulePanelState(
-            V1ModulePanelCoordinator.focusEditor(
+            V1ModulePanelCoordinator.focusRegion(
+                region,
                 state: modulePanelState
             )
         )
     }
 
-    private var logoRowDetail: String {
-        switch logoMode {
-        case .appleMini:
-            return "使用系统默认标识"
-        case .customUpload:
-            return customLogoBadge == nil
-                ? "点击选择自选 Logo"
-                : "已准备自选 Logo"
-        case .subjectAvatar:
-            return resolvedSubjectAvatarLogoImagePath == nil
-                ? "当前记忆对象尚未选择头像"
-                : "已使用对象头像"
+    private func showModuleLibrary(
+        for region: CardRegion
+    ) {
+        applyModulePanelState(
+            V1ModulePanelCoordinator.showModules(
+                for: region,
+                state: modulePanelState
+            )
+        )
+    }
+
+    private func toggleModuleLibraryFromToolbar() {
+        if activeModuleRegion != nil {
+            applyModulePanelState(V1ModulePanelCoordinator.setSheetPresented(false, state: modulePanelState))
+            return
         }
+        guard let focusedEditorRegion else { return }
+        dismissKeyboard()
+        showModuleLibrary(for: focusedEditorRegion)
+    }
+
+    private func resetCardEditorState() {
+        recentInsertionRegion = nil
+        recentInsertionItemID = nil
+        dismissKeyboard()
+        applyModulePanelState(V1ModulePanelCoordinator.focusEditor(state: modulePanelState))
     }
 
     private var resolvedSubjectAvatarLogoImagePath: String? {
@@ -1762,28 +1856,6 @@ struct PhotoMemoiOSV1View: View {
                 smartModuleCarrierRegion:
                     session.smartModuleCarrierRegion
             )
-    }
-
-    private var moduleSheetPresented: Binding<Bool> {
-        Binding(
-            get: {
-                V1ModuleLibraryPresenter
-                    .isSheetPresented(
-                        activeRegion:
-                            activeModuleRegion
-                    )
-            },
-            set: { isPresented in
-                applyModulePanelState(
-                    V1ModulePanelCoordinator
-                        .setSheetPresented(
-                            isPresented,
-                            state:
-                                modulePanelState
-                        )
-                )
-            }
-        )
     }
 
     private func draft(for region: CardRegion) -> V1EditorDraft {
@@ -1943,12 +2015,10 @@ struct PhotoMemoiOSV1View: View {
     private func insert(
         _ module: IOSInsertableModule,
         into region: CardRegion
-    ) {
-        draftRuntimeCoordinator
-            .insert(
-                moduleItem(module),
-                into: region
-            )
+    ) -> UUID {
+        let item = moduleItem(module)
+        draftRuntimeCoordinator.insert(item, into: region)
+        return item.id
     }
 
     @discardableResult
@@ -2481,6 +2551,8 @@ struct PhotoMemoiOSV1View: View {
         _ state:
             V1ModulePanelCoordinator.State
     ) {
+        focusedEditorRegion =
+            state.focusedRegion
         activeModuleRegion =
             state.activeRegion
         moduleUsageCountsStorage =
@@ -2790,5 +2862,4 @@ private struct V1ScrollOffsetPreferenceKey:
             .diagnostics
     )
 }
-
 #endif

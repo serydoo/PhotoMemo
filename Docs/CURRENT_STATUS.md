@@ -1,6 +1,198 @@
 # MemoMark Current Status
 
-Last updated: 2026-08-06
+## 2026-08-07 — UI-17PM-016 左上 TextKit 试点停止并回滚
+
+- 连续两次真机复测确认 TextKit 左上在文字中间插入模块仍卡死，且文字/模块垂直对齐不稳定。
+- 已停止 TextKit 试点并将实际左上路由恢复到稳定的 `V1RegionEditorCard / V1InlineTextField /
+  activeTextItemID`；第三步四区迁移取消，等待新的生命周期隔离设计。
+- 回滚后的无签名/签名 Debug 构建、严格签名校验、原地覆盖安装和启动通过；设备数据库序列
+  `3240`，未清除本地数据。
+- 候选内嵌、四区独立编辑、键盘避让、胶囊退格和 Renderer 实时刷新保持不变。
+- TX-001、BP-001 未关闭，生产认证继续保持 `FAIL (Conditional)`。
+
+## 2026-08-07 — UI-17PM-016 第二次 TextKit 卡死修复待真机复测
+
+- 进一步发现左上 TextKit 每次投影普通文字都会生成新 UUID，SwiftUI 全值比较误判内容变化，
+  反复重建 `NSTextStorage` 并放大 pending insertion 回灌循环。
+- 已改用编辑语义比较，避免仅因文字 item identity 变化而重建 storage；附件垂直 bounds
+  下移以改善文字与模块的基线对齐。
+- 签名构建、严格签名校验、原地覆盖安装和启动通过；设备数据库序列 `3232`。
+- 仍只允许复测左上文字中间插入模块这一条路径；若再次卡死，停止试点并回滚，不进入第三步。
+
+## 2026-08-07 — UI-17PM-016 真机卡死修复待复测
+
+- 真机发现左上 TextKit 在“文字中间光标 → 候选模块 → 插入”路径出现无响应。根因是
+  pending insertion 在 `updateUIView` 中未先消费，插入写回 draft 后触发重复 update/insert
+  循环。
+- 已修复为先消费一次性插入命令，再写回草稿；左上文字上下 inset 调整为对称 10pt，修正
+  自定义文字偏高。
+- 签名构建、严格签名校验、原地覆盖安装和启动通过；设备数据库序列 `3224`，未清除数据。
+- 当前只允许复测最小主路径；在卡死修复得到真机确认前，不开始第三步四区 TextKit 迁移。
+- TX-001、BP-001 仍未关闭，生产认证继续保持 `FAIL (Conditional)`。
+
+## 2026-08-07 — UI-17PM-016 左上区域统一 TextKit 流试点已安装待人工验收
+
+- Product Loop P1 试点只迁移卡片内容左上 `.slotA`：`UITextView + NSTextStorage +
+  NSTextAttachment + selectedRange`；另外三区保留现有分段输入。
+- TextKit 仅作为 `V1EditorDraft / V1ContentItem` 的 iOS UI 适配层；现有预览刷新、
+  Renderer、Memory Engine、Layout Engine、Export、PhotoKit 和持久化所有权不变。
+- 聚焦新契约与 draft mutation tests 通过；聚焦响应式套件仍保留既有
+  `rootDelegatesSystemPresentationAndRuntimeCoordination()` 失败，未宣称全套通过。
+- `git diff --check`、无签名/签名 iOS Debug 构建和严格签名校验通过；2.0.3 (70)
+  已原地覆盖安装并启动目标 iPhone 17 Pro Max，数据库序列 `3216`，未清除数据。
+- 左上 selection、附件插入/退格、键盘 trackpad、中文输入法、emoji、实时预览、
+  Dynamic Type 与 VoiceOver仍需产品负责人真机验收。第三步四区迁移尚未开始。
+- 未推送 GitHub；TX-001、BP-001 未关闭，生产认证仍为 `FAIL (Conditional)`。
+
+Last updated: 2026-08-07
+
+## 2026-08-07 UI-17PM-016 fully expanded top-boundary package
+
+- `V1CardEditorOverlay` now fills the available space from the fixed
+  `contentEditorMinimumTopBoundary` (148pt on the iPhone 17 Pro Max baseline) to
+  the keyboard or bottom safe-area boundary. This makes the fully expanded Card
+  Content top align with the Memory Source/Renderer boundary without restoring a
+  system half-sheet.
+- `V1RegionEditorCluster` keeps the 116pt candidate surface as a fixed sibling
+  above the independent four-region vertical scroll viewport. Keyboard frame
+  occupation is owned by Card Editor, so the middle rows are the only content
+  that can be reduced/cropped and scrolled.
+- Focused layout contract coverage was already passing after the code slice;
+  `git diff --check` passed. The generic iOS Debug build returned `0`, and the
+  signed iOS Debug build for `863C2747-6742-5E93-B715-6F89DBF90B31` returned `0`.
+- The signed app was overwritten in place and launched after unlock as
+  `com.serydoo.PhotoMemo.iOS`; no uninstall or local-data clearing occurred.
+  Launch snapshot: `/tmp/PhotoMemo-UI17PM016-full-overlay.png`.
+- Full manual acceptance remains open: compare the expanded top with Memory
+  Source, tap the right side of an input, keep the candidate surface visible with
+  the keyboard, scroll the middle rows, and verify caret insertion. No GitHub push
+  was performed; `TX-001` and `BP-001` remain open and production certification
+  remains `FAIL (Conditional)`.
+
+## 2026-08-07 UI-17PM-016 固定四区卡片内容编辑基础骨架
+
+- 根据 iPhone 17 Pro Max 的最后一轮交互反馈，开始落实固定四区编辑方案：
+  左上、左下、右上、右下始终显示，每个区域只保留标题和一个预填当前配置
+  的组合录入框；编辑页不再渲染区域右侧重复摘要、录入框下方重复组合结果
+  或额外说明文字。
+- 点击任一组合录入面后自动打开当前区域的模块候选，不再在“完成”按钮下方
+  保留重复的模块入口。候选项在卡片内容页内以紧凑分类面板展开：保留分类标题，
+  每个分类一行横向滑动，不显示候选面板标题和说明文字；面板以编辑页内部 overlay
+  挂载，不参与编辑页高度计算，不遮挡 Renderer 区域。选择后沿用现有草稿和 Renderer
+  实时刷新链路并收起。编辑 sheet 只保留一个固定比例 detent，键盘不再通过全局
+  点按手势强制收回，避免编辑上下文和光标失稳。
+- 卡片内容四区末尾增加一段简短说明，明确文字与内容可自由组合、上方预览实时同步，
+  并提醒右下内容会写入照片说明。
+- 为避免键盘出现时编辑 sheet 被系统滚动到顶部，候选模块区现在以编辑页内部悬浮层
+  形式挂载，不再参与编辑页高度计算；四区录入列表保持自己的滚动视口。编辑页保持
+  单一受控容器，不再通过键盘通知切换第二套 detent；Card Editor 自己计算键盘底部占用，
+  超出可见高度的下方录入行自然裁切。四个区域标题与录入框改为同一行
+  的“左侧标题 + 右侧组合输入”结构，
+  释放纵向空间；记忆表达区域的标题明确为“智能模块表达预览”。候选分类改为
+  “EXIF / 智能表达”，横向溢出分类在胶囊行底部显示一条低对比度短横线提示。
+- 模块胶囊采用淡蓝色区分，删除按钮位于胶囊右上角同一组合面内；右下
+  `.slotD` 的映射和默认照片说明来源保持原链路不变。没有触及 Memory Engine、
+  Layout Engine、Renderer 核心、Export、PhotoKit、持久化或原照片。
+- UI-17PM-016 聚焦契约测试与模块面板协调器测试通过，`git diff --check`
+  通过。无签名 `PhotoMemoiOS` iOS Debug 构建和目标设备签名 Debug 构建均通过；
+  已覆盖安装并启动 `com.serydoo.PhotoMemo.iOS`，未卸载应用或清除本地数据。最新
+  设备快照确认候选区已变为“分类标题 + 每类一行横向滑动”的紧凑胶囊面板，候选
+  面板标题/说明和完成按钮下方的重复入口均已移除；面板仍在编辑 sheet 内容流内，
+  不额外遮挡 Renderer。四区编辑、键盘避让、模块点选和光标位置的完整人工交互
+  验收仍未完成，不能将启动快照视为完整真机视觉验收闭环。
+- 本轮不进行 GitHub 推送、不清除手机本地数据。`TX-001`、`BP-001` 仍未关闭，
+  生产认证继续保持 `FAIL (Conditional)`。
+
+### UI-17PM-016 Card Editor 受控容器（2026-08-07）
+
+- 新录屏确认：键盘出现时，系统外层 `.sheet` 会把整个卡片内容编辑页自动抬到顶部，
+  覆盖 Renderer/记忆来源区域；候选模块区不是根因。
+- 已将 `V1EditorPresentationModifier` 改为配置中心页面内的 `V1CardEditorOverlay`：
+  保留原生圆角卡片、拖拽指示条、标题和“完成”按钮，但不再让系统 sheet 接管键盘布局。
+  Card Editor 自行计算 `maximumEditorHeight`，以 `contentEditorTopBoundaryFraction` 加
+  `contentEditorMinimumTopBoundary` 固定最高边界，并把底部安全区交给内部录入滚动视口处理。
+- 候选区仍是编辑器内部的 116pt 紧凑分类悬浮层；关闭按钮置于右上角，下面两行固定左侧
+  分类标题、右侧横向候选胶囊，并在溢出时显示渐隐和短横线；四区草稿、模块插入、Renderer 实时刷新、
+  右下照片说明映射和完成保存链路没有改变。没有触及 Memory Engine、Layout Engine、
+  Renderer 核心、Export、PhotoKit、持久化或原照片。
+- 更新后的 `IPhoneResponsiveLayoutContractTests` 通过，要求编辑器使用 bounded overlay、
+  `safeAreaInsets.bottom` 和 `maximumEditorHeight`，并禁止恢复 `.sheet`/动态 detent；
+  `git diff --check` 和无签名 iOS Debug 构建均通过。
+- 以签名 Debug 构建覆盖安装到目标 iPhone 17 Pro Max 成功，未卸载应用或清除本地数据；
+  本次自动启动被系统以“设备处于锁屏”为由拒绝，解锁后需要人工复测：编辑页最高边界、
+  键盘出现时内部视口缩小、候选区不遮挡 Renderer、光标位置和模块插入。
+- 未进行 GitHub 推送。`TX-001`、`BP-001` 仍未关闭，生产认证继续保持 `FAIL (Conditional)`。
+
+### UI-17PM-016 键盘态边界修正（2026-08-07）
+
+- 新录屏的进一步关键帧表明：overlay 没有再被系统 sheet 整体移动，但键盘出现后
+  `GeometryReader` 的可用高度变小，单独使用比例边界会让最高线随之上移，仍可能压入
+  记忆来源区域。
+- 已补充 `contentEditorMinimumTopBoundary`（当前 148pt），`maximumEditorHeight` 现在取
+  比例边界与绝对最小安全线的较大值；Card Editor 自己监听键盘 frame，将候选 sibling 和
+  四区内部滚动视口锁在同一容器内，并把超出键盘上沿的内容裁切在视口内。这只约束
+  Card Editor 容器，不改变 Renderer、布局引擎或持久化。完全展开时顶部以该安全线对齐记忆
+  来源模块的顶部边界。
+- 需要以本次增量签名包在已解锁设备上复测键盘态；上一版签名包虽已安装并成功启动，
+  但该录屏仍显示旧的比例边界行为。
+
+### UI-17PM-016 候选 sibling 与完全展开视口（2026-08-07）
+
+- 候选模块区不再与四区编辑共享 overlay 的同一坐标层，而是作为 Card Editor 内的固定
+  sibling 放在垂直滚动视口之前；候选区固定 116pt，四区输入与底部说明在其下方独立滚动并
+  严格裁切在编辑器可用高度内。
+- `V1CardEditorOverlay` 以 `maximumEditorHeight` 填满“记忆来源边界/148pt 安全线”与键盘
+  或底部安全区之间的可用空间。这样完全展开时 Card Editor 顶部不会突破 Renderer 与记忆
+  来源模块，键盘只减少中间四区的可见视口。
+
+### UI-17PM-016 双模式编辑交互（2026-08-07）
+
+- 录入框点击不再自动打开候选模块；它只负责建立当前文字编辑区域和键盘焦点。Card Editor
+  顶部新增独立的“＋模块”按钮，只有存在有效活动区域时可用。
+- 点击“＋模块”会保留当前活动区域/文字节点上下文、收回键盘，再打开 116pt 候选区；选中
+  后插入并立即收起候选区，不自动重新弹键盘。点击另一个录入区域或四区空白时，候选区
+  自动收起，用户再次点入录入框即可继续文字编辑。
+- `V1ModulePanelCoordinator.State` 现在区分 `focusedRegion`（文字/插入上下文）与
+  `activeRegion`（候选面板展示状态），避免用同一个可选区域同时代表焦点和候选窗口。
+- 双模式契约与模块协调器聚焦测试通过；本轮仍不触及 Memory Engine、Layout Engine、
+  Renderer、Export、PhotoKit、持久化或生产认证边界。
+
+### UI-17PM-016 Card Editor 内部视口第一刀（2026-08-07）
+
+- 针对真机反馈中“展开候选模块后 sheet 仍被键盘抬到顶部”的现象，撤回仅依赖键盘态
+  detent 的比例补丁，改为 Card Editor 内部管理键盘可见空间：保持单一 0.58 内容
+  detent，移除键盘通知监听和 `.ignoresSafeArea(.keyboard, edges: .bottom)`，并给
+  编辑内容增加底部安全区内边距。候选层仍固定在编辑页内部顶部，不参与高度计算。
+- 稳定性契约、模块协调器聚焦测试、`git diff --check` 和 PhotoMemoiOS 无签名 iOS
+  Debug 构建通过。随后以签名 Debug 构建覆盖安装到目标 iPhone 17 Pro Max 并启动
+  `com.serydoo.PhotoMemo.iOS`，未卸载应用或清除本地数据；启动快照为
+  `/tmp/PhotoMemo-UI17PM016-device-launch.png`。键盘态最高边界、四区视口、候选区
+  和光标插入仍待用户在真机人工验证。未推送 GitHub，`TX-001`、`BP-001` 与
+  `FAIL (Conditional)` 生产认证状态不变。
+
+### UI-17PM-016 双模式入口验证补充（2026-08-07）
+
+无签名 iOS Debug 构建、签名 `generic/platform=iOS` 构建、聚焦契约测试和
+`git diff --check` 均通过。目标 iPhone 17 Pro Max 的 UDID
+`863C2747-6742-5E93-B715-6F89DBF90B31` 当前由 `devicectl` 报告为 `unavailable`，
+所以签名包已生成但尚未覆盖安装；恢复连接后继续原地安装，不卸载应用、不清除本地数据。
+TX-001、BP-001 仍未关闭，生产认证继续保持 `FAIL (Conditional)`。
+
+### UI-17PM-016 模块胶囊退格删除（2026-08-07）
+
+本轮仅收敛组合录入面：移除模块胶囊内的删除按钮，并将胶囊高度压缩到 `34pt`。新增
+`V1DraftMutationCoordinator.removePreviousComposedItem`，在文字节点光标位于起点且左侧紧邻
+非文字节点时，由系统键盘退格完成模块删除；普通文本删除、活动文字节点焦点、Renderer 实时
+刷新与右下照片说明来源保持不变。四区滚动、Card Editor 顶部边界、键盘避让和候选模块层未改动。
+
+相关聚焦测试、iOS Debug 构建、签名构建和 `git diff --check` 均通过。签名包已覆盖安装并启动
+到目标 iPhone 17 Pro Max；当前设备停留在系统解锁界面，真机退格删除和最终视觉验收仍待用户确认。
+TX-001、BP-001 仍未关闭，生产认证继续保持 `FAIL (Conditional)`。
+
+目标设备随后恢复为 `available (paired)`；签名 iOS Debug 包已原地覆盖安装并成功启动
+`com.serydoo.PhotoMemo.iOS`。未卸载应用、未清除手机本地数据，真机快照为
+`/tmp/PhotoMemo-UI17PM016-double-mode-installed.png`。快照仅证明安装、启动和当前编辑页
+容器可见，候选点选、光标插入、键盘互斥和四区滚动仍需用户在真机完成逐项人工验收。
 
 ## Current Local Packaging State
 
@@ -16,6 +208,81 @@ Last updated: 2026-08-06
   evidence remains open under `TX-001`. `BP-001` 48MP/RAW peak-memory evidence
   and superseding production certification also remain open. The 2026-07-20
   verdict remains `FAIL (Conditional)`.
+
+## 2026-08-06 P2 iPhone 17 Pro Max UI Rhythm Pass
+
+- Consolidated the physical-device feedback into one bounded UI pass. Shared
+  section cards now use a 44pt minimum header, 10pt header-to-content spacing,
+  and 12pt module rhythm, with accessibility sizes allowed to grow naturally.
+- Tightened the Configuration Center selection rows by moving anchor counts and
+  Logo state into the left subtitle; the Settings `MemoMark+` benefits action
+  now aligns to the primary status line at standard text sizes and keeps a
+  vertical accessibility fallback.
+- Added the scoped dashed separator and darker compatibility guidance on the
+  Output page, shortened the Chinese Photo Description copy to use `图库`, and
+  kept `Apple Photos` in English localization and technical boundaries.
+- Stabilized the expression-subject title outside its Menu, made the subject
+  statistics strip full width, and gave the destructive object action a bordered
+  44pt target without changing state, persistence, or delete confirmation.
+- The unsigned generic-iOS Debug build passed, and the focused UI contract run
+  passed all `47` selected tests. Physical-device portrait, Dynamic Type,
+  VoiceOver, dark-mode, and Apple Photos behavior checks remain for manual
+  acceptance; this pass does not close `TX-001`, `BP-001`, or production
+  certification, which remains `FAIL (Conditional)`.
+
+## 2026-08-06 P2 Large Card Header Density Follow-up
+
+- Refined the shared static `V1TitledSectionCard` title area after clarifying
+  that the remaining issue was the combined space above and below the title,
+  not only the title row's minimum height. Static headers now use a 28pt
+  minimum, 6pt header-to-content spacing, and 10pt vertical card padding.
+- The horizontal card padding remains 14pt. Configuration and disclosure
+  controls continue to use the shared 44pt minimum interactive height, and a
+  trailing interactive control can still determine the actual header height.
+- The latest automatically signed generic iOS Debug build for arm64 passed.
+  `git diff --check` passed. The focused test runner could not complete on this
+  Mac because the iOS test target is not compatible with the available
+  simulator and the macOS test runner stalled during worker initialization.
+- The physical `iPhone7` iPhone 17 Pro Max is currently paired but
+  `unavailable`, so this follow-up is awaiting manual visual confirmation on
+  the device. It does not close `TX-001`, `BP-001`, or production certification,
+  which remains `FAIL (Conditional)`.
+
+## 2026-08-06 P2 Subject Statistics And Delete Row Follow-up
+
+- Kept the shared `可用配置` and `累计完成` strip at the bottom of the
+  Memory Subject overview, centered its contents, and added the restrained
+  closing line `美好的回忆慢慢品味！`. The edit flow no longer inserts this
+  overview-only summary, so editing remains focused on identity and anchors.
+- Replaced the edit-flow delete control's small bordered button with a full-
+  width white rounded action row modeled on the Contacts editor reference:
+  leading red label, subtle hairline, and a 44pt minimum interactive target.
+  The existing destructive confirmation, deletion callback, and persistence
+  behavior are unchanged.
+- The automatically signed generic iOS Debug build for arm64 passed and
+  `git diff --check` passed. The resulting `2.0.3 (70)` app was installed and
+  launched successfully on the paired physical `iPhone7` iPhone 17 Pro Max;
+  visual acceptance of this pass remains pending manual review. `TX-001`,
+  `BP-001`, and production certification are unchanged; certification remains
+  `FAIL (Conditional)`.
+
+## 2026-08-06 P2 Cross-Page Card Header Rhythm Follow-up
+
+- Compared the Configuration Center's `记忆来源` and `卡片布局与内容`
+  cards with the bordered cards on the Save and Progress pages. The mismatch
+  was real: Configuration Center used a separate 44pt/14pt/10pt title rhythm,
+  while static Save and Progress card headers used the tighter shared rhythm.
+- Consolidated all bordered large-card title rows onto one shared contract:
+  28pt static header minimum, 6pt header-to-content spacing, and 10pt
+  vertical card padding. A real trailing interactive control still retains its
+  own 44pt minimum target and can expand the row naturally.
+- The change is layout-only. It does not alter configuration state, disclosure
+  behavior, persistence, Renderer, Layout Engine, or Save/Progress actions.
+  `git diff --check` and the latest automatically signed arm64 iOS Debug build
+  passed; the resulting app was installed and launched on the paired physical
+  `iPhone7` iPhone 17 Pro Max. Manual visual acceptance remains pending.
+  `TX-001`, `BP-001`, and production certification remain unchanged, with
+  certification still `FAIL (Conditional)`.
 
 ## 2026-08-06 MemoMark 2.0.3 (70) Source Checkpoint
 
@@ -20970,6 +21237,23 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   the device to be unlocked and is tracked separately from install/launch
   evidence. No simulator was used.
 
+## 2026-08-06 Compact Single-Row And Identity-Field Follow-up
+
+- Standard compact information rows now use `6pt` vertical padding through the
+  cross-platform `ConfigurationUI` contract. Configuration summaries, Home and
+  Memory Subject navigation rows, and anchor entry rows reuse the same rhythm;
+  ordinary tappable rows remain at least `44pt` high.
+- Memory Subject identity inputs now use a `48pt` minimum, while clear buttons
+  remain `44pt` targets and accessibility text can still expand naturally.
+  The `记忆表达主体` Menu value and chevron now use `Color.accentColor`.
+- Memory Subject time-anchor rows use a `52pt` standard minimum for their
+  two-line content and retain accessibility growth. The Home `当前任务` card
+  remains a separate processing status surface with its progress bar, status
+  accessibility value, and transient presentation lifecycle unchanged.
+- Focused `IPhoneResponsiveLayoutContractTests` passed. The signed arm64 iOS
+  Debug build passed and was installed and launched on the paired iPhone 17 Pro
+  Max without clearing local data. Manual visual confirmation remains open.
+
 ## 2026-07-29 Settings Follow-up And Device Delivery
 
 - The Settings “重新查看欢迎说明” action now closes Settings and opens the
@@ -20992,3 +21276,209 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   the device screen is unlocked; no restart or simulator operation is required.
 - Further language-system expansion is deferred for a dedicated follow-up,
   per the current product review direction.
+
+## 2026-08-06 Card-Content Module Editing Deferred
+
+- Per product direction, the UI-17PM-013 through UI-17PM-016 card-content module
+  editing experiments were reverted to the established card-content editor and
+  nested module-library behavior. The feature slice is deferred; no new inline
+  candidate surface, toolbar module entry, compact capsule catalog, or focus
+  prompt remains active.
+- The restoration is limited to the card-content editing surface and its source
+  contracts. Configuration Center polish outside this slice remains untouched;
+  Memory Engine, Layout Engine, Renderer, Export, PhotoKit, persistence, and
+  local device data were not changed.
+- TX-001 and BP-001 remain open. The superseding production certification is
+  still required, and the production verdict remains FAIL (Conditional).
+
+## 2026-08-07 Logo Row Subtitle Height Correction
+
+- The Configuration Center card-layout Logo row now keeps only the stable
+  description `让卡片留下你的标识。` in its subtitle. The selected Logo menu
+  result is no longer appended after the sentence separator, so this row uses
+  the same single-line summary rhythm as the neighboring Card Content and
+  More Information rows.
+- The Logo menu, logo preview, persisted selection, custom-logo handling, and
+  card-content editor were not changed. The now-unused subtitle detail path
+  was removed from the Configuration Center option-list boundary.
+- The focused `V1ConfigurationOptionListContractTests` and
+  `IPhoneResponsiveLayoutContractTests` passed (49 tests total). The generic
+  and signed iOS Debug builds passed, `git diff --check` passed, and the signed
+  2.0.3 (70) build was installed in place and launched on the paired iPhone 17
+  Pro Max without uninstalling the app or clearing local data.
+- TX-001 and BP-001 remain open. Production certification remains FAIL
+  (Conditional).
+
+## 2026-08-07 UI-17PM-016 胶囊轻量化与候选入口合并
+
+- 胶囊高度由 `34pt` 进一步收敛到 `30pt`，输入行同步压缩到约 `42pt`；保留整行命中区域，避免
+  视觉压缩影响光标定位。模块与文字节点间距收紧为 `1pt`。
+- 前置文字在未自定义时继续保持空白，不自动填入示例内容。
+- 顶部“＋模块”现在同时承担展开/收起候选区的职责；候选面板移除右上角独立关闭符号，分类仍按
+  两行横向滑动展示；有更多模块时底部提示线加长到 `34pt`。
+- 活动文字节点在键盘收起、候选区关闭后保留轻量插入位置提示。字符级跨胶囊拖动不在本 Slice 内，
+  需要统一 TextKit 文本流后再单独设计，避免破坏当前四区草稿/持久化边界。
+- 聚焦测试、`git diff --check`、无签名 iOS Debug 构建、签名 iOS Debug 构建通过；签名包已原地覆盖
+  安装到 `863C2747-6742-5E93-B715-6F89DBF90B31`，未卸载应用、未清除本地数据。设备当前锁屏，
+  胶囊高度、入口切换、键盘退格和插入提示仍需解锁后的人工验收。
+- 未推送 GitHub；`TX-001`、`BP-001` 仍未关闭，生产认证继续保持 `FAIL (Conditional)`。
+
+## 2026-08-07 UI-17PM-016 空节点原生化与键盘间隙修正
+
+- 纯模块开头不再渲染前置空输入节点，预设模块直接左靠齐；空文字节点仍保留原生输入命中区，
+  但不显示“短语”占位文案或蓝色占位底色。
+- 四个区域标题回到各自录入框上方左对齐，录入框获得完整横向宽度；四区内容继续由独立垂直
+  ScrollView 管理，Renderer 和候选区边界未改变。
+- Card Editor 背景层覆盖到底部键盘避让空间，避免键盘上方露出底层“保存当前配置”按钮；编辑内容
+  仍限制在键盘上沿可用视口内。
+- 聚焦契约测试和草稿退格测试通过；`git diff --check` 通过；无签名 iOS Debug 构建通过；签名包已
+  原地覆盖安装到 `863C2747-6742-5E93-B715-6F89DBF90B31`，数据库序列 `3168`。设备随后锁屏，
+  仍需解锁复测纯模块左靠齐、空节点、键盘间隙与四区滚动。
+- 未推送 GitHub；未卸载应用、未清除本地数据；`TX-001`、`BP-001` 仍未关闭，生产认证继续保持
+  `FAIL (Conditional)`。
+
+## 2026-08-07 Inline Text-and-Module Composer Revision
+
+- Reframed the card-content composer as one continuous inline editing surface:
+  text segments and module capsules now sit in the same bordered input area,
+  while the former left and right standalone literal-field chrome is removed.
+- The module capsule keeps its removal button inside the capsule at the
+  top-trailing corner. The contained 44pt control is allowed to establish the
+  composer row's compact height rather than floating outside the module.
+- Added explicit guidance that users can freely enter text and place modules
+  between text segments. Existing draft item ordering, active text insertion,
+  module insertion, removal callbacks, and resolved preview output remain
+  unchanged.
+- The focused `IPhoneResponsiveLayoutContractTests` and
+  `V1ConfigurationOptionListContractTests` passed (50 tests total). Generic
+  and signed iOS Debug builds passed, `git diff --check` passed, and the
+  signed 2.0.3 (70) build was installed in place and launched on the paired
+  iPhone 17 Pro Max without uninstalling the app or clearing local data.
+- TX-001 and BP-001 remain open. Production certification remains FAIL
+  (Conditional).
+
+## 2026-08-07 Card-Content Module Chip Height Follow-up
+
+- The inline card-content module chip now uses the same `subheadline` type
+  scale and `6pt` vertical padding baseline as the neighboring literal input
+  fields. Its removal affordance is rendered as a top-trailing overlay rather
+  than participating in the chip's horizontal layout, preserving the 44pt
+  accessibility target without allowing the remove control to set the row
+  height.
+- The module title remains single-line, the chip keeps its existing semantic
+  color and interaction callback, and the card-content focus, insertion,
+  module library, and preview flows are unchanged.
+- The focused `IPhoneResponsiveLayoutContractTests` and
+  `V1ConfigurationOptionListContractTests` passed (50 tests total). The
+  generic and signed iOS Debug builds passed, `git diff --check` passed, and
+  the signed 2.0.3 (70) build was installed in place and launched on the
+  paired iPhone 17 Pro Max without uninstalling the app or clearing local
+  data.
+- TX-001 and BP-001 remain open. Production certification remains FAIL
+  (Conditional).
+
+## 2026-08-06 Card-Content Region Preview Width Follow-up
+
+- Kept the established card-content editor, module library, input focus, and
+  top preview behavior unchanged. The scoped adjustment applies only to the
+  completed preview value in the four region rows.
+- Region previews now use the available row width as their measurement basis:
+  short values remain fully visible, the value column is right-aligned, and
+  values reaching 75% of the row width keep the same body/semibold scale as
+  the region title and use native tail truncation while preserving the title,
+  subtitle, and disclosure chevron.
+- Added a source contract for the bounded right-aligned preview column. The
+  focused 48-test suite passed, `git diff --check` passed, and both generic
+  and signed iOS Debug builds passed. The signed 2.0.3 (70) build was
+  installed in place and launched on the paired iPhone 17 Pro Max without
+  uninstalling the app or clearing local data.
+- The four-region long-value visual traversal was not completed in this pass;
+  manual acceptance remains limited to the captured device launch evidence.
+  TX-001 and BP-001 remain open, and production certification remains FAIL
+  (Conditional).
+
+## 2026-08-07 UI-17PM-016 原生光标收敛与键盘上方收起入口
+
+- 四个区域保持独立编辑流；移除分段输入层额外绘制的蓝色“当前插入位置”竖标，避免多个区域残留
+  看似光标的提示，真实 caret 由当前获得焦点的原生输入控件呈现。
+- 键盘出现时，Card Editor 在可视编辑区域底部、键盘上方显示独立的系统键盘收起按钮。按钮只收起
+  键盘，不关闭编辑器、不清空草稿、不改变模块候选上下文；原有键盘工具栏入口仍保留。
+- 聚焦 49 项测试通过，`git diff --check` 通过；无签名 iOS Debug 构建和签名 `PhotoMemoiOS` Debug
+  构建通过。签名包已原地覆盖安装到目标 iPhone 17 Pro Max（数据库序列 `3176`）并成功启动。
+- 本轮未卸载应用、未清除本地数据、未推送 GitHub。用户仍需在真机上人工确认按钮位置、四区滚动、
+  键盘收起后继续编辑和候选插入；`TX-001`、`BP-001` 仍未关闭，生产认证继续为 `FAIL (Conditional)`。
+
+## 2026-08-07 UI-17PM-016 键盘边界贴合与插入前锚点
+
+- 收起键盘按钮按系统键盘真实顶部坐标定位，直接贴合键盘上沿；移除额外横线和空白带，避免 Card
+  Editor 与键盘之间出现底部保存操作或额外行高。
+- 模块胶囊压缩为 `28pt`，文字使用 footnote 级别、内边距收紧；四区仍各自维护原生输入和退格删除。
+- 候选区展开期间，当前区域保留一个低对比度的单一插入锚点；点选后锚点跟随新插入胶囊。该提示不冒充
+  跨多个文本节点的字符级 caret，本轮不迁移 TextKit。
+- 编辑器契约与草稿变更测试直接运行通过，`git diff --check` 通过；无签名和签名 iOS Debug 构建、
+  签名校验均通过。目标 17 Pro Max 已恢复可用，签名包已原地覆盖安装并启动，数据库序列 `3192`。
+- 未卸载应用、未清除本地数据、未推送 GitHub；`TX-001`、`BP-001` 仍未关闭，生产认证保持
+  `FAIL (Conditional)`。
+
+## 2026-08-07 UI-17PM-016 末端插入与底部区域键盘可见性
+
+- 收起键盘按钮进一步收紧为 `38pt`，以实际键盘顶部为基准向下半贴合，避免按钮自身撑出额外底部行高。
+- 模块-only 区域右侧的临时文字输入在获得焦点时清除旧的活动文字锚点；候选展开时末端显示单一插入锚点，
+  空文字节点的锚点改为显示在节点前，避免已有胶囊右侧插入时复用旧位置而向左跳动。
+- 四个区域仍独立；`ScrollViewReader` 按区域定位，且在键盘 frame 变化后再次定位，保证第四区输入框在键盘弹出时保持可见。
+- 编辑器契约与草稿变更测试通过，`git diff --check` 通过；新的签名 iOS Debug 构建、签名校验和目标设备覆盖安装均通过，
+  数据库序列为 `3200`，应用已成功启动。
+- 未卸载应用、未清除本地数据、未推送 GitHub；`TX-001`、`BP-001` 仍未关闭，生产认证保持 `FAIL (Conditional)`。
+## 2026-08-07 UI-17PM-016 窗口坐标键盘边界收敛
+
+- Card Editor 保持页面内受控 overlay、四区独立编辑、内嵌候选区、28pt
+  胶囊和 38pt 键盘收起按钮；本轮没有重新设计或修改数据/渲染链路。
+- 键盘占用不再依赖 `UIScreen.main.bounds`，改由覆盖层自身全局几何底边与
+  系统键盘 frame 计算，并在几何变化时更新。它只影响键盘上沿贴合与编辑器
+  内部可用空间，不修改 Memory Engine、Layout Engine、Renderer、Export、
+  PhotoKit 或持久化。
+- 新契约完成 RED/GREEN；编辑器聚焦契约与 `V1DraftMutationCoordinatorTests`
+  通过，屏幕/设备模型分支契约恢复通过。完整布局契约仍保留既有
+  `rootDelegatesSystemPresentationAndRuntimeCoordination()` 失败；本轮执行期间
+  另出现不属于本 Slice 的新增 TextKit A 区试点契约
+  `onlySlotAPilotsUnifiedTextKitEditor()` 失败，未在本轮实现或修改该并行事项。
+- `git diff --check`、无签名与签名 iOS Debug 构建、签名校验通过；签名包已
+  原地覆盖安装并启动目标 iPhone 17 Pro Max，版本 `2.0.3 (70)`，安装数据库
+  序列 `3208`。未卸载、未清除设备数据、未推送 GitHub。
+- 人工验收仍需覆盖第四区键盘可见性、按钮与键盘上沿贴合、纯模块右侧连续
+  插入、候选区与 Renderer/标题/卡片边界。跨模块字符级光标与拖动留给后续
+  TextKit 架构切片；`TX-001`、`BP-001` 未关闭，生产认证仍为
+  `FAIL (Conditional)`。
+# 2026-08-07 UI-17PM-016 slotA trailing insertion follow-up
+
+- SlotA TextKit pilot now persists a trailing-insertion intent across the candidate-panel SwiftUI update path and treats taps in the right-side trailing zone as an explicit document-end selection.
+- Signed Debug build installed and launched on the target iPhone 17 Pro Max, database sequence 3352. `git diff --check` passed. Physical confirmation remains limited to right-edge insertion and repeated-module insertion.
+
+## 2026-08-07 UI-17PM-016 TextKit trace root cause
+
+- A live device trace showed `UITextView.selectedRange == {6,0}` immediately before module insertion while `V1TextKitEditorSession.selectedRange` was still `{0,0}`; `insert` therefore used `{0,0}` and prepended the attachment.
+- The adapter now synchronizes the session selection from the live UITextView at the command boundary before calculating the replacement range. This is a state-consistency fix, not another trailing-position heuristic.
+
+- SlotA visual alignment follow-up: module attachment baseline now derives from the editor font metrics, while capsule icon/title content is vertically centered from its measured line height. Physical-device visual feedback reports that text and modules now appear acceptably aligned and vertically centered.
+
+- SlotA lightweight native UI pass: the editor row now uses a quieter grouped-surface background and lighter stroke; the candidate module surface was reduced to a compact 84pt grouped-surface tool area with lower shadow weight and tighter row spacing. TextKit selection and insertion behavior were not changed.
+- Signed Debug build installed/launched on the target iPhone 17 Pro Max, database sequence `3400`; `git diff --check` passed. SlotA remains pending final manual confirmation of candidate overflow and keyboard behavior before freeze.
+
+## 2026-08-08 UI-17PM-016 slotA freeze baseline
+
+- Review of four physical-device screenshots confirms the editor card and top preview card share the same outer horizontal bounds; the perceived width difference comes from inner padding and the stronger white input-row boundary, not an outer layout violation.
+- The slotA baseline is now frozen for migration purposes: lightweight grouped input surface, content-boundary trailing tap, TextKit attachment modules, live draft projection, and compact candidate surface. Future visual changes require new evidence; remaining work moves to extracting a region-agnostic TextKit adapter for slotB/slotC/slotD.
+- Migration guardrail: `V1ConfigurationDraftProjection` continues to project `regionDrafts[.slotD]` into the template right-bottom area, while `RecordCardBuildService.resolvedPhotoDescription(from:configuration:)` continues to read the rendered right-bottom block unless an explicit photo-description override is enabled. Any TextKit migration must preserve this slotD -> rightBottom -> photo description path.
+- TextKit migration preparation: the frozen slotA editor is now parameterized by `CardRegion` and retains a slotA compatibility alias, removing the hard-coded region assumption before slotB/slotC/slotD adoption. No additional region has been routed through TextKit yet.
+- SlotB migration slice is now routed through the same parameterized TextKit session and its own command bus; slotC/slotD remain on the legacy editor. Signed Debug build installed/launched on the target device, database sequence `3424`; `git diff --check` passed. SlotD photo-description mapping remains unchanged.
+- SlotC migration slice is now routed through the same parameterized TextKit session and its own command bus; slotD remains on the legacy editor to protect the right-bottom/photo-description contract. Signed Debug build installed/launched, database sequence `3432`; `git diff --check` passed.
+- Module panel interaction pause: `focusRegion` now preserves an already-open module surface and retargets it to the newly focused region; the panel only closes through the explicit toolbar toggle, module selection, close action, or editor reset. Added a coordinator contract for this manual-toggle behavior. Signed Debug build installed/launched, database sequence `3440`; focused macOS test execution was blocked by missing Mac provisioning, while iOS build and `git diff --check` passed.
+- Follow-up root cause: `V1RegionEditorCluster` still had a parent `ScrollView` `simultaneousGesture(TapGesture)` that called `onCloseModuleLibrary()` for every region tap, overriding the coordinator's manual-toggle state. The global gesture was removed; explicit close paths remain. Signed Debug build installed/launched, database sequence `3448`; `git diff --check` passed.
+- Editor container stability pass: added an explicit downward drag gesture to the card-editor header/handle area for dismiss, without attaching a global scroll gesture; reduced TextKit text-container vertical insets from 10pt to 6pt so the fixed 42pt row and 28pt attachment share one stable line measure. Signed Debug build installed/launched, database sequence `3456`; `git diff --check` passed. slotD migration remains paused.
+- SlotD unified TextKit migration is now routed through its own command bus and the
+  parameterized `V1TextKitSessionEditor`. The existing draft projection and
+  right-bottom-to-photo-description path remain unchanged. Signed Debug build was
+  installed to the target iPhone 17 Pro Max, database sequence `3560`; initial
+  physical-device smoke test reported no blocking issue. Full slotD acceptance
+  still requires explicit verification of insertion, attachment deletion, preview
+  refresh, and saved photo-description output.

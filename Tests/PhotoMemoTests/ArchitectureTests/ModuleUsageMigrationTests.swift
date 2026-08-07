@@ -87,14 +87,14 @@ struct ModuleUsageMigrationTests {
         )
     }
 
-    @Test("categoryTitle preserves current brand versus EXIF labeling")
+    @Test("categoryTitle distinguishes smart expression from EXIF labeling")
     func categoryTitlePreservesCurrentLabeling() {
 
         #expect(
             V1ModuleUsageTracker
             .categoryTitle(
                 for: .captureSummary
-            ) == "时光记"
+            ) == "智能表达"
         )
         #expect(
             V1ModuleUsageTracker

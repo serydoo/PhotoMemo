@@ -38,6 +38,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
     let detail: String?
     let systemImage: String?
     let showsDivider: Bool
+    let usesWideTrailingPreview: Bool
 
     @Binding var isExpanded: Bool
     @ViewBuilder var content: Content
@@ -49,6 +50,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
         detail: String? = nil,
         systemImage: String?,
         showsDivider: Bool = true,
+        usesWideTrailingPreview: Bool = false,
         isExpanded: Binding<Bool>,
         @ViewBuilder content: () -> Content
     ) {
@@ -58,6 +60,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
         self.detail = detail
         self.systemImage = systemImage
         self.showsDivider = showsDivider
+        self.usesWideTrailingPreview = usesWideTrailingPreview
         self._isExpanded = isExpanded
         self.content = content()
     }
@@ -124,7 +127,35 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
         }
     }
 
+    @ViewBuilder
     private var horizontalDisclosureLabel: some View {
+        if usesWideTrailingPreview {
+            GeometryReader { proxy in
+                let availableWidth = proxy.size.width
+
+                horizontalDisclosureLabelContent(
+                    maxPreviewWidth:
+                        availableWidth * 0.75
+                )
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity
+                )
+            }
+            .frame(
+                minHeight:
+                    ConfigurationUI.minimumInteractiveHeight
+            )
+        } else {
+            horizontalDisclosureLabelContent(
+                maxPreviewWidth: nil
+            )
+        }
+    }
+
+    private func horizontalDisclosureLabelContent(
+        maxPreviewWidth: CGFloat?
+    ) -> some View {
         HStack(alignment: .center, spacing: 12) {
             if let systemImage {
                 leadingIcon(systemImage)
@@ -145,28 +176,48 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
 
             Spacer(minLength: 12)
 
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(value)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                if let detail,
-                   !detail.isEmpty {
-                    Text(detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
+            if let maxPreviewWidth {
+                trailingValueColumn
+                    .frame(
+                        maxWidth: maxPreviewWidth,
+                        alignment: .trailing
+                    )
+            } else {
+                trailingValueColumn
+                    .frame(
+                        width:
+                            ConfigurationUI
+                            .compactTrailingControlWidth,
+                        alignment: .trailing
+                    )
             }
-            .frame(
-                width: ConfigurationUI.compactTrailingControlWidth,
-                alignment: .trailing
-            )
 
             disclosureChevron
+        }
+    }
+
+    private var trailingValueColumn: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            Text(value)
+                .font(
+                    usesWideTrailingPreview
+                    ? .body.weight(.semibold)
+                    : .subheadline.weight(.medium)
+                )
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .multilineTextAlignment(.trailing)
+                .truncationMode(.tail)
+
+            if let detail,
+               !detail.isEmpty {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .multilineTextAlignment(.trailing)
+                    .truncationMode(.tail)
+            }
         }
     }
 

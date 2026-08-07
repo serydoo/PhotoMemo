@@ -164,6 +164,28 @@ struct V1DraftRuntimeCoordinator {
         )
     }
 
+    @discardableResult
+    func removePreviousComposedItem(
+        before textItemID: UUID,
+        from region: CardRegion
+    ) -> Bool {
+        let update =
+            V1DraftMutationCoordinator
+            .removePreviousComposedItem(
+                before: textItemID,
+                from: region,
+                in: mutationState,
+                makeDefaultDraft:
+                    makeDefaultMutationDraft
+            )
+        guard !update.dirtyRegions.isEmpty else {
+            return false
+        }
+
+        applyMutationUpdate(update)
+        return true
+    }
+
     func insert(
         _ item: V1ContentItem,
         into region: CardRegion
@@ -179,6 +201,15 @@ struct V1DraftRuntimeCoordinator {
                     makeDefaultMutationDraft
             )
         )
+    }
+
+    func replaceDraft(_ draft: V1EditorDraft, for region: CardRegion) {
+        var viewState = loadViewState()
+        guard viewState.regionDrafts[region] != draft else { return }
+        viewState.regionDrafts[region] = draft
+        viewState.activeConfigurationStatus = .dirty
+        updateViewState(viewState)
+        refreshPreviewText(region, V1DraftBridge.previewDraft(from: draft))
     }
 
     func refreshPreview(

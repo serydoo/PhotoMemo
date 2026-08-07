@@ -1,73 +1,174 @@
 #if os(iOS) && !PHOTOMEMO_SHARE_EXTENSION
+import Foundation
 import SwiftUI
+import UIKit
 
 struct V1RegionEditorCluster: View {
 
-    let expansionBinding: (CardRegion) -> Binding<Bool>
+    @State private var pendingRevealRegion: CardRegion?
+
+    let slotATextKitCommandBus: V1TextKitCommandBus
+    let slotBTextKitCommandBus: V1TextKitCommandBus
+    let slotCTextKitCommandBus: V1TextKitCommandBus
+    let slotDTextKitCommandBus: V1TextKitCommandBus
+
     let draft: (CardRegion) -> V1EditorDraft
-    let resolvedText: (V1EditorDraft) -> String
-    let onFocus: () -> Void
+    let onFocus: (CardRegion) -> Void
     let onFocusTextItem: (CardRegion, V1ContentItem) -> Void
+    let onFocusTrailingText: (CardRegion) -> Void
     let onUpdateTextItem: (CardRegion, V1ContentItem, String) -> Void
+    let onReplaceDraft: (CardRegion, V1EditorDraft) -> Void
     let onPrependText: (CardRegion, String) -> Void
     let onAppendText: (CardRegion, String) -> Void
     let onRemoveItem: (CardRegion, V1ContentItem) -> Void
-    let onShowModules: (CardRegion) -> Void
+    let onRemovePreviousComposedItem: (CardRegion, UUID) -> Bool
+    let activeModuleRegion: CardRegion?
+    let modules: (CardRegion) -> [IOSInsertableModule]
+    let categoryTitle: (IOSInsertableModule) -> String
+    let valueText: (IOSInsertableModule) -> String
+    let insertionMarkerID: (CardRegion) -> UUID?
+    let showsInsertionMarkerAtEnd: (CardRegion) -> Bool
+    let onSelectModule: (IOSInsertableModule, CardRegion) -> Void
+    let onCloseModuleLibrary: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            IOSCompactEntryListGroup(
-                cornerRadius: ConfigurationUI.sheetPanelCornerRadius
-            ) {
-                ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
-                    let regionDraft = draft(region)
-
-                    V1RegionEditorCard(
-                        region: region,
-                        isExpanded: expansionBinding(region),
-                        showsDivider:
-                            region != CardRegion.memoryCardRegions.last,
-                        draft: regionDraft,
-                        resolvedText: resolvedText(regionDraft),
-                        onFocus: onFocus,
-                        onFocusTextItem: { item in
-                            onFocusTextItem(region, item)
-                        },
-                        onUpdateTextItem: { item, text in
-                            onUpdateTextItem(region, item, text)
-                        },
-                        onPrependText: { text in
-                            onPrependText(region, text)
-                        },
-                        onAppendText: { text in
-                            onAppendText(region, text)
-                        },
-                        onRemoveItem: { item in
-                            onRemoveItem(region, item)
-                        },
-                        onShowModules: {
-                            onShowModules(region)
-                        }
-                    )
-                }
+        VStack(spacing: 0) {
+            if let activeModuleRegion {
+                V1ModuleLibrarySurface(
+                    region: activeModuleRegion,
+                    modules: modules(activeModuleRegion),
+                    categoryTitle: categoryTitle,
+                    valueText: valueText,
+                    onSelectModule: { module in
+                        onSelectModule(module, activeModuleRegion)
+                    }
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .frame(height: V1ModuleLibrarySurface.fixedHeight)
+                .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+                .padding(.top, 8)
+                .zIndex(1)
             }
 
-            configurationGuide
-                .padding(.horizontal, 4)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        IOSCompactEntryListGroup(
+                            cornerRadius: ConfigurationUI.sheetPanelCornerRadius
+                        ) {
+                            ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
+                                let regionDraft = draft(region)
+
+                                if region == .slotA || region == .slotB || region == .slotC || region == .slotD {
+                                    V1SlotATextKitSessionEditor(
+                                        region: region,
+                                        draft: regionDraft,
+                                        commandBus: region == .slotA
+                                            ? slotATextKitCommandBus
+                                            : region == .slotB
+                                                ? slotBTextKitCommandBus
+                                                : region == .slotC
+                                                    ? slotCTextKitCommandBus
+                                                    : slotDTextKitCommandBus,
+                                        onFocus: {
+                                            pendingRevealRegion = region
+                                            onFocus(region)
+                                            reveal(region, using: proxy)
+                                        },
+                                        onDraftChange: { updatedDraft in
+                                            onReplaceDraft(region, updatedDraft)
+                                        }
+                                    )
+                                    .id(region)
+                                } else {
+                                V1RegionEditorCard(
+                                    region: region,
+                                    showsDivider:
+                                        region != CardRegion.memoryCardRegions.last,
+                                    draft: regionDraft,
+                                    onFocus: {
+                                        pendingRevealRegion = region
+                                        onFocus(region)
+                                        reveal(region, using: proxy)
+                                    },
+                                    onFocusTextItem: { item in
+                                        pendingRevealRegion = region
+                                        onFocusTextItem(region, item)
+                                        reveal(region, using: proxy)
+                                    },
+                                    onFocusTrailingText: {
+                                        pendingRevealRegion = region
+                                        onFocusTrailingText(region)
+                                        reveal(region, using: proxy)
+                                    },
+                                    onUpdateTextItem: { item, text in
+                                        onUpdateTextItem(region, item, text)
+                                    },
+                                    onPrependText: { text in
+                                        onPrependText(region, text)
+                                    },
+                                    onAppendText: { text in
+                                        onAppendText(region, text)
+                                    },
+                                    onRemoveItem: { item in
+                                        onRemoveItem(region, item)
+                                    },
+                                    onRemovePreviousComposedItem: { itemID in
+                                        onRemovePreviousComposedItem(region, itemID)
+                                    },
+                                    insertionMarkerID: insertionMarkerID(region),
+                                    showsInsertionMarkerAtEnd:
+                                        showsInsertionMarkerAtEnd(region)
+                                )
+                                .id(region)
+                                }
+                            }
+                        }
+
+                        editorFooterNote
+                    }
+                    .padding(.top, 12)
+                }
+                .padding(.bottom, 28)
+                .v1AdaptiveScrollContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
+                )
+                .scrollDismissesKeyboard(.never)
+                .frame(maxHeight: .infinity)
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: UIResponder.keyboardWillChangeFrameNotification
+                    )
+                ) { _ in
+                    guard let region = pendingRevealRegion else {
+                        return
+                    }
+                    reveal(region, using: proxy)
+                }
+            }
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+        .clipped()
+    }
+
+    private func reveal(
+        _ region: CardRegion,
+        using proxy: ScrollViewProxy
+    ) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(region, anchor: .center)
+            }
         }
     }
 
-    private var configurationGuide: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("写进卡片的内容")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text("卡片上的四个位置，都能写下你的话，也能放入照片里的时间、地点和拍摄信息。需要时，这段回忆也可以写进新照片的说明里。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+    private var editorFooterNote: some View {
+        Text("四个区域都可以自由组合文字和内容，编辑结果会实时同步到上方预览；右下内容也会写入照片说明。")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+            .padding(.top, 2)
     }
 }
 #endif

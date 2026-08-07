@@ -375,6 +375,47 @@ struct V1DraftMutationCoordinator {
         }
     }
 
+    static func removePreviousComposedItem(
+        before textItemID: UUID,
+        from region: CardRegion,
+        in state: State,
+        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
+    ) -> Update {
+        let currentDraft = draft(
+            for: region,
+            state: state,
+            makeDefaultDraft: makeDefaultDraft
+        )
+
+        guard let textIndex = currentDraft.items.firstIndex(
+            where: { $0.id == textItemID && $0.kind == .text }
+        ),
+        textIndex > 0,
+        currentDraft.items[textIndex - 1].kind != .text
+        else {
+            return Update(
+                state: state,
+                dirtyRegions: []
+            )
+        }
+
+        let update = updateDraft(
+            for: region,
+            in: state,
+            makeDefaultDraft: makeDefaultDraft
+        ) { draft in
+            draft.items.remove(at: textIndex - 1)
+            draft.normalizeTrailingTextInput()
+        }
+
+        var nextState = update.state
+        nextState.activeTextItemIDs[region] = textItemID
+        return Update(
+            state: nextState,
+            dirtyRegions: update.dirtyRegions
+        )
+    }
+
     static func insert(
         _ item: V1DraftMutationItem,
         into region: CardRegion,

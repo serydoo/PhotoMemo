@@ -114,6 +114,7 @@
 "module.literal_text" = "文字";
 "module.unsupported_content" = "无法识别的内容";
 "module.category.memory" = "时光记";
+"module.category.smart_expression" = "智能表达";
 "module.category.metadata" = "EXIF";
 
 "commerce.title" = "MemoMark+";
@@ -424,7 +425,7 @@
 "output.memory_write.custom.title" = "补充一句话";
 "output.memory_write.custom.description" = "把想补充的话，写在照片说明里。";
 "output.memory_write.default.title" = "照片说明";
-"output.memory_write.default.description" = "把这段回忆写进照片说明，方便之后在 Apple Photos 中找到它。";
+"output.memory_write.default.description" = "写进照片说明，方便之后在图库里找到。";
 "output.memory_write.custom.placeholder" = "写下想补充的话";
 "output.memory_write.preview.title" = "即将写下的内容";
 "output.memory_write.preview.custom_note" = "包含这段回忆和你补充的话。";
@@ -432,6 +433,8 @@
 
 "回忆正围绕谁展开。" = "回忆正围绕谁展开。";
 "让卡片留下你的标识。" = "让卡片留下你的标识。";
+"让卡片留下你的标识。 · %@" = "让卡片留下你的标识。 · %@";
+"回忆对象重要时刻 · %@" = "回忆对象重要时刻 · %@";
 "地点想怎样被写下。" = "地点想怎样被写下。";
 "地理显示" = "地理显示";
 "记忆表达" = "记忆表达";
@@ -448,6 +451,8 @@
 "表达预览" = "表达预览";
 "暂无表达预览" = "暂无表达预览";
 "记忆表达预览" = "记忆表达预览";
+"智能模块表达预览" = "智能模块表达预览";
+"暂无智能模块表达预览" = "暂无智能模块表达预览";
 "更多内容会根据实际需要逐步加入。" = "更多内容会根据实际需要逐步加入。";
 "探索不同组合，也欢迎告诉我们你的自定义想法。" = "探索不同组合，也欢迎告诉我们你的自定义想法。";
 "决定卡片里的内容与显示方式。" = "决定卡片里的内容与显示方式。";
@@ -563,7 +568,7 @@
 "想围绕谁" = "想围绕谁";
 "按这个重要时刻呈现时间变化" = "按这个重要时刻呈现时间变化";
 "完成设置" = "完成设置";
-"Apple Photos 对照片说明的显示与搜索支持，可能因 iOS 版本不同而有所差异。" = "Apple Photos 对照片说明的显示与搜索支持，可能因 iOS 版本不同而有所差异。";
+"图库中的照片说明显示和搜索能力，可能随 iOS 版本有所不同。" = "图库中的照片说明显示和搜索能力，可能随 iOS 版本有所不同。";
 "当前任务" = "当前任务";
 "基础资料" = "基础资料";
 "编辑对象身份与关系信息" = "编辑对象身份与关系信息";

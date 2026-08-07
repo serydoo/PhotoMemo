@@ -27,7 +27,7 @@ struct MemoryWriteOptionPresenterTests {
         #expect(presentation.defaultContentTitle == "照片说明")
         #expect(
             presentation.defaultContentDescription
-            == "把这段回忆写进照片说明，方便之后在 Apple Photos 中找到它。"
+            == "写进照片说明，方便之后在图库里找到。"
         )
         #expect(
             presentation.inputPlaceholder
@@ -68,7 +68,7 @@ struct MemoryWriteOptionPresenterTests {
         #expect(presentation.defaultContentTitle == "照片说明")
         #expect(
             presentation.defaultContentDescription
-            == "把这段回忆写进照片说明，方便之后在 Apple Photos 中找到它。"
+            == "写进照片说明，方便之后在图库里找到。"
         )
         #expect(
             presentation.resolvedTitle

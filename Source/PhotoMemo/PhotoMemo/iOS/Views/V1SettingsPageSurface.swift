@@ -125,27 +125,16 @@ struct V1SettingsPageSurface: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            VStack(spacing: V1SectionCardMetrics.sectionSpacing) {
                 memoMarkPlusSection
 
-                VStack(spacing: 12) {
-                    gettingStartedSection
-                    photoProcessingSection
-                }
-                .padding(.top, 18)
-
-                VStack(spacing: 12) {
-                    dataSafetySection
-                    feedbackSection
-                    communitySection
-                }
-                .padding(.top, 18)
-
-                VStack(spacing: 12) {
-                    interfacePreferencesSection
-                    aboutSection
-                }
-                .padding(.top, 18)
+                gettingStartedSection
+                photoProcessingSection
+                dataSafetySection
+                feedbackSection
+                communitySection
+                interfacePreferencesSection
+                aboutSection
 
                 Text(
                     localized(
@@ -158,7 +147,7 @@ struct V1SettingsPageSurface: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
-                .padding(.top, 24)
+                .padding(.top, 12)
                 .padding(.horizontal, 24)
             }
             .padding(.top, 16)
@@ -441,7 +430,7 @@ struct V1SettingsPageSurface: View {
 
     private var memoMarkPlusSection: some View {
         Button(action: onOpenMemoMarkPlus) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 13) {
                     ZStack {
                         RoundedRectangle(
@@ -479,32 +468,7 @@ struct V1SettingsPageSurface: View {
                     Spacer(minLength: 0)
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(memoMarkPlusStatus)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    Text(memoMarkPlusStatusDetail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                HStack(spacing: 6) {
-                    Spacer(minLength: 0)
-
-                    Text(
-                        localized(
-                            "commerce.settings.view_benefits",
-                            fallback: "查看权益"
-                        )
-                    )
-                    .font(.caption.weight(.semibold))
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                }
-                .foregroundStyle(Color.accentColor)
+                memoMarkPlusStatusRow
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
@@ -521,6 +485,58 @@ struct V1SettingsPageSurface: View {
         )
         .accessibilityHint(
             memoMarkPlusAccessibilityHint
+        )
+    }
+
+    @ViewBuilder
+    private var memoMarkPlusStatusRow: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                memoMarkPlusStatusText
+                memoMarkPlusBenefitsLabel
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        } else {
+            HStack(alignment: .top, spacing: 12) {
+                memoMarkPlusStatusText
+
+                Spacer(minLength: 0)
+
+                memoMarkPlusBenefitsLabel
+            }
+        }
+    }
+
+    private var memoMarkPlusStatusText: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(memoMarkPlusStatus)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Text(memoMarkPlusStatusDetail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var memoMarkPlusBenefitsLabel: some View {
+        HStack(spacing: 6) {
+            Text(
+                localized(
+                    "commerce.settings.view_benefits",
+                    fallback: "查看权益"
+                )
+            )
+            .font(.caption.weight(.semibold))
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+        }
+        .foregroundStyle(Color.accentColor)
+        .frame(
+            minHeight: ConfigurationUI.minimumInteractiveHeight,
+            alignment: .top
         )
     }
 
@@ -744,7 +760,10 @@ struct V1SettingsPageSurface: View {
             ),
             emphasis: .primary
         ) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(
+                alignment: .leading,
+                spacing: V1SectionCardMetrics.headerContentSpacing
+            ) {
                 Text(
                     localized(
                         "settings.overview.headline",
@@ -1635,7 +1654,10 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
         V1ConfigurationCardContainer(
             background: sectionBackground
         ) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(
+                alignment: .leading,
+                spacing: V1SectionCardMetrics.headerContentSpacing
+            ) {
                 Button {
                     withAnimation(disclosureAnimation) {
                         isExpanded.toggle()

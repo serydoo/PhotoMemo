@@ -17,7 +17,6 @@ struct V1ConfigurationOptionList: View {
     @Binding var logoMode: V1LogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
     let logoValue: String
-    let logoDetail: String
     let customLogoImagePath: String?
     let isOptimizingLogo: Bool
     let timeAnchorTitle: String
@@ -42,7 +41,10 @@ struct V1ConfigurationOptionList: View {
     let onOpenRegionContent: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(
+            alignment: .leading,
+            spacing: V1SectionCardMetrics.sectionSpacing
+        ) {
             memorySourceSection
 
             groupedSection(
@@ -85,7 +87,10 @@ struct V1ConfigurationOptionList: View {
     }
 
     private var memorySourceSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(
+            alignment: .leading,
+            spacing: V1SectionCardMetrics.cardHeaderContentSpacing
+        ) {
             memorySourceSectionHeader
 
             VStack(spacing: 0) {
@@ -121,7 +126,8 @@ struct V1ConfigurationOptionList: View {
                 .stroke(ConfigurationUI.faintHairline)
             )
         }
-        .padding(14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)
         .v1CardChrome()
     }
 
@@ -147,6 +153,10 @@ struct V1ConfigurationOptionList: View {
         adaptiveSectionHeader(
             title: "记忆来源",
             subtitle: "你想围绕谁开展回忆。"
+        )
+        .frame(
+            minHeight: V1SectionCardMetrics.cardHeaderMinimumHeight,
+            alignment: .leading
         )
     }
 
@@ -201,7 +211,7 @@ struct V1ConfigurationOptionList: View {
                 .foregroundStyle(Color.accentColor)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 13)
+        .padding(.vertical, ConfigurationUI.compactRowVerticalPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(localized("当前记忆来源"))
         .accessibilityValue(memorySourceSummary)
@@ -239,9 +249,9 @@ struct V1ConfigurationOptionList: View {
         configurationRow(
             icon: logoIcon,
             title: "Logo 标识",
-            subtitle: "让卡片留下你的标识。",
+            subtitle: logoSubtitle,
             value: logoValue,
-            detail: logoDetail,
+            detail: "",
             showsTrailingChevron: false
         ) {
             HStack(spacing: 6) {
@@ -309,12 +319,12 @@ struct V1ConfigurationOptionList: View {
     private var timeAnchorRow: some View {
         configurationTextRow(
             title: "时间锚点",
-            subtitle: "回忆对象重要时刻",
+            subtitle: timeAnchorSubtitle,
             value:
                 availableTimeAnchors.isEmpty
                 ? "暂无"
                 : timeAnchorTitle,
-            detail: timeAnchorCountDetail,
+            detail: "",
             showsTrailingChevron: false
         ) {
             if availableTimeAnchors.isEmpty {
@@ -396,13 +406,13 @@ struct V1ConfigurationOptionList: View {
             .split(separator: "｜", omittingEmptySubsequences: true)
             .map(String.init)
 
-        return lines.isEmpty ? [localized("暂无表达预览")] : lines
+        return lines.isEmpty ? [localized("暂无智能模块表达预览")] : lines
     }
 
     private var memoryExpressionPreview: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("表达预览")
+                Text("智能模块表达预览")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
 
@@ -443,7 +453,7 @@ struct V1ConfigurationOptionList: View {
         .padding(.horizontal, V1CompactInformationRowMetrics.horizontalPadding)
         .padding(.bottom, 12)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(localized("记忆表达预览"))
+        .accessibilityLabel(localized("智能模块表达预览"))
         .accessibilityValue(memoryExpressionPreviewLines.joined(separator: "，"))
     }
 
@@ -594,10 +604,17 @@ struct V1ConfigurationOptionList: View {
         subtitle: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(
+            alignment: .leading,
+            spacing: V1SectionCardMetrics.cardHeaderContentSpacing
+        ) {
             adaptiveSectionHeader(
                 title: title,
                 subtitle: subtitle
+            )
+            .frame(
+                minHeight: V1SectionCardMetrics.cardHeaderMinimumHeight,
+                alignment: .leading
             )
 
             VStack(spacing: 0) {
@@ -618,7 +635,8 @@ struct V1ConfigurationOptionList: View {
                 .stroke(ConfigurationUI.faintHairline)
             )
         }
-        .padding(14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)
         .v1CardChrome()
     }
 
@@ -675,6 +693,18 @@ struct V1ConfigurationOptionList: View {
             locale: MemoMarkLanguage.interfaceStored.locale,
             timeAnchorCount
         )
+    }
+
+    private var timeAnchorSubtitle: String {
+        String(
+            format: localized("回忆对象重要时刻 · %@"),
+            locale: MemoMarkLanguage.interfaceStored.locale,
+            timeAnchorCountDetail
+        )
+    }
+
+    private var logoSubtitle: String {
+        localized("让卡片留下你的标识。")
     }
 
     private var subjectDisplayName: String {

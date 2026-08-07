@@ -71,10 +71,6 @@ private extension V1SubjectPresentationModifier {
     ) -> some View {
         V1IOSSubjectConfigurationFlow(
             flowState: flowState,
-            availableConfigurationCount:
-                availableConfigurationCount,
-            completedPhotoCount:
-                completedPhotoCount,
             onDeleteSubject: {
                 deleteCurrentSubject()
                 var nextState = V1EntryFlowCoordinator

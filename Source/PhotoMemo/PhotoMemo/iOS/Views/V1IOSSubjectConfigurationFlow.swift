@@ -7,9 +7,6 @@ struct V1IOSSubjectConfigurationFlow: View {
     private let flowState:
         V1IOSSubjectConfigurationFlowState
 
-    private let availableConfigurationCount: Int
-    private let completedPhotoCount: Int
-
     private let onDeleteSubject: () -> Void
     private let onCancel: () -> Void
     private let onSave: () -> Void
@@ -22,15 +19,11 @@ struct V1IOSSubjectConfigurationFlow: View {
 
     init(
         flowState: V1IOSSubjectConfigurationFlowState,
-        availableConfigurationCount: Int,
-        completedPhotoCount: Int,
         onDeleteSubject: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         onSave: @escaping () -> Void
     ) {
         self.flowState = flowState
-        self.availableConfigurationCount = availableConfigurationCount
-        self.completedPhotoCount = completedPhotoCount
         self.onDeleteSubject = onDeleteSubject
         self.onCancel = onCancel
         self.onSave = onSave
@@ -62,18 +55,7 @@ struct V1IOSSubjectConfigurationFlow: View {
                         )
                     }
 
-                    V1IOSSubjectStatisticsStrip(
-                        availableConfigurationCount:
-                            availableConfigurationCount,
-                        completedPhotoCount:
-                            completedPhotoCount
-                    )
-
-                    Button("删除记忆对象", role: .destructive) {
-                        showsDeleteConfirmation = true
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 18)
+                    deleteSubjectRow
                 }
                 .padding(.top, 12)
                 .padding(.bottom, 34)
@@ -132,6 +114,48 @@ struct V1IOSSubjectConfigurationFlow: View {
                 Text("对象名称是保存记忆对象的必填信息。")
             }
         }
+    }
+
+    private var deleteSubjectRow: some View {
+        Button {
+            showsDeleteConfirmation = true
+        } label: {
+            HStack {
+                Text("删除记忆对象")
+                    .font(.body)
+                    .foregroundStyle(.red)
+
+                Spacer(minLength: 0)
+            }
+            .frame(
+                maxWidth: .infinity,
+                minHeight: ConfigurationUI.minimumInteractiveHeight,
+                alignment: .leading
+            )
+            .padding(.horizontal, 16)
+        }
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.panelBackground)
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+        .contentShape(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.cornerRadius,
+                style: .continuous
+            )
+        )
+        .accessibilityHint("删除对象的基础资料和时间锚点")
     }
 
     private func dismissKeyboard() {

@@ -70,10 +70,10 @@ enum V1ModuleUsageTracker {
              .smartTime,
              .captureSummary:
             return language.localized(
-                key: "module.category.memory",
+                key: "module.category.smart_expression",
                 fallback: language == .simplifiedChinese
-                    ? "时光记"
-                    : "Memory"
+                    ? "智能表达"
+                    : "Smart Expression"
             )
         default:
             return language.localized(

@@ -80,7 +80,8 @@ struct V1ConfigurationOptionListContractTests {
         #expect(editorClusterSource.contains("IOSCompactEntryListGroup"))
         #expect(editorClusterSource.contains("V1RegionEditorCard("))
         #expect(editorClusterSource.contains("写进卡片的内容"))
-        #expect(editorClusterSource.contains("都能写下你的话"))
+        #expect(editorClusterSource.contains("自由录入文字"))
+        #expect(editorClusterSource.contains("组合进文字之间"))
         #expect(editorClusterSource.contains("照片里的时间、地点和拍摄信息"))
     }
 
@@ -121,11 +122,12 @@ struct V1ConfigurationOptionListContractTests {
         #expect(optionListSource.contains("ForEach("))
         #expect(optionListSource.contains("Text(line)"))
         #expect(optionListSource.contains(".font(.caption2)"))
+        #expect(optionListSource.contains("Text(\"智能模块表达预览\")"))
         #expect(optionListSource.contains("ConfigurationUI.controlBackground"))
         #expect(optionListSource.contains("ConfigurationUI.faintHairline"))
         #expect(
             optionListSource.contains(
-                ".accessibilityLabel(localized(\"记忆表达预览\"))"
+                ".accessibilityLabel(localized(\"智能模块表达预览\"))"
             )
         )
         #expect(
@@ -188,6 +190,27 @@ struct V1ConfigurationOptionListContractTests {
         #expect(moduleSource.contains("let categoryTitles = filteredModules.reduce"))
         #expect(moduleSource.contains("modules: filteredModules.filter"))
         #expect(!moduleSource.contains("filteredModules.sorted"))
+    }
+
+    @Test("logo row keeps one concise subtitle without selection detail")
+    func logoRowKeepsOneConciseSubtitleWithoutSelectionDetail() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let logoSubtitle = try #require(
+            source.range(of: "private var logoSubtitle")
+        )
+        let nextProperty = try #require(
+            source.range(
+                of: "private var subjectDisplayName",
+                range: logoSubtitle.upperBound..<source.endIndex
+            )
+        )
+        let section = source[logoSubtitle.lowerBound..<nextProperty.lowerBound]
+
+        #expect(section.contains("localized(\"让卡片留下你的标识。\")"))
+        #expect(!section.contains("logoDetail"))
+        #expect(!section.contains(" · %@"))
     }
 
     @Test("card layout places border before logo without changing row forms")

@@ -99,10 +99,6 @@ struct V1IOSSubjectOverviewSheet: View {
         .sheet(item: $configurationFlowState) { flowState in
             V1IOSSubjectConfigurationFlow(
                 flowState: flowState,
-                availableConfigurationCount:
-                    availableConfigurationCount,
-                completedPhotoCount:
-                    completedPhotoCount,
                 onDeleteSubject: {
                     onDeleteCurrentSubject()
                     configurationFlowState = nil

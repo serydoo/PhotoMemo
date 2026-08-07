@@ -187,7 +187,11 @@ struct V1IOSSubjectStatisticsStrip: View {
             }
         }
         .padding(.horizontal, 9)
-        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: ConfigurationUI.minimumInteractiveHeight,
+            alignment: .center
+        )
         .background(
             RoundedRectangle(
                 cornerRadius: 10,
@@ -204,7 +208,7 @@ struct V1IOSSubjectStatisticsStrip: View {
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "可用配置 \(max(availableConfigurationCount, 0)) 个，累计完成 \(max(completedPhotoCount, 0)) 张"
+            "可用配置 \(max(availableConfigurationCount, 0)) 个，累计完成 \(max(completedPhotoCount, 0)) 张。美好的回忆慢慢品味！"
         )
     }
 
@@ -227,11 +231,20 @@ struct V1IOSSubjectStatisticsStrip: View {
                 value:
                     "\(max(completedPhotoCount, 0)) 张"
             )
+
+            Text("美好的回忆慢慢品味！")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .allowsTightening(true)
         }
     }
 
     private var accessibilityStatisticsContent: some View {
         HStack(alignment: .top, spacing: 10) {
+            Spacer(minLength: 0)
+
             statisticsIcon
 
             VStack(alignment: .leading, spacing: 5) {
@@ -245,6 +258,12 @@ struct V1IOSSubjectStatisticsStrip: View {
                     value:
                         "\(max(completedPhotoCount, 0)) 张"
                 )
+                Text("美好的回忆慢慢品味！")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .allowsTightening(true)
             }
 
             Spacer(minLength: 0)
@@ -425,7 +444,10 @@ private struct V1IOSHomeLinkRow: View {
                 }
                 .contentShape(Rectangle())
                 .padding(.horizontal, 14)
-                .padding(.vertical, 13)
+                .padding(
+                    .vertical,
+                    ConfigurationUI.compactRowVerticalPadding
+                )
             }
             .buttonStyle(.plain)
 

@@ -122,6 +122,15 @@ struct V1CompactSelectionLabel: View {
     }
 }
 
+enum V1SectionCardMetrics {
+
+    static let cardHeaderMinimumHeight: CGFloat = 28
+    static let cardHeaderContentSpacing: CGFloat = 6
+    static let cardVerticalPadding: CGFloat = 10
+    static let headerContentSpacing: CGFloat = 10
+    static let sectionSpacing: CGFloat = 12
+}
+
 enum V1CompactInformationRowMetrics {
 
     static let iconSize = ConfigurationUI.compactIconSize
@@ -478,7 +487,10 @@ struct V1TitledSectionCard<
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(
+            alignment: .leading,
+            spacing: V1SectionCardMetrics.cardHeaderContentSpacing
+        ) {
             HStack(alignment: .center, spacing: 12) {
                 titleGroup
 
@@ -486,12 +498,17 @@ struct V1TitledSectionCard<
 
                 trailingAccessory
             }
+            .frame(
+                minHeight:
+                    V1SectionCardMetrics.cardHeaderMinimumHeight
+            )
 
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
-        .padding(14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)
         .v1CardChrome()
     }
 
@@ -914,277 +931,198 @@ struct V1PreviewCard: View {
 
 struct V1RegionEditorCard: View {
 
-    @Environment(\.dynamicTypeSize)
-    private var dynamicTypeSize
-
     let region: CardRegion
-    @Binding var isExpanded: Bool
     let showsDivider: Bool
     let draft: V1EditorDraft
-    let resolvedText: String
     let onFocus: () -> Void
     let onFocusTextItem: (V1ContentItem) -> Void
+    let onFocusTrailingText: () -> Void
     let onUpdateTextItem: (V1ContentItem, String) -> Void
     let onPrependText: (String) -> Void
     let onAppendText: (String) -> Void
     let onRemoveItem: (V1ContentItem) -> Void
-    let onShowModules: () -> Void
+    let onRemovePreviousComposedItem: (UUID) -> Bool
+    let insertionMarkerID: UUID?
+    let showsInsertionMarkerAtEnd: Bool
 
     var body: some View {
-        IOSCompactEntryDisclosureRow(
-            title: region.displayTitle,
-            subtitle: region.defaultContentSummary,
-            value: rowValueText,
-            detail: rowDetailText,
-            systemImage: nil,
-            showsDivider: showsDivider,
-            isExpanded: $isExpanded
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                adaptiveComposerHeader
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 3) {
-                        if draft.items.first?.kind != .text {
-                            transientTextField(
-                                placeholder: "短语",
-                                minWidth: 46,
-                                onChange: onPrependText
-                            )
-                            .onTapGesture(perform: onFocus)
-                        }
-
-                        ForEach(draft.items) { item in
-                            switch item.kind {
-                            case .text:
-                                editableTextField(item)
-
-                            case .token,
-                                 .separator,
-                                 .lineBreak:
-                                moduleChip(item)
-                            }
-                        }
-
-                        if draft.items.last?.kind != .text {
-                            transientTextField(
-                                placeholder: "短语",
-                                minWidth: 58,
-                                onChange: onAppendText
-                            )
-                            .onTapGesture(perform: onFocus)
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 7)
-                }
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: ConfigurationUI.smallCornerRadius,
-                        style: .continuous
-                    )
-                    .fill(Color(uiColor: .secondarySystemBackground))
-                )
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: ConfigurationUI.smallCornerRadius,
-                        style: .continuous
-                    )
-                    .stroke(Color.primary.opacity(0.08))
-                )
-
-                if !resolvedText.isEmpty {
-                    V1HorizontalDivider()
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Label(
-                            "组合结果",
-                            systemImage: "text.quote"
-                        )
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-
-                        Text(resolvedText)
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(3)
-                            .fixedSize(
-                                horizontal: false,
-                                vertical: true
-                            )
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var adaptiveComposerHeader: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 8) {
-                composerHeading
-
-                addModuleButton
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-        } else {
-            HStack(alignment: .center, spacing: 10) {
-                composerHeading
-                Spacer()
-                addModuleButton
-            }
-        }
-    }
-
-    private var composerHeading: some View {
-        Text("模块与文字")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-    }
-
-    private var addModuleButton: some View {
-        Button {
-            onShowModules()
-        } label: {
-            Label(
-                "添加模块",
-                systemImage: "plus"
-            )
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.regular)
-        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
-    }
-
-    private func moduleChip(
-        _ item: V1ContentItem
-    ) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: item.systemImage)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.accentColor)
-
-            Text(item.title)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(region.displayTitle)
+                .font(.headline.weight(.semibold))
                 .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
 
-            Button {
-                UISelectionFeedbackGenerator()
-                    .selectionChanged()
-                onRemoveItem(item)
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-            }
-            .buttonStyle(
-                V1ModuleChipRemoveButtonStyle()
-            )
-            .accessibilityLabel(
-                "移除\(item.title)"
-            )
+            compositionField
+                .frame(maxWidth: .infinity)
         }
-        .font(.caption.weight(.semibold))
-        .padding(.leading, 9)
-        .padding(.trailing, 4)
+        .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) {
+            if showsDivider {
+                V1HorizontalDivider()
+                    .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+            }
+        }
+    }
+
+    private var compositionField: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 1) {
+                ForEach(draft.items) { item in
+                    if item.id == insertionMarkerID,
+                       insertionAnchorBelongsBefore(item) {
+                        insertionAnchor
+                    }
+
+                    switch item.kind {
+                    case .text:
+                        editableTextField(item)
+
+                    case .token,
+                         .separator,
+                         .lineBreak:
+                        moduleChip(item)
+                    }
+
+                    if item.id == insertionMarkerID,
+                       !insertionAnchorBelongsBefore(item) {
+                        insertionAnchor
+                    }
+                }
+
+                if draft.items.last?.kind != .text {
+                    if showsInsertionMarkerAtEnd {
+                        insertionAnchor
+                    }
+                    transientTextField(
+                        placeholder: "",
+                        minWidth: 58,
+                        onChange: onAppendText,
+                        onFocus: onFocusTrailingText
+                    )
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+        }
+        .frame(minHeight: 42)
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            TapGesture().onEnded { _ in
+                onFocus()
+            }
+        )
         .background(
             RoundedRectangle(
                 cornerRadius: ConfigurationUI.smallCornerRadius,
                 style: .continuous
             )
-            .fill(
-                Color(
-                    uiColor:
-                        .tertiarySystemFill
-                )
-            )
+            .fill(Color(uiColor: .systemBackground))
         )
         .overlay(
             RoundedRectangle(
                 cornerRadius: ConfigurationUI.smallCornerRadius,
                 style: .continuous
             )
+            .stroke(Color.primary.opacity(0.08))
+        )
+    }
+
+    private func moduleChip(
+        _ item: V1ContentItem
+    ) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: item.systemImage)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accentColor)
+
+            Text(item.title)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .font(.footnote.weight(.semibold))
+        .padding(.horizontal, 6)
+        .frame(height: 28)
+        .background(
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
+            .fill(
+                Color(
+                    uiColor:
+                        .systemBlue
+                )
+                .opacity(0.12)
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 12,
+                style: .continuous
+            )
             .stroke(
-                Color.primary.opacity(0.08)
+                Color.accentColor.opacity(0.22)
             )
         )
     }
 
-    private var rowValueText: String {
-        let trimmed =
-            resolvedText.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        return trimmed.isEmpty ? "点击编辑" : trimmed
+    private var insertionAnchor: some View {
+        Capsule(style: .continuous)
+            .fill(Color.primary.opacity(0.42))
+            .frame(width: 2, height: 20)
+            .padding(.horizontal, 2)
+            .accessibilityLabel("模块插入位置")
     }
 
-    private var rowDetailText: String {
-        let itemCount =
-            draft.items.filter { item in
-                switch item.kind {
-                case .text:
-                    return !item.value
-                        .trimmingCharacters(
-                            in: .whitespacesAndNewlines
-                        )
-                        .isEmpty
-                case .token,
-                     .separator,
-                     .lineBreak:
-                    return true
-                }
-            }
-            .count
-
-        return itemCount == 0
-            ? "尚未添加内容"
-            : "\(itemCount) 个内容项"
+    private func insertionAnchorBelongsBefore(
+        _ item: V1ContentItem
+    ) -> Bool {
+        item.kind == .text
+            && item.value
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty
     }
 
     private func editableTextField(
         _ item: V1ContentItem
     ) -> some View {
-        TextField(
-            "短语",
+        V1InlineTextField(
             text: Binding(
                 get: { item.value },
                 set: {
-                    onUpdateTextItem(
-                        item,
-                        $0
-                    )
+                    onUpdateTextItem(item, $0)
                 }
             ),
-            axis: .horizontal
+            placeholder: "",
+            minWidth: textFieldWidth(for: item.value),
+            onFocus: {
+                onFocusTextItem(item)
+            },
+            onBackspaceAtBeginning: {
+                onRemovePreviousComposedItem(item.id)
+            }
         )
-        .textFieldStyle(.plain)
-        .font(.subheadline)
         .frame(minWidth: textFieldWidth(for: item.value))
-        .lineLimit(1)
-        .modifier(V1LiteralComposerFieldStyle())
-        .onTapGesture {
-            onFocusTextItem(item)
-        }
     }
 
     private func transientTextField(
         placeholder: String,
         minWidth: CGFloat,
-        onChange: @escaping (String) -> Void
+        onChange: @escaping (String) -> Void,
+        onFocus: @escaping () -> Void
     ) -> some View {
-        TextField(
-            placeholder,
+        V1InlineTextField(
             text: Binding(
                 get: { "" },
                 set: onChange
             ),
-            axis: .horizontal
+            placeholder: placeholder,
+            minWidth: minWidth,
+            onFocus: onFocus,
+            onBackspaceAtBeginning: { false }
         )
-        .textFieldStyle(.plain)
-        .font(.subheadline)
         .frame(minWidth: minWidth)
-        .lineLimit(1)
-        .modifier(V1LiteralComposerFieldStyle())
     }
 
     private func textFieldWidth(
@@ -1206,66 +1144,324 @@ struct V1RegionEditorCard: View {
     }
 }
 
-private struct V1ModuleChipRemoveButtonStyle:
-    ButtonStyle {
+struct V1SlotATextKitEditor: View {
+    let draft: V1EditorDraft
+    @Binding var pendingInsertion: V1ContentItem?
+    let onFocus: () -> Void
+    let onDraftChange: (V1EditorDraft) -> Void
 
-    @Environment(\.accessibilityReduceMotion)
-    private var reduceMotion
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(CardRegion.slotA.displayTitle)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
 
-    func makeBody(
-        configuration: Configuration
-    ) -> some View {
-        configuration.label
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(
-                configuration.isPressed
-                ? Color.primary
-                : Color.secondary
+            V1SlotATextView(
+                draft: draft,
+                pendingInsertion: $pendingInsertion,
+                onFocus: onFocus,
+                onDraftChange: onDraftChange
             )
-            .frame(
-                width: ConfigurationUI.minimumInteractiveHeight,
-                height: ConfigurationUI.minimumInteractiveHeight
-            )
-            .contentShape(Circle())
-            .scaleEffect(
-                configuration.isPressed && !reduceMotion
-                ? 0.88
-                : 1
-            )
-            .animation(
-                reduceMotion
-                ? nil
-                : .easeOut(duration: 0.1),
-                value: configuration.isPressed
-            )
-    }
-}
-
-private struct V1LiteralComposerFieldStyle:
-    ViewModifier {
-
-    func body(
-        content: Content
-    ) -> some View {
-        content
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .frame(minHeight: 42, maxHeight: 42)
             .background(
                 RoundedRectangle(
-                    cornerRadius: 8,
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
                     style: .continuous
                 )
-                .fill(
-                    Color(uiColor: .systemBackground)
-                )
+                .fill(Color(uiColor: .systemBackground))
             )
             .overlay(
                 RoundedRectangle(
-                    cornerRadius: 8,
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
                     style: .continuous
                 )
-                .stroke(ConfigurationUI.faintHairline)
+                .stroke(Color.primary.opacity(0.08))
             )
+        }
+        .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) {
+            V1HorizontalDivider()
+                .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+        }
+    }
+}
+
+private struct V1SlotATextView: UIViewRepresentable {
+    let draft: V1EditorDraft
+    @Binding var pendingInsertion: V1ContentItem?
+    let onFocus: () -> Void
+    let onDraftChange: (V1EditorDraft) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> UITextView {
+        let storage = NSTextStorage()
+        let layoutManager = NSLayoutManager()
+        let container = NSTextContainer(
+            size: CGSize(width: CGFloat.greatestFiniteMagnitude, height: 36)
+        )
+        container.maximumNumberOfLines = 1
+        container.lineBreakMode = .byClipping
+        layoutManager.addTextContainer(container)
+        storage.addLayoutManager(layoutManager)
+        let view = UITextView(frame: .zero, textContainer: container)
+        view.delegate = context.coordinator
+        view.backgroundColor = .clear
+        view.font = .preferredFont(forTextStyle: .subheadline)
+        view.adjustsFontForContentSizeCategory = true
+        view.textContainerInset = UIEdgeInsets(top: 10, left: 4, bottom: 10, right: 4)
+        view.textContainer.lineFragmentPadding = 0
+        view.showsHorizontalScrollIndicator = false
+        view.showsVerticalScrollIndicator = false
+        view.isScrollEnabled = true
+        view.accessibilityLabel = "左上内容"
+        context.coordinator.apply(draft, to: view, restoring: nil)
+        return view
+    }
+
+    func updateUIView(_ view: UITextView, context: Context) {
+        context.coordinator.parent = self
+        if let item = pendingInsertion {
+            // Consume the one-shot command before writing the resulting draft
+            // back through SwiftUI. Otherwise updateUIView can observe the
+            // same pending item again and insert it repeatedly.
+            pendingInsertion = nil
+            context.coordinator.insert(item, in: view)
+            return
+        }
+        guard view.markedTextRange == nil,
+              !context.coordinator.hasSameEditingContent(
+                  context.coordinator.projectedDraft(from: view),
+                  as: draft
+              ) else { return }
+        context.coordinator.apply(draft, to: view, restoring: view.selectedRange)
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: V1SlotATextView
+        private var isApplying = false
+        private var savedSelection = NSRange(location: 0, length: 0)
+
+        init(_ parent: V1SlotATextView) { self.parent = parent }
+
+        func textViewDidBeginEditing(_ textView: UITextView) { parent.onFocus() }
+        func textViewDidChangeSelection(_ textView: UITextView) { savedSelection = textView.selectedRange }
+        func textViewDidChange(_ textView: UITextView) {
+            guard !isApplying, textView.markedTextRange == nil else { return }
+            parent.onDraftChange(projectedDraft(from: textView))
+        }
+
+        func apply(_ draft: V1EditorDraft, to view: UITextView, restoring range: NSRange?) {
+            isApplying = true
+            let result = NSMutableAttributedString()
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.preferredFont(forTextStyle: .subheadline),
+                .foregroundColor: UIColor.label
+            ]
+            for item in draft.items {
+                if item.kind == .text {
+                    result.append(NSAttributedString(string: item.value, attributes: attributes))
+                } else {
+                    let attachment = V1TextKitModuleAttachment(item: item)
+                    result.append(NSAttributedString(attachment: attachment))
+                }
+            }
+            view.textStorage.setAttributedString(result)
+            let candidate = range ?? savedSelection
+            view.selectedRange = NSRange(location: min(candidate.location, result.length), length: 0)
+            savedSelection = view.selectedRange
+            isApplying = false
+        }
+
+        func insert(_ item: V1ContentItem, in view: UITextView) {
+            let range = NSIntersectionRange(savedSelection, NSRange(location: 0, length: view.textStorage.length))
+            let attachment = V1TextKitModuleAttachment(item: item)
+            view.textStorage.replaceCharacters(in: range, with: NSAttributedString(attachment: attachment))
+            view.selectedRange = NSRange(location: range.location + 1, length: 0)
+            savedSelection = view.selectedRange
+            parent.onDraftChange(projectedDraft(from: view))
+        }
+
+        func projectedDraft(from view: UITextView) -> V1EditorDraft {
+            var items: [V1ContentItem] = []
+            let full = NSRange(location: 0, length: view.textStorage.length)
+            view.textStorage.enumerateAttributes(in: full) { attributes, range, _ in
+                if let attachment = attributes[.attachment] as? V1TextKitModuleAttachment {
+                    items.append(attachment.item)
+                } else {
+                    let text = (view.textStorage.string as NSString).substring(with: range)
+                    if !text.isEmpty {
+                        if let last = items.last, last.kind == .text {
+                            items[items.count - 1].value += text
+                            items[items.count - 1].savedValue += text
+                        } else {
+                            items.append(.text(text))
+                        }
+                    }
+                }
+            }
+            if items.isEmpty { items = [.text("")] }
+            return V1EditorDraft(items: items)
+        }
+
+        func hasSameEditingContent(
+            _ projected: V1EditorDraft,
+            as draft: V1EditorDraft
+        ) -> Bool {
+            guard projected.items.count == draft.items.count else { return false }
+            return zip(projected.items, draft.items).allSatisfy { lhs, rhs in
+                lhs.kind == rhs.kind
+                    && lhs.value == rhs.value
+                    && lhs.savedValue == rhs.savedValue
+                    && lhs.title == rhs.title
+                    && lhs.systemImage == rhs.systemImage
+            }
+        }
+    }
+}
+
+final class V1TextKitModuleAttachment: NSTextAttachment {
+    let item: V1ContentItem
+
+    init(item: V1ContentItem) {
+        self.item = item
+        super.init(data: nil, ofType: nil)
+        let font = UIFont.preferredFont(forTextStyle: .footnote)
+        let title = item.title as NSString
+        let titleWidth = ceil(title.size(withAttributes: [.font: font]).width)
+        let size = CGSize(width: min(max(titleWidth + 34, 58), 150), height: 28)
+        image = UIGraphicsImageRenderer(size: size).image { context in
+            UIColor.systemBlue.withAlphaComponent(0.12).setFill()
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 12).fill()
+            UIColor.systemBlue.withAlphaComponent(0.22).setStroke()
+            let border = UIBezierPath(roundedRect: CGRect(x: 0.5, y: 0.5, width: size.width - 1, height: size.height - 1), cornerRadius: 11.5)
+            border.lineWidth = 1
+            border.stroke()
+            let contentY = floor((size.height - 14) / 2)
+            UIImage(systemName: item.systemImage)?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
+                .draw(in: CGRect(x: 7, y: contentY, width: 14, height: 14))
+            let titleY = floor((size.height - font.lineHeight) / 2)
+            title.draw(at: CGPoint(x: 25, y: titleY), withAttributes: [.font: font, .foregroundColor: UIColor.label])
+            _ = context
+        }
+        // Align the capsule's visual center with the subheadline line rather
+        // than using a fixed offset that drifts as Dynamic Type changes.
+        let editorFont = UIFont.preferredFont(forTextStyle: .subheadline)
+        let baselineOffset = floor((editorFont.capHeight - size.height) / 2)
+        // Keep a small native-looking insertion gap after the capsule. The
+        // transparent trailing advance prevents the caret from visually
+        // merging into the capsule while preserving the attachment itself.
+        let trailingAdvance: CGFloat = 4
+        bounds = CGRect(x: 0, y: baselineOffset, width: size.width + trailingAdvance, height: size.height)
+        accessibilityLabel = "\(item.title)，\(item.value)"
+    }
+
+    required init?(coder: NSCoder) { nil }
+}
+
+private struct V1InlineTextField: UIViewRepresentable {
+
+    @Binding var text: String
+    let placeholder: String
+    let minWidth: CGFloat
+    let onFocus: () -> Void
+    let onBackspaceAtBeginning: () -> Bool
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> V1InlineTextFieldView {
+        let textField = V1InlineTextFieldView()
+        textField.onBackspaceAtBeginning = {
+            context.coordinator.parent.onBackspaceAtBeginning()
+        }
+        textField.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.textDidChange(_:)),
+            for: .editingChanged
+        )
+        textField.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.editingDidBegin(_:)),
+            for: .editingDidBegin
+        )
+        configure(textField)
+        return textField
+    }
+
+    func updateUIView(
+        _ textField: V1InlineTextFieldView,
+        context: Context
+    ) {
+        context.coordinator.parent = self
+        textField.onBackspaceAtBeginning = {
+            context.coordinator.parent.onBackspaceAtBeginning()
+        }
+        configure(textField)
+        if textField.text != text {
+            textField.text = text
+        }
+    }
+
+    private func configure(
+        _ textField: V1InlineTextFieldView
+    ) {
+        textField.placeholder = placeholder
+        textField.font = UIFont.preferredFont(
+            forTextStyle: .subheadline
+        )
+        textField.adjustsFontForContentSizeCategory = true
+        textField.textColor = .label
+        textField.tintColor = .tintColor
+        textField.borderStyle = .none
+        textField.backgroundColor = .clear
+        textField.clearButtonMode = .never
+        textField.returnKeyType = .default
+        textField.setContentHuggingPriority(
+            .defaultLow,
+            for: .horizontal
+        )
+        textField.setContentCompressionResistancePriority(
+            .defaultLow,
+            for: .horizontal
+        )
+    }
+
+    final class Coordinator: NSObject {
+        var parent: V1InlineTextField
+
+        init(_ parent: V1InlineTextField) {
+            self.parent = parent
+        }
+
+        @objc func textDidChange(_ sender: UITextField) {
+            parent.text = sender.text ?? ""
+        }
+
+        @objc func editingDidBegin(_ sender: UITextField) {
+            parent.onFocus()
+        }
+    }
+}
+
+private final class V1InlineTextFieldView: UITextField {
+    var onBackspaceAtBeginning: (() -> Bool)?
+
+    override func deleteBackward() {
+        guard let selectedTextRange,
+              selectedTextRange.isEmpty,
+              offset(
+                  from: beginningOfDocument,
+                  to: selectedTextRange.start
+              ) == 0,
+              onBackspaceAtBeginning?() == true
+        else {
+            super.deleteBackward()
+            return
+        }
     }
 }
 

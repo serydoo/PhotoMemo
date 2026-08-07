@@ -142,6 +142,81 @@ struct V1DraftMutationCoordinatorTests {
         #expect(update.dirtyRegions == [.slotC])
     }
 
+    @Test("backspace at a text boundary removes the adjacent composed item and keeps text focus")
+    func removePreviousComposedItemAtTextBoundary() throws {
+        let leadingText = UUID()
+        let tokenID = UUID()
+        let trailingText = UUID()
+        let initialDraft =
+            V1DraftMutationDraft(
+                items: [
+                    .text("前文", id: leadingText),
+                    .token(
+                        value: "记录",
+                        templateValue: "{{capture_summary}}",
+                        id: tokenID
+                    ),
+                    .text("", id: trailingText)
+                ]
+            )
+        let initialState =
+            V1DraftMutationCoordinator.State(
+                regionDrafts: [.slotA: initialDraft],
+                activeTextItemIDs: [.slotA: trailingText],
+                activeConfigurationStatus: .idle
+            )
+
+        let update =
+            V1DraftMutationCoordinator
+            .removePreviousComposedItem(
+                before: trailingText,
+                from: .slotA,
+                in: initialState,
+                makeDefaultDraft: { _ in initialDraft }
+            )
+        let draft =
+            try #require(update.state.regionDrafts[.slotA])
+
+        #expect(draft.items.map(\.id) == [leadingText, trailingText])
+        #expect(draft.items.map(\.value) == ["前文", ""])
+        #expect(
+            update.state.activeTextItemIDs[.slotA]
+            == trailingText
+        )
+        #expect(update.dirtyRegions == [.slotA])
+    }
+
+    @Test("backspace at a text boundary does not dirty a region when no composed item precedes it")
+    func removePreviousComposedItemLeavesPlainTextBoundaryUnchanged() throws {
+        let leadingText = UUID()
+        let trailingText = UUID()
+        let initialDraft =
+            V1DraftMutationDraft(
+                items: [
+                    .text("前文", id: leadingText),
+                    .text("", id: trailingText)
+                ]
+            )
+        let initialState =
+            V1DraftMutationCoordinator.State(
+                regionDrafts: [.slotA: initialDraft],
+                activeTextItemIDs: [.slotA: trailingText],
+                activeConfigurationStatus: .idle
+            )
+
+        let update =
+            V1DraftMutationCoordinator
+            .removePreviousComposedItem(
+                before: trailingText,
+                from: .slotA,
+                in: initialState,
+                makeDefaultDraft: { _ in initialDraft }
+            )
+
+        #expect(update.state == initialState)
+        #expect(update.dirtyRegions.isEmpty)
+    }
+
     @Test("insert places a composed item after the active text item and preserves a trailing text input")
     func insertPlacesComposedItemAfterActiveTextItem() {
         let leadingText = UUID()

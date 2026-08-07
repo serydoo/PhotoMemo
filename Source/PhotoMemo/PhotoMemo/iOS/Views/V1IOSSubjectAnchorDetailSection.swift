@@ -164,7 +164,7 @@ struct V1IOSSubjectAnchorDetailSection: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 16)
-            .frame(minHeight: 58)
+            .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
             .background(moduleBackground)
         }
         .buttonStyle(.plain)

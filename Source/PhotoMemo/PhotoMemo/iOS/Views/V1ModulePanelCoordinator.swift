@@ -6,6 +6,7 @@ struct V1ModulePanelCoordinator {
     struct State:
         Equatable {
 
+        var focusedRegion: CardRegion?
         var activeRegion: CardRegion?
         var usageStorage: String
     }
@@ -15,7 +16,22 @@ struct V1ModulePanelCoordinator {
     ) -> State {
         var nextState =
             state
+        nextState.focusedRegion = nil
         nextState.activeRegion = nil
+        return nextState
+    }
+
+    static func focusRegion(
+        _ region: CardRegion,
+        state: State
+    ) -> State {
+        var nextState = state
+        nextState.focusedRegion = region
+        // The module surface is manually toggled. When it is already open,
+        // focusing another editor retargets the surface instead of closing it.
+        nextState.activeRegion = state.activeRegion == nil
+            ? nil
+            : region
         return nextState
     }
 
@@ -25,6 +41,7 @@ struct V1ModulePanelCoordinator {
     ) -> State {
         var nextState =
             state
+        nextState.focusedRegion = region
         nextState.activeRegion = region
         return nextState
     }

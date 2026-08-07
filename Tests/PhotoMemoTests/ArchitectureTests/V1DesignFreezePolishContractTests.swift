@@ -100,9 +100,11 @@ struct V1DesignFreezePolishContractTests {
         #expect(output.contains("case .staticImage:"))
         #expect(
             output.contains(
-                "Apple Photos 对照片说明的显示与搜索支持，可能因 iOS 版本不同而有所差异。"
+                "图库中的照片说明显示和搜索能力，可能随 iOS 版本有所不同。"
             )
         )
+        #expect(output.contains("V1OutputDashedDivider()"))
+        #expect(output.contains(".foregroundStyle(Color.primary.opacity(0.72))"))
         #expect(output.contains("@Environment(\\.accessibilityReduceMotion)"))
         #expect(output.contains("reduceMotion ? .opacity : .opacity.combined("))
         #expect(output.contains("with: .move(edge: .top)"))

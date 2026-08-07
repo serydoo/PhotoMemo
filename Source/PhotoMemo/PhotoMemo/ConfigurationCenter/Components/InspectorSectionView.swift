@@ -13,13 +13,14 @@ enum ConfigurationUI {
     static let innerPanelPadding = MemoMarkDesignTokens.Spacing.medium
     static let compactIconSize: CGFloat = 36
     static let compactIconCornerRadius = MemoMarkDesignTokens.CornerRadius.compactControl
-    static let compactRowVerticalPadding: CGFloat = 9
+    static let compactRowVerticalPadding: CGFloat = 6
     static let contentSpacing = MemoMarkDesignTokens.Spacing.large
     static let sectionSpacing = MemoMarkDesignTokens.Spacing.extraLarge
     static let compactTrailingControlWidth =
         MemoMarkDesignTokens.Layout.compactTrailingControlWidth
     static let minimumInteractiveHeight =
         MemoMarkDesignTokens.ControlState.minimumTouchTarget
+    static let compactInputRowMinimumHeight: CGFloat = 48
     static let sheetSubtitleTopPadding =
         MemoMarkDesignTokens.Spacing.extraSmall
     static let sheetSubtitleBottomPadding =
@@ -31,6 +32,11 @@ enum ConfigurationUI {
         MemoMarkDesignTokens.Layout.configurationSheetCompactHeight
     static let contentSheetFraction =
         MemoMarkDesignTokens.Layout.configurationSheetContentFraction
+    /// The Card Editor may use the space below the memory-source preview, but
+    /// never moves its own top edge through that preview when the keyboard is
+    /// presented.
+    static let contentEditorTopBoundaryFraction: CGFloat = 0.18
+    static let contentEditorMinimumTopBoundary: CGFloat = 148
     #else
     static let cornerRadius: CGFloat = 12
     static let smallCornerRadius: CGFloat = 10
@@ -41,11 +47,12 @@ enum ConfigurationUI {
     static let innerPanelPadding: CGFloat = 12
     static let compactIconSize: CGFloat = 36
     static let compactIconCornerRadius: CGFloat = 11
-    static let compactRowVerticalPadding: CGFloat = 9
+    static let compactRowVerticalPadding: CGFloat = 6
     static let contentSpacing: CGFloat = 16
     static let sectionSpacing: CGFloat = 20
     static let compactTrailingControlWidth: CGFloat = 128
     static let minimumInteractiveHeight: CGFloat = 44
+    static let compactInputRowMinimumHeight: CGFloat = 48
     static let sheetSubtitleTopPadding: CGFloat = 4
     static let sheetSubtitleBottomPadding: CGFloat = 8
     static let sheetPanelCornerRadius = cornerRadius
@@ -53,6 +60,8 @@ enum ConfigurationUI {
     static let sheetDividerInset = innerPanelPadding
     static let compactSheetHeight: CGFloat = 390
     static let contentSheetFraction: CGFloat = 0.58
+    static let contentEditorTopBoundaryFraction: CGFloat = 0.18
+    static let contentEditorMinimumTopBoundary: CGFloat = 148
     #endif
 
     #if os(iOS)

@@ -83,7 +83,7 @@ struct TimeAnchorEditingTransactionTests {
         )
         let usesReadableRowHeight =
             source.contains("SubjectTimeAnchorMetrics.rowHeight")
-            && source.contains("static let rowHeight: CGFloat = 64")
+            && source.contains("static let rowHeight: CGFloat = 52")
             && source.contains(
                 ".frame(minHeight: SubjectTimeAnchorMetrics.rowHeight)"
             )

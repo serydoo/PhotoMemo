@@ -153,6 +153,7 @@
 "module.literal_text" = "Text";
 "module.unsupported_content" = "Unsupported content";
 "module.category.memory" = "Memory";
+"module.category.smart_expression" = "Smart Expression";
 "module.category.metadata" = "EXIF";
 
 "commerce.title" = "MemoMark+";
@@ -470,6 +471,8 @@
 "output.memory_write.preview.default_note" = "Writes the matching Memory Expression from the capture time, Memory Subject, and Time Anchor.";
 "回忆正围绕谁展开。" = "Who this memory is about.";
 "让卡片留下你的标识。" = "Leave your mark on the card.";
+"让卡片留下你的标识。 · %@" = "Leave your mark on the card · %@";
+"回忆对象重要时刻 · %@" = "Important moments for this memory · %@";
 "地点想怎样被写下。" = "How should the place be remembered?";
 "地理显示" = "Location Display";
 "记忆表达" = "Memory Expression";
@@ -486,6 +489,8 @@
 "表达预览" = "Expression Preview";
 "暂无表达预览" = "No expression preview available";
 "记忆表达预览" = "Memory Expression Preview";
+"智能模块表达预览" = "Smart Module Expression Preview";
+"暂无智能模块表达预览" = "No smart module expression preview available";
 "更多内容会根据实际需要逐步加入。" = "More options will be added as real needs emerge.";
 "探索不同组合，也欢迎告诉我们你的自定义想法。" = "Explore different combinations and share the customizations you would like to see.";
 "决定卡片里的内容与显示方式。" = "Decide what appears on the card and how it is shown.";
@@ -561,7 +566,7 @@
 "想围绕谁" = "Who This Memory Is About";
 "按这个重要时刻呈现时间变化" = "Show how time changes from this important moment";
 "完成设置" = "Finish Setup";
-"Apple Photos 对照片说明的显示与搜索支持，可能因 iOS 版本不同而有所差异。" = "Photo description visibility and search support in Apple Photos may vary by iOS version.";
+"图库中的照片说明显示和搜索能力，可能随 iOS 版本有所不同。" = "Photo description visibility and search support in Apple Photos may vary by iOS version.";
 "当前任务" = "Current Task";
 "基础资料" = "Basic Information";
 "编辑对象身份与关系信息" = "Edit identity and relationship details";

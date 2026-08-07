@@ -11,6 +11,7 @@ struct V1ModulePanelCoordinatorTests {
         let state =
             V1ModulePanelCoordinator
             .State(
+                focusedRegion: .slotD,
                 activeRegion: .slotD,
                 usageStorage: "{}"
             )
@@ -22,10 +23,47 @@ struct V1ModulePanelCoordinatorTests {
             )
 
         #expect(nextState.activeRegion == nil)
+        #expect(nextState.focusedRegion == nil)
         #expect(
             nextState.usageStorage
             == state.usageStorage
         )
+    }
+
+    @Test("focusRegion keeps the active insertion region without presenting the panel")
+    func focusRegionKeepsTheActiveInsertionRegionWithoutPresentingThePanel() {
+        let state =
+            V1ModulePanelCoordinator
+            .State(
+                focusedRegion: nil,
+                activeRegion: nil,
+                usageStorage: "{}"
+            )
+
+        let nextState =
+            V1ModulePanelCoordinator
+            .focusRegion(
+                .slotD,
+                state: state
+            )
+
+        #expect(nextState.focusedRegion == .slotD)
+        #expect(nextState.activeRegion == nil)
+        #expect(nextState.usageStorage == state.usageStorage)
+    }
+
+    @Test("focusRegion retargets an already open module panel")
+    func focusRegionRetargetsAnAlreadyOpenModulePanel() {
+        let state = V1ModulePanelCoordinator.State(
+            focusedRegion: .slotA,
+            activeRegion: .slotA,
+            usageStorage: "{}"
+        )
+
+        let nextState = V1ModulePanelCoordinator.focusRegion(.slotB, state: state)
+
+        #expect(nextState.focusedRegion == .slotB)
+        #expect(nextState.activeRegion == .slotB)
     }
 
     @Test("setSheetPresented false preserves the existing dismissal rule")
@@ -33,6 +71,7 @@ struct V1ModulePanelCoordinatorTests {
         let state =
             V1ModulePanelCoordinator
             .State(
+                focusedRegion: .slotA,
                 activeRegion: .slotA,
                 usageStorage: "{}"
             )
@@ -45,6 +84,7 @@ struct V1ModulePanelCoordinatorTests {
             )
 
         #expect(nextState.activeRegion == nil)
+        #expect(nextState.focusedRegion == .slotA)
     }
 
     @Test("selectModule records usage and dismisses the panel")
@@ -52,6 +92,7 @@ struct V1ModulePanelCoordinatorTests {
         let state =
             V1ModulePanelCoordinator
             .State(
+                focusedRegion: .slotC,
                 activeRegion: .slotC,
                 usageStorage: "{}"
             )
@@ -70,6 +111,7 @@ struct V1ModulePanelCoordinatorTests {
             )
 
         #expect(nextState.activeRegion == nil)
+        #expect(nextState.focusedRegion == .slotC)
         #expect(
             counts[
                 IOSInsertableModule

@@ -38,7 +38,7 @@ enum MemoryWriteOptionPresenter {
             defaultContentDescription:
                 language.localized(
                     key: "output.memory_write.default.description",
-                    fallback: "把这段回忆写进照片说明，方便之后在 Apple Photos 中找到它。"
+                    fallback: "写进照片说明，方便之后在图库里找到。"
                 ),
             inputPlaceholder:
                 language.localized(
