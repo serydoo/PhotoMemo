@@ -130,7 +130,9 @@ enum MemoMarkDesignTokens {
         static let compactPrimaryActionHeight: CGFloat = 40
         static let compactPrimaryActionCornerRadius: CGFloat = 12
         static let compactPrimaryActionTintOpacity: Double = 0.84
-        static let compactPrimaryActionShadowOpacity: Double = 0.08
+        static let compactPrimaryActionShadowOpacity: Double = 0.04
+        static let compactPrimaryActionShadowRadius: CGFloat = 6
+        static let compactPrimaryActionShadowOffsetY: CGFloat = 2
     }
 
     enum Share {

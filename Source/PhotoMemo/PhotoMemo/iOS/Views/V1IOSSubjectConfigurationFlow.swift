@@ -33,7 +33,7 @@ struct V1IOSSubjectConfigurationFlow: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    V1TitledSectionCard(
+                    V1TitledSectionSurface(
                         title: "基础资料",
                         subtitle: "编辑对象身份与关系信息"
                     ) {
@@ -43,7 +43,7 @@ struct V1IOSSubjectConfigurationFlow: View {
                         )
                     }
 
-                    V1TitledSectionCard(
+                    V1TitledSectionSurface(
                         title: "时间锚点",
                         subtitle: "维护与这个对象有关的重要时刻。"
                     ) {

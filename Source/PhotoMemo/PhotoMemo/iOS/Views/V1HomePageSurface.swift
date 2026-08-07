@@ -333,7 +333,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var profileSection: some View {
-        V1TitledSectionCard(
+        V1TitledSectionSurface(
             title: "记忆对象",
             subtitle: "回忆正围绕谁展开。"
         ) {
@@ -366,7 +366,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var currentPresetSection: some View {
-        V1TitledSectionCard(
+        V1TitledSectionSurface(
             title: "我的预设",
             subtitle: "下一次分享，照片会怎样呈现。",
             trailingAccessory: {

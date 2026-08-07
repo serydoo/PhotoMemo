@@ -231,13 +231,13 @@ struct ConfigurationCenterSummarySection: View {
             summaryRow(
                 title: "边框样式",
                 systemImage: MemoMarkSymbol.configuration.name,
-                detail: "当前先锁定 1 种样式，后续再扩展。"
+                detail: "当前版本仅提供基础白，更多样式将陆续开放。"
             ) {
                 Text(currentBorderStyleName)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.primary)
             } trailing: {
-                summaryStatusBadge("当前锁定")
+                summaryStatusBadge("当前版本")
             }
 
             summaryDivider

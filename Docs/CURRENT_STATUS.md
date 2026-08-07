@@ -1,5 +1,30 @@
 # MemoMark Current Status
 
+## 2026-08-08 — UI-17PM-019 卡片内容行为说明与 UI 规范同步
+
+- 根据 UI-17PM-016 固定四区实现和 UI-17PM-017 键盘/关闭边界，卡片内容编辑页底部说明已更新为当前行为基准：四区可自由组合文字与内容，修改实时同步 Renderer，右下区域写入照片说明，点击“完成”统一保存，收起键盘不会离开编辑页。
+- `Docs/DesignSystem.md`、`Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md`、`Docs/01_Product/V4_Configuration_Center_Anchor_Preview_Refinement_2026-08-05.md` 与 `Docs/07_Releases/2026-08-06-2.0.3-internal-changelog.md` 已同步；旧的探索性文案只保留在历史记录中，不再作为当前 UI 规范。
+- 新增底部说明契约并通过聚焦 `IPhoneResponsiveLayoutContractTests/cardContentEditorUsesFixedFourRegionStructure`；本轮未重跑完整测试集，既有产品语言、配置选项、根视图职责、模块候选和编辑器排版契约债务仍按历史记录处理。
+
+## 2026-08-08 — UI-17PM-018 页面表面层级统一与规范固化
+
+- 依据本轮 30 张真机截图完成 Product Loop P1 的页面层级收敛：首页“记忆对象 / 我的预设”、配置页“记忆来源 / 卡片布局与内容”以及设置页可展开分区不再使用无独立语义的最外层大卡片；各区左上标题、说明与右上操作保留，Renderer、对象、Preset、任务、结果、权益等具有独立身份或状态的内容卡片保持不变。
+- 新增共享 `V1TitledSectionSurface` 与 `v1SectionSurfaceLayout()`，把“页面分区”与“语义卡片”拆成明确的两级组件；未改变 Configuration aggregate、Renderer、Layout Engine、TextKit、持久化、Export 或 Apple Photos 生命周期。
+- 底部主操作按钮阴影已统一为 `opacity 0.04 / radius 6 / y 2`，首页、配置与保存页共用设计令牌；设置页同步去除展开分区的重复外框，保留行组、44pt 点击目标、辅助功能标签与展开状态。
+- `Docs/DesignSystem.md` 已建立四级表面模型、卡片准入规则、设置页组合规则和阴影规范；`Docs/UI_SPEC.md` 标记为历史早期布局记录，避免继续形成双重 UI 规范源。
+- 新增的三项聚焦 UI 契约通过，`git diff --check` 与 generic iOS Debug 构建通过。完整 `PhotoMemoTests` 仍有既有的产品语言、配置选项、根视图职责、模块候选与编辑器排版契约失败；本轮新增契约没有失败，因此不宣称完整测试集全绿。
+- 签名 Debug 构建成功并原地覆盖安装、启动到 iPhone 17 Pro Max；设备数据库序列 `3576`，未卸载或清除本地数据。首页、配置页、设置页的最终视觉密度与层级仍待产品负责人本轮真机确认。
+- 第一轮真机截图确认首页、配置页与设置页层级明显改善，同时发现记忆对象查看/编辑页仍保留旧章节外卡。已将两处 `基础资料 / 时间锚点` 同步改为共享无外框章节，保留对象身份内容面、编辑字段组、锚点条目、草稿保存与删除确认；总体规范和 UI-17PM-018 范围记录已同步修订。三项聚焦契约、generic iOS Debug 与签名 Debug 构建通过，最终包原地覆盖安装并启动，设备数据库序列 `3584`；记忆对象两页的最终视觉确认待产品负责人查看。
+
+## 2026-08-08 — UI-17PM-017 卡片内容标题下拉误关闭修复
+
+- 当前卡片内容编辑页在标题区域挂载向下拖动关闭手势；用户轻微下拉超过阈值后，页面会在没有连续转场反馈的情况下直接退出。
+- 已移除标题下拉关闭，只保留顶部“完成”退出页面；键盘右上方“收起键盘”继续只关闭键盘并保留编辑上下文。
+- 范围仅限 `V1EditorPresentationModifier` 的退出交互及响应式契约测试；不改变草稿 mutation、焦点路由、候选模块、持久化、Renderer、Layout Engine、Export 或 Apple Photos 生命周期。
+- 新增契约先因现有 `DragGesture` 失败，移除手势后单项通过；generic iOS Debug 构建与 `git diff --check` 通过。完整响应式套件仍保留两个与本轮无关的既有失败：根视图职责和模块候选面板契约。
+- 签名 Debug 构建与严格签名校验通过；`2.0.3 (70)` 已原地覆盖安装并启动到 iPhone 17 Pro Max，设备数据库序列 `3568`，未卸载或清除本地数据。
+- 产品负责人已在新安装包中确认卡片内容正常打开，拉动顶部没有动作，页面不再误关闭；本轮标题下拉退出问题完成真机验收。键盘按钮只收起键盘和“完成”退出页面的既有职责保持不变。
+
 ## 2026-08-07 — UI-17PM-016 左上 TextKit 试点停止并回滚
 
 - 连续两次真机复测确认 TextKit 左上在文字中间插入模块仍卡死，且文字/模块垂直对齐不稳定。
@@ -44,7 +69,7 @@
   Dynamic Type 与 VoiceOver仍需产品负责人真机验收。第三步四区迁移尚未开始。
 - 未推送 GitHub；TX-001、BP-001 未关闭，生产认证仍为 `FAIL (Conditional)`。
 
-Last updated: 2026-08-07
+Last updated: 2026-08-08
 
 ## 2026-08-07 UI-17PM-016 fully expanded top-boundary package
 

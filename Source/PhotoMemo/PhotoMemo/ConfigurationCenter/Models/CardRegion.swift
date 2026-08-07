@@ -56,6 +56,18 @@ extension CardRegion {
         }
     }
 
+    var editorTitle: String {
+        switch self {
+        case .slotA: return "卡片左上"
+        case .slotB: return "卡片左下"
+        case .slotC: return "卡片右上"
+        case .slotD: return "卡片右下"
+        default: return displayTitle
+        }
+    }
+
+    var editorSubtitle: String? { self == .slotD ? "输出到照片说明，便于检索" : nil }
+
     var semanticTitle: String {
         switch self {
         case .subject:

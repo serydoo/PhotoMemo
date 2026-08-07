@@ -120,12 +120,15 @@ punctuation is optional for the compact phrase and remains expected for the
 full prompt.
 
 Configuration sheets may use one centered, secondary `footnote` subtitle below
-the native navigation title when the sheet needs context. The accepted active
-sheet subtitles are:
+the native navigation title when the sheet needs context. The current accepted
+sheet context is:
 
 - `时间锚点`: `选择一个时间起点，让照片拥有时间答案。`
 - `更多信息`: `更多内容会根据实际需要逐步加入。`
-- `卡片内容`: `探索不同组合，也欢迎告诉我们你的自定义想法。`
+- `卡片内容`: the fixed-region editor uses its bottom explanation instead of a
+  second subtitle, because the editor must reserve vertical space for the four
+  inputs and keyboard. The explanation is:
+  `四个卡片区域都可以自由组合文字和内容，修改会实时同步到上方预览；卡片右下会写入照片说明。点“完成”后统一保存，收起键盘不会离开编辑页。`
 
 These lines are quiet context, not banners, roadmap promises, or a substitute
 for a feedback action.

@@ -358,8 +358,12 @@ extension View {
                         .Layout
                         .compactPrimaryActionShadowOpacity
                 ),
-                radius: 12,
-                y: 5
+                radius: MemoMarkDesignTokens
+                    .Layout
+                    .compactPrimaryActionShadowRadius,
+                y: MemoMarkDesignTokens
+                    .Layout
+                    .compactPrimaryActionShadowOffsetY
             )
     }
 }
@@ -462,6 +466,45 @@ struct V1TitledSectionCard<
     Content: View
 >: View {
 
+    let title: String
+    let subtitle: String?
+
+    @ViewBuilder
+    let trailingAccessory: TrailingAccessory
+
+    @ViewBuilder
+    let content: Content
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder trailingAccessory: () -> TrailingAccessory,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.trailingAccessory = trailingAccessory()
+        self.content = content()
+    }
+
+    var body: some View {
+        V1TitledSectionSurface(
+            title: title,
+            subtitle: subtitle,
+            trailingAccessory: { trailingAccessory },
+            content: { content }
+        )
+        .padding(.horizontal, 14)
+        .padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)
+        .v1CardChrome()
+    }
+}
+
+struct V1TitledSectionSurface<
+    TrailingAccessory: View,
+    Content: View
+>: View {
+
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
@@ -507,9 +550,6 @@ struct V1TitledSectionCard<
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
-        .padding(.horizontal, 14)
-        .padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)
-        .v1CardChrome()
     }
 
     @ViewBuilder
@@ -551,6 +591,32 @@ struct V1TitledSectionCard<
             key: value,
             fallback: value
         )
+    }
+}
+
+extension V1TitledSectionSurface where TrailingAccessory == EmptyView {
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(
+            title: title,
+            subtitle: subtitle,
+            trailingAccessory: { EmptyView() },
+            content: content
+        )
+    }
+}
+
+extension View {
+
+    func v1SectionSurfaceLayout() -> some View {
+        self
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 2)
+            .padding(.vertical, 2)
     }
 }
 
@@ -947,10 +1013,13 @@ struct V1RegionEditorCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(region.displayTitle)
+            Text(region.editorTitle)
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
+            if let subtitle = region.editorSubtitle {
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
 
             compositionField
                 .frame(maxWidth: .infinity)

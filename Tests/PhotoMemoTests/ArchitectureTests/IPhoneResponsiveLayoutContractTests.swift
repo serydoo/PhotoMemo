@@ -75,7 +75,8 @@ struct IPhoneResponsiveLayoutContractTests {
         )
         #expect(configuration.contains("spacing: V1SectionCardMetrics.cardHeaderContentSpacing"))
         #expect(configuration.contains("minHeight: V1SectionCardMetrics.cardHeaderMinimumHeight"))
-        #expect(configuration.contains("V1SectionCardMetrics.cardVerticalPadding"))
+        #expect(configuration.contains(".v1SectionSurfaceLayout()"))
+        #expect(!configuration.contains(".v1CardChrome()"))
     }
 
     @Test("primary vertical pages adopt the shared viewport contract")
@@ -372,7 +373,9 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!editorSource.contains("IOSCompactEntryDisclosureRow("))
         #expect(!editorSource.contains("组合结果"))
         #expect(!editorSource.contains("rowValueText"))
-        #expect(cluster.contains("四个区域都可以自由组合文字和内容"))
+        #expect(cluster.contains("四个卡片区域都可以自由组合文字和内容"))
+        #expect(cluster.contains("输出到照片说明，便于检索"))
+        #expect(cluster.contains("点“完成”后统一保存，收起键盘不会离开编辑页"))
     }
 
     @Test("card composer keeps module removal in keyboard text-flow semantics")
@@ -446,6 +449,17 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!modifier.contains("keyboard seam"))
         #expect(!modifier.contains("Color.primary.opacity(0.10)"))
         #expect(modifier.contains("onDismissKeyboard()"))
+    }
+
+    @Test("card editor title does not dismiss through a downward drag")
+    func cardEditorTitleDoesNotDismissThroughDownwardDrag() throws {
+        let modifier = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPresentationModifier.swift"
+        )
+
+        #expect(modifier.contains("Button(\"完成\", action: onDismiss)"))
+        #expect(!modifier.contains("DragGesture(minimumDistance:"))
+        #expect(!modifier.contains("value.translation.height > 56"))
     }
 
     @Test("module candidates stay inline with the card editor instead of a half sheet")
@@ -777,8 +791,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(deleteButton.contains("foregroundStyle(.red)"))
     }
 
-    @Test("subject overview uses the configuration-center card hierarchy")
-    func subjectOverviewUsesConfigurationCenterCardHierarchy() throws {
+    @Test("subject overview uses the shared section surface hierarchy")
+    func subjectOverviewUsesSharedSectionSurfaceHierarchy() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
         )
@@ -788,7 +802,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!source.contains("GeometryReader"))
         #expect(source.contains("subjectIdentitySummary"))
         #expect(source.contains("subjectBasicInformation"))
-        #expect(source.contains("V1TitledSectionCard("))
+        #expect(source.contains("V1TitledSectionSurface("))
+        #expect(!source.contains("V1TitledSectionCard("))
         #expect(source.contains("V1IOSSubjectAnchorDetailSection("))
         #expect(!source.contains("V1ConfigurationCardContainer"))
     }

@@ -126,9 +126,7 @@ struct V1ConfigurationOptionList: View {
                 .stroke(ConfigurationUI.faintHairline)
             )
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)
-        .v1CardChrome()
+        .v1SectionSurfaceLayout()
     }
 
     @ViewBuilder
@@ -460,9 +458,9 @@ struct V1ConfigurationOptionList: View {
     private var borderStyleRow: some View {
         configurationTextRow(
             title: "边框样式",
-            subtitle: "当前预设使用的边框。",
+            subtitle: "当前版本仅提供基础白，更多样式将陆续开放。",
             value: borderStyleName,
-            detail: "当前锁定",
+            detail: "当前版本",
             showsTrailingChevron: false
         ) {
             rowValueText(borderStyleName)
@@ -635,9 +633,7 @@ struct V1ConfigurationOptionList: View {
                 .stroke(ConfigurationUI.faintHairline)
             )
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)
-        .v1CardChrome()
+        .v1SectionSurfaceLayout()
     }
 
     @ViewBuilder
@@ -1233,9 +1229,17 @@ private struct V1ConfigurationSaveButtonStyle: ButtonStyle {
                 color:
                     isRestrained
                     ? Color.clear
-                    : Color.accentColor.opacity(0.16),
-                radius: 12,
-                y: 5
+                    : Color.accentColor.opacity(
+                        MemoMarkDesignTokens
+                            .Layout
+                            .compactPrimaryActionShadowOpacity
+                    ),
+                radius: MemoMarkDesignTokens
+                    .Layout
+                    .compactPrimaryActionShadowRadius,
+                y: MemoMarkDesignTokens
+                    .Layout
+                    .compactPrimaryActionShadowOffsetY
             )
             .animation(
                 reduceMotion

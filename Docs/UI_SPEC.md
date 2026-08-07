@@ -1,5 +1,10 @@
 # MemoMark UI Specification
 
+> Historical early-layout note. The canonical product-interface rules are now
+> maintained in `Docs/DesignSystem.md`. Where this document conflicts with the
+> current Configuration Center, surface hierarchy, semantic tokens, or Renderer
+> ownership, `Docs/DesignSystem.md` and accepted V4 specifications prevail.
+
 ## Design Language
 
 - Apple Native
@@ -104,4 +109,3 @@ Supports:
 Recommended Size:
 
 128x128
-

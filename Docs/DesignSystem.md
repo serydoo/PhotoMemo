@@ -1,8 +1,8 @@
 # MemoMark Design System V1
 
-Status: Frozen
+Status: Frozen, refined by UI-17PM-018
 
-Last updated: 2026-07-25
+Last updated: 2026-08-08
 
 ## Purpose
 
@@ -254,16 +254,72 @@ Share-specific typography tokens remain defined in
 
 ## Cards And Separators
 
-One card owns one product object, decision, or status group.
+### Surface Hierarchy
+
+MemoMark uses four visual levels. A lower level must not be wrapped in an
+additional card merely to make a section look complete.
+
+1. **Page:** semantic system background, page title, introduction, and section
+   spacing. The page provides the broadest grouping.
+2. **Section:** title, optional subtitle, and optional trailing action placed
+   directly on the page background. A section is navigation and information
+   hierarchy, not automatically a card.
+3. **Content surface:** a grouped set of related rows or controls. It may use a
+   quiet inset background, hairline, or rounded group when this improves
+   scanning and touch comprehension.
+4. **Semantic card:** a distinct product object, rendered result, durable
+   status, entitlement, task, or bounded decision that must read as one unit.
+
+The default composition is therefore:
+
+```text
+Page
+-> Section title and optional action
+-> Content surface or semantic cards
+```
+
+Avoid this composition unless the outer card itself represents a real object:
+
+```text
+Page
+-> Section card
+-> Inner card
+-> Row or control
+```
+
+### Card Admission Rule
+
+One card owns one product object, decision, result, entitlement, or status
+group. A section heading alone is never sufficient reason to create a card.
+
+Before adding a card, identify its semantic owner. If the answer is only “this
+is a section” or “this needs visual separation,” use spacing, typography, a
+grouped content surface, or a separator first.
 
 Accepted examples:
 
-- Home: Memory Subject and configuration remain separate;
-- Configuration Center: expression, layout/content, and save remain separate;
-- Memory Subject: basic information and time anchors remain separate.
+- Home: the active Memory Subject object, each saved Preset, and a current task
+  remain semantic cards; `记忆对象` and `我的预设` remain page-level section
+  headings rather than additional outer cards.
+- Configuration Center: the real Renderer preview remains the primary semantic
+  card; `记忆来源` and `卡片布局与内容` use section headings with grouped inner
+  content surfaces.
+- Settings: MemoMark+ entitlement remains a semantic card; disclosure groups
+  use page-level headings and reveal grouped inner content without another
+  outer card.
+- Memory Subject: `基础资料` and `时间锚点` are page-level section headings in
+  both reading and editing flows. The identity summary, editable field group,
+  and each time-anchor row retain their own content or object surfaces because
+  they represent durable memory truth; the section wrapper does not add a
+  second card around them.
+- Processing and Share: real task, result, destination, and execution-state
+  groups remain cards when the boundary helps the user understand consequence
+  or lifecycle state.
 
 Do not create a new card when content belongs to an accepted card. Do not merge
-accepted cards when their responsibilities differ.
+accepted cards when their responsibilities differ. Do not remove a card from
+Renderer output, the Memory Subject identity summary or anchor rows, Preset,
+entitlement, task, result, or status surfaces merely to reduce card count.
 
 Horizontal row separators use:
 
@@ -285,6 +341,67 @@ Use the existing token owners before introducing new values:
 Prefer the existing 4/8/12/16/24 spacing rhythm. Corner radius follows
 component hierarchy and existing tokens; do not invent a new radius for a
 single use.
+
+Section titles align with the content column they govern. Removing an outer
+card must not also remove the section title, trailing action, minimum touch
+target, Dynamic Type reflow, or the inner content boundary users rely on.
+
+## Elevation And Shadow
+
+Elevation is functional, not decorative. Most page sections and grouped
+content surfaces use no shadow. Semantic cards may use the existing restrained
+card chrome when separation from the system background is necessary.
+
+Primary bottom actions use the shared `MemoMarkDesignTokens.Layout` shadow
+tokens. The accepted compact treatment is:
+
+- accent shadow opacity: `0.04`;
+- blur radius: `6` points;
+- vertical offset: `2` points.
+
+Do not define a stronger local primary-action shadow in a page-specific button
+style. Pressed, disabled, and restrained states may reduce or remove elevation;
+they must not increase it. Sheets and system menus should rely on native
+presentation depth rather than adding custom page shadows.
+
+## Card Content Editor
+
+The Card Content editor is a fixed four-region editing surface, not a set of
+expandable cards or a second preview page:
+
+- `左上`, `左下`, `右上`, and `右下` remain visible in a stable order;
+- each region has one continuous combination input for literal text and
+  insertable content;
+- the top `＋模块` action opens candidates inside the current editor context;
+  it does not present a competing half-height module sheet;
+- Renderer remains the only complete visual preview while editing;
+- edits update the preview immediately, while `完成` commits all four regions
+  together through the existing configuration save path;
+- the keyboard toolbar and keyboard-edge button only dismiss the keyboard;
+  they never dismiss the editor, clear the draft, or change the active region;
+- the bottom explanation is the behavioral source of truth: `四个卡片区域都可以
+  自由组合文字和内容，修改会实时同步到上方预览；卡片右下会写入照片说明。
+  点“完成”后统一保存，收起键盘不会离开编辑页。`
+- region labels use `卡片左上 / 卡片左下 / 卡片右上 / 卡片右下`; only
+  `卡片右下` carries `输出到照片说明，便于检索` because it is the photo-
+  description source.
+
+Do not add a second region summary, a duplicate composed-result preview, or a
+per-region save action. Keep the editor's title compact because its vertical
+space is reserved for the four inputs, candidate context, and keyboard-safe
+scroll viewport.
+
+## Settings Composition
+
+Settings follows the same surface hierarchy as the main app:
+
+- entitlement and purchase state may remain a distinct semantic card;
+- disclosure titles sit directly on the page background;
+- expanded rows form one quiet grouped content surface;
+- collapsed disclosure headings keep a minimum 44-point target;
+- chevrons, summaries, Dynamic Type reflow, VoiceOver expanded/collapsed state,
+  and Reduce Motion behavior remain intact;
+- disclosure groups must not become card-inside-card stacks.
 
 ## Motion And Feedback
 

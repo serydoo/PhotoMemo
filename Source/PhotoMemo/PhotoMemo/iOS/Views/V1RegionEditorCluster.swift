@@ -163,7 +163,7 @@ struct V1RegionEditorCluster: View {
     }
 
     private var editorFooterNote: some View {
-        Text("四个区域都可以自由组合文字和内容，编辑结果会实时同步到上方预览；右下内容也会写入照片说明。")
+        Text("四个卡片区域都可以自由组合文字和内容，修改会实时同步到上方预览；卡片右下会写入照片说明。点“完成”后统一保存，收起键盘不会离开编辑页。")
             .font(.footnote)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)

@@ -56,10 +56,15 @@ Accepted follow-up treatment:
 
 - Keep the native inline navigation titles.
 - Add one shared centered `footnote` subtitle treatment with secondary color
-  and system spacing below each title.
+  and system spacing below the Time Anchor and More Information titles. The
+  fixed-region Card Content editor keeps a compact title-only header and uses
+  its bottom behavior explanation instead, preserving input and keyboard
+  viewport space.
 - Time Anchor subtitle: `选择一个时间起点，让照片拥有时间答案。`
 - More Information subtitle: `更多内容会根据实际需要逐步加入。`
-- Card Content subtitle: `探索不同组合，也欢迎告诉我们你的自定义想法。`
+- Card Content keeps the compact title-only editor header. Its bottom
+  explanation is the source of truth for fixed-region behavior:
+  `四个区域都可以自由组合文字和内容，修改会实时同步到上方预览；右下区域会写入照片说明。点“完成”后统一保存，收起键盘不会离开编辑页。`
 - Preserve the existing sheet actions, data ownership, detents, and editor
   internals. This is presentation polish only.
 

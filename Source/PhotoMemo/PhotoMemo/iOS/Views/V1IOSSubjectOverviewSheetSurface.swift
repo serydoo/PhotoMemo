@@ -36,7 +36,7 @@ struct V1IOSSubjectOverviewSheet: View {
                         subjectSwitcher
                     }
 
-                    V1TitledSectionCard(
+                    V1TitledSectionSurface(
                         title: "基础资料",
                         subtitle: "对象身份与关系信息",
                         trailingAccessory: {
@@ -46,7 +46,7 @@ struct V1IOSSubjectOverviewSheet: View {
                         subjectBasicInformation
                     }
 
-                    V1TitledSectionCard(
+                    V1TitledSectionSurface(
                         title: "时间锚点",
                         subtitle: "这些重要时刻会影响照片中的时间表达。"
                     ) {

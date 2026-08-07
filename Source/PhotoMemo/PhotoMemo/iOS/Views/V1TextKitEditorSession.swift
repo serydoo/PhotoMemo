@@ -408,9 +408,12 @@ struct V1TextKitSessionEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(region.displayTitle)
+            Text(region.editorTitle)
                 .font(.headline.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)
+            if let subtitle = region.editorSubtitle {
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
 
             V1SlotATextKitSessionRepresentable(
                 session: session,

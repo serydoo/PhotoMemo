@@ -1651,48 +1651,45 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
     let content: Content
 
     var body: some View {
-        V1ConfigurationCardContainer(
-            background: sectionBackground
+        VStack(
+            alignment: .leading,
+            spacing: V1SectionCardMetrics.headerContentSpacing
         ) {
-            VStack(
-                alignment: .leading,
-                spacing: V1SectionCardMetrics.headerContentSpacing
-            ) {
-                Button {
-                    withAnimation(disclosureAnimation) {
-                        isExpanded.toggle()
-                    }
-                } label: {
-                    adaptiveDisclosureHeader
+            Button {
+                withAnimation(disclosureAnimation) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                adaptiveDisclosureHeader
                     .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .frame(minHeight: 44)
-                .accessibilityLabel(title)
-                .accessibilityValue(
-                    isExpanded
-                    ? localized(
-                        "settings.accessibility.expanded",
-                        fallback: "已展开"
-                    )
-                    : localized(
-                        "settings.accessibility.collapsed",
-                        fallback: "已收起"
-                    )
+            }
+            .buttonStyle(.plain)
+            .frame(minHeight: 44)
+            .accessibilityLabel(title)
+            .accessibilityValue(
+                isExpanded
+                ? localized(
+                    "settings.accessibility.expanded",
+                    fallback: "已展开"
                 )
-                .accessibilityHint(
-                    localized(
-                        "settings.accessibility.toggle_hint",
-                        fallback: "点击展开或收起"
-                    )
+                : localized(
+                    "settings.accessibility.collapsed",
+                    fallback: "已收起"
                 )
+            )
+            .accessibilityHint(
+                localized(
+                    "settings.accessibility.toggle_hint",
+                    fallback: "点击展开或收起"
+                )
+            )
 
-                if isExpanded {
-                    content
-                        .transition(contentTransition)
-                }
+            if isExpanded {
+                content
+                    .transition(contentTransition)
             }
         }
+        .v1SectionSurfaceLayout()
     }
 
     @ViewBuilder
@@ -1770,17 +1767,6 @@ private struct V1SettingsDisclosureSection<Content: View>: View {
         return .opacity.combined(
             with: .offset(y: -4)
         )
-    }
-
-    private var sectionBackground: Color {
-        switch emphasis {
-        case .primary:
-            ConfigurationUI.panelBackground
-        case .secondary:
-            ConfigurationUI.panelBackground.opacity(0.82)
-        case .system:
-            ConfigurationUI.controlBackground.opacity(0.36)
-        }
     }
 
     private func localized(

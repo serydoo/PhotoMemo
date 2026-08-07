@@ -114,17 +114,6 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 10)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 18)
-                            .onEnded { value in
-                                let isVertical = abs(value.translation.height)
-                                    > abs(value.translation.width)
-                                if isVertical, value.translation.height > 56 {
-                                    onDismiss()
-                                }
-                            }
-                    )
 
                     editorContent
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

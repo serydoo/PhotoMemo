@@ -190,7 +190,7 @@ private extension PhotoMemoShareExtensionViewController {
             previewCard
 
         let summaryCard =
-            makeTitledCardContainer(
+            makeTitledSectionContainer(
                 title: "本次分享",
                 contentView:
                     makeInnerCardContainer(
@@ -201,7 +201,7 @@ private extension PhotoMemoShareExtensionViewController {
             summaryCard
 
         let statusCard =
-            makeTitledCardContainer(
+            makeTitledSectionContainer(
                 headerView: statusTitleLabel,
                 contentView:
                     makeInnerCardContainer(
@@ -1017,6 +1017,37 @@ private extension PhotoMemoShareExtensionViewController {
             headerView: titleLabel,
             contentView: contentView
         )
+    }
+
+    func makeTitledSectionContainer(
+        title: String,
+        contentView: UIView
+    ) -> UIView {
+        let titleLabel = UILabel()
+        titleLabel.font = MemoMarkDesignTokens.Typography.moduleTitle.uiFont()
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.numberOfLines = 0
+        titleLabel.text = title
+        titleLabel.accessibilityTraits = .header
+
+        let stack = UIStackView(arrangedSubviews: [titleLabel, contentView])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.alignment = .fill
+        stack.spacing = 12
+        return stack
+    }
+
+    func makeTitledSectionContainer(
+        headerView: UIView,
+        contentView: UIView
+    ) -> UIView {
+        let stack = UIStackView(arrangedSubviews: [headerView, contentView])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.alignment = .fill
+        stack.spacing = 12
+        return stack
     }
 
     func makeTitledCardContainer(

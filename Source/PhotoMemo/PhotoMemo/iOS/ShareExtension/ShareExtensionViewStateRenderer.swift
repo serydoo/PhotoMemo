@@ -375,7 +375,7 @@ final class ShareExtensionViewStateRenderer {
         }
         return MemoMarkLanguage.interfaceStored.localized(
             key: "share.ready.subtitle",
-            fallback: "Ready to create new memory records"
+            fallback: "准备记录这段时光"
         )
     }
 

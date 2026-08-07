@@ -358,8 +358,8 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
     }
 
-    @Test("memory subject cards and interface preferences use nested disclosure hierarchy")
-    func memorySubjectCardsAndInterfacePreferencesUseNestedHierarchy() throws {
+    @Test("memory subject sections and interface preferences use restrained hierarchy")
+    func memorySubjectSectionsAndInterfacePreferencesUseRestrainedHierarchy() throws {
         let overview = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
         )
@@ -375,12 +375,16 @@ struct AppleNativeProductSurfaceContractTests {
 
         #expect(overview.contains("title: \"基础资料\""))
         #expect(overview.contains("title: \"时间锚点\""))
+        #expect(overview.contains("V1TitledSectionSurface("))
+        #expect(!overview.contains("V1TitledSectionCard("))
         #expect(overview.contains("subjectBasicInformation"))
         #expect(overview.contains(".v1CardChrome()"))
         #expect(overview.contains(".frame(maxWidth: .infinity, alignment: .center)"))
         #expect(overview.contains(".padding(.vertical, 7)"))
         #expect(editorFlow.contains("title: \"基础资料\""))
         #expect(editorFlow.contains("title: \"时间锚点\""))
+        #expect(editorFlow.contains("V1TitledSectionSurface("))
+        #expect(!editorFlow.contains("V1TitledSectionCard("))
         #expect(editor.contains("contactAvatarEditor"))
         #expect(editor.contains("expressionSubjectCard\n                .subjectIdentityInnerCardChrome()"))
         #expect(editor.contains("compactIdentityFieldsPanel\n                .subjectIdentityInnerCardChrome()"))
@@ -480,6 +484,29 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("profileSection"))
         #expect(source.contains("currentPresetSection"))
         #expect(source.contains("选择照片"))
+    }
+
+    @Test("primary pages reserve cards for objects instead of section wrappers")
+    func primaryPagesReserveCardsForObjects() throws {
+        let home = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+        let configuration = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let settings = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsPageSurface.swift"
+        )
+        let support = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+
+        #expect(support.contains("struct V1TitledSectionSurface"))
+        #expect(home.contains("V1TitledSectionSurface(\n            title: \"记忆对象\""))
+        #expect(home.contains("V1TitledSectionSurface(\n            title: \"我的预设\""))
+        #expect(configuration.contains(".v1SectionSurfaceLayout()"))
+        #expect(!settings.contains("V1ConfigurationCardContainer(\n            background: sectionBackground"))
+        #expect(settings.contains("memoMarkPlusSection"))
     }
 
     @Test("settings opens getting started first and keeps secondary sections collapsed")
@@ -588,12 +615,14 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(detail.contains("V1CardHeaderIconButton("))
         #expect(detail.contains("systemImage: \"pencil\""))
         #expect(detail.contains("accessibilityLabel: \"编辑记忆对象\""))
-        #expect(detail.contains("V1TitledSectionCard("))
+        #expect(detail.contains("V1TitledSectionSurface("))
+        #expect(!detail.contains("V1TitledSectionCard("))
         #expect(!detail.contains("onSaveSubject"))
         #expect(!detail.contains("当前使用"))
         #expect(!detail.contains("mode: .identityOverview"))
         #expect(editor.contains("mode: .identityOverview"))
-        #expect(editor.contains("V1TitledSectionCard("))
+        #expect(editor.contains("V1TitledSectionSurface("))
+        #expect(!editor.contains("V1TitledSectionCard("))
         #expect(editor.contains("删除记忆对象"))
     }
 
@@ -742,7 +771,17 @@ struct AppleNativeProductSurfaceContractTests {
         )
         #expect(
             tokens.contains(
-                "compactPrimaryActionShadowOpacity: Double = 0.08"
+                "compactPrimaryActionShadowOpacity: Double = 0.04"
+            )
+        )
+        #expect(
+            tokens.contains(
+                "compactPrimaryActionShadowRadius: CGFloat = 6"
+            )
+        )
+        #expect(
+            tokens.contains(
+                "compactPrimaryActionShadowOffsetY: CGFloat = 2"
             )
         )
         #expect(
