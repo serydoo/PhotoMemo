@@ -80,13 +80,9 @@ struct V1ModulePanelCoordinator {
                 storage
         }
 
-        nextState.activeRegion =
-            V1ModuleLibraryPresenter
-            .resolvedActiveRegion(
-                isPresented: false,
-                currentRegion:
-                    state.activeRegion
-            )
+        // Keep the candidate surface open after insertion so users can add
+        // multiple modules without reopening it after every selection.
+        nextState.activeRegion = state.activeRegion
 
         return nextState
     }

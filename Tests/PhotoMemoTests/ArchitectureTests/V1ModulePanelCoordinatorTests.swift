@@ -87,8 +87,8 @@ struct V1ModulePanelCoordinatorTests {
         #expect(nextState.focusedRegion == .slotA)
     }
 
-    @Test("selectModule records usage and dismisses the panel")
-    func selectModuleRecordsUsageAndDismissesThePanel() {
+    @Test("selectModule records usage and keeps the panel open")
+    func selectModuleRecordsUsageAndKeepsThePanelOpen() {
         let state =
             V1ModulePanelCoordinator
             .State(
@@ -110,7 +110,7 @@ struct V1ModulePanelCoordinatorTests {
                     nextState.usageStorage
             )
 
-        #expect(nextState.activeRegion == nil)
+        #expect(nextState.activeRegion == .slotC)
         #expect(nextState.focusedRegion == .slotC)
         #expect(
             counts[
