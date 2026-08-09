@@ -52,12 +52,12 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("生日当天会用自然的语言记录"))
-        #expect(simplifiedChinese.contains("可以选择跟随系统、浅色或深色界面"))
-        #expect(simplifiedChinese.contains("保存回 Apple Photos 后的恢复与重复结果保护得到改进"))
-        #expect(english.contains("Photos from a birthday use a natural expression"))
-        #expect(english.contains("Choose System, Light, or Dark appearance"))
-        #expect(english.contains("Improved recovery and duplicate-result protection"))
+        #expect(simplifiedChinese.contains("时光记迎来一次较大的体验更新"))
+        #expect(simplifiedChinese.contains("四个内容区域明确对应最终照片的位置"))
+        #expect(simplifiedChinese.contains("选图、任务重试与购买操作获得更清楚的状态和失败提示"))
+        #expect(english.contains("MemoMark is receiving a major experience update"))
+        #expect(english.contains("Four content regions map clearly to the final photo"))
+        #expect(english.contains("Photo picking, task retry, and purchase actions provide clearer states"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -68,47 +68,42 @@ struct V1ReleaseNotesContractTests {
             "Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj"
         )
 
-        #expect(!projectSource.contains("MARKETING_VERSION = 2.0.2;"))
-        #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 69;"))
+        #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
+        #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.0.3;"
+                separatedBy: "MARKETING_VERSION = 2.1.0;"
             ).count == 9
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 70;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 76;"
             ).count == 11
         )
     }
 
     @Test("next release drafts keep internal TestFlight and App Store boundaries distinct")
     func nextReleaseDraftsKeepAudienceBoundariesDistinct() throws {
-        let internalNotes = try sourceText(
-            "Docs/07_Releases/2026-08-06-2.0.3-internal-changelog.md"
+        let releaseNotes = try sourceText(
+            "Docs/07_Releases/2026-08-08-2.1.0-release-notes.md"
         )
         let testFlightNotes = try sourceText(
-            "Docs/07_Releases/2026-08-06-2.0.3-testflight-notes.md"
+            "Docs/07_Releases/2026-08-08-2.1.0-testflight-notes.md"
         )
         let appStoreNotes = try sourceText(
-            "Docs/07_Releases/2026-08-06-2.0.3-app-store-whats-new.md"
+            "Docs/07_Releases/2026-08-08-2.1.0-app-store-whats-new.md"
         )
 
-        #expect(internalNotes.contains("目标版本与构建号：`2.0.3 (70)`"))
-        #expect(testFlightNotes.contains("目标版本与构建号：`2.0.3 (70)`"))
-        #expect(appStoreNotes.contains("目标版本：`2.0.3`"))
-        #expect(internalNotes.contains("FAIL (Conditional)"))
-        #expect(internalNotes.contains("TX-001"))
-        #expect(internalNotes.contains("BP-001"))
-        #expect(internalNotes.contains("所有生产时间锚点路径统一按拍摄时区中的日历日判断关系"))
-        #expect(internalNotes.contains("2026-08-06 之前，非生日锚点按精确时刻比较"))
-        #expect(internalNotes.contains("该规则仅作为历史记录保留"))
-        #expect(testFlightNotes.contains("照片拍摄时区中的日历日"))
-        #expect(testFlightNotes.contains("同一日内早晚不同的时刻"))
-        #expect(testFlightNotes.contains("不会仅因时分先后变成倒计时"))
-        #expect(testFlightNotes.contains("补充文字会在下一行显示"))
-        #expect(testFlightNotes.contains("不替换表达"))
-        #expect(testFlightNotes.contains("强制终止、Apple Photos 延迟显示和恢复后的结果数量"))
+        #expect(releaseNotes.contains("# MemoMark 2.1.0 (76)"))
+        #expect(testFlightNotes.contains("2.1.0 (76)"))
+        #expect(appStoreNotes.contains("# MemoMark 2.1.0"))
+        #expect(releaseNotes.contains("FAIL (Conditional)"))
+        #expect(releaseNotes.contains("TX-001"))
+        #expect(releaseNotes.contains("BP-001"))
+        #expect(releaseNotes.contains("变更起点：2026-08-06 16:08"))
+        #expect(testFlightNotes.contains("四个内容区域"))
+        #expect(testFlightNotes.contains("重要日子"))
+        #expect(testFlightNotes.contains("购买/恢复/兑换"))
         #expect(!testFlightNotes.contains("TX-001"))
         #expect(!testFlightNotes.contains("BP-001"))
         #expect(!appStoreNotes.contains("TX-001"))

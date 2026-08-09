@@ -233,10 +233,10 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!output.contains("title: \"回到哪里\",\n                systemImage:"))
         #expect(!output.contains("private struct V1MemoryWriteExplanation"))
         #expect(!output.contains("let tint: Color\n    let title: String\n    let subtitle: String"))
-        #expect(support.contains("systemImage: nil"))
-        #expect(regionEditor.contains("Text(\"写进卡片的内容\")"))
-        #expect(!regionEditor.contains("Label(\"写进卡片的内容\", systemImage: \"info.circle\")"))
-        #expect(regionEditor.contains("configurationGuide\n                .padding(.horizontal, 4)"))
+        #expect(support.contains("struct V1TitledSectionSurface"))
+        #expect(regionEditor.contains("Text(\"这里的内容会怎样使用？\")"))
+        #expect(!regionEditor.contains("Label(\"这里的内容会怎样使用？\", systemImage:"))
+        #expect(regionEditor.contains("private var editorFooterNote"))
     }
 
     @Test("processing and output share titled card hierarchy")
@@ -329,16 +329,16 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
         )
         let applePhotosRow = try #require(
-            progress.range(of: "Text(\"查看 Apple Photos\")")
+            progress.range(of: "private var photoLibraryLinkRow: some View")
         )
         let applePhotosRowSource = progress[applePhotosRow.lowerBound...]
         #expect(
-            applePhotosRowSource.prefix(1_400).contains(
+            applePhotosRowSource.prefix(2_200).contains(
                 "Image(systemName: \"chevron.right\")"
             )
         )
         #expect(
-            applePhotosRowSource.prefix(1_400).contains(
+            applePhotosRowSource.prefix(2_200).contains(
                 ".foregroundStyle(.secondary)"
             )
         )
@@ -456,7 +456,7 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         #expect(source.contains("已保存"))
-        #expect(source.contains("保存这次选择"))
+        #expect(source.contains("保存这些设置"))
         #expect(source.contains("保留拍摄信息"))
         #expect(source.contains("configurationStatus == .saved"))
         #expect(!source.contains("保留 EXIF 信息"))

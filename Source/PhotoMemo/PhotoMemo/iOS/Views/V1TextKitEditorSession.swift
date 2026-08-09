@@ -6,6 +6,7 @@ import UIKit
 @MainActor
 final class V1TextKitCommandBus {
     var insertHandler: ((V1ContentItem) -> Void)?
+    var focusHandler: (() -> Void)?
     var prefersTrailingInsertion = false
     private(set) var commandRevision = 0
 
@@ -13,6 +14,11 @@ final class V1TextKitCommandBus {
         commandRevision += 1
         V1TextKitTrace.log("commandBus.insert", extra: "revision=\(commandRevision) item=\(item.kind)")
         insertHandler?(item)
+    }
+
+    func requestFocus() {
+        V1TextKitTrace.log("commandBus.requestFocus")
+        focusHandler?()
     }
 }
 
@@ -78,14 +84,7 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         // or an attachment changes.
         textView.textContainerInset = UIEdgeInsets(top: 6, left: 4, bottom: 6, right: 4)
         textView.textContainer.lineFragmentPadding = 0
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.minimumLineHeight = 28
-        paragraphStyle.maximumLineHeight = 28
-        textView.typingAttributes = [
-            .font: UIFont.preferredFont(forTextStyle: .subheadline),
-            .foregroundColor: UIColor.label,
-            .paragraphStyle: paragraphStyle
-        ]
+        textView.typingAttributes = editingAttributes()
         textView.showsHorizontalScrollIndicator = false
         textView.showsVerticalScrollIndicator = false
         textView.accessibilityLabel = "\(region.displayTitle)内容"
@@ -255,16 +254,7 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
     ) {
         isApplyingExternalState = true
         let result = NSMutableAttributedString()
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.preferredFont(forTextStyle: .subheadline),
-            .foregroundColor: UIColor.label,
-            .paragraphStyle: {
-                let style = NSMutableParagraphStyle()
-                style.minimumLineHeight = 28
-                style.maximumLineHeight = 28
-                return style
-            }()
-        ]
+        let attributes = editingAttributes()
 
         for item in draft.items {
             if item.kind == .text {
@@ -281,7 +271,7 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         result.append(
             NSAttributedString(
                 string: "\u{200B}",
-                attributes: [Self.trailingPositionAttribute: true]
+                attributes: trailingSentinelAttributes()
             )
         )
 
@@ -339,7 +329,7 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         textView.textStorage.append(
             NSAttributedString(
                 string: "\u{200B}",
-                attributes: [Self.trailingPositionAttribute: true]
+                attributes: trailingSentinelAttributes()
             )
         )
         textView.selectedRange = currentSelection
@@ -349,6 +339,25 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
             "restoreTrailingSentinel",
             extra: stateDescription(for: textView)
         )
+    }
+
+    private func editingAttributes() -> [NSAttributedString.Key: Any] {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.minimumLineHeight = 28
+        paragraphStyle.maximumLineHeight = 28
+        return [
+            .font: UIFont.preferredFont(forTextStyle: .subheadline),
+            .foregroundColor: UIColor.label,
+            .paragraphStyle: paragraphStyle
+        ]
+    }
+
+    private func trailingSentinelAttributes() -> [NSAttributedString.Key: Any] {
+        var attributes: [NSAttributedString.Key: Any] = [
+            Self.trailingPositionAttribute: true
+        ]
+        attributes.merge(editingAttributes()) { current, _ in current }
+        return attributes
     }
 
     private func stateDescription(for textView: UITextView) -> String {
@@ -379,6 +388,7 @@ struct V1TextKitSessionEditor: View {
     let region: CardRegion
     let draft: V1EditorDraft
     let commandBus: V1TextKitCommandBus
+    let isFocused: Bool
     let onFocus: () -> Void
     let onDraftChange: (V1EditorDraft) -> Void
 
@@ -388,12 +398,14 @@ struct V1TextKitSessionEditor: View {
         region: CardRegion,
         draft: V1EditorDraft,
         commandBus: V1TextKitCommandBus,
+        isFocused: Bool,
         onFocus: @escaping () -> Void,
         onDraftChange: @escaping (V1EditorDraft) -> Void
     ) {
         self.region = region
         self.draft = draft
         self.commandBus = commandBus
+        self.isFocused = isFocused
         self.onFocus = onFocus
         self.onDraftChange = onDraftChange
         _session = State(
@@ -408,13 +420,15 @@ struct V1TextKitSessionEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(region.editorTitle)
-                    .font(.headline.weight(.semibold))
-                    .accessibilityAddTraits(.isHeader)
-                if let subtitle = region.editorSubtitle {
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
-                }
+            Text(region.displayTitle)
+                .font(.headline.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
+
+            if let subtitle = region.editorSubtitle {
+                Text(subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             V1SlotATextKitSessionRepresentable(
@@ -437,13 +451,14 @@ struct V1TextKitSessionEditor: View {
                     cornerRadius: ConfigurationUI.smallCornerRadius,
                     style: .continuous
                 )
-                .stroke(Color.primary.opacity(0.06))
+                .stroke(
+                    isFocused ? Color.accentColor.opacity(0.42) : Color.primary.opacity(0.06),
+                    lineWidth: isFocused ? 1.2 : 1
+                )
             )
         }
-        // Match the single-field editor's inner visual measure while keeping
-        // the TextKit row's full-width hit target inside this inset.
-        .padding(.horizontal, ConfigurationUI.sheetPanelPadding + 4)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
     }
 }
 
@@ -484,6 +499,13 @@ private struct V1SlotATextKitSessionRepresentable: UIViewRepresentable {
             }
             session.insert(item, in: view)
         }
+        commandBus.focusHandler = { [weak view] in
+            guard let view else { return }
+            DispatchQueue.main.async {
+                guard view.window != nil else { return }
+                _ = view.becomeFirstResponder()
+            }
+        }
         return view
     }
 
@@ -496,6 +518,13 @@ private struct V1SlotATextKitSessionRepresentable: UIViewRepresentable {
                 commandBus.prefersTrailingInsertion = false
             }
             session.insert(item, in: view)
+        }
+        commandBus.focusHandler = { [weak view] in
+            guard let view else { return }
+            DispatchQueue.main.async {
+                guard view.window != nil else { return }
+                _ = view.becomeFirstResponder()
+            }
         }
         session.setDraftFromOutside(draft, in: view)
     }
@@ -510,6 +539,15 @@ private final class V1TextKitTextView: UITextView {
             return
         }
         super.deleteBackward()
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        // An empty draft contains only the private trailing sentinel. UIKit
+        // does not consistently promote that otherwise blank surface to the
+        // first responder when it is embedded in the editor ScrollView, so
+        // make the native input contract explicit before handling the touch.
+        _ = becomeFirstResponder()
+        super.touchesBegan(touches, with: event)
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {

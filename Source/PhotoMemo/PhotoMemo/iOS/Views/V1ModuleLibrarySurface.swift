@@ -36,7 +36,7 @@ struct V1ModuleLibrarySurface: View {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(groupedModules) { group in
                     HStack(alignment: .center, spacing: 8) {
-                        Text(group.title)
+                        Text(LocalizedStringKey(displayCategoryTitle(group.title)))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .frame(width: 48, alignment: .leading)
@@ -86,18 +86,17 @@ struct V1ModuleLibrarySurface: View {
         .background(Color(uiColor: .secondarySystemGroupedBackground))
         .clipShape(
             RoundedRectangle(
-                cornerRadius: ConfigurationUI.sheetPanelCornerRadius,
+                cornerRadius: ConfigurationUI.smallCornerRadius,
                 style: .continuous
             )
         )
         .overlay(
             RoundedRectangle(
-                cornerRadius: ConfigurationUI.sheetPanelCornerRadius,
+                cornerRadius: ConfigurationUI.smallCornerRadius,
                 style: .continuous
             )
-            .stroke(Color.primary.opacity(0.08))
+            .stroke(Color.primary.opacity(0.06))
         )
-        .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(region.semanticTitle)的模块候选")
     }
@@ -135,6 +134,17 @@ struct V1ModuleLibrarySurface: View {
         .accessibilityLabel(
             "插入\(module.title)，当前值\(valueText(module))"
         )
+    }
+
+    private func displayCategoryTitle(_ title: String) -> String {
+        switch title {
+        case "EXIF":
+            return "照片信息"
+        case "智能表达":
+            return "记忆表达"
+        default:
+            return title
+        }
     }
 }
 

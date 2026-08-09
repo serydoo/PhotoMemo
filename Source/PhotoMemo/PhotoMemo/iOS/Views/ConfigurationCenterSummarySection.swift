@@ -231,7 +231,7 @@ struct ConfigurationCenterSummarySection: View {
             summaryRow(
                 title: "边框样式",
                 systemImage: MemoMarkSymbol.configuration.name,
-                detail: "当前版本仅提供基础白，更多样式将陆续开放。"
+                detail: "当前使用基础白。"
             ) {
                 Text(currentBorderStyleName)
                     .font(.subheadline.weight(.semibold))

@@ -230,6 +230,14 @@ struct MemoMarkPlusPurchaseView: View {
                 )
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            } else if store.purchaseState == .restoring {
+                Text("正在恢复购买…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if store.purchaseState == .redeeming {
+                Text("正在打开兑换页面…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             if !store.hasVerifiedPlusEntitlement {
@@ -244,6 +252,7 @@ struct MemoMarkPlusPurchaseView: View {
                     }
                 }
                 .font(.subheadline.weight(.semibold))
+                .disabled(store.isPurchaseActionInProgress)
             }
 
             Button(
@@ -257,6 +266,7 @@ struct MemoMarkPlusPurchaseView: View {
                 }
             }
             .font(.subheadline)
+            .disabled(store.isPurchaseActionInProgress)
         }
         .padding(.horizontal, 2)
     }

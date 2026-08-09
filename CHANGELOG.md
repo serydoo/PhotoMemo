@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.1.0 (76) Major Experience Update - 2026-08-09
+
+- Rebuilt the four-region card-content editor around a full, unobstructed
+  output preview, explicit region navigation, continuous TextKit composition,
+  and clearer Done versus keyboard-dismiss behavior.
+- Refined Configuration Center, Memory Subject, Settings, welcome guidance,
+  and small-screen hierarchy in response to user feedback.
+- Added today's time answer to Memory Subject surfaces and clarified the
+  important-date setup flow without changing capture-time output truth.
+- Improved user-facing recovery for photo picking, failed-task retry, Share
+  intake, and duplicate purchase/restore/redemption actions.
+- Prepared synchronized in-app, App Store, TestFlight, and internal release
+  materials for `2.1.0 (76)`; release evidence remains open.
+
 ## 2.0.3 (70) Memory Expression And Save Recovery - 2026-08-06
 
 ### Fixed

@@ -29,4 +29,17 @@ struct V1MemorySourceDisclosureState: Hashable {
         isExpanded = true
     }
 }
+
+struct V1MemoryExpressionDisclosureState: Hashable {
+
+    private(set) var isExpanded: Bool
+
+    init(isExpanded: Bool = false) {
+        self.isExpanded = isExpanded
+    }
+
+    mutating func setExpanded(_ isExpanded: Bool) {
+        self.isExpanded = isExpanded
+    }
+}
 #endif

@@ -90,6 +90,28 @@ struct V1TaskPhotoLibraryLink:
 
         return albumName
     }
+
+    var actionTitle: String {
+        "打开照片 App"
+    }
+
+    var saveDestinationText: String {
+        guard let albumName,
+              !albumName.isEmpty else {
+            return "已保存到系统图库"
+        }
+
+        return "已保存到「\(albumName)」"
+    }
+
+    var accessibilityHint: String {
+        guard let albumName,
+              !albumName.isEmpty else {
+            return "打开照片 App 查看已保存的回忆"
+        }
+
+        return "打开照片 App；请在照片 App 中查看「\(albumName)」"
+    }
 }
 
 struct V1TaskOverviewItemPresentation:

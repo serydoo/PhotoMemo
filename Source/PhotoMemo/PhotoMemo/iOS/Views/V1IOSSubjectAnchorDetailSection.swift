@@ -37,6 +37,7 @@ struct V1IOSSubjectAnchorDetailSection: View {
                 ForEach(subject.timeAnchors) { anchor in
                     V1IOSSubjectAnchorDetailModule(
                         anchor: anchor,
+                        subjectName: subject.identity.shortName,
                         onConfigure: {
                             editingDraft = AnchorDraft(
                                 originalID: anchor.id,
@@ -100,10 +101,7 @@ struct V1IOSSubjectAnchorDetailSection: View {
                         commitEditingDraft()
                     }
                 )
-                .presentationDetents([
-                    .height(ConfigurationUI.compactSheetHeight),
-                    .large
-                ])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
             .alert(
@@ -255,6 +253,7 @@ struct V1IOSSubjectAnchorDetailModule: View {
     static let ordinaryMinimumHeight: CGFloat = 64
 
     let anchor: MemorySubject.TimeAnchor
+    let subjectName: String
     let onConfigure: () -> Void
     let onDelete: () -> Void
     let leadingContentInset: CGFloat
@@ -300,6 +299,7 @@ struct V1IOSSubjectAnchorDetailModule: View {
             .stroke(ConfigurationUI.faintHairline)
         )
         .contentShape(Rectangle())
+        .onTapGesture(perform: onConfigure)
         .contextMenu {
             Button("配置", action: onConfigure)
             Button("删除", role: .destructive, action: onDelete)
@@ -326,6 +326,21 @@ struct V1IOSSubjectAnchorDetailModule: View {
             Text(dateText)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            TimelineView(.periodic(from: .now, by: 3_600)) { context in
+                Text(
+                    V1TimeAnchorTodayPresenter.presentation(
+                        anchor: anchor,
+                        subjectName: subjectName,
+                        referenceDate: context.date
+                    ).value
+                )
+                .font(.caption.weight(.medium))
+                .foregroundStyle(anchorTypeTint)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .lineLimit(2)
+            }
         }
     }
 
@@ -397,19 +412,15 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    categoryRow
+                    anchorSetupPanel
 
-                    CompactSubjectAnchorDatePicker(
-                        selection: Binding(
-                            get: { anchor.date },
-                            set: { newDate in
-                                anchor.date = newDate
-                                onChange(anchor)
-                            }
-                        )
-                    )
+                    todayAnswerPreview
 
                     adaptiveNameRow
+
+                    saveButton
+
+                    usageGuidance
                 }
                 .padding(.horizontal, ConfigurationUI.contentColumnPadding)
                 .padding(.bottom, 20)
@@ -423,6 +434,10 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
             .background(ConfigurationUI.appBackground)
             .navigationTitle("时间锚点")
             .navigationBarTitleDisplayMode(.inline)
+            .sensoryFeedback(
+                .selection,
+                trigger: anchor.resolvedAnchorType
+            )
         }
     }
 
@@ -432,8 +447,6 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
                 VStack(alignment: .leading, spacing: 10) {
                     nameLabel
                     nameField
-                    saveButton
-                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             } else {
                 HStack(alignment: .center, spacing: 12) {
@@ -444,8 +457,6 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
                         .frame(width: 1, height: 24)
 
                     nameField
-
-                    saveButton
                 }
             }
         }
@@ -456,10 +467,10 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
     }
 
     private var nameLabel: some View {
-        Text("自定义名称")
+        Text("名称")
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            .frame(minWidth: 76, alignment: .leading)
+            .frame(minWidth: 48, alignment: .leading)
     }
 
     private var nameField: some View {
@@ -479,91 +490,277 @@ private struct V1IOSSubjectAnchorCompactEditor: View {
     }
 
     private var saveButton: some View {
-        Button("保存") {
+        Button {
             onSave()
+        } label: {
+            Text("保存时间锚点")
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
         .font(.subheadline.weight(.semibold))
-        .frame(
-            minWidth: ConfigurationUI.minimumInteractiveHeight,
-            minHeight: ConfigurationUI.minimumInteractiveHeight
-        )
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
     }
 
-    private var categoryRow: some View {
-        Group {
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 8) {
-                    categoryLabel
-                    categorySelection
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+    private var todayAnswerPreview: some View {
+        TimelineView(.periodic(from: .now, by: 3_600)) { context in
+            let presentation = V1TimeAnchorTodayPresenter.presentation(
+                anchor: anchor,
+                subjectName: anchor.title,
+                referenceDate: context.date
+            )
+
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            Circle()
+                                .fill(Color.accentColor.opacity(0.1))
+                        )
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("今天的时间答案")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Text(presentation.value)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                            .lineLimit(2)
+                    }
+
+                    Spacer(minLength: 0)
                 }
-            } else {
-                HStack(alignment: .center, spacing: 12) {
-                    categoryLabel
-                    Spacer(minLength: 12)
-                    categorySelection
+
+                Text("这里先按今天预览；处理照片时，会按每张照片的拍摄时间计算。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .v1ConfigurationSheetPanelChrome()
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(presentation.accessibilityText)
+        }
+    }
+
+    private var anchorSetupPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("这个日子属于哪一类？")
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            Text("类型决定它会表达年龄、纪念时间还是未来倒数。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            LazyVGrid(columns: typeColumns, spacing: 8) {
+                ForEach(AnchorType.allCases, id: \.self) { type in
+                    typeChoice(type)
                 }
             }
+
+            Text(typeHelperText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("日期")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                Text("设置这个重要日子发生或开始的日期。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            CompactSubjectAnchorDatePicker(
+                selection: Binding(
+                    get: { anchor.date },
+                    set: { newDate in
+                        anchor.date = newDate
+                        onChange(anchor)
+                    }
+                )
+            )
+            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
-        .padding(.vertical, ConfigurationUI.compactRowVerticalPadding)
-        .frame(
-            maxWidth: .infinity,
-            minHeight: ConfigurationUI.minimumInteractiveHeight,
-            alignment: .leading
-        )
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .v1ConfigurationSheetPanelChrome()
     }
 
-    private var categorySelection: some View {
-        HStack(alignment: .center, spacing: 12) {
-            categoryMenu
-
-            Rectangle()
-                .fill(ConfigurationUI.faintHairline)
-                .frame(width: 1, height: 24)
-
-            selectedDateText
+    private var typeColumns: [GridItem] {
+        if dynamicTypeSize.isAccessibilitySize {
+            return [GridItem(.flexible(), spacing: 8)]
         }
+
+        return [
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8)
+        ]
     }
 
-    private var categoryLabel: some View {
-        Text("锚点类别")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .frame(minWidth: 76, alignment: .leading)
-    }
+    private func typeChoice(_ type: AnchorType) -> some View {
+        let isSelected = type == anchor.resolvedAnchorType
+        let tint = anchorTypeTint(type)
 
-    private var categoryMenu: some View {
-        Menu {
-            ForEach(AnchorType.allCases, id: \.self) { type in
-                Button {
-                    updateAnchorType(type)
-                } label: {
-                    HStack {
-                        Text(type.displayName)
-                        if type == anchor.resolvedAnchorType {
-                            Image(systemName: "checkmark")
-                        }
-                    }
+        return Button {
+            updateAnchorType(type)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: anchorTypeSymbol(type))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 18)
+
+                Text(anchorTypeSelectionTitle(type))
+                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                Spacer(minLength: 4)
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(tint)
                 }
             }
-        } label: {
-            V1CompactSelectionLabel(
-                title: anchor.resolvedAnchorType.displayName
+            .padding(.horizontal, 12)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: ConfigurationUI.minimumInteractiveHeight,
+                alignment: .leading
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(
+                        isSelected
+                        ? tint.opacity(0.1)
+                        : ConfigurationUI.controlBackground
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(
+                        isSelected
+                        ? tint.opacity(0.32)
+                        : ConfigurationUI.faintHairline
+                    )
             )
         }
-        .tint(.secondary)
+        .buttonStyle(.plain)
+        .accessibilityLabel(anchorTypeSelectionTitle(type))
+        .accessibilityValue(isSelected ? "已选择" : "未选择")
     }
 
-    private var selectedDateText: some View {
-        Text(V1UserFacingDateFormatter.date(anchor.date))
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.primary)
-            .lineLimit(2)
-            .accessibilityLabel("已选日期")
+    private var typeHelperText: String {
+        switch anchor.resolvedAnchorType {
+        case .birthday:
+            return "用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。"
+        case .relationship:
+            return "用照片拍摄时间表达相识或相伴了多久。"
+        case .marriage:
+            return "用照片拍摄时间表达共同走过的时间和纪念日。"
+        case .exam:
+            return "用照片拍摄时间表达距离目标还有多久。"
+        case .custom:
+            return "为旅行、毕业、搬家或其他人生时刻设置自己的时间起点。"
+        }
+    }
+
+    private func anchorTypeSelectionTitle(_ type: AnchorType) -> String {
+        switch type {
+        case .birthday:
+            return "生日 / 出生"
+        case .relationship:
+            return "恋爱纪念"
+        case .marriage:
+            return "结婚纪念"
+        case .exam:
+            return "未来目标"
+        case .custom:
+            return "自定义"
+        }
+    }
+
+    private func anchorTypeSymbol(_ type: AnchorType) -> String {
+        switch type {
+        case .birthday:
+            return "birthday.cake"
+        case .relationship:
+            return "heart"
+        case .marriage:
+            return "heart.circle"
+        case .exam:
+            return "target"
+        case .custom:
+            return "ellipsis"
+        }
+    }
+
+    private func anchorTypeTint(_ type: AnchorType) -> Color {
+        switch type {
+        case .birthday:
+            return .orange
+        case .relationship:
+            return .pink
+        case .marriage:
+            return .purple
+        case .exam:
+            return .green
+        case .custom:
+            return .blue
+        }
+    }
+
+    private var usageGuidance: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("设置后会怎样？")
+                .font(.headline)
+                .foregroundStyle(.primary)
+
+            guidanceRow(number: 1, text: "在配置中心选择这个重要日子。")
+            guidanceRow(number: 2, text: "处理照片时，会按每张照片的拍摄时间计算。")
+            guidanceRow(number: 3, text: "最终怎样写在记忆卡上，仍然由你决定。")
+        }
+        .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .v1ConfigurationSheetPanelChrome()
+    }
+
+    private func guidanceRow(number: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(number)")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 22, height: 22)
+                .background(
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.1))
+                )
+
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
     }
 
     private func updateAnchorType(_ newType: AnchorType) {

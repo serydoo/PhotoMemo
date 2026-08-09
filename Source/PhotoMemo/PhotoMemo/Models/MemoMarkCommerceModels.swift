@@ -81,6 +81,8 @@ nonisolated enum MemoMarkPurchaseState:
     case idle
     case loading
     case purchasing
+    case restoring
+    case redeeming
     case pending
     case purchased
     case cancelled

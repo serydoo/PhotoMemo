@@ -151,7 +151,9 @@ final class ShareExtensionIntakeCoordinator {
     ) -> String {
         if let diagnosticSummary =
             error.diagnosticSummaryLine {
-            return "\(error.errorDescription ?? "这次分享没有完成。")\n\n\(diagnosticSummary)"
+            PhotoMemoShareIntakeLog.error(
+                "User-facing intake failure detail: \(diagnosticSummary)"
+            )
         }
         return error.errorDescription
             ?? "这次分享没有完成。"
@@ -163,7 +165,9 @@ final class ShareExtensionIntakeCoordinator {
         if let errorSummary =
             error.resolvedFailureContext?
             .errorSummary {
-            return "\(error.recoverySuggestion)\n\nNSError: \(errorSummary.domain) / \(errorSummary.code)"
+            PhotoMemoShareIntakeLog.error(
+                "Intake recovery context: \(errorSummary.domain) / \(errorSummary.code)"
+            )
         }
         return error.recoverySuggestion
     }

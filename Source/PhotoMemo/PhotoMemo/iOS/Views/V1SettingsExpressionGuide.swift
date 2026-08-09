@@ -10,18 +10,21 @@ struct V1SettingsExpressionGuide: View {
         AnchorType.birthday.rawValue
     ]
 
+    @State
+    private var showsCompositionExplanation = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             guideHeader
-            formulaOverview
-            colorLegend
+            exampleOverview
+            compositionExplanation
 
             V1HorizontalDivider()
 
             Text(
                 localized(
                     "settings.expression.guide.introduction",
-                    fallback: "按时间锚点看看每一种表达方式。展开后，可以选择更适合这段回忆的说法。"
+                    fallback: "继续看看不同重要日子可以怎样表达。"
                 )
             )
                 .font(.caption)
@@ -70,7 +73,7 @@ struct V1SettingsExpressionGuide: View {
             Text(
                 localized(
                     "settings.expression.guide.header",
-                    fallback: "记忆表达说明"
+                    fallback: "同一个重要日子，在到来前、当天和之后，会有不同说法。"
                 )
             )
                 .font(.subheadline.weight(.semibold))
@@ -79,13 +82,109 @@ struct V1SettingsExpressionGuide: View {
             Text(
                 localized(
                     "settings.expression.guide.detail",
-                    fallback: "先看看一段回忆怎样由记忆对象、表达内容和时间结果组成。"
+                    fallback: "MemoMark 会根据照片的拍摄时间，选用与你选择的表达方式相符的说法。"
                 )
             )
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var exampleOverview: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(
+                localized(
+                    "settings.expression.guide.example_title",
+                    fallback: "例如：生日"
+                )
+            )
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            exampleRow(
+                title: localized(
+                    "settings.expression.guide.phase.before",
+                    fallback: "之前"
+                ),
+                value: localized(
+                    "settings.expression.guide.example_before",
+                    fallback: "还有 6 天就 1 岁了"
+                )
+            )
+            exampleRow(
+                title: localized(
+                    "settings.expression.guide.phase.on_anchor",
+                    fallback: "当天"
+                ),
+                value: localized(
+                    "settings.expression.guide.example_on_anchor",
+                    fallback: "今天 1 岁了"
+                )
+            )
+            exampleRow(
+                title: localized(
+                    "settings.expression.guide.phase.after",
+                    fallback: "之后"
+                ),
+                value: localized(
+                    "settings.expression.guide.example_after",
+                    fallback: "已经 1 岁 3 天"
+                )
+            )
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(ConfigurationUI.controlBackground.opacity(0.72))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(ConfigurationUI.faintHairline)
+        )
+    }
+
+    private func exampleRow(title: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 44, alignment: .leading)
+
+            Text(value)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var compositionExplanation: some View {
+        DisclosureGroup(
+            isExpanded: $showsCompositionExplanation
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                formulaOverview
+                colorLegend
+            }
+            .padding(.top, 10)
+        } label: {
+            Text(
+                localized(
+                    "settings.expression.guide.composition_title",
+                    fallback: "它是怎样组成的"
+                )
+            )
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.primary)
+        }
+        .tint(.secondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(ConfigurationUI.controlBackground.opacity(0.5))
+        )
     }
 
     private var formulaOverview: some View {

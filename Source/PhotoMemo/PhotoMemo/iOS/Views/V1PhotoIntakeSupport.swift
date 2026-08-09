@@ -150,18 +150,27 @@ enum V1PhotoProcessingQuickActionCoordinator {
         let submittedURLs: [URL]
         let submittedItems:
             [ExternalPhotoIntakeItem]
+        let requestedCount: Int
+        let failedCount: Int
 
         init(
             status: Status,
             submittedURLs: [URL],
             submittedItems:
-                [ExternalPhotoIntakeItem] = []
+                [ExternalPhotoIntakeItem] = [],
+            requestedCount: Int? = nil
         ) {
             self.status = status
             self.submittedURLs =
                 submittedURLs
             self.submittedItems =
                 submittedItems
+            self.requestedCount = requestedCount ?? submittedItems.count
+            self.failedCount = max(
+                0,
+                (requestedCount ?? submittedItems.count)
+                    - submittedItems.count
+            )
         }
     }
 
@@ -197,6 +206,7 @@ enum V1PhotoProcessingQuickActionCoordinator {
 
     static func processPickedPhotoItems(
         saveCurrentConfiguration: () async -> Bool,
+        requestedCount: Int = 0,
         importItems:
             () async -> [ExternalPhotoIntakeItem],
         submit: ([ExternalPhotoIntakeItem]) -> Void
@@ -204,7 +214,8 @@ enum V1PhotoProcessingQuickActionCoordinator {
         guard await saveCurrentConfiguration() else {
             return Result(
                 status: .configurationSaveFailed,
-                submittedURLs: []
+                submittedURLs: [],
+                requestedCount: requestedCount
             )
         }
 
@@ -214,7 +225,8 @@ enum V1PhotoProcessingQuickActionCoordinator {
         guard !resolvedItems.isEmpty else {
             return Result(
                 status: .noSupportedPhotos,
-                submittedURLs: []
+                submittedURLs: [],
+                requestedCount: requestedCount
             )
         }
 
@@ -227,7 +239,8 @@ enum V1PhotoProcessingQuickActionCoordinator {
                     \.managedURL
                 ),
             submittedItems:
-                resolvedItems
+                resolvedItems,
+            requestedCount: max(requestedCount, resolvedItems.count)
         )
     }
 }

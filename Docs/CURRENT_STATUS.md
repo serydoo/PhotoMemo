@@ -1,5 +1,167 @@
 # MemoMark Current Status
 
+## 2026-08-09 — MemoMark 2.1.0 (76) 发布同步准备
+
+- 用户指定本轮正式版本为 `2.1.0 (76)`，范围起点为 2026-08-06 周四 16:08；
+  Git 基线采用该时间点相邻的已提交源码 `da2a77a`（16:02:56），范围差异已显式记录。
+- 已把应用内“关于 -> 更新日志”、App Store “此版本的新内容”、TestFlight 测试说明
+  和内部发布边界统一到同一事实源，表达为“根据用户反馈的一次较大版本更新”，并明确
+  建议用户及时更新。普通用户文案不包含内部风险编号、测试数量或未经验证的可靠性承诺。
+- 所有 Xcode product/test configuration 的 marketing version 保持 `2.1.0`，build
+  number 从 `75` 统一推进到 `76`；应用内版本继续读取实际 Bundle，不硬编码显示版本。
+- 新增 `Docs/07_Releases/RELEASE_SYNC_STANDARD.md`，冻结“范围由用户提供、先分类再
+  同步、四套说明共用事实源、证据分层、外部动作逐项授权”的长期发布同步规则。
+- GitHub 仓库首页所使用的 `README.md` 已纳入正式同步范围，补充 `2.1.0 (76)` 当前
+  正式候选入口、完整更新说明链接与发布同步规范；新增英文 `README_EN.md` 保持同一
+  产品叙述和发布边界，随本轮源码同步一并发布。
+- 当前状态为 `Version Locked; Release Evidence Open`。本轮只整理同步准备，没有执行
+  Git 暂存、提交、推送、TestFlight 上传或 App Store 提交；最终候选验证仍需继续完成。
+- 发布说明契约 4/4、双语 `plutil -lint`、`git diff --check` 与 unsigned
+  `PhotoMemoiOS` Debug build 已通过；完整测试、扩展构建、签名候选、实际 Bundle
+  字段和正式真机关键路径仍按同步清单保持开放。
+
+## 2026-08-09 — 卡片内容编辑任务面与 Renderer 不可覆盖边界收口
+
+- Product Loop 将卡片内容编辑器重组为“完整输出预览 -> 当前编辑任务 -> 四区内容 ->
+  使用结果说明”。Renderer、预览草稿投影、Layout Engine、Export 和 Apple Photos
+  输出保持冻结；编辑 Overlay 移除原有 `8%` 全屏黑色调暗，预览区域现在始终保持
+  原亮度、原比例、完整可见，不承载玻璃、遮罩、区域选框或点击热区。
+- 编辑器新增独立“正在编辑左上/左下/右上/右下”任务面，说明内容最终出现的位置；
+  右侧四区位置导航使用标准系统材质，选中区域轻微放大、抬升并显示强调色，其他区域
+  退后但仍可辨认。点击导航会同步当前区域、滚动位置、焦点描边和模块入口，导航状态
+  不进入 Renderer 或输出配置。
+- 四个既有 TextKit 输入会话统一收进一块内容面，普通文字与模块混排、四区独立草稿、
+  连续插入、退格删除、候选窗口按需展开且插入后不自动收回、键盘关闭和右下照片说明
+  映射均未改变。底部新增“这里的内容会怎样使用？”三步说明，分别解释实时预览、
+  逐照片模块替换和右下照片说明检索价值。
+- 响应式源契约同步冻结 Renderer 不可覆盖、四区导航、新手说明和既有 TextKit/候选
+  行为；`git diff --check` 与 generic iOS Debug 构建通过。签名 Debug 包严格签名检查
+  通过并原地覆盖安装到 iPhone 17 Pro Max，最终设备数据库序列 `3760`；未卸载 App、
+  未清除本地数据、未修改 `2.1.0 (75)`，也未执行保存配置或照片输出。
+- 镜像确认初始四区总览、右下导航切换、自动滚动、模块候选展开、右下 TextKit 光标、
+  候选持续展开和底部三步说明；最终包再次确认 Renderer 不再被旧遮罩调暗。镜像连接
+  使用 Mac 硬件键盘时没有弹出 iOS 软件键盘，因此本轮保留既有键盘几何构建契约和
+  历史真机证据，不把光标检查扩大表述为一次新的软件键盘人工验收。
+
+## 2026-08-09 — 时间锚点配置引导与首页数量语言收口
+
+- Product Loop 根据 iPhone 17 Pro Max 真机观察重排时间锚点编辑器：原先靠右的紧凑
+  类型菜单改为五类始终可见的系统选择面，常规字号使用两列，辅助功能字号退化为单列；
+  当前类型同时给出用途解释，日期选择成为下一段明确步骤，不再重复显示一行日期摘要。
+- 编辑顺序统一为“选择类型 -> 设置日期 -> 查看今天的时间答案 -> 命名 -> 保存”；预览
+  明确区分“这里按今天预览”和“处理照片时按每张照片拍摄时间计算”，避免用户误把
+  今日结果理解为最终输出真值。底部新增“设置后会怎样？”三步说明，强调在配置中心
+  选择、处理时计算以及最终卡片文案仍由用户决定。
+- 首页记忆对象数量由“3 个锚点”改为“3 个重要日子”，VoiceOver 仍使用精确的
+  “已设置 3 个时间锚点”；Memory Engine、AnchorEngine、Renderer、Export、PhotoKit、
+  配置持久化和版本号/构建号均未改变。
+- 新增并同步响应式源契约，移除与旧紧凑菜单冲突的陈旧断言；`git diff --check` 和
+  generic iOS Debug 编译通过。指定 iPhone 17 Pro Max 的签名 Debug 包通过严格签名
+  检查并原地覆盖安装、启动，设备数据库序列 `3744`；未卸载 App、未清除本地数据。
+- 镜像逐段确认类型区、日期滚轮、今天预览、名称、全宽保存按钮和三步说明均无截断或
+  重叠；返回对象页后原有三条锚点的名称、日期、类型和今天结果保持一致，首页
+  “3 个重要日子”与当前生日答案层级清楚。小屏与辅助功能字号由滚动容器和单列选择
+  契约覆盖，本轮没有把 17 Pro Max 视觉检查扩大表述为所有尺寸的人工验收。
+
+## 2026-08-09 — 记忆对象时间答案与 Apple Photos 动作精度收口
+
+- Product Loop 将首页记忆对象卡片的“可用配置 / 累计完成”统计条替换为当前预设所选
+  时间锚点的“今天时间答案”；对象详情不再重复统计条，每个重要日子直接展示以今天为
+  参照的年龄、经过时间或未来倒数。日期变化使用克制的系统数字过渡，不引入轮播、
+  持续动画或 Dashboard 化统计。
+- 新增 `V1TimeAnchorTodayPresenter`，把 `MemorySubject.TimeAnchor` 投影到既有
+  `AnchorEngine`，UI 不拥有第二套日期算法。生日当天、过去生日年龄、未来日期倒数和
+  Apple Photos 动作文案均有固定日期契约覆盖；照片最终输出仍以拍摄时间为输入，本轮
+  只增加明确标注为“今天”的界面提示。
+- 时间锚点编辑器新增“今天的时间答案”实时预览；“锚点类别”改为“重要日子类型”，
+  保存改为独立全宽“保存时间锚点”。编辑器使用大型系统 Sheet，避免紧凑 Detent 在
+  小屏或大字体下把预览、名称和保存动作压出首屏；类型变化使用系统选择触感。
+- 真机检查发现锚点卡片原先只有长按菜单和辅助功能动作，没有普通点击进入配置；现已
+  补齐整卡点击，并保留长按删除/配置和 VoiceOver 自定义动作。
+- Apple 官方公开 PhotoKit 能力可以管理、读取相册和资源，但没有把系统照片 App 深链
+  到指定相册、指定资源或“最近项目”的公开接口。进度页因此改为事实性的“打开照片
+  App”，副文字单独说明“已保存到「相册名」”；仍保留 `photos-redirect://` 与
+  `photos://` 的既有双重启动回退和失败反馈，不再暗示按钮会直达该相册。
+- 新行为测试通过，generic iOS Debug 构建和指定 iPhone 17 Pro Max 签名 Debug 构建
+  通过；最终包原地覆盖安装并启动，未卸载应用、未清除本地数据、未修改版本号或构建
+  号。镜像确认首页时间答案、三类锚点当前结果、整卡点击、编辑器实时预览与可达保存
+  动作。定向大套件仍有旧根协调器、旧候选结构、旧右侧预览和首页活动卡契约失败，
+  与本轮新增时间答案契约分开记录。
+
+## 2026-08-09 — 全界面产品语言与新手说明第二轮收口
+
+- 后续小屏适配复核发现折叠状态的表达摘要在 iPhone 17 Pro Max 已经换行；摘要由
+  “拍摄前、当天和之后，会使用不同说法”收短为“随时间变化”，完整时间阶段解释
+  继续保留在展开后的表达示例中，避免小屏折叠态承担重复教学。
+- 展开后的选择对象进一步校正为“表达风格”，副标题按当前可用集合动态说明“围绕
+  时间锚点，可选择 5 种表达风格”，不再错误描述为选择时间关系；自然、仪式感、
+  成长、温馨与极简的风格集合和表达计算均未改变。
+
+- 依据中英文 README、产品语言指南、Design System、SwiftUI 实现与 iPhone
+  17 Pro Max 镜像完成第二轮 Product Loop 审核，并以
+  `V4_UI_Language_And_Guidance_Refinement_2026-08-09.md` 固化范围。该轮仅调整
+  用户可见标题、说明、示例层级、辅助功能标签和显式完成入口；Memory Engine、
+  TextKit 编辑语义、Renderer、Layout Engine、Export、Share、PhotoKit、持久化与
+  Commerce 均未改变。
+- 卡片内容编辑器把“文字、照片信息与记忆表达”恢复为标题下的新手提示；右下区域
+  现在以独立两行说明明确内容会写入 Apple Photos 照片说明，底部说明按实时预览、
+  照片说明检索价值和完成/键盘职责分层。候选面板持续按需展开，插入后不自动收回。
+- 配置中心外层表达标题缩短为“这一刻怎样表达”；内部保持“表达方式”，示例标题
+  保持“这张照片会这样表达”，移除重复样式名并提高示例字号。“更多信息”改为
+  “时间与地点”，内部使用“地点显示 / 时间显示 / 日期补充”，并移除未来能力承诺。
+- 记忆对象查看/编辑页改用“名字、关系和你熟悉的称呼”“照片中的称呼”“选择重要
+  日子，让照片拥有时间答案”等用户语言；对象总览增加显式“完成”，切换入口增加
+  文字标签。首页/对象统计条移除装饰性口号，但保留既有数量来源和结构。
+- 设置中的表达说明改为真实生日场景先行，组成公式降为按需展开；长说明页增加显式
+  “完成”。保存设置按钮和进展说明同步改为更准确的行为文案。中英文字符串、产品
+  语言指南和设计系统已同步。
+- 聚焦 Swift 契约通过；中英文 `plutil -lint`、`git diff --check`、generic iOS
+  Debug、目标设备签名 Debug 与严格签名验证通过。`2.1.0 (75)` 已原地覆盖安装并
+  启动到 iPhone 17 Pro Max，最终设备数据库序列 `3696`；未卸载应用、未清除本地数据、
+  未保存配置或触发照片/购买操作。
+- 镜像确认首页、配置中心折叠/展开表达区、卡片内容编辑器、右下照片说明、模块候选
+  展开状态均保持紧凑且可读。随后 Mac 锁定，时间与地点、记忆对象和设置说明的安装
+  后最终镜像复查未继续；这些页面有签名构建与源契约证据，不把它们描述为本轮完整
+  真机人工验收。
+
+## 2026-08-09 — 卡片内容新手说明与照片表达命名收口
+
+- 以磁盘上的最新中英文 README 为产品叙述基准，恢复卡片内容编辑器承担的新手教学：底部现在解释四区可组合文字、照片信息与记忆表达，修改实时出现在卡片上，完成与键盘收起的职责保持分开。
+- 右下亮点重新显式呈现：行内副标题使用“本区域内容写入照片说明，便于检索”，底部进一步说明该内容会写入 Apple Photos 的照片说明，方便之后查找照片。照片说明写入实现、slotD 映射、Renderer、Export 与 PhotoKit 均未改变。
+- 为避免外层章节与内部控制重复使用“记忆表达”，外层改为“照片怎样讲述这一刻”，内部选择改为“表达方式”，预览改为“这张照片会这样表达”；说明明确拍摄前、当天和之后会使用不同说法。相关 VoiceOver 标签与中英文 Localizable.strings 已同步，产品语言指南记录了新的标题层级和完整编辑器说明。
+- `git diff --check` 与中英文本地化 `plutil -lint` 通过；新增命名和编辑器说明契约通过。相关聚焦测试仍包含旧 Sheet、旧候选区、旧 RegionEditor、根视图与首页活动卡字符串契约失败，未恢复已废弃结构。
+- generic iOS Debug 与指定 iPhone 17 Pro Max 的签名 Debug 构建通过；签名包已原地覆盖安装并启动，设备数据库序列 `3672`，未卸载应用、未清除本地数据、未修改 `2.1.0 (75)`。设备只读截图确认新包运行，但当时停留在首页且 iPhone 正在直接使用，配置页最终视觉换行仍与安装/启动证据分开记录。
+
+## 2026-08-09 — 卡片内容编辑器视觉连续性与空白光标收口
+
+- Product Loop 第一轮依据 iPhone 17 Pro Max 真机截图收敛卡片内容编辑器：减轻背景遮罩，去除四区域外层重复大卡片，以“左上 / 左下 / 右上 / 右下”建立直接层级，并通过标题上下文和轻量蓝色描边标识当前区域。顶部“模块 / 完成”、右下照片说明提示和底部说明同步降噪；候选分类改为“照片信息 / 记忆表达”。
+- 模块候选仍固定在编辑器顶部并保持原有高度；插入后不会自动收回。四区独立 TextKit 会话、候选连续插入、退格删除、键盘几何、草稿投影、Renderer、Export、PhotoKit 与右下照片说明映射均未改变。
+- 第二轮修正空内容 caret 度量：TextKit 末端零宽哨兵现在继承与正常文字相同的字体、颜色和 `28pt` 行高，`42pt` 输入框及点击区域保持不变。真机删除右上“位置”至空白后，caret 上下留白接近对称；重新插回“位置”后候选面板仍保持展开，最终语义内容恢复。
+- 两项新增编辑器契约通过，键盘稳定、四区固定表面和退格相关契约继续通过。完整 `IPhoneResponsiveLayoutContractTests` 仍有四类既有陈旧断言失败：根协调器、首页活动卡、旧候选面板尺寸和旧右侧预览结构；未为制造全绿恢复旧界面。
+- `git diff --check`、中英文本地化 `plutil -lint`、generic iOS Debug 构建和指定设备签名 Debug 构建通过。签名包已原地覆盖安装并启动到 iPhone 17 Pro Max，设备数据库序列 `3664`；未卸载应用、未清除本地数据、未修改版本号或构建号，也未执行“保存当前配置”。
+
+## 2026-08-08 — 异常与恢复反馈收口
+
+- App 内备用选图在配置保存失败或没有可处理照片时，不再静默返回：首页显示可读的恢复提示，并保留原有处理状态流。
+- 失败任务重试在执行层拒绝时写入明确错误提示，避免点击“重试失败项”后无反馈。
+- Share Extension 保留 NSError domain/code 到诊断日志，但用户界面只显示自然语言失败原因与恢复建议，不再泄漏底层诊断串。
+- `git diff --check` 与 generic iOS Debug 构建通过；App 内选图对“部分项目读取失败”的逐项计数仍需下一步补充 intake 结果契约，当前未宣称该边界已完全闭环。
+- Commerce 的购买、恢复购买、兑换代码现在共享进行中锁，分别显示“购买中 / 正在恢复购买 / 正在打开兑换页面”，并禁止重复点击；恢复/兑换仍沿用现有失败状态。
+- App 内备用选图结果现在携带请求数与失败数；部分成功时首页显示“已接收 X 张，另有 Y 张无法读取”的非阻塞提示，全部失败仍走原有可读错误提示。
+
+## 2026-08-08 — 欢迎页 Hero 收敛与首页任务进度层级修正
+
+- 欢迎页首个 Hero 模块改用与首页同源的 `HomeAppIcon`，图标缩至 92pt，容器内边距、圆角与阴影同步收敛，避免旧版手绘标识占据过多首屏空间。
+- 首页“当前任务”去除临时进度外层章节卡，仅保留普通标题与进度内容面，消除页面分区与任务卡片的重复嵌套；处理状态、进度、点击查看与辅助功能语义不变。
+- `git diff --check` 与 generic iOS Debug 构建通过；待下一次真机安装后确认欢迎页首屏密度和任务进度视觉层级。
+
+## 2026-08-08 — 主入口认知修正：首次引导与跳过后的恢复入口
+
+- 首次欢迎流程继续明确完整日常路径：`Apple Photos -> 分享 -> 时光记 -> 处理 -> Apple Photos`；其中“分享”步骤不再把 App 内选图描述为同等入口，而是明确提示“在系统相册点分享，选择时光记”。英文文案同步更新。
+- 用户跳过欢迎页后，首页既有“从 Apple Photos 开始”说明卡继续作为非阻塞恢复入口；用户可查看分享方法，也可随时使用保留的 App 内选图备用路径。关闭说明卡不影响设置中的使用流程入口。
+- 首页快捷操作中的 App 内选图已明确标为“备用选图”，避免新用户把它误认为日常主入口；功能本身保留。
+- 本轮只调整入口认知与文案，不改变 Share Extension、队列、照片处理、持久化或 Apple Photos 生命周期；欢迎流程与文案契约已补充测试，generic iOS Debug 构建通过。
+
 ## 2026-08-08 — UI-17PM-019 卡片内容行为说明与 UI 规范同步
 
 - 根据 UI-17PM-016 固定四区实现和 UI-17PM-017 键盘/关闭边界，卡片内容编辑页底部说明已更新为当前行为基准：四区可自由组合文字与内容，修改实时同步 Renderer，右下区域写入照片说明，点击“完成”统一保存，收起键盘不会离开编辑页。
@@ -21507,3 +21669,24 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   physical-device smoke test reported no blocking issue. Full slotD acceptance
   still requires explicit verification of insertion, attachment deletion, preview
   refresh, and saved photo-description output.
+
+## 2026-08-09 MemoMark 2.1.0 (76) Public Sync Preparation
+
+- Locked every project marketing version to `2.1.0` and every build number to
+  `76`, and prepared bilingual in-app, App Store, and TestFlight update notes
+  for the user-specified change range beginning 2026-08-06 16:08.
+- Refreshed the public GitHub landing page and added an English README, a scoped
+  release sync manifest, and a reusable synchronization standard separating
+  public source, local-only evidence, user-facing copy, and store metadata.
+- Updated stale source contracts to describe the accepted current Configuration
+  Center and TextKit surfaces. The affected suites passed 114/114, and the full
+  macOS `PhotoMemoTests` result passed 1,349 tests with 1 existing skip and 0
+  failures. The release-note contract passed 4/4.
+- Unsigned Debug builds passed for `PhotoMemoiOS`,
+  `PhotoMemoShareExtension`, and `PhotoMemoWidgetExtension`; localization plist
+  lint and `git diff --check` passed. Existing test-host UTType and fixture QoS
+  warnings remain non-blocking observations.
+- This source-sync checkpoint does not close signed-candidate bundle inspection,
+  physical-device acceptance, App Store Connect metadata review, `TX-001`, or
+  `BP-001`; production certification remains `FAIL (Conditional)` until
+  superseding evidence explicitly closes or narrows those findings.

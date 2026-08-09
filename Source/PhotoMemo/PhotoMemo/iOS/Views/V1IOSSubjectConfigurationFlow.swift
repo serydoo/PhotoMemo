@@ -35,7 +35,7 @@ struct V1IOSSubjectConfigurationFlow: View {
                 VStack(spacing: 14) {
                     V1TitledSectionSurface(
                         title: "基础资料",
-                        subtitle: "编辑对象身份与关系信息"
+                        subtitle: "名字、关系和你熟悉的称呼。"
                     ) {
                         MemorySubjectEditorView(
                             session: flowState.draftSession,
@@ -45,7 +45,7 @@ struct V1IOSSubjectConfigurationFlow: View {
 
                     V1TitledSectionSurface(
                         title: "时间锚点",
-                        subtitle: "维护与这个对象有关的重要时刻。"
+                        subtitle: "选择重要日子，让照片拥有时间答案。"
                     ) {
                         V1IOSSubjectAnchorDetailSection(
                             session: flowState.draftSession,

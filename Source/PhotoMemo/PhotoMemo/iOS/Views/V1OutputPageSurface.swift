@@ -153,7 +153,7 @@ private struct V1OutputSaveConfigurationButton: View {
              .dirty,
              .saving,
              .subjectSynced:
-            return "保存这次选择"
+            return "保存这些设置"
         }
     }
 

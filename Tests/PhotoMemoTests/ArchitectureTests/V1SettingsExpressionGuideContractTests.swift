@@ -5,7 +5,7 @@ import Testing
 @Suite("V1 settings expression guide")
 struct V1SettingsExpressionGuideContractTests {
 
-    @Test("settings help exposes a beginner expression formula guide")
+    @Test("settings help leads with a real scenario before the expression formula")
     func settingsHelpExposesExpressionFormulaGuide() throws {
         let source = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1SettingsExpressionGuide.swift"
@@ -14,6 +14,9 @@ struct V1SettingsExpressionGuideContractTests {
         #expect(source.contains("let language: MemoMarkLanguage"))
         #expect(source.contains("private func localized"))
         #expect(source.contains("formulaToken("))
+        #expect(source.contains("private var exampleOverview"))
+        #expect(source.contains("同一个重要日子，在到来前、当天和之后，会有不同说法。"))
+        #expect(source.contains("它是怎样组成的"))
         #expect(source.contains("settings.expression.guide.subject"))
         #expect(source.contains("AnchorType.allCases"))
         #expect(source.contains("availableStyles"))
@@ -54,6 +57,11 @@ struct V1SettingsExpressionGuideContractTests {
             "settings.expression.guide.introduction",
             "settings.expression.guide.original_note",
             "settings.expression.guide.header",
+            "settings.expression.guide.example_title",
+            "settings.expression.guide.example_before",
+            "settings.expression.guide.example_on_anchor",
+            "settings.expression.guide.example_after",
+            "settings.expression.guide.composition_title",
             "settings.expression.guide.formula_title",
             "settings.expression.guide.subject",
             "settings.expression.guide.expression",
@@ -87,11 +95,12 @@ struct V1SettingsExpressionGuideContractTests {
         #expect(source.contains("private var gettingStartedSection"))
         #expect(source.contains("private var gettingStartedActions"))
         #expect(source.contains("showsExpressionGuide"))
-        #expect(source.contains("了解记忆表达"))
+        #expect(source.contains("照片怎样表达时间"))
         #expect(source.contains("Button {"))
         #expect(source.contains(".sheet(isPresented: $showsExpressionGuide)"))
         #expect(source.contains("private var expressionGuideSheet"))
         #expect(source.contains("V1SettingsExpressionGuide(language: interfaceLanguage)"))
+        #expect(source.contains("Button(\"完成\")"))
         #expect(source.contains(".presentationDetents([.medium, .large])"))
     }
 

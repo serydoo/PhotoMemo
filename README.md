@@ -1,299 +1,145 @@
-# MemoMark
+# MemoMark · 时光记
 
-> 让照片，不止记录画面，更记录人生。
+> 让照片不只留下那一刻，也留下那一刻在生命里的位置。
 
-MemoMark is a local-first Memory Presentation Engine for Apple Photos.
+MemoMark（时光记）是一款为 Apple Photos 设计的本地优先照片记忆工具。
+它不会替代系统相册，也不会修改你的原始照片。MemoMark 读取照片已有的拍摄时间、地点、设备和拍摄信息，再结合你设定的重要日期，为照片生成一份新的记忆版本。
 
-时光记是一款围绕 Apple Photos 打造的本地化照片记忆增强应用。它不会修改原始照片，也不是传统意义上的水印工具。它读取照片的拍摄事实，结合用户设定的 Memory Subject、Life Anchor、Time Anchor 和表达内容，为照片生成一张新的记忆版本。
+当前正式候选版本：**MemoMark 2.1.0（构建 76）**。这是一次根据用户反馈完成的较大体验更新，重点改善卡片内容编辑、重要日子设置、页面层级、Apple Photos 使用引导和失败恢复反馈。详见 [2.1.0 更新说明](Docs/07_Releases/2026-08-08-2.1.0-release-notes.md)。
 
-多年以后，当再次翻开照片时，看到的不只是画面，更是那一天在生命时间线里的位置。
+例如，一张普通的宝宝照片，除了拍摄日期，还可以留下：
 
-<!--
-Hero image slot:
+```text
+宝宝 1岁2个月18天
+2026年7月29日 · 星期三
+上海 · 徐汇
+iPhone 17 Pro Max
+```
 
-Add a public, non-private product image here when available.
-Recommended path: Screenshots/memomark-hero.png
+多年以后重新看到照片时，不需要再计算，也不需要再回忆：
 
-![MemoMark memory card example](Screenshots/memomark-hero.png)
--->
+> 原来，那时候的他才这么大。
 
-## Why MemoMark Exists
+## 为什么做 MemoMark
 
-Today, we take more photos than we can meaningfully reread.
+MemoMark 最初只是一个父亲为家庭记录孩子成长的小工具。照片准确保存了拍摄日期，却没有回答父母真正关心的问题：拍这张照片时，孩子到底多大？
 
-The details people care about years later are rarely only camera settings. More often, they are:
+这些信息可以由拍摄时间和出生日期计算出来，但 Apple Photos 不负责表达这种人与时间之间的关系。MemoMark 因此诞生，并逐步成为一款独立的 Apple 原生应用。
 
-- Where was this?
-- How old was the child?
-- What happened that day?
-- Why was this photo taken?
-- Where does this photo belong in a person's life?
+## 照片有时间，记忆有位置
 
-MemoMark exists to help people read their memories, not just store their photos.
+一张照片天然拥有拍摄时间。MemoMark 更关心的是：这个时间，对你意味着什么？
 
-时光记存在的意义，不是帮助人们保存照片，而是帮助人们阅读回忆。
+MemoMark 将这些重要日期称为 **时间锚点（Time Anchor）**。它可以表达孩子的年龄、旅行第几天、相识或结婚纪念日、距离未来事件还有多久，以及其他自定义的人生时刻。
 
-Photos preserve moments.
+拍摄时间与时间锚点之间的关系由 MemoMark 自动计算；最终如何写成一句话，仍然由你决定。
 
-MemoMark reveals their meaning.
+## MemoMark 能做什么
 
-照片记录瞬间。时光记赋予意义。
+### 记录成长与人生阶段
 
-## What MemoMark Is
+设置一次出生日期或其他重要日期，之后选择照片即可得到对应的时间结果，例如 `3个月6天`、`1岁3个月18天`、`相识267天` 或 `旅行第5天`。
 
-MemoMark is:
+时间锚点同样适用于家庭生活、情侣纪念、旅行、宠物成长、毕业和其他重要阶段。
 
-- a local-first Memory Presentation Engine
-- a memory timeline system
-- a metadata-driven presentation engine
-- a research-first layout-specification project
-- a system that generates a new image while preserving the original photo
-- a Memory Capability inside Apple Photos workflows
+### 读取照片原本拥有的信息
 
-MemoMark is not:
+MemoMark 可以利用照片中的拍摄日期与时间、星期、地点、设备、焦距、光圈、ISO、快门等信息组织记忆卡内容。它们不是为了把照片变成参数表，而是帮助未来的你重新理解这张照片。
 
-- a cloud photo product
-- a general image editor
-- a photo manager
-- an EXIF tool
-- a template marketplace
-- a batch-first dashboard
-- a watermark clone app
+### 自由组合记忆卡
 
-Apple Photos remains the trusted library, timeline, map, people system, search system, sync system, and reading space. MemoMark only owns the Memory Workflow that helps a meaningful photo reveal its Life Position.
+记忆卡采用稳定的四区域布局。每个区域都可以组合普通文字与智能内容，你可以决定人物、日期、设备、拍摄参数、年龄和地点分别出现在哪里，以及采用什么表达方式。
 
-## Core Principles
+MemoMark 负责计算，最终怎么表达仍然由你决定。智能变量输出的是可复用的时间结果，不会替你生成不可编辑的整段文案。
 
-### Memory, Not Parameters
+### 支持地点与 Live Photo
 
-EXIF is data. Memory is relationship.
+地点可以按需要表达为“上海”“上海 · 徐汇”等层级。MemoMark 也持续适配 Apple Photos、PhotoKit 以及 Live Photo 的静态资源和动态资源关系，尽可能保留照片原本的生命力。
 
-MemoMark does not display photo facts for their own sake. It uses capture time, location, camera information, Life Anchors, and user expression to make a photo easier to understand later.
+## 使用方式
 
-Photos have timestamps.
-
-Memories have positions.
-
-### Local First
-
-All core processing is local.
-
-MemoMark does not upload photos, does not depend on cloud processing, and does not mutate the original image. The output is a newly generated image.
-
-### Apple Native
-
-MemoMark extends Apple Photos instead of replacing it.
-
-The intended daily lifecycle is:
+Apple Photos 仍然是照片真正的家。第一次使用时，建立记忆对象、设置时间锚点、选择表达方式并配置记忆卡；之后的日常流程是：
 
 ```text
 Apple Photos
--> Share
+-> 选择照片
+-> 分享
 -> MemoMark
--> Processing
--> Notification
--> Apple Photos
+-> 本地处理
+-> 生成新的记忆照片
+-> 回到 Apple Photos
 ```
 
-MemoMark should return users to Apple Photos instead of pulling them into a separate app-owned workflow.
+配置一次，之后只管选照片。
 
-### Configuration Once, Benefit Forever
+## 原始照片永远是原始照片
 
-The foreground app is the Configuration Center.
+- 原图不修改，处理后生成一份新的照片。
+- 照片处理核心流程在设备本地完成，不建立在上传家庭照片的服务器之上。
+- 在 Apple 平台允许的范围内，持续验证 EXIF、拍摄时间、地点、方向、Live Photo 与 Apple Photos 保存流程。
 
-The Configuration Center is responsible for long-term setup:
+目标不是简单导出一张带字的 JPG，而是尽可能让生成后的照片仍然拥有完整上下文。
 
-- Memory Profile
-- Life Anchor
-- Preset
-- Output
-- Album
-- Automation
-- Advanced settings
+## 为什么不直接做成水印 App
 
-The Configuration Center edits Objects, not Data.
-
-Everything starts from the Memory Card.
-
-## Memory Card Workflow
-
-MemoMark's long-term workflow is:
+MemoMark 想解决的不是“如何在图片下面加几个字”，而是如何把照片背后的时间关系长期、稳定地表达出来。项目内部将照片事实、时间计算、语言表达、布局和渲染分别交给不同层：
 
 ```text
-Photo
--> Metadata Engine
--> Memory Engine
--> Presentation Engine
--> Layout Engine
--> Renderer
--> Export
+Photo -> Metadata -> Memory Engine -> Expression -> Layout -> Renderer -> Export
 ```
 
-Ownership:
+这样的边界让 MemoMark 能继续增加表达能力，而不必变成越来越复杂的模板编辑器。
 
-- Metadata Engine owns photo facts and normalized metadata.
-- Memory Engine owns Life Position calculations.
-- Presentation Engine owns expression and content assembly.
-- Layout Engine owns canvas, slots, typography placement, adaptive rules, and optical compensation.
-- Renderer draws resolved layout instructions.
-- Export creates a new output image and preserves metadata usefulness where the platform allows.
+## 为 Apple Photos 而生
 
-Renderer must not own layout decisions.
+Apple Photos 已经拥有照片时间线、地图、人物与宠物、搜索、相册、分享、iCloud Photos 和系统级隐私权限。MemoMark 不重新制造一个相册，只专注于补充：
 
-## Time Anchor
+> 这张照片在人生中的位置。
 
-Time Anchor is one of MemoMark's core capabilities.
+Apple Photos 负责保存记忆，MemoMark 负责帮助你读懂记忆。
 
-A photo already has a capture time. MemoMark adds relationships between that capture time and important life events.
+## 产品原则
 
-Examples of anchors:
+- **原图不改。**
+- **核心照片处理本地完成。**
+- **Apple Photos 始终是照片的家。**
+- **优先使用 Apple 原生能力。**
+- **配置应该越来越少，而不是越来越多。**
+- **技术复杂度应该留给软件，而不是留给用户。**
 
-- birth
-- marriage
-- relationship
-- first meeting
-- graduation
-- travel
-- pet adoption
-- memorial day
-- custom life event
+## 当前状态
 
-The Memory Engine calculates reusable time results such as:
+MemoMark 已从 PhotoMemo 原型演进为正式产品 MemoMark（时光记），并持续进行 V4 Expression Style System 的研究与受控优化。当前仍在持续验证和完善记忆表达、配置中心、Live Photo 与媒体可靠性、本地处理、国际化、无障碍和 Apple 平台适配。
 
-- `1岁3个月18天`
-- `相识267天`
-- `结婚第8年`
-- `旅行第5天`
-- `还有86天`
+仓库中的 V4 研究、TX-001 与 BP-001 可靠性记录代表进行中的工程工作，不应被理解为已经完成的生产认证或云端能力承诺。
 
-Smart anchor variables output time results, not complete prose. Users remain in control of the final sentence by combining literal text and variables.
+## 关于项目
 
-## Memory Subject
+MemoMark 是一个独立开发项目。它使用 Swift、SwiftUI、PhotoKit 等 Apple 原生技术，并借助 AI / Codex 辅助工程实现、代码审查、测试和迭代；产品方向、交互取舍、真机验证与最终决定，始终来自一个具体的问题：几年以后重新打开家人的照片时，希望看到什么？
 
-MemoMark is not centered on generic contacts.
+主要源码：`Source/PhotoMemo/`
 
-It is centered on Memory Subjects: the people, relationships, events, and life contexts that make a photo meaningful.
+项目文档：`Docs/`
 
-A Memory Subject may include:
+研究与早期设计：`Research/`
 
-- display name
-- nickname
-- relationship
-- reference date
-- Life Anchors
-- Time Anchors
-- expression behavior
-- decoration assets
-- default presentation choices
+测试：`Tests/`
 
-One photo may belong to multiple life timelines. The long-term goal is to let every meaningful photo know where it belongs inside a person's life.
+进一步了解项目内部设计，可阅读 `PROJECT_CONSTITUTION.md`、`Docs/MASTER_PLAN.md`、`Docs/PRODUCT_VERSION_HISTORY.md`、`Docs/CURRENT_STATUS.md` 与 `PROJECT_PHILOSOPHY.md`。
 
-## Current Status
+发布与同步遵循 [MemoMark 发布同步规范](Docs/07_Releases/RELEASE_SYNC_STANDARD.md)。版本号、更新范围、GitHub 同步、TestFlight 和 App Store 提交分别确认，不把源码检查点等同于正式发布。
 
-MemoMark is in `V4 Expression Style System`, subphase
-`V4.0 Research And Product Definition`.
+## English
 
-V1 MVP, V2 Product Definition And Realization, and V3 Production Quality And
-Delivery are concluded. V3 ended with certification carryover rather than a
-false production-certification pass.
+See [README_EN.md](README_EN.md).
 
-V4 is the final sustained refinement stage. It begins with Expression Style
-research and continues bounded improvement of the main interface, existing
-features, interaction logic, accessibility, and device fit without a broad
-core-flow or architecture rewrite.
+## 最后
 
-Current priorities include:
+我们已经拥有越来越好的相机，也拥有越来越大的照片库。但真正珍贵的，也许从来不是这张照片用了什么参数，而是：
 
-```text
-Product Loop: ES-001 User Expression Scenarios
--> Style Taxonomy
--> Measurable Classic And Minimal Specifications
--> Product Design Review
--> Observed Existing-Product Refinement
+> 那一天，他多大。
+>
+> 那一天，我们在哪里。
+> 那一天，在我们的人生里意味着什么。
 
-Engineering Loop: TX-001 Export Commit Protocol
--> BP-001 Enforced Single-Task Memory Contract
--> Superseding Production Reliability Certification
-```
-
-IA-002 Configuration Center Architecture and the completed IA-003 Memory Engine
-integration remain architectural foundations. V4 does not reopen them by
-default. Expression Style production implementation and broader production
-claims remain unauthorized until both V4 entry gates pass.
-
-After V4, routine version updates stop unless material user impact,
-Apple-platform compatibility, or a major reliability/privacy need justifies a
-scoped maintenance release.
-
-Recent IA-003-compatible foundation work has established the first Memory Expression Engine path:
-
-```text
-MemorySubject
--> ConfigurationSnapshot
--> MemoryExpressionEngine
--> MemoryModule
-```
-
-See `Docs/PRODUCT_VERSION_HISTORY.md` for the canonical distinction between
-product stages, App release versions, audit-report versions, and legacy `V1*`
-implementation identifiers.
-
-See `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md` for the accepted
-V4 boundary, V3 carryover, and first work items.
-
-## Repository Map
-
-Current source and project structure:
-
-- `Source/PhotoMemo/` - current Xcode project and app source
-- `Research/` - research and specification history
-- `Docs/` - product, architecture, behavior, QA, release, and historical documents
-- `App/` - reserved app-facing structure
-- `DesignSystem/` - reserved durable design-system assets
-- `LayoutEngine/` - reserved future Layout Engine boundary
-- `Renderer/` - reserved future renderer boundary
-- `Examples/` - public non-private examples
-- `Screenshots/` - public non-private screenshots
-- `Tests/` - fixtures and Swift tests
-- `scripts/` - local automation helpers
-
-Existing source files remain under `Source/PhotoMemo/` until a reviewed migration slice moves them safely.
-
-## Repository Lines
-
-MemoMark should preserve historical product phases through branches, tags, and releases rather than duplicated version folders.
-
-Current intended line split:
-
-- `main` - active V4 repository and product source-of-truth line
-- milestone tags and releases - macOS foundation, iOS foundation, MVP, and V1 checkpoints
-
-Repository cleanup should not create root-level copies such as `MacVersion/`, `MVP/`, or `V1/`.
-
-See `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md` for the current repository-line policy.
-
-## Start Here
-
-For project context, read:
-
-1. `PROJECT_CONSTITUTION.md`
-2. `Docs/MASTER_PLAN.md`
-3. `Docs/PRODUCT_VERSION_HISTORY.md`
-4. `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
-5. `Docs/CURRENT_STATUS.md`
-6. `PROJECT_PHILOSOPHY.md`
-7. `PROJECT_DIRECTION.md`
-8. `Docs/DOCUMENT_INDEX.md`
-9. `Docs/PROJECT_STRUCTURE.md`
-
-Old documents remain reference material for now. Do not migrate them until the research specifications stabilize.
-
-## Design Review Principle
-
-Every review should leave the repository simpler than before.
-
-每一次设计评审，都应该让时光记比昨天更简单一点。
-
-## Closing
-
-照片记录的是那一刻。时光记希望记录的是，那一刻背后的故事。
+照片记录那一刻。MemoMark，希望留下那一刻在生命里的位置。

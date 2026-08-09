@@ -395,6 +395,7 @@ final class BatchQueueStore: ObservableObject {
             in: &jobs,
             jobID: jobID
         ) else {
+            lastErrorMessage = "重试没有开始，请重新打开处理进度后再试。"
             return
         }
 

@@ -3,6 +3,9 @@ import SwiftUI
 
 struct V1IOSSubjectOverviewSheet: View {
 
+    @Environment(\.dismiss)
+    private var dismiss
+
     let subjects: [MemorySubject]
     let subject: MemorySubject?
     let availableConfigurationCount: Int
@@ -38,7 +41,7 @@ struct V1IOSSubjectOverviewSheet: View {
 
                     V1TitledSectionSurface(
                         title: "基础资料",
-                        subtitle: "对象身份与关系信息",
+                        subtitle: "名字、关系和你熟悉的称呼。",
                         trailingAccessory: {
                             editSubjectButton
                         }
@@ -48,7 +51,7 @@ struct V1IOSSubjectOverviewSheet: View {
 
                     V1TitledSectionSurface(
                         title: "时间锚点",
-                        subtitle: "这些重要时刻会影响照片中的时间表达。"
+                        subtitle: "选择重要日子，让照片拥有时间答案。"
                     ) {
                         V1IOSSubjectAnchorDetailSection(
                             session: session,
@@ -58,12 +61,6 @@ struct V1IOSSubjectOverviewSheet: View {
                         )
                     }
 
-                    V1IOSSubjectStatisticsStrip(
-                        availableConfigurationCount:
-                            availableConfigurationCount,
-                        completedPhotoCount:
-                            completedPhotoCount
-                    )
                 }
                 .padding(.top, 12)
                 .padding(.bottom, 34)
@@ -83,9 +80,16 @@ struct V1IOSSubjectOverviewSheet: View {
                     Button {
                         beginSwitchingSubject()
                     } label: {
-                        Image(systemName: "arrow.left.arrow.right")
+                        Label("切换", systemImage: "person.2")
                     }
                     .accessibilityLabel("切换记忆对象")
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
                 }
             }
         }
@@ -210,7 +214,7 @@ struct V1IOSSubjectOverviewSheet: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
 
-                Text("当前生效的记忆主体")
+                Text("照片中的回忆正围绕 TA 展开。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

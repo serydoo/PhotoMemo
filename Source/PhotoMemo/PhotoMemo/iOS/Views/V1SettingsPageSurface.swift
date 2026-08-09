@@ -813,11 +813,11 @@ struct V1SettingsPageSurface: View {
                 settingsActionRow(
                     title: localized(
                         "settings.guide.welcome.title",
-                        fallback: "重新查看欢迎说明"
+                        fallback: "重看欢迎介绍"
                     ),
                     detail: localized(
                         "settings.guide.welcome.detail",
-                        fallback: "从第一次打开时光记开始。"
+                        fallback: "回顾首次使用时的主要说明。"
                     ),
                     systemImage: MemoMarkSymbol.welcome.name,
                     tint: .orange,
@@ -832,7 +832,7 @@ struct V1SettingsPageSurface: View {
                 settingsActionRow(
                     title: localized(
                         "settings.guide.workflow.title",
-                        fallback: "看看日常怎么记录"
+                        fallback: "查看日常使用流程"
                     ),
                     detail: localized(
                         "settings.guide.workflow.detail",
@@ -851,11 +851,11 @@ struct V1SettingsPageSurface: View {
                 settingsActionRow(
                     title: localized(
                         "settings.guide.expression.title",
-                        fallback: "了解记忆表达"
+                        fallback: "照片怎样表达时间"
                     ),
                     detail: localized(
                         "settings.guide.expression.detail",
-                        fallback: "看看照片、记忆对象和时间锚点怎样一起留下回忆。"
+                        fallback: "看看重要日子如何改变照片中的时间说法。"
                     ),
                     systemImage: MemoMarkSymbol.expressionFormula.name,
                     tint: .purple,
@@ -959,10 +959,18 @@ struct V1SettingsPageSurface: View {
             .navigationTitle(
                 localized(
                     "settings.expression_guide.title",
-                    fallback: "记忆表达说明"
+                    fallback: "照片怎样讲述这一刻"
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") {
+                        showsExpressionGuide = false
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)

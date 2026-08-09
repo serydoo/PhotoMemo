@@ -72,13 +72,13 @@ struct V1AdvancedModulesSheet: View {
             }
             .safeAreaInset(edge: .top, spacing: 0) {
                 V1ConfigurationSheetSubtitle(
-                    "更多内容会根据实际需要逐步加入。"
+                    "决定照片中的时间和地点怎样呈现。"
                 )
             }
             .background(
                 ConfigurationUI.appBackground.ignoresSafeArea()
             )
-            .navigationTitle("更多信息")
+            .navigationTitle("时间与地点")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -136,11 +136,11 @@ struct V1AdvancedModulesSheet: View {
             alignment: .leading,
             spacing: MemoMarkDesignTokens.Spacing.extraSmall
         ) {
-            Text(localized("地理显示"))
+            Text(localized("地点显示"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            Text(localized("地点想怎样被写下。"))
+            Text(localized("选择地点在卡片里怎样显示。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -192,7 +192,7 @@ struct V1AdvancedModulesSheet: View {
             Text(localized("时间显示"))
                 .font(.subheadline.weight(.semibold))
 
-            Text(localized("照片时间想怎样被写下。"))
+            Text(localized("选择拍摄时间怎样显示。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -259,9 +259,19 @@ struct V1AdvancedModulesSheet: View {
     }
 
     private var timeSupplementHeading: some View {
-        Text(localized("时间补充"))
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.primary)
+        VStack(
+            alignment: .leading,
+            spacing: MemoMarkDesignTokens.Spacing.extraSmall
+        ) {
+            Text(localized("日期补充"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Text(localized("补充农历、节气或节日信息。"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var timeSupplementMenu: some View {
@@ -288,7 +298,7 @@ struct V1AdvancedModulesSheet: View {
                 title: timeSupplementTitle(selectedTimeSupplement)
             )
         }
-        .accessibilityLabel(localized("时间补充"))
+        .accessibilityLabel(localized("日期补充"))
         .accessibilityValue(timeSupplementTitle(selectedTimeSupplement))
     }
 
@@ -321,7 +331,7 @@ struct V1AdvancedModulesSheet: View {
         } label: {
             V1CompactSelectionLabel(title: selectedLocationValue)
         }
-        .accessibilityLabel(localized("地理显示"))
+        .accessibilityLabel(localized("地点显示"))
         .accessibilityValue(selectedLocationValue)
     }
 

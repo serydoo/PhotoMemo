@@ -136,7 +136,7 @@ private struct V1IOSSubjectPrimaryCard<StatisticsStrip: View>: View {
 
     private var anchorCountText: String {
         let count = max(subject?.timeAnchors.count ?? 0, 0)
-        return "\(count) 个锚点"
+        return "\(count) 个重要日子"
     }
 
     private var subjectMetaRow: some View {
@@ -162,149 +162,82 @@ private struct V1IOSSubjectPrimaryCard<StatisticsStrip: View>: View {
     }
 
     private var subjectAnchorCountPill: some View {
-        V1IOSSubjectMetaPill(
+        let count = max(subject?.timeAnchors.count ?? 0, 0)
+        return V1IOSSubjectMetaPill(
             text: anchorCountText,
             tone: .accent
         )
+        .accessibilityLabel("已设置 \(count) 个时间锚点")
     }
 
 }
 
-struct V1IOSSubjectStatisticsStrip: View {
+struct V1IOSTodayTimeAnswerStrip: View {
 
-    let availableConfigurationCount: Int
-    let completedPhotoCount: Int
-
-    @Environment(\.dynamicTypeSize)
-    private var dynamicTypeSize
+    let anchor: MemorySubject.TimeAnchor
+    let subjectName: String
 
     var body: some View {
-        Group {
-            if dynamicTypeSize.isAccessibilitySize {
-                accessibilityStatisticsContent
-            } else {
-                regularStatisticsContent
+        TimelineView(.periodic(from: .now, by: 3_600)) { context in
+            let presentation = V1TimeAnchorTodayPresenter.presentation(
+                anchor: anchor,
+                subjectName: subjectName,
+                referenceDate: context.date
+            )
+
+            HStack(spacing: 10) {
+                answerIcon
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(presentation.title)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    Text(presentation.value)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
             }
-        }
-        .padding(.horizontal, 9)
-        .frame(
-            maxWidth: .infinity,
-            minHeight: ConfigurationUI.minimumInteractiveHeight,
-            alignment: .center
-        )
-        .background(
-            RoundedRectangle(
-                cornerRadius: 10,
-                style: .continuous
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: ConfigurationUI.minimumInteractiveHeight,
+                alignment: .leading
             )
-            .fill(statisticsTint.opacity(0.07))
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: 10,
-                style: .continuous
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(answerTint.opacity(0.07))
             )
-            .stroke(statisticsTint.opacity(0.12))
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "可用配置 \(max(availableConfigurationCount, 0)) 个，累计完成 \(max(completedPhotoCount, 0)) 张。美好的回忆慢慢品味！"
-        )
-    }
-
-    private var regularStatisticsContent: some View {
-        HStack(spacing: 10) {
-            statisticsIcon
-
-            statText(
-                title: "可用配置",
-                value:
-                    "\(max(availableConfigurationCount, 0)) 个"
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(answerTint.opacity(0.12))
             )
-
-            Rectangle()
-                .fill(statisticsTint.opacity(0.16))
-                .frame(width: 1, height: 18)
-
-            statText(
-                title: "累计完成",
-                value:
-                    "\(max(completedPhotoCount, 0)) 张"
-            )
-
-            Text("美好的回忆慢慢品味！")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .allowsTightening(true)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(presentation.accessibilityText)
         }
     }
 
-    private var accessibilityStatisticsContent: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Spacer(minLength: 0)
-
-            statisticsIcon
-
-            VStack(alignment: .leading, spacing: 5) {
-                statText(
-                    title: "可用配置",
-                    value:
-                        "\(max(availableConfigurationCount, 0)) 个"
-                )
-                statText(
-                    title: "累计完成",
-                    value:
-                        "\(max(completedPhotoCount, 0)) 张"
-                )
-                Text("美好的回忆慢慢品味！")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .allowsTightening(true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 8)
-    }
-
-    private var statisticsIcon: some View {
+    private var answerIcon: some View {
         ZStack {
             Circle()
-                .fill(statisticsTint.opacity(0.12))
+                .fill(answerTint.opacity(0.12))
 
             Image(systemName: "sparkles")
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(statisticsTint)
+                .foregroundStyle(answerTint)
         }
         .frame(width: 24, height: 24)
     }
 
-    private var statisticsTint: Color {
+    private var answerTint: Color {
         MemoMarkDesignTokens.Semantic.memoryStatistics
-    }
-
-    private func statText(
-        title: String,
-        value: String
-    ) -> some View {
-        HStack(spacing: 4) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: true, vertical: false)
-
-            Text(value)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.primary)
-                .monospacedDigit()
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .lineLimit(1)
-        .fixedSize(horizontal: true, vertical: false)
     }
 }
 

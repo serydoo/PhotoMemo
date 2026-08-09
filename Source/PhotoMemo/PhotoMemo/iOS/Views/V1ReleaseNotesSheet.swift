@@ -12,16 +12,16 @@ struct V1ReleaseNotesSheet: View {
                 id: "time-expression",
                 title: localized(
                     "settings.release_notes.time_expression.title",
-                    fallback: "让时间的表达更自然"
+                    fallback: "卡片编辑更清楚"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.time_expression.item_one",
-                        fallback: "生日当天会用自然的语言记录，不再显示“0天”。"
+                        fallback: "四个内容区域明确对应最终照片的位置，修改会实时出现在完整预览中。"
                     ),
                     localized(
                         "settings.release_notes.time_expression.item_two",
-                        fallback: "现在可以提前看看重要时刻之前、当天和之后的表达。"
+                        fallback: "普通文字、照片信息与记忆表达可以连续组合，右下内容也会写入照片说明。"
                     )
                 ]
             ),
@@ -29,16 +29,16 @@ struct V1ReleaseNotesSheet: View {
                 id: "configuration",
                 title: localized(
                     "settings.release_notes.configuration.title",
-                    fallback: "让设置更清楚、更顺手"
+                    fallback: "重要日子更容易理解"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.configuration.item_one",
-                        fallback: "配置中心和照片说明的层级更清楚，小屏上也更容易阅读。"
+                        fallback: "首页和记忆对象会直接呈现今天的时间答案，重要日子的设置步骤也更清楚。"
                     ),
                     localized(
                         "settings.release_notes.configuration.item_two",
-                        fallback: "可以选择跟随系统、浅色或深色界面，照片的呈现不会因此改变。"
+                        fallback: "配置中心、记忆对象和设置页面减少重复层级，小屏阅读与操作更从容。"
                     )
                 ]
             ),
@@ -46,16 +46,16 @@ struct V1ReleaseNotesSheet: View {
                 id: "saving",
                 title: localized(
                     "settings.release_notes.saving.title",
-                    fallback: "让保存更安心"
+                    fallback: "分享与恢复更可靠"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.saving.item_one",
-                        fallback: "保存回 Apple Photos 后的恢复与重复结果保护得到改进。"
+                        fallback: "从 Apple Photos 分享、查看处理进展和打开照片 App 的路径更明确。"
                     ),
                     localized(
                         "settings.release_notes.saving.item_two",
-                        fallback: "照片始终只在设备本地处理；原始照片保持不变，时光记只保存新的结果。"
+                        fallback: "选图、任务重试与购买操作获得更清楚的状态和失败提示；照片仍在设备本地处理，原图保持不变。"
                     )
                 ]
             )
@@ -71,7 +71,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.header",
-                                    fallback: "这一次，让回忆在时间和日常使用里更自然。"
+                                    fallback: "根据大家的反馈，时光记迎来一次较大的体验更新。"
                                 )
                             )
                             .font(.subheadline.weight(.semibold))
@@ -89,7 +89,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.positioning",
-                                    fallback: "我们改善了时间表达、配置体验和保存后的恢复表现。"
+                                    fallback: "建议及时更新，体验更清楚的卡片编辑、重要日子与 Apple Photos 工作流程。"
                                 )
                             )
                             .font(.caption)
@@ -125,7 +125,7 @@ struct V1ReleaseNotesSheet: View {
                     Text(
                         localized(
                             "settings.release_notes.closing",
-                            fallback: "照片仍然只属于你的设备和生活。"
+                            fallback: "感谢每一条反馈。照片仍然只属于你的设备和生活。"
                         )
                     )
                     .font(.caption)

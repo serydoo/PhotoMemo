@@ -10,6 +10,7 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
     let onToggleModuleLibrary: () -> Void
     let canToggleModuleLibrary: Bool
     let isModuleLibraryPresented: Bool
+    let focusedRegionTitle: String?
     let onDismissEditor: () -> Void
 
     func body(content: Content) -> some View {
@@ -29,7 +30,8 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
                         canToggleModuleLibrary:
                             canToggleModuleLibrary,
                         isModuleLibraryPresented:
-                            isModuleLibraryPresented
+                            isModuleLibraryPresented,
+                        focusedRegionTitle: focusedRegionTitle
                     )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -44,6 +46,7 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
 private struct V1CardEditorOverlay<EditorContent: View>: View {
     @State private var keyboardBottomInset: CGFloat = 0
     @State private var editorViewportBottom: CGFloat = 0
+    @State private var pullDownOffset: CGFloat = 0
 
     let editorContent: EditorContent
     let onDismiss: () -> Void
@@ -51,6 +54,7 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
     let onToggleModuleLibrary: () -> Void
     let canToggleModuleLibrary: Bool
     let isModuleLibraryPresented: Bool
+    let focusedRegionTitle: String?
 
     var body: some View {
         GeometryReader { proxy in
@@ -72,10 +76,6 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
             let editorHeight = maximumEditorHeight
 
             ZStack(alignment: .bottom) {
-                Color.black
-                    .opacity(0.16)
-                    .ignoresSafeArea()
-
                 VStack(spacing: 0) {
                     Capsule()
                         .fill(Color.secondary.opacity(0.42))
@@ -84,10 +84,17 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
                         .padding(.bottom, 8)
                         .accessibilityHidden(true)
 
-                    HStack {
-                        Text("卡片内容")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
+                    HStack(alignment: .center, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("卡片内容")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(.primary)
+
+                            Text("组合文字、照片信息与记忆表达。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
 
                         Spacer(minLength: 12)
 
@@ -108,8 +115,13 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
                         .accessibilityIdentifier("card-editor-add-module")
 
                         Button("完成", action: onDismiss)
-                            .buttonStyle(.bordered)
-                            .tint(.primary)
+                            .buttonStyle(.plain)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .frame(
+                                minWidth: ConfigurationUI.minimumInteractiveHeight,
+                                minHeight: ConfigurationUI.minimumInteractiveHeight
+                            )
                             .accessibilityIdentifier("card-editor-done")
                     }
                     .padding(.horizontal, 20)
@@ -196,6 +208,8 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
                 maxHeight: .infinity,
                 alignment: .bottom
             )
+            .offset(y: pullDownOffset)
+            .simultaneousGesture(pullToDismissGesture)
             .onAppear {
                 editorViewportBottom = currentViewportBottom
             }
@@ -237,5 +251,48 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("卡片内容编辑")
     }
+
+    private var pullToDismissGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                guard keyboardBottomInset == 0 else {
+                    pullDownOffset = 0
+                    return
+                }
+
+                let translation = value.translation
+                guard translation.height > abs(translation.width) else {
+                    pullDownOffset = 0
+                    return
+                }
+
+                pullDownOffset = min(translation.height * 0.72, 180)
+            }
+            .onEnded { value in
+                guard keyboardBottomInset == 0 else {
+                    pullDownOffset = 0
+                    return
+                }
+
+                let translation = value.translation
+                let predictedHeight = value.predictedEndTranslation.height
+                let shouldDismiss =
+                    translation.height
+                        >= ConfigurationUI.cardEditorDismissThreshold
+                    || predictedHeight
+                        >= ConfigurationUI.cardEditorDismissThreshold * 1.35
+
+                guard translation.height > abs(translation.width),
+                      shouldDismiss else {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+                        pullDownOffset = 0
+                    }
+                    return
+                }
+
+                onDismiss()
+            }
+    }
+
 }
 #endif

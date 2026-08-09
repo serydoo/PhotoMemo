@@ -38,5 +38,15 @@ struct V1WelcomeFlowCoordinatorTests {
         #expect(nextState.showsWelcomePage == false)
         #expect(nextState.showsWorkflowGuide == false)
     }
+
+    @Test("the workflow guide keeps Apple Photos Share as the primary entry")
+    func workflowGuideKeepsApplePhotosShareAsPrimaryEntry() {
+        let steps = V1WelcomePresentation.workflowSteps(for: .simplifiedChinese)
+
+        let shareStep = steps.first(where: { $0.id == "share" })
+
+        #expect(shareStep?.title == "分享给时光记")
+        #expect(shareStep?.detail == "在系统相册点分享，选择时光记。")
+    }
 }
 #endif

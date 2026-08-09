@@ -169,7 +169,7 @@ struct V1WelcomePresentation: Equatable {
                 ),
                 detail: language.localized(
                     key: "welcome.workflow.share.detail",
-                    fallback: "也可以直接在首页选择照片。"
+                    fallback: "在系统相册点分享，选择时光记。"
                 ),
                 systemImage: "square.and.arrow.up"
             ),
@@ -642,9 +642,9 @@ private struct V1WelcomeHeroSection: View {
                 )
             }
         }
-        .padding(22)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(ConfigurationUI.panelBackground)
         )
         .overlay(
@@ -652,9 +652,9 @@ private struct V1WelcomeHeroSection: View {
                 .stroke(ConfigurationUI.faintHairline)
         )
         .shadow(
-            color: ConfigurationUI.cardShadow,
-            radius: 18,
-            y: 8
+            color: ConfigurationUI.cardShadow.opacity(0.45),
+            radius: 8,
+            y: 3
         )
         .padding(.top, 12)
     }
@@ -729,34 +729,12 @@ private struct V1WelcomePill: View {
 private struct V1WelcomeHeroMark: View {
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(MemoMarkDesignTokens.Semantic.fixedLightBackground)
-                .shadow(color: ConfigurationUI.cardShadow, radius: 18, y: 8)
-
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.black, lineWidth: 8)
-                .frame(width: 88, height: 104)
-                .offset(x: -10, y: -2)
-
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.black.opacity(0.92), lineWidth: 6)
-                .frame(width: 74, height: 86)
-                .offset(x: 18, y: 12)
-
-            Circle()
-                .fill(Color.blue)
-                .frame(width: 18, height: 18)
-                .offset(x: 36, y: -30)
-
-            Path { path in
-                path.move(to: CGPoint(x: 46, y: 70))
-                path.addLine(to: CGPoint(x: 70, y: 46))
-                path.addLine(to: CGPoint(x: 88, y: 62))
-            }
-            .stroke(Color.blue, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
-        }
-        .frame(width: 134, height: 134)
+        Image("HomeAppIcon")
+            .resizable()
+            .scaledToFill()
+            .frame(width: 92, height: 92)
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: ConfigurationUI.cardShadow.opacity(0.45), radius: 6, y: 2)
     }
 }
 #endif

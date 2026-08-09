@@ -98,7 +98,7 @@ struct V1TaskPageSurface: View {
     private var pageHeader: some View {
         V1PageHeader(
             "进展",
-            subtitle: "从 Apple Photos 分享后，这里会告诉你进展。"
+            subtitle: "从 Apple Photos 分享后，可以在这里看到是否已经完成。"
         )
     }
 
@@ -119,7 +119,7 @@ struct V1TaskPageSurface: View {
     private var waitingTaskCard: some View {
         V1TitledSectionCard(
             title: "准备好了",
-            subtitle: "从 Apple Photos 分享照片后，这里会告诉你进展。"
+            subtitle: "从 Apple Photos 分享照片后，可以在这里看到是否已经完成。"
         ) {
             HStack(spacing: 12) {
                 Image(systemName: "photo.badge.plus")
@@ -591,7 +591,13 @@ struct V1TaskPageSurface: View {
                     .frame(width: 22, height: 22)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("查看 Apple Photos")
+                    Text(
+                        presentation
+                        .currentTask
+                        .photoLibraryLink?
+                        .actionTitle
+                        ?? "打开照片 App"
+                    )
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(
@@ -602,8 +608,8 @@ struct V1TaskPageSurface: View {
                         presentation
                         .currentTask
                         .photoLibraryLink?
-                        .displayTitle
-                        ?? "系统照片"
+                        .saveDestinationText
+                        ?? "已保存到系统图库"
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -637,7 +643,13 @@ struct V1TaskPageSurface: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityHint("打开 Apple Photos 查看已保存的回忆")
+        .accessibilityHint(
+            presentation
+            .currentTask
+            .photoLibraryLink?
+            .accessibilityHint
+            ?? "打开照片 App 查看已保存的回忆"
+        )
     }
 
     private func recentTaskRowContent(

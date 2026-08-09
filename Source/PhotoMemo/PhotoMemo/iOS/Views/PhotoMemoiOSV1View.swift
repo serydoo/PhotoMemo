@@ -762,6 +762,8 @@ struct PhotoMemoiOSV1View: View {
                     || activeModuleRegion != nil,
                 isModuleLibraryPresented:
                     activeModuleRegion != nil,
+                focusedRegionTitle:
+                    focusedEditorRegion?.displayTitle,
                 onDismissEditor:
                     resetCardEditorState
             )
@@ -1719,6 +1721,7 @@ struct PhotoMemoiOSV1View: View {
                 }
                 return removed
             },
+            focusedRegion: focusedEditorRegion,
             activeModuleRegion: activeModuleRegion,
             modules: modules(for:),
             categoryTitle: moduleCategoryTitle,
@@ -2526,14 +2529,25 @@ struct PhotoMemoiOSV1View: View {
         }
 
         UIApplication.shared.open(primaryURL) { success in
-            guard !success,
-                  let fallbackURL =
-                    URL(string: "photos://")
-            else {
+            guard !success, let fallbackURL = URL(string: "photos://") else {
+                if !success {
+                    Task { @MainActor in
+                        presentHomeConfigurationActionFeedback(
+                            "暂时无法打开 Apple Photos，请稍后重试。"
+                        )
+                    }
+                }
                 return
             }
 
-            UIApplication.shared.open(fallbackURL)
+            UIApplication.shared.open(fallbackURL) { fallbackSuccess in
+                guard !fallbackSuccess else { return }
+                Task { @MainActor in
+                    presentHomeConfigurationActionFeedback(
+                        "暂时无法打开 Apple Photos，请稍后重试。"
+                    )
+                }
+            }
         }
     }
 
@@ -2739,27 +2753,35 @@ struct PhotoMemoiOSV1View: View {
         defer {
             mediaPickerPresentation.selectedProcessingItems = []
         }
-        await performPhotoQuickAction {
+        await performPhotoQuickAction(
+            importItems: {
             await V1PhotoIntakeImporter.importItems(from: items)
-        }
+            },
+            requestedCount: items.count
+        )
     }
 
     @MainActor
     private func importPickedPHPickerResults(
         _ results: [PHPickerResult]
     ) async {
-        await performPhotoQuickAction {
+        await performPhotoQuickAction(
+            importItems: {
             await V1PhotoIntakeImporter.importPHPickerResults(from: results)
-        }
+            },
+            requestedCount: results.count
+        )
     }
 
     @MainActor
     private func performPhotoQuickAction(
-        importItems: @escaping () async -> [ExternalPhotoIntakeItem]
+        importItems: @escaping () async -> [ExternalPhotoIntakeItem],
+        requestedCount: Int
     ) async {
         let result = await V1PhotoProcessingQuickActionCoordinator
             .processPickedPhotoItems(
                 saveCurrentConfiguration: applyCurrentV1Configuration,
+                requestedCount: requestedCount,
                 importItems: importItems,
                 submit: {
                     externalIntakeCenter.submit(
@@ -2771,10 +2793,22 @@ struct PhotoMemoiOSV1View: View {
 
         switch result.status {
         case .configurationSaveFailed:
+            presentHomeConfigurationActionFeedback(
+                "当前配置没有保存成功，请稍后重试。"
+            )
             return
         case .noSupportedPhotos:
+            presentHomeConfigurationActionFeedback(
+                "没有找到可处理的照片，请确认照片已从 iCloud 下载完成。"
+            )
             break
         case .submitted:
+            if result.failedCount > 0 {
+                presentHomeConfigurationActionFeedback(
+                    "已接收 \(result.submittedItems.count) 张，另有 \(result.failedCount) 张无法读取，请确认原图已下载完成。",
+                    isBlocking: false
+                )
+            }
             refreshExternalIntake()
             refreshProcessingState()
         }

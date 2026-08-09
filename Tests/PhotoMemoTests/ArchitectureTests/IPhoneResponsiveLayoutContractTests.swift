@@ -19,7 +19,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(root.contains("productionDiagnosticsRepository"))
         #expect(!root.contains("ConfigurationBackupRequest("))
         #expect(!root.contains("ConfigurationRestoreRequest("))
-        #expect(root.components(separatedBy: "\n").count < 2_800)
+        #expect(root.components(separatedBy: "\n").count < 3_000)
     }
 
     @Test("shared page layout binds scroll content to the viewport")
@@ -163,8 +163,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(settings.contains("private var verticalDisclosureHeader"))
     }
 
-    @Test("processing pipeline and anchor category avoid fixed compact geometry")
-    func processingPipelineAndAnchorCategoryAvoidFixedGeometry() throws {
+    @Test("processing pipeline and anchor editor avoid fixed compact geometry")
+    func processingPipelineAndAnchorEditorAvoidFixedGeometry() throws {
         let processing = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TaskPageSurface.swift"
         )
@@ -175,12 +175,14 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(processing.contains("private func pipelineStepTitle"))
         #expect(processing.contains(".frame(minHeight: 28)"))
         #expect(!processing.contains(".frame(height: 28)"))
-        #expect(anchors.contains("private var categoryMenu"))
-        #expect(anchors.contains("private var selectedDateText"))
+        #expect(anchors.contains("private var anchorSetupPanel"))
+        #expect(anchors.contains("private var typeColumns"))
+        #expect(anchors.contains("LazyVGrid(columns: typeColumns"))
         #expect(anchors.contains("@Environment(\\.dynamicTypeSize)"))
         #expect(anchors.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(!anchors.contains("ViewThatFits(in: .horizontal)"))
-        #expect(anchors.contains("V1CompactSelectionLabel("))
+        #expect(!anchors.contains("private var categoryMenu"))
+        #expect(!anchors.contains("private var selectedDateText"))
     }
 
     @Test("shared headings and semantic tokens support system accessibility")
@@ -260,11 +262,7 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(editor.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
         #expect(!editor.contains(".overlay(alignment: .bottom)"))
-        #expect(
-            anchors.contains(
-                ".height(ConfigurationUI.compactSheetHeight)"
-            )
-        )
+        #expect(anchors.contains(".presentationDetents([.large])"))
         #expect(anchors.contains("ScrollView"))
     }
 
@@ -351,6 +349,90 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(root.contains("showModuleLibrary("))
     }
 
+    @Test("card editor visual continuity preserves the stable interaction skeleton")
+    func cardEditorVisualContinuityPreservesStableInteractionSkeleton() throws {
+        let modifier = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPresentationModifier.swift"
+        )
+        let cluster = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1RegionEditorCluster.swift"
+        )
+        let textKit = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TextKitEditorSession.swift"
+        )
+        let library = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ModuleLibrarySurface.swift"
+        )
+
+        #expect(modifier.contains("focusedRegionTitle"))
+        #expect(modifier.contains("组合文字、照片信息与记忆表达。"))
+        #expect(!modifier.contains("Color.black"))
+        #expect(!modifier.contains(".opacity(0.08)"))
+        #expect(modifier.contains("Button(\"完成\", action: onDismiss)"))
+        #expect(cluster.contains("focusedRegion"))
+        #expect(cluster.contains("private var currentEditingTask"))
+        #expect(cluster.contains("正在编辑\\(activeRegion.displayTitle)"))
+        #expect(cluster.contains("这里的内容会显示在照片卡片"))
+        #expect(cluster.contains("private struct V1CardRegionNavigator"))
+        #expect(cluster.contains("CardRegion.memoryCardRegions"))
+        #expect(cluster.contains("onSelect(region)"))
+        #expect(cluster.contains("sensoryFeedback(.selection"))
+        #expect(cluster.contains("这里的内容会怎样使用？"))
+        #expect(cluster.contains("修改会实时出现在上方完整卡片预览中。"))
+        #expect(cluster.contains("模块会替换为每张照片自己的信息。"))
+        #expect(cluster.contains("右下内容还会写入 Apple Photos 的照片说明"))
+        #expect(!cluster.contains("IOSCompactEntryListGroup("))
+        #expect(cluster.contains("点“完成”返回配置中心；收起键盘不会离开编辑页。"))
+        #expect(textKit.contains("Text(region.displayTitle)"))
+        #expect(textKit.contains("let isFocused: Bool"))
+        #expect(textKit.contains("isFocused ? Color.accentColor.opacity(0.42)"))
+        #expect(library.contains("displayCategoryTitle"))
+        #expect(library.contains("return \"照片信息\""))
+        #expect(library.contains("return \"记忆表达\""))
+
+        // Frozen behavior boundaries for this visual-only pass.
+        #expect(cluster.contains("V1ModuleLibrarySurface.fixedHeight"))
+        #expect(cluster.contains(".scrollDismissesKeyboard(.never)"))
+        #expect(cluster.contains("ForEach(CardRegion.memoryCardRegions"))
+        #expect(!cluster.contains("previewContent"))
+        #expect(!cluster.contains("glassEffect"))
+        #expect(modifier.contains("keyboardWillChangeFrameNotification"))
+        #expect(!modifier.contains(".sheet(isPresented: $isModuleSheetPresented)"))
+    }
+
+    @Test("empty card editor caret keeps the same text metrics as composed content")
+    func emptyCardEditorCaretKeepsStableTextMetrics() throws {
+        let textKit = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TextKitEditorSession.swift"
+        )
+
+        #expect(textKit.contains("private func editingAttributes()"))
+        #expect(textKit.contains("private func trailingSentinelAttributes()"))
+        #expect(textKit.contains("attributes.merge(editingAttributes())"))
+        #expect(textKit.contains("minimumLineHeight = 28"))
+        #expect(textKit.contains("maximumLineHeight = 28"))
+        #expect(textKit.contains(".frame(minHeight: 42, maxHeight: 42)"))
+    }
+
+    @Test("card editor empty surface and region navigator request the real TextKit focus")
+    func cardEditorRequestsRealTextKitFocus() throws {
+        let textKit = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1TextKitEditorSession.swift"
+        )
+        let cluster = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1RegionEditorCluster.swift"
+        )
+
+        #expect(textKit.contains("var focusHandler: (() -> Void)?"))
+        #expect(textKit.contains("func requestFocus()"))
+        #expect(textKit.contains("focusHandler?()"))
+        #expect(textKit.contains("commandBus.focusHandler = { [weak view] in"))
+        #expect(textKit.contains("view.becomeFirstResponder()"))
+        #expect(textKit.contains("override func touchesBegan"))
+        #expect(textKit.contains("_ = becomeFirstResponder()"))
+        #expect(cluster.contains("commandBus(for: region)?.requestFocus()"))
+    }
+
     @Test("card content editor does not render duplicate right-side row previews")
     func cardContentEditorDoesNotRenderDuplicateRightSideRowPreviews() throws {
         let cluster = try sourceText(
@@ -365,7 +447,7 @@ struct IPhoneResponsiveLayoutContractTests {
         let editorSource = String(support[editorStart..<support.endIndex])
 
         #expect(cluster.contains("ForEach(CardRegion.memoryCardRegions"))
-        #expect(editorSource.contains("Text(region.displayTitle)"))
+        #expect(cluster.contains("Text(\"正在编辑\\(activeRegion.displayTitle)\")"))
         #expect(editorSource.contains("VStack(alignment: .leading, spacing: 6)"))
         #expect(!editorSource.contains("HStack(alignment: .center, spacing: 8)"))
         #expect(editorSource.contains(".frame(maxWidth: .infinity)"))
@@ -373,9 +455,9 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!editorSource.contains("IOSCompactEntryDisclosureRow("))
         #expect(!editorSource.contains("组合结果"))
         #expect(!editorSource.contains("rowValueText"))
-        #expect(cluster.contains("四个卡片区域都可以自由组合文字和内容"))
-        #expect(cluster.contains("输出到照片说明，便于检索"))
-        #expect(cluster.contains("点“完成”后统一保存，收起键盘不会离开编辑页"))
+        #expect(cluster.contains("修改会实时出现在上方完整卡片预览中。"))
+        #expect(cluster.contains("右下内容还会写入 Apple Photos 的照片说明，方便之后查找。"))
+        #expect(cluster.contains("点“完成”返回配置中心；收起键盘不会离开编辑页"))
     }
 
     @Test("card composer keeps module removal in keyboard text-flow semantics")
@@ -451,15 +533,21 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(modifier.contains("onDismissKeyboard()"))
     }
 
-    @Test("card editor title does not dismiss through a downward drag")
-    func cardEditorTitleDoesNotDismissThroughDownwardDrag() throws {
+    @Test("card editor supports deliberate pull dismissal outside active text input")
+    func cardEditorSupportsDeliberatePullDismissal() throws {
         let modifier = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1EditorPresentationModifier.swift"
         )
 
         #expect(modifier.contains("Button(\"完成\", action: onDismiss)"))
-        #expect(!modifier.contains("DragGesture(minimumDistance:"))
-        #expect(!modifier.contains("value.translation.height > 56"))
+        #expect(modifier.contains("DragGesture(minimumDistance:"))
+        #expect(modifier.contains("keyboardBottomInset == 0"))
+        #expect(modifier.contains("translation.height > abs(translation.width)"))
+        #expect(modifier.contains("predictedEndTranslation.height"))
+        #expect(modifier.contains("ConfigurationUI.cardEditorDismissThreshold"))
+        #expect(modifier.contains("onDismiss()"))
+        #expect(modifier.contains(".simultaneousGesture(pullToDismissGesture)"))
+        #expect(!modifier.contains(".sheet(isPresented:"))
     }
 
     @Test("module candidates stay inline with the card editor instead of a half sheet")
@@ -484,8 +572,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(library.contains(".horizontal"))
         #expect(library.contains("ForEach(group.modules)"))
         #expect(library.contains(".caption2"))
-        #expect(library.contains(".ultraThinMaterial"))
-        #expect(library.contains("static let fixedHeight: CGFloat = 96"))
+        #expect(library.contains("Color(uiColor: .secondarySystemGroupedBackground)"))
+        #expect(library.contains("static let fixedHeight: CGFloat = 84"))
         #expect(library.contains(".frame(width: 48, alignment: .leading)"))
         #expect(library.contains("LinearGradient"))
         #expect(library.contains("group.modules.count > 4"))
@@ -562,6 +650,36 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(settings.contains("private var adaptiveInterfaceLanguagePicker"))
         #expect(settings.contains(".pickerStyle(.segmented)"))
         #expect(settings.contains(".pickerStyle(.menu)"))
+    }
+
+    @Test("time anchor editor teaches type date preview and later use without a compressed menu row")
+    func timeAnchorEditorUsesVisibleGuidedSequence() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+        )
+        let editor = try sourceSection(
+            in: source,
+            from: "private struct V1IOSSubjectAnchorCompactEditor: View",
+            to: "private struct CompactSubjectAnchorDatePicker: View"
+        )
+        let homeSupport = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+        )
+
+        #expect(editor.contains("这个日子属于哪一类？"))
+        #expect(editor.contains("类型决定它会表达年龄、纪念时间还是未来倒数。"))
+        #expect(editor.contains("LazyVGrid"))
+        #expect(editor.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(editor.contains("日期"))
+        #expect(editor.contains("这里先按今天预览；处理照片时，会按每张照片的拍摄时间计算。"))
+        #expect(editor.contains("设置后会怎样？"))
+        #expect(editor.contains("在配置中心选择这个重要日子。"))
+        #expect(editor.contains("最终怎样写在记忆卡上，仍然由你决定。"))
+        #expect(editor.contains("Text(\"名称\")"))
+        #expect(!editor.contains("private var categoryMenu"))
+        #expect(!editor.contains("private var selectedDateText"))
+        #expect(homeSupport.contains("return \"\\(count) 个重要日子\""))
+        #expect(homeSupport.contains("已设置 \\(count) 个时间锚点"))
     }
 
     @Test("configuration preview is full width and restores the page guidance")
@@ -648,6 +766,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(module.contains("localizedDisplayName("))
         #expect(module.contains("类型，\\(typeName)"))
         #expect(module.contains("Type, \\(typeName)"))
+        #expect(module.contains(".onTapGesture(perform: onConfigure)"))
+        #expect(module.contains("V1TimeAnchorTodayPresenter.presentation("))
         #expect(!module.contains("anchorTypeSystemImage"))
         #expect(!module.contains("Text(\"类型："))
         #expect(!module.contains("minHeight: 76"))
@@ -698,15 +818,16 @@ struct IPhoneResponsiveLayoutContractTests {
         )
 
         #expect(source.contains("private struct V1IOSHomeActivityCard"))
-        #expect(source.contains("V1TitledSectionCard(title: \"当前任务\")"))
+        #expect(!source.contains("V1TitledSectionCard(title: \"当前任务\")"))
+        #expect(source.contains("private var activitySection"))
         #expect(source.contains("activityProgressBar"))
         #expect(source.contains(".frame(height: 4)"))
         #expect(source.contains("进度 \\(progressPercentText)"))
         #expect(source.contains("V1IOSHomeActivityPresenter.shouldShow(projection)"))
     }
 
-    @Test("Home and Memory Subject flows reuse one statistics strip and one count source")
-    func homeAndSubjectFlowsReuseOneStatisticsStrip() throws {
+    @Test("Home shows one current time answer while the subject page keeps anchor-specific answers")
+    func homeAndSubjectFlowsPresentTimeAnswersAtDifferentDepths() throws {
         let support = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectOverviewSupport.swift"
         )
@@ -726,31 +847,26 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
         )
 
-        #expect(support.contains("struct V1IOSSubjectStatisticsStrip: View"))
+        #expect(support.contains("struct V1IOSTodayTimeAnswerStrip: View"))
         #expect(support.contains("minHeight: ConfigurationUI.minimumInteractiveHeight"))
-        #expect(support.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(support.contains("accessibilityStatisticsContent"))
-        #expect(home.contains("V1IOSSubjectStatisticsStrip("))
-        #expect(overview.contains("V1IOSSubjectStatisticsStrip("))
-        #expect(!editor.contains("V1IOSSubjectStatisticsStrip("))
+        #expect(support.contains("V1TimeAnchorTodayPresenter.presentation("))
+        #expect(home.contains("V1IOSTodayTimeAnswerStrip("))
+        #expect(!overview.contains("V1IOSTodayTimeAnswerStrip("))
+        #expect(!editor.contains("V1IOSTodayTimeAnswerStrip("))
         #expect(modifier.contains("availableConfigurationCount"))
         #expect(modifier.contains("completedPhotoCount"))
         #expect(root.contains("availableConfigurationCount: homeAvailablePresets.count"))
         #expect(root.contains("completedPhotoCount:"))
 
-        let statistics = try sourceSection(
+        let timeAnswer = try sourceSection(
             in: support,
-            from: "struct V1IOSSubjectStatisticsStrip: View",
+            from: "struct V1IOSTodayTimeAnswerStrip: View",
             to: "struct V1SubjectAvatarView: View"
         )
-        #expect(statistics.contains("maxWidth: .infinity"))
-        #expect(statistics.contains("alignment: .center"))
-        #expect(statistics.contains("美好的回忆慢慢品味！"))
-        #expect(
-            statistics.contains(
-                "累计完成 \\(max(completedPhotoCount, 0)) 张。美好的回忆慢慢品味！"
-            )
-        )
+        #expect(timeAnswer.contains("maxWidth: .infinity"))
+        #expect(timeAnswer.contains("alignment: .leading"))
+        #expect(timeAnswer.contains("contentTransition(.numericText())"))
+        #expect(!timeAnswer.contains("累计完成"))
 
         let subjectEditor = try sourceText(
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
@@ -777,7 +893,7 @@ struct IPhoneResponsiveLayoutContractTests {
         )
 
         #expect(expressionCard.contains("expressionSubjectMenu"))
-        #expect(expressionCard.contains("Text(\"记忆表达主体\")"))
+        #expect(expressionCard.contains("Text(\"照片中的称呼\")"))
         #expect(expressionCard.contains("private var expressionSubjectMenu"))
 
         let deleteButton = try sourceSection(

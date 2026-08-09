@@ -21,15 +21,15 @@ struct MemoMarkNarrativeLanguageContractTests {
         )
         #expect(
             optionList.contains(
-                "subtitle: \"回忆对象重要时刻\""
+                "format: localized(\"回忆对象重要时刻 · %@\")"
             )
         )
-        #expect(optionList.contains("title: \"记忆表达\""))
-        #expect(optionList.contains("subtitle: \"让回忆拥有属于自己的表达方式。\""))
+        #expect(optionList.contains("title: \"这一刻怎样表达\""))
+        #expect(optionList.contains("subtitle: memoryExpressionSummary"))
         #expect(optionList.contains("subtitle: \"决定这段回忆最终如何呈现。\""))
         #expect(optionList.contains("subtitle: \"决定卡片里的内容与显示方式。\""))
-        #expect(optionList.contains("title: \"更多信息\""))
-        #expect(optionList.contains("subtitle: \"调整地点与拍摄时间的显示方式。\""))
+        #expect(optionList.contains("title: \"时间与地点\""))
+        #expect(optionList.contains("subtitle: \"调整照片中的时间和地点怎样显示。\""))
         #expect(!optionList.contains("title: \"高级模块\""))
         #expect(
             configurationPage.contains(
@@ -79,9 +79,9 @@ struct MemoMarkNarrativeLanguageContractTests {
         #expect(welcome.contains("Text(\"对象名称\")"))
         #expect(welcome.contains(".accessibilityLabel(\"对象名称，必填\")"))
         #expect(welcome.contains("Text(isSaving ? \"正在保存\" : \"完成设置\")"))
-        #expect(regionContent.contains(".navigationTitle(\"卡片内容\")"))
-        #expect(subjectEditor.contains("subtitle: \"维护与这个对象有关的重要时刻。\""))
-        #expect(subjectOverview.contains("subtitle: \"这些重要时刻会影响照片中的时间表达。\""))
+        #expect(regionContent.contains("Text(\"卡片内容\")"))
+        #expect(subjectEditor.contains("subtitle: \"选择重要日子，让照片拥有时间答案。\""))
+        #expect(subjectOverview.contains("subtitle: \"选择重要日子，让照片拥有时间答案。\""))
         #expect(timeAnchorEditor.contains(".navigationTitle(\"时间锚点\")"))
         #expect(
             timeAnchorEditor.contains(
@@ -106,22 +106,22 @@ struct MemoMarkNarrativeLanguageContractTests {
         #expect(macOS.contains(".navigationTitle(\"编辑\")"))
         #expect(
             simplifiedChinese.contains(
-                "\"settings.guide.expression.title\" = \"了解记忆表达\";"
+                "\"settings.guide.expression.title\" = \"照片怎样表达时间\";"
             )
         )
         #expect(
             english.contains(
-                "\"settings.guide.expression.title\" = \"Explore Memory Expression\";"
+                "\"settings.guide.expression.title\" = \"How Photos Express Time\";"
             )
         )
         #expect(
             simplifiedChinese.contains(
-                "\"更多信息\" = \"更多信息\";"
+                "\"时间与地点\" = \"时间与地点\";"
             )
         )
         #expect(
             english.contains(
-                "\"更多信息\" = \"More Information\";"
+                "\"时间与地点\" = \"Time & Location\";"
             )
         )
         #expect(
@@ -141,7 +141,7 @@ struct MemoMarkNarrativeLanguageContractTests {
         )
         #expect(
             simplifiedChinese.contains(
-                "\"更多内容会根据实际需要逐步加入。\" = \"更多内容会根据实际需要逐步加入。\";"
+                "\"决定照片中的时间和地点怎样呈现。\" = \"决定照片中的时间和地点怎样呈现。\";"
             )
         )
         #expect(
@@ -151,7 +151,7 @@ struct MemoMarkNarrativeLanguageContractTests {
         )
         #expect(
             english.contains(
-                "\"更多内容会根据实际需要逐步加入。\" = \"More options will be added as real needs emerge.\";"
+                "\"决定照片中的时间和地点怎样呈现。\" = \"Choose how time and location are presented on the photo.\";"
             )
         )
         #expect(

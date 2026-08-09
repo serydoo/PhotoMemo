@@ -94,7 +94,7 @@ struct V1NativeSystemInteractionContractTests {
                 ".buttonStyle(V1CompactPrimaryActionButtonStyle())"
             )
         )
-        #expect(homeSource.contains("在 App 内选择照片"))
+        #expect(homeSource.contains("备用：App 内选择照片"))
         #expect(outputSource.contains("V1OutputSaveButtonStyle"))
         #expect(
             outputSource.contains(

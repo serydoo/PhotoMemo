@@ -379,11 +379,15 @@ expandable cards or a second preview page:
   together through the existing configuration save path;
 - the keyboard toolbar and keyboard-edge button only dismiss the keyboard;
   they never dismiss the editor, clear the draft, or change the active region;
-- the bottom explanation is the behavioral source of truth: `四个卡片区域都可以
-  自由组合文字和内容，修改会实时同步到上方预览；卡片右下会写入照片说明。
-  点“完成”后统一保存，收起键盘不会离开编辑页。`
+- the title context explains the available content families: `组合自己的文字、
+  照片信息与记忆表达。`;
+- the bottom explanation is the behavioral source of truth: `四个区域都可以自由
+  组合文字、照片信息和记忆表达，修改会实时出现在卡片上。右下内容也会写入
+  Apple Photos 的照片说明，方便之后查找这张照片。点“完成”返回配置中心；
+  收起键盘不会离开编辑页。`;
 - region labels use `卡片左上 / 卡片左下 / 卡片右上 / 卡片右下`; only
-  `卡片右下` carries `输出到照片说明，便于检索` because it is the photo-
+  `卡片右下` carries a separate readable line explaining that its content is
+  also written to the Apple Photos description because it is the photo-
   description source.
 
 Do not add a second region summary, a duplicate composed-result preview, or a

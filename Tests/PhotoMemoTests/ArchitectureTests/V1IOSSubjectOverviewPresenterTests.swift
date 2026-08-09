@@ -570,7 +570,8 @@ struct V1IOSSubjectOverviewPresenterTests {
             to: "private var compactIdentityFieldsPanel"
         )
         #expect(expressionSource.contains("Menu {"))
-        #expect(expressionSource.contains("Text(\"记忆表达主体\")"))
+        #expect(expressionSource.contains("Text(\"照片中的称呼\")"))
+        #expect(expressionSource.contains("Text(\"选择照片里怎样称呼这个人。\")"))
         #expect(
             expressionSource.contains(
                 "expressionSubjectSelectionTitle"

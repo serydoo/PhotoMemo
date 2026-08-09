@@ -38,22 +38,17 @@ struct TimeAnchorEditingTransactionTests {
             from: "private var adaptiveNameRow",
             to: "private var nameLabel"
         )
-        let categoryRow = try sourceSection(
+        let anchorSetupPanel = try sourceSection(
             in: source,
-            from: "private var categoryRow",
-            to: "private var categoryLabel"
+            from: "private var anchorSetupPanel",
+            to: "private var typeColumns"
         )
         #expect(nameRow.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(nameRow.contains("HStack(alignment: .center"))
         #expect(!nameRow.contains("ViewThatFits(in: .horizontal)"))
-        #expect(categoryRow.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(categoryRow.contains("HStack(alignment: .center"))
-        #expect(
-            categoryRow.contains(
-                ".frame(maxWidth: .infinity, alignment: .trailing)"
-            )
-        )
-        #expect(!categoryRow.contains("ViewThatFits(in: .horizontal)"))
+        #expect(anchorSetupPanel.contains("LazyVGrid(columns: typeColumns"))
+        #expect(anchorSetupPanel.contains("这个日子属于哪一类？"))
+        #expect(!anchorSetupPanel.contains("ViewThatFits(in: .horizontal)"))
     }
 
     @Test("Time Anchor rows expose native configure and delete swipe actions")

@@ -338,9 +338,16 @@ struct MemorySubjectEditorView: View {
     }
 
     private var expressionSubjectTitle: some View {
-        Text("记忆表达主体")
-            .font(.body)
-            .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 2) {
+            Text("照片中的称呼")
+                .font(.body)
+                .foregroundStyle(.primary)
+
+            Text("选择照片里怎样称呼这个人。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var expressionSubjectMenu: some View {
@@ -368,7 +375,7 @@ struct MemorySubjectEditorView: View {
             expressionSubjectSelectionLabel
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("选择锚点内表达主体")
+        .accessibilityLabel("选择照片中的称呼")
         .accessibilityValue(expressionSubjectSelectionTitle)
     }
 

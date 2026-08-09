@@ -11,6 +11,10 @@ struct V1ConfigurationOptionList: View {
     @State
     private var showsAdvancedModulesSheet = false
 
+    @State
+    private var memoryExpressionDisclosureState =
+        V1MemoryExpressionDisclosureState()
+
     let subject: MemorySubject?
     @Binding var isMemorySourceExpanded: Bool
     let subjectAvatarPreviewImagePath: String?
@@ -46,6 +50,8 @@ struct V1ConfigurationOptionList: View {
             spacing: V1SectionCardMetrics.sectionSpacing
         ) {
             memorySourceSection
+
+            memoryExpressionSection
 
             groupedSection(
                 title: "卡片布局与内容",
@@ -101,12 +107,6 @@ struct V1ConfigurationOptionList: View {
                             V1CompactInformationRowMetrics.horizontalPadding
                     )
                     timeAnchorRow
-                    V1HorizontalDivider(
-                        horizontalInset:
-                            V1CompactInformationRowMetrics.horizontalPadding
-                    )
-                    memoryDisplayRow
-                    memoryExpressionPreview
                 } else {
                     memorySourceSummaryRow
                 }
@@ -220,10 +220,123 @@ struct V1ConfigurationOptionList: View {
             subjectDisplayName,
             availableTimeAnchors.isEmpty
                 ? localized("暂无时间锚点")
-                : timeAnchorTitle,
-            localized(memoryDisplayValue)
+                : timeAnchorTitle
         ]
         .joined(separator: " · ")
+    }
+
+    private var memoryExpressionSection: some View {
+        VStack(
+            alignment: .leading,
+            spacing: V1SectionCardMetrics.cardHeaderContentSpacing
+        ) {
+            memoryExpressionSectionHeader
+
+            if memoryExpressionDisclosureState.isExpanded {
+                VStack(spacing: 0) {
+                    memoryDisplayRow
+                    memoryExpressionPreview
+                }
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: 18,
+                        style: .continuous
+                    )
+                    .fill(ConfigurationUI.panelBackground)
+                )
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: 18,
+                        style: .continuous
+                    )
+                    .stroke(ConfigurationUI.faintHairline)
+                )
+                .transition(.opacity)
+            }
+        }
+        .v1SectionSurfaceLayout()
+        .animation(
+            .easeInOut(duration: 0.2),
+            value: memoryExpressionDisclosureState.isExpanded
+        )
+    }
+
+    @ViewBuilder
+    private var memoryExpressionSectionHeader: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                memoryExpressionHeading
+
+                memoryExpressionDisclosureButton
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        } else {
+            HStack(alignment: .center, spacing: 10) {
+                memoryExpressionHeading
+                Spacer(minLength: 8)
+                memoryExpressionDisclosureButton
+            }
+        }
+    }
+
+    private var memoryExpressionHeading: some View {
+        adaptiveSectionHeader(
+            title: "这一刻怎样表达",
+            subtitle: memoryExpressionSummary
+        )
+        .frame(
+            minHeight: V1SectionCardMetrics.cardHeaderMinimumHeight,
+            alignment: .leading
+        )
+    }
+
+    private var memoryExpressionSummary: String {
+        "\(localized(memoryDisplayValue)) · \(localized("随时间变化"))"
+    }
+
+    private var memoryExpressionDisclosureButton: some View {
+        Button {
+            memoryExpressionDisclosureState.setExpanded(
+                !memoryExpressionDisclosureState.isExpanded
+            )
+        } label: {
+            Label(
+                localized(
+                    memoryExpressionDisclosureState.isExpanded
+                    ? "收起"
+                    : "调整"
+                ),
+                systemImage:
+                    memoryExpressionDisclosureState.isExpanded
+                    ? "chevron.up"
+                    : "chevron.down"
+            )
+            .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .tint(Color.accentColor)
+        .frame(
+            minWidth: ConfigurationUI.minimumInteractiveHeight,
+            minHeight: ConfigurationUI.minimumInteractiveHeight,
+            alignment: .trailing
+        )
+        .contentShape(Rectangle())
+        .accessibilityLabel(
+            localized(
+                memoryExpressionDisclosureState.isExpanded
+                ? "收起照片表达设置"
+                : "调整照片表达设置"
+            )
+        )
+        .accessibilityValue(
+            localized(
+                memoryExpressionDisclosureState.isExpanded
+                ? "已展开"
+                : "已折叠"
+            )
+        )
     }
 
     private var subjectRow: some View {
@@ -357,8 +470,8 @@ struct V1ConfigurationOptionList: View {
 
     private var memoryDisplayRow: some View {
         configurationTextRow(
-            title: "记忆表达",
-            subtitle: "让回忆拥有属于自己的表达方式。",
+            title: "表达风格",
+            subtitle: memoryDisplaySubtitle,
             value: memoryDisplayValue,
             detail: "",
             showsTrailingChevron: false
@@ -366,7 +479,7 @@ struct V1ConfigurationOptionList: View {
             if availableMemoryDisplayStyles.isEmpty {
                 V1CompactSelectionLabel(title: localized("暂无"))
                     .opacity(0.56)
-                    .accessibilityLabel(localized("记忆表达"))
+                    .accessibilityLabel(localized("表达风格"))
                     .accessibilityValue(localized("暂无"))
             } else {
                 Menu {
@@ -392,10 +505,17 @@ struct V1ConfigurationOptionList: View {
                         title: localized(memoryDisplayValue)
                     )
                 }
-                .accessibilityLabel(localized("记忆表达"))
+                .accessibilityLabel(localized("表达风格"))
                 .accessibilityValue(localized(memoryDisplayValue))
             }
         }
+    }
+
+    private var memoryDisplaySubtitle: String {
+        String.localizedStringWithFormat(
+            localized("围绕时间锚点，可选择 %lld 种表达风格。"),
+            Int64(availableMemoryDisplayStyles.count)
+        )
     }
 
     private var memoryExpressionPreviewLines: [String] {
@@ -409,25 +529,16 @@ struct V1ConfigurationOptionList: View {
 
     private var memoryExpressionPreview: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("智能模块表达预览")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Spacer(minLength: 8)
-
-                Text(localized(memoryDisplayValue))
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .lineLimit(1)
-            }
+            Text("这张照片会这样表达")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
 
             ForEach(
                 Array(memoryExpressionPreviewLines.enumerated()),
                 id: \.offset
             ) { _, line in
                 Text(line)
-                    .font(.caption2)
+                    .font(.footnote)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -451,14 +562,14 @@ struct V1ConfigurationOptionList: View {
         .padding(.horizontal, V1CompactInformationRowMetrics.horizontalPadding)
         .padding(.bottom, 12)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(localized("智能模块表达预览"))
+        .accessibilityLabel(localized("这张照片会这样表达"))
         .accessibilityValue(memoryExpressionPreviewLines.joined(separator: "，"))
     }
 
     private var borderStyleRow: some View {
         configurationTextRow(
             title: "边框样式",
-            subtitle: "当前版本仅提供基础白，更多样式将陆续开放。",
+            subtitle: "当前使用基础白。",
             value: borderStyleName,
             detail: "当前版本",
             showsTrailingChevron: false
@@ -505,8 +616,8 @@ struct V1ConfigurationOptionList: View {
             showsAdvancedModulesSheet = true
         } label: {
             configurationTextRow(
-                title: "更多信息",
-                subtitle: "调整地点与拍摄时间的显示方式。",
+                title: "时间与地点",
+                subtitle: "调整照片中的时间和地点怎样显示。",
                 value: "编辑",
                 detail: "",
                 showsTrailingChevron: false
@@ -531,8 +642,8 @@ struct V1ConfigurationOptionList: View {
         .buttonStyle(
             V1ConfigurationNavigationRowButtonStyle()
         )
-        .accessibilityLabel("编辑更多信息")
-        .accessibilityHint("调整地点与拍摄时间的显示方式。")
+        .accessibilityLabel("编辑时间与地点")
+        .accessibilityHint("调整照片中的时间和地点怎样显示。")
     }
 
     private var configurationStatusCard: some View {

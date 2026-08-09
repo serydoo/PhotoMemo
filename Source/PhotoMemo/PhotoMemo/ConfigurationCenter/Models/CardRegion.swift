@@ -66,7 +66,11 @@ extension CardRegion {
         }
     }
 
-    var editorSubtitle: String? { self == .slotD ? "输出到照片说明，便于检索" : nil }
+    var editorSubtitle: String? {
+        self == .slotD
+            ? "内容也会写入 Apple Photos 的照片说明，方便之后查找。"
+            : nil
+    }
 
     var semanticTitle: String {
         switch self {

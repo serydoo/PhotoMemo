@@ -81,7 +81,8 @@ the subtitle:
 | Title | Subtitle role |
 | --- | --- |
 | `时间锚点` editor | `选择一个时间起点，让照片拥有时间答案。` |
-| `记忆表达` | `让回忆拥有属于自己的表达方式。` |
+| `这一刻怎样表达` | `自然（默认） · 随时间变化` |
+| `表达风格` | `围绕时间锚点，可选择 5 种表达风格。` The number comes from the current available styles. |
 | `我的预设` | `下一次分享，照片会怎样呈现。` |
 
 When the title and controls already make the result clear, omit the subtitle.
@@ -92,7 +93,7 @@ Do not add helper copy only to make a section look complete.
 Use one stable four-field vocabulary wherever a Memory Subject is viewed or
 edited: `对象名称` is required; `昵称`, `与我的关系`, and `专属称呼` are optional.
 Optional values stay absent from the reading surface until the user fills them
-in. `记忆表达主体` names the separate choice that decides which populated
+in. `照片中的称呼` names the separate choice that decides which populated
 identity value appears in memory expressions; it is not another identity field.
 If a selected optional value becomes unavailable, expression text and its
 visible source label both return directly to the required `对象名称`. Do not
@@ -124,11 +125,15 @@ the native navigation title when the sheet needs context. The current accepted
 sheet context is:
 
 - `时间锚点`: `选择一个时间起点，让照片拥有时间答案。`
-- `更多信息`: `更多内容会根据实际需要逐步加入。`
-- `卡片内容`: the fixed-region editor uses its bottom explanation instead of a
-  second subtitle, because the editor must reserve vertical space for the four
-  inputs and keyboard. The explanation is:
-  `四个卡片区域都可以自由组合文字和内容，修改会实时同步到上方预览；卡片右下会写入照片说明。点“完成”后统一保存，收起键盘不会离开编辑页。`
+- `时间与地点`: `决定照片中的时间和地点怎样呈现。`
+- `卡片内容`: use `组合自己的文字、照片信息与记忆表达。` below the title.
+  The bottom explanation remains split by responsibility:
+  `四个区域都可以自由组合文字、照片信息和记忆表达，修改会实时出现在卡片上。`
+  `右下内容也会写入 Apple Photos 的照片说明，方便之后查找这张照片。`
+  `点“完成”返回配置中心；收起键盘不会离开编辑页。`
+- `右下`: place `内容也会写入 Apple Photos 的照片说明，方便之后查找。`
+  on its own secondary line below the region title. Do not compress this product
+  benefit into a trailing caption.
 
 These lines are quiet context, not banners, roadmap promises, or a substitute
 for a feedback action.

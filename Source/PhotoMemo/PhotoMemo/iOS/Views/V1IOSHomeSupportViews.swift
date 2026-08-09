@@ -169,8 +169,8 @@ struct V1IOSHomeQuickAction:
         .init(
             id: .processPhotos,
             title: "处理照片",
-            subtitle: "直接从系统图库选择照片并开始处理",
-            compactDetail: "从图库开始",
+            subtitle: "需要时可在时光记中选择照片；日常记录请从 Apple Photos 分享",
+            compactDetail: "备用选图",
             systemImage: MemoMarkSymbol.applePhotos.name
         ),
         .init(

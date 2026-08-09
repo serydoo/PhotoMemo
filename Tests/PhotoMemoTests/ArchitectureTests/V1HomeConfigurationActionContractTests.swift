@@ -27,7 +27,7 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains("ForEach(applePhotosWorkflowSteps)"))
         #expect(source.contains("下一次从 Apple Photos 分享时，将使用当前配置"))
         #expect(source.contains("onOpenWorkflowGuide"))
-        #expect(source.contains("在 App 内选择照片"))
+        #expect(source.contains("备用：App 内选择照片"))
         #expect(source.contains(".v1CompactBottomPrimaryAction()"))
         #expect(source.contains("V1CompactPrimaryActionButtonStyle()"))
         #expect(!source.contains("applePhotosEntryIcon"))

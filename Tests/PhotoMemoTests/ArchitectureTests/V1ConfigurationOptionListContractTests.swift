@@ -62,14 +62,11 @@ struct V1ConfigurationOptionListContractTests {
         let editorClusterSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1RegionEditorCluster.swift"
         )
-        let supportSource = try sourceText(
-            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
-        )
         let regionSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/CardRegion.swift"
         )
 
-        #expect(supportSource.contains("subtitle: region.defaultContentSummary"))
+        #expect(editorClusterSource.contains("Text(\"正在编辑\\(activeRegion.displayTitle)\")"))
         #expect(regionSource.contains("return \"左上\""))
         #expect(regionSource.contains("return \"左下\""))
         #expect(regionSource.contains("return \"右上\""))
@@ -77,16 +74,16 @@ struct V1ConfigurationOptionListContractTests {
         #expect(regionSource.contains("return \"默认动作 + 设备信息\""))
         #expect(regionSource.contains("return \"默认智能模块输出信息\""))
         #expect(editorClusterSource.contains("struct V1RegionEditorCluster: View"))
-        #expect(editorClusterSource.contains("IOSCompactEntryListGroup"))
-        #expect(editorClusterSource.contains("V1RegionEditorCard("))
-        #expect(editorClusterSource.contains("写进卡片的内容"))
-        #expect(editorClusterSource.contains("自由录入文字"))
-        #expect(editorClusterSource.contains("组合进文字之间"))
-        #expect(editorClusterSource.contains("照片里的时间、地点和拍摄信息"))
+        #expect(editorClusterSource.contains("ForEach(CardRegion.memoryCardRegions"))
+        #expect(editorClusterSource.contains("V1SlotATextKitSessionEditor("))
+        #expect(editorClusterSource.contains("这里的内容会怎样使用？"))
+        #expect(editorClusterSource.contains("修改会实时出现在上方完整卡片预览中。"))
+        #expect(editorClusterSource.contains("处理照片时，模块会替换为每张照片自己的信息。"))
+        #expect(editorClusterSource.contains("右下内容还会写入 Apple Photos 的照片说明"))
     }
 
-    @Test("memory display keeps a compact trailing control and previews every phase below")
-    func memoryDisplayKeepsCompactControlAndPreviewsEveryPhaseBelow() throws {
+    @Test("memory expression is an on-demand section outside memory source")
+    func memoryExpressionIsOnDemandSectionOutsideMemorySource() throws {
         let optionListSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
@@ -106,7 +103,49 @@ struct V1ConfigurationOptionListContractTests {
             selectorStart.lowerBound..<selectorEnd.lowerBound
         ]
 
-        #expect(optionListSource.contains("title: \"记忆表达\""))
+        let sourceSectionStart = try #require(
+            optionListSource.range(of: "private var memorySourceSection: some View")
+        )
+        let sourceSectionEnd = try #require(
+            optionListSource.range(
+                of: "private var memoryExpressionSection: some View",
+                range: sourceSectionStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let memorySourceSection = optionListSource[
+            sourceSectionStart.lowerBound..<sourceSectionEnd.lowerBound
+        ]
+
+        #expect(!memorySourceSection.contains("memoryDisplayRow"))
+        #expect(!memorySourceSection.contains("memoryExpressionPreview"))
+        #expect(optionListSource.contains("private var memoryExpressionSection: some View"))
+        #expect(optionListSource.contains("V1MemoryExpressionDisclosureState()"))
+        #expect(optionListSource.contains("if memoryExpressionDisclosureState.isExpanded"))
+        #expect(optionListSource.contains("? \"收起\"\n                    : \"调整\""))
+        #expect(optionListSource.contains(".buttonBorderShape(.capsule)"))
+        #expect(optionListSource.contains("title: \"这一刻怎样表达\""))
+        #expect(
+            optionListSource.contains(
+                "localized(\"随时间变化\")"
+            )
+        )
+        #expect(
+            !optionListSource.contains(
+                "localized(\"拍摄前、当天和之后，会使用不同说法。\")"
+            )
+        )
+        #expect(optionListSource.contains("title: \"表达风格\""))
+        #expect(optionListSource.contains("subtitle: memoryDisplaySubtitle"))
+        #expect(
+            optionListSource.contains(
+                "围绕时间锚点，可选择 %lld 种表达风格。"
+            )
+        )
+        #expect(
+            optionListSource.contains(
+                "Int64(availableMemoryDisplayStyles.count)"
+            )
+        )
         #expect(optionListSource.contains("detail: \"\""))
         #expect(!optionListSource.contains("detail: memoryDisplayDetail"))
         #expect(!optionListSource.contains("showsMemoryDisplayDetail"))
@@ -121,13 +160,13 @@ struct V1ConfigurationOptionListContractTests {
         )
         #expect(optionListSource.contains("ForEach("))
         #expect(optionListSource.contains("Text(line)"))
-        #expect(optionListSource.contains(".font(.caption2)"))
-        #expect(optionListSource.contains("Text(\"智能模块表达预览\")"))
+        #expect(optionListSource.contains(".font(.subheadline.weight(.medium))"))
+        #expect(optionListSource.contains("Text(\"这张照片会这样表达\")"))
         #expect(optionListSource.contains("ConfigurationUI.controlBackground"))
         #expect(optionListSource.contains("ConfigurationUI.faintHairline"))
         #expect(
             optionListSource.contains(
-                ".accessibilityLabel(localized(\"智能模块表达预览\"))"
+                ".accessibilityLabel(localized(\"这张照片会这样表达\"))"
             )
         )
         #expect(
@@ -187,8 +226,8 @@ struct V1ConfigurationOptionListContractTests {
 
         #expect(moduleSource.contains("private var groupedModules: [ModuleGroup]"))
         #expect(moduleSource.contains("ForEach(groupedModules)"))
-        #expect(moduleSource.contains("let categoryTitles = filteredModules.reduce"))
-        #expect(moduleSource.contains("modules: filteredModules.filter"))
+        #expect(moduleSource.contains("let categoryTitles = modules.reduce"))
+        #expect(moduleSource.contains("modules: modules.filter"))
         #expect(!moduleSource.contains("filteredModules.sorted"))
     }
 
@@ -277,12 +316,12 @@ struct V1ConfigurationOptionListContractTests {
         #expect(advancedRange.lowerBound < statusRange.lowerBound)
         #expect(
             optionListSource.contains(
-                "title: \"更多信息\""
+                "title: \"时间与地点\""
             )
         )
         #expect(
             optionListSource.contains(
-                "subtitle: \"调整地点与拍摄时间的显示方式。\""
+                "subtitle: \"调整照片中的时间和地点怎样显示。\""
             )
         )
         #expect(
@@ -306,7 +345,7 @@ struct V1ConfigurationOptionListContractTests {
         #expect(!sheetSource.contains("List {"))
         #expect(!sheetSource.contains(".listStyle(.insetGrouped)"))
         #expect(sheetSource.contains("ConfigurationUI.sheetPanelPadding"))
-        #expect(sheetSource.contains("Text(localized(\"地理显示\"))"))
+        #expect(sheetSource.contains("Text(localized(\"地点显示\"))"))
         #expect(
             sheetSource.contains(
                 ".font(.subheadline.weight(.semibold))"
@@ -457,7 +496,14 @@ struct V1ConfigurationOptionListContractTests {
                 "} header: {\n                    Text(\"高级模块\")"
             )
         )
-        #expect(sheetSource.contains(".navigationTitle(\"更多信息\")"))
+        #expect(sheetSource.contains(".navigationTitle(\"时间与地点\")"))
+        #expect(
+            sheetSource.contains(
+                "决定照片中的时间和地点怎样呈现。"
+            )
+        )
+        #expect(sheetSource.contains("Text(localized(\"地点显示\"))"))
+        #expect(sheetSource.contains("Text(localized(\"日期补充\"))"))
         #expect(sheetSource.contains(".safeAreaInset(edge: .top, spacing: 0)"))
         #expect(
             sheetSource.contains(
@@ -478,15 +524,15 @@ struct V1ConfigurationOptionListContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/IOSCompactEntryRow.swift"
         )
 
-        #expect(editorSource.contains(".navigationTitle(\"卡片内容\")"))
-        #expect(editorSource.contains(".safeAreaInset(edge: .top, spacing: 0)"))
+        #expect(editorSource.contains("Text(\"卡片内容\")"))
+        #expect(editorSource.contains("V1CardEditorOverlay"))
         #expect(
             editorSource.contains(
-                "探索不同组合，也欢迎告诉我们你的自定义想法。"
+                "组合文字、照片信息与记忆表达。"
             )
         )
         #expect(!editorSource.contains(".padding(.top, 4)"))
-        #expect(!editorSource.contains(".padding(.bottom, 8)"))
+        #expect(editorSource.contains(".padding(.bottom, 8)"))
         #expect(!editorSource.contains(".padding(.top, 16)"))
         #expect(entryRowSource.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(entryRowSource.contains("horizontalDisclosureLabel"))
@@ -552,13 +598,13 @@ struct V1ConfigurationOptionListContractTests {
         )
         #expect(
             informationSource.contains(
-                "更多内容会根据实际需要逐步加入。"
+                "决定照片中的时间和地点怎样呈现。"
             )
         )
-        #expect(cardSource.contains("V1ConfigurationSheetSubtitle("))
+        #expect(cardSource.contains("V1CardEditorOverlay"))
         #expect(
             cardSource.contains(
-                "探索不同组合，也欢迎告诉我们你的自定义想法。"
+                "组合文字、照片信息与记忆表达。"
             )
         )
     }
@@ -711,11 +757,7 @@ struct V1ConfigurationOptionListContractTests {
                 "ConfigurationUI.compactRowVerticalPadding"
             )
         )
-        #expect(
-            editorSource.contains(
-                "ConfigurationUI.contentSheetFraction"
-            )
-        )
+        #expect(editorSource.contains("ConfigurationUI.contentEditorTopBoundaryFraction"))
         #expect(
             entryRowSource.contains(
                 ".v1ConfigurationSheetPanelChrome("
@@ -723,11 +765,7 @@ struct V1ConfigurationOptionListContractTests {
         )
         #expect(entryRowSource.contains("@Environment(\\.dynamicTypeSize)"))
         #expect(!entryRowSource.contains("ViewThatFits(in: .horizontal)"))
-        #expect(
-            regionSource.contains(
-                "cornerRadius: ConfigurationUI.sheetPanelCornerRadius"
-            )
-        )
+        #expect(regionSource.contains("cornerRadius: ConfigurationUI.cardCornerRadius"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

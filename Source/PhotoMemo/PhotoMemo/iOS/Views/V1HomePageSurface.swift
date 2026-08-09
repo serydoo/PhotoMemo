@@ -342,14 +342,34 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 subject: subject,
                 onOpenSubject: onOpenSubject,
                 statisticsStrip:
-                    V1IOSSubjectStatisticsStrip(
-                        availableConfigurationCount:
-                            memoryPresets.count,
-                        completedPhotoCount:
-                            completedPhotoCount
-                    )
+                    todayTimeAnswerStrip
             )
         }
+    }
+
+    @ViewBuilder
+    private var todayTimeAnswerStrip: some View {
+        if let anchor = selectedTimeAnswerAnchor {
+            V1IOSTodayTimeAnswerStrip(
+                anchor: anchor,
+                subjectName:
+                    subject?.identity.shortName
+                    ?? subjectSummary.title
+            )
+        }
+    }
+
+    private var selectedTimeAnswerAnchor: MemorySubject.TimeAnchor? {
+        let selectedPreset = memoryPresets.first {
+            $0.id == selectedMemoryPresetID
+        }
+        if let anchorID = selectedPreset?.selectedTimeAnchorID,
+           let anchor = subject?.timeAnchor(id: anchorID) {
+            return anchor
+        }
+
+        return subject?.primaryTimeAnchor
+            ?? subject?.timeAnchors.first
     }
 
     private func anchorType(
@@ -474,7 +494,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             Button(action: onOpenPhotoPicker) {
                 Label(
                     isConfigurationReady
-                    ? "在 App 内选择照片"
+                    ? "备用：App 内选择照片"
                     : "先完成配置",
                     systemImage: "photo.on.rectangle"
                 )
@@ -486,7 +506,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             .buttonStyle(V1CompactPrimaryActionButtonStyle())
             .accessibilityLabel(
                 isConfigurationReady
-                ? "在 App 内选择照片"
+                ? "备用：App 内选择照片"
                 : "先完成配置"
             )
         }
@@ -522,7 +542,11 @@ private struct V1IOSHomeActivityCard: View {
     var body: some View {
         Group {
             if isMounted {
-                V1TitledSectionCard(title: "当前任务") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("当前任务")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
                     Button(action: onOpenProcessing) {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .center, spacing: 12) {

@@ -29,7 +29,8 @@ struct V1DesignFreezePolishContractTests {
         #expect(backups.contains("最近保存的配置会留在这里"))
         #expect(backups.contains("恢复时会保留当前配置"))
         #expect(anchors.contains(".buttonStyle(.borderedProminent)"))
-        #expect(anchors.contains("V1CompactSelectionLabel("))
+        #expect(anchors.contains("LazyVGrid(columns: typeColumns"))
+        #expect(anchors.contains("V1TimeAnchorTodayPresenter.presentation("))
     }
 
     @Test("configuration center uses preview and state-aware save treatment")
@@ -163,7 +164,8 @@ struct V1DesignFreezePolishContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1WelcomePresentation.swift"
         )
 
-        #expect(task.contains("Text(\"查看 Apple Photos\")"))
+        #expect(task.contains("?? \"打开照片 App\""))
+        #expect(task.contains(".saveDestinationText"))
         #expect(task.contains(".foregroundStyle(.secondary)"))
         #expect(task.contains("systemImage: \"clock\""))
         #expect(welcome.contains("Text(\"对象名称\")"))

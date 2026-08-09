@@ -48,4 +48,26 @@ struct V1MemorySourceDisclosureStateTests {
         #expect(state.isExpanded)
     }
 }
+
+@Suite("V1 memory expression disclosure state")
+struct V1MemoryExpressionDisclosureStateTests {
+
+    @Test("memory expression details start collapsed")
+    func memoryExpressionDetailsStartCollapsed() {
+        let state = V1MemoryExpressionDisclosureState()
+
+        #expect(state.isExpanded == false)
+    }
+
+    @Test("manual disclosure changes presentation state only")
+    func manualDisclosureChangesPresentationStateOnly() {
+        var state = V1MemoryExpressionDisclosureState()
+
+        state.setExpanded(true)
+        #expect(state.isExpanded)
+
+        state.setExpanded(false)
+        #expect(state.isExpanded == false)
+    }
+}
 #endif

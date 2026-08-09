@@ -80,6 +80,8 @@ final class MemoMarkCommerceStore:
     var isPurchaseActionInProgress: Bool {
         purchaseState == .loading
         || purchaseState == .purchasing
+        || purchaseState == .restoring
+        || purchaseState == .redeeming
     }
 
     var remainingRecords: Int? {
@@ -124,7 +126,7 @@ final class MemoMarkCommerceStore:
     }
 
     func refresh() async {
-        purchaseState = .loading
+        purchaseState = .restoring
 
         let environment =
             await resolvedEnvironment()
@@ -251,6 +253,7 @@ final class MemoMarkCommerceStore:
 
 #if os(iOS)
     func redeemOfferCode() async {
+        purchaseState = .redeeming
         guard let scene =
                 UIApplication.shared
                 .connectedScenes

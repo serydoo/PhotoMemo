@@ -22,7 +22,7 @@ struct V1IOSHomeQuickActionsTests {
         #expect(
             actions.map(\.subtitle)
             == [
-                "直接从系统图库选择照片并开始处理",
+                "需要时可在时光记中选择照片；日常记录请从 Apple Photos 分享",
                 "继续查看当前生效配置",
                 "查看记忆对象与生效锚点",
                 "查看 Apple Photos 使用流程与说明"
@@ -32,7 +32,7 @@ struct V1IOSHomeQuickActionsTests {
         #expect(
             actions.map(\.compactDetail)
             == [
-                "从图库开始",
+                "备用选图",
                 "查看当前配置",
                 "切换生效锚点",
                 "查看使用流程"
