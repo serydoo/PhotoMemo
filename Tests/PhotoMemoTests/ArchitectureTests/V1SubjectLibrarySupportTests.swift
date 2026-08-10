@@ -399,7 +399,14 @@ struct V1SubjectLibrarySupportTests {
                 from: savedData
             )
 
-        #expect(savedRecord.memoryPresets == [selectedPreset])
+        #expect(savedRecord.memoryPresets.contains(selectedPreset))
+        #expect(savedRecord.memoryPresets.count == 2)
+        #expect(
+            savedRecord.memoryPresets.contains {
+                $0.selectedSubjectID == firstSubject.id
+                && $0.savedAt == nil
+            }
+        )
         #expect(savedRecord.selectedMemoryPresetID == selectedPreset.id)
     }
 

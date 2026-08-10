@@ -1,0 +1,11 @@
+channel,type,priority,status,submission_or_contact_url,public_listing_url,copy_source,owner,last_action,next_action,version_checked,notes
+Product Hunt,product launch,P1,准备中,https://www.producthunt.com/launch,,CHANNEL_COPY.md,,2026-08-11,确认公开版本和发布日期,,需要真实可用版本；禁止购买投票
+AlternativeTo,software directory,P1,待提交,https://alternativeto.net/,,CHANNEL_COPY.md,,2026-08-11,准备平台和替代关系,,社区驱动；不请求虚假评分
+Indie Hackers,product community,P1,准备中,https://www.indiehackers.com/products,,CHANNEL_COPY.md,,2026-08-11,补充公开产品链接和故事,,发布后持续回复反馈
+少数派,Chinese editorial/community, P1,准备中,https://sspai.com/contribute,,CHANNEL_COPY.md,,2026-08-11,完成中文长文和截图,,投稿需有经验或观点；不写成硬广
+MacStories,Apple editorial,P1,待定,https://www.macstories.net/about/,,MEDIA_PITCHES.md,,2026-08-11,确认编辑邮箱和 press kit,,定向 pitch；不保证刊登
+9to5Mac,Apple editorial,P2,待定,https://9to5mac.com/,,MEDIA_PITCHES.md,,2026-08-11,提炼新闻角度,,强调 Apple workflow 或平台趋势
+Macworld,Apple editorial,P2,待定,https://www.macworld.com/,,MEDIA_PITCHES.md,,2026-08-11,确认软件评测联系人,,适合成熟公开版本
+MacUpdate,Mac directory,P2,条件待确认,https://www.macupdate.com/,,PRODUCT_POSITIONING.md,,2026-08-11,确认是否有公开 macOS 版本,,无 macOS 版本时暂缓
+SaaSHub,software directory,P3,暂缓,https://www.saashub.com/submit,,PRODUCT_POSITIONING.md,,2026-08-11,确认提交入口是否可用,,当前公开页面有安全验证
+Slant,product recommendation,P3,暂缓,https://www.slant.co/,,PRODUCT_POSITIONING.md,,2026-08-11,确认当前是否接受 iOS 产品,,当前页面明显转向 Vetted.ai

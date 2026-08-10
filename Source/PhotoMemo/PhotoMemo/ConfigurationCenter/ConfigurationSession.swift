@@ -68,6 +68,14 @@ final class ConfigurationSession: ObservableObject {
         editingState.selectedMemoryConfiguration
     }
 
+    var selectedMemoryPresetIsDurable: Bool {
+        editingState.selectedMemoryPresetIsDurable
+    }
+
+    var activeConfigurationState: ActiveConfigurationState {
+        editingState.activeConfigurationState
+    }
+
     var language: MemoMarkLanguage {
         get {
             MemoMarkLanguage.stored

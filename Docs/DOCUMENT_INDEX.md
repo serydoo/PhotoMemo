@@ -1,6 +1,6 @@
 # MemoMark Document Index
 
-Last updated: 2026-07-30
+Last updated: 2026-08-11
 
 ## Product Stage Source Of Truth
 
@@ -167,6 +167,23 @@ Use these when preparing verification or release-quality checks:
 - `Docs/Alpha/KnownIssues.md`
 - `Docs/Alpha/UXNotes.md`
 - `Docs/07_Releases/REPOSITORY_LINE_STRATEGY.md`
+
+## External Distribution And Partnerships
+
+Use these when preparing public listings, media outreach, press materials, or
+bounded photo-printing partnerships. These documents support external
+communication; they do not authorize publishing, emailing, commercial terms,
+or unverified product claims.
+
+- `Docs/Outreach/README.md` - package entry, usage order, and privacy boundary
+- `Docs/Outreach/OUTREACH_MATERIALS_SPEC.md` - scope and acceptance criteria
+- `Docs/Outreach/PRODUCT_POSITIONING.md` - shared Chinese/English positioning
+- `Docs/Outreach/CHANNEL_COPY.md` - channel-specific submission copy
+- `Docs/Outreach/MEDIA_PITCHES.md` - targeted media-pitch drafts
+- `Docs/Outreach/PRESS_KIT_CONTENT.md` - public press-kit content source
+- `Docs/Outreach/PHOTO_PRINTING_PARTNER_KIT_2026-08-10.md` - dated photo-printing partnership kit; revalidate commercial facts before use
+- `Docs/Outreach/SUBMISSION_CHECKLIST.md` - pre-submission fact and privacy gate
+- `Docs/Outreach/OUTREACH_TRACKER.csv` - channel status and follow-up ledger
 
 ## Historical Or Session-Specific Notes
 

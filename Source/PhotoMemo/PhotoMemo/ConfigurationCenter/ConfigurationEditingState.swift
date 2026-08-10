@@ -135,6 +135,33 @@ struct ConfigurationEditingState {
         )
     }
 
+    var selectedMemoryPresetIsDurable: Bool {
+        if case .saved = activeConfigurationState {
+            return true
+        }
+        return false
+    }
+
+    var activeConfigurationState: ActiveConfigurationState {
+        guard let subjectID = state.selectedSubject?.id,
+              let presetID = state.selectedMemoryPresetID else {
+            return .unavailable
+        }
+        if Self.configuration(
+            id: presetID,
+            in: state.configurationLibrary
+        ) != nil {
+            return .saved(
+                subjectID: subjectID,
+                configurationID: presetID
+            )
+        }
+        return .newDraft(
+            subjectID: subjectID,
+            draftID: presetID
+        )
+    }
+
     mutating func selectSubject(
         _ subject: MemorySubject
     ) {
@@ -991,23 +1018,29 @@ struct ConfigurationEditingState {
     private mutating func alignSelectedMemoryPresetToSelectedSubject(
         restoreContext: Bool
     ) {
-        guard let preset =
-            preferredMemoryPresetForSelectedSubject
-        else {
-            state.selectedMemoryPresetID = nil
-            appliedMemoryPresetID = nil
-            alignConfigurationLibraryActiveSelection(
-                configurationID: nil
-            )
-            presentationState.draftMemoryConfiguration = nil
-            refreshPresetDrivenPreview()
-            return
+        let preset: MemoryPreset
+        let createdDefaultDraft: Bool
+        if let preferredMemoryPresetForSelectedSubject {
+            preset = preferredMemoryPresetForSelectedSubject
+            createdDefaultDraft = false
+        } else {
+            preset = makeDefaultDraftPresetForSelectedSubject()
+            state.memoryPresets.append(preset)
+            createdDefaultDraft = true
         }
 
         state.selectedMemoryPresetID = preset.id
-        alignConfigurationLibraryActiveSelection(
-            configurationID: preset.id
-        )
+
+        if let configuration = Self.configuration(
+            id: preset.id,
+            in: state.configurationLibrary
+        ) {
+            alignConfigurationLibraryActiveSelection(
+                configurationID: configuration.id
+            )
+        } else if createdDefaultDraft {
+            appliedMemoryPresetID = nil
+        }
 
         guard restoreContext else {
             return
@@ -1026,6 +1059,19 @@ struct ConfigurationEditingState {
             )
         }
         refreshPresetDrivenPreview()
+    }
+
+    private func makeDefaultDraftPresetForSelectedSubject()
+        -> MemoryPreset {
+        MemoryPreset(
+            title: currentDefaultMemoryPresetTitle,
+            summary: "当前区域组合",
+            regionTemplateIDs: [:],
+            selectedSubjectID: state.selectedSubjectID,
+            selectedTimeAnchorID:
+                state.selectedSubject?.primaryTimeAnchor?.id,
+            language: MemoMarkLanguage.stored
+        )
     }
 
     private mutating func alignConfigurationLibraryActiveSelection(

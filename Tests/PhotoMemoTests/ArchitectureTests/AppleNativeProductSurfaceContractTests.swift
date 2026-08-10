@@ -609,6 +609,7 @@ struct AppleNativeProductSurfaceContractTests {
 
         #expect(detail.contains("subjectIdentitySummary"))
         #expect(detail.contains("subjectBasicInformation"))
+        #expect(detail.contains("size: 84"))
         #expect(detail.contains("ToolbarItem(placement: .topBarLeading)"))
         #expect(!detail.contains("ToolbarItem(placement: .topBarTrailing)"))
         #expect(detail.contains("private var editSubjectButton"))

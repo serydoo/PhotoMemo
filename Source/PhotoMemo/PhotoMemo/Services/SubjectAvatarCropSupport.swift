@@ -104,16 +104,23 @@ enum SubjectAvatarCropSupport {
                 width: baseRect.width * resolvedZoomScale,
                 height: baseRect.height * resolvedZoomScale
             )
+        let cropDiameter =
+            max(
+                min(canvasSize.width, canvasSize.height)
+                - min(canvasSize.width, canvasSize.height)
+                    * safeInsetRatio * 2,
+                1
+            )
 
         return CGSize(
             width:
                 max(
-                    (scaledSize.width - canvasSize.width) / 2,
+                    (scaledSize.width - cropDiameter) / 2,
                     0
                 ),
             height:
                 max(
-                    (scaledSize.height - canvasSize.height) / 2,
+                    (scaledSize.height - cropDiameter) / 2,
                     0
                 )
         )

@@ -95,6 +95,25 @@ struct SubjectAvatarCropSupportTests {
         #expect(clamped.height == -maxTranslation.height)
     }
 
+    @Test("pan bounds use the inset circular crop target instead of the full canvas")
+    func panBoundsUseInsetCircularCropTarget() {
+        let sourceSize = CGSize(width: 1600, height: 900)
+        let canvasSize = CGSize(width: 320, height: 320)
+
+        let translation =
+            SubjectAvatarCropSupport.maximumTranslation(
+                sourceSize: sourceSize,
+                canvasSize: canvasSize,
+                safeInsetRatio: 0.08,
+                zoomScale: 1
+            )
+
+        // A landscape image fills the crop circle vertically and must retain
+        // the complete surplus width as horizontal positioning space.
+        #expect(translation.width > 100)
+        #expect(translation.height == 0)
+    }
+
     @Test("zoom expands the draw rect and applies normalized translation")
     func zoomExpandsDrawRectAndAppliesTranslation() {
         let sourceSize =

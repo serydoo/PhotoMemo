@@ -41,6 +41,8 @@ struct SubjectAvatarCropSheet: View {
 
                 cropCanvas
 
+                zoomControl
+
                 HStack(spacing: 10) {
                     statPill(
                         title: "缩放",
@@ -158,48 +160,47 @@ struct SubjectAvatarCropSheet: View {
             )
             .contentShape(Rectangle())
             .gesture(
-                SimultaneousGesture(
-                    DragGesture()
-                        .onChanged { value in
-                            interactiveTranslation =
-                                value.translation
-                        }
-                        .onEnded { value in
-                            committedTranslation =
-                                clampedTranslation(
-                                    proposed:
-                                        CGSize(
-                                            width:
-                                                committedTranslation.width
-                                                + value.translation.width,
-                                            height:
-                                                committedTranslation.height
-                                                + value.translation.height
-                                        ),
-                                    canvasSize: canvasSize,
-                                    zoomScale: effectiveZoomScale
-                                )
-                            interactiveTranslation = .zero
-                        },
-                    MagnificationGesture()
-                        .onChanged { value in
-                            interactiveZoomScale = value
-                        }
-                        .onEnded { value in
-                            committedZoomScale =
-                                SubjectAvatarCropConfiguration
-                                .clampedZoomScale(
-                                    committedZoomScale * value
-                                )
-                            interactiveZoomScale = 1
-                            committedTranslation =
-                                clampedTranslation(
-                                    proposed: currentTranslation,
-                                    canvasSize: canvasSize,
-                                    zoomScale: committedZoomScale
-                                )
-                        }
-                )
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        interactiveTranslation = value.translation
+                    }
+                    .onEnded { value in
+                        committedTranslation =
+                            clampedTranslation(
+                                proposed:
+                                    CGSize(
+                                        width:
+                                            committedTranslation.width
+                                            + value.translation.width,
+                                        height:
+                                            committedTranslation.height
+                                            + value.translation.height
+                                    ),
+                                canvasSize: canvasSize,
+                                zoomScale: effectiveZoomScale
+                            )
+                        interactiveTranslation = .zero
+                    }
+            )
+            .simultaneousGesture(
+                MagnificationGesture()
+                    .onChanged { value in
+                        interactiveZoomScale = value
+                    }
+                    .onEnded { value in
+                        committedZoomScale =
+                            SubjectAvatarCropConfiguration
+                            .clampedZoomScale(
+                                committedZoomScale * value
+                            )
+                        interactiveZoomScale = 1
+                        committedTranslation =
+                            clampedTranslation(
+                                proposed: currentTranslation,
+                                canvasSize: canvasSize,
+                                zoomScale: committedZoomScale
+                            )
+                    }
             )
         }
         .aspectRatio(1, contentMode: .fit)
@@ -248,6 +249,47 @@ struct SubjectAvatarCropSheet: View {
             .clampedZoomScale(
                 committedZoomScale * interactiveZoomScale
             )
+    }
+
+    private var zoomControl: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "photo")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Slider(
+                value:
+                    Binding(
+                        get: { committedZoomScale },
+                        set: { value in
+                            committedZoomScale =
+                                SubjectAvatarCropConfiguration
+                                .clampedZoomScale(value)
+                            interactiveZoomScale = 1
+                            committedTranslation =
+                                clampedTranslation(
+                                    proposed: committedTranslation,
+                                    canvasSize: latestCanvasSize,
+                                    zoomScale: committedZoomScale
+                                )
+                        }
+                    ),
+                in: avatarZoomRange
+            )
+            .accessibilityLabel("头像缩放")
+            .accessibilityValue("\(Int(committedZoomScale * 100))%")
+
+            Image(systemName: "photo.fill")
+                .font(.body)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var avatarZoomRange: ClosedRange<CGFloat> {
+        return (
+            SubjectAvatarCropConfiguration.minimumZoomScale
+            ... SubjectAvatarCropConfiguration.maximumZoomScale
+        )
     }
 
     private var currentTranslation: CGSize {

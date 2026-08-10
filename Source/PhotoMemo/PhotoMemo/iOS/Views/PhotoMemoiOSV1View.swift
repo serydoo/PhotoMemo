@@ -1552,7 +1552,8 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func persistActiveConfigurationSelection() {
-        guard let candidate = session.state.configurationLibrary,
+        guard session.selectedMemoryPresetIsDurable,
+              let candidate = session.state.configurationLibrary,
               let configurationSelectionPersistenceCoordinator else {
             return
         }

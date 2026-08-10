@@ -187,7 +187,7 @@ struct MemorySubjectEditorView: View {
         }
 #endif
 #if canImport(UIKit)
-        .sheet(item: $pendingAvatarCropDraft) { draft in
+        .fullScreenCover(item: $pendingAvatarCropDraft) { draft in
             SubjectAvatarCropSheet(
                 image: draft.image,
                 onCancel: {
@@ -253,7 +253,36 @@ struct MemorySubjectEditorView: View {
 #if canImport(PhotosUI)
         VStack(spacing: 8) {
             ZStack(alignment: .topTrailing) {
-                subjectAvatarPreview(size: 96)
+                PhotosPicker(
+                    selection: $selectedAvatarItem,
+                    matching: .images
+                ) {
+                    VStack(spacing: 8) {
+                        subjectAvatarPreview(size: 112)
+
+                        HStack(spacing: 5) {
+                            if isOptimizingAvatar {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+
+                            Text(hasAvatar ? "编辑" : "添加照片")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .frame(
+                            minHeight:
+                                ConfigurationUI.minimumInteractiveHeight
+                        )
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .disabled(isOptimizingAvatar)
+                .accessibilityLabel(
+                    hasAvatar ? "编辑对象头像" : "添加对象照片"
+                )
+                .accessibilityHint("从照片中选择，然后缩放和移动裁切范围")
 
                 if hasAvatar {
                     Button(role: .destructive) {
@@ -284,29 +313,9 @@ struct MemorySubjectEditorView: View {
                 }
             }
 
-            PhotosPicker(
-                selection: $selectedAvatarItem,
-                matching: .images
-            ) {
-                HStack(spacing: 5) {
-                    if isOptimizingAvatar {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-
-                    Text(hasAvatar ? "编辑" : "添加照片")
-                        .font(.subheadline.weight(.medium))
-                }
-                .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.accentColor)
-            .disabled(isOptimizingAvatar)
-            .accessibilityLabel(hasAvatar ? "编辑对象头像" : "添加对象照片")
         }
 #else
-        subjectAvatarPreview(size: 96)
+        subjectAvatarPreview(size: 112)
 #endif
     }
 
@@ -1611,6 +1620,10 @@ struct MemorySubjectEditorView: View {
     ) async {
         isOptimizingAvatar = true
         avatarStatusMessage = "正在载入对象头像"
+        defer {
+            selectedAvatarItem = nil
+            isOptimizingAvatar = false
+        }
 
         do {
             guard
@@ -1644,7 +1657,6 @@ struct MemorySubjectEditorView: View {
                 error.localizedDescription
         }
 
-        isOptimizingAvatar = false
     }
 #endif
 

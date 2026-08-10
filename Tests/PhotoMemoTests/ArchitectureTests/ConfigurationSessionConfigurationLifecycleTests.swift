@@ -464,8 +464,10 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         let session = ConfigurationSession(state: state)
 
         #expect(
-            session.availableMemoryPresetsForSelectedSubject.isEmpty
+            session.availableMemoryPresetsForSelectedSubject.count == 1
         )
+
+        let draftID = session.state.selectedMemoryPresetID
 
         session.saveCurrentMemoryPreset()
 
@@ -474,6 +476,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         )
 
         #expect(createdPreset.title == "纪念对象 纪念日")
+        #expect(createdPreset.id == draftID)
         #expect(createdPreset.savedAt != nil)
         #expect(createdPreset.selectedSubjectID == secondSubject.id)
         #expect(
@@ -484,8 +487,8 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.selectedMemoryPresetIsApplied)
     }
 
-    @Test("nil selected configuration does not fall back to another subject configuration")
-    func nilSelectedConfigurationDoesNotFallBackToAnotherSubjectConfiguration() {
+    @Test("nil selected configuration creates a clean draft instead of falling back to another subject")
+    func nilSelectedConfigurationCreatesCleanSubjectDraft() throws {
         var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
@@ -505,7 +508,11 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         let session = ConfigurationSession(state: state)
 
-        #expect(session.state.selectedMemoryPreset == nil)
+        let draft = try #require(session.state.selectedMemoryPreset)
+        #expect(draft.selectedSubjectID == secondSubject.id)
+        #expect(draft.savedAt == nil)
+        #expect(draft.regionTemplateIDs.isEmpty)
+        #expect(draft.id != firstPreset.id)
     }
 
     @Test("new subject persistence snapshot does not inherit another subject configuration")
@@ -1171,8 +1178,8 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.previewText(for: .slotD) == " ")
     }
 
-    @Test("switching to a memory subject without configurations clears the stale current configuration")
-    func switchingToSubjectWithoutConfigurationsClearsStaleCurrentConfiguration() {
+    @Test("switching to a memory subject without configurations creates one stable unsaved draft")
+    func switchingToSubjectWithoutConfigurationsCreatesStableDraft() throws {
         var state = Self.makeStateWithSecondSubject()
         let firstSubject = state.subjects[0]
         let secondSubject = state.subjects[1]
@@ -1189,17 +1196,75 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         state.memoryPresets = [firstPreset]
         state.selectedSubjectID = firstSubject.id
         state.selectedMemoryPresetID = firstPreset.id
+        let durableConfiguration = Self.makeCompleteConfiguration(
+            id: firstPreset.id,
+            title: firstPreset.title,
+            templateValue: "对象一内容",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "对象一记忆",
+            descriptionEnabled: false,
+            descriptionOverride: "",
+            albumIdentifier: "subject-one",
+            albumTitle: "对象一",
+            mediaMode: .staticImage
+        )
+        state.configurationLibrary = ConfigurationLibraryRecord(
+            revision: 5,
+            subjects: [
+                .init(
+                    subject: firstSubject,
+                    configurations: [durableConfiguration],
+                    assetManifest: .init(entries: [])
+                ),
+                .init(
+                    subject: secondSubject,
+                    configurations: [],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: firstSubject.id,
+            activeConfigurationID: firstPreset.id
+        )
 
         let session = ConfigurationSession(state: state)
 
         session.selectSubject(secondSubject)
 
         #expect(session.state.selectedSubjectID == secondSubject.id)
-        #expect(session.availableMemoryPresetsForSelectedSubject.isEmpty)
-        #expect(session.state.selectedMemoryPresetID == nil)
-        #expect(session.currentMemoryPresetTitle == "当前对象还没有配置")
-        #expect(session.currentMemoryPresetSummary == "为当前记忆对象新建配置后即可使用。")
+        let draft = try #require(
+            session.availableMemoryPresetsForSelectedSubject.first
+        )
+        #expect(session.availableMemoryPresetsForSelectedSubject.count == 1)
+        #expect(session.state.selectedMemoryPresetID == draft.id)
+        #expect(draft.selectedSubjectID == secondSubject.id)
+        #expect(draft.savedAt == nil)
+        #expect(draft.regionTemplateIDs.isEmpty)
+        #expect(draft.usesCustomMemoryWriteText == false)
+        #expect(draft.customMemoryWriteText.isEmpty)
         #expect(session.selectedMemoryPresetIsApplied == false)
+        #expect(
+            session.activeConfigurationState
+            == .newDraft(
+                subjectID: secondSubject.id,
+                draftID: draft.id
+            )
+        )
+
+        // An in-memory draft must not become a dangling durable selection.
+        #expect(
+            session.state.configurationLibrary?.activeSubjectID
+            == firstSubject.id
+        )
+        #expect(
+            session.state.configurationLibrary?.activeConfigurationID
+            == firstPreset.id
+        )
+
+        session.selectSubject(secondSubject)
+        #expect(session.availableMemoryPresetsForSelectedSubject.count == 1)
+        #expect(session.state.selectedMemoryPresetID == draft.id)
     }
 
     private static func makeStateWithSecondSubject()

@@ -204,7 +204,7 @@ struct V1IOSSubjectOverviewSheet: View {
                 imagePath:
                     subject?.identity.avatarPreviewImagePath
                     ?? subject?.identity.avatarImagePath,
-                size: 68
+                size: 84
             )
 
             VStack(alignment: .center, spacing: 4) {

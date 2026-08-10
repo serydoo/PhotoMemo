@@ -1,5 +1,12 @@
 # MemoMark Current Status
 
+## 2026-08-11 external distribution materials
+
+- Added `Docs/Outreach/` as a bounded Product Loop support package for researching and preparing external app-directory and Apple-media outreach.
+- The package includes a scoped materials specification, unified Chinese/English positioning, channel-specific copy for Product Hunt, AlternativeTo, Indie Hackers, and 少数派, Apple-media pitches, press-kit content, a pre-submission checklist, and an outreach tracker.
+- Consolidated the dated photo-printing partner kit from `Docs/01_Product/` into `Docs/Outreach/`, then added package and repository-index entries. This follows the existing non-destructive organization baseline: classify new material without reopening a broad migration of historical documents.
+- This documentation does not authorize automated posting, paid ranking, vote manipulation, or claims beyond the currently verified public build. It preserves the V4 boundary: Expression Style remains research and product definition, not a production capability claim.
+
 ## 2026-08-09 — MemoMark 2.1.0 (76) 发布同步准备
 
 - 用户指定本轮正式版本为 `2.1.0 (76)`，范围起点为 2026-08-06 周四 16:08；
@@ -21690,3 +21697,55 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   physical-device acceptance, App Store Connect metadata review, `TX-001`, or
   `BP-001`; production certification remains `FAIL (Conditional)` until
   superseding evidence explicitly closes or narrows those findings.
+
+## 2026-08-10 Subject Configuration Draft Consistency
+
+- Closed the primary state conflict when switching to a Memory Subject without
+  a saved Configuration: the session now creates one clean, stable in-memory
+  preset draft bound to that Subject instead of clearing the active preset and
+  leaving the save builder without a candidate.
+- Added an explicit active-configuration state boundary for saved
+  configurations, new drafts, and unavailable state. A new draft does not write
+  a dangling active Configuration identifier to durable selection storage.
+- Re-selecting the same empty Subject reuses its draft identity. The first save
+  preserves that identity while the existing apply/persistence pipeline inserts
+  the corresponding Configuration into that Subject and reconciles the session.
+- The Configuration Library remains the durable source of truth. This slice did
+  not change Renderer, Layout Engine, Export, PhotoKit, EXIF, commerce, or the
+  existing saved-Configuration switching path.
+- The complete macOS `PhotoMemoTests` run passed 1,349 tests with 1 existing skip
+  and 0 failures. The generic unsigned iOS Debug build and signed iphoneos Debug
+  build passed; the signed app was installed over the existing installation and
+  launched successfully on `iPhone7`, an iPhone 17 Pro Max, without uninstalling
+  the app or clearing local data. Installation database sequence: `3796`.
+- Command-line installation and launch prove delivery and startup only. Manual
+  on-device interaction acceptance for switching to an empty Subject, editing,
+  first save, switching away/back, and relaunch restoration remains distinct.
+
+## 2026-08-10 Subject Avatar Framing And Crop Interaction
+
+- Increased the Memory Subject basic-information summary avatar from 68pt to
+  84pt and the identity editor avatar from 96pt to 112pt. The avatar itself is
+  now the primary PhotosPicker affordance while retaining the readable Edit/Add
+  action and destructive remove control.
+- The existing local crop step now uses a focused full-screen presentation,
+  independently recognized drag and pinch gestures, and an accessible zoom
+  slider. The PhotosPicker selection is cleared after decode so selecting the
+  same photo can begin another crop transaction.
+- Fixed crop geometry to clamp translation against the actual inset circular
+  crop diameter rather than the containing square canvas. Wide and tall photos
+  therefore keep all valid positioning travel while still covering the circle.
+- The original photo remains unchanged and no broad Photos permission was
+  added. Apply continues to regenerate only MemoMark's local display, badge,
+  and preview avatar derivatives.
+- RED/GREEN avatar geometry and Apple-native surface contracts passed. After
+  retaining the accepted `编辑` copy, the final complete test run executed 1,351
+  tests: 1,350 passed, 1 existing test skipped, and 0 failed. Generic unsigned
+  and signed iphoneos Debug builds passed.
+- The signed app was installed in place and launched on `iPhone7`, an iPhone 17
+  Pro Max, without uninstalling or clearing local data. Final installation
+  database sequence: `3816`. CoreDevice confirmed delivery and launch. Automated manual
+  touch inspection could not be completed because macOS ScreenCaptureKit denied
+  both iPhone Mirroring and QuickTime capture streams; pinch, drag, same-photo
+  reselection, final framing, and visual balance remain explicit human-device
+  acceptance items rather than claimed evidence.
