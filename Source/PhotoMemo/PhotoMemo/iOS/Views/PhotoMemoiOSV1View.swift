@@ -1510,6 +1510,13 @@ struct PhotoMemoiOSV1View: View {
             self.birthdayDate = birthdayDate
         }
 
+        // Subject selection changes the active configuration context as one
+        // transaction. Refresh every root-owned projection here instead of
+        // relying on independent onChange callbacks to arrive in a stable
+        // order. This keeps Home, Output, logo, and the editor drafts bound
+        // to the same selected subject/configuration.
+        synchronizeSelectedSubjectConfigurationProjection()
+
         if patch.events.contains(.rebootstrapPreviewDrafts) {
             bootstrapDrafts()
         } else if patch.shouldRefreshPreview {
@@ -1549,6 +1556,30 @@ struct PhotoMemoiOSV1View: View {
                         entryFlowState
                 )
         }
+    }
+
+    private func synchronizeSelectedSubjectConfigurationProjection() {
+        isApplyingSavedOutputConfiguration = true
+        defer {
+            isApplyingSavedOutputConfiguration = false
+        }
+
+        if let configuration = session.selectedMemoryConfiguration {
+            applyConfigurationDraftProjection(
+                V1ConfigurationDraftProjection(
+                    configuration: configuration
+                )
+            )
+            return
+        }
+
+        guard let preset = session.state.selectedMemoryPreset else {
+            return
+        }
+
+        logoMode = preset.logoMode
+        customLogoBadge = nil
+        applySavedOutputConfiguration(preset)
     }
 
     private func persistActiveConfigurationSelection() {

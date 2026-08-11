@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.1.1 (77) Memory Subject Consistency Fix - 2026-08-11
+
+- Fixed iOS Memory Subject switching so the selected subject, saved or draft
+  configuration, time anchor, logo, output settings, custom memory text, and
+  region previews refresh as one configuration context.
+- Preserved the distinction between a durable saved configuration and a
+  subject-synced draft when switching to a subject without saved configuration.
+- Added regression coverage for destination subject identity and subject-region
+  preview refresh.
+- Raised all app, extension, widget, and test target version fields to
+  `2.1.1 (77)`.
+- Release evidence remains open; the simulator was unavailable during this
+  pass and the remaining signed-device interaction checks are separate.
+
 ## 2.1.0 (76) Major Experience Update - 2026-08-09
 
 - Rebuilt the four-region card-content editor around a full, unobstructed

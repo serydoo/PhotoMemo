@@ -280,6 +280,18 @@ struct V1SubjectLibrarySupportTests {
                 .persistActiveConfigurationSelection
             )
         )
+        #expect(
+            session.state.selectedMemoryPreset?
+                .selectedSubjectID
+            == secondSubject.id
+        )
+        #expect(
+            session.state.regionPreviewTexts[.subject]
+            == ConfigurationEditingState.defaultPreviewText(
+                for: .subject,
+                subject: secondSubject
+            )
+        )
     }
 
     @Test("legacy demo subject is removed without deleting custom event subjects")

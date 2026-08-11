@@ -55,3 +55,56 @@
 ## 6. 停止点
 
 “整理”“准备同步”“准备发布”默认不授权 Git 提交、推送、上传或提交审核。每一项外部状态变更必须来自本轮明确授权；任一关键验证失败时，保留现场并回到 `Release Evidence Open`。
+
+## 7. 每次同步的固定整理包
+
+每一个版本同步都必须建立一个独立的版本总表，并使用同一版本号、构建号和事实范围生成以下四份材料：
+
+1. `YYYY-MM-DD-VERSION-release-notes.md`：应用内完整更新说明与内部发布边界。
+2. `YYYY-MM-DD-VERSION-app-store-whats-new.md`：简体中文和 U.S. English 的 App Store 文案。
+3. `YYYY-MM-DD-VERSION-testflight-notes.md`：测试路径、反馈字段和隐私提醒。
+4. `YYYY-MM-DD-VERSION-sync-manifest.md`：同步范围、排除范围、证据、风险、授权和停止点。
+
+同时必须更新：
+
+- `CHANGELOG.md` 的版本首段；
+- `README.md` 的当前版本入口和发布说明链接；
+- `Docs/CURRENT_STATUS.md` 的同步事件记录；
+- 所有 App、Extension、Widget 和 Test target 的版本字段。
+
+如果本轮没有面向用户的功能变化，也必须明确写出“修复性更新”“维护性更新”或“仅内部构建”，不得用空泛的“性能优化”代替事实。
+
+## 8. 固定同步检查表
+
+同步前必须逐项记录结果，不得只写“已检查”：
+
+- [ ] 已确定版本范围起点、上一版本、marketing version 和 build number。
+- [ ] 已检查工作区，并将文件分为正式同步、本地保留、待决定三类。
+- [ ] App、Share Extension、Widget Extension 和 test target 的版本字段全部一致。
+- [ ] 版本总表、应用内、App Store、TestFlight、CHANGELOG、README 和 CURRENT_STATUS 互相一致。
+- [ ] 双语资源格式和键集合检查通过，或明确记录失败原因。
+- [ ] `git diff --check` 通过。
+- [ ] 聚焦测试、完整测试和构建结果分别记录；警告不得写成通过证据。
+- [ ] 自动化、真机安装启动、手动关键路径、StoreKit、App Store Connect 和生产认证证据分开记录。
+- [ ] 已核对未跟踪文件，确认没有私人照片、设备材料、归档包、签名产物或本地诊断进入同步范围。
+- [ ] 已获得本轮明确的 Git 暂存、提交和推送授权。
+- [ ] TestFlight 上传和 App Store 提交是否授权已单独确认，不由“同步”一词推断。
+
+## 9. 固定执行顺序与交付状态
+
+标准执行顺序固定为：
+
+```text
+整理事实源
+-> 生成四份版本材料
+-> 更新 CHANGELOG / README / CURRENT_STATUS / 版本字段
+-> 运行检查与构建
+-> 核对暂存清单
+-> 用户授权后暂存
+-> 用户授权后提交
+-> 用户授权后推送
+-> 如另有授权，再上传 TestFlight
+-> 如另有授权，再提交 App Store
+```
+
+每次同步完成后，回复中必须包含：版本与构建号、提交号、推送分支、验证结果、未完成证据、是否上传 TestFlight、是否提交 App Store，以及对应材料链接。

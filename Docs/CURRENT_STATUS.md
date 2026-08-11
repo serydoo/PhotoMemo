@@ -1,5 +1,41 @@
 # MemoMark Current Status
 
+## 2026-08-11 MemoMark 2.1.1 (77) 发布材料与版本字段准备
+
+- 根据本轮记忆对象切换一致性修复，将目标版本整理为 `2.1.1 (77)`。
+- 新增应用内完整更新说明、App Store 更新说明、TestFlight 测试说明和同步清单；README 当前版本入口与 CHANGELOG 已同步到 `2.1.1 (77)`。
+- 版本字段已从 `2.1.0 (76)` 推进到 `2.1.1 (77)`，覆盖 App、Share Extension、Widget Extension 与 test target 配置。
+- 本轮材料只描述对象、配置、时间锚点、预览与输出上下文同步修复，不扩大为生产认证或完整可靠性声明。
+- 当前仍为 `Version Locked; Release Evidence Open`：macOS 测试与部分真机启动/首页投影已有证据，Simulator、签名候选包、完整真机点按和 App Store Connect 外部核验仍待完成。
+
+## 2026-08-11 Memory Subject Switch Consistency Follow-up
+
+- Reframed Memory Subject switching as a single configuration-context change:
+  the target subject is aligned to its saved configuration or a clean draft,
+  and the root iOS projection explicitly refreshes subject, anchor, logo,
+  output, custom memory text, and region drafts together.
+- Subject selection no longer invalidates the newly selected configuration's
+  applied identity as a side effect of changing the subject. A durable target
+  configuration is reported as saved; a target without one remains a subject-
+  synced draft until the user saves it.
+- The existing unsaved-change guard remains limited to actual dirty edits in
+  the current configuration. Saving before a subject switch still completes
+  the current configuration transaction before the target subject is applied.
+- Added regression coverage for destination subject identity and subject-region
+  preview refresh. Full device interaction still requires manual confirmation
+  after the next signed iOS build.
+- Validation follow-up: the macOS test scheme completed with 1,350 passing
+  tests and one expected skip; no test failures were reported. The paired
+  iPhone 17 Pro Max launched the installed MemoMark build and displayed the
+  real home projection for `蜡笔小新`, including the relationship badge and
+  birthday anchor. Simulator validation was unavailable because
+  CoreSimulatorService repeatedly refused connections, and the mirroring
+  session could not be kept interactive for the remaining tap-through cases.
+- The product version was intentionally not changed in this pass. The project
+  remains `MARKETING_VERSION = 2.1.0` and `CURRENT_PROJECT_VERSION = 76`; a
+  version/build bump should accompany the next signed release candidate, not
+  an uncommitted behavior-validation pass.
+
 ## 2026-08-11 external distribution materials
 
 - Added `Docs/Outreach/` as a bounded Product Loop support package for researching and preparing external app-directory and Apple-media outreach.

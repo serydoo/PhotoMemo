@@ -202,7 +202,9 @@ enum V1SubjectOverviewActionCoordinator {
                 ?? subject.referenceDate,
             shouldRefreshPreview: false,
             activeConfigurationStatus:
-                .subjectSynced,
+                session.selectedMemoryPresetIsDurable
+                ? .saved
+                : .subjectSynced,
             events: [
                 .rebootstrapPreviewDrafts,
                 .persistActiveConfigurationSelection

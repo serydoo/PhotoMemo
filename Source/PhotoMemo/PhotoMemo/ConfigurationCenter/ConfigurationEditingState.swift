@@ -188,7 +188,6 @@ struct ConfigurationEditingState {
                 )
         }
         selectRegion(.subject)
-        markSelectedMemoryPresetNeedsApply()
         alignSelectedMemoryPresetToSelectedSubject(
             restoreContext: true
         )
@@ -1038,6 +1037,7 @@ struct ConfigurationEditingState {
             alignConfigurationLibraryActiveSelection(
                 configurationID: configuration.id
             )
+            appliedMemoryPresetID = configuration.id
         } else if createdDefaultDraft {
             appliedMemoryPresetID = nil
         }
