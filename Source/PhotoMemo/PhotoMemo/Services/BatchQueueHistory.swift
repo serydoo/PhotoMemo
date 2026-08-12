@@ -5,18 +5,24 @@ final class BatchQueueHistory {
 
     private let maxRetainedTerminalJobs =
         120
+    private let maxRetainedHistoryCovers = 60
+    private let maximumHistoryCoverAge: TimeInterval = 60 * 24 * 60 * 60
+    private let maximumHistoryCoverBytes: Int64 = 30 * 1_024 * 1_024
 
     private let externalIntakeStore:
         ExternalPhotoIntakeStore
 
     private let notificationAttachmentsDirectoryURL:
         URL
+    private let historyCoversDirectoryURL: URL
 
     private var pendingNotificationAttachmentCleanupURLs:
         Set<URL> = []
 
     private var pendingManagedSourceCleanupURLs:
         Set<URL> = []
+    private var pendingHistoryCoverCleanupURLs: Set<URL> = []
+    private var previouslyUnreferencedHistoryCoverURLs: Set<URL> = []
 
     init(
         externalIntakeStore:
@@ -26,6 +32,11 @@ final class BatchQueueHistory {
             .appendingPathComponent(
                 "NotificationAttachments",
                 isDirectory: true
+            ),
+        historyCoversDirectoryURL: URL =
+            PhotoMemoSharedContainer.baseDirectoryURL.appendingPathComponent(
+                "TaskHistoryCovers",
+                isDirectory: true
             )
     ) {
         self.externalIntakeStore =
@@ -33,6 +44,7 @@ final class BatchQueueHistory {
             ?? .shared
         self.notificationAttachmentsDirectoryURL =
             notificationAttachmentsDirectoryURL
+        self.historyCoversDirectoryURL = historyCoversDirectoryURL
     }
 
     func usageSnapshot(
@@ -317,7 +329,59 @@ final class BatchQueueHistory {
             }
         }
 
+        trimHistoryCoversIfNeeded(&jobs, now: Date())
         return removedTaskIDStrings
+    }
+
+    private func trimHistoryCoversIfNeeded(
+        _ jobs: inout [BatchJob],
+        now: Date
+    ) {
+        var retainedCount = 0
+        var retainedBytes: Int64 = 0
+        let orderedIndices = jobs.indices.sorted {
+            (jobs[$0].historyCover?.createdAt ?? .distantPast)
+                > (jobs[$1].historyCover?.createdAt ?? .distantPast)
+        }
+
+        for index in orderedIndices {
+            guard let cover = jobs[index].historyCover,
+                  let url = BatchTaskResourceLifecycle.historyCoverURL(
+                    for: cover,
+                    baseDirectoryURL: historyCoversDirectoryURL.deletingLastPathComponent()
+                  ) else {
+                jobs[index].historyCover = nil
+                continue
+            }
+            guard let values = try? url.resourceValues(
+                forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
+            ), values.isRegularFile == true,
+               values.isSymbolicLink != true else {
+                jobs[index].historyCover = nil
+                continue
+            }
+            let bytes = Int64(values.fileSize ?? 0)
+            let isExpired = now.timeIntervalSince(cover.createdAt) > maximumHistoryCoverAge
+            let exceedsCount = retainedCount >= maxRetainedHistoryCovers
+            let exceedsBytes = retainedBytes + bytes > maximumHistoryCoverBytes
+
+            if isExpired || exceedsCount || exceedsBytes {
+                jobs[index].historyCover = nil
+                pendingHistoryCoverCleanupURLs.insert(url.standardizedFileURL)
+            } else {
+                retainedCount += 1
+                retainedBytes += bytes
+            }
+        }
+
+        for index in jobs.indices
+        where jobs[index].historyCover != nil
+            && jobs[index].finalNotificationSentAt != nil
+            && jobs[index].tasks.allSatisfy({ $0.phase.isTerminal }) {
+            for taskIndex in jobs[index].tasks.indices {
+                jobs[index].tasks[taskIndex].notificationAttachmentURL = nil
+            }
+        }
     }
 
     func commitResourceCleanup(
@@ -352,6 +416,39 @@ final class BatchQueueHistory {
                 previouslyUnreferencedURLs:
                     pendingNotificationAttachmentCleanupURLs
             )
+
+        let retainedCoverURLs = Set(jobs.compactMap { job in
+            job.historyCover.flatMap {
+                BatchTaskResourceLifecycle.historyCoverURL(for: $0)
+            }?.standardizedFileURL
+        })
+        for url in pendingHistoryCoverCleanupURLs
+        where !retainedCoverURLs.contains(url) {
+            try? FileManager.default.removeItem(at: url)
+        }
+        pendingHistoryCoverCleanupURLs.removeAll()
+
+        let currentUnreferencedCoverURLs = Set(
+            (try? FileManager.default.contentsOfDirectory(
+                at: historyCoversDirectoryURL,
+                includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey],
+                options: [.skipsHiddenFiles]
+            ))?.compactMap { file -> URL? in
+                let normalizedFile = file.standardizedFileURL
+                guard !retainedCoverURLs.contains(normalizedFile),
+                      let values = try? normalizedFile.resourceValues(
+                        forKeys: [.isRegularFileKey, .isSymbolicLinkKey]
+                      ), values.isRegularFile == true,
+                      values.isSymbolicLink != true else {
+                    return nil
+                }
+                if previouslyUnreferencedHistoryCoverURLs.contains(normalizedFile) {
+                    try? FileManager.default.removeItem(at: normalizedFile)
+                }
+                return normalizedFile
+            } ?? []
+        )
+        previouslyUnreferencedHistoryCoverURLs = currentUnreferencedCoverURLs
     }
 }
 #endif

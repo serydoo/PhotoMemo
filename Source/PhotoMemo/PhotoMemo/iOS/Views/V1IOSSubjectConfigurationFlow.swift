@@ -17,6 +17,12 @@ struct V1IOSSubjectConfigurationFlow: View {
     @State
     private var showsNameRequiredAlert = false
 
+    @State
+    private var saveFailureMessage: String?
+
+    @State
+    private var isSaving = false
+
     init(
         flowState: V1IOSSubjectConfigurationFlowState,
         onDeleteSubject: @escaping () -> Void,
@@ -49,7 +55,6 @@ struct V1IOSSubjectConfigurationFlow: View {
                     ) {
                         V1IOSSubjectAnchorDetailSection(
                             session: flowState.draftSession,
-                            subject: flowState.draftSession.state.selectedSubject,
                             onPersistSubjectChanges: {},
                             allowsSwipeDeletion: true
                         )
@@ -85,13 +90,22 @@ struct V1IOSSubjectConfigurationFlow: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("完成") {
-                        guard flowState.saveChanges() else {
-                            showsNameRequiredAlert = true
-                            return
+                        Task { @MainActor in
+                            isSaving = true
+                            defer { isSaving = false }
+                            guard await flowState.saveChanges() else {
+                                if let message = flowState.lastSaveFailureMessage {
+                                    saveFailureMessage = message
+                                } else {
+                                    showsNameRequiredAlert = true
+                                }
+                                return
+                            }
+                            onSave()
                         }
-                        onSave()
                     }
                     .fontWeight(.semibold)
+                    .disabled(isSaving)
                 }
             }
             .alert(
@@ -112,6 +126,17 @@ struct V1IOSSubjectConfigurationFlow: View {
                 Button("好", role: .cancel) {}
             } message: {
                 Text("对象名称是保存记忆对象的必填信息。")
+            }
+            .alert(
+                "无法保存",
+                isPresented: Binding(
+                    get: { saveFailureMessage != nil },
+                    set: { if !$0 { saveFailureMessage = nil } }
+                )
+            ) {
+                Button("好", role: .cancel) {}
+            } message: {
+                Text(saveFailureMessage ?? "请稍后再试。")
             }
         }
     }

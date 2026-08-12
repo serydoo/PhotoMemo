@@ -135,8 +135,15 @@ struct V1AccessoryEntrySection: View {
                    ) {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFit()
-                        .padding(8)
+                        .scaledToFill()
+                        .frame(width: 38, height: 38)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle().stroke(
+                                Color.primary.opacity(0.08),
+                                lineWidth: 1
+                            )
+                        )
                 } else {
                     VStack(spacing: 4) {
                         Image(systemName: "photo.badge.plus")
@@ -155,8 +162,8 @@ struct V1AccessoryEntrySection: View {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
-                        .clipShape(Circle())
                         .frame(width: 38, height: 38)
+                        .clipShape(Circle())
                 } else {
                     VStack(spacing: 4) {
                         Image(systemName: "person.crop.circle.badge.plus")

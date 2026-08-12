@@ -110,6 +110,9 @@ final class BatchQueueNotifications {
             .notifyJobFinished(job)
 
         guard didSend else {
+            store.releaseNotificationAttachmentsIfCovered(
+                for: jobID
+            )
             return
         }
 

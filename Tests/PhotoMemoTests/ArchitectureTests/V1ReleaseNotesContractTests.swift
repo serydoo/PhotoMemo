@@ -52,12 +52,12 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("时光记迎来一次较大的体验更新"))
-        #expect(simplifiedChinese.contains("四个内容区域明确对应最终照片的位置"))
-        #expect(simplifiedChinese.contains("选图、任务重试与购买操作获得更清楚的状态和失败提示"))
-        #expect(english.contains("MemoMark is receiving a major experience update"))
-        #expect(english.contains("Four content regions map clearly to the final photo"))
-        #expect(english.contains("Photo picking, task retry, and purchase actions provide clearer states"))
+        #expect(simplifiedChinese.contains("这次更新让记忆对象、预设与处理结果保持一致"))
+        #expect(simplifiedChinese.contains("编辑、保存、重新进入或切换记忆对象时"))
+        #expect(simplifiedChinese.contains("进展页现在会保留真实结果缩略图"))
+        #expect(english.contains("This update keeps Memory Subjects, presets, and finished results in sync"))
+        #expect(english.contains("after editing, saving, reopening, or switching subjects"))
+        #expect(english.contains("Progress now keeps real result thumbnails"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -72,12 +72,12 @@ struct V1ReleaseNotesContractTests {
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.1.0;"
+                separatedBy: "MARKETING_VERSION = 2.1.2;"
             ).count == 9
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 76;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 79;"
             ).count == 11
         )
     }

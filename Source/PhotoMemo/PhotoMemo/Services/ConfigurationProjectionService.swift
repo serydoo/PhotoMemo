@@ -195,7 +195,10 @@ struct ConfigurationProjectionService {
             name: descriptor.name,
             type: descriptor.type,
             imageName: descriptor.imageName,
-            imagePath: descriptor.assetReference?.relativePath,
+            imagePath: ConfigurationSubjectAssetMapper()
+                .makeRuntimePath(
+                    descriptor.assetReference?.relativePath
+                ),
             systemSymbol: descriptor.systemSymbol,
             isSystemDefault: descriptor.isSystemDefault
         )

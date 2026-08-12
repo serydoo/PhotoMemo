@@ -42,8 +42,27 @@ struct BadgeRenderer {
                     )
                     .foregroundStyle(systemSymbolTint ?? .primary)
 
+            case .customUpload:
+
+                if let image = image(for: badge) {
+
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: size,
+                            height: size
+                        )
+                        .clipShape(Circle())
+
+                } else {
+
+                    emptyBadge(
+                        size: size
+                    )
+                }
+
             case .png,
-                 .customUpload,
                  .svg:
 
                 if let image = image(for: badge) {

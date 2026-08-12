@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.2 (79) Subject, Logo, Workflow, And Progress Closure - 2026-08-12
+
+- Consolidated all user-facing changes after the 2026-08-09 `2.1.0 (76)` source checkpoint, including the unpublished 2.1.1 subject-switching work, into one 2.1.2 release candidate.
+- Improved Memory Subject avatar framing, scaling, circular crop preview, and saved composition continuity.
+- Made Memory Subject edits durable before updating live state and preserved drafts on save failure.
+- Kept subject, anchor, card content, output, and Logo context synchronized across save, switch, and reload.
+- Unified custom Logo uploads, previews, and rendering as circular identity marks.
+- Fixed custom Logo asset paths being dropped during configuration save and restored portable paths to runtime paths on reload.
+- Added a compact Home workflow reminder and removed the unexplained “备用” prefix from the in-app photo picker.
+- Added durable final-result thumbnails to Progress history, with a deterministic representative image and count badge for multi-photo jobs.
+- Added portable Job-level cover persistence, missing-file healing, legacy fallback, bounded retention, notification-attachment release, and two-pass orphan cleanup without retaining original photos.
+- Raised all app, extension, widget, and test targets to `2.1.2 (79)`.
+
 ## 2.1.1 (77) Memory Subject Consistency Fix - 2026-08-11
 
 - Fixed iOS Memory Subject switching so the selected subject, saved or draft

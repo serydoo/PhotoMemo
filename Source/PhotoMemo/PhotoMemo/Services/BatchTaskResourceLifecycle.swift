@@ -10,6 +10,7 @@ final class BatchTaskResourceLifecycle {
     private let externalIntakeStore: ExternalPhotoIntakeStore
     private let managedIntakeRootURL: URL
     private let notificationAttachmentsDirectoryURL: URL
+    private let historyCoversDirectoryURL: URL
 
     init(
         coordinator: BatchProcessingCoordinator,
@@ -20,6 +21,11 @@ final class BatchTaskResourceLifecycle {
             PhotoMemoSharedContainer.baseDirectoryURL.appendingPathComponent(
                 "NotificationAttachments",
                 isDirectory: true
+            ),
+        historyCoversDirectoryURL: URL =
+            PhotoMemoSharedContainer.baseDirectoryURL.appendingPathComponent(
+                "TaskHistoryCovers",
+                isDirectory: true
             )
     ) {
         self.coordinator = coordinator
@@ -27,6 +33,7 @@ final class BatchTaskResourceLifecycle {
         self.managedIntakeRootURL = managedIntakeRootURL
         self.notificationAttachmentsDirectoryURL =
             notificationAttachmentsDirectoryURL
+        self.historyCoversDirectoryURL = historyCoversDirectoryURL
     }
 
     func cleanupTemporaryFile(
@@ -121,6 +128,108 @@ final class BatchTaskResourceLifecycle {
         return CGImageDestinationFinalize(destination)
             ? destinationURL
             : nil
+    }
+
+    func makeHistoryCoverIfNeeded(
+        from exportedFileURL: URL,
+        jobID: UUID,
+        sourceTaskID: UUID
+    ) async -> BatchJobHistoryCover? {
+        let directoryURL = historyCoversDirectoryURL
+        return await Task.detached(priority: .utility) {
+            Self.generateHistoryCover(
+                from: exportedFileURL,
+                jobID: jobID,
+                sourceTaskID: sourceTaskID,
+                directoryURL: directoryURL
+            )
+        }.value
+    }
+
+    nonisolated private static func generateHistoryCover(
+        from exportedFileURL: URL,
+        jobID: UUID,
+        sourceTaskID: UUID,
+        directoryURL: URL
+    ) -> BatchJobHistoryCover? {
+        do {
+            try PhotoMemoSharedContainer.ensureDirectory(
+                at: directoryURL
+            )
+        } catch {
+            return nil
+        }
+
+        let fileName = "\(jobID.uuidString).jpg"
+        let relativePath = "TaskHistoryCovers/\(fileName)"
+        let destinationURL = directoryURL
+            .appendingPathComponent(fileName)
+        let temporaryURL = directoryURL
+            .appendingPathComponent(".\(jobID.uuidString)-\(UUID().uuidString).tmp")
+
+        guard let source = CGImageSourceCreateWithURL(
+            exportedFileURL as CFURL,
+            [kCGImageSourceShouldCache: false] as CFDictionary
+        ), let thumbnail = CGImageSourceCreateThumbnailAtIndex(
+            source,
+            0,
+            [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true,
+                kCGImageSourceThumbnailMaxPixelSize: 360
+            ] as CFDictionary
+        ), let destination = CGImageDestinationCreateWithURL(
+            temporaryURL as CFURL,
+            UTType.jpeg.identifier as CFString,
+            1,
+            nil
+        ) else {
+            try? FileManager.default.removeItem(at: temporaryURL)
+            return nil
+        }
+
+        CGImageDestinationAddImage(
+            destination,
+            thumbnail,
+            [kCGImageDestinationLossyCompressionQuality: 0.78] as CFDictionary
+        )
+        guard CGImageDestinationFinalize(destination) else {
+            try? FileManager.default.removeItem(at: temporaryURL)
+            return nil
+        }
+
+        do {
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                _ = try FileManager.default.replaceItemAt(
+                    destinationURL,
+                    withItemAt: temporaryURL
+                )
+            } else {
+                try FileManager.default.moveItem(
+                    at: temporaryURL,
+                    to: destinationURL
+                )
+            }
+        } catch {
+            try? FileManager.default.removeItem(at: temporaryURL)
+            return nil
+        }
+
+        return BatchJobHistoryCover(
+            sourceTaskID: sourceTaskID,
+            relativePath: relativePath
+        )
+    }
+
+    static func historyCoverURL(
+        for cover: BatchJobHistoryCover,
+        baseDirectoryURL: URL = PhotoMemoSharedContainer.baseDirectoryURL
+    ) -> URL? {
+        guard BatchJobHistoryCover.isValid(relativePath: cover.relativePath) else {
+            return nil
+        }
+        return baseDirectoryURL.appendingPathComponent(cover.relativePath)
     }
 
     static func cleanupUnreferencedNotificationAttachments(

@@ -876,14 +876,7 @@ struct V1ConfigurationOptionList: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
-                    .clipShape(
-                        RoundedRectangle(
-                            cornerRadius:
-                                V1CompactInformationRowMetrics
-                                .iconCornerRadius,
-                            style: .continuous
-                        )
-                    )
+                    .clipShape(Circle())
             } else if logoMode == .customUpload,
                       let customLogoImagePath,
                       let image = UIImage(
@@ -892,8 +885,14 @@ struct V1ConfigurationOptionList: View {
                       ) {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFit()
-                    .padding(7)
+                    .scaledToFill()
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle().stroke(
+                            Color.primary.opacity(0.08),
+                            lineWidth: 1
+                        )
+                    )
             } else {
                 Image(systemName: "apple.logo")
                     .font(.title3.weight(.semibold))

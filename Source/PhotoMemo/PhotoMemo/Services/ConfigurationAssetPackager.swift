@@ -141,6 +141,40 @@ struct ConfigurationSubjectAssetMapper {
             .standardizedFileURL
             .path
     }
+
+    func makePortablePath(
+        _ path: String?
+    ) -> String? {
+        guard let path else {
+            return nil
+        }
+        let trimmed = path.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+        if PortableAssetReference.isValid(trimmed) {
+            return trimmed
+        }
+
+        let sourceURL = URL(fileURLWithPath: trimmed)
+            .standardizedFileURL
+        let rootComponents = baseDirectoryURL.pathComponents
+        let sourceComponents = sourceURL.pathComponents
+        guard sourceComponents.count > rootComponents.count,
+              sourceComponents.starts(with: rootComponents)
+        else {
+            return nil
+        }
+        let relativePath = sourceComponents
+            .dropFirst(rootComponents.count)
+            .joined(separator: "/")
+        guard PortableAssetReference.isValid(relativePath) else {
+            return nil
+        }
+        return relativePath
+    }
 }
 
 private extension ConfigurationSubjectAssetMapper {

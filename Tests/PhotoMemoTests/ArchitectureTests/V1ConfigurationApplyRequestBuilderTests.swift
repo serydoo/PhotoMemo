@@ -6,6 +6,98 @@ import Testing
 @Suite("V1 configuration apply request builder")
 struct V1ConfigurationApplyRequestBuilderTests {
 
+    @Test("custom logo survives aggregate save and returns as a runtime path")
+    func customLogoSurvivesSaveAndReload() throws {
+        let state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let configurationID = UUID()
+        let existing = MemoryConfigurationRecord(
+            id: configurationID,
+            title: "自选标识",
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(usesCustomText: false, customText: "")
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(mode: .appleMini, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(isEnabled: false, overrideText: ""),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 1,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [existing],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configurationID
+        )
+        let relativePath = "LogoAssets/custom-logo.png"
+        let runtimePath = PhotoMemoSharedContainer.baseDirectoryURL
+            .appendingPathComponent(relativePath)
+            .standardizedFileURL
+            .path
+        let draft = V1ConfigurationAggregateDraft(
+            title: "自选标识",
+            regionDrafts: [:],
+            regionTemplateIDs: [:],
+            locationConfiguration: nil,
+            logoMode: .customUpload,
+            badge: Badge(
+                name: "自选标识",
+                type: .customUpload,
+                imagePath: runtimePath
+            ),
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 200)
+        )
+
+        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: draft
+        )
+        #expect(
+            candidate.configuration.presentation.logo.badge?
+                .assetReference?.relativePath == relativePath
+        )
+        #expect(candidate.aggregate.validationResult == .valid)
+        #expect(
+            candidate.aggregate.subjects.first?.assetManifest.entries
+                .contains(where: {
+                    $0.role == .customLogo
+                    && $0.reference.relativePath == relativePath
+                }) == true
+        )
+
+        let projection = V1ConfigurationDraftProjection(
+            configuration: candidate.configuration
+        )
+        #expect(projection.badge?.imagePath == runtimePath)
+    }
+
     @Test("multi-item module drafts survive normalization and reload")
     func multiItemModuleDraftsSurviveNormalizationAndReload() throws {
         let state = ConfigurationCenterState.mock

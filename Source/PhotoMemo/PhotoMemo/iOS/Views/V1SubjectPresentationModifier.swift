@@ -50,14 +50,11 @@ private extension V1SubjectPresentationModifier {
 
     var subjectOverview: some View {
         V1IOSSubjectOverviewSheet(
-            subjects: session.state.subjects,
-            subject: session.state.selectedSubject,
             availableConfigurationCount:
                 availableConfigurationCount,
             completedPhotoCount:
                 completedPhotoCount,
             session: session,
-            selectedSubjectID: session.state.selectedSubjectID,
             onSelectSubject: onRequestSubjectSelection,
             onAddSubject: addDefaultSubject,
             onEditSubject: makeConfigurationFlowState,

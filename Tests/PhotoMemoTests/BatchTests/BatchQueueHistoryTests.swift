@@ -197,6 +197,118 @@ struct BatchQueueHistoryTests {
         #expect(!FileManager.default.fileExists(atPath: cancelledURL.path))
     }
 
+    @Test("Missing history cover references heal back to nil")
+    func missingHistoryCoverReferenceHeals() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PhotoMemo.HistoryCover.Missing.\(UUID().uuidString)")
+        let coversURL = rootURL.appendingPathComponent("TaskHistoryCovers", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: coversURL,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        var job = makeTerminalJob(title: "Missing cover")
+        job.historyCover = BatchJobHistoryCover(
+            sourceTaskID: job.tasks[0].id,
+            relativePath: "TaskHistoryCovers/\(job.id.uuidString).jpg"
+        )
+        var jobs = [job]
+        let history = BatchQueueHistory(historyCoversDirectoryURL: coversURL)
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+
+        #expect(jobs[0].historyCover == nil)
+    }
+
+    @Test("Delivered final notification attachments are released after a durable cover exists")
+    func deliveredNotificationAttachmentsAreReleased() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PhotoMemo.HistoryCover.Release.\(UUID().uuidString)")
+        let coversURL = rootURL.appendingPathComponent("TaskHistoryCovers", isDirectory: true)
+        let attachmentsURL = rootURL.appendingPathComponent("NotificationAttachments", isDirectory: true)
+        try FileManager.default.createDirectory(at: coversURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: attachmentsURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        var job = makeTerminalJob(
+            title: "Covered",
+            notificationAttachmentURL: attachmentsURL.appendingPathComponent("task.jpg")
+        )
+        let cover = try #require(BatchJobHistoryCover(
+            sourceTaskID: job.tasks[0].id,
+            relativePath: "TaskHistoryCovers/\(job.id.uuidString).jpg"
+        ))
+        job.historyCover = cover
+        job.finalNotificationSentAt = Date()
+        try Data("cover".utf8).write(
+            to: coversURL.appendingPathComponent("\(job.id.uuidString).jpg")
+        )
+        try Data("attachment".utf8).write(
+            to: try #require(job.tasks[0].notificationAttachmentURL)
+        )
+        var jobs = [job]
+        let history = BatchQueueHistory(
+            notificationAttachmentsDirectoryURL: attachmentsURL,
+            historyCoversDirectoryURL: coversURL
+        )
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+
+        #expect(jobs[0].historyCover == cover)
+        #expect(jobs[0].tasks[0].notificationAttachmentURL == nil)
+    }
+
+    @Test("Pending final notification keeps its attachment")
+    func pendingNotificationKeepsAttachment() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PhotoMemo.HistoryCover.Pending.\(UUID().uuidString)")
+        let coversURL = rootURL.appendingPathComponent("TaskHistoryCovers", isDirectory: true)
+        try FileManager.default.createDirectory(at: coversURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let attachmentURL = rootURL.appendingPathComponent("task.jpg")
+        var job = makeTerminalJob(
+            title: "Pending",
+            notificationAttachmentURL: attachmentURL
+        )
+        job.historyCover = BatchJobHistoryCover(
+            sourceTaskID: job.tasks[0].id,
+            relativePath: "TaskHistoryCovers/\(job.id.uuidString).jpg"
+        )
+        try Data("cover".utf8).write(
+            to: coversURL.appendingPathComponent("\(job.id.uuidString).jpg")
+        )
+        var jobs = [job]
+        let history = BatchQueueHistory(historyCoversDirectoryURL: coversURL)
+
+        _ = history.trimTerminalJobHistoryIfNeeded(&jobs)
+
+        #expect(jobs[0].tasks[0].notificationAttachmentURL == attachmentURL)
+    }
+
+    @Test("Orphaned covers require two durable reconciliation passes before deletion")
+    func orphanedCoversUseTwoPassCleanup() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PhotoMemo.HistoryCover.Orphan.\(UUID().uuidString)")
+        let coversURL = rootURL.appendingPathComponent("TaskHistoryCovers", isDirectory: true)
+        try FileManager.default.createDirectory(at: coversURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let orphanURL = coversURL.appendingPathComponent("orphan.jpg")
+        let inProgressURL = coversURL.appendingPathComponent(".in-progress.tmp")
+        try Data("orphan".utf8).write(to: orphanURL)
+        try Data("temporary".utf8).write(to: inProgressURL)
+        let history = BatchQueueHistory(historyCoversDirectoryURL: coversURL)
+
+        history.commitResourceCleanup(retaining: [])
+        #expect(FileManager.default.fileExists(atPath: orphanURL.path))
+        #expect(FileManager.default.fileExists(atPath: inProgressURL.path))
+
+        history.commitResourceCleanup(retaining: [])
+        #expect(!FileManager.default.fileExists(atPath: orphanURL.path))
+        #expect(FileManager.default.fileExists(atPath: inProgressURL.path))
+    }
+
     @Test("History trimming does not delete an attachment still referenced by a retained task")
     func historyTrimmingPreservesSharedReferencedAttachment() throws {
         let directoryURL = FileManager.default.temporaryDirectory

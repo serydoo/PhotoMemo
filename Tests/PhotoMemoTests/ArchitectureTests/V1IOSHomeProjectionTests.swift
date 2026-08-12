@@ -64,7 +64,7 @@ struct V1IOSHomeProjectionTests {
 
     @Test("deferred first-run subject edits project current facts to Home")
     @MainActor
-    func deferredFirstRunSubjectEditsProjectCurrentFactsToHome() throws {
+    func deferredFirstRunSubjectEditsProjectCurrentFactsToHome() async throws {
         let anchor =
             MemorySubject.TimeAnchor(
                 title: "默认锚点",
@@ -127,7 +127,7 @@ struct V1IOSHomeProjectionTests {
             editedSubject
         )
 
-        #expect(flow.saveChanges())
+        #expect(await flow.saveChanges())
 
         let projection =
             V1IOSHomeProjection

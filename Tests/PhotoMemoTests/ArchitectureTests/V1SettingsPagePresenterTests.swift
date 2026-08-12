@@ -286,6 +286,7 @@ struct V1SettingsPagePresenterTests {
             presentation.currentTask.progressText
             == "已完成 1 张 · 剩余 3 张"
         )
+        #expect(presentation.currentTask.totalCount == 4)
         #expect(
             presentation.currentTask.stepRows.map(\.title)
             == ["生成记忆照片", "处理照片"]

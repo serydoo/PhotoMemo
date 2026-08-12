@@ -1,5 +1,83 @@
 # MemoMark Current Status
 
+## 2026-08-12 Durable Task History Covers
+
+- Replaced completed-history dependence on disposable intake `sourceURL` with
+  one durable, Job-owned cover derived from the final saved result. The first
+  successful result becomes the stable representative and is not replaced by
+  later photos, retries, refreshes, or relaunches.
+- Added a versioned portable cover reference to `BatchJob`; only validated
+  `TaskHistoryCovers/*.jpg` relative paths are persisted, so App Group container
+  UUID changes cannot invalidate durable queue data. Legacy jobs without the
+  field continue to decode and use the existing symbol fallback.
+- Cover generation runs as utility work after Photos save succeeds and before
+  rendered temporary output cleanup. It writes a 360 px, quality 0.78 JPEG by
+  temporary sibling and atomic move/replace. Failure is explicitly best effort
+  and cannot change a completed task into a failure.
+- Added count/age/size governance: at most 60 Job covers, 60 days, and 30 MB,
+  plus orphan cleanup after queue persistence. History files remain separate
+  from notification attachments and never retain the original photo.
+- Progress now resolves completed Jobs through the durable cover. Multi-photo
+  rows use one cover with a lightweight stacked-card treatment and count badge;
+  no collage or multi-image loading is introduced in the small row surface.
+- Verification passed for portable-path rejection, model round-trip, legacy
+  decode, focused background-status regressions, generic iOS build, and signed
+  iPhone 17 Pro Max build/install while preserving app data. Installed identity
+  remains `2.1.2 (79)`. Physical one-photo, multi-photo, relaunch, and missing-
+  cover interaction checks remain the final manual acceptance evidence.
+- Physical-device acceptance subsequently confirmed real final-result covers
+  for one-photo and multi-photo Jobs, including the stable multi-photo count
+  badge. A closure review then added the same count treatment to the current
+  completed card, missing-file reference healing, legacy notification-
+  derivative fallback, and two-pass orphan cleanup so a newly generated cover
+  cannot be mistaken for an orphan before its Job reference is committed.
+- Once the final notification has been delivered—or a delivery attempt has
+  established that no attachment can be used—the Job releases all per-task
+  notification attachment references when its durable cover exists. This
+  closes the former worst case where a retained 40-photo Job could keep 40
+  larger notification JPEGs despite needing only one history cover.
+
+## 2026-08-12 Memory Subject Durable Commit And Context Closure
+
+- Physical-device evidence separated the three persistence layers correctly:
+  `ConfigurationLibrary/primary.json` is the durable configuration aggregate,
+  `photomemo.v1.subjectLibrary` is the compatibility subject library, and
+  `MemorySubjects/*.memomarkconfig` belongs to the local backup/version library.
+  An earlier status entry incorrectly treated the backup files as proof of the
+  active aggregate write; this entry supersedes that interpretation.
+- The iOS subject editor now performs an awaited durable commit. It updates an
+  existing subject snapshot in the latest configuration aggregate before
+  writing the compatibility subject library or changing the live session.
+  Persistence failure keeps the editor open and leaves the live subject
+  unchanged instead of reporting success and allowing stale state to return.
+- Post-save projection refresh is separated from durable persistence and runs
+  only after the committed subject enters the live `ConfigurationSession`.
+  This preserves the existing context synchronization for subject, anchor,
+  memory configuration, output, logo, custom memory text, and region drafts.
+- First-run subjects without a stored aggregate remain supported; once a
+  subject exists in the durable aggregate, mapping or save failures are
+  blocking and visible. Temporary logs containing user-entered subject text
+  were removed; retained failure diagnostics contain identifiers and errors.
+- Focused verification passed for subject editing/switching, failed-persistence
+  rollback, complete configuration lifecycle, output configuration, logo,
+  album, independent region drafts, subjects without configurations, and
+  restart restoration. A signed iPhone 17 Pro Max build was installed without
+  clearing application data; final post-cleanup package installation remains
+  part of this session's closure evidence.
+
+## 2026-08-11 Memory Subject Context Consistency Hardening
+
+- 真机数据核对确认对象编辑后的最新内容已正确写入 `MemorySubjects` 配置文件；回退现象来自 iOS 对象概览与锚点编辑视图同时持有 `MemorySubject` 值快照和实时 `ConfigurationSession`，而非持久化文件丢失。
+- 对象概览页改为从 `ConfigurationSession` 实时读取当前对象、对象列表和选中 ID；时间锚点编辑区移除快照回退参数，统一以当前 session 作为唯一上下文来源。
+- 已通过 `V1SubjectLibrarySupportTests` 对象切换回归测试和 iOS 真机构建；下一步需在真机上复测编辑保存、重新进入编辑、切换对象后切回以及锚点修改四条路径。
+
+## 2026-08-11 V4 App Store 展示规范冻结
+
+- 新增 `Docs/07_Releases/2026-08-11-v4-app-store-presentation-spec.md`，冻结 V4 商店展示方向：结果优先、真实界面优先、围绕人和时间、Apple Photos 工作流收尾。
+- 推荐七张截图顺序为：最终记忆卡、记忆对象、时间锚点、配置中心、记忆表达、原始照片保护、Apple Photos 工作流。
+- 本次只冻结叙事、文案基线、素材隐私边界和提交前检查，不制作截图、不改变产品代码；具体素材必须从修复后的当前候选版本重新取证。
+- 当前商店展示状态为 `Frozen Direction; Recapture Required`。后续 Bug 修复完成后，应按该规范重新采集 iPhone、iPad 或 Mac 的实际素材，并将证据写入对应版本同步清单。
+
 ## 2026-08-11 MemoMark 2.1.1 (77) 发布材料与版本字段准备
 
 - 根据本轮记忆对象切换一致性修复，将目标版本整理为 `2.1.1 (77)`。
@@ -21785,3 +21863,101 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   both iPhone Mirroring and QuickTime capture streams; pinch, drag, same-photo
   reselection, final framing, and visual balance remain explicit human-device
   acceptance items rather than claimed evidence.
+
+## 2026-08-12 Custom Logo Circular Identity Contract
+
+- Reframed `自选标识` as the same small circular identity slot used by a Memory
+  Subject avatar. New uploads are normalized locally to a 2048px transparent PNG
+  using center aspect-fill, a circular alpha mask, and a restrained 4% safe inset;
+  the original selected image remains unchanged.
+- Configuration entry, compact option rows, the live iOS card preview, and
+  `BadgeRenderer` now enforce the same circular presentation. The display and
+  renderer masks intentionally remain in place for previously saved square logo
+  assets, while Apple mini-logo and built-in PNG/SVG badges remain uncropped.
+- Added a pixel-level regression contract proving transparent output corners and
+  an opaque center, alongside the existing print-size and renderer-layout
+  contracts. No Photos permission, network flow, EXIF behavior, original-photo
+  mutation, Layout Engine ownership, or durable configuration schema changed.
+- Signed Debug delivery was built and installed in place on the connected iPhone
+  17 Pro Max without uninstalling or clearing app data; installation database
+  sequence `1848`. CoreDevice confirmed launch. Command-line delivery proves
+  installation/startup; final visual acceptance with a real custom logo remains
+  a distinct manual device check.
+
+## 2026-08-12 Persistent Home Workflow Reminder
+
+- Added a compact, non-interactive `怎么记录` card directly below `我的预设`.
+  It keeps the complete daily lifecycle visible: choose in Apple Photos, share
+  to MemoMark, process locally with the active preset, and save a new result
+  back to Apple Photos. A short `PS` explains the in-app picker as the secondary
+  path without requiring the user to remember onboarding.
+- The card intentionally has no icon or navigation action, preserving the visual
+  priority of the Memory Subject and Preset objects. The bottom action and its
+  VoiceOver label now read `App 内选择照片`; the unexplained `备用` prefix was
+  removed. Simplified Chinese and English localization entries were updated
+  together with the canonical product-language guide.
+
+## 2026-08-12 Custom Logo Durable Path Closure
+
+- Physical-device App Group evidence showed the active configuration remained
+  `customUpload`, but both `photomemo.configurationSlots` and
+  `photomemo.selectedBadge` omitted the Logo image path after save. The loss was
+  therefore in persistence projection, not SwiftUI masking or Renderer layout.
+- Root cause: the upload preview held an App Group absolute path, while the
+  aggregate builder passed it directly into `PortableAssetReference`, which
+  accepts only relative paths; `try?` silently converted the validation failure
+  to a missing asset reference. Reload projection then also treated portable
+  relative paths as runtime file paths.
+- The shared asset mapper now converts only absolute paths contained by the
+  managed App Group root into validated portable paths, and restores portable
+  paths to runtime absolute paths for draft, compatibility, preview, and
+  production consumers. Paths outside the managed root remain rejected.
+- Added a save/reload regression proving a custom Logo keeps
+  `LogoAssets/...` in durable configuration and returns as a runtime path.
+  Focused aggregate, asset packaging, production snapshot, circular Logo pixel,
+  and ClassicWhite Renderer tests passed.
+
+## 2026-08-12 MemoMark 2.1.2 (79) Source Candidate Verification
+
+- Consolidated the unpublished `2.1.1 (77)` Memory Subject and configuration
+  consistency work with the Home workflow reminder and custom Logo durability
+  closure into the `2.1.2 (79)` source candidate. All app, share extension,
+  widget extension, and test-target build settings now use that version.
+- The complete macOS `PhotoMemoTests` run passed after updating two stale
+  release-contract expectations from the previous `2.1.0` train. Generic iOS
+  builds passed for the app, share extension, and widget extension. Simplified
+  Chinese and English string files passed plist validation, and `git diff
+  --check` passed.
+- A signed device build reported `2.1.2 (79)` for the app and both embedded
+  extensions. It was installed in place and launched on the connected iPhone
+  17 Pro Max without uninstalling or clearing local data; CoreDevice database
+  sequence: `1872`.
+- The post-install App Group baseline still contains the historical broken
+  revision `65`: its `customUpload` selection has neither a portable
+  `badge.assetReference` nor a compatibility image path. This is expected for
+  an already-lost reference and is intentionally not repaired by guessing among
+  private or orphaned assets. Final device acceptance requires selecting the
+  intended custom Logo once in `2.1.2`, saving, and proving that the new
+  `LogoAssets/...` reference survives relaunch.
+- This checkpoint prepares source synchronization only. No TestFlight upload or
+  App Store submission is authorized or claimed.
+
+## 2026-08-12 MemoMark 2.1.2 (79) Final Release Evidence
+
+- The complete macOS `PhotoMemoTests` run passed 1,362 tests in 203 suites with
+  0 failures. The expected failure-path diagnostics for missing temporary media
+  and persistence probes remain test logs, not failed tests.
+- Generic unsigned iOS build, signed `iphoneos` build, and Release archive all
+  passed. The archive is `/tmp/MemoMark-2.1.2-79-20260812.xcarchive`; its app,
+  Share Extension, and Widget Extension each report `2.1.2 (79)`.
+- The archived app passed `codesign --verify --deep --strict`; the app and both
+  embedded extensions carry the same Team ID `UK7ZR8G564`. The archive and
+  signing products are local delivery evidence only and are excluded from Git.
+- On the connected iPhone 17 Pro Max, the signed build was installed in place
+  and launched without uninstalling the app or clearing its local data. Manual
+  acceptance confirmed custom Logo persistence, circular preview/output
+  consistency, and single-photo/multi-photo durable history covers with a stable
+  representative and count badge.
+- The source candidate is ready for GitHub checkpoint synchronization. No
+  TestFlight upload or App Store submission has been executed or claimed; those
+  remain separate external delivery states under the release sync standard.

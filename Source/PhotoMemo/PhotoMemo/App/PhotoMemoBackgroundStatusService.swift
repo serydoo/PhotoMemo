@@ -653,10 +653,9 @@ private extension PhotoMemoBackgroundStatusService {
                 .preset
                 .displayName,
             previewSourceURL:
-                activeTask?
-                .sourceURL
-                ?? job.tasks.first?
-                .sourceURL,
+                activeTask?.sourceURL
+                ?? resolvedHistoryPreviewURL(for: job)
+                ?? job.tasks.first(where: { !$0.phase.isTerminal })?.sourceURL,
             savedAlbumName:
                 latestSavedTask(
                     in: job
@@ -741,8 +740,8 @@ private extension PhotoMemoBackgroundStatusService {
             totalCount:
                 job.totalTaskCount,
             previewSourceURL:
-                job.tasks.first?
-                .sourceURL,
+                resolvedHistoryPreviewURL(for: job)
+                ?? job.tasks.first(where: { !$0.phase.isTerminal })?.sourceURL,
             savedAlbumName:
                 latestSavedTask(
                     in: job
@@ -769,6 +768,25 @@ private extension PhotoMemoBackgroundStatusService {
                 $0.createdAt > $1.createdAt
             }
             .first
+    }
+
+    func resolvedHistoryPreviewURL(
+        for job: BatchJob,
+        fileManager: FileManager = .default
+    ) -> URL? {
+        if let cover = job.historyCover,
+           let coverURL = BatchTaskResourceLifecycle.historyCoverURL(for: cover),
+           fileManager.fileExists(atPath: coverURL.path) {
+            return coverURL
+        }
+
+        return job.tasks.first(where: { task in
+            guard task.phase == .completed,
+                  let url = task.notificationAttachmentURL else {
+                return false
+            }
+            return fileManager.fileExists(atPath: url.path)
+        })?.notificationAttachmentURL
     }
 
     func resolvedConfigurationName(

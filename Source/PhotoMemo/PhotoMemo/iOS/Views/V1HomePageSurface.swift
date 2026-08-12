@@ -85,7 +85,13 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             activitySection
 
             currentPresetSection
+
+            workflowReminderCard
         }
+    }
+
+    private var workflowReminderCard: some View {
+        V1HomeWorkflowReminderCard()
     }
 
     private var applePhotosEntrySection: some View {
@@ -494,7 +500,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             Button(action: onOpenPhotoPicker) {
                 Label(
                     isConfigurationReady
-                    ? "备用：App 内选择照片"
+                    ? "App 内选择照片"
                     : "先完成配置",
                     systemImage: "photo.on.rectangle"
                 )
@@ -506,7 +512,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             .buttonStyle(V1CompactPrimaryActionButtonStyle())
             .accessibilityLabel(
                 isConfigurationReady
-                ? "备用：App 内选择照片"
+                ? "App 内选择照片"
                 : "先完成配置"
             )
         }
@@ -1126,6 +1132,48 @@ private struct V1HomeHeaderPill: View {
                 .fill(Color(uiColor: .secondarySystemFill))
         )
         .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
+private struct V1HomeWorkflowReminderCard: View {
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("怎么记录")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Text(
+                "从 Apple Photos 选择照片并分享给时光记；时光记会按当前预设在本地处理，完成后将新照片保存回 Apple Photos。"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Text(
+                "PS：也可以使用下方“App 内选择照片”；日常记录仍建议从 Apple Photos 分享。"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
+                style: .continuous
+            )
+            .fill(ConfigurationUI.controlBackground.opacity(0.82))
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
+                style: .continuous
+            )
+            .stroke(ConfigurationUI.faintHairline)
+        )
+        .accessibilityElement(children: .combine)
     }
 }
 #endif

@@ -246,6 +246,21 @@ Narrative language yields to clarity when the user must understand:
 In those cases, use direct factual wording first. Warmth may soften the tone,
 but it must never hide the action, state, consequence, or next step.
 
+### Home Workflow Reminder
+
+The Home page keeps the primary Apple Photos lifecycle visible beneath `我的预设`
+so a new user does not need to remember the onboarding explanation. Use this
+accepted Simplified Chinese copy:
+
+- Title: `怎么记录`
+- Primary path: `从 Apple Photos 选择照片并分享给时光记；时光记会按当前预设在本地处理，完成后将新照片保存回 Apple Photos。`
+- Secondary path: `PS：也可以使用下方“App 内选择照片”；日常记录仍建议从 Apple Photos 分享。`
+
+The reminder is a compact informational card without an icon or a competing
+action. The bottom photo-picker action is `App 内选择照片`; do not prefix it
+with `备用`, because the workflow reminder already explains that it is the
+secondary path and the isolated label sounds unexplained or provisional.
+
 ## Anchor And Variable Rule
 
 Smart anchor variables output time results, not complete sentence copy. Users

@@ -941,7 +941,7 @@ struct V1PreviewCard: View {
                    let image = UIImage(contentsOfFile: customLogoImagePath) {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFit()
+                        .scaledToFill()
                         .frame(
                             width:
                                 logoSize
@@ -950,6 +950,7 @@ struct V1PreviewCard: View {
                                 logoSize
                                 * spec.customLogoScale
                         )
+                        .clipShape(Circle())
                 } else {
                     Image(systemName: "photo.badge.plus")
                         .font(.system(size: logoSize * 0.78, weight: .semibold))
@@ -959,7 +960,7 @@ struct V1PreviewCard: View {
                    let image = UIImage(contentsOfFile: subjectAvatarLogoImagePath) {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFit()
+                        .scaledToFill()
                         .frame(
                             width:
                                 logoSize

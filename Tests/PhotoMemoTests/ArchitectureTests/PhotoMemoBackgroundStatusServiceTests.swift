@@ -7,6 +7,36 @@ import Testing
 @Suite("Background status service")
 struct PhotoMemoBackgroundStatusServiceTests {
 
+    @Test("Legacy jobs decode without a history cover")
+    func legacyJobCompatibility() throws {
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let job = makeJob(
+            title: "Legacy",
+            source: .shareExtension,
+            phase: .completed,
+            updatedAt: 100,
+            configuration: configuration
+        )
+        var object = try #require(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(job))
+                as? [String: Any]
+        )
+        object.removeValue(forKey: "historyCover")
+        let decoded = try JSONDecoder().decode(
+            BatchJob.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        #expect(decoded.historyCover == nil)
+        #expect(decoded.id == job.id)
+    }
+
     @Test("Current snapshot counts only unfinished subsequent external jobs")
     func currentSnapshotCountsOnlyUnfinishedSubsequentExternalJobs() throws {
         let suiteName =

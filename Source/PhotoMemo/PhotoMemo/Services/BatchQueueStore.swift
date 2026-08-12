@@ -991,6 +991,7 @@ extension BatchQueueStore {
             BatchQueueExecution.TaskReference,
         persist: Bool = true,
         recordsSuccessfulSave: Bool = true,
+        historyCoverCandidate: BatchJobHistoryCover? = nil,
         mutate: (inout BatchTask) -> Void
     ) {
 
@@ -1006,6 +1007,11 @@ extension BatchQueueStore {
         let updatedTask =
             job.tasks[taskIndex]
         job.updatedAt = Date()
+        if job.historyCover == nil,
+           let historyCoverCandidate,
+           historyCoverCandidate.sourceTaskID == updatedTask.id {
+            job.historyCover = historyCoverCandidate
+        }
         job.state =
             execution.derivedJobState(
                 from: job.tasks
@@ -1122,6 +1128,20 @@ extension BatchQueueStore {
         jobs[jobIndex]
             .finalNotificationSentAt =
             Date()
+        persistJobs()
+    }
+
+    func releaseNotificationAttachmentsIfCovered(
+        for jobID: UUID
+    ) {
+        guard let index = jobs.firstIndex(where: { $0.id == jobID }),
+              jobs[index].historyCover != nil,
+              jobs[index].tasks.allSatisfy({ $0.phase.isTerminal }) else {
+            return
+        }
+        for taskIndex in jobs[index].tasks.indices {
+            jobs[index].tasks[taskIndex].notificationAttachmentURL = nil
+        }
         persistJobs()
     }
 

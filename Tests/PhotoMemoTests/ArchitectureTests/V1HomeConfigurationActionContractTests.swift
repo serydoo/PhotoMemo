@@ -27,13 +27,48 @@ struct V1HomeConfigurationActionContractTests {
         #expect(source.contains("ForEach(applePhotosWorkflowSteps)"))
         #expect(source.contains("下一次从 Apple Photos 分享时，将使用当前配置"))
         #expect(source.contains("onOpenWorkflowGuide"))
-        #expect(source.contains("备用：App 内选择照片"))
+        #expect(source.contains("App 内选择照片"))
+        #expect(!source.contains("备用：App 内选择照片"))
         #expect(source.contains(".v1CompactBottomPrimaryAction()"))
         #expect(source.contains("V1CompactPrimaryActionButtonStyle()"))
         #expect(!source.contains("applePhotosEntryIcon"))
         #expect(rootSource.contains("entryFlowState.showsWorkflowGuide = true"))
         #expect(presentationSource.contains("V1WorkflowGuideSurface("))
         #expect(!rootSource.contains("V1WorkflowGuideSurface("))
+    }
+
+    @Test("home keeps the complete daily workflow visible below presets")
+    func homeKeepsWorkflowReminderBelowPresets() throws {
+        let source = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
+        )
+
+        let presetPosition = try #require(
+            source.range(of: "currentPresetSection")
+        )
+        let reminderPosition = try #require(
+            source.range(of: "workflowReminderCard")
+        )
+        #expect(reminderPosition.lowerBound > presetPosition.lowerBound)
+        #expect(source.contains("private struct V1HomeWorkflowReminderCard"))
+        #expect(source.contains("怎么记录"))
+        #expect(
+            source.contains(
+                "从 Apple Photos 选择照片并分享给时光记；时光记会按当前预设在本地处理，完成后将新照片保存回 Apple Photos。"
+            )
+        )
+        #expect(
+            source.contains(
+                "PS：也可以使用下方“App 内选择照片”；日常记录仍建议从 Apple Photos 分享。"
+            )
+        )
+
+        let cardSource = try #require(
+            source.components(
+                separatedBy: "private struct V1HomeWorkflowReminderCard"
+            ).last
+        )
+        #expect(!cardSource.contains("Image(systemName:"))
     }
 
     @Test("configuration rows use native non-full-swipe actions")

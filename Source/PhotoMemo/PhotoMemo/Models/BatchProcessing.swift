@@ -924,6 +924,40 @@ struct BatchTask:
     }
 }
 
+struct BatchJobHistoryCover: Codable, Hashable, Sendable {
+
+    nonisolated static let currentSchemaVersion = 1
+
+    let schemaVersion: Int
+    let sourceTaskID: UUID
+    let relativePath: String
+    let createdAt: Date
+
+    nonisolated init?(
+        sourceTaskID: UUID,
+        relativePath: String,
+        createdAt: Date = Date(),
+        schemaVersion: Int = currentSchemaVersion
+    ) {
+        guard Self.isValid(relativePath: relativePath) else {
+            return nil
+        }
+        self.schemaVersion = schemaVersion
+        self.sourceTaskID = sourceTaskID
+        self.relativePath = relativePath
+        self.createdAt = createdAt
+    }
+
+    nonisolated static func isValid(relativePath: String) -> Bool {
+        let path = NSString(string: relativePath).standardizingPath
+        return !relativePath.hasPrefix("/")
+            && path == relativePath
+            && !path.split(separator: "/").contains("..")
+            && path.hasPrefix("TaskHistoryCovers/")
+            && path.hasSuffix(".jpg")
+    }
+}
+
 struct BatchJob:
     Identifiable,
     Codable,
@@ -958,6 +992,8 @@ struct BatchJob:
 
     var finalNotificationSentAt: Date?
 
+    var historyCover: BatchJobHistoryCover?
+
     init(
         id: UUID = UUID(),
         title: String,
@@ -973,7 +1009,8 @@ struct BatchJob:
         policy: BatchPipelinePolicy = .init(),
         startNotificationSentAt: Date? = nil,
         lastProgressNotificationStage: String? = nil,
-        finalNotificationSentAt: Date? = nil
+        finalNotificationSentAt: Date? = nil,
+        historyCover: BatchJobHistoryCover? = nil
     ) {
         self.id = id
         self.title = title
@@ -994,6 +1031,7 @@ struct BatchJob:
             lastProgressNotificationStage
         self.finalNotificationSentAt =
             finalNotificationSentAt
+        self.historyCover = historyCover
     }
 }
 

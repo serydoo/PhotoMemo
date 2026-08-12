@@ -136,7 +136,7 @@ struct V1IOSSubjectOverviewPresenterTests {
     }
 
     @Test("configuration flow keeps a draft copy until save")
-    func configurationFlowKeepsDraftCopyUntilSave() throws {
+    func configurationFlowKeepsDraftCopyUntilSave() async throws {
         let originalAnchor =
             MemorySubject.TimeAnchor(
                 title: "生日",
@@ -204,7 +204,7 @@ struct V1IOSSubjectOverviewPresenterTests {
             == "小宝成长记录"
         )
 
-        flow?.saveChanges()
+        await flow?.saveChanges()
 
         #expect(
             liveSession.state.selectedSubject?.identity.displayName
@@ -213,7 +213,7 @@ struct V1IOSSubjectOverviewPresenterTests {
     }
 
     @Test("configuration flow save can persist updated subject through an external save hook")
-    func configurationFlowSaveCanPersistUpdatedSubjectThroughExternalSaveHook() throws {
+    func configurationFlowSaveCanPersistUpdatedSubjectThroughExternalSaveHook() async throws {
         let originalSubject =
             MemorySubject(
                 identity: .init(
@@ -277,7 +277,7 @@ struct V1IOSSubjectOverviewPresenterTests {
         updatedDraft.expressionSubjectSource = .shortName
         flow?.draftSession.updateSelectedSubject(updatedDraft)
 
-        flow?.saveChanges()
+        await flow?.saveChanges()
 
         #expect(
             persistedSubject?.expressionSubjectSource
@@ -289,8 +289,54 @@ struct V1IOSSubjectOverviewPresenterTests {
         )
     }
 
+    @Test("configuration flow keeps live subject unchanged when durable persistence fails")
+    func configurationFlowKeepsLiveSubjectWhenPersistenceFails() async throws {
+        let originalSubject = MemorySubject(
+            identity: .init(displayName: "原名称", shortName: "原昵称"),
+            relationship: .init(role: "家人", label: "孩子"),
+            referenceDate: Date(timeIntervalSince1970: 0),
+            behavior: .init(
+                primaryAnchor: "生日",
+                iconStrategy: .autoMatch,
+                badgeStrategy: .fixed,
+                memoryExpression: .init(title: "默认表达", blocks: [])
+            ),
+            decorations: []
+        )
+        let liveSession = ConfigurationSession(
+            state: ConfigurationCenterState(
+                subjects: [originalSubject],
+                selectedSubjectID: originalSubject.id,
+                memoryPresets: [],
+                selectedMemoryPresetID: nil,
+                cardSelection: .init(selectedRegion: .subject),
+                selectedBlockID: nil,
+                tokenLibrary: .init(),
+                availableDecorations: [],
+                regionPreviewTexts: [:]
+            )
+        )
+        let flow = try #require(
+            V1IOSSubjectConfigurationFlowState(
+                liveSession: liveSession,
+                persistSubject: { _ in
+                    throw CancellationError()
+                }
+            )
+        )
+        var draft = try #require(flow.draftSession.state.selectedSubject)
+        draft.identity.displayName = "新名称"
+        flow.draftSession.updateSelectedSubject(draft)
+
+        #expect(await flow.saveChanges() == false)
+        #expect(
+            liveSession.state.selectedSubject?.identity.displayName
+            == "原名称"
+        )
+    }
+
     @Test("configuration flow commits a fallback anchor after deleting its current anchor")
-    func configurationFlowCommitsFallbackAnchorAfterDeletingCurrentAnchor() throws {
+    func configurationFlowCommitsFallbackAnchorAfterDeletingCurrentAnchor() async throws {
         let birthday = MemorySubject.TimeAnchor(
             title: "生日",
             date: Date(timeIntervalSince1970: 0),
@@ -341,7 +387,7 @@ struct V1IOSSubjectOverviewPresenterTests {
 
         flow.draftSession.updateSelectedSubject(updatedDraft)
 
-        #expect(flow.saveChanges() == true)
+        #expect(await flow.saveChanges() == true)
         #expect(
             liveSession.state.selectedSubject?.timeAnchors
             == [school]
@@ -400,7 +446,7 @@ struct V1IOSSubjectOverviewPresenterTests {
     }
 
     @Test("configuration flow rejects an empty object name")
-    func configurationFlowRejectsEmptyObjectName() throws {
+    func configurationFlowRejectsEmptyObjectName() async throws {
         let anchor = MemorySubject.TimeAnchor(
             title: "生日",
             date: Date(timeIntervalSince1970: 0),
@@ -442,7 +488,7 @@ struct V1IOSSubjectOverviewPresenterTests {
         flow.draftSession.updateSelectedSubject(draft)
 
         #expect(flow.canSaveChanges == false)
-        #expect(flow.saveChanges() == false)
+        #expect(await flow.saveChanges() == false)
         #expect(
             liveSession.state.selectedSubject?.identity.displayName == "原名称"
         )
@@ -466,7 +512,7 @@ struct V1IOSSubjectOverviewPresenterTests {
     }
 
     @Test("configuration flow commits identity and time anchor edits together")
-    func configurationFlowCommitsIdentityAndTimeAnchorEdits() throws {
+    func configurationFlowCommitsIdentityAndTimeAnchorEdits() async throws {
         let anchor = MemorySubject.TimeAnchor(
             title: "生日",
             date: Date(timeIntervalSince1970: 0),
@@ -513,7 +559,7 @@ struct V1IOSSubjectOverviewPresenterTests {
         )
         flow.draftSession.updateSelectedSubject(draft)
 
-        #expect(flow.saveChanges() == true)
+        #expect(await flow.saveChanges() == true)
         let saved = try #require(liveSession.state.selectedSubject)
         #expect(saved.identity.displayName == "新名称")
         #expect(saved.timeAnchors[0].title == "被误改的锚点")

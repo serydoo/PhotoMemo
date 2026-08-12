@@ -269,7 +269,8 @@ struct V1TaskPageSurface: View {
                 url: presentation.currentTask.previewSourceURL,
                 symbolName: presentation.currentTask.thumbnailSymbolName,
                 tint: .secondary,
-                size: CGSize(width: 56, height: 56)
+                size: CGSize(width: 56, height: 56),
+                itemCount: presentation.currentTask.totalCount
             )
 
             VStack(alignment: .leading, spacing: 4) {
@@ -304,7 +305,8 @@ struct V1TaskPageSurface: View {
                 url: presentation.currentTask.previewSourceURL,
                 symbolName: presentation.currentTask.thumbnailSymbolName,
                 tint: presentation.currentTask.tint,
-                size: CGSize(width: 56, height: 56)
+                size: CGSize(width: 56, height: 56),
+                itemCount: presentation.currentTask.totalCount
             )
 
             VStack(alignment: .leading, spacing: 4) {
@@ -660,7 +662,8 @@ struct V1TaskPageSurface: View {
                 url: row.previewSourceURL,
                 symbolName: row.symbolName,
                 tint: row.tint,
-                size: CGSize(width: 64, height: 54)
+                size: CGSize(width: 64, height: 54),
+                itemCount: row.totalCount
             )
 
             VStack(alignment: .leading, spacing: 5) {
@@ -709,13 +712,15 @@ struct V1TaskPageSurface: View {
         url: URL?,
         symbolName: String,
         tint: PhotoMemoiOSQueueDiagnosticsTint,
-        size: CGSize
+        size: CGSize,
+        itemCount: Int = 1
     ) -> some View {
         V1TaskLocalThumbnail(
             sourceURL: url,
             symbolName: symbolName,
             tint: tint,
-            size: size
+            size: size,
+            itemCount: itemCount
         )
     }
 
@@ -742,12 +747,25 @@ private struct V1TaskLocalThumbnail: View {
     let symbolName: String
     let tint: PhotoMemoiOSQueueDiagnosticsTint
     let size: CGSize
+    let itemCount: Int
 
     @State
     private var image: UIImage?
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
+            if itemCount > 1 {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(tint.color.opacity(0.12))
+                    .frame(width: size.width - 8, height: size.height - 8)
+                    .offset(x: 5, y: -4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(ConfigurationUI.faintHairline)
+                            .offset(x: 5, y: -4)
+                    )
+            }
+
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(
                     tint.color.opacity(0.12)
@@ -761,6 +779,16 @@ private struct V1TaskLocalThumbnail: View {
                 Image(systemName: symbolName)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(tint.color)
+            }
+
+            if itemCount > 1 {
+                Text("\(itemCount)")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color.black.opacity(0.68)))
+                    .padding(5)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -779,6 +807,11 @@ private struct V1TaskLocalThumbnail: View {
                         max(size.width, size.height) * 3
                 )
         }
+        .accessibilityLabel(
+            itemCount > 1
+                ? "共 \(itemCount) 张照片，显示第一张已保存结果作为封面"
+                : "照片缩略图"
+        )
     }
 
     private func loadThumbnail(

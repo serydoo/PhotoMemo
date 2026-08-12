@@ -312,7 +312,10 @@ enum V1ConfigurationApplyRequestBuilder {
             type: descriptor.type,
             imageName: descriptor.imageName,
             imagePath:
-                descriptor.assetReference?.relativePath,
+                ConfigurationSubjectAssetMapper()
+                .makeRuntimePath(
+                    descriptor.assetReference?.relativePath
+                ),
             systemSymbol: descriptor.systemSymbol,
             isSystemDefault: descriptor.isSystemDefault
         )

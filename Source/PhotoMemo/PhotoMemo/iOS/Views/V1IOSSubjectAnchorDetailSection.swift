@@ -6,18 +6,15 @@ struct V1IOSSubjectAnchorDetailSection: View {
     @ObservedObject
     var session: ConfigurationSession
 
-    let subject: MemorySubject?
     let onPersistSubjectChanges: () -> Void
     let allowsSwipeDeletion: Bool
 
     init(
         session: ConfigurationSession,
-        subject: MemorySubject?,
         onPersistSubjectChanges: @escaping () -> Void,
         allowsSwipeDeletion: Bool = false
     ) {
         self.session = session
-        self.subject = subject
         self.onPersistSubjectChanges = onPersistSubjectChanges
         self.allowsSwipeDeletion = allowsSwipeDeletion
     }
@@ -32,7 +29,7 @@ struct V1IOSSubjectAnchorDetailSection: View {
     private var showsLastAnchorWarning = false
 
     var body: some View {
-        if let subject = session.state.selectedSubject ?? subject {
+        if let subject = session.state.selectedSubject {
             VStack(spacing: 12) {
                 ForEach(subject.timeAnchors) { anchor in
                     V1IOSSubjectAnchorDetailModule(
@@ -189,7 +186,6 @@ struct V1IOSSubjectAnchorDetailSection: View {
     ) {
         guard (
             session.state.selectedSubject?.timeAnchors.count
-            ?? subject?.timeAnchors.count
             ?? 0
         ) > 1 else {
             showsLastAnchorWarning = true

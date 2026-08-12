@@ -337,10 +337,47 @@ enum V1ConfigurationAggregateCandidateBuilder {
         var candidate = aggregate
         candidate.subjects[subjectIndex]
             .configurations[configurationIndex] = configuration
+        candidate.subjects[subjectIndex].assetManifest =
+            manifestRegisteringCustomLogoReferences(
+                configurations:
+                    candidate.subjects[subjectIndex].configurations,
+                existing:
+                    candidate.subjects[subjectIndex].assetManifest
+            )
         return V1ConfigurationAggregateCandidate(
             aggregate: candidate,
             configuration: configuration
         )
+    }
+
+    private static func manifestRegisteringCustomLogoReferences(
+        configurations: [MemoryConfigurationRecord],
+        existing: PortableAssetManifest
+    ) -> PortableAssetManifest {
+        var manifest = existing
+        for configuration in configurations {
+            guard let reference = configuration.presentation.logo.badge?
+                .assetReference,
+                  !manifest.entries.contains(where: {
+                      $0.reference == reference
+                  }) else {
+                continue
+            }
+            manifest.entries.append(
+                PortableAssetManifest.Entry(
+                    id: MemoryConfigurationRecord.deterministicUUID(
+                        basedOn: configuration.id,
+                        discriminator: 0xA4
+                    ),
+                    role: .customLogo,
+                    reference: reference,
+                    originalFileName: URL(
+                        fileURLWithPath: reference.relativePath
+                    ).lastPathComponent
+                )
+            )
+        }
+        return manifest
     }
 
     private static func template(
@@ -448,11 +485,13 @@ enum V1ConfigurationAggregateCandidateBuilder {
                 imageName: $0.imageName,
                 systemSymbol: $0.systemSymbol,
                 isSystemDefault: $0.isSystemDefault,
-                assetReference: $0.imagePath.flatMap {
-                    try? PortableAssetReference(
-                        relativePath: $0
-                    )
-                }
+                assetReference: ConfigurationSubjectAssetMapper()
+                    .makePortablePath($0.imagePath)
+                    .flatMap {
+                        try? PortableAssetReference(
+                            relativePath: $0
+                        )
+                    }
             )
         }
     }
@@ -530,7 +569,10 @@ private extension V1ConfigurationDraftProjection {
             name: descriptor.name,
             type: descriptor.type,
             imageName: descriptor.imageName,
-            imagePath: descriptor.assetReference?.relativePath,
+            imagePath: ConfigurationSubjectAssetMapper()
+                .makeRuntimePath(
+                    descriptor.assetReference?.relativePath
+                ),
             systemSymbol: descriptor.systemSymbol,
             isSystemDefault: descriptor.isSystemDefault
         )

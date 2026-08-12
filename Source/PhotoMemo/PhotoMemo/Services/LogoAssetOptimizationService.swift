@@ -46,7 +46,7 @@ final class LogoAssetOptimizationService {
 
     nonisolated static let optimizedPixelSize = 2048
 
-    nonisolated static let safeInsetRatio: CGFloat = 0.12
+    nonisolated static let safeInsetRatio: CGFloat = 0.04
 
     func optimize(
         data: Data
@@ -69,7 +69,7 @@ final class LogoAssetOptimizationService {
 
         return try await Task.detached(priority: .utility) {
             let pngData =
-                try Self.normalizedPNGData(
+                try Self.normalizedCircularPNGData(
                     from: data,
                     canvasPixelSize:
                         canvasPixelSize,
@@ -109,12 +109,23 @@ final class LogoAssetOptimizationService {
             * spec.barHeightToWidth
             * spec.logoSizeToBarHeight
     }
+
+    nonisolated static func normalizedCircularPNGData(
+        from data: Data,
+        canvasPixelSize: Int
+    ) throws -> Data {
+        try normalizedCircularPNGData(
+            from: data,
+            canvasPixelSize: canvasPixelSize,
+            safeInsetRatio: safeInsetRatio
+        )
+    }
 }
 
 private extension LogoAssetOptimizationService {
 
 #if canImport(UIKit)
-    nonisolated static func normalizedPNGData(
+    nonisolated static func normalizedCircularPNGData(
         from data: Data,
         canvasPixelSize: Int,
         safeInsetRatio: CGFloat
@@ -148,13 +159,16 @@ private extension LogoAssetOptimizationService {
                     CGRect(origin: .zero, size: canvasSize)
                 )
 
+                let clipPath = UIBezierPath(
+                    ovalIn: CGRect(origin: .zero, size: canvasSize)
+                )
+                clipPath.addClip()
                 sourceImage.draw(
-                    in: aspectFitRect(
-                        sourceSize:
-                            sourceImage.size,
+                    in: SubjectAvatarCropSupport.resolvedDrawRect(
+                        sourceSize: sourceImage.size,
                         canvasSize: canvasSize,
-                        safeInsetRatio:
-                            safeInsetRatio
+                        safeInsetRatio: safeInsetRatio,
+                        configuration: .init()
                     )
                 )
             }
@@ -166,7 +180,7 @@ private extension LogoAssetOptimizationService {
         return pngData
     }
 #elseif os(macOS)
-    nonisolated static func normalizedPNGData(
+    nonisolated static func normalizedCircularPNGData(
         from data: Data,
         canvasPixelSize: Int,
         safeInsetRatio: CGFloat
@@ -176,46 +190,67 @@ private extension LogoAssetOptimizationService {
             throw LogoAssetOptimizationError.invalidImage
         }
 
+        var proposedRect = CGRect(
+            origin: .zero,
+            size: sourceImage.size
+        )
+        guard let sourceCGImage = sourceImage.cgImage(
+            forProposedRect: &proposedRect,
+            context: nil,
+            hints: nil
+        ) else {
+            throw LogoAssetOptimizationError.invalidImage
+        }
+
         let canvasSize =
             CGSize(
                 width: canvasPixelSize,
                 height: canvasPixelSize
             )
 
-        guard let representation =
-            NSBitmapImageRep(
-                bitmapDataPlanes: nil,
-                pixelsWide: canvasPixelSize,
-                pixelsHigh: canvasPixelSize,
-                bitsPerSample: 8,
-                samplesPerPixel: 4,
-                hasAlpha: true,
-                isPlanar: false,
-                colorSpaceName: .deviceRGB,
-                bitmapFormat: .alphaNonpremultiplied,
-                bytesPerRow: 0,
-                bitsPerPixel: 0
-            )
-        else {
+        guard let colorSpace = CGColorSpace(
+            name: CGColorSpace.sRGB
+        ),
+        let graphicsContext = CGContext(
+            data: nil,
+            width: canvasPixelSize,
+            height: canvasPixelSize,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
             throw LogoAssetOptimizationError.pngEncodingFailed
         }
 
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current =
-            NSGraphicsContext(bitmapImageRep: representation)
-        NSColor.clear.setFill()
-        CGRect(origin: .zero, size: canvasSize).fill()
-        sourceImage.draw(
-            in: aspectFitRect(
-                sourceSize: sourceImage.size,
-                canvasSize: canvasSize,
-                safeInsetRatio: safeInsetRatio
-            ),
-            from: .zero,
-            operation: .sourceOver,
-            fraction: 1
+        graphicsContext.clear(
+            CGRect(origin: .zero, size: canvasSize)
         )
-        NSGraphicsContext.restoreGraphicsState()
+        graphicsContext.saveGState()
+        graphicsContext.addEllipse(
+            in: CGRect(origin: .zero, size: canvasSize)
+        )
+        graphicsContext.clip()
+        graphicsContext.draw(
+            sourceCGImage,
+            in: SubjectAvatarCropSupport.resolvedDrawRect(
+                sourceSize: CGSize(
+                    width: sourceCGImage.width,
+                    height: sourceCGImage.height
+                ),
+                canvasSize: canvasSize,
+                safeInsetRatio: safeInsetRatio,
+                configuration: .init()
+            )
+        )
+        graphicsContext.restoreGState()
+
+        guard let renderedCGImage = graphicsContext.makeImage() else {
+            throw LogoAssetOptimizationError.pngEncodingFailed
+        }
+        let representation = NSBitmapImageRep(
+            cgImage: renderedCGImage
+        )
 
         guard let pngData =
             representation.representation(
@@ -230,44 +265,4 @@ private extension LogoAssetOptimizationService {
     }
 #endif
 
-    nonisolated static func aspectFitRect(
-        sourceSize: CGSize,
-        canvasSize: CGSize,
-        safeInsetRatio: CGFloat
-    ) -> CGRect {
-
-        let sourceWidth =
-            max(sourceSize.width, 1)
-        let sourceHeight =
-            max(sourceSize.height, 1)
-        let safeInset =
-            canvasSize.width
-            * safeInsetRatio
-        let availableSize =
-            CGSize(
-                width:
-                    max(canvasSize.width - safeInset * 2, 1),
-                height:
-                    max(canvasSize.height - safeInset * 2, 1)
-            )
-        let scale =
-            min(
-                availableSize.width / sourceWidth,
-                availableSize.height / sourceHeight
-            )
-        let fittedSize =
-            CGSize(
-                width: sourceWidth * scale,
-                height: sourceHeight * scale
-            )
-
-        return CGRect(
-            x:
-                (canvasSize.width - fittedSize.width) / 2,
-            y:
-                (canvasSize.height - fittedSize.height) / 2,
-            width: fittedSize.width,
-            height: fittedSize.height
-        )
-    }
 }

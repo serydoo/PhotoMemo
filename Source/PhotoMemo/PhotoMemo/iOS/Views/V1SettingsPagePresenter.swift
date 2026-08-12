@@ -36,6 +36,7 @@ struct V1SettingsCurrentTaskPresentation:
     let subtitleText: String
     let statusText: String
     let itemCountText: String?
+    let totalCount: Int
     let progressText: String?
     let detailText: String
     let symbolName: String
@@ -71,6 +72,7 @@ struct V1SettingsHistoryRowPresentation:
         PhotoMemoiOSQueueDiagnosticsTint
     let templateName: String?
     let previewSourceURL: URL?
+    let totalCount: Int
     let photoLibraryLink:
         V1TaskPhotoLibraryLink?
 }
@@ -223,6 +225,7 @@ private extension V1SettingsPagePresenter {
                     photoCountText(
                         count: snapshot.totalCount
                     ),
+                totalCount: snapshot.totalCount,
                 progressText:
                     progressText(
                         snapshot
@@ -284,6 +287,7 @@ private extension V1SettingsPagePresenter {
                     header
                 ),
             itemCountText: nil,
+            totalCount: 0,
             progressText: nil,
             detailText:
                 recoveryMessage
@@ -561,6 +565,7 @@ private extension V1SettingsPagePresenter {
                 ),
             previewSourceURL:
                 summary.previewSourceURL,
+            totalCount: summary.totalCount,
             photoLibraryLink:
                 photoLibraryLink(
                     albumName:

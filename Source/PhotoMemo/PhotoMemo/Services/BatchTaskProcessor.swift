@@ -308,8 +308,18 @@ final class BatchTaskProcessor {
                     taskID: task.id
                 )
             }
+            let historyCoverCandidate = store.currentJob(at: reference)?.historyCover == nil
+                ? await resourceLifecycle.makeHistoryCoverIfNeeded(
+                    from: exportedFileURL,
+                    jobID: reference.jobID,
+                    sourceTaskID: task.id
+                )
+                : nil
             resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
-            store.updateTask(at: reference) { task in
+            store.updateTask(
+                at: reference,
+                historyCoverCandidate: historyCoverCandidate
+            ) { task in
                 task.renderedFileURL = nil
                 task.savedAlbumName = saveResult.albumTitle
                 task.savedAssetIdentifier = saveResult.assetLocalIdentifier
@@ -483,8 +493,22 @@ final class BatchTaskProcessor {
         let notificationAttachmentURL = result.notificationSourceURL.flatMap {
             resourceLifecycle.makeNotificationAttachmentIfNeeded(from: $0, taskID: task.id)
         }
+        let historyCoverCandidate: BatchJobHistoryCover?
+        if let sourceURL = result.notificationSourceURL,
+           store.currentJob(at: reference)?.historyCover == nil {
+            historyCoverCandidate = await resourceLifecycle.makeHistoryCoverIfNeeded(
+                from: sourceURL,
+                jobID: reference.jobID,
+                sourceTaskID: task.id
+            )
+        } else {
+            historyCoverCandidate = nil
+        }
         resourceLifecycle.cleanupTemporaryFiles(result.temporaryFileURLs)
-        store.updateTask(at: reference) { task in
+        store.updateTask(
+            at: reference,
+            historyCoverCandidate: historyCoverCandidate
+        ) { task in
             task.renderedFileURL = nil
             task.savedAlbumName = result.saveResult.albumTitle
             task.savedAssetIdentifier = result.saveResult.assetLocalIdentifier

@@ -1,6 +1,17 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
 import Foundation
 
+private enum V1SubjectPersistenceError: LocalizedError {
+    case subjectMappingFailed(MemorySubject.ID)
+
+    var errorDescription: String? {
+        switch self {
+        case .subjectMappingFailed(let subjectID):
+            return "Configuration subject mapping failed for \(subjectID.uuidString)."
+        }
+    }
+}
+
 enum V1SubjectFlowEvent:
     Hashable {
 
@@ -335,6 +346,40 @@ enum V1SubjectOverviewActionCoordinator {
             .makeFlowState(
                 from: session,
                 persistSubject: { subject in
+                    var durableAggregate: ConfigurationLibraryRecord?
+                    if let configurationCoordinator {
+                        let aggregate: ConfigurationLibraryRecord?
+                        do {
+                            aggregate = try await configurationCoordinator
+                                .loadConfigurationLibrary()
+                                .aggregate
+                        } catch ConfigurationLibraryPersistenceError
+                            .noStoredAggregate {
+                            aggregate = nil
+                        }
+                        if let aggregate,
+                           aggregate.subjects.contains(where: {
+                            $0.subject.id == subject.id
+                           }) {
+                            guard let candidate =
+                                V1LocalConfigurationLibraryPresenter
+                                .updatingSubject(
+                                    subject: subject,
+                                    in: aggregate
+                                ) else {
+                                throw V1SubjectPersistenceError
+                                    .subjectMappingFailed(subject.id)
+                            }
+                            if candidate != aggregate {
+                                let receipt = try await configurationCoordinator
+                                    .saveConfigurationLibrary(candidate)
+                                var durableCandidate = candidate
+                                durableCandidate.revision = receipt.revision
+                                durableAggregate = durableCandidate
+                            }
+                        }
+                    }
+
                     V1SubjectLibraryPersistenceCoordinator
                         .persistSelectedSubject(
                             subject,
@@ -349,6 +394,14 @@ enum V1SubjectOverviewActionCoordinator {
                                 configurationCoordinator
                         )
 
+                    if let durableAggregate {
+                        session.updateConfigurationLibraryReference(
+                            durableAggregate
+                        )
+                    }
+
+                },
+                didPersistSubject: { subject in
                     onPersistedSubject(
                         V1SubjectFlowPatch(
                             birthdayDate:

@@ -6,15 +6,12 @@ struct V1IOSSubjectOverviewSheet: View {
     @Environment(\.dismiss)
     private var dismiss
 
-    let subjects: [MemorySubject]
-    let subject: MemorySubject?
     let availableConfigurationCount: Int
     let completedPhotoCount: Int
 
     @ObservedObject
     var session: ConfigurationSession
 
-    let selectedSubjectID: MemorySubject.ID?
     let onSelectSubject: (MemorySubject.ID) -> Void
     let onAddSubject: () -> Void
     let onEditSubject: () -> V1IOSSubjectConfigurationFlowState?
@@ -55,7 +52,6 @@ struct V1IOSSubjectOverviewSheet: View {
                     ) {
                         V1IOSSubjectAnchorDetailSection(
                             session: session,
-                            subject: subject,
                             onPersistSubjectChanges:
                                 onPersistSubjectChanges
                         )
@@ -93,7 +89,7 @@ struct V1IOSSubjectOverviewSheet: View {
                 }
             }
         }
-        .onChange(of: selectedSubjectID) { _, newValue in
+        .onChange(of: session.state.selectedSubjectID) { _, newValue in
             guard !isSwitchingSubject else {
                 return
             }
@@ -134,8 +130,8 @@ struct V1IOSSubjectOverviewSheet: View {
             }
 
             V1IOSSubjectOverviewSubjectRail(
-                subjects: subjects,
-                selectedSubjectID: selectedSubjectID,
+                subjects: session.state.subjects,
+                selectedSubjectID: session.state.selectedSubjectID,
                 switchCandidateSubjectID:
                     switchCandidateSubjectID,
                 onSelectSubject: { subjectID in
@@ -160,7 +156,7 @@ struct V1IOSSubjectOverviewSheet: View {
 
     @ViewBuilder
     private var subjectBasicInformation: some View {
-        if let subject {
+        if let subject = session.state.selectedSubject {
             VStack(spacing: 0) {
                 subjectIdentitySummary
 
@@ -199,7 +195,9 @@ struct V1IOSSubjectOverviewSheet: View {
     }
 
     private var subjectIdentitySummary: some View {
-        HStack(spacing: 14) {
+        let subject = session.state.selectedSubject
+
+        return HStack(spacing: 14) {
             V1SubjectAvatarView(
                 imagePath:
                     subject?.identity.avatarPreviewImagePath
@@ -226,7 +224,7 @@ struct V1IOSSubjectOverviewSheet: View {
     }
 
     private var subjectDisplayName: String {
-        normalized(subject?.identity.displayName)
+        normalized(session.state.selectedSubject?.identity.displayName)
         ?? "记忆对象"
     }
 
@@ -243,9 +241,8 @@ struct V1IOSSubjectOverviewSheet: View {
 
     private func beginSwitchingSubject() {
         switchCandidateSubjectID =
-            selectedSubjectID
-            ?? subject?.id
-            ?? subjects.first?.id
+            session.state.selectedSubjectID
+            ?? session.state.subjects.first?.id
         isSwitchingSubject = true
     }
 }

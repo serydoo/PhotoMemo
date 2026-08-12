@@ -766,7 +766,7 @@ struct V1SubjectLibrarySupportTests {
 
     @Test("editor flow callback emits sync patch after saving")
     @MainActor
-    func editorFlowCallbackEmitsSyncPatchAfterSaving() throws {
+    func editorFlowCallbackEmitsSyncPatchAfterSaving() async throws {
         let subject = makeSubject(
             displayName: "小宝成长记录",
             shortName: "小宝",
@@ -808,7 +808,7 @@ struct V1SubjectLibrarySupportTests {
             )
         updatedSubject.identity.displayName = "新的名字"
         flowState.draftSession.updateSelectedSubject(updatedSubject)
-        flowState.saveChanges()
+        await flowState.saveChanges()
 
         #expect(session.state.selectedSubject?.identity.displayName == "新的名字")
         #expect(emittedPatch?.activeConfigurationStatus == .dirty)
