@@ -21961,3 +21961,16 @@ CLGeocoder SDK deprecation warnings remain unrelated.
 - The source candidate is ready for GitHub checkpoint synchronization. No
   TestFlight upload or App Store submission has been executed or claimed; those
   remain separate external delivery states under the release sync standard.
+
+## 2026-08-12 2.1.2 Store Delivery Boundary
+
+- The source checkpoint was pushed to `origin/main` as commit `382fc1a`
+  (`Prepare MemoMark 2.1.2 release sync`); the local branch and remote are
+  aligned and the worktree is clean.
+- Local App Store Connect export is not part of this delivery path. The local
+  Mac has only the `Apple Development: serydoo@163.com` identity, so it is not
+  the signing environment for the store candidate and no local IPA is claimed.
+- The user-designated delivery path is Xcode Cloud for the distribution build
+  and signing. Xcode Cloud build/upload and App Store submission remain
+  unexecuted in this workspace; the GitHub source checkpoint and the connected
+  device validation are complete and independent of that cloud step.
