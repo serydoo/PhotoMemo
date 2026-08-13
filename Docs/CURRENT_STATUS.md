@@ -8,7 +8,7 @@
 - 当前正式同步包包含中英文应用内更新日志、App Store 文案、TestFlight 测试说明、同步清单、CHANGELOG、README、版本字段和相关回归测试。私有照片、真机容器、日志、截图、签名产物、DerivedData 与未冻结研究均排除。
 - 当前证据：Logo/配置相关聚焦回归 `249/249` 通过，`git diff --check` 通过；版本更新后的签名 Debug 构建已在连接的 iPhone 17 Pro Max（设备标识 `863C2747-6742-5E93-B715-6F89DBF90B31`）原位安装并启动，设备显示 `2.1.1 (80)`，未卸载或清理用户数据。真机交互验收、Apple Photos 生命周期、`TX-001`、`BP-001`、StoreKit、TestFlight 和 App Store 仍是独立开放边界。
 - 状态：`Source Checkpoint Ready; Store Delivery Evidence Open`。本条随本次用户授权的 GitHub 同步包进入 `main`，源码同步与商店交付继续分开记录。
-- 源码同步结果：`730b0af`（`Sync MemoMark 2.1.1 build 80 Logo closure`）已推送到 `origin/main`；本地 `main`、远端 `origin/main` 与 GitHub `refs/heads/main` 一致，工作树干净。
+- 源码同步结果：代码提交 `730b0af`（`Sync MemoMark 2.1.1 build 80 Logo closure`）和同步结果记录提交 `f78cc83` 均已推送到 `origin/main`；最终本地 `main`、远端 `origin/main` 与 GitHub `refs/heads/main` 指向 `f78cc83`，工作树干净。
 
 ## 2026-08-13 Logo Continuation Check
 
