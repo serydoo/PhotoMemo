@@ -139,7 +139,7 @@ enum ProductionConfigurationSnapshotFactory {
             template:
                 configuration.editor.template
                 .normalizedForEditing,
-            badge: badge(
+            badge: ConfigurationLogoResolver.badge(
                 from: configuration.presentation.logo,
                 subject: frozenSubject
             ),
@@ -197,47 +197,6 @@ enum ProductionConfigurationSnapshotFactory {
             isCountdown: type.defaultCountdown,
             expressionStyle:
                 anchor.resolvedExpressionStyle
-        )
-    }
-
-    private static func badge(
-        from logo: MemoryConfigurationRecord.Presentation.Logo,
-        subject: MemorySubject
-    ) -> Badge? {
-        if logo.mode == .subjectAvatar {
-            let imagePath = ConfigurationSubjectAssetMapper()
-                .makeRuntimePath(
-                    subject.identity.avatarBadgeImagePath
-                    ?? subject.identity.avatarImagePath
-                )
-            guard imagePath != nil else {
-                return nil
-            }
-            return Badge(
-                name: OptimizedSubjectAvatarAsset
-                    .subjectAvatarBadgeName,
-                type: .customUpload,
-                imagePath: imagePath,
-                isSystemDefault: false
-            )
-        }
-
-        let descriptor = logo.badge
-        guard let descriptor else {
-            return nil
-        }
-        return Badge(
-            id: descriptor.id,
-            name: descriptor.name,
-            type: descriptor.type,
-            imageName: descriptor.imageName,
-            imagePath:
-                ConfigurationSubjectAssetMapper()
-                .makeRuntimePath(
-                    descriptor.assetReference?.relativePath
-                ),
-            systemSymbol: descriptor.systemSymbol,
-            isSystemDefault: descriptor.isSystemDefault
         )
     }
 

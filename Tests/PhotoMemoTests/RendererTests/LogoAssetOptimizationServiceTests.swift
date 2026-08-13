@@ -8,6 +8,42 @@ import UniformTypeIdentifiers
 @Suite("LogoAssetOptimizationService", .serialized)
 struct LogoAssetOptimizationServiceTests {
 
+    @Test("Only a generated direct Logo asset is eligible for stale-result cleanup")
+    func onlyGeneratedDirectLogoAssetIsEligibleForStaleResultCleanup() {
+        let logoFolderURL = URL(fileURLWithPath: "/tmp/LogoAssets")
+
+        #expect(
+            LogoAssetOptimizationService.isUncommittedAsset(
+                logoFolderURL.appendingPathComponent(
+                    "memomark-logo-123.png"
+                ),
+                in: logoFolderURL
+            )
+        )
+        #expect(
+            !LogoAssetOptimizationService.isUncommittedAsset(
+                logoFolderURL.appendingPathComponent(
+                    "saved-logo.png"
+                ),
+                in: logoFolderURL
+            )
+        )
+        #expect(
+            !LogoAssetOptimizationService.isUncommittedAsset(
+                logoFolderURL.appendingPathComponent(
+                    "nested/memomark-logo-123.png"
+                ),
+                in: logoFolderURL
+            )
+        )
+        #expect(
+            !LogoAssetOptimizationService.isUncommittedAsset(
+                URL(fileURLWithPath: "/tmp/memomark-logo-123.png"),
+                in: logoFolderURL
+            )
+        )
+    }
+
     @Test("Defines a print-safe upload and optimization size")
     func definesPrintSafeUploadAndOptimizationSize() {
 

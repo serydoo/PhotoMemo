@@ -1,5 +1,119 @@
 # MemoMark Current Status
 
+## 2026-08-13 MemoMark 2.1.1 (80) Source Sync Package
+
+- 本轮正式同步范围从上周日约 14:12 的相邻 Git 基线 `588792d`（2026-08-09 14:06:59，`2.1.0 (76)`）整理到当前工作树；此前已经推送的 `2.1.1 (77)` 与 `2.1.2 (79)` 作为未上架源码检查点保留其历史记录。
+- 当前目标按产品负责人指定锁定为 `2.1.1 (80)`。这是版本训练修正后的 GitHub 源码检查点，不代表 TestFlight 或 App Store 已上传；App Store Connect 既有版本训练状态仍需在商店侧独立确认。
+- 本轮闭合卡片内容 Logo 优化：Apple mini、Subject Avatar 与自选 Logo 的归属分离；自选 Logo 的保存、导入、备份恢复、历史迁移、切换与圆形预览统一；新的 Logo 选择会使旧的异步结果失效，避免晚到结果覆盖用户决定。
+- 当前正式同步包包含中英文应用内更新日志、App Store 文案、TestFlight 测试说明、同步清单、CHANGELOG、README、版本字段和相关回归测试。私有照片、真机容器、日志、截图、签名产物、DerivedData 与未冻结研究均排除。
+- 当前证据：Logo/配置相关聚焦回归 `249/249` 通过，`git diff --check` 通过；版本更新后的签名 Debug 构建已在连接的 iPhone 17 Pro Max（设备标识 `863C2747-6742-5E93-B715-6F89DBF90B31`）原位安装并启动，设备显示 `2.1.1 (80)`，未卸载或清理用户数据。真机交互验收、Apple Photos 生命周期、`TX-001`、`BP-001`、StoreKit、TestFlight 和 App Store 仍是独立开放边界。
+- 状态：`Source Checkpoint Ready; Store Delivery Evidence Open`。本条随本次用户授权的 GitHub 同步包进入 `main`，源码同步与商店交付继续分开记录。
+
+## 2026-08-13 Logo Continuation Check
+
+- The current unfinished Logo work is connected end to end in the working tree:
+  the `卡片布局与内容` Logo row feeds the native picker and optimization state,
+  the selected mode reaches the live card preview, and the same resolved Logo
+  ownership is used by configuration save, reload, switching, compatibility
+  projection, and production snapshots.
+- Focused verification was rerun against the current uncommitted source tree
+  and passed `245/245`, with zero failures and zero skips. It covered Logo selection and stale-completion
+  isolation, circular asset cleanup, configuration persistence, import,
+  backup/restore, subject and Configuration switching, draft/bootstrap
+  projection, and Card Content responsive contracts.
+- A signed `PhotoMemoiOS` Debug build from this source tree was built, installed
+  in place, and launched on `iPhone7` (`863C2747-6742-5E93-B715-6F89DBF90B31`).
+  The device was unlocked, the developer disk image was usable, and the app
+  remained `com.serydoo.PhotoMemo.iOS` version `2.1.2 (79)`. No uninstall,
+  App Group reset, or data cleanup was performed.
+- The remaining acceptance boundary is manual: enter `卡片内容`, exercise all
+  three Logo modes, save the current Configuration, switch Subject and
+  Configuration, relaunch, and verify the live preview plus final output. This
+  check established build/install/launch connectivity but did not claim those
+  tap-through and rendered-output results. No commit or push was performed.
+
+## 2026-08-13 Logo Picker Race Closure And Device Deployment
+
+- Closed one additional state race found during final review: when a custom
+  Logo optimization is in flight, a later explicit Logo choice now invalidates
+  that request before changing mode or presenting a new picker. This includes
+  reselecting the currently visible fixed mode. The late result is therefore
+  rejected by the existing request-plus-subject-plus-configuration identity
+  check and its newly generated, uncommitted asset is safely discarded.
+- The final focused regression suite passed `30/30`, `0` failed, `0` skipped:
+  Logo selection decisions, stale-completion isolation, native picker wiring,
+  circular Logo optimization, and stale-result cleanup were all exercised.
+  The preceding durable configuration, import, backup, restore, and switch
+  regression suite also passed `126/126`, `0` failed, `0` skipped.
+- `git diff --check` passed. Unsigned generic iOS Simulator Debug and signed
+  physical-device Debug builds both passed using the current source tree.
+- The signed `PhotoMemoiOS` package was installed in place and launched on the
+  connected iPhone 17 Pro Max (`863C2747-6742-5E93-B715-6F89DBF90B31`) without
+  uninstalling the app or clearing its data. CoreDevice reports the installed
+  app as `com.serydoo.PhotoMemo.iOS`, version `2.1.2 (79)`.
+- Two attempted complete-suite runs did not produce a final result because the
+  current macOS 27 / Xcode Beta test host stalled in pre-existing unrelated
+  tests: first during shared-intake file-read readiness in
+  `ShareDrainMigrationRegressionTests`, then during a static source-file open
+  in `AppleNativeProductSurfaceContractTests`. Stack samples showed neither
+  stall entered Logo code or reported a failed assertion. These are test-host
+  infrastructure blockers, not passing full-suite evidence, so they do not
+  supersede the focused and durable regression results above.
+- GitHub, Xcode Cloud, TestFlight, and App Store synchronization remain
+  paused. No commit, push, external synchronization, version change, uninstall,
+  or user-data reset was performed.
+
+## 2026-08-13 Logo Asset Ownership And Persistence Closure
+
+- Physical-device and source-path evidence traced the object-avatar save
+  failure to one ownership collision: `subjectAvatar` was serialized with a
+  configuration Logo badge descriptor while the same portable path was also
+  registered as both a Subject avatar asset and `customLogo`. The aggregate
+  correctly rejected that duplicate path/role state, which surfaced to the
+  user as a save failure.
+- Logo ownership is now explicit and centralized. `subjectAvatar` resolves
+  only from `MemorySubject.identity`, stores only its mode in the
+  Configuration, and retains Subject avatar/display/preview manifest roles;
+  `customUpload` alone owns a Logo badge descriptor and matching `customLogo`
+  manifest reference; `appleMini` stores neither a descriptor nor an asset and
+  continues to use the existing system fallback.
+- The same resolver and canonicalization rules now cover V1 migration,
+  aggregate save/load and last-known-good recovery, import, local backup and
+  restore, compatibility projection, production snapshots, draft bootstrap,
+  object switching, and Configuration switching. Missing custom Logo or
+  Subject-avatar resources fall back safely to Apple instead of persisting an
+  incomplete state. A path already owned by any Subject avatar role cannot be
+  accepted by a custom Logo, including legacy data where another
+  Configuration still carries the conflicting descriptor.
+- Portable import security order remains `decode -> verify original checksum
+  -> canonicalize historical Logo ownership -> validate resolved document`.
+  Local backup loading verifies the stored checksum before repair, then emits
+  a newly checksummed canonical document. Canonicalization preserves a custom
+  Logo still referenced by another Configuration and removes only unreferenced
+  `customLogo` manifest entries.
+- Focused ownership/import/backup/repository verification passed `55/55` with
+  no skips or failures. A RED/GREEN regression proved that a legacy custom
+  Logo cannot reuse the Subject-avatar path; the final complete test result
+  passed `1,386/1,387`, with one existing conditional JPEG metadata test
+  skipped and zero failures. The final signed iOS Debug build passed and its
+  app reports `2.1.2 (79)`, bundle ID `com.serydoo.PhotoMemo.iOS`, and Team ID
+  `UK7ZR8G564`.
+- The final build was installed in place on the connected iPhone 17 Pro Max.
+  The App Group container remained
+  `542BFDD7-DA1B-44C3-9164-4B348DAC3947`, so the install neither uninstalled
+  the app nor cleared shared user data. The pre-launch device baseline shows
+  durable revision `73`, two Subjects with display/badge/preview avatar
+  references, and three presets using Apple, Subject avatar, and Apple modes.
+- Physical launch, post-launch aggregate/resource export, object and
+  Configuration switch-through, the three Logo-mode save sequence, relaunch,
+  renderer preview, and final-output acceptance remain open until the Mac and
+  iPhone are unlocked. CoreDevice and LLDB both explicitly reported the
+  device-lock boundary. Device unified-log collection additionally requires
+  administrator authorization and has not been represented as an empty or
+  successful log result.
+- GitHub, Xcode Cloud, TestFlight, and App Store synchronization remain paused.
+  No commit or push was performed, and the version remains `2.1.2 (79)`.
+
 ## 2026-08-12 Durable Task History Covers
 
 - Replaced completed-history dependence on disposable intake `sourceURL` with

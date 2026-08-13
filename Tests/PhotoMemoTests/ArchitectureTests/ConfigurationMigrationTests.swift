@@ -1497,14 +1497,6 @@ struct ConfigurationMigrationTests {
                 )
             )
         )
-        let projectedBadge = try JSONDecoder().decode(
-            Badge.self,
-            from: try #require(
-                defaults.data(
-                    forKey: "photomemo.selectedBadge"
-                )
-            )
-        )
         let projectedLocation = try JSONDecoder().decode(
             ExpressionModuleConfiguration.self,
             from: try #require(
@@ -1534,7 +1526,11 @@ struct ConfigurationMigrationTests {
             == receipt.configurationID
         )
         #expect(projectedTemplate.name == "Aggregate Preset")
-        #expect(projectedBadge.name == "Family")
+        #expect(
+            defaults.data(
+                forKey: "photomemo.selectedBadge"
+            ) == nil
+        )
         #expect(projectedLocation.token == "{{location}}")
         #expect(
             defaults.string(
@@ -2147,7 +2143,12 @@ struct ConfigurationMigrationTests {
             restarted.selectedTemplate?.name
             == "Restart Aggregate"
         )
-        #expect(restarted.selectedBadge?.name == "Family")
+        #expect(restarted.selectedBadge == Badge.none)
+        #expect(
+            defaults.data(
+                forKey: "photomemo.selectedBadge"
+            ) == nil
+        )
         #expect(restarted.shouldWritePhotoDescription)
         #expect(
             restarted.photoDescriptionOverride

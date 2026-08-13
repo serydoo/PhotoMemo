@@ -26,8 +26,10 @@ final class ConfigurationImportCoordinator {
         availableAlbumIdentifiers: Set<String>,
         liveSubject: MemorySubject? = nil
     ) throws -> ConfigurationImportResolution {
-        let document = try decode(data)
-        try validateChecksum(document)
+        let decodedDocument = try decode(data)
+        try validateChecksum(decodedDocument)
+        let document = decodedDocument
+            .canonicalizingLogoOwnership()
         try validateUnrecoverableIssues(document)
 
         var importedSubject = document.subject
@@ -147,6 +149,8 @@ final class ConfigurationImportCoordinator {
                 )
             )
         }
+
+        candidate = candidate.canonicalizingLogoOwnership()
 
         return ConfigurationImportRestoreReceipt(
             aggregate: candidate,
@@ -402,15 +406,25 @@ private extension ConfigurationImportCoordinator {
             assetRootURL: assetRootURL,
             warnings: &warnings
         )
-        resolveAsset(
-            role: .customLogo,
-            path: configuration.presentation.logo.badge?
-                .assetReference?.relativePath,
-            subject: &subject,
-            configuration: &configuration,
-            manifest: &manifest,
-            assetRootURL: assetRootURL,
-            warnings: &warnings
+        if configuration.presentation.logo.mode == .customUpload {
+            resolveAsset(
+                role: .customLogo,
+                path: configuration.presentation.logo.badge?
+                    .assetReference?.relativePath,
+                subject: &subject,
+                configuration: &configuration,
+                manifest: &manifest,
+                assetRootURL: assetRootURL,
+                warnings: &warnings
+            )
+        } else {
+            configuration.presentation.logo.badge?
+                .assetReference = nil
+            manifest.entries.removeAll { $0.role == .customLogo }
+        }
+        normalizeLogoAfterAssetResolution(
+            subject: subject,
+            configuration: &configuration
         )
     }
 
@@ -453,6 +467,7 @@ private extension ConfigurationImportCoordinator {
         )
         manifest.entries.removeAll {
             $0.reference.relativePath == path
+            && $0.role == role
         }
     }
 
@@ -485,10 +500,6 @@ private extension ConfigurationImportCoordinator {
         switch role {
         case .subjectAvatar:
             subject.identity.avatarImagePath = nil
-            if configuration.presentation.logo.mode
-                == .subjectAvatar {
-                configuration.presentation.logo.mode = .appleMini
-            }
         case .subjectAvatarBadge:
             subject.identity.avatarBadgeImagePath = nil
         case .subjectAvatarPreview:
@@ -500,6 +511,30 @@ private extension ConfigurationImportCoordinator {
                 == .customUpload {
                 configuration.presentation.logo.mode = .appleMini
             }
+        }
+    }
+
+    func normalizeLogoAfterAssetResolution(
+        subject: MemorySubject,
+        configuration: inout MemoryConfigurationRecord
+    ) {
+        switch configuration.presentation.logo.mode {
+        case .subjectAvatar:
+            configuration.presentation.logo.badge = nil
+            if subject.identity.avatarBadgeImagePath == nil,
+               subject.identity.avatarImagePath == nil {
+                configuration.presentation.logo.mode = .appleMini
+            }
+        case .customUpload:
+            if configuration.presentation.logo.badge?
+                .assetReference == nil {
+                configuration.presentation.logo = .init(
+                    mode: .appleMini,
+                    badge: nil
+                )
+            }
+        case .appleMini:
+            configuration.presentation.logo.badge = nil
         }
     }
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.1.1 (80) Card Content, Logo, And Configuration Continuity - 2026-08-13
+
+- Consolidated the source changes recorded after the 2026-08-09 `2.1.0 (76)` checkpoint, including the previously unpublished `2.1.1 (77)` subject work and the later Logo persistence closure.
+- Kept Memory Subject, Configuration, card text, all four content regions, output settings, and Logo state synchronized after save, reload, and switching.
+- Made Apple mini Logo, Subject Avatar, and custom-upload Logo distinct ownership paths so a custom Logo cannot accidentally reuse an avatar resource.
+- Preserved custom Logo resources across configuration save, import, local backup/restore, legacy migration, and portable-path recovery, with a safe Apple fallback when a resource is unavailable.
+- Unified circular Logo appearance across selection, live card preview, and final output, and rejected late picker results after a newer Logo choice has been made.
+- Raised all app, extension, widget, and test target configurations to `2.1.1 (80)`.
+
+Release evidence remains open for manual tap-through, Apple Photos lifecycle, high-cost media, StoreKit, TestFlight, and App Store delivery. Photos remain local-first, originals remain unchanged, and this source checkpoint does not itself represent a store submission.
+
 ## 2.1.2 (79) Subject, Logo, Workflow, And Progress Closure - 2026-08-12
 
 - Consolidated all user-facing changes after the 2026-08-09 `2.1.0 (76)` source checkpoint, including the unpublished 2.1.1 subject-switching work, into one 2.1.2 release candidate.

@@ -408,6 +408,7 @@ struct ConfigurationLibraryRecordTests {
         var configuration = Self.makeConfiguration(
             subject: subject
         )
+        configuration.presentation.logo.mode = .customUpload
         configuration.presentation.logo.badge = .init(
             id: UUID(uuidString: "61616161-6161-6161-6161-616161616161")!,
             name: "Logo",
@@ -791,6 +792,118 @@ struct ConfigurationLibraryRecordTests {
         #expect(fallback.output.mediaMode == .staticImage)
     }
 
+    @Test("V1 migration keeps subject-avatar assets owned by the subject")
+    func v1MigrationKeepsSubjectAvatarOwnershipSeparate() throws {
+        var subject = Self.makeSubject()
+        subject.identity.avatarBadgeImagePath = "/tmp/avatar-badge.png"
+        let preset = MemoryPreset(
+            title: "对象头像配置",
+            summary: "",
+            regionTemplateIDs: [:],
+            selectedSubjectID: subject.id,
+            selectedTimeAnchorID: subject.timeAnchors.first?.id,
+            logoMode: .subjectAvatar
+        )
+        let library = V1SubjectLibraryRecord(
+            subjects: [subject],
+            selectedSubjectID: subject.id,
+            memoryPresets: [preset],
+            selectedMemoryPresetID: preset.id
+        )
+        let compatibility = LegacyConfigurationCompatibilitySettings(
+            template: .classicWhite,
+            badge: Badge(
+                name: OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                imagePath: subject.identity.avatarBadgeImagePath,
+                isSystemDefault: false
+            ),
+            logoMode: .subjectAvatar,
+            locationConfiguration: nil,
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            selectedAlbumIdentifier: "",
+            selectedAlbumTitle: "",
+            mediaOutputMode: .staticImage
+        )
+
+        let migrated = ConfigurationLibraryRecord.migrating(
+            library,
+            compatibility: compatibility,
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100)
+        )
+        let record = try #require(migrated.subjects.first)
+        let configuration = try #require(record.configurations.first)
+
+        #expect(migrated.validationResult == .valid)
+        #expect(configuration.presentation.logo.mode == .subjectAvatar)
+        #expect(configuration.presentation.logo.badge == nil)
+        #expect(
+            record.assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(
+            record.subject.identity.avatarBadgeImagePath
+            == record.assetManifest.entries.first?
+                .reference.relativePath
+        )
+    }
+
+    @Test("V1 migration falls back to Apple when a custom logo has no asset")
+    func v1MigrationRejectsAssetlessCustomLogoState() throws {
+        let subject = Self.makeSubject()
+        let preset = MemoryPreset(
+            title: "缺失自选标识资源",
+            summary: "",
+            regionTemplateIDs: [:],
+            selectedSubjectID: subject.id,
+            selectedTimeAnchorID: subject.timeAnchors.first?.id,
+            logoMode: .customUpload
+        )
+        let library = V1SubjectLibraryRecord(
+            subjects: [subject],
+            selectedSubjectID: subject.id,
+            memoryPresets: [preset],
+            selectedMemoryPresetID: preset.id
+        )
+        let compatibility = LegacyConfigurationCompatibilitySettings(
+            template: .classicWhite,
+            badge: Badge(
+                name: "旧系统符号",
+                type: .systemSymbol,
+                systemSymbol: "heart.fill",
+                isSystemDefault: true
+            ),
+            logoMode: .customUpload,
+            locationConfiguration: nil,
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            selectedAlbumIdentifier: "",
+            selectedAlbumTitle: "",
+            mediaOutputMode: .staticImage
+        )
+
+        let migrated = ConfigurationLibraryRecord.migrating(
+            library,
+            compatibility: compatibility,
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100)
+        )
+        let record = try #require(migrated.subjects.first)
+        let configuration = try #require(record.configurations.first)
+
+        #expect(migrated.validationResult == .valid)
+        #expect(configuration.presentation.logo.mode == .appleMini)
+        #expect(configuration.presentation.logo.badge == nil)
+        #expect(
+            !record.assetManifest.entries.contains {
+                $0.role == .customLogo
+            }
+        )
+    }
+
     @Test("V1 migration applies compatibility to the first active configuration when selection is nil")
     func v1MigrationUsesFirstActiveConfigurationWhenSelectionIsNil() throws {
         try assertFirstActiveConfigurationReceivesCompatibility(
@@ -843,9 +956,9 @@ struct ConfigurationLibraryRecordTests {
             badge: Badge(
                 id: UUID(uuidString: "51515151-5151-5151-5151-515151515151")!,
                 name: "Compatibility Logo",
-                type: .systemSymbol,
-                systemSymbol: "heart.fill",
-                isSystemDefault: true
+                type: .customUpload,
+                imagePath: "/tmp/compatibility-logo.png",
+                isSystemDefault: false
             ),
             logoMode: .customUpload,
             locationConfiguration: .init(

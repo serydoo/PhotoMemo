@@ -138,6 +138,351 @@ struct ConfigurationLibraryRepositoryTests {
     }
 
     @MainActor
+    @Test("load repairs legacy logo modes and removes stale custom-logo ownership")
+    func loadRepairsLegacyLogoOwnership() async throws {
+        let storage = TestConfigurationLibraryStorage()
+        var legacy = Self.makeAggregate(title: "旧 Logo 状态")
+        let avatarReference = try PortableAssetReference(
+            relativePath: "SubjectAssets/avatar-badge.png"
+        )
+        legacy.subjects[0].subject.identity.avatarBadgeImagePath =
+            avatarReference.relativePath
+        legacy.subjects[0].configurations[0].presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "错误复用对象头像",
+                type: .customUpload,
+                assetReference: avatarReference
+            )
+        )
+        let baseConfiguration =
+            legacy.subjects[0].configurations[0]
+        var subjectAvatarConfiguration =
+            MemoryConfigurationRecord(
+                id: UUID(),
+                title: baseConfiguration.title,
+                revision: baseConfiguration.revision,
+                savedAt: baseConfiguration.savedAt,
+                selectedTimeAnchorID:
+                    baseConfiguration.selectedTimeAnchorID,
+                language: baseConfiguration.language,
+                editor: baseConfiguration.editor,
+                presentation: baseConfiguration.presentation,
+                output: baseConfiguration.output
+            )
+        subjectAvatarConfiguration.presentation.logo = .init(
+            mode: .subjectAvatar,
+            badge: .init(
+                id: UUID(),
+                name: "旧错误对象头像描述",
+                type: .customUpload,
+                assetReference: avatarReference
+            )
+        )
+        legacy.subjects[0].configurations.append(
+            subjectAvatarConfiguration
+        )
+        legacy.subjects[0].assetManifest = .init(entries: [
+            .init(
+                role: .subjectAvatarBadge,
+                reference: avatarReference
+            ),
+            .init(
+                role: .customLogo,
+                reference: avatarReference
+            )
+        ])
+        storage.primaryData = try JSONEncoder().encode(legacy)
+        let repository = Self.makeRepository(storage: storage)
+
+        let loaded = try await repository.load().aggregate
+        let configurations = loaded.subjects[0].configurations
+
+        #expect(configurations[0].presentation.logo.mode == .appleMini)
+        #expect(configurations[0].presentation.logo.badge == nil)
+        #expect(configurations[1].presentation.logo.mode == .subjectAvatar)
+        #expect(configurations[1].presentation.logo.badge == nil)
+        #expect(
+            loaded.subjects[0].assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(loaded.validationResult == .valid)
+    }
+
+    @MainActor
+    @Test("load restores missing subject-avatar manifest ownership")
+    func loadRepairsUnownedSubjectAvatarPath() async throws {
+        let storage = TestConfigurationLibraryStorage()
+        var legacy = Self.makeAggregate(title: "残留对象头像路径")
+        legacy.subjects[0].subject.identity.avatarBadgeImagePath =
+            "SubjectAssets/missing-avatar-badge.png"
+        legacy.subjects[0].configurations[0].presentation.logo = .init(
+            mode: .subjectAvatar,
+            badge: nil
+        )
+        legacy.subjects[0].assetManifest = .init(entries: [])
+        storage.primaryData = try JSONEncoder().encode(legacy)
+        let repository = Self.makeRepository(storage: storage)
+
+        let loaded = try await repository.load().aggregate
+
+        #expect(
+            loaded.subjects[0].subject.identity
+                .avatarBadgeImagePath
+            == "SubjectAssets/missing-avatar-badge.png"
+        )
+        #expect(
+            loaded.subjects[0].configurations[0]
+                .presentation.logo.mode == .subjectAvatar
+        )
+        #expect(
+            loaded.subjects[0].configurations[0]
+                .presentation.logo.badge == nil
+        )
+        #expect(
+            loaded.subjects[0].assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(loaded.validationResult == .valid)
+    }
+
+    @MainActor
+    @Test("load replaces stale subject-avatar role ownership with the identity's current asset")
+    func loadReplacesStaleSubjectAvatarRoleOwnership() async throws {
+        let storage = TestConfigurationLibraryStorage()
+        var legacy = Self.makeAggregate(title: "已更换对象头像")
+        let oldReference = try PortableAssetReference(
+            relativePath: "SubjectAssets/old-avatar-badge.png"
+        )
+        let currentReference = try PortableAssetReference(
+            relativePath: "SubjectAssets/current-avatar-badge.png"
+        )
+        let roleEntryID = MemoryConfigurationRecord
+            .deterministicUUID(
+                basedOn: legacy.subjects[0].subject.id,
+                discriminator: 0xA2
+            )
+        legacy.subjects[0].subject.identity.avatarBadgeImagePath =
+            currentReference.relativePath
+        legacy.subjects[0].configurations[0].presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "错误复用当前对象头像",
+                type: .customUpload,
+                assetReference: currentReference
+            )
+        )
+        legacy.subjects[0].assetManifest = .init(entries: [
+            .init(
+                id: roleEntryID,
+                role: .subjectAvatarBadge,
+                reference: oldReference,
+                originalFileName: "old-avatar-badge.png",
+                checksum: "old-checksum"
+            ),
+            .init(
+                role: .customLogo,
+                reference: currentReference,
+                originalFileName: "current-avatar-badge.png",
+                checksum: "current-checksum"
+            )
+        ])
+        storage.primaryData = try JSONEncoder().encode(legacy)
+        let repository = Self.makeRepository(storage: storage)
+
+        let loaded = try await repository.load().aggregate
+        let entries = loaded.subjects[0].assetManifest.entries
+        let entry = try #require(entries.first)
+
+        #expect(entries.count == 1)
+        #expect(entry.role == .subjectAvatarBadge)
+        #expect(entry.reference == currentReference)
+        #expect(entry.originalFileName == "current-avatar-badge.png")
+        #expect(entry.checksum == "current-checksum")
+        #expect(
+            loaded.subjects[0].configurations[0]
+                .presentation.logo.mode == .appleMini
+        )
+        #expect(
+            loaded.subjects[0].configurations[0]
+                .presentation.logo.badge == nil
+        )
+        #expect(loaded.validationResult == .valid)
+    }
+
+    @MainActor
+    @Test("load rejects custom-logo reuse of another subject's avatar asset")
+    func loadRejectsCrossSubjectAvatarReuse() async throws {
+        let storage = TestConfigurationLibraryStorage()
+        var legacy = Self.makeAggregate(title: "第一个对象")
+        let sharedReference = try PortableAssetReference(
+            relativePath: "SubjectAssets/first-subject-avatar.png"
+        )
+        legacy.subjects[0].subject.identity.avatarBadgeImagePath =
+            sharedReference.relativePath
+        legacy.subjects[0].assetManifest = .init(entries: [
+            .init(
+                role: .subjectAvatarBadge,
+                reference: sharedReference
+            )
+        ])
+
+        var second = Self.makeAggregate(title: "第二个对象")
+            .subjects[0]
+        second.subject = MemorySubject(
+            id: UUID(
+                uuidString: "33333333-3333-3333-3333-333333333333"
+            )!,
+            identity: .init(
+                displayName: "第二对象",
+                shortName: "二宝"
+            ),
+            relationship: second.subject.relationship,
+            referenceDate: second.subject.referenceDate,
+            timeAnchors: second.subject.timeAnchors,
+            activeTimeAnchorID: second.subject.activeTimeAnchorID,
+            expressionSubjectSource:
+                second.subject.expressionSubjectSource,
+            behavior: second.subject.behavior,
+            decorations: second.subject.decorations
+        )
+        second.configurations[0] = MemoryConfigurationRecord(
+            id: UUID(
+                uuidString: "44444444-4444-4444-4444-444444444444"
+            )!,
+            title: second.configurations[0].title,
+            revision: second.configurations[0].revision,
+            savedAt: second.configurations[0].savedAt,
+            selectedTimeAnchorID:
+                second.configurations[0].selectedTimeAnchorID,
+            language: second.configurations[0].language,
+            editor: second.configurations[0].editor,
+            presentation: second.configurations[0].presentation,
+            output: second.configurations[0].output
+        )
+        second.configurations[0].presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "错误复用其他对象头像",
+                type: .customUpload,
+                assetReference: sharedReference
+            )
+        )
+        second.assetManifest = .init(entries: [
+            .init(
+                role: .customLogo,
+                reference: sharedReference
+            )
+        ])
+        legacy.subjects.append(second)
+        storage.primaryData = try JSONEncoder().encode(legacy)
+        let repository = Self.makeRepository(storage: storage)
+
+        let loaded = try await repository.load().aggregate
+
+        #expect(
+            loaded.subjects[1].configurations[0]
+                .presentation.logo.mode == .appleMini
+        )
+        #expect(
+            loaded.subjects[1].configurations[0]
+                .presentation.logo.badge == nil
+        )
+        #expect(loaded.subjects[1].assetManifest.entries.isEmpty)
+        #expect(
+            loaded.subjects[0].assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(loaded.validationResult == .valid)
+    }
+
+    @MainActor
+    @Test("save canonicalizes incomplete logo state before persistence")
+    func saveCanonicalizesIncompleteLogoState() async throws {
+        let storage = TestConfigurationLibraryStorage()
+        let repository = Self.makeRepository(storage: storage)
+        var candidate = Self.makeAggregate(title: "不完整自选标识")
+        candidate.subjects[0].configurations[0].presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "缺失资源",
+                type: .customUpload
+            )
+        )
+
+        _ = try await repository.save(candidate)
+        let saved = try JSONDecoder().decode(
+            ConfigurationLibraryRecord.self,
+            from: try #require(storage.primaryData)
+        )
+
+        #expect(
+            saved.subjects[0].configurations[0]
+                .presentation.logo.mode == .appleMini
+        )
+        #expect(
+            saved.subjects[0].configurations[0]
+                .presentation.logo.badge == nil
+        )
+    }
+
+    @MainActor
+    @Test("canonicalization preserves a custom logo still shared by another configuration")
+    func canonicalizationPreservesSharedCustomLogo() async throws {
+        let storage = TestConfigurationLibraryStorage()
+        let repository = Self.makeRepository(storage: storage)
+        var candidate = Self.makeAggregate(title: "Apple 配置")
+        let reference = try PortableAssetReference(
+            relativePath: "LogoAssets/shared-custom.png"
+        )
+        let base = candidate.subjects[0].configurations[0]
+        var custom = MemoryConfigurationRecord(
+            id: UUID(),
+            title: "仍使用自选标识",
+            revision: base.revision,
+            savedAt: base.savedAt,
+            selectedTimeAnchorID: base.selectedTimeAnchorID,
+            language: base.language,
+            editor: base.editor,
+            presentation: base.presentation,
+            output: base.output
+        )
+        custom.presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "共享自选标识",
+                type: .customUpload,
+                assetReference: reference
+            )
+        )
+        candidate.subjects[0].configurations.append(custom)
+        candidate.subjects[0].assetManifest = .init(entries: [
+            .init(role: .customLogo, reference: reference)
+        ])
+
+        _ = try await repository.save(candidate)
+        let saved = try JSONDecoder().decode(
+            ConfigurationLibraryRecord.self,
+            from: try #require(storage.primaryData)
+        )
+
+        #expect(saved.validationResult == .valid)
+        #expect(
+            saved.subjects[0].assetManifest.entries.map(\.reference)
+            == [reference]
+        )
+        #expect(
+            saved.subjects[0].configurations[1]
+                .presentation.logo.badge?.assetReference == reference
+        )
+    }
+
+    @MainActor
     @Test("repository rejects a stale aggregate instead of overwriting newer content")
     func staleAggregateDoesNotOverwriteNewerContent() async throws {
         let storage = TestConfigurationLibraryStorage()

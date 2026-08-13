@@ -1126,6 +1126,212 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         )
     }
 
+    @Test("switching subjects and configurations keeps logo resources isolated")
+    func switchingSubjectsAndConfigurationsKeepsLogoResourcesIsolated() throws {
+        var state = Self.makeStateWithSecondSubject()
+        let firstSubject = state.subjects[0]
+        var secondSubject = state.subjects[1]
+        let customLogoReference = try PortableAssetReference(
+            relativePath: "LogoAssets/subject-one-custom.png"
+        )
+        let secondAvatarReference = try PortableAssetReference(
+            relativePath: "SubjectAssets/subject-two-avatar-badge.png"
+        )
+        secondSubject.identity.avatarBadgeImagePath =
+            secondAvatarReference.relativePath
+
+        var customConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "53535353-5353-5353-5353-535353535353")!,
+            title: "对象一自选标识",
+            templateValue: "对象一内容",
+            locationStyle: "city",
+            logoMode: .customUpload,
+            badge: .travel,
+            memoryText: "对象一记忆",
+            descriptionEnabled: false,
+            descriptionOverride: "",
+            albumIdentifier: "subject-one-custom",
+            albumTitle: "对象一",
+            mediaMode: .staticImage
+        )
+        customConfiguration.presentation.logo.badge?.assetReference =
+            customLogoReference
+        customConfiguration.savedAt = Date(timeIntervalSince1970: 300)
+
+        var subjectAvatarConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "54545454-5454-5454-5454-545454545454")!,
+            title: "对象二头像标识",
+            templateValue: "对象二头像内容",
+            locationStyle: "provinceCity",
+            logoMode: .subjectAvatar,
+            badge: .family,
+            memoryText: "对象二头像记忆",
+            descriptionEnabled: true,
+            descriptionOverride: "对象二头像说明",
+            albumIdentifier: "subject-two-avatar",
+            albumTitle: "对象二头像",
+            mediaMode: .originalFormat
+        )
+        subjectAvatarConfiguration.presentation.logo.badge = nil
+        subjectAvatarConfiguration.savedAt =
+            Date(timeIntervalSince1970: 500)
+
+        var appleConfiguration = Self.makeCompleteConfiguration(
+            id: UUID(uuidString: "55555555-5555-5555-5555-555555555555")!,
+            title: "对象二 Apple 标识",
+            templateValue: "对象二 Apple 内容",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "对象二 Apple 记忆",
+            descriptionEnabled: false,
+            descriptionOverride: "",
+            albumIdentifier: "subject-two-apple",
+            albumTitle: "对象二 Apple",
+            mediaMode: .staticImage
+        )
+        appleConfiguration.presentation.logo.badge = nil
+        appleConfiguration.savedAt = Date(timeIntervalSince1970: 400)
+
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 7,
+            subjects: [
+                .init(
+                    subject: firstSubject,
+                    configurations: [customConfiguration],
+                    assetManifest: .init(entries: [
+                        .init(
+                            role: .customLogo,
+                            reference: customLogoReference
+                        )
+                    ])
+                ),
+                .init(
+                    subject: secondSubject,
+                    configurations: [
+                        subjectAvatarConfiguration,
+                        appleConfiguration
+                    ],
+                    assetManifest: .init(entries: [
+                        .init(
+                            role: .subjectAvatarBadge,
+                            reference: secondAvatarReference
+                        )
+                    ])
+                )
+            ],
+            activeSubjectID: firstSubject.id,
+            activeConfigurationID: customConfiguration.id
+        )
+        state.subjects = [firstSubject, secondSubject]
+        state.configurationLibrary = aggregate
+        state.memoryPresets = aggregate.subjects.flatMap { subjectRecord in
+            subjectRecord.configurations.map { configuration in
+                MemoryPreset(
+                    id: configuration.id,
+                    title: configuration.title,
+                    summary: "",
+                    regionTemplateIDs:
+                        configuration.editor.regionTemplateIDs,
+                    savedAt: configuration.savedAt,
+                    selectedSubjectID: subjectRecord.subject.id,
+                    selectedTimeAnchorID:
+                        configuration.selectedTimeAnchorID,
+                    logoMode: configuration.presentation.logo.mode
+                )
+            }
+        }
+        state.selectedSubjectID = firstSubject.id
+        state.selectedMemoryPresetID = customConfiguration.id
+
+        #expect(aggregate.validationResult == .valid)
+
+        let session = ConfigurationSession(state: state)
+
+        func selectedProjection() throws -> V1ConfigurationDraftProjection {
+            V1ConfigurationDraftProjection(
+                configuration: try #require(
+                    session.selectedMemoryConfiguration
+                )
+            )
+        }
+
+        func selectedResolvedBadge() throws -> Badge? {
+            let configuration = try #require(
+                session.selectedMemoryConfiguration
+            )
+            return ConfigurationLogoResolver.badge(
+                from: configuration.presentation.logo,
+                subject: session.state.selectedSubject
+            )
+        }
+
+        #expect(try selectedProjection().logoMode == .customUpload)
+        #expect(
+            try selectedProjection().badge?.imagePath
+            == PhotoMemoSharedContainer.baseDirectoryURL
+                .appendingPathComponent(customLogoReference.relativePath)
+                .standardizedFileURL.path
+        )
+
+        session.selectSubject(secondSubject)
+
+        #expect(
+            session.state.selectedMemoryPresetID
+            == subjectAvatarConfiguration.id
+        )
+        #expect(try selectedProjection().logoMode == .subjectAvatar)
+        #expect(try selectedProjection().badge == nil)
+        #expect(
+            try selectedResolvedBadge()?.imagePath
+            == PhotoMemoSharedContainer.baseDirectoryURL
+                .appendingPathComponent(secondAvatarReference.relativePath)
+                .standardizedFileURL.path
+        )
+
+        let applePreset = try #require(
+            session.state.memoryPresets.first {
+                $0.id == appleConfiguration.id
+            }
+        )
+        session.selectMemoryPreset(applePreset)
+
+        #expect(try selectedProjection().logoMode == .appleMini)
+        #expect(try selectedProjection().badge == nil)
+        #expect(try selectedResolvedBadge() == nil)
+
+        let subjectAvatarPreset = try #require(
+            session.state.memoryPresets.first {
+                $0.id == subjectAvatarConfiguration.id
+            }
+        )
+        session.selectMemoryPreset(subjectAvatarPreset)
+
+        #expect(try selectedProjection().logoMode == .subjectAvatar)
+        #expect(try selectedProjection().badge == nil)
+        #expect(
+            try selectedResolvedBadge()?.imagePath
+            == PhotoMemoSharedContainer.baseDirectoryURL
+                .appendingPathComponent(secondAvatarReference.relativePath)
+                .standardizedFileURL.path
+        )
+
+        session.selectSubject(firstSubject)
+
+        #expect(session.state.selectedMemoryPresetID == customConfiguration.id)
+        #expect(try selectedProjection().logoMode == .customUpload)
+        #expect(
+            try selectedResolvedBadge()?.imagePath
+            == PhotoMemoSharedContainer.baseDirectoryURL
+                .appendingPathComponent(customLogoReference.relativePath)
+                .standardizedFileURL.path
+        )
+        #expect(
+            session.state.configurationLibrary?.validationResult
+            == .valid
+        )
+    }
+
     @Test("switching memory subjects rebuilds region preview text from that subject's configuration")
     func switchingMemorySubjectsRebuildsRegionPreviewTextFromConfiguration() {
         var state = Self.makeStateWithSecondSubject()

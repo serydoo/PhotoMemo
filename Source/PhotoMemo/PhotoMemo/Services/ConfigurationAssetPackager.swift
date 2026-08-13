@@ -265,6 +265,36 @@ private extension ConfigurationSubjectAssetMapper {
 
 struct ConfigurationAssetPackager {
 
+    func validateAvailableAssetChecksums(
+        in document: PortableMemoryConfigurationDocument,
+        sourceRootURL: URL
+    ) throws {
+        for entry in document.assetManifest.entries {
+            let sourceURL = try containedURL(
+                sourceRootURL.appendingPathComponent(
+                    entry.reference.relativePath
+                ),
+                within: sourceRootURL
+            )
+            guard FileManager.default.fileExists(
+                atPath: sourceURL.path
+            ),
+                  let expected = entry.checksum else {
+                continue
+            }
+            let data = try readData(at: sourceURL)
+            let actual = checksum(for: data)
+            guard actual == expected else {
+                throw ConfigurationAssetPackagingError
+                    .checksumMismatch(
+                        path: entry.reference.relativePath,
+                        expected: expected,
+                        actual: actual
+                    )
+            }
+        }
+    }
+
     func package(
         subject: MemorySubject,
         configuration: MemoryConfigurationRecord,
@@ -273,11 +303,23 @@ struct ConfigurationAssetPackager {
     ) throws -> PackagedConfigurationAssets {
         var packagedSubject = subject
         var packagedConfiguration = configuration
+        if packagedConfiguration.presentation.logo.mode != .customUpload {
+            packagedConfiguration.presentation.logo.badge = nil
+        } else if packagedConfiguration.presentation.logo.badge == nil
+                    || sourceURLs[.customLogo] == nil {
+            throw ConfigurationAssetPackagingError
+                .missingSource(.customLogo)
+        }
         var entries: [PortableAssetManifest.Entry] = []
         var newlyCreatedAssetURLs: [URL] = []
 
         do {
             for role in Self.roles {
+                guard role != .customLogo
+                    || packagedConfiguration.presentation.logo.mode
+                    == .customUpload else {
+                    continue
+                }
                 guard let sourceURL = sourceURLs[role] else {
                     continue
                 }
@@ -333,7 +375,10 @@ struct ConfigurationAssetPackager {
         destinationRootURL: URL
     ) throws -> RestoredConfigurationAssets {
         var subject = document.subject
-        let configuration = document.configuration
+        var configuration = document.configuration
+        if configuration.presentation.logo.mode != .customUpload {
+            configuration.presentation.logo.badge = nil
+        }
         var restoredURLs: [PortableAssetManifest.Role: URL] = [:]
         var preparedAssets: [(
             entry: PortableAssetManifest.Entry,
@@ -342,6 +387,11 @@ struct ConfigurationAssetPackager {
         )] = []
 
         for entry in document.assetManifest.entries {
+            guard entry.role != .customLogo
+                || configuration.presentation.logo.mode == .customUpload
+            else {
+                continue
+            }
             let sourceURL = try containedURL(
                 sourceRootURL.appendingPathComponent(
                     entry.reference.relativePath
@@ -602,6 +652,10 @@ private extension ConfigurationAssetPackager {
         case .subjectAvatarPreview:
             subject.identity.avatarPreviewImagePath = reference.relativePath
         case .customLogo:
+            guard configuration.presentation.logo.mode
+                == .customUpload else {
+                return
+            }
             configuration.presentation.logo.badge?
                 .assetReference = reference
         }

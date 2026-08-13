@@ -532,8 +532,9 @@ private extension LocalConfigurationLibraryRepository {
     static func prepare(
         _ document: PortableMemoryConfigurationDocument
     ) throws -> PreparedLocalConfigurationBackup {
-        try validate(document)
-        let finalized = try documentWithChecksum(document)
+        let canonical = document.canonicalizingLogoOwnership()
+        try validate(canonical)
+        let finalized = try documentWithChecksum(canonical)
         return PreparedLocalConfigurationBackup(
             data: try encode(finalized),
             subjectID: finalized.subject.id,
@@ -560,7 +561,6 @@ private extension LocalConfigurationLibraryRepository {
                 String(describing: error)
             )
         }
-        try validate(document)
         let actualChecksum = try checksum(for: document)
         guard actualChecksum == document.documentChecksum else {
             throw LocalConfigurationLibraryError.checksumMismatch(
@@ -568,17 +568,20 @@ private extension LocalConfigurationLibraryRepository {
                 actual: actualChecksum
             )
         }
-        guard document.subject.id == subjectID,
-              document.configuration.id == stored.configurationID
+        let canonical = document.canonicalizingLogoOwnership()
+        try validate(canonical)
+        let finalized = try documentWithChecksum(canonical)
+        guard finalized.subject.id == subjectID,
+              finalized.configuration.id == stored.configurationID
         else {
             throw LocalConfigurationLibraryError.pathIdentityMismatch(
                 expectedSubjectID: subjectID,
-                actualSubjectID: document.subject.id,
+                actualSubjectID: finalized.subject.id,
                 expectedConfigurationID: stored.configurationID,
-                actualConfigurationID: document.configuration.id
+                actualConfigurationID: finalized.configuration.id
             )
         }
-        return document
+        return finalized
     }
 
     @MainActor

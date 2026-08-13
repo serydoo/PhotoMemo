@@ -67,6 +67,70 @@ struct ConfigurationAssetPackagerTests {
         )
     }
 
+    @Test("custom-logo packaging rejects a missing logo asset")
+    func customLogoPackagingRejectsMissingAsset() throws {
+        let workspace = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+        let sourceDirectory = workspace.appendingPathComponent("Sources")
+        let packageRoot = workspace.appendingPathComponent("Package")
+        try FileManager.default.createDirectory(
+            at: sourceDirectory,
+            withIntermediateDirectories: true
+        )
+        let avatarURL = sourceDirectory.appendingPathComponent("avatar.png")
+        try Data("avatar-data".utf8).write(to: avatarURL)
+
+        #expect(
+            throws: ConfigurationAssetPackagingError
+                .missingSource(.customLogo)
+        ) {
+            _ = try ConfigurationAssetPackager().package(
+                subject: Self.makeSubject(),
+                configuration: Self.makeConfiguration(),
+                sourceURLs: [.subjectAvatar: avatarURL],
+                destinationRootURL: packageRoot
+            )
+        }
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: packageRoot.path
+            )
+        )
+    }
+
+    @Test("custom-logo packaging rejects a missing logo descriptor")
+    func customLogoPackagingRejectsMissingDescriptor() throws {
+        let workspace = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+        let sourceDirectory = workspace.appendingPathComponent("Sources")
+        let packageRoot = workspace.appendingPathComponent("Package")
+        try FileManager.default.createDirectory(
+            at: sourceDirectory,
+            withIntermediateDirectories: true
+        )
+        let logoURL = sourceDirectory.appendingPathComponent("logo.png")
+        try Data("logo-data".utf8).write(to: logoURL)
+        var configuration = Self.makeConfiguration()
+        configuration.presentation.logo.badge = nil
+
+        #expect(
+            throws: ConfigurationAssetPackagingError
+                .missingSource(.customLogo)
+        ) {
+            _ = try ConfigurationAssetPackager().package(
+                subject: Self.makeSubject(),
+                configuration: configuration,
+                sourceURLs: [.customLogo: logoURL],
+                destinationRootURL: packageRoot
+            )
+        }
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: packageRoot.path
+            )
+        )
+    }
+
     @Test("restore copies packaged assets and remaps live avatar and logo URLs")
     func restoresAndRemapsPackagedAssets() throws {
         let workspace = Self.makeTemporaryDirectory()
@@ -142,7 +206,9 @@ struct ConfigurationAssetPackagerTests {
         try Data("packaged-avatar".utf8).write(to: avatarURL)
         let package = try ConfigurationAssetPackager().package(
             subject: Self.makeSubject(),
-            configuration: Self.makeConfiguration(),
+            configuration: Self.makeConfiguration(
+                logoMode: .appleMini
+            ),
             sourceURLs: [.subjectAvatar: avatarURL],
             destinationRootURL: packageRoot
         )
@@ -204,7 +270,9 @@ struct ConfigurationAssetPackagerTests {
         try Data("avatar".utf8).write(to: avatarURL)
         let package = try ConfigurationAssetPackager().package(
             subject: Self.makeSubject(),
-            configuration: Self.makeConfiguration(),
+            configuration: Self.makeConfiguration(
+                logoMode: .appleMini
+            ),
             sourceURLs: [.subjectAvatar: avatarURL],
             destinationRootURL: packageRoot
         )
@@ -267,7 +335,9 @@ struct ConfigurationAssetPackagerTests {
         let packager = ConfigurationAssetPackager()
         let firstPackage = try packager.package(
             subject: Self.makeSubject(),
-            configuration: Self.makeConfiguration(),
+            configuration: Self.makeConfiguration(
+                logoMode: .appleMini
+            ),
             sourceURLs: [.subjectAvatar: avatarURL],
             destinationRootURL: packageRoot
         )
@@ -283,12 +353,131 @@ struct ConfigurationAssetPackagerTests {
         ) {
             _ = try packager.package(
                 subject: Self.makeSubject(),
-                configuration: Self.makeConfiguration(),
+                configuration: Self.makeConfiguration(
+                    logoMode: .appleMini
+                ),
                 sourceURLs: [.subjectAvatar: avatarURL],
                 destinationRootURL: packageRoot
             )
         }
         #expect(try Data(contentsOf: destinationURL) == conflictingData)
+    }
+
+    @Test("subject-avatar packaging ignores and removes stale custom-logo state")
+    func subjectAvatarPackagingKeepsOnlySubjectAssets() throws {
+        let workspace = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+        let sourceDirectory = workspace.appendingPathComponent("Sources")
+        let packageRoot = workspace.appendingPathComponent("Package")
+        try FileManager.default.createDirectory(
+            at: sourceDirectory,
+            withIntermediateDirectories: true
+        )
+        let avatarURL = sourceDirectory.appendingPathComponent("avatar.png")
+        let staleLogoURL = sourceDirectory.appendingPathComponent("stale.png")
+        try Data("avatar".utf8).write(to: avatarURL)
+        try Data("stale".utf8).write(to: staleLogoURL)
+        var subject = Self.makeSubject()
+        subject.identity.avatarBadgeImagePath = avatarURL.path
+        var configuration = Self.makeConfiguration()
+        configuration.presentation.logo.mode = .subjectAvatar
+
+        let package = try ConfigurationAssetPackager().package(
+            subject: subject,
+            configuration: configuration,
+            sourceURLs: [
+                .subjectAvatarBadge: avatarURL,
+                .customLogo: staleLogoURL
+            ],
+            destinationRootURL: packageRoot
+        )
+
+        #expect(
+            package.manifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(package.configuration.presentation.logo.mode == .subjectAvatar)
+        #expect(package.configuration.presentation.logo.badge == nil)
+        #expect(
+            package.subject.identity.avatarBadgeImagePath
+            == package.manifest.entries.first?
+                .reference.relativePath
+        )
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: packageRoot
+                    .appendingPathComponent("Assets/customLogo")
+                    .path
+            )
+        )
+    }
+
+    @Test("subject-avatar restore ignores legacy custom-logo manifest entries")
+    func subjectAvatarRestoreDoesNotCopyStaleCustomLogo() throws {
+        let workspace = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: workspace) }
+        let packageRoot = workspace.appendingPathComponent("Package")
+        let restoreRoot = workspace.appendingPathComponent("Restored")
+        let avatarReference = try PortableAssetReference(
+            relativePath: "Assets/subjectAvatarBadge/avatar.png"
+        )
+        let staleReference = try PortableAssetReference(
+            relativePath: "Assets/customLogo/stale.png"
+        )
+        let avatarURL = packageRoot.appendingPathComponent(
+            avatarReference.relativePath
+        )
+        let staleURL = packageRoot.appendingPathComponent(
+            staleReference.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: avatarURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(
+            at: staleURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("avatar".utf8).write(to: avatarURL)
+        try Data("stale".utf8).write(to: staleURL)
+        var subject = Self.makeSubject()
+        subject.identity.avatarBadgeImagePath = avatarReference.relativePath
+        var configuration = Self.makeConfiguration()
+        configuration.presentation.logo.mode = .subjectAvatar
+        let document = PortableMemoryConfigurationDocument(
+            appVersion: "2.1.2",
+            subject: subject,
+            configuration: configuration,
+            assetManifest: .init(entries: [
+                .init(
+                    role: .subjectAvatarBadge,
+                    reference: avatarReference
+                ),
+                .init(
+                    role: .customLogo,
+                    reference: staleReference
+                )
+            ]),
+            documentChecksum: "pending"
+        )
+
+        let restored = try ConfigurationAssetPackager().restoreAssets(
+            in: document,
+            sourceRootURL: packageRoot,
+            destinationRootURL: restoreRoot
+        )
+
+        #expect(restored.assetURL(for: .subjectAvatarBadge) != nil)
+        #expect(restored.assetURL(for: .customLogo) == nil)
+        #expect(restored.configuration.presentation.logo.mode == .subjectAvatar)
+        #expect(restored.configuration.presentation.logo.badge == nil)
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: restoreRoot
+                    .appendingPathComponent(staleReference.relativePath)
+                    .path
+            )
+        )
     }
 }
 
@@ -315,7 +504,9 @@ private extension ConfigurationAssetPackagerTests {
         )
     }
 
-    static func makeConfiguration() -> MemoryConfigurationRecord {
+    static func makeConfiguration(
+        logoMode: V1LogoMode = .customUpload
+    ) -> MemoryConfigurationRecord {
         MemoryConfigurationRecord(
             id: UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!,
             title: "成长配置",
@@ -331,12 +522,14 @@ private extension ConfigurationAssetPackagerTests {
                 route: .classicWhite,
                 locationConfiguration: nil,
                 logo: .init(
-                    mode: .customUpload,
-                    badge: .init(
-                        id: UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")!,
-                        name: "家庭标识",
-                        type: .customUpload
-                    )
+                    mode: logoMode,
+                    badge: logoMode == .customUpload
+                        ? .init(
+                            id: UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")!,
+                            name: "家庭标识",
+                            type: .customUpload
+                        )
+                        : nil
                 )
             ),
             output: .init(

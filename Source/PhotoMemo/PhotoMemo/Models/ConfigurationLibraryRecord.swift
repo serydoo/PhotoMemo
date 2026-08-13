@@ -362,6 +362,63 @@ extension ConfigurationLibraryRecord {
         }
         return repaired
     }
+
+    func canonicalizingLogoOwnership()
+    -> ConfigurationLibraryRecord {
+        var canonical = self
+        let reservedSubjectAssetPaths = Set(
+            canonical.subjects.flatMap { subjectRecord in
+                [
+                    subjectRecord.subject.identity.avatarImagePath,
+                    subjectRecord.subject.identity.avatarBadgeImagePath,
+                    subjectRecord.subject.identity.avatarPreviewImagePath
+                ].compactMap { $0 }
+            }
+        )
+        for subjectIndex in canonical.subjects.indices {
+            let subject = canonical.subjects[subjectIndex].subject
+            let manifest = ConfigurationLogoOwnershipCanonicalizer
+                .canonicalizingSubjectAssetOwnership(
+                    subject: subject,
+                    manifest: canonical.subjects[subjectIndex]
+                        .assetManifest
+                )
+            canonical.subjects[subjectIndex].assetManifest =
+                manifest
+            var referencedCustomLogos:
+                Set<PortableAssetReference> = []
+
+            for configurationIndex in canonical
+                .subjects[subjectIndex].configurations.indices {
+                let logo = canonical.subjects[subjectIndex]
+                    .configurations[configurationIndex]
+                    .presentation.logo
+                let result = ConfigurationLogoOwnershipCanonicalizer
+                    .canonicalize(
+                        logo: logo,
+                        subject: subject,
+                        manifest: manifest,
+                        reservedSubjectAssetPaths:
+                            reservedSubjectAssetPaths
+                    )
+                if let reference = result.customLogoReference {
+                    referencedCustomLogos.insert(reference)
+                }
+                canonical.subjects[subjectIndex]
+                    .configurations[configurationIndex]
+                    .presentation.logo = result.logo
+            }
+
+            canonical.subjects[subjectIndex]
+                .assetManifest.entries.removeAll {
+                    $0.role == .customLogo
+                    && !referencedCustomLogos.contains(
+                        $0.reference
+                    )
+                }
+        }
+        return canonical
+    }
 }
 
 extension ConfigurationLibraryRecord {
@@ -471,25 +528,46 @@ extension ConfigurationLibraryRecord {
             ?? deterministicClassicWhiteTemplate(
                 basedOn: preset.id
             )
+        let requestedLogoMode = compatibility?.logoMode
+            ?? preset.logoMode
         let badge = compatibility?.badge
-        let badgeAsset = assetCollector.reference(
-            for: badge?.imagePath,
-            role: .customLogo,
-            ownerID: badge?.id ?? preset.id
-        )
-        let badgeDescriptor = badge.map {
-            MemoryConfigurationRecord
-                .Presentation.Logo.BadgeDescriptor(
-                    id: $0.id,
-                    name: $0.name,
-                    type: $0.type,
-                    imageName: $0.imageName,
-                    systemSymbol: $0.systemSymbol,
-                    isSystemDefault:
-                        $0.isSystemDefault,
-                    assetReference: badgeAsset
-                )
-        }
+        let badgeAsset = requestedLogoMode == .customUpload
+            ? assetCollector.reference(
+                for: badge?.imagePath,
+                role: .customLogo,
+                ownerID: badge?.id ?? preset.id
+            )
+            : nil
+        let logoMode: V1LogoMode = {
+            switch requestedLogoMode {
+            case .appleMini:
+                return .appleMini
+            case .customUpload:
+                return badgeAsset == nil
+                    ? .appleMini
+                    : .customUpload
+            case .subjectAvatar:
+                return subject.identity.avatarBadgeImagePath == nil
+                    && subject.identity.avatarImagePath == nil
+                    ? .appleMini
+                    : .subjectAvatar
+            }
+        }()
+        let badgeDescriptor = logoMode == .customUpload
+            ? badge.map {
+                MemoryConfigurationRecord
+                    .Presentation.Logo.BadgeDescriptor(
+                        id: $0.id,
+                        name: $0.name,
+                        type: $0.type,
+                        imageName: $0.imageName,
+                        systemSymbol: $0.systemSymbol,
+                        isSystemDefault:
+                            $0.isSystemDefault,
+                        assetReference: badgeAsset
+                    )
+            }
+            : nil
         let output = migratedOutput(
             preset: preset,
             compatibility: compatibility
@@ -521,8 +599,7 @@ extension ConfigurationLibraryRecord {
                     compatibility?
                     .locationConfiguration,
                 logo: .init(
-                    mode: compatibility?.logoMode
-                        ?? preset.logoMode,
+                    mode: logoMode,
                     badge: badgeDescriptor
                 )
             ),

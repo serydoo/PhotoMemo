@@ -391,6 +391,34 @@ struct PortableMemoryConfigurationDocument:
 
 extension PortableMemoryConfigurationDocument {
 
+    func canonicalizingLogoOwnership()
+    -> PortableMemoryConfigurationDocument {
+        var configuration = configuration
+        var manifest = ConfigurationLogoOwnershipCanonicalizer
+            .canonicalizingSubjectAssetOwnership(
+                subject: subject,
+                manifest: assetManifest
+            )
+        let result = ConfigurationLogoOwnershipCanonicalizer
+            .canonicalize(
+                logo: configuration.presentation.logo,
+                subject: subject,
+                manifest: manifest
+            )
+        configuration.presentation.logo = result.logo
+        manifest.entries.removeAll { entry in
+            entry.role == .customLogo
+            && entry.reference != result.customLogoReference
+        }
+        return PortableMemoryConfigurationDocument(
+            appVersion: appVersion,
+            subject: subject,
+            configuration: configuration,
+            assetManifest: manifest,
+            documentChecksum: documentChecksum
+        )
+    }
+
     private struct ExpectedAssetReference {
 
         let path: String
@@ -478,7 +506,8 @@ extension PortableMemoryConfigurationDocument {
             path: subject.identity.avatarPreviewImagePath,
             role: .subjectAvatarPreview
         )
-        for configuration in configurations {
+        for configuration in configurations where configuration.presentation
+            .logo.mode == .customUpload {
             append(
                 path: configuration.presentation
                     .logo.badge?.assetReference?
@@ -552,6 +581,170 @@ extension PortableMemoryConfigurationDocument {
         Decodable {
 
         let schemaVersion: Int
+    }
+}
+
+enum ConfigurationLogoOwnershipCanonicalizer {
+
+    struct Result {
+        let logo: MemoryConfigurationRecord.Presentation.Logo
+        let customLogoReference: PortableAssetReference?
+    }
+
+    static func canonicalize(
+        logo: MemoryConfigurationRecord.Presentation.Logo,
+        subject: MemorySubject,
+        manifest: PortableAssetManifest,
+        reservedSubjectAssetPaths: Set<String>? = nil
+    ) -> Result {
+        var logo = logo
+        let reservedSubjectAssetPaths =
+            reservedSubjectAssetPaths
+            ?? subjectAssetPaths(subject)
+        switch logo.mode {
+        case .appleMini:
+            logo.badge = nil
+            return Result(
+                logo: logo,
+                customLogoReference: nil
+            )
+        case .subjectAvatar:
+            logo.badge = nil
+            if subject.identity.avatarBadgeImagePath == nil,
+               subject.identity.avatarImagePath == nil {
+                logo.mode = .appleMini
+            }
+            return Result(
+                logo: logo,
+                customLogoReference: nil
+            )
+        case .customUpload:
+            guard let reference = logo.badge?.assetReference,
+                  !reservedSubjectAssetPaths.contains(
+                      reference.relativePath
+                  ),
+                  manifest.entries.contains(where: {
+                      $0.role == .customLogo
+                      && $0.reference == reference
+                  }),
+                  !manifest.entries.contains(where: {
+                      $0.role != .customLogo
+                      && $0.reference == reference
+                  }) else {
+                return Result(
+                    logo: .init(
+                        mode: .appleMini,
+                        badge: nil
+                    ),
+                    customLogoReference: nil
+                )
+            }
+            return Result(
+                logo: logo,
+                customLogoReference: reference
+            )
+        }
+    }
+
+    static func canonicalizingSubjectAssetOwnership(
+        subject: MemorySubject,
+        manifest: PortableAssetManifest
+    ) -> PortableAssetManifest {
+        var manifest = manifest
+        let assets: [(
+            path: String?,
+            role: PortableAssetManifest.Role,
+            discriminator: UInt8
+        )] = [
+            (
+                subject.identity.avatarImagePath,
+                .subjectAvatar,
+                0xA1
+            ),
+            (
+                subject.identity.avatarBadgeImagePath,
+                .subjectAvatarBadge,
+                0xA2
+            ),
+            (
+                subject.identity.avatarPreviewImagePath,
+                .subjectAvatarPreview,
+                0xA3
+            )
+        ]
+
+        for asset in assets {
+            let currentAsset: (
+                path: String,
+                reference: PortableAssetReference
+            )? = asset.path.flatMap { path in
+                guard let reference = try? PortableAssetReference(
+                    relativePath: path
+                ) else {
+                    return nil
+                }
+                return (path, reference)
+            }
+            let existingEntry = currentAsset.flatMap { current in
+                manifest.entries.first(where: {
+                    $0.role == asset.role
+                    && $0.reference == current.reference
+                })
+                ?? manifest.entries.first(where: {
+                    $0.reference == current.reference
+                })
+            }
+
+            manifest.entries.removeAll { entry in
+                entry.role == asset.role
+                || currentAsset.map {
+                    entry.reference == $0.reference
+                } == true
+            }
+
+            guard let currentAsset else {
+                continue
+            }
+            let deterministicID = MemoryConfigurationRecord
+                .deterministicUUID(
+                    basedOn: subject.id,
+                    discriminator: asset.discriminator
+                )
+            let preservedOriginalFileName: String?
+            if let existingEntry,
+               existingEntry.role == asset.role {
+                preservedOriginalFileName =
+                    existingEntry.originalFileName
+            } else {
+                preservedOriginalFileName =
+                    existingEntry?.originalFileName
+                    ?? URL(
+                        fileURLWithPath: currentAsset.path
+                    ).lastPathComponent
+            }
+            manifest.entries.append(
+                .init(
+                    id: existingEntry.flatMap {
+                        $0.role == asset.role ? $0.id : nil
+                    } ?? deterministicID,
+                    role: asset.role,
+                    reference: currentAsset.reference,
+                    originalFileName: preservedOriginalFileName,
+                    checksum: existingEntry?.checksum
+                )
+            )
+        }
+        return manifest
+    }
+
+    private static func subjectAssetPaths(
+        _ subject: MemorySubject
+    ) -> Set<String> {
+        Set([
+            subject.identity.avatarImagePath,
+            subject.identity.avatarBadgeImagePath,
+            subject.identity.avatarPreviewImagePath
+        ].compactMap { $0 })
     }
 }
 #endif

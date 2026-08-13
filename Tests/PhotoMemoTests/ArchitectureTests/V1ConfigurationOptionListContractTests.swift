@@ -5,6 +5,25 @@ import Testing
 @Suite("V1 configuration option list boundary")
 struct V1ConfigurationOptionListContractTests {
 
+    @Test("custom Logo mode waits for native photo selection before changing")
+    func customLogoModeWaitsForNativePhotoSelectionBeforeChanging() throws {
+        let optionListSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
+        )
+        let rootSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
+        )
+
+        #expect(
+            optionListSource.contains(
+                ".photosPicker(\n            isPresented: $isLogoPickerPresented"
+            )
+        )
+        #expect(rootSource.contains("logoMode: logoModeSelectionBinding"))
+        #expect(rootSource.contains("handleRequestedLogoMode"))
+        #expect(rootSource.contains("shouldApplyCompletedOptimization"))
+    }
+
     @Test("configuration option list stays outside the runtime root")
     func configurationOptionListStaysOutsideRuntimeRoot() throws {
         let optionListSource = try sourceText(

@@ -61,7 +61,7 @@ struct V1ConfigurationBootstrapPresenterTests {
         #expect(firstProjection.regionTemplateIDs[.slotA] == "海边.recorder")
         #expect(firstProjection.locationConfiguration?.options["displayStyle"] == "city")
         #expect(firstProjection.logoMode == .appleMini)
-        #expect(firstProjection.badge?.id == Badge.family.id)
+        #expect(firstProjection.badge == nil)
         #expect(firstProjection.usesCustomMemoryWriteText)
         #expect(firstProjection.customMemoryWriteText == "海边记忆")
         #expect(firstProjection.shouldWritePhotosDescription == false)

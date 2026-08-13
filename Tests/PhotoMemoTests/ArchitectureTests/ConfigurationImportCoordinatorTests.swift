@@ -104,6 +104,96 @@ struct ConfigurationImportCoordinatorTests {
     }
 
     @MainActor
+    @Test("restore canonicalizes custom-logo reuse of another subject's avatar before returning")
+    func restoreCanonicalizesCrossSubjectAvatarReuse() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let sharedReference = try PortableAssetReference(
+            relativePath: "SubjectAssets/live-avatar-badge.png"
+        )
+        let sharedURL = rootURL.appendingPathComponent(
+            sharedReference.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: sharedURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("shared-avatar".utf8).write(to: sharedURL)
+
+        var live = Self.makeAggregate()
+        live.subjects[0].subject.identity.avatarBadgeImagePath =
+            sharedReference.relativePath
+        live.subjects[0].assetManifest = .init(entries: [
+            .init(
+                role: .subjectAvatarBadge,
+                reference: sharedReference
+            )
+        ])
+        var importedConfiguration = Self.makeConfiguration(
+            id: Self.importedConfigurationID,
+            title: "错误复用其他对象头像"
+        )
+        importedConfiguration.presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "错误自选标识",
+                type: .customUpload,
+                assetReference: sharedReference
+            )
+        )
+        let coordinator = ConfigurationImportCoordinator()
+        let resolution = try coordinator.resolveImport(
+            data: try Self.encode(
+                Self.signedDocument(
+                    subject: Self.makeSubject(
+                        id: Self.importedSubjectID,
+                        name: "导入对象"
+                    ),
+                    configuration: importedConfiguration,
+                    manifest: .init(entries: [
+                        .init(
+                            role: .customLogo,
+                            reference: sharedReference
+                        )
+                    ])
+                )
+            ),
+            assetRootURL: rootURL,
+            availableAlbumIdentifiers: []
+        )
+
+        #expect(
+            resolution.configuration.presentation.logo.mode
+            == .customUpload
+        )
+
+        let receipt = coordinator.restore(resolution, into: live)
+        let importedRecord = try #require(
+            receipt.aggregate.subjects.first(where: {
+                $0.subject.id == Self.importedSubjectID
+            })
+        )
+
+        #expect(
+            importedRecord.configurations[0]
+                .presentation.logo.mode == .appleMini
+        )
+        #expect(
+            importedRecord.configurations[0]
+                .presentation.logo.badge == nil
+        )
+        #expect(importedRecord.assetManifest.entries.isEmpty)
+        #expect(
+            receipt.aggregate.subjects[0]
+                .assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(receipt.aggregate.validationResult == .valid)
+    }
+
+    @MainActor
     @Test("same-subject import preserves live facts and only adds missing anchors")
     func sameSubjectImportPreservesLiveFacts() throws {
         let liveAnchor = MemorySubject.TimeAnchor(
@@ -328,8 +418,7 @@ struct ConfigurationImportCoordinatorTests {
             == .appleMini
         )
         #expect(
-            resolution.configuration.presentation.logo.badge?
-                .assetReference == nil
+            resolution.configuration.presentation.logo.badge == nil
         )
         #expect(resolution.assetManifest.entries.isEmpty)
         #expect(
@@ -347,6 +436,294 @@ struct ConfigurationImportCoordinatorTests {
                     path: logoReference.relativePath
                 )
             )
+        )
+    }
+
+    @MainActor
+    @Test("legacy subject-avatar logo descriptors do not consume the subject asset as a custom logo")
+    func legacySubjectAvatarDescriptorKeepsSubjectAssetOwnership() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let avatarReference = try PortableAssetReference(
+            relativePath: "Assets/avatar-badge.png"
+        )
+        let avatarURL = rootURL.appendingPathComponent(
+            avatarReference.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: avatarURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("avatar".utf8).write(to: avatarURL)
+
+        var subject = Self.makeSubject()
+        subject.identity.avatarBadgeImagePath =
+            avatarReference.relativePath
+        var configuration = Self.makeConfiguration()
+        configuration.presentation.logo = .init(
+            mode: .subjectAvatar,
+            badge: .init(
+                id: UUID(),
+                name: OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                assetReference: avatarReference
+            )
+        )
+        let manifest = PortableAssetManifest(entries: [
+            .init(
+                role: .subjectAvatarBadge,
+                reference: avatarReference
+            )
+        ])
+
+        let resolution = try ConfigurationImportCoordinator()
+            .resolveImport(
+                data: try Self.encode(
+                    Self.signedDocument(
+                        subject: subject,
+                        configuration: configuration,
+                        manifest: manifest
+                    )
+                ),
+                assetRootURL: rootURL,
+                availableAlbumIdentifiers: []
+            )
+
+        #expect(
+            resolution.configuration.presentation.logo.mode
+            == .subjectAvatar
+        )
+        #expect(
+            resolution.configuration.presentation.logo.badge == nil
+        )
+        #expect(
+            resolution.subject.identity.avatarBadgeImagePath
+            == avatarReference.relativePath
+        )
+        #expect(
+            resolution.assetManifest.entries == manifest.entries
+        )
+        #expect(
+            !resolution.warnings.contains {
+                guard case .missingAsset(
+                    role: .customLogo,
+                    path: avatarReference.relativePath
+                ) = $0 else {
+                    return false
+                }
+                return true
+            }
+        )
+    }
+
+    @MainActor
+    @Test("legacy subject-avatar imports repair duplicate custom-logo ownership")
+    func legacySubjectAvatarDuplicateLogoOwnershipIsRepaired() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let avatarReference = try PortableAssetReference(
+            relativePath: "Assets/avatar-badge.png"
+        )
+        let avatarURL = rootURL.appendingPathComponent(
+            avatarReference.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: avatarURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("avatar".utf8).write(to: avatarURL)
+
+        var subject = Self.makeSubject()
+        subject.identity.avatarBadgeImagePath =
+            avatarReference.relativePath
+        var configuration = Self.makeConfiguration()
+        configuration.presentation.logo = .init(
+            mode: .subjectAvatar,
+            badge: .init(
+                id: UUID(),
+                name: OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                assetReference: avatarReference
+            )
+        )
+        let document = Self.signedDocument(
+            subject: subject,
+            configuration: configuration,
+            manifest: .init(entries: [
+                .init(
+                    role: .subjectAvatarBadge,
+                    reference: avatarReference
+                ),
+                .init(
+                    role: .customLogo,
+                    reference: avatarReference
+                )
+            ])
+        )
+
+        let resolution = try ConfigurationImportCoordinator()
+            .resolveImport(
+                data: try Self.encode(document),
+                assetRootURL: rootURL,
+                availableAlbumIdentifiers: []
+            )
+
+        #expect(
+            resolution.configuration.presentation.logo.mode
+            == .subjectAvatar
+        )
+        #expect(
+            resolution.configuration.presentation.logo.badge == nil
+        )
+        #expect(
+            resolution.assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(
+            resolution.subject.identity.avatarBadgeImagePath
+            == avatarReference.relativePath
+        )
+    }
+
+    @MainActor
+    @Test("legacy custom-logo imports cannot reuse a subject-avatar asset")
+    func legacyCustomLogoCannotReuseSubjectAvatarAsset() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let avatarReference = try PortableAssetReference(
+            relativePath: "Assets/avatar-badge.png"
+        )
+        let avatarURL = rootURL.appendingPathComponent(
+            avatarReference.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: avatarURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("avatar".utf8).write(to: avatarURL)
+
+        var subject = Self.makeSubject()
+        subject.identity.avatarBadgeImagePath =
+            avatarReference.relativePath
+        var configuration = Self.makeConfiguration()
+        configuration.presentation.logo = .init(
+            mode: .customUpload,
+            badge: .init(
+                id: UUID(),
+                name: "错误复用对象头像",
+                type: .customUpload,
+                assetReference: avatarReference
+            )
+        )
+        let document = Self.signedDocument(
+            subject: subject,
+            configuration: configuration,
+            manifest: .init(entries: [
+                .init(
+                    role: .subjectAvatarBadge,
+                    reference: avatarReference
+                ),
+                .init(
+                    role: .customLogo,
+                    reference: avatarReference
+                )
+            ])
+        )
+
+        let resolution = try ConfigurationImportCoordinator()
+            .resolveImport(
+                data: try Self.encode(document),
+                assetRootURL: rootURL,
+                availableAlbumIdentifiers: []
+            )
+
+        #expect(
+            resolution.configuration.presentation.logo.mode
+            == .appleMini
+        )
+        #expect(
+            resolution.configuration.presentation.logo.badge == nil
+        )
+        #expect(
+            resolution.assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(
+            resolution.subject.identity.avatarBadgeImagePath
+            == avatarReference.relativePath
+        )
+    }
+
+    @MainActor
+    @Test("subject-avatar mode survives a missing display image when its badge image is available")
+    func subjectAvatarUsesAvailableBadgeWhenDisplayImageIsMissing() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let displayReference = try PortableAssetReference(
+            relativePath: "Assets/avatar-display.heic"
+        )
+        let badgeReference = try PortableAssetReference(
+            relativePath: "Assets/avatar-badge.png"
+        )
+        let badgeURL = rootURL.appendingPathComponent(
+            badgeReference.relativePath
+        )
+        try FileManager.default.createDirectory(
+            at: badgeURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("badge".utf8).write(to: badgeURL)
+
+        var subject = Self.makeSubject()
+        subject.identity.avatarImagePath = displayReference.relativePath
+        subject.identity.avatarBadgeImagePath = badgeReference.relativePath
+        var configuration = Self.makeConfiguration()
+        configuration.presentation.logo = .init(
+            mode: .subjectAvatar,
+            badge: nil
+        )
+        let manifest = PortableAssetManifest(entries: [
+            .init(
+                role: .subjectAvatar,
+                reference: displayReference
+            ),
+            .init(
+                role: .subjectAvatarBadge,
+                reference: badgeReference
+            )
+        ])
+
+        let resolution = try ConfigurationImportCoordinator()
+            .resolveImport(
+                data: try Self.encode(
+                    Self.signedDocument(
+                        subject: subject,
+                        configuration: configuration,
+                        manifest: manifest
+                    )
+                ),
+                assetRootURL: rootURL,
+                availableAlbumIdentifiers: []
+            )
+
+        #expect(resolution.subject.identity.avatarImagePath == nil)
+        #expect(
+            resolution.subject.identity.avatarBadgeImagePath
+            == badgeReference.relativePath
+        )
+        #expect(
+            resolution.configuration.presentation.logo.mode
+            == .subjectAvatar
+        )
+        #expect(
+            resolution.assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
         )
     }
 

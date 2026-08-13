@@ -1,4 +1,5 @@
 #if !PHOTOMEMO_SHARE_EXTENSION
+import CryptoKit
 import Foundation
 import Testing
 @testable import PhotoMemo
@@ -81,6 +82,104 @@ struct LocalConfigurationLibraryRepositoryTests {
                 return
             }
         }
+    }
+
+    @Test("legacy subject-avatar backups repair duplicate custom-logo ownership after checksum validation")
+    func legacySubjectAvatarBackupRepairsDuplicateLogoOwnership() async throws {
+        let rootURL = Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let repository = LocalConfigurationLibraryRepository(
+            applicationSupportURL: rootURL
+        )
+        var subject = Self.makeSubject()
+        let avatarReference = try PortableAssetReference(
+            relativePath: "Assets/subjectAvatarBadge/avatar.png"
+        )
+        subject.identity.avatarBadgeImagePath =
+            avatarReference.relativePath
+        var configuration = Self.makeConfiguration(
+            id: UUID(
+                uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
+            )!,
+            title: "Legacy Subject Avatar",
+            revision: 4,
+            savedAt: Date(timeIntervalSince1970: 100)
+        )
+        configuration.presentation.logo = .init(
+            mode: .subjectAvatar,
+            badge: .init(
+                id: UUID(),
+                name: OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                assetReference: avatarReference
+            )
+        )
+        let unsigned = PortableMemoryConfigurationDocument(
+            appVersion: "2.1.2",
+            subject: subject,
+            configuration: configuration,
+            assetManifest: .init(entries: [
+                .init(
+                    role: .subjectAvatarBadge,
+                    reference: avatarReference
+                ),
+                .init(
+                    role: .customLogo,
+                    reference: avatarReference
+                )
+            ]),
+            documentChecksum: ""
+        )
+        let unsignedData = try Self.stableEncode(unsigned)
+        let document = PortableMemoryConfigurationDocument(
+            appVersion: unsigned.appVersion,
+            subject: unsigned.subject,
+            configuration: unsigned.configuration,
+            assetManifest: unsigned.assetManifest,
+            documentChecksum:
+                "sha256:\(SHA256.hash(data: unsignedData).hexString)"
+        )
+        let configurationURL = rootURL
+            .appendingPathComponent("MemoMark")
+            .appendingPathComponent("MemorySubjects")
+            .appendingPathComponent(subject.id.uuidString)
+            .appendingPathComponent("Configurations")
+            .appendingPathComponent(
+                "\(configuration.id.uuidString).memomarkconfig"
+            )
+        try FileManager.default.createDirectory(
+            at: configurationURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Self.stableEncode(document).write(
+            to: configurationURL,
+            options: .atomic
+        )
+
+        let loaded = try await repository.load(
+            subjectID: subject.id,
+            configurationID: configuration.id
+        )
+
+        #expect(loaded.configuration.presentation.logo.mode == .subjectAvatar)
+        #expect(loaded.configuration.presentation.logo.badge == nil)
+        #expect(
+            loaded.assetManifest.entries.map(\.role)
+            == [.subjectAvatarBadge]
+        )
+        #expect(loaded.documentChecksum != document.documentChecksum)
+        let loadedUnsigned = PortableMemoryConfigurationDocument(
+            appVersion: loaded.appVersion,
+            subject: loaded.subject,
+            configuration: loaded.configuration,
+            assetManifest: loaded.assetManifest,
+            documentChecksum: ""
+        )
+        #expect(
+            loaded.documentChecksum
+            == "sha256:\(SHA256.hash(data: try Self.stableEncode(loadedUnsigned)).hexString)"
+        )
     }
 
     @Test("lower revision save is a no-op and preserves the newer backup")
@@ -683,6 +782,14 @@ private extension LocalConfigurationLibraryRepositoryTests {
             .appendingPathComponent(UUID().uuidString)
     }
 
+    static func stableEncode<Value: Encodable>(
+        _ value: Value
+    ) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(value)
+    }
+
     static func makeDocument(
         subjectID: UUID = UUID(
             uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
@@ -760,6 +867,13 @@ private extension LocalConfigurationLibraryRepositoryTests {
                 album: .automatic
             )
         )
+    }
+}
+
+private extension SHA256.Digest {
+
+    nonisolated var hexString: String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }
 #endif

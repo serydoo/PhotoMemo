@@ -61,9 +61,11 @@ struct V1ConfigurationDraftProjection: Hashable {
         locationConfiguration =
             configuration.presentation.locationConfiguration
         logoMode = configuration.presentation.logo.mode
-        badge = Self.badge(
-            from: configuration.presentation.logo.badge
-        )
+        badge = configuration.presentation.logo.mode == .customUpload
+            ? Self.badge(
+                from: configuration.presentation.logo.badge
+            )
+            : nil
         usesCustomMemoryWriteText =
             configuration.editor.memoryCopy.usesCustomText
         customMemoryWriteText =
@@ -212,7 +214,8 @@ enum V1ConfigurationAggregateCandidateBuilder {
         id: UUID,
         draft: V1ConfigurationAggregateDraft
     ) -> MemoryConfigurationRecord {
-        MemoryConfigurationRecord(
+        let logo = normalizedLogo(from: draft)
+        return MemoryConfigurationRecord(
             id: id,
             title: draft.title,
             revision: 0,
@@ -254,10 +257,7 @@ enum V1ConfigurationAggregateCandidateBuilder {
             presentation: .init(
                 route: .classicWhite,
                 locationConfiguration: draft.locationConfiguration,
-                logo: .init(
-                    mode: draft.logoMode,
-                    badge: badgeDescriptor(from: draft.badge)
-                )
+                logo: logo
             ),
             output: .init(
                 mediaMode: draft.mediaOutputMode,
@@ -293,6 +293,10 @@ enum V1ConfigurationAggregateCandidateBuilder {
 
         let previous = aggregate.subjects[subjectIndex]
             .configurations[configurationIndex]
+        let logo = normalizedLogo(
+            from: draft,
+            subject: aggregate.subjects[subjectIndex].subject
+        )
         let configuration = MemoryConfigurationRecord(
             id: previous.id,
             title: draft.title,
@@ -317,10 +321,7 @@ enum V1ConfigurationAggregateCandidateBuilder {
                 route: .classicWhite,
                 locationConfiguration:
                     draft.locationConfiguration,
-                logo: .init(
-                    mode: draft.logoMode,
-                    badge: badgeDescriptor(from: draft.badge)
-                )
+                logo: logo
             ),
             output: .init(
                 mediaMode: draft.mediaOutputMode,
@@ -354,8 +355,31 @@ enum V1ConfigurationAggregateCandidateBuilder {
         configurations: [MemoryConfigurationRecord],
         existing: PortableAssetManifest
     ) -> PortableAssetManifest {
-        var manifest = existing
-        for configuration in configurations {
+        let referencedCustomLogoPaths = Set<String>(
+            configurations.compactMap { configuration in
+                guard configuration.presentation.logo.mode
+                    == .customUpload else {
+                    return nil
+                }
+                return configuration.presentation.logo.badge?
+                    .assetReference?.relativePath
+            }
+        )
+
+        // Custom-logo ownership exists only while a configuration uses
+        // customUpload. This also removes stale entries when the user
+        // switches to Apple or subjectAvatar.
+        var manifest = PortableAssetManifest(
+            entries: existing.entries.filter { entry in
+                entry.role != .customLogo
+                || referencedCustomLogoPaths.contains(
+                    entry.reference.relativePath
+                )
+            }
+        )
+
+        for configuration in configurations where configuration.presentation
+            .logo.mode == .customUpload {
             guard let reference = configuration.presentation.logo.badge?
                 .assetReference,
                   !manifest.entries.contains(where: {
@@ -475,10 +499,18 @@ enum V1ConfigurationAggregateCandidateBuilder {
     }
 
     private static func badgeDescriptor(
-        from badge: Badge?
+        from badge: Badge?,
+        logoMode: V1LogoMode
     ) -> MemoryConfigurationRecord.Presentation.Logo.BadgeDescriptor? {
-        badge.map {
-            .init(
+        // The subject avatar is owned by MemorySubject and is resolved by
+        // ProductionConfigurationContract. It must never be persisted as a
+        // configuration-owned custom logo reference.
+        guard logoMode == .customUpload else {
+            return nil
+        }
+
+        return badge.map {
+            MemoryConfigurationRecord.Presentation.Logo.BadgeDescriptor(
                 id: $0.id,
                 name: $0.name,
                 type: $0.type,
@@ -493,6 +525,35 @@ enum V1ConfigurationAggregateCandidateBuilder {
                         )
                     }
             )
+        }
+    }
+
+    private static func normalizedLogo(
+        from draft: V1ConfigurationAggregateDraft,
+        subject: MemorySubject? = nil
+    ) -> MemoryConfigurationRecord.Presentation.Logo {
+        let descriptor = badgeDescriptor(
+            from: draft.badge,
+            logoMode: draft.logoMode
+        )
+        switch draft.logoMode {
+        case .appleMini:
+            return .init(mode: .appleMini, badge: nil)
+        case .customUpload:
+            guard descriptor?.assetReference != nil else {
+                return .init(mode: .appleMini, badge: nil)
+            }
+            return .init(
+                mode: .customUpload,
+                badge: descriptor
+            )
+        case .subjectAvatar:
+            guard subject == nil
+                || subject?.identity.avatarBadgeImagePath != nil
+                || subject?.identity.avatarImagePath != nil else {
+                return .init(mode: .appleMini, badge: nil)
+            }
+            return .init(mode: .subjectAvatar, badge: nil)
         }
     }
 

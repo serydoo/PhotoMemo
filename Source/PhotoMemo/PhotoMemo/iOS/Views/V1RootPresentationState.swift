@@ -6,7 +6,10 @@ import SwiftUI
 struct V1MediaPickerPresentationState {
     var selectedProcessingItems: [PhotosPickerItem] = []
     var selectedLogoItem: PhotosPickerItem?
+    var isLogoPickerPresented = false
     var isOptimizingLogo = false
+    var activeLogoOptimizationRequest:
+        LogoAssetOptimizationRequest?
 }
 
 struct V1ConfigurationRenamePresentationState {

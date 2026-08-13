@@ -6,6 +6,440 @@ import Testing
 @Suite("V1 configuration apply request builder")
 struct V1ConfigurationApplyRequestBuilderTests {
 
+    @Test("subject avatar logo does not reuse its asset as a custom logo")
+    func subjectAvatarLogoDoesNotReuseAssetAsCustomLogo() throws {
+        let state = ConfigurationCenterState.mock
+        var subject = try #require(state.selectedSubject)
+        let configurationID = UUID()
+        let relativePath = "SubjectAssets/avatar-badge.png"
+        let reference = try PortableAssetReference(
+            relativePath: relativePath
+        )
+        subject.identity.avatarBadgeImagePath = relativePath
+
+        let existing = MemoryConfigurationRecord(
+            id: configurationID,
+            title: "对象头像",
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(
+                    usesCustomText: false,
+                    customText: ""
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(mode: .appleMini, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: ""
+                ),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 1,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [existing],
+                    assetManifest: .init(
+                        entries: [
+                            .init(
+                                role: .subjectAvatarBadge,
+                                reference: reference
+                            )
+                        ]
+                    )
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configurationID
+        )
+        let runtimePath = PhotoMemoSharedContainer
+            .baseDirectoryURL
+            .appendingPathComponent(relativePath)
+            .standardizedFileURL
+            .path
+        let draft = V1ConfigurationAggregateDraft(
+            title: "对象头像",
+            regionDrafts: [:],
+            regionTemplateIDs: [:],
+            locationConfiguration: nil,
+            logoMode: .subjectAvatar,
+            badge: Badge(
+                name: OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                imagePath: runtimePath,
+                isSystemDefault: false
+            ),
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 200)
+        )
+
+        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: draft
+        )
+
+        #expect(candidate.aggregate.validationResult == .valid)
+        #expect(
+            candidate.configuration.presentation.logo.badge?
+                .assetReference == nil
+        )
+    }
+
+    @Test("subject-avatar mode without an available avatar falls back to Apple")
+    func subjectAvatarWithoutAvailableAssetFallsBackToApple() throws {
+        let state = ConfigurationCenterState.mock
+        var subject = try #require(state.selectedSubject)
+        subject.identity.avatarImagePath = nil
+        subject.identity.avatarBadgeImagePath = nil
+        let configurationID = UUID()
+        let existing = MemoryConfigurationRecord(
+            id: configurationID,
+            title: "无头像对象",
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(usesCustomText: false, customText: "")
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(mode: .appleMini, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: ""
+                ),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 1,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [existing],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configurationID
+        )
+        let draft = V1ConfigurationAggregateDraft(
+            title: "无头像对象",
+            regionDrafts: [:],
+            regionTemplateIDs: [:],
+            locationConfiguration: nil,
+            logoMode: .subjectAvatar,
+            badge: Badge(
+                name: OptimizedSubjectAvatarAsset.subjectAvatarBadgeName,
+                type: .customUpload,
+                imagePath: nil,
+                isSystemDefault: false
+            ),
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 200)
+        )
+
+        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: draft
+        )
+
+        #expect(candidate.configuration.presentation.logo.mode == .appleMini)
+        #expect(candidate.configuration.presentation.logo.badge == nil)
+        #expect(candidate.aggregate.validationResult == .valid)
+    }
+
+    @Test("logo mode switches keep subject and configuration asset ownership separate")
+    func logoModeSwitchesKeepAssetOwnershipSeparate() throws {
+        let state = ConfigurationCenterState.mock
+        var subject = try #require(state.selectedSubject)
+        let configurationID = UUID()
+        let avatarPath = "SubjectAssets/avatar-badge.png"
+        let customLogoPath = "Assets/customLogo/custom-logo.png"
+        subject.identity.avatarBadgeImagePath = avatarPath
+
+        let avatarReference = try PortableAssetReference(
+            relativePath: avatarPath
+        )
+        let customLogoReference = try PortableAssetReference(
+            relativePath: customLogoPath
+        )
+        let existing = MemoryConfigurationRecord(
+            id: configurationID,
+            title: "Logo 切换",
+            revision: 3,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(
+                    usesCustomText: false,
+                    customText: ""
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(
+                    mode: .customUpload,
+                    badge: .init(
+                        id: UUID(),
+                        name: "自选标识",
+                        type: .customUpload,
+                        assetReference: customLogoReference
+                    )
+                )
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: ""
+                ),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 4,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [existing],
+                    assetManifest: .init(
+                        entries: [
+                            .init(
+                                role: .subjectAvatarBadge,
+                                reference: avatarReference
+                            ),
+                            .init(
+                                role: .customLogo,
+                                reference: customLogoReference
+                            )
+                        ]
+                    )
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configurationID
+        )
+
+        let avatarDraft = V1ConfigurationAggregateDraft(
+            title: "头像 Logo",
+            regionDrafts: [:],
+            regionTemplateIDs: [:],
+            locationConfiguration: nil,
+            logoMode: .subjectAvatar,
+            badge: Badge(
+                name: OptimizedSubjectAvatarAsset.subjectAvatarBadgeName,
+                type: .customUpload,
+                imagePath: PhotoMemoSharedContainer
+                    .baseDirectoryURL
+                    .appendingPathComponent(avatarPath)
+                    .path,
+                isSystemDefault: false
+            ),
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 200)
+        )
+        let avatarCandidate = try V1ConfigurationAggregateCandidateBuilder
+            .build(from: aggregate, draft: avatarDraft)
+
+        #expect(avatarCandidate.aggregate.validationResult == .valid)
+        #expect(avatarCandidate.configuration.presentation.logo.badge == nil)
+        #expect(
+            avatarCandidate.aggregate.subjects[0].assetManifest.entries
+                .contains {
+                    $0.role == .subjectAvatarBadge
+                    && $0.reference == avatarReference
+                }
+        )
+        #expect(
+            !avatarCandidate.aggregate.subjects[0].assetManifest.entries
+                .contains {
+                    $0.role == .customLogo
+                    && $0.reference == customLogoReference
+                }
+        )
+
+        let customDraft = V1ConfigurationAggregateDraft(
+            title: "自选 Logo",
+            regionDrafts: [:],
+            regionTemplateIDs: [:],
+            locationConfiguration: nil,
+            logoMode: .customUpload,
+            badge: Badge(
+                name: "自选标识",
+                type: .customUpload,
+                imagePath: PhotoMemoSharedContainer
+                    .baseDirectoryURL
+                    .appendingPathComponent(customLogoPath)
+                    .path,
+                isSystemDefault: false
+            ),
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 300)
+        )
+        let customCandidate = try V1ConfigurationAggregateCandidateBuilder
+            .build(
+                from: avatarCandidate.aggregate,
+                draft: customDraft
+            )
+
+        #expect(customCandidate.aggregate.validationResult == .valid)
+        #expect(
+            customCandidate.configuration.presentation.logo.badge?
+                .assetReference == customLogoReference
+        )
+        #expect(
+            customCandidate.aggregate.subjects[0].assetManifest.entries
+                .contains {
+                    $0.role == .customLogo
+                    && $0.reference == customLogoReference
+                }
+        )
+
+        let appleDraft = V1ConfigurationAggregateDraft(
+            title: "Apple Logo",
+            regionDrafts: [:],
+            regionTemplateIDs: [:],
+            locationConfiguration: nil,
+            logoMode: .appleMini,
+            badge: .appleClassic,
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 400)
+        )
+        let appleCandidate = try V1ConfigurationAggregateCandidateBuilder
+            .build(from: customCandidate.aggregate, draft: appleDraft)
+
+        #expect(appleCandidate.aggregate.validationResult == .valid)
+        #expect(
+            appleCandidate.configuration.presentation.logo.badge?
+                .assetReference == nil
+        )
+        #expect(
+            !appleCandidate.aggregate.subjects[0].assetManifest.entries
+                .contains { $0.role == .customLogo }
+        )
+    }
+
+    @Test("subject-avatar projection does not expose a stale descriptor as a custom logo")
+    func subjectAvatarProjectionDropsStaleConfigurationDescriptor() throws {
+        var subject = try #require(ConfigurationCenterState.mock.selectedSubject)
+        subject.identity.avatarBadgeImagePath = "SubjectAssets/avatar-badge.png"
+        let staleReference = try PortableAssetReference(
+            relativePath: "SubjectAssets/avatar-badge.png"
+        )
+        let configuration = MemoryConfigurationRecord(
+            id: UUID(),
+            title: "旧头像配置",
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(usesCustomText: false, customText: "")
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(
+                    mode: .subjectAvatar,
+                    badge: .init(
+                        id: UUID(),
+                        name: "对象头像",
+                        type: .customUpload,
+                        assetReference: staleReference
+                    )
+                )
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: ""
+                ),
+                album: .automatic
+            )
+        )
+
+        let projection = V1ConfigurationDraftProjection(
+            configuration: configuration
+        )
+
+        #expect(projection.logoMode == .subjectAvatar)
+        #expect(projection.badge == nil)
+    }
+
     @Test("custom logo survives aggregate save and returns as a runtime path")
     func customLogoSurvivesSaveAndReload() throws {
         let state = ConfigurationCenterState.mock
@@ -96,6 +530,84 @@ struct V1ConfigurationApplyRequestBuilderTests {
             configuration: candidate.configuration
         )
         #expect(projection.badge?.imagePath == runtimePath)
+    }
+
+    @Test("custom-logo mode without a managed asset falls back to Apple before persistence")
+    func customLogoWithoutManagedAssetFallsBackToApple() throws {
+        let state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let configurationID = UUID()
+        let existing = MemoryConfigurationRecord(
+            id: configurationID,
+            title: "未选择自选标识",
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(usesCustomText: false, customText: "")
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(mode: .appleMini, badge: nil)
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: ""
+                ),
+                album: .automatic
+            )
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 1,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [existing],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configurationID
+        )
+        let draft = V1ConfigurationAggregateDraft(
+            title: "未选择自选标识",
+            regionDrafts: [:],
+            regionTemplateIDs: [:],
+            locationConfiguration: nil,
+            logoMode: .customUpload,
+            badge: Badge.none,
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            shouldWritePhotosDescription: false,
+            photosDescriptionOverride: "",
+            outputTarget: .automatic,
+            selectedAlbumIdentifier: "",
+            albumTitle: "",
+            mediaOutputMode: .staticImage,
+            livePhotoPolicy: .staticImageOnly,
+            selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+            savedAt: Date(timeIntervalSince1970: 200)
+        )
+
+        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: draft
+        )
+
+        #expect(candidate.configuration.presentation.logo.mode == .appleMini)
+        #expect(candidate.configuration.presentation.logo.badge == nil)
+        #expect(
+            !candidate.aggregate.subjects[0].assetManifest.entries.contains {
+                $0.role == .customLogo
+            }
+        )
+        #expect(candidate.aggregate.validationResult == .valid)
     }
 
     @Test("multi-item module drafts survive normalization and reload")
@@ -273,6 +785,16 @@ struct V1ConfigurationApplyRequestBuilderTests {
             activeConfigurationID: existing.id
         )
         let anchorID = try #require(subject.primaryTimeAnchor?.id)
+        let customLogoPath = PhotoMemoSharedContainer.baseDirectoryURL
+            .appendingPathComponent("LogoAssets/complete-draft.png")
+            .standardizedFileURL.path
+        let customLogo = Badge(
+            id: Badge.travel.id,
+            name: "自选标识",
+            type: .customUpload,
+            imagePath: customLogoPath,
+            isSystemDefault: false
+        )
         let input = V1ConfigurationAggregateDraft(
             title: "After",
             regionDrafts: [
@@ -295,7 +817,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 options: ["displayStyle": "cityDistrict"]
             ),
             logoMode: .customUpload,
-            badge: .travel,
+            badge: customLogo,
             usesCustomMemoryWriteText: true,
             customMemoryWriteText: "Memory Copy",
             shouldWritePhotosDescription: true,
@@ -322,7 +844,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
         #expect(result.configuration.editor.regionTemplateIDs[.slotA] == "after.recorder")
         #expect(result.configuration.presentation.locationConfiguration == input.locationConfiguration)
         #expect(result.configuration.presentation.logo.mode == .customUpload)
-        #expect(result.configuration.presentation.logo.badge?.id == Badge.travel.id)
+        #expect(result.configuration.presentation.logo.badge?.id == customLogo.id)
         #expect(result.configuration.editor.memoryCopy.customText == "Memory Copy")
         #expect(result.configuration.output.photosDescriptionPolicy.overrideText == "Photos Description")
         #expect(result.configuration.output.album.identifier == "album-after")
@@ -425,12 +947,72 @@ struct V1ConfigurationApplyRequestBuilderTests {
 
         #expect(request.template == template)
         #expect(request.template.leftTopArea.items.count == 2)
-        #expect(request.badge?.id == Badge.travel.id)
+        #expect(request.badge == nil)
         #expect(request.locationDisplayConfiguration == candidate.presentation.locationConfiguration)
         #expect(request.shouldWritePhotoDescription == false)
         #expect(request.photoDescriptionOverride == "Photos 独立说明")
         #expect(request.selectedExistingAlbumIdentifier == "album-complete")
         #expect(request.mediaOutputMode == .originalFormat)
+    }
+
+    @Test("subject-avatar candidate resolves the selected subject instead of stale custom-logo input")
+    func subjectAvatarCandidateDoesNotFallBackToStaleInputBadge() throws {
+        let state = ConfigurationCenterState.mock
+        var subject = try #require(state.selectedSubject)
+        let avatarPath = "SubjectAssets/current-avatar-badge.png"
+        subject.identity.avatarBadgeImagePath = avatarPath
+        let candidate = Self.makeLogoCandidate(
+            mode: .subjectAvatar,
+            badge: nil
+        )
+        let staleBadge = Badge(
+            name: "上一个配置的自选标识",
+            type: .customUpload,
+            imagePath: "/tmp/stale-logo.png"
+        )
+
+        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+            from: Self.makeLogoBuildInput(
+                subject: subject,
+                candidate: candidate,
+                badge: staleBadge
+            )
+        )
+
+        #expect(request.badge?.name == "对象头像")
+        #expect(
+            request.badge?.imagePath
+            == PhotoMemoSharedContainer.baseDirectoryURL
+                .appendingPathComponent(avatarPath)
+                .standardizedFileURL.path
+        )
+        #expect(request.badge?.imagePath != staleBadge.imagePath)
+    }
+
+    @Test("Apple-logo candidate ignores stale descriptors and stale custom-logo input")
+    func appleCandidateDoesNotReuseStaleBadgeState() throws {
+        let subject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        let candidate = Self.makeLogoCandidate(
+            mode: .appleMini,
+            badge: .family
+        )
+        let staleBadge = Badge(
+            name: "上一个配置的自选标识",
+            type: .customUpload,
+            imagePath: "/tmp/stale-logo.png"
+        )
+
+        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+            from: Self.makeLogoBuildInput(
+                subject: subject,
+                candidate: candidate,
+                badge: staleBadge
+            )
+        )
+
+        #expect(request.badge == nil)
     }
 
     @Test("build request uses aligned subject resolved library preset drafts and output selection")
@@ -775,6 +1357,80 @@ struct V1ConfigurationApplyRequestBuilderTests {
         )
         #expect(request.shouldWritePhotoDescription == true)
         #expect(request.photoDescriptionOverride.isEmpty)
+    }
+
+    private static func makeLogoCandidate(
+        mode: V1LogoMode,
+        badge: Badge?
+    ) -> MemoryConfigurationRecord {
+        MemoryConfigurationRecord(
+            title: "Logo candidate",
+            revision: 1,
+            savedAt: Date(timeIntervalSince1970: 100),
+            selectedTimeAnchorID: nil,
+            editor: .init(
+                template: .classicWhite,
+                regionTemplateIDs: [:],
+                memoryCopy: .init(
+                    usesCustomText: false,
+                    customText: ""
+                )
+            ),
+            presentation: .init(
+                route: .classicWhite,
+                locationConfiguration: nil,
+                logo: .init(
+                    mode: mode,
+                    badge: badge.map {
+                        .init(
+                            id: $0.id,
+                            name: $0.name,
+                            type: $0.type,
+                            imageName: $0.imageName,
+                            systemSymbol: $0.systemSymbol,
+                            isSystemDefault: $0.isSystemDefault
+                        )
+                    }
+                )
+            ),
+            output: .init(
+                mediaMode: .staticImage,
+                livePhotoPolicy: .staticImageOnly,
+                photosDescriptionPolicy: .init(
+                    isEnabled: false,
+                    overrideText: ""
+                ),
+                album: .automatic
+            )
+        )
+    }
+
+    private static func makeLogoBuildInput(
+        subject: MemorySubject,
+        candidate: MemoryConfigurationRecord,
+        badge: Badge?
+    ) -> V1ConfigurationApplyBuildInput {
+        V1ConfigurationApplyBuildInput(
+            selectedSubject: subject,
+            subjects: [subject],
+            selectedSubjectID: subject.id,
+            shouldSaveSubjectLibrary: true,
+            memoryPresets: [],
+            selectedMemoryPresetID: candidate.id,
+            candidateConfiguration: candidate,
+            presetTitle: "Logo candidate",
+            templateTextsByRegion: [:],
+            locationDisplayConfiguration: nil,
+            badge: badge,
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            birthdayDate: subject.referenceDate,
+            outputTarget: .automatic,
+            mediaOutputMode: .staticImage,
+            availableAlbums: [],
+            selectedExistingAlbumIdentifier: "",
+            newAlbumName: ""
+        )
     }
 }
 #endif

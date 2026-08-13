@@ -13,6 +13,30 @@ struct LogoAssetSelectionResult: Hashable {
     let activeConfigurationStatus: V1ConfigurationStatus?
 }
 
+struct LogoModeSelectionDecision: Hashable {
+    let nextLogoMode: V1LogoMode?
+    let shouldPresentPhotoPicker: Bool
+    let shouldCancelActiveOptimization: Bool
+}
+
+struct LogoAssetEditingContext: Hashable {
+    let subjectID: UUID?
+    let configurationID: UUID?
+}
+
+struct LogoAssetOptimizationRequest: Hashable, Identifiable {
+    let id: UUID
+    let editingContext: LogoAssetEditingContext
+
+    init(
+        id: UUID = UUID(),
+        editingContext: LogoAssetEditingContext
+    ) {
+        self.id = id
+        self.editingContext = editingContext
+    }
+}
+
 struct LogoAssetUpdate: Hashable {
     let isOptimizingLogo: Bool
     let customLogoBadge: Badge?
@@ -23,6 +47,42 @@ struct LogoAssetUpdate: Hashable {
 
 @MainActor
 struct LogoAssetCoordinator {
+
+    func modeSelectionDecision(
+        currentMode: V1LogoMode,
+        requestedMode: V1LogoMode
+    ) -> LogoModeSelectionDecision {
+        guard requestedMode != currentMode else {
+            return LogoModeSelectionDecision(
+                nextLogoMode: nil,
+                shouldPresentPhotoPicker: false,
+                shouldCancelActiveOptimization: true
+            )
+        }
+
+        if requestedMode == .customUpload {
+            return LogoModeSelectionDecision(
+                nextLogoMode: nil,
+                shouldPresentPhotoPicker: true,
+                shouldCancelActiveOptimization: true
+            )
+        }
+
+        return LogoModeSelectionDecision(
+            nextLogoMode: requestedMode,
+            shouldPresentPhotoPicker: false,
+            shouldCancelActiveOptimization: true
+        )
+    }
+
+    func shouldApplyCompletedOptimization(
+        _ request: LogoAssetOptimizationRequest,
+        activeRequest: LogoAssetOptimizationRequest?,
+        currentContext: LogoAssetEditingContext
+    ) -> Bool {
+        request == activeRequest
+        && request.editingContext == currentContext
+    }
 
     func beginOptimization() -> LogoAssetUpdate {
         LogoAssetUpdate(

@@ -95,6 +95,36 @@ final class LogoAssetOptimizationService {
         }.value
     }
 
+    nonisolated static func discardUncommittedAsset(
+        atPath path: String
+    ) {
+        let logoFolderURL = PhotoMemoSharedContainer
+            .baseDirectoryURL
+            .appendingPathComponent("LogoAssets", isDirectory: true)
+            .standardizedFileURL
+        let assetURL = URL(fileURLWithPath: path).standardizedFileURL
+        guard isUncommittedAsset(
+            assetURL,
+            in: logoFolderURL
+        ) else {
+            return
+        }
+        try? FileManager.default.removeItem(at: assetURL)
+    }
+
+    nonisolated static func isUncommittedAsset(
+        _ assetURL: URL,
+        in logoFolderURL: URL
+    ) -> Bool {
+        let normalizedAssetURL = assetURL.standardizedFileURL
+        let normalizedLogoFolderURL = logoFolderURL.standardizedFileURL
+        return normalizedAssetURL.deletingLastPathComponent()
+            .path == normalizedLogoFolderURL.path
+            && normalizedAssetURL.pathExtension.lowercased() == "png"
+            && normalizedAssetURL.lastPathComponent
+                .hasPrefix("memomark-logo-")
+    }
+
     static func estimatedDisplayedLogoPixels(
         outputWidth: CGFloat,
         orientation: CompactInformationBarOrientation

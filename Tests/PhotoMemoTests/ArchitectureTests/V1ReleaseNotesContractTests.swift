@@ -52,12 +52,12 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("这次更新让记忆对象、预设与处理结果保持一致"))
-        #expect(simplifiedChinese.contains("编辑、保存、重新进入或切换记忆对象时"))
-        #expect(simplifiedChinese.contains("进展页现在会保留真实结果缩略图"))
-        #expect(english.contains("This update keeps Memory Subjects, presets, and finished results in sync"))
-        #expect(english.contains("after editing, saving, reopening, or switching subjects"))
-        #expect(english.contains("Progress now keeps real result thumbnails"))
+        #expect(simplifiedChinese.contains("这次更新让卡片内容、标识与配置保存保持一致"))
+        #expect(simplifiedChinese.contains("编辑、保存、重新进入或切换记忆对象与配置时"))
+        #expect(simplifiedChinese.contains("修复保存、导入、备份恢复或切换配置后自选 Logo 消失或错用头像的问题"))
+        #expect(english.contains("This update keeps card content, logos, and saved configurations in sync"))
+        #expect(english.contains("after editing, saving, reopening, or switching subjects and configurations"))
+        #expect(english.contains("Fixed custom logos disappearing or using an avatar"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -72,12 +72,12 @@ struct V1ReleaseNotesContractTests {
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.1.2;"
+                separatedBy: "MARKETING_VERSION = 2.1.1;"
             ).count == 9
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 79;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 80;"
             ).count == 11
         )
     }

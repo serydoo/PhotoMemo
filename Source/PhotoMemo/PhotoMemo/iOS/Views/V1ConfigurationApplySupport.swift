@@ -169,11 +169,13 @@ enum V1ConfigurationApplyRequestBuilder {
                         ),
                     badgeArea: .badge
                 ),
-            badge:
-                candidate.flatMap {
-                    badge(from: $0.presentation.logo.badge)
-                }
-                ?? input.badge,
+            badge: candidate.map {
+                ConfigurationLogoResolver.badge(
+                    from: $0.presentation.logo,
+                    subject: subjectForSaving
+                        ?? input.selectedSubject
+                )
+            } ?? input.badge,
             locationDisplayConfiguration:
                 candidate?.presentation
                     .locationConfiguration
@@ -295,29 +297,6 @@ enum V1ConfigurationApplyRequestBuilder {
                         !trimmedValue.isEmpty
                 )
             ]
-        )
-    }
-
-    private static func badge(
-        from descriptor:
-            MemoryConfigurationRecord.Presentation.Logo.BadgeDescriptor?
-    ) -> Badge? {
-        guard let descriptor else {
-            return nil
-        }
-
-        return Badge(
-            id: descriptor.id,
-            name: descriptor.name,
-            type: descriptor.type,
-            imageName: descriptor.imageName,
-            imagePath:
-                ConfigurationSubjectAssetMapper()
-                .makeRuntimePath(
-                    descriptor.assetReference?.relativePath
-                ),
-            systemSymbol: descriptor.systemSymbol,
-            isSystemDefault: descriptor.isSystemDefault
         )
     }
 

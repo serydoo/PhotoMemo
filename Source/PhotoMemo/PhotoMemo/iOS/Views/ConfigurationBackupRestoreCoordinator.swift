@@ -335,9 +335,24 @@ final class ConfigurationBackupRestoreCoordinator {
                     request.availableAlbumIdentifiers
             )
             if let assetRootURL = request.assetRootURL {
-                let document = try JSONDecoder().decode(
+                // resolveImport verifies the original document checksum
+                // before any repair. Only then may packaged asset checksums
+                // be inspected or the resolved state be copied.
+                let sourceDocument = try JSONDecoder().decode(
                     PortableMemoryConfigurationDocument.self,
                     from: data
+                )
+                try assetPackager.validateAvailableAssetChecksums(
+                    in: sourceDocument,
+                    sourceRootURL: assetRootURL
+                )
+                let document = PortableMemoryConfigurationDocument(
+                    appVersion: sourceDocument.appVersion,
+                    subject: resolution.subject,
+                    configuration: resolution.configuration,
+                    assetManifest: resolution.assetManifest,
+                    documentChecksum:
+                        sourceDocument.documentChecksum
                 )
                 if !document.assetManifest.entries.isEmpty {
                     let restoredAssets = try assetPackager
@@ -491,12 +506,17 @@ final class ConfigurationBackupRestoreCoordinator {
             baseDirectoryURL: baseDirectoryURL,
             fileManager: fileManager
         )
-        let customLogoPath =
-            configuration.presentation.logo.badge?
-            .assetReference?.relativePath
-            ?? (configuration.id == selectedConfigurationID
-                ? selectedCustomLogoPath
-                : nil)
+        let customLogoPath: String?
+        if configuration.presentation.logo.mode == .customUpload {
+            customLogoPath =
+                configuration.presentation.logo.badge?
+                .assetReference?.relativePath
+                ?? (configuration.id == selectedConfigurationID
+                    ? selectedCustomLogoPath
+                    : nil)
+        } else {
+            customLogoPath = nil
+        }
         appendAssetURL(
             customLogoPath,
             role: .customLogo,
@@ -558,6 +578,10 @@ private extension ConfigurationBackupRestoreCoordinator {
     }
 
     static func localLibraryErrorMessage(_ error: Error) -> String {
+        if case ConfigurationAssetPackagingError
+            .missingSource(.customLogo) = error {
+            return "自选标识图片已不存在，请重新选择图片并保存配置后再备份。"
+        }
         guard let error = error as? LocalConfigurationLibraryError else {
             return "本地配置库操作失败：\(error.localizedDescription)"
         }

@@ -152,8 +152,9 @@ struct ConfigurationProjectionService {
                 .resolvedExpressionSubjectText,
             template: activeConfiguration.editor.template
                 .normalizedForEditing,
-            badge: legacyBadge(
-                from: activeConfiguration.presentation.logo.badge
+            badge: ConfigurationLogoResolver.badge(
+                from: activeConfiguration.presentation.logo,
+                subject: activeSubjectRecord.subject
             ),
             locationDisplayConfiguration:
                 activeConfiguration.presentation
@@ -179,28 +180,6 @@ struct ConfigurationProjectionService {
             mediaOutputMode:
                 activeConfiguration.output.mediaMode,
             savedAt: activeConfiguration.savedAt
-        )
-    }
-
-    private func legacyBadge(
-        from descriptor:
-            MemoryConfigurationRecord.Presentation.Logo
-            .BadgeDescriptor?
-    ) -> Badge? {
-        guard let descriptor else {
-            return nil
-        }
-        return Badge(
-            id: descriptor.id,
-            name: descriptor.name,
-            type: descriptor.type,
-            imageName: descriptor.imageName,
-            imagePath: ConfigurationSubjectAssetMapper()
-                .makeRuntimePath(
-                    descriptor.assetReference?.relativePath
-                ),
-            systemSymbol: descriptor.systemSymbol,
-            isSystemDefault: descriptor.isSystemDefault
         )
     }
 

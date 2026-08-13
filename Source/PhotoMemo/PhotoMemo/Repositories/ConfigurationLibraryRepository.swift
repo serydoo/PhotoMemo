@@ -193,7 +193,9 @@ enum ConfigurationLibraryRecordRecovery {
         let aggregate = try JSONDecoder().decode(
             ConfigurationLibraryRecord.self,
             from: data
-        ).repairingDuplicateTemplateItemIDs()
+        )
+        .repairingDuplicateTemplateItemIDs()
+        .canonicalizingLogoOwnership()
         try validate(aggregate)
         return aggregate
     }
@@ -234,12 +236,14 @@ final class ConfigurationLibraryRepository {
             ) throws -> Void = { _, _ in }
     ) async throws -> ConfigurationLibrarySaveReceipt {
         var candidate = aggregate
+            .canonicalizingLogoOwnership()
         try validate(candidate)
         let subjectID = try requiredActiveSubjectID(candidate)
         let configurationID =
             try requiredActiveConfigurationID(candidate)
         let configurationRevision =
             try requiredActiveConfigurationRevision(candidate)
+        let requestedRevision = candidate.revision
 
         while true {
             let persistenceSnapshot = try await loadSnapshot()
@@ -249,10 +253,10 @@ final class ConfigurationLibraryRepository {
             )
             let currentRevision = current?.aggregate.revision ?? 0
             if current != nil,
-               aggregate.revision != currentRevision {
+               requestedRevision != currentRevision {
                 throw ConfigurationLibraryPersistenceError
                     .staleAggregate(
-                        candidateRevision: aggregate.revision,
+                        candidateRevision: requestedRevision,
                         storedRevision: currentRevision
                     )
             }

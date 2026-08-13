@@ -97,6 +97,60 @@ struct SettingsPersistenceLayerTests {
     }
 
     @MainActor
+    @Test("Compatibility projection follows subject-avatar ownership and clears it after switching to Apple")
+    func compatibilityProjectionTracksLogoModeWithoutStaleBadge() throws {
+        let context = try Self.makeDefaultsContext("logo-mode-projection")
+        defer { context.cleanup() }
+        var aggregate = try Self.makeAggregate(revision: 24)
+        let reference = try PortableAssetReference(
+            relativePath: "SubjectAssets/avatar-badge.png"
+        )
+        aggregate.subjects[0].subject.identity.avatarBadgeImagePath =
+            reference.relativePath
+        aggregate.subjects[0].configurations[0].presentation.logo = .init(
+            mode: .subjectAvatar,
+            badge: .init(
+                id: UUID(),
+                name: OptimizedSubjectAvatarAsset
+                    .subjectAvatarBadgeName,
+                type: .customUpload,
+                assetReference: reference
+            )
+        )
+        aggregate.subjects[0].assetManifest = .init(entries: [
+            .init(
+                role: .subjectAvatarBadge,
+                reference: reference
+            )
+        ])
+        let store = LegacySettingsStore(defaults: context.defaults)
+        let service = ConfigurationProjectionService(
+            legacyStore: store,
+            snapshotProvider: BatchConfigurationSnapshotProvider(
+                defaults: context.defaults
+            )
+        )
+
+        let subjectProjection = try service.projectAndPersist(aggregate)
+
+        #expect(subjectProjection.badge?.name == "对象头像")
+        #expect(
+            subjectProjection.badge?.imagePath
+            == PhotoMemoSharedContainer.baseDirectoryURL
+                .appendingPathComponent(reference.relativePath)
+                .standardizedFileURL.path
+        )
+        #expect(store.loadBadge() == subjectProjection.badge)
+
+        aggregate.subjects[0].configurations[0]
+            .presentation.logo.mode = .appleMini
+        let appleProjection = try service.projectAndPersist(aggregate)
+
+        #expect(appleProjection.badge == nil)
+        #expect(store.loadBadge() == nil)
+    }
+
+    @MainActor
     @Test("Configuration library store recovers durable aggregate revision before projection")
     func configurationLibraryStoreRecoversDurableAggregateRevisionBeforeProjection() throws {
         let aggregate = try Self.makeAggregate(revision: 41)

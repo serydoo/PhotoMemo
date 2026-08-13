@@ -12,6 +12,11 @@ Canonical repository-line guidance for current release history:
 
 Release events:
 
+- `2026-08-13-2.1.1-release-notes.md`
+- `2026-08-13-2.1.1-app-store-whats-new.md`
+- `2026-08-13-2.1.1-testflight-notes.md`
+- `2026-08-13-2.1.1-sync-manifest.md`
+
 - `2026-08-12-2.1.2-release-notes.md`
 - `2026-08-12-2.1.2-app-store-whats-new.md`
 - `2026-08-12-2.1.2-testflight-notes.md`

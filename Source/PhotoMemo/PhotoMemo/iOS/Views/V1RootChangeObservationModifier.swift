@@ -20,6 +20,7 @@ struct V1RootChangeObservationModifier: ViewModifier {
         V1MemorySourceDisclosureState
     @Binding var mediaPickerPresentation: V1MediaPickerPresentationState
     @Binding var logoMode: V1LogoMode
+    @Binding var customLogoBadge: Badge?
     @Binding var outputTarget: V1IOSOutputTarget
     @Binding var mediaOutputMode: V1MediaOutputMode
     @Binding var selectedAlbumIdentifier: String
@@ -71,6 +72,7 @@ struct V1RootChangeObservationModifier: ViewModifier {
                     .prepareForCompactPresentation(from: flowState)
             }
             .onChange(of: session.state.selectedMemoryPresetID) { _, _ in
+                resetLogoSelectionPresentation()
                 renamePresentation.isEditing = false
                 titleFieldFocus.wrappedValue = false
                 if let configuration = session.selectedMemoryConfiguration {
@@ -81,6 +83,7 @@ struct V1RootChangeObservationModifier: ViewModifier {
                     )
                 } else if let preset = session.state.selectedMemoryPreset {
                     logoMode = preset.logoMode
+                    customLogoBadge = nil
                     applySavedOutputConfiguration(preset)
                 }
                 bootstrapDrafts()
@@ -97,6 +100,7 @@ struct V1RootChangeObservationModifier: ViewModifier {
                 }
             }
             .onChange(of: session.state.selectedSubject) { _, subject in
+                resetLogoSelectionPresentation()
                 synchronizeSelectedSubject(subject)
             }
             .onChange(of: mediaPickerPresentation.selectedLogoItem) {
@@ -148,6 +152,13 @@ private extension V1RootChangeObservationModifier {
     func markOutputDirtyIfNeeded() {
         guard shouldTrackOutputChanges else { return }
         configurationStatus = .dirty
+    }
+
+    func resetLogoSelectionPresentation() {
+        mediaPickerPresentation.selectedLogoItem = nil
+        mediaPickerPresentation.isLogoPickerPresented = false
+        mediaPickerPresentation.isOptimizingLogo = false
+        mediaPickerPresentation.activeLogoOptimizationRequest = nil
     }
 
     func synchronizeSelectedSubject(

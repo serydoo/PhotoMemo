@@ -804,6 +804,7 @@ struct PhotoMemoiOSV1View: View {
                 memorySourceDisclosureState: $memorySourceDisclosureState,
                 mediaPickerPresentation: $mediaPickerPresentation,
                 logoMode: $logoMode,
+                customLogoBadge: $customLogoBadge,
                 outputTarget: $outputTarget,
                 mediaOutputMode: $mediaOutputMode,
                 selectedAlbumIdentifier:
@@ -1035,8 +1036,10 @@ struct PhotoMemoiOSV1View: View {
                 ),
             subjectAvatarPreviewImagePath:
                 resolvedSubjectAvatarPreviewImagePath,
-            logoMode: $logoMode,
+            logoMode: logoModeSelectionBinding,
             selectedLogoItem: $mediaPickerPresentation.selectedLogoItem,
+            isLogoPickerPresented:
+                $mediaPickerPresentation.isLogoPickerPresented,
             logoValue: logoMode.title,
             customLogoImagePath:
                 customLogoBadge?.imagePath,
@@ -1366,8 +1369,8 @@ struct PhotoMemoiOSV1View: View {
             switchPresentation.pendingMemoryPresetActivation = preset
             switchPresentation.showsUnsavedPresetSwitchAlert = true
         case .activate(let preset):
-            logoMode = preset.logoMode
             session.selectMemoryPreset(preset)
+            synchronizeSelectedSubjectConfigurationProjection()
             bootstrapDrafts()
             activeConfigurationStatus = .saving
             Task {
@@ -2249,6 +2252,11 @@ struct PhotoMemoiOSV1View: View {
     private func optimizeSelectedLogo(
         _ item: PhotosPickerItem
     ) async {
+        let request = LogoAssetOptimizationRequest(
+            editingContext: currentLogoAssetEditingContext
+        )
+        mediaPickerPresentation.activeLogoOptimizationRequest = request
+        mediaPickerPresentation.selectedLogoItem = nil
         applyLogoAssetUpdate(
             logoAssetCoordinator
                 .beginOptimization()
@@ -2257,7 +2265,69 @@ struct PhotoMemoiOSV1View: View {
         let update =
             await logoAssetCoordinator
             .optimize(item)
+        guard logoAssetCoordinator.shouldApplyCompletedOptimization(
+            request,
+            activeRequest:
+                mediaPickerPresentation.activeLogoOptimizationRequest,
+            currentContext: currentLogoAssetEditingContext
+        ) else {
+            discardUnappliedLogoAsset(update.customLogoBadge)
+            if mediaPickerPresentation.activeLogoOptimizationRequest == request {
+                mediaPickerPresentation.activeLogoOptimizationRequest = nil
+                mediaPickerPresentation.isOptimizingLogo = false
+            }
+            return
+        }
+        mediaPickerPresentation.activeLogoOptimizationRequest = nil
         applyLogoAssetUpdate(update)
+    }
+
+    private var currentLogoAssetEditingContext:
+        LogoAssetEditingContext {
+        LogoAssetEditingContext(
+            subjectID: session.state.selectedSubject?.id,
+            configurationID: session.state.selectedMemoryPresetID
+        )
+    }
+
+    private var logoModeSelectionBinding: Binding<V1LogoMode> {
+        Binding(
+            get: { logoMode },
+            set: handleRequestedLogoMode
+        )
+    }
+
+    private func handleRequestedLogoMode(
+        _ requestedMode: V1LogoMode
+    ) {
+        let decision = logoAssetCoordinator.modeSelectionDecision(
+            currentMode: logoMode,
+            requestedMode: requestedMode
+        )
+
+        if decision.shouldCancelActiveOptimization {
+            mediaPickerPresentation.selectedLogoItem = nil
+            mediaPickerPresentation.isOptimizingLogo = false
+            mediaPickerPresentation.activeLogoOptimizationRequest = nil
+        }
+
+        if decision.shouldPresentPhotoPicker {
+            mediaPickerPresentation.isLogoPickerPresented = true
+            return
+        }
+
+        guard let nextLogoMode = decision.nextLogoMode else {
+            return
+        }
+        mediaPickerPresentation.isLogoPickerPresented = false
+        logoMode = nextLogoMode
+    }
+
+    private func discardUnappliedLogoAsset(_ badge: Badge?) {
+        guard let path = badge?.imagePath else { return }
+        LogoAssetOptimizationService.discardUncommittedAsset(
+            atPath: path
+        )
     }
 
     private func applyLogoAssetUpdate(

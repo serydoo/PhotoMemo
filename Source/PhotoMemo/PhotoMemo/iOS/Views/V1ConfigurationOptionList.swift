@@ -20,6 +20,7 @@ struct V1ConfigurationOptionList: View {
     let subjectAvatarPreviewImagePath: String?
     @Binding var logoMode: V1LogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
+    @Binding var isLogoPickerPresented: Bool
     let logoValue: String
     let customLogoImagePath: String?
     let isOptimizingLogo: Bool
@@ -90,6 +91,11 @@ struct V1ConfigurationOptionList: View {
                 selectedTimeSupplement: selectedTimeSupplement
             )
         }
+        .photosPicker(
+            isPresented: $isLogoPickerPresented,
+            selection: $selectedLogoItem,
+            matching: .images
+        )
     }
 
     private var memorySourceSection: some View {
