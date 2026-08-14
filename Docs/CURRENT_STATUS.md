@@ -1,5 +1,751 @@
 # MemoMark Current Status
 
+## 2026-08-14 MemoMark 2.1.2 (85) Root View And Device QA Integration Package
+
+- 本轮从上一同步检查点 `1b3b9f7`（2026-08-13 11:04:49，Asia/Shanghai）之后开始，目标版本更新为 `2.1.2 (85)`；`84` 仅为未推送的准备构建，不作为当前版本继续使用。
+- 本轮合并了配置中心根视图状态所有权整理、异步相册选项身份保护、对应契约测试，以及原先暂存的 PhotoKit、Live Photo、队列、导出和 Device QA 工程文件。
+- `MemoMarkDeviceQA` target、共享 scheme、QA manifest、UI harness 与本地验证脚本已纳入当前工作区，版本字段与主 App、Share Extension、Widget Extension、测试目标保持一致。
+- 应用内、App Store、TestFlight 和内部同步资料已重新对齐到 `2.1.2 (85)`；历史版本材料和原有 QA 证据记录保留，不把工具失败或局部设备证据包装成生产认证。
+- 合并后重点 `PhotoMemoTests` 范围通过 `164/164`，0 failures，0 skips；`PhotoMemoiOS` 真机 SDK unsigned build 与 `MemoMarkDeviceQA` `build-for-testing` 均完成，产物版本核验为 `2.1.2 (85)`。
+- 当前状态：`Source Checkpoint Ready; Release Evidence Open`。提交、推送、TestFlight 上传和 App Store 提交仍需按本轮授权逐项执行。
+
+## 2026-08-14 BP-001 Memory Pressure Verification Project: closed by explicit decision, evidence unresolved
+
+- Per the user's explicit decision, the active BP-001 memory-pressure
+  verification project is now closed. No further Instruments, `xctrace`,
+  CoreDevice, process-snapshot, or Xcode-toolchain retry will be performed as
+  part of this project.
+- This is a tool-boundary and project-scope closure, not a memory-safety pass,
+  waiver, or production-certification approval. The connected iPhone 17 Pro
+  Max was available, paired, unlocked, and signed with the relocated Xcode
+  Beta; repeated `xctrace` attempts nevertheless failed before sampling with
+  `Timed out waiting for device to boot: iPhone7 (27.0)`. No `.trace`, peak RSS,
+  Jetsam, Allocations, Memory Graph, or equivalent high-resolution processing
+  evidence was created or accepted.
+- The product evidence that does exist remains valid and separate from the
+  closed memory campaign: the signed physical `MemoMarkDeviceQA` run passed
+  `13/13`; the fresh RAW/ProRAW QA-05 rerun passed `1/1` with the device path
+  classified as `rawWithJPEGRepresentation` at `8064x4536`, one new output at
+  `8064x5557`, and the original preserved; the post-run read-only inventory
+  passed `2/2`; and the focused local TX-001 receipt/queue regression passed
+  `70/70`. These results demonstrate functional slices, not a measured memory
+  budget.
+- The original code audit's static concern remains a documented residual risk:
+  a high-resolution task can hold source, output, renderer, artifact-guard, and
+  encoding buffers whose combined peak was not measured on the target device.
+  Closing BP-001 as a verification project does not remove that risk and does
+  not authorize a claim that 48MP/RAW processing is memory-safe on every
+  device or lifecycle path.
+- Current engineering disposition after this closure is recorded below. The
+  remaining open reliability and platform items must not be silently folded
+  into BP-001 or reported as closed because the memory campaign stopped.
+
+### Progress against the initial code audit
+
+| Audit item | Current progress | Evidence-based disposition |
+|---|---|---|
+| TX-001 PhotoKit receipt/queue consistency | Local protocol hardening and `70/70` focused tests; physical QA-07/08 recovery slices passed | Still open P0: delayed visibility, permission change, cancellation, receipt-write failure, and complete D1-D5 durable binding are not closed |
+| BP-001 high-resolution peak memory | Static risk review complete; physical RAW/ProRAW processing passed functionally; Instruments campaign stopped | Closed as a verification project with unresolved evidence; no memory-pass claim |
+| Limited Photos authorization model | `.limited` is recognized in code and normal paths were audited | P1 open: no complete real-device permission-change matrix or user-facing recovery proof |
+| Info.plist / system metadata localization | Gap identified in audit | P1 open: `InfoPlist.strings` / `InfoPlist.xcstrings` and system permission/share surfaces were not closed in this round |
+| Time and locale formatting | Static formatter issue identified | P1/P2 open: dynamic locale and 12/24-hour behavior require a bounded implementation and verification pass |
+| iOS root-view state complexity | Ownership risk identified; Configuration Center architecture preserved | P1 maintainability work open; no broad rewrite authorized or performed |
+| Automated test coverage | Signed physical QA `13/13`, QA Runner Python `117/117`, local TX slice `70/70` | Partial: counts are valid for those runs only; no claim that source `@Test` declaration count equals executed tests, and UI/Share/Photos/accessibility coverage remains separate |
+| Share Extension API-only setting | Effective Debug/Release setting audited as `APPLICATION_EXTENSION_API_ONLY=YES` | Not a confirmed defect; explicit project-file declaration is optional hardening |
+| iPad Share Extension | Target-family mismatch identified (`iPhone`-only extension versus iPhone+iPad app) | Conditional P1: open only if iPad system sharing is part of the product promise |
+| Apple-native iPad/UI polish | Navigation/layout opportunities identified | P2 open; IA-002 remains frozen and no wholesale `NavigationSplitView` rewrite is authorized |
+| EXIF / Live Photo / output-format claims | Metadata chain exists; Live Photo processing and paired-resource readback passed on device | Partially verified: original is preserved and a new output is generated, but universal EXIF, RAW, P3, HDR, ICC, and all-format fidelity claims remain unsupported |
+| Local-first / dependency boundary | No third-party SDK or application-layer network dependency identified; Apple frameworks are used | Positive baseline confirmed; system services such as geocoding remain independently fallible |
+
+- The overall production-certification disposition remains `FAIL (Conditional)`.
+  Closing the BP-001 verification campaign does not close TX-001, Limited
+  Photos, localization, product-contract-dependent iPad Share, or final
+  UI/accessibility acceptance.
+
+## 2026-08-14 Device QA Round 119: empty-output baseline, RAW rerun, and bounded memory-tool retry
+
+- The user intentionally emptied `MemoMark QA Outputs` before this round. No
+  runner command cleared either QA album. `MemoMark QA Inputs` remained at 15
+  authorized assets throughout the round.
+- The first focused QA-05 attempt did not enter product processing: the iOS 27
+  Photos picker exposes `精选集` as a segmented-control button, while the
+  harness was querying it as a regular button. This was a UI-test navigation
+  defect, not a MemoMark processing failure. The harness was repaired with a
+  single `openPreparedInputAlbum()` route that resets to Home, queries the
+  picker segmented control with a regular-button fallback, and resolves the
+  unique `MemoMark QA Inputs` album button without reopening or double-tapping
+  the picker. The contract regression went RED then GREEN, and the physical
+  picker-only route passed `1/1` on the iPhone 17 Pro Max.
+- The corrected focused QA-05 run passed `1/1` on `iPhone7` / iPhone 17 Pro Max
+  / iOS 27.0 using Xcode Beta `27.0 (27A5237l)`. Evidence is in
+  `/tmp/MemoMarkRound119QA05Fixed2.xcresult`, with exported sanitized
+  descriptors in `/tmp/MemoMarkRound119QA05Evidence.YeoE3a`. The production
+  route selected the highest-quality RAW/ProRAW input through
+  `App 内选择照片 -> 精选集 -> MemoMark QA Inputs`; the raw input was
+  classified as `rawWithJPEGRepresentation` at `8064x4536` and remained
+  unchanged. Output count changed from `0 -> 1`, producing a new JPEG still at
+  `8064x5557`; `originalPreserved=true` was recorded.
+- A post-run read-only inventory recheck passed `2/2` in
+  `/tmp/MemoMarkRound119ReadOnlyAfterMemory2.xcresult`: the input media matrix
+  still passed, and the output album contained a valid JPEG candidate. This
+  confirms that the focused run created one output and that the subsequent
+  diagnostic attempts did not mutate the prepared Photos resources.
+- BP-001 received one additional bounded Xcode Beta `Activity Monitor`
+  `xctrace` attempt using `--device iPhone7 --all-processes` for 30 seconds.
+  It failed before trace creation with
+  `Timed out waiting for device to boot: iPhone7 (27.0)` even though
+  `devicectl` reported the device as `available (paired)`. No
+  `/tmp/MemoMarkRound119BP001-try2.trace` was produced; therefore no peak RSS,
+  Allocations, Jetsam, or memory pass/fail conclusion is accepted. The
+  read-only process snapshot found only the Widget extension after the test
+  host exited, which is point-in-time state and not peak-memory evidence.
+- The existing physical JPEG, Live Photo, RAW/ProRAW, and controlled
+  post-commit restart slices remain valid evidence, but TX-001 D1-D5 is still
+  open for delayed visibility, permission changes, cancellation, receipt-write
+  failure, and durable receipt/idempotency binding. At the time of Round 119,
+  BP-001 remained open at the Instruments/CoreDevice sampling boundary; Round
+  120 above records the subsequent explicit closure of that verification
+  campaign. Production certification remains `FAIL (Conditional)`; no release
+  or certification claim is changed.
+
+## 2026-08-14 Device QA Round 118: complete signed QA run after Xcode Beta relocation
+
+- The complete signed `MemoMarkDeviceQA` run used the connected physical
+  `iPhone7` (iPhone 17 Pro Max, iOS 27.0, device build `24A5408d`) through the
+  relocated default Xcode Beta at `/Applications/Xcode-beta.app` (`27A5237l`,
+  iPhoneOS SDK `24A5408c`). The result bundle is
+  `/tmp/MemoMarkDeviceQA/20260814T081340Z/MemoMarkDeviceQA.xcresult` and its
+  formal `xcresulttool` summary is `Passed`: `13/13` tests passed, `0` failed,
+  `0` skipped.
+- The processing evidence passed through the exact production picker route and
+  preserved the prepared input album. QA-02 processed an independent JPEG
+  (`3840x2160`) into one new `jpegStill` output (`3840x2646`), with output count
+  `5 -> 6` and the original preserved. QA-04 processed a Live Photo
+  (`4032x2268`) into one complete `livePhoto` (`4032x2778`) with both `photo`
+  and `pairedVideo` resources, capture date preserved, and output count
+  `6 -> 7`; the independent readback also passed.
+- QA-05 processed the device's highest-quality RAW/ProRAW path, classified as
+  `rawWithJPEGRepresentation` at `8064x4536` (`36,578,304` pixels), into one
+  `jpegStill` output at `8064x5557`, with output count `7 -> 8` and the original
+  preserved. This is the current product-level 48MP evidence path; no claim of
+  an exact `8064x6048` rectangle is made because the prepared library does not
+  contain that exact pixel rectangle.
+- QA-07 and QA-08 both passed the controlled post-commit termination/relaunch
+  recovery check. Static JPEG output count was `8 -> 9`, and Live Photo output
+  count was `9 -> 10`; each test recorded `duplicateOutput=false`,
+  `originalPreserved=true`, and the Live Photo output retained `photo` plus
+  `pairedVideo`. The final inventories recorded `MemoMark QA Inputs = 15`
+  (`authorized`) and `MemoMark QA Outputs = 10`; no input asset was modified
+  and neither album was cleared by the runner.
+- The runner itself initially returned non-zero after `xcodebuild` succeeded
+  because the regular-run verifier omitted the `signing-status.json` file that
+  the signed run intentionally generates. The verifier now includes that file
+  in the regular optional-artifact allowlist. The existing run was replayed
+  offline with the recorded `xcodebuildExitStatus=0` and now verifies as
+  `Device QA evidence verified: pass`. A Swift contract regression and a Python
+  verifier regression were added; the focused runner contract passed, and the
+  local Python automation suite passed `117/117`.
+- The focused TX-001 local receipt/queue regression was also rerun with a
+  formal result bundle and passed `70/70`, covering pre-commit intent,
+  visibility waiting, direct asset reuse, receipt-write failure, cancellation,
+  queue restart, cleanup durability, and shared static/Live Photo policy. This
+  is local protocol evidence only; it does not close the remaining physical
+  delayed-visibility, permission-change, cancellation, receipt-write failure,
+  and complete D1-D5 acceptance boundaries.
+- The run emitted five internal QoS priority-inversion warnings and repeated
+  PhotoKit on-demand metadata-prefetch diagnostics. They did not fail an
+  assertion or alter the `13/13` result, but remain engineering follow-up
+  signals. BP-001 remains open because Instruments still produced no `.trace`
+  artifact and therefore supplies no peak-memory evidence. The final device
+  state remains `available (paired)`, and the read-only signing diagnostic is
+  still `ready` with one matching provisioning profile.
+
+## 2026-08-14 Device QA Rounds 112-117: latest Xcode Beta moved to the default path and signed read-only regression
+
+- The newer Xcode Beta was found at `/Users/rui/Downloads/Xcode-beta.app` as
+  Xcode `27.0 (27A5237l)` with iPhoneOS SDK build `24A5408c`. It replaced the
+  old `/Applications/Xcode-beta.app` location without destructive deletion:
+  the old `27A5218g` bundle is preserved at
+  `/Applications/Xcode-beta-previous-27A5218g.app`, and the new bundle now
+  resides at `/Applications/Xcode-beta.app`. `xcode-select` already resolves
+  to `/Applications/Xcode-beta.app/Contents/Developer`; the Downloads source
+  bundle is no longer present.
+- The new toolchain is materially aligned with the connected phone's iOS 27.0
+  build `24A5408d` (`24A5408c` SDK build). Signing remains ready with one
+  matching provisioning profile, the physical destination resolves, and the
+  main app launched successfully after one transient SpringBoard/XPC launch
+  failure. No app data or Photos resource was cleared.
+- BP-001 was retried with the new default Xcode Beta by process name, all
+  processes, and physical-device UDID. Each attempt still failed before trace
+  creation with `Timed out waiting for device to boot: iPhone7 (27.0)` while
+  `devicectl` continued to report the device as available, paired, booted, and
+  unlocked. The SDK/device-build mismatch is therefore corrected, but a
+  separate CoreDevice/Instruments service-session failure remains. No `.trace`
+  artifact or memory conclusion is accepted.
+- With the new Xcode Beta as the active toolchain, the signed read-only
+  PhotoKit input/output recheck passed `2/2`:
+  `/tmp/PhotoMemoRound116ReadOnly.xcresult`. The picker/configuration route
+  recheck passed `3/3`:
+  `/tmp/PhotoMemoRound117QA01QA03.xcresult`. These runs preserved the current
+  input/output albums and did not create a new output.
+- The environment is now correctly installed and usable from the default
+  Xcode path for signed physical QA. BP-001 remains blocked only at the
+  Instruments/CoreDevice sampling layer; TX-001's delayed-visibility,
+  permission-change, cancellation, receipt-write failure, and complete D1-D5
+  evidence boundaries remain unchanged.
+
+## 2026-08-14 Device QA Rounds 110-111: reconnect confirmation, bounded Instruments retry, and read-only PhotoKit recheck
+
+- The paired physical device recovered to CoreDevice `available (paired)`:
+  `iPhone7` / iPhone 17 Pro Max / iOS 27.0, with the device connected,
+  booted, and Developer Mode enabled. The read-only signing diagnostic still
+  reports `result=ready`, one matching provisioning profile, and no need for
+  provisioning updates. The main `PhotoMemoiOS` process launched successfully
+  as PID `30697`.
+- BP-001 was retried twice after reconnection with the Xcode-beta `Activity
+  Monitor` template, once by device UDID and once by device name. Both failed
+  before creating a trace with `Timed out waiting for device to boot:
+  iPhone7 (27.0)`, even though `devicectl` and `xctrace list devices` both
+  recognized the physical device. This remains a CoreDevice/Instruments
+  bridge failure; no peak RSS, Allocations, Jetsam, or memory pass/fail result
+  is inferred. No `.trace` artifact was accepted as BP-001 evidence.
+- A signed, read-only device run then passed the input-media-matrix and output
+  inventory tests `2/2`:
+  `/tmp/PhotoMemoRound111ReadOnly.xcresult`. `MemoMark QA Inputs` remained at
+  `15` assets with `authorized` Photos access, independent JPEG, Live Photo,
+  and `rawWithJPEGRepresentation` classifications, four highest-quality RAW
+  candidates at `8064x4536` (`36,578,304` pixels), and no exact 48MP pixel
+  rectangle. `MemoMark QA Outputs` remained at `5` assets. The run did not
+  select media, process a task, clear either album, or mutate the prepared
+  Photos resources.
+- The unattended QA entrypoint also passed its read-only preflight against
+  `iPhone7`: the manifest was valid, Xcode-beta `27.0 (27A5218g)` resolved the
+  physical destination, the device was unlocked and paired, and the CoreDevice
+  identifier resolved to `863C2747-6742-5E93-B715-6F89DBF90B31`. Preflight did
+  not install, terminate, or modify the application or either QA album.
+- The current physical-device state is therefore suitable for further signed
+  functional runs, but it does not close BP-001. TX-001 remains open for the
+  delayed-visibility, permission-change, cancellation, receipt-write failure,
+  and complete D1-D5 protocol evidence boundaries.
+
+## 2026-08-14 Device QA Rounds 103-108: fresh output baseline, processing, and recovery revalidation
+
+- The user cleared `MemoMark QA Outputs` before this sequence. The test run did
+  not clear either QA album. The input album was read as `15` assets with the
+  independent JPEG stills, complete Live Photos, and the iPhone 17 Pro Max
+  highest-quality RAW/ProRAW path already prepared. The two newly supplied
+  ordinary JPGs were classified as `jpegStill` at `3840x2160` and were used
+  through the exact production picker route.
+- QA-02 passed on the signed physical `iPhone7` (iPhone 17 Pro Max, iOS 27.0,
+  Xcode-beta 27.0): output count `0 -> 1`, exactly one new `jpegStill`, input
+  identifier and dimensions preserved. Evidence:
+  `/tmp/PhotoMemoRound95QA02JPEG.xcresult`.
+- QA-04 end-to-end Live Photo processing passed: output count `1 -> 2`, exactly
+  one new `livePhoto` with a `pairedVideo` resource, capture date preserved,
+  and the original Live Photo remained complete. The independent Live Photo
+  readback test also passed against the newly generated output. Evidence:
+  `/tmp/PhotoMemoRound97QA04LivePhoto.xcresult` and
+  `/tmp/PhotoMemoRound99QA04Readback.xcresult`.
+- QA-05 passed against the device's highest-quality RAW/ProRAW input, recorded
+  as `8064x4536` (`36,578,304` pixels) for the product-level 48MP path. Output
+  count `2 -> 3`, exactly one generated `jpegStill` at `8064x5557`, and the
+  original RAW classification and dimensions were preserved. Evidence:
+  `/tmp/PhotoMemoRound98QA05Raw.xcresult`.
+- QA-01 Configuration Center passed after one isolated CoreDevice launch
+  failure was retried through a separate signed run. QA-03 picker presentation,
+  cancellation, and the exact `精选集 -> MemoMark QA Inputs` route passed `2/2`.
+  The first combined Round100 run is retained as a tool-layer failure record;
+  it is not treated as an App assertion failure. Successful retry evidence:
+  `/tmp/PhotoMemoRound101QA01Config.xcresult` and
+  `/tmp/PhotoMemoRound102QA03Picker.xcresult`.
+- Added a Debug-only, QA-launch-argument-controlled seam after PhotoKit accepts
+  the transaction and before local commit acknowledgement. QA-07 then passed
+  the static JPEG post-commit termination/relaunch check: output count `3 -> 4`,
+  termination-time and post-relaunch counts both `4`, one output identifier,
+  no duplicate, and original preservation. QA-08 passed the same controlled
+  boundary for Live Photo: output count `4 -> 5`, no duplicate, complete
+  `pairedVideo` output, and original preservation. The seam is not enabled in
+  normal production launches. Evidence:
+  `/tmp/PhotoMemoRound105QA07StaticRecovery.xcresult` and
+  `/tmp/PhotoMemoRound106QA08LiveRecovery.xcresult`.
+- Focused macOS receipt/queue recovery tests passed after the seam was added,
+  including placeholder/intent persistence, direct visible-asset reuse,
+  missing-visibility fail-closed behavior, queue startup reconciliation, and
+  shared static/Live Photo receipt policy. The device QA runner contract also
+  passed after RED/GREEN coverage for QA-02, QA-04, QA-07, and QA-08.
+- These rounds materially narrow TX-001: the controlled post-commit boundary
+  now has static and Live Photo physical-device evidence for one termination
+  followed by immediate relaunch without a duplicate output. TX-001 is still
+  open and the QA manifest remains `planned`: delayed-visibility D3, permission
+  change D5, cancellation and receipt-write failure boundary evidence, and the
+  complete protocol review are not yet closed. The controlled UI-test
+  termination is also kept distinct from the earlier Round86 CoreDevice
+  `SIGKILL` signal; the two evidence types must not be conflated.
+- BP-001 remains open. The Round108 Xcode Beta `xctrace` retry produced no trace:
+  CoreDevice first reported usage assertion error `4016`, the device became
+  `unavailable`, and `xctrace` ended with `Timed out waiting for device to boot`.
+  No peak RSS, Allocations, Jetsam, or memory pass/fail conclusion was inferred
+  from this tool failure. The required Instruments capture remains pending a
+  healthy CoreDevice bridge.
+- After the final harness tightening, the unsigned iPhoneOS
+  `MemoMarkDeviceQA` `build-for-testing` structural gate passed, the device QA
+  runner contract passed, the local Python automation suite passed `116/116`,
+  `git diff --check` passed, and the read-only signing diagnostic reported
+  `result=ready` with one matching provisioning profile. These are local
+  readiness/build facts and do not override the physical-device `unavailable`
+  state or create BP-001 memory evidence.
+
+## 2026-08-14 QA input/output boundary and macOS UTI contract round 89
+
+- Reconfirmed the only production-input route for unattended device QA:
+  `程序主界面 -> App 内选择照片 -> 精选集 -> MemoMark QA Inputs`. The
+  prepared `MemoMark QA Outputs` album remains readback-only. The harness does
+  not use it as a picker source, does not scan the personal library, and does
+  not clear either QA album; each processing run compares the existing output
+  local-identifier set with the identifiers observed after the run.
+- Added the macOS `PhotoMemo` target's explicit `PhotoMemo-Info.plist` and
+  switched both macOS configurations from generated Info.plist mode to that
+  source file. The macOS host now declares Apple ProRAW as an imported UTI and
+  the internally used Live Photo bundle identifier as an exported UTI. The
+  existing iOS declaration remains an import only; Apple ProRAW is not
+  exported.
+- Extended `RawInputInfoPlistContractTests` to check the macOS declarations
+  and that the Xcode target is wired to the explicit plist. The focused
+  contract passed. The full macOS `PhotoMemoTests` suite also passed with
+  `1,436` passed, `0` failed, `1` skipped, and `1,437` total tests. The
+  prior missing-ProRAW and missing-Live-Photo-bundle runtime warnings are absent.
+  Two unrelated internal QoS priority-inversion warnings remain in
+  `FixtureExportReadbackTests.swift`.
+- This round changes only the local QA/test-host contract and does not alter
+  the device's prepared Photos resources. The physical-device evidence
+  boundaries remain unchanged: BP-001 still lacks a valid peak-memory trace,
+  and TX-001 still lacks durable pre-commit receipt binding, same-task restart
+  idempotency, delayed-visibility recovery, permission-change coverage, and
+  the complete D1-D5 matrix.
+
+## 2026-08-14 Device QA Round 90: exact picker input route on iPhone 17 Pro Max
+
+- Ran a signed, single-test physical-device regression against `iPhone7`
+  (iPhone 17 Pro Max, iOS 27.0) using the Xcode-beta toolchain. The test
+  completed the exact production route:
+  `App 内选择照片 -> 精选集 -> MemoMark QA Inputs -> 返回`.
+- The test passed `1/1`, with `0` failed and `0` skipped:
+  `/tmp/PhotoMemoRound90PickerRoute.xcresult`. It did not select a media
+  cell, did not invoke processing, did not create an output, and did not
+  clear either QA album. This is a direct route/album-boundary result, not
+  processing or output certification.
+
+## 2026-08-14 Device QA Round 91: prepared input media matrix readback
+
+- Ran the read-only PhotoKit inventory test on the same physical device. The
+  prepared `MemoMark QA Inputs` album contained `13` assets and the
+  authorization state was `authorized`. The observed classifications were
+  `livePhoto` and `rawWithJPEGRepresentation` only.
+- The Live Photo inputs exposed both HEIC still resources
+  (`public.heic`) and JPEG still resources (`public.jpeg`), with paired
+  video resources. The album contained `4` RAW/DNG inputs, each with a
+  Photos JPEG rendition, at `8064x4536` (`36,578,304` pixels). The
+  evidence records `rawHighestQualityInputAvailable=true` and
+  `exact48MPPixelAreaAvailable=false`; this confirms the product-level
+  48MP label is mapped to the iPhone 17 Pro Max's highest-quality RAW/ProRAW
+  source path, while the reported pixel rectangle remains a separate fact.
+- The test completed `1/1` with no output creation or album mutation. Result
+  bundle:
+  `/tmp/PhotoMemoRound91InputMediaMatrix.xcresult`.
+
+## 2026-08-14 Device QA Round 92: output album readback boundary
+
+- Ran the output-only PhotoKit inventory test on the same physical device.
+  `MemoMark QA Outputs` remained at `7` assets: `1` complete Live Photo
+  and `6` JPEG stills. The observed generated JPEGs remained
+  `8064x5557`; no asset was selected through the production picker.
+- The test completed `1/1` with no input or output album mutation. This
+  confirms that the current output readback path is separate from the
+  production input route; it is not a new processing run or a proof of
+  save-receipt idempotency. Result bundle:
+  `/tmp/PhotoMemoRound92OutputInventory.xcresult`.
+
+## 2026-08-14 Device QA Round 88: restart and output readback stability
+
+- Terminated the installed main App process (`PhotoMemoiOS` PID `28513`) on
+  the paired physical device, then launched the same signed App again as PID
+  `28547` with CoreDevice.
+- Immediately after relaunch, the device QA readback test completed with `1/1`
+  passed. `MemoMark QA Outputs` remained at `7` assets with authorization
+  `authorized`; no new output was created and the input album was not changed.
+  Result bundle:
+  `/tmp/PhotoMemoRound88QA08-RestartReadbackAfterLaunch.xcresult`.
+- This closes only a bounded ordinary restart/readback stability slice. It
+  does not prove that an interrupted task with the same idempotency key is
+  resumed or reused, and it does not close the TX-001 D1-D5 recovery matrix.
+
+## 2026-08-14 Device QA Round 87: Instruments attachment boundary on iOS 27 beta
+
+- After the signed QA build was already installed and the main app process was
+  launched directly on `iPhone7`, `xctrace` was retried with a narrower
+  target: `Activity Monitor` attached only to the running `PhotoMemoiOS`
+  process (`PID 28513`) for a bounded 30-second window.
+- The attach attempt failed before a trace was created with the same Xcode
+  beta/CoreDevice error as the earlier all-process attempt:
+  `Timed out waiting for device to boot: iPhone7 (27.0)`. This is a sampling
+  tool/device-bridge failure, not an App memory result. No peak RSS,
+  Allocations, Jetsam, or Time Profiler evidence was inferred from it.
+- A separate `sendMemoryWarning` attempt also returned CoreDevice
+  `NSPOSIXErrorDomain` / `No such file or directory`; the app process remained
+  listed afterward. This is recorded as an unsupported/failed device-control
+  operation, not as memory-pressure acceptance.
+- BP-001 therefore remains open and still requires a real Instruments or
+  equivalent device-memory capture when the Xcode/CoreDevice bridge can
+  attach successfully.
+
+## 2026-08-14 Device QA Round 86: controlled process termination during RAW processing
+
+- Repeated the production input route on the paired physical `iPhone7` (iPhone
+  17 Pro Max, iOS 27.0): `App 内选择照片 -> 精选集 -> MemoMark QA Inputs`.
+  `MemoMark QA Outputs` remained readback-only; no input or output album data
+  was cleared by the test.
+- A Round85 single-test baseline completed `QA-05` with `1/1` passed and
+  produced one new JPEG output. Round86 then launched the same QA-05 test and
+  the device-control monitor observed the newly launched `PhotoMemoiOS`
+  process (`PID 28490`). After the controlled processing-window delay it sent
+  `SIGKILL` through CoreDevice. The test still completed with `1/1` passed.
+- The post-termination evidence showed the input album remained at `13`
+  assets and the selected RAW/ProRAW input
+  `CC700FC4-3906-4A81-ABD7-36AB061EFBAE/L0/001` remained
+  `8064x4536`. The output album increased from `6` to `7`; the new output
+  `9168EF3F-AE25-4DB4-8BA2-535ADCB21AFC/L0/001` was a JPEG still at
+  `8064x5557`. The evidence recorded the same input identifier and
+  `originalPreserved=true`.
+- This is a bounded TX-001 device-injection signal: a process termination was
+  actually issued during the end-to-end RAW attempt, and the observed result
+  did not mutate the source or create a second output within that attempt. It
+  does not close TX-001. The current test does not yet bind a durable
+  pre-commit receipt to the interrupted task, prove same-task restart
+  idempotency, or exercise delayed visibility, permission changes, and the
+  complete D1-D5 recovery matrix. The Round86 result bundle is
+  `/tmp/PhotoMemoRound86TX001-Terminate-QA05.xcresult`.
+
+## 2026-08-14 Device QA Round 83: production picker route and highest-quality RAW readback
+
+- Corrected the device-QA source route to the actual production flow:
+  `App 内选择照片 -> 精选集 -> MemoMark QA Inputs`. The input album is now
+  explicitly distinguished from `MemoMark QA Outputs`; the output album is
+  used only for result readback and is never selected as a production input.
+- Added a bounded QA-05 processing assertion that selects a RAW/ProRAW asset
+  through that picker route, waits for a new PhotoKit output, checks that the
+  output is a new JPEG still, and verifies that the selected input's local
+  identifier, classification, and dimensions remain unchanged. The test
+  records the result as an evidence attachment rather than relying on a
+  transient completion-screen timing check.
+- On the paired physical `iPhone7` (iPhone 17 Pro Max, iOS 27.0), the input
+  album contained `13` assets, including `4` highest-quality RAW/ProRAW assets
+  with JPEG renditions. Their observed dimensions were `8064x4536`, with a
+  maximum pixel area of `36,578,304`; an exact `48MP` pixel area was not
+  present. For this device, the product-level `48MP` label is therefore
+  mapped to the device's highest-quality RAW/ProRAW source path, while the
+  exact pixel-area fact remains recorded separately.
+- Round83 was built, signed, installed, and executed with Xcode-beta
+  `27.0 (27A5218g)`. The run executed `9` tests with `9` passed, `0` failed,
+  and `0` skipped; the result bundle and evidence verifier both passed:
+  `/tmp/PhotoMemoRound83Run/round83-qa05-raw-imported-uti-plist/`.
+  QA-05 produced a new output
+  `87D6FD57-D38E-4A3F-A96D-5C9E197D4D74/L0/001` from input
+  `CC700FC4-3906-4A81-ABD7-36AB061EFBAE/L0/001`; the input remained
+  `8064x4536`, the output was `8064x5557`, and the evidence reported
+  `originalPreserved=true`. The output album increased from `3` to `4`.
+- Fixed the Apple ProRAW type contract by using `UTType(importedAs:)` in the
+  processing policy and declaring `com.apple.proraw` under
+  `UTImportedTypeDeclarations` in the iOS App Info.plist. The corresponding
+  contract test passed, and the Round83 device log no longer contains the
+  prior missing-ProRAW-declaration warning. No Apple-owned UTI is exported.
+- This closes the current picker-route, highest-quality RAW intake, output
+  readback, original-preservation, and ProRAW bundle-declaration evidence
+  slice. It does not close BP-001 peak-memory/Jetsam evidence, TX-001 forced
+  termination and delayed-visibility recovery, Limited Photos behavior,
+  Share Extension end-to-end acceptance, localization/accessibility/iPad
+  acceptance, or overall production certification. The QA-01 through QA-08
+  manifest remains `planned` until those broader contracts are independently
+  exercised.
+
+## 2026-08-14 Device QA Round 76: Live Photo readback on iPhone 17 Pro Max
+
+- Added a bounded QA-04 physical-device readback assertion to
+  `MemoMarkDeviceQAHarnessTests`. It matches a valid output Live Photo to a
+  valid input Live Photo by normalized still-resource stem and capture date,
+  then checks that the output has a different PhotoKit local identifier, both
+  assets remain complete Live Photos with paired-video resources, and the
+  capture date is preserved.
+- The signed `MemoMarkDeviceQA` runner was built with Xcode-beta `27.0
+  (27A5218g)`, installed and executed on the paired physical `iPhone7`
+  (iPhone 17 Pro Max, iOS 27.0). The run executed `5` tests with `5` passed,
+  `0` failed, `0` skipped. The result bundle and verifier both passed:
+  `/tmp/PhotoMemoRound76Run/round76-qa04-live-photo-readback/`.
+- The readback evidence paired input
+  `230E0C3C-ECF6-41A3-96B7-D5A827E4323D/L0/001` with output
+  `C774E52A-279E-4A82-AEEB-8F53F3F10BE7/L0/001`. The output is a new
+  `photoLive` asset with `photo` + `pairedVideo` resources and capture date
+  `2026-07-30T04:02:46Z`; the input remains a complete `photoLive` asset in
+  `MemoMark QA Inputs`.
+- This closes a real-device resource/readback evidence slice for the
+  user-confirmed MemoMark result. It does not yet close the full QA-04
+  processing trigger, exact save-receipt binding, Share Extension journey,
+  forced-termination recovery, or QA-01 through QA-08 certification. The QA
+  manifest remains `planned` until those broader contracts are implemented and
+  independently exercised.
+
+## 2026-08-13 MemoMark Device QA Evidence Gate Optimization Round 8
+
+- Closed a bounded Engineering Loop slice in the physical-device QA
+  orchestration layer. The runner now validates `QA/MemoMarkDeviceQA.json`
+  before device interaction: schema, exact QA-01 through QA-08 ordering,
+  original-asset mutation prohibition, no automatic library scan/deletion, and
+  required result-bundle/private-media policies are all checked automatically.
+- A device `run` is no longer considered successful from the `xcodebuild`
+  exit code alone. It now requires a present `.xcresult`, a `Passed` test
+  summary, zero failed tests, and at least one executed test; run metadata
+  records the result-bundle and summary evidence fields. `validate` is exposed
+  as a standalone preflight command, and the QA README documents the hard
+  evidence gate.
+- `bash -n`, manifest JSON parsing, the new `validate` command, connected
+  `iPhone7` / iPhone 17 Pro Max preflight, and `git diff --check` passed. The
+  preflight did not execute signed device tests or touch Photos data.
+- This closes the eighth optimization slice, not QA-01 through QA-08. The
+  current UI test target still contains only the host launch smoke test; the
+  remaining scenario assertions require the user-provided QA assets, a valid
+  signing profile for the new runner, and later physical-device execution.
+
+## 2026-08-13 TX-001 Queue Projection Optimization Round 7
+
+- Closed a small Engineering Loop maintenance slice for the durable intent
+  contract. `PhotoLibrarySaveReceiptStore` now exposes a read-only intent
+  projection for diagnostics and restart inspection, while the persisted
+  marker remains private to the receipt store and the existing exact-task
+  identity. This adds observability without adding a scan, a new recovery
+  query, or a user-facing workflow.
+- Added regression coverage that reloads the store, reads the durable intent
+  timestamp, and verifies that recording the eventual asset receipt removes
+  the pending marker. The existing malformed-marker blocking behavior remains
+  conservative: marker presence protects the task even when its payload cannot
+  be decoded.
+- The focused receipt suite passed after this round. The complete
+  `PhotoMemoTests` suite then passed: `1,412` passed, `0` failed, and `1`
+  skipped. Generic iOS `PhotoMemoiOS` build and generic iOS
+  `MemoMarkDeviceQA` build-for-testing also passed with signing disabled.
+- This closes the seventh optimization slice, not TX-001 certification. The
+  intent projection is diagnostic evidence only; it cannot identify an asset
+  when a crash occurs before a PhotoKit placeholder is available.
+
+## 2026-08-13 TX-001 Reuse Confirmation Optimization Round 6
+
+- Closed the next bounded Engineering Loop slice for the retry/reuse path.
+  Static-image and Live Photo writers now use one `ensureCommitted` contract
+  when an exact previously recorded asset is found. An already acknowledged
+  receipt is reused without another write; a submitted receipt must still be
+  upgraded and verified before the save result can be returned.
+- If that upgrade cannot be durably acknowledged, both writers return the
+  existing `savedAssetReadbackPending` state. This keeps the original receipt
+  available for exact local-identifier recovery and prevents a retry from
+  presenting a successful save whose local acknowledgement is not durable.
+- Added tests for idempotent acknowledged receipts and static/Live Photo
+  source parity. The focused receipt and queue suites passed. The complete
+  `PhotoMemoTests` suite passed after this round: `1,412` passed, `0` failed,
+  and `1` skipped; the only skip remains the existing conditional JPEG
+  metadata test. Generic iOS `PhotoMemoiOS` build and generic iOS
+  `MemoMarkDeviceQA` build-for-testing also passed with signing disabled.
+- This closes the sixth optimization slice, not TX-001 certification. No
+  claim is made about forced termination, delayed PhotoKit visibility, or
+  signed physical-device runtime behavior.
+
+## 2026-08-13 TX-001 Queue Acknowledgement Projection Optimization Round 5
+
+- Closed a bounded Engineering Loop slice for startup reconciliation. When
+  the exact PhotoKit asset is visible but upgrading a `transactionSubmitted`
+  receipt to `commitAcknowledged` fails, the queue now keeps the task in
+  `savingToPhotoLibrary`, retains its rendered resource and receipt, and does
+  not clean up or project a false terminal success.
+- An already `commitAcknowledged` receipt is accepted without rewriting the
+  receipt store. The normal visible-asset completion path remains unchanged
+  when the acknowledgement is durable, and the delayed-visibility path still
+  waits for the exact local-identifier lookup.
+- Added failure-injection coverage for receipt write failure during startup
+  reconciliation. The RED test failed against the previous implementation;
+  after the smallest guard change the focused queue suite passed. The complete
+  `PhotoMemoTests` suite passed after this round: `1,410` passed, `0` failed,
+  and `1` skipped. Generic iOS `PhotoMemoiOS` build and generic iOS
+  `MemoMarkDeviceQA` build-for-testing also passed with signing disabled.
+- This closes the fifth optimization slice, not TX-001 certification. Actual
+  forced-termination and signed physical-device evidence remain open.
+
+## 2026-08-13 TX-001 Pre-Commit Intent Optimization Round 4
+
+- Closed the next bounded Engineering Loop slice at the point immediately
+  before a static-image or Live Photo save enters the external PhotoKit
+  transaction. The change remains inside the receipt store, the two existing
+  PhotoKit writers, and queue startup recovery; no UI, Renderer, Memory
+  Engine, Layout Engine, Share intake, or full-library query behavior changed.
+- Added the durable `photomemo.photoLibrarySaveIntent.v1` pre-commit marker.
+  It is written and read back before `performChanges` begins, refuses a second
+  unresolved intent for the same idempotency key, and is cleared only when a
+  receipt is recorded, committed, removed, or explicitly cancelled before the
+  external transaction. Receipt pruning now handles both durable marker types.
+- If the intent cannot be verified, both writers stay in the existing
+  `savedAssetReadbackPending` recovery state and do not start another PhotoKit
+  write. If cancellation arrives before the external transaction, the marker
+  is removed; if it arrives after submission, the Round 3 submission receipt
+  remains the recovery source and no output is deleted or rewritten.
+- Queue startup now protects a saving task when either its exact asset receipt
+  or its pre-commit intent exists. It does not requeue such a task and does
+  not scan the user's library. Exact local-identifier visibility remains the
+  only completion route; an intent without a placeholder identifier is
+  intentionally conservative and cannot by itself prove that an asset was
+  committed.
+- RED/GREEN coverage passed for marker restart survival, marker write failure,
+  writer ordering, and startup preservation of an intent-backed saving task.
+  The complete `PhotoMemoTests` suite passed after this round: `1,409`
+  passed, `0` failed, and `1` skipped. The existing ProRAW / Live Photo
+  declaration and test QoS runtime warnings remain; none was a test failure.
+- Generic iOS `PhotoMemoiOS` build and generic iOS `MemoMarkDeviceQA`
+  build-for-testing both passed with signing disabled. Shared-scheme XML,
+  QA-manifest JSON, runner shell syntax, `git diff --check`, and connected
+  `iPhone7` / iPhone 17 Pro Max preflight also passed.
+- This closes the fourth optimization slice, not TX-001 certification. The
+  unresolved intent state still needs exact receipt visibility or a future
+  product-level recovery surface; forced termination, delayed PhotoKit
+  visibility, signed physical execution, and the final QA-01 through QA-08
+  run remain open.
+
+## 2026-08-13 TX-001 Cancellation Boundary Optimization Round 3
+
+- Closed the next bounded Engineering Loop slice at the boundary between an
+  accepted PhotoKit transaction and the remaining local task projection. The
+  change stayed inside the existing static-image / Live Photo save paths and
+  queue-recovery contract; no UI, Renderer, Memory Engine, Layout Engine,
+  Share intake, or full-library query behavior changed.
+- Both PhotoKit writers now call `Task.checkCancellation()` immediately after
+  the external `performChanges` transaction returns and before commit
+  acknowledgement or success projection. If cancellation arrives in this
+  window, the already-submitted output is not deleted or written again; the
+  durable `transactionSubmitted` receipt remains available for exact
+  local-identifier recovery on the next queue reconciliation.
+- Added a RED/GREEN source contract covering the cancellation recheck in both
+  static and Live Photo paths. The existing transaction-order contract was
+  narrowed to its real invariant—receipt recording must occur before the
+  PhotoKit transaction closes—so it remains valid as post-transaction guards
+  evolve.
+- The focused `PhotoLibrarySaveReceiptStoreTests` run passed, and the complete
+  `PhotoMemoTests` suite passed after this round: `1,405` passed, `0` failed,
+  and `1` skipped. The one skip remains the pre-existing conditional JPEG
+  metadata test. Existing ProRAW / Live Photo Info.plist declaration and test
+  QoS runtime warnings remain; none was a test failure.
+- Generic iOS `PhotoMemoiOS` build and generic iOS `MemoMarkDeviceQA`
+  build-for-testing both passed with signing disabled. QA manifest parsing,
+  shared-scheme XML validation, runner shell syntax, `git diff --check`, and
+  connected `iPhone7` / iPhone 17 Pro Max preflight also passed.
+- This closes the third optimization slice, not TX-001 certification. Actual
+  signed physical-device execution, forced termination, delayed PhotoKit
+  visibility, and the durable pre-commit-intent design remain open. The
+  current evidence proves the source contract and recovery-preserving
+  cancellation boundary; it does not claim Apple Photos runtime acceptance.
+
+## 2026-08-13 TX-001 Receipt Confirmation Optimization Round 2
+
+- Closed the next bounded Engineering Loop slice for receipt persistence
+  failure. This round stayed inside `PhotoLibrarySaveReceiptStore` and the
+  existing static-image / Live Photo PhotoKit save paths; no UI, Renderer,
+  Memory Engine, Layout Engine, Share intake, or full-library query behavior
+  changed.
+- Receipt writes now have an injectable writer for controlled verification,
+  return an explicit success result, and require a read-back match. If a
+  commit-acknowledgement write is rejected or read-back differs, the previous
+  `transactionSubmitted` receipt is restored instead of being silently
+  replaced by an invalid phase.
+- After PhotoKit reports a successful transaction, both static-image and Live
+  Photo saves now treat a failed `commitAcknowledged` write as the existing
+  `savedAssetReadbackPending` state. The durable submission receipt remains
+  available, so the next attempt can perform the exact local-identifier lookup
+  and reuse the asset without a second PhotoKit write.
+- RED/GREEN coverage now proves record-write failure reporting, preservation
+  of the last-known submission receipt, and parity of the static / Live Photo
+  failure branch. The four related suites
+  (`PhotoLibrarySaveReceiptStoreTests`, `BatchQueueStorePersistenceTests`,
+  `BatchQueueExecutionContractTests`, and `ProductionDiagnosticsTests`) passed
+  with zero failures.
+- The complete `PhotoMemoTests` suite passed after this round: `1,404` passed,
+  `0` failed, and `1` skipped. The only reported skip remains the
+  pre-existing conditional JPEG metadata test. Xcode also emitted the
+  existing ProRAW / Live Photo declaration and test QoS runtime warnings;
+  none was a test failure.
+- This closes the second optimization slice, not TX-001 certification. A
+  receipt write failure occurring before a PhotoKit placeholder identifier is
+  available still needs a dedicated durable pre-commit-intent design before it
+  can be claimed as fully crash-safe. Forced-termination, cancellation-boundary,
+  delayed-visibility, and signed iPhone 17 Pro Max evidence remain open.
+
+## 2026-08-13 TX-001 Receipt Confirmation Optimization Round 1
+
+- Completed a bounded Engineering Loop slice without changing the Memory
+  Engine, Layout Engine, Renderer, Share intake, UI workflow, or Apple Photos
+  asset ownership boundaries.
+- `PhotoLibrarySaveReceiptStore` now exposes an explicit two-phase receipt:
+  `transactionSubmitted` is persisted inside the PhotoKit change transaction,
+  and `commitAcknowledged` is persisted only after PhotoKit reports a
+  successful commit callback. Existing split receipts and older atomic JSON
+  receipts remain readable and conservatively map to
+  `transactionSubmitted`.
+- Static image saves and Live Photo saves use the same lifecycle semantics.
+  Direct local-identifier lookup remains the only reconciliation query; no
+  full-library scan, filename matching, or elapsed-time negative proof was
+  introduced.
+- Queue startup and later exact readback now upgrade the receipt to
+  `commitAcknowledged` before persisting the durable task as completed. If the
+  acknowledgement write cannot be verified, the original submission receipt
+  remains available for safe recovery.
+- RED/GREEN coverage was added for receipt lifecycle, legacy receipt decoding,
+  static/Live Photo parity, and visible-asset queue reconciliation. The
+  focused `PhotoLibrarySaveReceiptStoreTests` and
+  `BatchQueueStorePersistenceTests` run passed with zero failures and zero
+  skips.
+- The complete `PhotoMemoTests` suite passed after the QA target version
+  contract was brought into the release-train count. The only reported skip
+  remains the existing conditional JPEG metadata test; no test failure was
+  reported in the final run.
+- Unsigned macOS `PhotoMemo`, generic iOS `PhotoMemoiOS`, and generic iOS
+  Simulator `MemoMarkDeviceQA` build-for-testing checks passed. `git diff
+  --check`, project-file lint, QA manifest parsing, runner shell syntax, and
+  the connected `iPhone7` / iPhone 17 Pro Max preflight also passed.
+- This round does not close TX-001 or the V3 `FAIL (Conditional)` reliability
+  verdict. Receipt-write failure injection, forced-termination evidence,
+  cancellation-boundary evidence, and signed iPhone 17 Pro Max execution
+  remain required before any production-certification claim.
+
+## 2026-08-13 Device QA Harness Preparation
+
+- Added the non-destructive `MemoMarkDeviceQA` iOS UI test target and shared
+  scheme. The target currently contains only a harness launch smoke test; it
+  does not claim that QA-01 through QA-08, PhotoKit, Share Extension, TX-001,
+  BP-001, or final UI acceptance have passed.
+- Added `QA/MemoMarkDeviceQA.json` as the future device-run contract. It
+  requires explicit user-provided asset identifiers or a prepared `MemoMark QA
+  Inputs` album, writes only to the dedicated QA output boundary, forbids
+  automatic personal-library scanning and original-asset mutation, and keeps
+  private media out of repository results.
+- Added `scripts/memomark-device-qa.sh` for preflight, signed test execution,
+  `.xcresult` collection, run metadata, and best-effort device screenshots.
+  The runner does not uninstall the app, clear the App Group container, reset
+  Photos permissions, or delete personal photos.
+- `xcodebuild ... build-for-testing` passed for a generic iOS Simulator with
+  signing disabled. The connected `iPhone7` / iPhone 17 Pro Max is paired and
+  unlocked according to `devicectl`; signed physical build is currently
+  blocked by the local Xcode command-line environment having no Apple account
+  and no provisioning profile for the new `.xctrunner` bundle. This is an
+  environment prerequisite for the later user-provided-device run, not a
+  production-code failure.
+- A simulator `xcodebuild test` smoke attempt did not return under the current
+  Xcode beta/CoreSimulator host and was stopped; it is not recorded as passed.
+  The existing production reliability boundaries remain unchanged: TX-001,
+  BP-001, PhotoKit lifecycle, and the final QA-01 through QA-08 execution are
+  still open.
+
 ## 2026-08-13 MemoMark 2.1.1 (80) Source Sync Package
 
 - 本轮正式同步范围从上周日约 14:12 的相邻 Git 基线 `588792d`（2026-08-09 14:06:59，`2.1.0 (76)`）整理到当前工作树；此前已经推送的 `2.1.1 (77)` 与 `2.1.2 (79)` 作为未上架源码检查点保留其历史记录。
@@ -22089,3 +22835,1213 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   and signing. Xcode Cloud build/upload and App Store submission remain
   unexecuted in this workspace; the GitHub source checkpoint and the connected
   device validation are complete and independent of that cloud step.
+
+## 2026-08-13 TX-001 Queue Projection Optimization Round 9
+
+- Extended the durable pre-commit save intent with an optional PhotoKit
+  placeholder `PHAsset.localIdentifier`. If the external PhotoKit transaction
+  succeeds but receipt persistence fails, the exact output asset can now be
+  located and the pending intent can be materialized into a normal receipt on
+  the next recovery pass; no personal-library scan or heuristic asset matching
+  was introduced.
+- Static-image and Live Photo save paths record the placeholder identifier when
+  receipt write-back fails. `BatchQueueStore` protects both receipt-backed and
+  intent-backed saving jobs, then materializes and durably acknowledges an exact
+  placeholder-backed asset before projecting the job as completed.
+- Added backward decoding coverage for pre-placeholder intent payloads,
+  receipt-write failure retention, placeholder materialization, and startup
+  recovery. The complete macOS `PhotoMemoTests` run passed 1,415 tests with 0
+  failures and 1 skipped test. Generic unsigned iOS builds for `PhotoMemoiOS`
+  and `MemoMarkDeviceQA` passed.
+- This closes the ninth bounded TX-001 reliability slice. It does not close
+  forced-termination, delayed-visibility, or physical-PhotoKit certification
+  evidence, and it does not claim QA-01 through QA-08 execution.
+
+## 2026-08-13 MemoMark Device QA Automation Round 10
+
+- Corrected the unattended runner to resolve the human-readable device name
+  (`iPhone7`) to the current CoreDevice identifier before invoking
+  `xcodebuild`; the runner now uses the connected iPhone 17 Pro Max identifier
+  `863C2747-6742-5E93-B715-6F89DBF90B31`.
+- The runner now hard-gates all three result conditions: xcodebuild exit status
+  0, a present `.xcresult` bundle, and a `Passed` test summary with zero
+  failures and at least one executed test. The runner contract tests cover the
+  destination binding and evidence gate.
+- Physical preflight passed: the device was paired, visible, and unlocked.
+  The first physical attempt exposed the name-versus-UDID destination defect;
+  the corrected attempt reached the actual signing boundary and produced a
+  result bundle, but could not run because no development profile existed for
+  `com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner` and no Xcode account was
+  configured for automatic provisioning. This is external signing setup
+  evidence, not a QA pass or an application failure.
+- Added an opt-in `--allow-provisioning-updates` path. It does not alter
+  credentials or silently fall back to an unsigned/simulator run. No app
+  uninstall, Photos reset, App Group deletion, or personal media export was
+  performed.
+- This closes the runner-preparation slice, not physical QA-01 through QA-08
+  execution or certification.
+
+## 2026-08-13 MemoMark Device QA Automation Round 11
+
+- Classified incomplete physical runs in `run-metadata.json`: a missing Apple
+  development account/profile is now `result: "blocked"` with
+  `failureClass: "signing-blocked"`; ordinary test and runner failures remain
+  non-passing failure states. The process still exits non-zero, so the
+  classification cannot weaken the hard evidence gate.
+- Fixed the default macOS Bash `set -u` path where an empty provisioning
+  argument array prevented the runner from reaching xcodebuild. Signing update
+  arguments are now passed through an explicit opt-in branch. Also removed a
+  duplicate screenshot-device argument.
+- The runner contract suite passed 5 tests with 0 failures. A new physical
+  regression run again reached xcodebuild on the paired/unlocked iPhone 17 Pro
+  Max, resolved the correct UDID, produced an `.xcresult`, and recorded
+  `xcodebuildExitStatus: 65`, `result: "blocked"`, and
+  `failureClass: "signing-blocked"` for the missing QA-runner profile.
+- The complete macOS `PhotoMemoTests` regression passed 1,420 tests with 0
+  failures and 1 skipped test. The run included the new runner contracts and
+  the Round 9 receipt/intent recovery coverage.
+- This closes the eleventh bounded automation slice. The remaining physical
+  blocker is Apple signing/account setup; once supplied, the same command can
+  continue without changing the runner contract. QA-01 through QA-08 remain
+  intentionally deferred until the underlying production lifecycle gates are
+  ready.
+
+## 2026-08-13 MemoMark Device QA Automation Round 12
+
+- Executed the runner's explicit provisioning-update branch against the paired
+  and unlocked iPhone 17 Pro Max. Both Xcode provisioning flags were passed as
+  designed, and the run produced a result bundle without touching the app's
+  installed data or the Photos library.
+- The configured Mac still has no Xcode developer account available to the
+  command-line build and no QA-runner profile. The run therefore remains
+  correctly classified as `result: "blocked"` and
+  `failureClass: "signing-blocked"`, with exit status 65. This confirms the
+  opt-in branch does not weaken the signing boundary or create a false pass.
+- Generic unsigned `PhotoMemoiOS` and `MemoMarkDeviceQA` iOS builds both
+  passed after the runner changes. The full macOS test evidence remains
+  1,420 passed, 0 failed, and 1 skipped.
+- This closes the cross-platform runner-consistency slice. The only remaining
+  prerequisite for a real unattended physical QA run is configuring the
+  Apple developer account/profile for the QA runner; once present, the same
+  command is ready to execute the still-deferred QA-01 through QA-08 plan.
+
+## 2026-08-13 MemoMark Device QA Automation Round 13
+
+- Added an offline artifact verifier at
+  `scripts/memomark-device-qa-verify.py`. It recomputes the result from the
+  copied manifest, run metadata, test summary, xcodebuild log, and `.xcresult`
+  structure, then compares the recomputed evidence with the stored metadata.
+- Added `scripts/memomark-device-qa.sh verify --run-dir <directory>`. The
+  default verify path does not invoke CoreDevice, xcodebuild, Photos, or any
+  write operation. A blocked run remains a non-zero result while retaining the
+  machine-readable `blocked/signing-blocked` classification.
+- Rechecked the real Round 12 physical artifact offline. It returned
+  `blocked (signing-blocked)` as expected, and the combined digest of metadata,
+  test summary, and xcodebuild log remained unchanged. An intentional metadata
+  mismatch was also rejected with a non-zero status.
+- Added a six-test runner contract slice covering verifier dispatch, evidence
+  hard gates, signing classification, argument safety, and offline verification.
+  The complete macOS `PhotoMemoTests` run passed 1,421 tests with 0 failures and
+  1 skipped test. Generic unsigned `PhotoMemoiOS` and `MemoMarkDeviceQA` iOS
+  builds passed.
+- This closes the offline evidence-replay slice. It does not change the
+  physical signing blocker and does not claim execution of QA-01 through QA-08.
+
+## 2026-08-13 MemoMark Device QA Automation Round 14
+
+- Added a physical-device hard gate to preflight. The runner now reads the
+  current CoreDevice `properties.hardware.reality` value, keeps a fallback for
+  Xcode's deprecated `hardwareProperties.reality` field, and rejects anything
+  other than `physical` before a test command can run.
+- The connected iPhone 17 Pro Max preflight passed the new gate, confirmed the
+  device as physical, paired, unlocked, and resolved the expected CoreDevice
+  identifier. No application install, launch, Photos access, or data mutation
+  occurred during this preflight-only run.
+- The runner contract suite passed 7 tests with 0 failures. The complete
+  macOS `PhotoMemoTests` run passed 1,422 tests with 0 failures and 1 skipped
+  test. Generic unsigned `PhotoMemoiOS` and `MemoMarkDeviceQA` iOS builds
+  passed.
+- This closes the physical-target selection slice. The Apple signing/account
+  blocker and the deliberate deferral of QA-01 through QA-08 remain unchanged.
+
+## 2026-08-13 MemoMark Device QA Automation Round 15
+
+- Extended the offline verifier to require physical-device evidence from the
+  run's copied `device-details.json`. It checks the current
+  `properties.hardware.reality` field with the same deprecated-field fallback
+  used by preflight, so an artifact without physical proof cannot become a
+  pass during later replay.
+- An invalid or missing device reality is classified as
+  `failureClass: "device-target-invalid"`; signing-blocked, test-failed, and
+  runner-failed classifications remain distinct after the physical gate.
+- The runner contract suite passed 8 tests with 0 failures. The real Round 12
+  artifact still replays as `blocked (signing-blocked)`, confirming that its
+  physical device evidence is accepted while its missing Apple signing setup
+  remains visible.
+- The complete macOS `PhotoMemoTests` run passed 1,423 tests with 0 failures
+  and 1 skipped test. The previously verified generic unsigned iOS builds for
+  `PhotoMemoiOS` and `MemoMarkDeviceQA` remain valid because this slice only
+  changes the QA verifier and macOS contract coverage.
+- This closes the physical-evidence replay slice. It does not alter the Apple
+  account/profile blocker and does not claim QA-01 through QA-08 execution.
+
+## 2026-08-13 MemoMark Device QA Automation Round 16
+
+- Added a read-only `signing-status` diagnostic to the device-QA runner. It
+  reads the selected scheme's signing settings, the local Apple Development
+  identity inventory, and the locally readable provisioning profiles without
+  logging in, creating profiles, changing the keychain, or mutating the
+  project. It emits human-readable output by default and a stable JSON form
+  with the signing failure classification for unattended orchestration.
+- The diagnostic was executed against the current repository and Xcode
+  installation. It found one Apple Development identity but zero matching
+  development profiles for
+  `com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner`, so it correctly returned
+  `blocked (provisioning-profile-missing)` with a non-zero status. This turns
+  the remaining physical-run prerequisite into an explicit, machine-checkable
+  preflight result rather than a failed opaque build attempt.
+- The focused runner contract suite passed 9 tests with 0 failures. The full
+  macOS `PhotoMemoTests` regression passed 1,424 tests with 0 failures and 1
+  skipped test. Existing generic unsigned iOS build evidence from Round 14
+  remains valid because this round changed only QA scripts, documentation,
+  and macOS contract coverage.
+- The physical-only preflight and offline artifact verifier remain intact:
+  simulator evidence cannot pass as device evidence, and a blocked physical
+  artifact still replays as blocked. QA-01 through QA-08 remain intentionally
+  deferred until the Apple account/profile prerequisite and the final manual
+  device resources are available; no physical business-flow QA pass is
+  claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 17
+
+- Tightened read-only provisioning-profile matching so a profile is considered
+  usable only when both `application-identifier` exactly equals
+  `DEVELOPMENT_TEAM.bundleIdentifier` and
+  `com.apple.developer.team-identifier` equals the selected scheme's
+  `DEVELOPMENT_TEAM`. A same-suffix profile belonging to another team can no
+  longer be reported as ready.
+- Added a pure offline Python test module for the matching rule. It covers the
+  valid case, a wrong application-identifier team, a wrong team-identifier
+  entitlement, and a missing team entitlement. The repository's existing
+  script-test discovery passed 35 tests with 0 failures.
+- The focused Swift runner contract suite passed 9 tests with 0 failures, and
+  the complete macOS `PhotoMemoTests` regression passed 1,424 tests with 0
+  failures and 1 skipped test. The current machine still reports one Apple
+  Development identity and zero matching profiles, correctly remaining
+  `blocked (provisioning-profile-missing)`.
+- No account, keychain, project-signing, device, Photos, or personal-library
+  state was changed. QA-01 through QA-08 remain intentionally deferred until
+  the external Apple signing prerequisite and final physical-device resources
+  are available.
+
+## 2026-08-13 MemoMark Device QA Automation Round 18
+
+- Corrected the signing diagnostic's build-settings source. It now reads the
+  explicit `MemoMarkDeviceQA` UI test target with `xcodebuild -target`, rather
+  than inheriting the host application's scheme-level settings. The target's
+  own `PRODUCT_BUNDLE_IDENTIFIER` is recorded and used to derive the
+  `.xctrunner` bundle identifier; an explicit override remains available for
+  nonstandard target setups.
+- Added the target as an explicit runner option and covered the derivation
+  behavior with an offline test. The script test suite passed 36 tests with 0
+  failures, and the focused Swift runner contract suite passed 9 tests with 0
+  failures.
+- The complete macOS `PhotoMemoTests` regression passed 1,424 tests with 0
+  failures and 1 skipped test. The live read-only diagnostic reports
+  `target: MemoMarkDeviceQA`,
+  `productBundleIdentifier: com.serydoo.PhotoMemo.MemoMarkDeviceQA`, and
+  `runnerBundleIdentifier: com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner`;
+  it remains correctly blocked by zero matching provisioning profiles.
+- No iOS source, account, keychain, signing configuration, device, Photos, or
+  personal-library state was changed in this round. QA-01 through QA-08 remain
+  deferred until the external Apple signing prerequisite and final physical
+  test resources are available.
+
+## 2026-08-13 MemoMark Device QA Automation Round 19
+
+- Moved the default runner's read-only signing diagnostic ahead of physical
+  device preflight. With the current missing-profile state, `run` now exits
+  with `provisioning-profile-missing` before invoking CoreDevice, so a known
+  external blocker causes no unnecessary device interaction.
+- Preserved the explicit `--allow-provisioning-updates` path. When that option
+  is supplied, the early diagnostic gate is skipped intentionally and Xcode is
+  allowed to attempt the requested provisioning update; physical-device
+  selection, result-bundle presence, test-summary success, and offline
+  evidence gates remain unchanged.
+- The default-run ordering contract passed 11 tests with 0 failures. A live
+  default run on the current Mac returned the expected non-zero
+  `provisioning-profile-missing` result and created the copied QA manifest plus
+  a validated `signing-status.json`; no `preflight.log`,
+  `device-details.json`, xcodebuild test result, or device interaction was
+  produced. The script-test suite passed 36 tests with 0 failures, and the
+  complete macOS regression passed 1,426 tests with 0 failures and 1 skipped
+  test.
+- QA-01 through QA-08 remain deferred; no physical business-flow pass is
+  claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 21
+
+- Extended the offline verifier to recognize an early signing-blocked run that
+  contains only the copied QA manifest and `signing-status.json`. It validates
+  the read-only mode, blocked result, known signing failure class, target, and
+  runner Bundle ID, then replays the run as `blocked` without requiring
+  `run-metadata.json`, `device-details.json`, an xcodebuild log, or an
+  `.xcresult` bundle.
+- The early verifier rejects a supposedly early artifact if any device or
+  xcodebuild evidence is present, and rejects a `ready` signing status from
+  being treated as blocked evidence. The real Round 20 early artifact now
+  replays offline as `blocked (provisioning-profile-missing)` with exit status
+  1, as designed.
+- The script-test suite passed 39 tests with 0 failures. The complete macOS
+  `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1 skipped
+  test; the runner contract coverage remains passing.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state was changed. QA-01 through QA-08 remain deferred and no physical
+  business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 41
+
+- Added the read-only `readiness` command as the unattended preflight entry
+  point. It produces one `readiness.json` report with four explicit gates:
+  manifest validation, unsigned iPhoneOS `build-for-testing`, target-scoped
+  signing diagnostics, and physical-device preflight. The order is enforced:
+  CoreDevice is contacted only after the first three gates are ready.
+- The current live readiness run completed the manifest and structural build
+  gates, found one Apple Development identity but zero matching provisioning
+  profiles, and exited with `overallResult: "blocked"`; the physical-device
+  gate was correctly recorded as `skipped` with
+  `reason: "signing-blocked"`. No CoreDevice, app installation, Photos,
+  account, keychain, or personal-library state was touched.
+- Added a pure, offline report composer with atomic JSON output and a safety
+  downgrade: a report cannot claim `ready` without physical evidence carrying
+  both a CoreDevice identifier and `reality: "physical"`. The script suite
+  passed 85 tests with 0 failures; the focused runner contract suite passed
+  13 tests with 0 failures; and the complete macOS `PhotoMemoTests` regression
+  passed 1,428 tests with 0 failures and 1 skipped test (1,429 total). The
+  focused `.xcresult` is `/tmp/PhotoMemoRound41ContractEvidence.xcresult` and
+  the full `.xcresult` is `/tmp/PhotoMemoRound41Full.xcresult`.
+- `readiness` reports are deliberately distinct from completed physical QA
+  run artifacts and are not accepted by the regular `verify --run-dir` path.
+  QA-01 through QA-08 remain intentionally deferred; no physical business-flow
+  pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 26
+
+- Closed the remaining early-artifact path alias gap. The verifier now rejects
+  a run directory whose path is itself a symlink, in addition to rejecting
+  symlinked or directory-shaped manifest and signing-status entries.
+- Added offline coverage for the symlinked run-directory case. The script-test
+  suite passed 50 tests with 0 failures, and the focused Swift runner contract
+  suite passed 11 tests with 0 failures.
+- The complete macOS `PhotoMemoTests` regression passed 1,426 tests with 0
+  failures and 1 skipped test (1,427 total). Early artifact replay remains
+  blocked by the current missing provisioning profile, as expected.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state was changed. QA-01 through QA-08 remain deferred and no physical
+  business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 27
+
+- Bound regular physical-run replay to the QA manifest's `defaultScheme` and
+  `qaTarget` when a target is present, and compare the run metadata's
+  `deviceIdentifier` with the copied CoreDevice identifier. Foreign scheme,
+  target, or device evidence is rejected before result classification.
+- New runner metadata records `target` explicitly. Existing regular artifacts
+  without that field remain replayable as legacy-unbound target evidence; the
+  scheme check remains required because historical artifacts already record the
+  selected scheme.
+- The script test suite passed 55 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). QA-01 through QA-08 remain intentionally
+  deferred; no physical business-flow pass is claimed.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round.
+
+## 2026-08-13 MemoMark Device QA Automation Round 29
+
+- Strengthened `validate_manifest` so `defaultScheme` must be a non-empty
+  string and the new `qaTarget`/`qaRunnerBundleIdentifier` identity pair must
+  be complete and correctly typed. Legacy artifacts with both fields absent
+  remain replayable.
+- Extended regular-run shape coverage into the `.xcresult` bundle: a present
+  `Info.plist` must itself be a regular, non-symlink file. Added RED-to-green
+  coverage for inner Info.plist substitution, partial manifest identity, and
+  an empty default scheme.
+- The script test suite passed 64 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). Historical early and physical replays retain
+  their expected blocked classifications.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 36
+
+- Audited the current shell runner's metadata generator against the verifier's
+  required schema. The generator emits schema version, run ID, device and
+  CoreDevice identifier, scheme, configuration, target, and `MemoMark` project
+  identity; the Swift runner contract now guards these exact fields.
+- The script test suite passed 80 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). Manifest validation and all historical replays
+  remain correct.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 37
+
+- Added the first local iPhoneOS structural build gate for the new
+  `MemoMarkDeviceQA` scheme. An unsigned `xcodebuild build` completed with the
+  host iOS target and its existing extensions, using isolated DerivedData and
+  no device interaction.
+- The build is intentionally classified as compile evidence only. It does not
+  prove signing, installation, physical-device execution, Photos permission,
+  PhotoKit readback, or QA-01 through QA-08. The stronger test-bundle gate was
+  completed in Round 38.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 38
+
+- Closed the test-target compilation gap with unsigned `xcodebuild
+  build-for-testing`. The build produced `MemoMarkDeviceQA-Runner.app`, the
+  embedded `MemoMarkDeviceQA.xctest`, and the existing `PhotoMemoiOS.app`; the
+  runner, test bundle, and host Bundle IDs match the manifest and target
+  contract.
+- The complete repository script-test discovery passed 80 tests with 0
+  failures. The focused Swift runner contract suite passed 11 tests with 0
+  failures. The formal `.xcresult` summary for the complete macOS
+  `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1 skipped
+  test (1,427 total). Manifest validation and blocked historical replays retain
+  their expected classifications; the live read-only diagnostic remains
+  `blocked (provisioning-profile-missing)` with zero matching profiles.
+- The two unsigned build gates are documented in `QA/README.md`; they remain
+  structural checks and are not physical QA evidence. No device, Photos,
+  account, keychain, project-signing, or personal-library state is changed by
+  this round. QA-01 through QA-08 remain intentionally deferred and no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 39
+
+- Promoted the unsigned iPhoneOS structural gate from documentation into the
+  runner as `build-check`. It runs `build-for-testing` with isolated DerivedData
+  and verifies the manifest-bound host App, `.xctrunner`, and embedded `.xctest`
+  directories and Bundle IDs. The live command passed with
+  `host=PhotoMemoiOS.app`, `runner=MemoMarkDeviceQA-Runner.app`, and
+  `testBundle=MemoMarkDeviceQA.xctest`.
+- Added a RED-to-GREEN Swift contract for the new command. The complete
+  repository script-test discovery passed 80 tests with 0 failures, the
+  focused runner contract suite passed 12 tests with 0 failures, and the
+  formal full macOS regression passed 1,427 tests with 0 failures and 1
+  skipped test (1,428 total).
+- `build-check` is intentionally unsigned structural evidence only. It does
+  not create profiles, use an Apple account, alter the keychain, contact
+  CoreDevice, install an app, access Photos, or establish physical QA. The
+  live signing diagnostic remains `blocked (provisioning-profile-missing)`
+  with zero matching provisioning profiles. No device, Photos, account,
+  keychain, project-signing, or personal-library state is changed by this
+  round. QA-01 through QA-08 remain intentionally deferred and no physical
+  business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 40
+
+- Re-queried the external test resources without mutation. `iPhone7` resolves
+  to the physical iPhone 17 Pro Max CoreDevice
+  `863C2747-6742-5E93-B715-6F89DBF90B31`, is paired and available, and reports
+  `unlockedSinceBoot=true`.
+- Kept the evidence layers separate: the device is ready for a future signed
+  run, but the read-only signing diagnostic still reports one Apple Development
+  identity and zero matching provisioning profiles, so the default runner must
+  remain blocked as `provisioning-profile-missing` before CoreDevice testing.
+- No app installation, process control, Photos access, permission reset,
+  account, keychain, project-signing, or personal-library state was changed.
+  QA-01 through QA-08 remain intentionally deferred and no physical
+  business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 35
+
+- Tightened result classification so stored `xcodebuildExitStatus` must be a
+  strict integer; JSON boolean values are rejected instead of being accepted
+  through Python's `bool`-is-`int` relationship.
+- Added an offline regression for boolean exit status. The script test suite
+  passed 80 tests with 0 failures. The focused Swift runner contract suite
+  passed 11 tests with 0 failures, and the complete macOS `PhotoMemoTests`
+  regression passed 1,426 tests with 0 failures and 1 skipped test (1,427
+  total). Historical early and physical replays remain correctly blocked.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 34
+
+- Hardened the verifier's `--write-metadata` boundary. Metadata writeback now
+  requires an already validated regular run and an existing regular
+  `run-metadata.json`; symlink targets are rejected before atomic replacement.
+- Added offline coverage proving a valid regular run receives recomputed result
+  fields and `finishedAt`, while a symlinked metadata target cannot be written.
+  Early signing artifacts remain read-only and continue to replay without
+  metadata writeback.
+- The script test suite passed 79 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). Current manifest validation and historical
+  replays retain their expected outcomes.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 33
+
+- Closed the malformed-optional-JSON gap. Existing `test-summary.json` and
+  `device-details.json` files must parse as valid JSON; only a genuinely absent
+  optional artifact is treated as missing and allowed to flow to the normal
+  blocked/fail classification.
+- Added offline coverage for malformed summary and device evidence JSON. The
+  script test suite passed 77 tests with 0 failures. The focused Swift runner
+  contract suite passed 11 tests with 0 failures, and the complete macOS
+  `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1 skipped
+  test (1,427 total).
+- Current manifest validation and historical early/physical replays remain
+  correct: early artifacts are `blocked (provisioning-profile-missing)` and
+  the Round 12 physical artifact is `blocked (signing-blocked)`.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 32
+
+- Added type and value validation for regular `test-summary.json` and
+  `device-details.json` evidence. Summary results now accept only `Passed`,
+  `Failed`, or lowercase `unknown`; counts must be non-negative integers, and
+  device evidence must contain a CoreDevice identifier and physical reality.
+- Preserved a real legacy boundary found during replay: the Round 12 signing
+  interruption records `result: "unknown"` with zero tests. It remains valid
+  incomplete evidence and replays as `blocked (signing-blocked)`, while it can
+  never become a pass.
+- The script test suite passed 75 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). Early signing replays retain their expected
+  `provisioning-profile-missing` classification.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 31
+
+- Added regular metadata schema validation. Current artifacts must use schema
+  version 1 and include non-empty `runID`, device, device identifier, scheme,
+  configuration, and `project` fields; an unsupported schema or missing field
+  is rejected before identity and result checks.
+- Preserved the documented compatibility boundary: historical regular evidence
+  may omit only the later-added `target` field. The Round 12 physical artifact
+  confirms this path and still replays as `blocked (signing-blocked)`.
+- The script test suite passed 70 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). Current and early signing replays retain their
+  expected outcomes.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 30
+
+- Closed the regular-run top-level artifact boundary. The verifier now accepts
+  only the runner's declared manifest, metadata, logs, device evidence,
+  screenshot/process evidence, and `.xcresult` bundle; undeclared files or
+  directories are rejected before any evidence is classified.
+- Bound the regular metadata `project` field to `MemoMark`, with offline
+  rejection coverage for evidence copied from another project identity.
+- The script test suite passed 67 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). Current and historical QA replays retain their
+  expected outcomes.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round. QA-01 through QA-08 remain intentionally
+  deferred and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 28
+
+- Added a regular-run artifact shape gate before JSON parsing and result
+  classification. The run directory and required manifest/metadata files must
+  be real filesystem objects; known optional evidence cannot be symlinked or
+  replaced by directories.
+- A present `.xcresult` bundle must be a directory with a regular `Info.plist`.
+  Added offline coverage for the run-directory, manifest, metadata, device
+  evidence, result-bundle symlink, and directory-shaped manifest cases.
+- The script test suite passed 61 tests with 0 failures. The focused Swift
+  runner contract suite passed 11 tests with 0 failures, and the complete
+  macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1
+  skipped test (1,427 total). QA-01 through QA-08 remain intentionally
+  deferred; no physical business-flow pass is claimed.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state is changed by this round.
+
+## 2026-08-13 MemoMark Device QA Automation Round 22
+
+- Added `qaTarget` and `qaRunnerBundleIdentifier` to the QA manifest so the
+  manifest is now the source of truth for the physical UI test target and its
+  runner identity. The shell manifest validator requires these fields for new
+  runs.
+- Tightened early signing artifact replay: new artifacts must match both
+  manifest identity fields exactly. A diagnostic for another target or another
+  runner Bundle ID is rejected before it can be classified as blocked.
+- Preserved replay compatibility for the real Round 20 early artifact, which
+  was created before the identity fields were added. Legacy schema v1
+  artifacts remain verifiable as `legacy-unbound` evidence; newly generated
+  artifacts are manifest-bound.
+- The script-test suite passed 42 tests with 0 failures. The complete macOS
+  `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1 skipped
+  test. The old early artifact still replays as
+  `blocked (provisioning-profile-missing)`, and the current manifest validates.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state was changed. QA-01 through QA-08 remain deferred; no physical
+  business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 23
+
+- Extended early signing artifact provenance checks beyond target and runner
+  Bundle ID. The verifier now requires the diagnostic scheme to match the
+  manifest's `defaultScheme`, and resolves its project path against the
+  current repository's `Source/PhotoMemo/PhotoMemo.xcodeproj`.
+- Added offline rejection coverage for a diagnostic from another scheme and a
+  diagnostic from another project. New Round 23 early evidence is now marked
+  manifest-bound and project-bound; the pre-existing Round 20 artifact remains
+  replayable under the documented legacy compatibility path.
+- The script-test suite passed 44 tests with 0 failures. The focused runner
+  contract suite passed 11 tests with 0 failures. The complete macOS
+  `PhotoMemoTests` regression passed 1,426 tests with 0 failures and 1 skipped
+  test.
+- A fresh default run still exits before CoreDevice with the expected
+  `provisioning-profile-missing` status. Its new `signing-status.json` passes
+  scheme, project, target, and runner identity replay checks. No device,
+  Photos, account, keychain, project-signing, or personal-library state was
+  changed; QA-01 through QA-08 remain deferred.
+
+## 2026-08-13 MemoMark Device QA Automation Round 24
+
+- Tightened early signing artifact replay with a top-level allowlist. Only the
+  copied `MemoMarkDeviceQA.json` manifest and `signing-status.json` diagnostic
+  are accepted; any unknown file or directory is rejected before the blocked
+  classification is returned. Known device evidence retains its more specific
+  `device evidence` diagnostic.
+- Added offline coverage for both unexpected files and unexpected directories.
+  The script-test suite passed 46 tests with 0 failures, and the focused Swift
+  runner contract suite passed 11 tests with 0 failures.
+- A fresh Round 24 early artifact still replays as
+  `blocked (provisioning-profile-missing)`, while the Round 20 legacy early
+  artifact and the Round 12 physical-evidence artifact remain replayable under
+  their documented compatibility paths.
+- The complete macOS `PhotoMemoTests` regression passed 1,426 tests with 0
+  failures and 1 skipped test (1,427 total). No device, Photos, account,
+  keychain, project-signing, or personal-library state is changed in this
+  round. QA-01 through QA-08 remain deferred and no physical business-flow
+  pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 25
+
+- Hardened the early signing artifact shape boundary after RED tests exposed
+  that an allowed manifest name could be a directory (raising an unhandled
+  `IsADirectoryError`) and that allowed JSON names could be symlinks. The
+  verifier now requires the run directory to be a directory and both allowed
+  entries to be regular, non-symlink files before reading JSON.
+- Added offline coverage for a manifest directory and for manifest or signing
+  status symlinks that point outside the run directory. The script-test suite
+  passed 49 tests with 0 failures; the focused Swift runner contract suite
+  passed 11 tests with 0 failures.
+- The full macOS `PhotoMemoTests` regression passed 1,426 tests with 0 failures
+  and 1 skipped test (1,427 total). A new early artifact and the historical
+  Round 20 and Round 12 artifacts remain replayable with their expected blocked
+  classifications.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state was changed. QA-01 through QA-08 remain deferred and no physical
+  business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 42
+
+- Added offline replay for the read-only `readiness.json` artifact through
+  `verify-readiness --run-dir`. The verifier requires the MemoMark identity,
+  exact four-gate shape, manifest scenario count, unsigned structural-build
+  mode, signing scheme/target identity, physical-device evidence, and an
+  `overallResult` that exactly recomputes from the gate states.
+- Closed RED-to-GREEN tamper coverage for altered overall status and extra
+  gate names. The generated report now normalizes an unavailable device
+  identifier to JSON `null`; an empty identifier or a physical gate without a
+  CoreDevice identifier and `reality: "physical"` cannot be replayed as ready.
+- A fresh generation/replay pair passed with
+  `overallResult: "blocked"`, signing
+  `failureClass: "provisioning-profile-missing"`, and physical-device
+  `result: "skipped"` / `reason: "signing-blocked"`. The script suite passed
+  88 tests with 0 failures; the focused runner contract suite passed 14 tests
+  with 0 failures; and the complete macOS `PhotoMemoTests` regression passed
+  1,429 tests with 0 failures and 1 skipped test (1,430 total). The focused
+  `.xcresult` is `/tmp/PhotoMemoRound42ContractEvidence.xcresult` and the
+  full `.xcresult` is `/tmp/PhotoMemoRound42Full.xcresult`.
+- Readiness replay remains offline-only: no Xcode build, CoreDevice query,
+  app installation, Photos access, account, keychain, or personal-library
+  state is touched. QA-01 through QA-08 remain intentionally deferred; no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 43
+
+- Hardened `verify-readiness --run-dir` from single-file replay into a complete
+  readiness-directory audit. The directory now has an explicit top-level
+  allowlist for the copied manifest, readiness report, diagnostics, signing
+  status, and physical-device evidence; undeclared files, directories, or
+  symlinks are rejected before JSON interpretation.
+- Bound the report back to its copied manifest's schema, exact QA-01 through
+  QA-08 scenario set, `defaultScheme`, and `qaTarget`. When evidence exists,
+  `signing-status.json` must equal the report's signing gate, and
+  `device-details.json` must equal the report's physical identifier/reality;
+  physical evidence is forbidden when the physical gate was skipped.
+- Added RED-to-GREEN coverage for a valid directory replay, private/unknown
+  artifact rejection, manifest identity mismatch, and symlinked readiness
+  report rejection. The script suite passed 92 tests with 0 failures; the
+  focused runner contract suite passed 14 tests with 0 failures; and the
+  complete macOS `PhotoMemoTests` regression passed 1,429 tests with 0
+  failures and 1 skipped test (1,430 total). The focused `.xcresult` is
+  `/tmp/PhotoMemoRound43ContractEvidence.xcresult` and the full `.xcresult`
+  is `/tmp/PhotoMemoRound43Full.xcresult`.
+- A live Round42 readiness directory replay passed with the current stricter
+  boundary. No Xcode build, CoreDevice query, app installation, Photos access,
+  account, keychain, or personal-library state was changed. QA-01 through
+  QA-08 remain intentionally deferred; no physical business-flow pass is
+  claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 44
+
+- Added a freshness gate before `readiness` copies its manifest or invokes the
+  unsigned build. An explicit `--run-id` now accepts only a new empty directory
+  or one containing the current regular manifest; any prior readiness report,
+  diagnostic, device evidence, log, symlink, or unknown artifact stops the run
+  with a clear request to use a new run ID. The runner never deletes stale
+  evidence to make a reused directory appear fresh.
+- Added RED-to-GREEN coverage for empty-directory acceptance, manifest-only
+  acceptance, stale artifact rejection, and manifest symlink rejection. A
+  real attempt to reuse the Round42 run directory exited 1 before build/signing
+  work and listed the stale artifacts. The script suite passed 97 tests with 0
+  failures; the focused runner contract suite passed 15 tests with 0 failures;
+  and the complete macOS `PhotoMemoTests` regression passed 1,430 tests with 0
+  failures and 1 skipped test (1,431 total). The focused `.xcresult` is
+  `/tmp/PhotoMemoRound44ContractEvidence.xcresult` and the full `.xcresult` is
+  `/tmp/PhotoMemoRound44Full.xcresult`.
+- No old evidence was removed, and no device, Photos, account, keychain,
+  project-signing, or personal-library state changed. QA-01 through QA-08
+  remain intentionally deferred; no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 45
+
+- Formalized the command-level exit contract for readiness automation. A
+  verified `overallResult: "ready"` returns exit 0; a structurally valid but
+  currently unavailable or failed readiness report returns exit 1; malformed,
+  inconsistent, or invalid evidence returns exit 2. JSON remains available on
+  stdout for blocked reports, while concise CLI errors go to stderr.
+- The live blocked readiness directory replay printed a valid report with
+  `signing.failureClass: "provisioning-profile-missing"` and returned exit 1;
+  it did not get mistaken for a successful handoff. The script suite passed 99
+  tests with 0 failures; the focused runner contract suite passed 16 tests
+  with 0 failures; and the complete macOS `PhotoMemoTests` regression passed
+  1,431 tests with 0 failures and 1 skipped test (1,432 total). The focused
+  `.xcresult` is `/tmp/PhotoMemoRound45ContractEvidence.xcresult` and the
+  full `.xcresult` is `/tmp/PhotoMemoRound45Full.xcresult`.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state changed. QA-01 through QA-08 remain intentionally deferred; no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 46
+
+- Hardened readiness input parsing against non-string JSON values and
+  impossible per-gate states. Manifest gates now accept only `passed`/`failed`,
+  structural build gates only `passed`/`failed`/`skipped`, signing gates only
+  `ready`/`blocked`/`failed`/`skipped`, and physical-device gates only
+  `passed`/`failed`/`skipped`.
+- Malformed values such as an object or array in a result field now produce a
+  controlled readiness error with exit 2 instead of a Python unhashable-type
+  traceback. A valid blocked report still prints JSON and returns exit 1.
+- The script suite passed 102 tests with 0 failures; the focused runner
+  contract suite passed 16 tests with 0 failures; and the complete macOS
+  `PhotoMemoTests` regression passed 1,431 tests with 0 failures and 1 skipped
+  test (1,432 total). The focused `.xcresult` is
+  `/tmp/PhotoMemoRound46ContractEvidence.xcresult` and the full `.xcresult` is
+  `/tmp/PhotoMemoRound46Full.xcresult`.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state changed. QA-01 through QA-08 remain intentionally deferred; no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 47
+
+- Added a timestamp provenance gate to readiness replay. `generatedAt` is now
+  required, must be ISO-8601 with an explicit timezone, and cannot be more
+  than five minutes in the future relative to the verifier's clock. This
+  keeps the report self-describing without requiring network time or another
+  external service.
+- Added offline coverage for missing, future, and timezone-less timestamps.
+  A fresh live blocked report still replays with exit 1 and a valid
+  `generatedAt`; the script suite passed 105 tests with 0 failures, the
+  focused runner contract suite passed 16 tests with 0 failures, and the
+  complete macOS `PhotoMemoTests` regression passed 1,431 tests with 0
+  failures and 1 skipped test (1,432 total). The focused `.xcresult` is
+  `/tmp/PhotoMemoRound47ContractEvidence.xcresult` and the full `.xcresult` is
+  `/tmp/PhotoMemoRound47Full.xcresult`.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state changed. QA-01 through QA-08 remain intentionally deferred; no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 48
+
+- Re-queried live external readiness without mutation. Signing remains
+  `blocked (provisioning-profile-missing)` with one Apple Development identity
+  and zero matching profiles; the QA runner identity remains
+  `com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner`.
+- The target physical device `iPhone7` is currently reported by CoreDevice as
+  `unavailable` rather than `available`. A direct `lockState` query failed at
+  the CoreDevice usage-assertion layer (`CoreDeviceError 4016`), so no unlocked
+  claim was made. Because signing is still the earlier gate, the runner did
+  not proceed to device preflight, installation, launch, or Photos.
+- No repository, device, Photos, account, keychain, project-signing, or
+  personal-library state changed. QA-01 through QA-08 remain intentionally
+  deferred; no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 49
+
+- Added conservative preflight failure classification for the future signed
+  path. A CoreDevice usage-assertion failure (`4016`), a target device shown as
+  `unavailable`, and an unknown physical preflight failure now produce distinct
+  machine-readable reasons; none is reported as an App/UI test failure.
+- Added offline coverage for all three classifications and kept missing-log
+  behavior conservative (`physical-device-preflight-failed`). The script suite
+  passed 108 tests with 0 failures; the focused runner contract suite passed
+  17 tests with 0 failures; and the complete macOS `PhotoMemoTests` regression
+  passed 1,432 tests with 0 failures and 1 skipped test (1,433 total). The
+  focused `.xcresult` is `/tmp/PhotoMemoRound49ContractEvidence.xcresult` and
+  the full `.xcresult` is `/tmp/PhotoMemoRound49Full.xcresult`.
+- The current iPhone7 unavailable/usage-assertion state remains external tool
+  evidence only; signing is still the earlier `provisioning-profile-missing`
+  gate, so no physical run was attempted. No device, Photos, account,
+  keychain, project-signing, or personal-library state changed. QA-01 through
+  QA-08 remain intentionally deferred; no physical business-flow pass is
+  claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 50
+
+- Closed the positive offline readiness path. A complete ready bundle with a
+  manifest-bound scheme/target, passed unsigned structural build gate,
+  ready target-scoped signing diagnostic, physical CoreDevice identifier,
+  `reality: "physical"`, and matching device-details evidence now replays as
+  `overallResult: "ready"` and exit 0.
+- This is deliberately structural proof, not a physical-device pass: the
+  ready evidence is synthesized only inside offline unit-test temporary
+  directories; no account, profile, device, Photos, or private media is used.
+- The script suite passed 109 tests with 0 failures; the focused runner
+  contract suite passed 18 tests with 0 failures; and the complete macOS
+  `PhotoMemoTests` regression passed 1,433 tests with 0 failures and 1 skipped
+  test (1,434 total). The focused `.xcresult` is
+  `/tmp/PhotoMemoRound50ContractEvidence.xcresult` and the full `.xcresult` is
+  `/tmp/PhotoMemoRound50Full.xcresult`.
+- No device, Photos, account, keychain, project-signing, or personal-library
+  state changed. QA-01 through QA-08 remain intentionally deferred; no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 51
+
+- Added a machine-readable `build-check.json` receipt for the unsigned
+  `build-for-testing` gate. The receipt records the actual host App, runner,
+  and embedded test-bundle products and Bundle IDs, with schema, mode,
+  project, scheme, target, configuration, and passed result fields.
+- The live structural build passed and produced a receipt bound to
+  `PhotoMemoiOS.app` (`com.serydoo.PhotoMemo.iOS`),
+  `MemoMarkDeviceQA-Runner.app`
+  (`com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner`), and
+  `MemoMarkDeviceQA.xctest` (`com.serydoo.PhotoMemo.MemoMarkDeviceQA`). A new
+  Round51 readiness run copied that receipt and passed the stricter offline
+  directory replay, while remaining blocked only at signing.
+- Added RED-to-GREEN receipt validation and foreign-runner rejection coverage.
+  The script suite passed 111 tests with 0 failures; the focused runner
+  contract suite passed 19 tests with 0 failures; and the complete macOS
+  `PhotoMemoTests` regression passed 1,434 tests with 0 failures and 1 skipped
+  test (1,435 total). The focused `.xcresult` is
+  `/tmp/PhotoMemoRound51ContractEvidence.xcresult` and the full `.xcresult` is
+  `/tmp/PhotoMemoRound51Full.xcresult`.
+- This remains unsigned structural evidence only: no app installation,
+  CoreDevice test, Photos access, account, keychain, or personal-library
+  state changed. QA-01 through QA-08 remain intentionally deferred; no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 52
+
+- Completed a repository-hygiene audit after the build-receipt round. Shell
+  syntax, Python compilation behavior, `git diff --check`, runner help output,
+  and the readiness artifact shape were rechecked. The only generated Python
+  bytecode was identified as this session's test/compile cache and moved to a
+  unique `/tmp` archive; no source, user data, or unrelated worktree change
+  was removed.
+- Final script discovery passed 111 tests with 0 failures, and the current
+  readiness directory contains only the declared manifest, readiness report,
+  build receipt/log, manifest validation log, signing output/status artifacts.
+  No `.pyc`/`__pycache__` remains under the project QA/script/test paths.
+- The Round51 focused and full `.xcresult` evidence remains valid: 19 focused
+  runner-contract tests passed, and the full macOS regression passed 1,434
+  tests with 0 failures and 1 skipped test (1,435 total). No device, Photos,
+  account, keychain, project-signing, or personal-library state changed.
+  QA-01 through QA-08 remain intentionally deferred; no physical business-flow
+  pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 53
+
+- Closed the structural build-receipt contract review. The manifest now names
+  the expected iOS host product explicitly as `PhotoMemoiOS.app`; readiness
+  replay binds that product, the QA runner product, the embedded test-bundle
+  product, and all three Bundle IDs to the current target. Foreign host or
+  runner products are rejected rather than being treated as a valid build.
+- Rebuilt the QA scheme with Xcode beta and produced a fresh unsigned receipt
+  for `PhotoMemoiOS.app`, `MemoMarkDeviceQA-Runner.app`, and
+  `MemoMarkDeviceQA.xctest`. The live readiness run passed the manifest and
+  structural-build gates, reported the existing signing blocker as
+  `provisioning-profile-missing`, safely skipped the physical-device gate, and
+  replayed the same blocked result offline.
+- The script suite passed 112 tests with 0 failures; the focused runner
+  contract suite passed 19 tests with 0 failures; and the complete macOS
+  `PhotoMemoTests` regression passed 1,434 tests with 0 failures and 1 skipped
+  test (1,435 total). Focused evidence is at
+  `/tmp/PhotoMemoRound53ContractEvidence.xcresult`; full evidence is at
+  `/tmp/PhotoMemoRound53Full.xcresult`.
+- No app installation, CoreDevice test, Photos access, account, keychain,
+  project-signing, or personal-library state changed. The current external
+  iPhone7 availability/usage-assertion issue and missing provisioning profile
+  remain delivery blockers; QA-01 through QA-08 remain intentionally
+  deferred, and no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 54
+
+- Tightened the unsigned structural build receipt against stale evidence. Each
+  receipt now records the originating readiness `runID`, and offline replay
+  requires that value to match `readiness.json`; a receipt from another run is
+  rejected even when its host, runner, test-bundle products, and Bundle IDs
+  otherwise look valid.
+- Added the stale-receipt regression and updated the shell/Swift contract
+  coverage. The script suite passed 113 tests with 0 failures, and the focused
+  runner contract suite passed 19 tests with 0 failures.
+- Rebuilt the iPhoneOS QA products with Xcode beta using a fresh DerivedData
+  root. `** TEST BUILD SUCCEEDED **` produced a run-bound receipt for
+  `PhotoMemoiOS.app`, `MemoMarkDeviceQA-Runner.app`, and
+  `MemoMarkDeviceQA.xctest`. A fresh readiness run remained correctly blocked
+  only at `provisioning-profile-missing`, skipped CoreDevice, and replayed
+  offline with the same blocked result.
+- No app installation, CoreDevice test, Photos access, account, keychain,
+  project-signing, or personal-library state changed. QA-01 through QA-08
+  remain intentionally deferred, and no physical business-flow pass is
+  claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 55
+
+- Verified the actual default `run` path under the current external blocker.
+  It exits non-zero at the read-only signing gate with
+  `provisioning-profile-missing`, writes only the copied manifest and
+  `signing-status.json`, and regular offline `verify` replays it as blocked.
+  No CoreDevice, installation, Photos, or personal-library action was
+  attempted.
+- Closed a stale-evidence safety gap for explicit run IDs. `run` now applies
+  the same fresh-directory guard as `readiness` before writing evidence; a
+  second invocation with the same run ID is rejected with exit 2 instead of
+  reusing an old artifact directory. The RED-to-GREEN runner contract test
+  now covers this boundary.
+- The focused runner contract suite passed 20 tests with 0 failures; the
+  script suite passed 113 tests with 0 failures; and the complete macOS
+  `PhotoMemoTests` regression passed 1,435 tests with 0 failures and 1 skipped
+  test (1,436 total). Focused evidence is at
+  `/tmp/PhotoMemoRound55ContractEvidence.xcresult`; full evidence is at
+  `/tmp/PhotoMemoRound55Full.xcresult`.
+- The existing Xcode beta runtime warnings remain limited to ProRAW/Live Photo
+  Info.plist declarations and QoS inversion diagnostics; no test failure was
+  observed. QA-01 through QA-08 remain intentionally deferred, and no
+  physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 56
+
+- Re-queried the live external gates after the default-run and stale-directory
+  closures. The read-only signing diagnostic still reports one Apple
+  Development identity but zero readable or matching provisioning profiles,
+  so the target remains blocked at `provisioning-profile-missing`.
+- CoreDevice still reports `iPhone7` as a physical iPhone 17 Pro Max with the
+  same identifier `863C2747-6742-5E93-B715-6F89DBF90B31`, but state
+  `unavailable`. A direct lock-state query again failed with CoreDevice error
+  `4016` because no requested usage assertion state was currently assertable.
+- The ordering remains safe: signing blocks before device preflight, so this
+  round performed no install, launch, termination, Photos access, account,
+  keychain, or personal-library operation. No physical QA-01 through QA-08
+  result is claimed; the automation is ready to resume once signing and the
+  paired device become available.
+
+## 2026-08-13 MemoMark Device QA Automation Round 57
+
+- Corrected the freshness-guard diagnostic wording after extending it from
+  `readiness` to the default `run`. Symlink, invalid-directory, stale-artifact,
+  and manifest-shape errors now consistently identify the generic Device QA
+  run boundary instead of incorrectly naming only readiness.
+- The RED-to-GREEN regression passed, the complete script suite remained at
+  113 tests with 0 failures, shell syntax and `git diff --check` passed, and a
+  real repeated `run --run-id` invocation returned exit 2 with the corrected
+  stale-directory message before any signing or device operation.
+- This was a diagnostics-only QA harness refinement. No app, device, signing,
+  Photos, account, keychain, or personal-library state changed; QA-01 through
+  QA-08 remain intentionally deferred with no physical pass claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 58
+
+- Performed a targeted terminology and contract scan after the freshness-guard
+  refinement. New-run, stale-run, symlink, invalid-directory, and manifest
+  diagnostics consistently use the generic Device QA run boundary; the
+  readiness-specific directory wording remains only in the readiness replay
+  verifier where it is semantically correct.
+- No residual stale wording, contradictory documentation, or contract mismatch
+  was found. This round required no source behavior change and introduced no
+  external-state operation. QA-01 through QA-08 remain intentionally deferred
+  until the signed physical-device and production lifecycle gates are ready.
+
+## 2026-08-13 MemoMark Device QA Automation Round 59
+
+- Audited the signed-path physical-device preflight contract. The current
+  sequence is explicit and fail-closed: CoreDevice lock-state query, device
+  details, physical-reality validation, identifier resolution, and
+  `unlockedSinceBoot: true`; shell `pipefail` prevents an earlier CoreDevice
+  failure from being hidden by later log processing. No code change was
+  justified by this review.
+- Re-queried the live external gates read-only. Signing remains blocked with
+  one Apple Development identity and zero readable or matching provisioning
+  profiles (`provisioning-profile-missing`). `iPhone7` remains the physical
+  iPhone 17 Pro Max with identifier `863C2747-6742-5E93-B715-6F89DBF90B31`,
+  reported by CoreDevice as `unavailable`.
+- No lock-state, installation, launch, Photos, account, keychain, or
+  personal-library operation was attempted in this round. QA-01 through QA-08
+  remain intentionally deferred; no physical business-flow pass is claimed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 60
+
+- The requested iPhone 17 Pro Max returned to the Mac and became available:
+  CoreDevice reports `iPhone7` as `available (paired)`, lock state confirms
+  `passcodeRequired: false` and `unlockedSinceBoot: true`, and the read-only
+  preflight passed physical reality and identifier validation for
+  `863C2747-6742-5E93-B715-6F89DBF90B31`.
+- Attempted the real signed QA run with the explicitly authorized
+  provisioning-update flags. Xcode reached the physical destination but
+  stopped at signing with `No Accounts` and no development profile for
+  `com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner`. The resulting artifact
+  was verified as `blocked (signing-blocked)` with an `unknown` test summary
+  and zero executed tests; no QA scenario was marked passed.
+- Performed a non-installing observation of the already-installed developer
+  app. `com.serydoo.PhotoMemo.iOS` is present on iPhone7 as `时光记` version
+  `2.1.1` build `80`, matching the current project version settings. It
+  launched successfully with PID `24077`; the Widget Extension process was
+  also observed, and CoreDevice captured a `1320x2868` screenshot. This is
+  observation evidence for the installed build only, not a current signed QA
+  Runner or full QA-01 pass.
+- A warm and cold `memomark://share` launch was also attempted against the
+  installed build. CoreDevice reported launch success, but its returned launch
+  options did not retain the payload and the settled screen remained Home;
+  therefore no Share-route or QA-06 result is claimed. This is retained as an
+  observation/tool-delivery boundary, not converted into an App failure
+  without a signed UI-test path.
+- No app installation, replacement, Photos selection, Photos write, original
+  asset mutation, account credential change, keychain change, or personal
+  library cleanup occurred. QA-01 through QA-08 remain blocked at the
+  signing/account boundary and are not claimed as physically passed.
+
+## 2026-08-13 MemoMark Device QA Automation Round 61
+
+- Confirmed the active toolchain is the compatible beta environment:
+  `xcode-select` resolves to `/Applications/Xcode-beta.app/Contents/Developer`
+  and reports Xcode `27.0 (27A5218g)`. The physical iPhone 17 Pro Max remains
+  available and paired as `iPhone7`.
+- Re-ran the read-only signing diagnostic. The target still has one Apple
+  Development identity but zero readable or matching provisioning profiles for
+  `com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner`; the result remains
+  `blocked (provisioning-profile-missing)`. The manifest validation passed and
+  the readiness build-check artifact was produced, but no QA Runner was
+  installed and no UI-test scenario executed.
+- Cold-launched the already-installed `com.serydoo.PhotoMemo.iOS` build 80
+  without replacing it and captured the current Configuration Center screen
+  at `/tmp/PhotoMemoRound61Observed/iPhone7-existing-build80.png`. This is
+  observation evidence for the existing developer installation only; it is not
+  a signed QA Runner result or a full QA-01 pass.
+- No account credentials, keychain, app installation, Photos selection, Photos
+  write, original asset mutation, or personal-library cleanup occurred. QA-01
+  through QA-08 remain blocked at the signing/account boundary and are not
+  claimed as physically passed.
+
+## 2026-08-13 MemoMark Device QA Automation Rounds 62-63
+
+- After the Apple Developer account was added to Xcode-beta, the first
+  read-only signing check still reported no profiles. Investigation found that
+  Xcode-beta stores profiles under `~/Library/Developer/Xcode/UserData/Provisioning
+  Profiles`, while the QA diagnostic only scanned the legacy
+  `~/Library/MobileDevice/Provisioning Profiles` path. The diagnostic now scans
+  the current Xcode path first and keeps the legacy path as a fallback; it also
+  recognizes a team-scoped wildcard development profile (`TEAM.*`) as valid for
+  the QA Runner. The regression tests cover both behaviors.
+- A real Round62 physical run proved that signing and installation are now
+  functional. Xcode-beta selected the `iOS Team Provisioning Profile: *`,
+  signed `MemoMarkDeviceQA-Runner`, and installed it on the paired physical
+  iPhone 17 Pro Max. The result bundle was created, but XCTest failed before
+  any QA case executed: `The test runner failed to initialize for UI testing`
+  because it timed out while enabling automation mode.
+- Round63 repeated the run with a new DerivedData root and Run ID. It reached
+  the same signed Runner launch and failed with the identical automation-mode
+  timeout after approximately 60 seconds. The verified result is
+  `fail (test-failed)`, not a signing block. The current read-only signing
+  check is now `ready` with 13 readable profiles and one matching profile.
+- The remaining evidence boundary is therefore the iOS 27 beta/XCTest UI
+  automation channel. The post-failure device capture shows the system prompt
+  `为“XCTest”输入 iPhone 密码 / Enable UI Automation`; the phone is unlocked
+  and Developer Mode is enabled, but XCTest still requires this one-time manual
+  passcode authorization. QA-01 through QA-08 remain unclaimed; no
+  business-flow test ran, and no Photos selection, Photos write, original asset
+  mutation, or personal-library cleanup was performed by the QA harness.
+
+## 2026-08-13 MemoMark Device QA Automation Round 64
+
+- Reinstalled the already signed `MemoMarkDeviceQA-Runner.app` onto the
+  physical iPhone 17 Pro Max and started a fresh XCTest session after the
+  Runner had disappeared from the device surface. The system requested the
+  one-time `XCTest / Enable UI Automation` passcode authorization; after the
+  user completed it on the phone, the automation channel became available.
+- The signed physical run then passed the current harness smoke test:
+  `Executed 1 test, with 0 failures`, `** TEST SUCCEEDED **`, and the offline
+  evidence verifier reported `Device QA evidence verified: pass`. The test
+  launched `com.serydoo.PhotoMemo.iOS`, reached the foreground, requested its
+  accessibility hierarchy, and retained the `device-qa-harness-launch`
+  screenshot attachment.
+- Evidence is stored at
+  `/tmp/PhotoMemoRound64Run/round64-physical-automation-auth/MemoMarkDeviceQA.xcresult`;
+  the run used Xcode-beta `27.0 (27A5218g)`, the paired physical iPhone 17 Pro
+  Max, and exit status `0`. This closes the signing, installation, and XCTest
+  automation-enablement gates for the harness, not the full QA-01 through
+  QA-08 business scenarios.
+- No Photos selection, Photos write, original asset mutation, or personal
+  library cleanup was performed. QA-01 through QA-08 remain individually
+  unclaimed until their explicit assertions and user-provided test assets are
+  executed.
+
+## 2026-08-13 MemoMark Device QA Automation Rounds 65-67
+
+- Round65 intentionally added the first physical QA-01 assertion and exposed
+  a test-contract mismatch: the harness looked for the shared
+  `configurationCenter.memoryCard.slotA...slotD` identifiers, but the current
+  iOS V1 entry uses a separate production surface and does not expose those
+  identifiers in its accessibility tree. The launch smoke still passed. The
+  failure was diagnosed from the exported physical-device accessibility
+  hierarchy; no production UI change was made.
+- Round66 verified the diagnosis after the Configuration tab was tapped: the
+  physical app was already on `配置中心`, with the current iOS controls
+  `编辑卡片呈现` and `编辑时间与地点` visible. The failure was therefore
+  narrowed to the QA locator contract rather than navigation or page loading.
+- Round67 updated QA-01 to the current iOS production contract and passed on
+  the physical iPhone 17 Pro Max: launch, tap the Configuration tab, reach
+  `配置中心`, expose `编辑卡片呈现`, and expose `编辑时间与地点`. The run
+  executed 2 tests with 0 failures; the result bundle is at
+  `/tmp/PhotoMemoRound67Run/round67-qa01-current-ios-contract/MemoMarkDeviceQA.xcresult`,
+  and offline verification also reported `pass`.
+- The run used Xcode-beta `27.0 (27A5218g)`, device identifier
+  `863C2747-6742-5E93-B715-6F89DBF90B31`, and signed Runner installation. This
+  closes the currently implemented physical QA-01 harness slice. It does not
+  certify JPEG, HEIC, Live Photo, 48MP, Share Extension, PhotoKit recovery,
+  restart, idempotency, visual fidelity, accessibility breadth, or original
+  asset preservation.
+- No Photos selection, Photos write, original asset mutation, personal-library
+  scan, or personal-library cleanup was performed. QA-02 through QA-08 still
+  require explicit user-provided QA assets and their corresponding business
+  assertions before they can be executed or claimed.
+- Post-run hygiene also passed: the Device QA script suite completed 116 tests
+  with 0 failures, `bash -n scripts/memomark-device-qa.sh` passed, and
+  `git diff --check` passed. The read-only signing diagnostic remains `ready`
+  with one matching development profile for the QA Runner.
+
+## 2026-08-14 MemoMark Device QA Automation Round 70
+
+- Round70 added a read-only PhotoKit inventory assertion for the exact
+  `MemoMark QA Inputs` user album and executed it on the connected physical
+  iPhone 17 Pro Max. The run used Xcode-beta `27.0 (27A5218g)`, device
+  identifier `863C2747-6742-5E93-B715-6F89DBF90B31`, and the signed
+  `MemoMarkDeviceQA` Runner. All 3 implemented tests passed with 0 failures;
+  the result bundle is at
+  `/tmp/PhotoMemoRound70Run/round70-qa-inputs-inventory-primary-resource/MemoMarkDeviceQA.xcresult`.
+  Offline evidence verification also reported `pass`.
+- PhotoKit returned `authorized` access and 13 assets in the exact album. The
+  inventory contains 9 valid Live Photo assets: all have the `photoLive`
+  subtype and a `.pairedVideo` resource. Their primary `.photo` resources are
+  5 HEIC assets (`public.heic`) and 4 JPEG assets (`public.jpeg`). The HEIC
+  Live Photos therefore qualify as Live Photo test resources; they must not be
+  treated as standalone HEIC stills merely because their still component is
+  HEIC.
+- The remaining 4 assets have a RAW/DNG primary `.photo` resource
+  (`com.adobe.raw-image`) and a Photos-provided `FullSizeRender.jpeg` resource.
+  They are recorded as `rawWithJPEGRepresentation`, not as standalone JPEG
+  inputs. This distinction prevents a JPEG rendition of a RAW asset from being
+  mistaken for either a native JPEG input or a MemoMark-generated output.
+- At the time of Round70, MemoMark outputs were configured to use the same
+  `MemoMark QA Inputs` album. That round therefore established resource
+  inventory only; album membership could not attribute any asset to the
+  MemoMark save pipeline, and no output-save business assertion was claimed.
+  The later Rounds 71-73 verify the corrected separate output-album location.
+- The exported inventory attachment is local-only at
+  `/tmp/PhotoMemoRound70Attachments/9061E1CF-8B97-43D2-8C2B-1FF7D181F0AF.json`.
+  It contains metadata and resource descriptors, not photo or video bytes. No
+  Photos asset was selected, written, moved, deleted, or otherwise mutated by
+  the inventory test.
+
+## 2026-08-14 MemoMark Device QA Automation Rounds 71-73
+
+- Round71 extended the physical Runner to inspect both exact album names. The
+  input album was readable with authorization `authorized` and contained 13
+  assets. The output album existed and was readable; one observed asset was a
+  RAW/DNG primary resource with a Photos `FullSizeRender.jpeg` rendition, so it
+  was not accepted as a MemoMark output candidate.
+- The latest Round72 and Round73 reads found the output album still present but
+  with `assetCount: 0`. The Runner performed no Photos write, move, delete, or
+  cleanup between these reads. The change is therefore recorded as observed
+  device-library state, not attributed to the test harness.
+- Round73 added the output data-readiness gate: the output album must contain
+  at least one JPEG still or valid Live Photo candidate. On the physical iPhone
+  17 Pro Max, the run completed the launch, QA-01, and input-inventory tests,
+  then correctly failed the output preflight with
+  `observed classifications: []`. This is an intentional data-preparation
+  failure, not a signing, installation, or PhotoKit authorization failure.
+  The result summary is 3 passed / 1 failed, and the result bundle is at
+  `/tmp/PhotoMemoRound73Run/round73-qa-output-format-preflight-clean/MemoMarkDeviceQA.xcresult`.
+- The latest output inventory JSON is at
+  `/tmp/PhotoMemoRound73Attachments/0C919BAF-B7C0-4F64-81E5-31CD61BD0992.json`.
+  It records `MemoMark QA Outputs`, `authorized`, and `assetCount: 0`. The
+  latest input inventory remains 13 assets: 9 Live Photos and 4 RAW assets
+  with JPEG renditions. QA-02 through QA-08 business scenarios remain
+  unclaimed; the next required resource is a newly generated MemoMark output
+  saved into the now-correct output album, followed by receipt/local-identifier
+  binding.
+
+## 2026-08-14 MemoMark Device QA Automation Round 74
+
+- The user supplied one new output in `MemoMark QA Outputs`. The physical
+  Runner re-read both exact albums with PhotoKit authorization `authorized`:
+  `MemoMark QA Inputs` contained 13 assets and `MemoMark QA Outputs` contained
+  1 asset.
+- The output passed the resource-level Live Photo gate. Its classification is
+  `livePhoto`, its media subtype is `photoLive`, its primary resource is
+  `IMG_6600 (1).heic` with UTI `public.heic`, and it has the paired video
+  resource `IMG_6600 (1).MOV` with QuickTime UTI. It has a new local identifier
+  `C774E52A-279E-4A82-AEEB-8F53F3F10BE7/L0/001`, distinct from the source
+  input `230E0C3C-ECF6-41A3-96B7-D5A827E4323D/L0/001`.
+- The output dimensions are `4032 x 2778`; the matching input was `4032 x
+  2268`. The changed dimensions and new asset identifier are consistent with
+  a generated presentation output, but this resource inventory alone does not
+  certify pixel fidelity, metadata policy, save receipt binding, original
+  asset preservation, or the complete QA-04 processing lifecycle.
+- All 4 implemented physical Runner tests passed with 0 failures. Offline
+  evidence verification reported `pass`; the result bundle is at
+  `/tmp/PhotoMemoRound74Run/round74-qa-output-live-photo-recheck/MemoMarkDeviceQA.xcresult`.
+  The detailed output inventory is at
+  `/tmp/PhotoMemoRound74Attachments/2A05FF59-95EB-4D4A-9B32-651B4DED3026.json`.

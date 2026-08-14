@@ -190,7 +190,7 @@ extension PhotoProcessingInputPolicy {
         UTType("public.camera-raw-image"),
         UTType("com.adobe.raw-image"),
         UTType("com.adobe.digital-negative"),
-        UTType(exportedAs: "com.apple.proraw")
+        UTType(importedAs: "com.apple.proraw")
     ]
     .compactMap { $0 }
 

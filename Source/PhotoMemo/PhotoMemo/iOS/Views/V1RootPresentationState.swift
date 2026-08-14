@@ -33,4 +33,26 @@ struct V1LocalConfigurationLibraryPresentationState {
     var homeActionFeedback: String?
     var showsHomeActionFailureAlert = false
 }
+
+/// Groups transient root presentation state without owning configuration data.
+///
+/// This container intentionally excludes ConfigurationSession, editor drafts,
+/// output configuration, bootstrap state, and persistence status. Those values
+/// have separate lifecycle and truth boundaries.
+struct V1RootPresentationState {
+    var memorySourceDisclosureState =
+        V1MemorySourceDisclosureState()
+    var mediaPickerPresentation =
+        V1MediaPickerPresentationState()
+    var renamePresentation =
+        V1ConfigurationRenamePresentationState()
+    var showsRegionContentSheet = false
+    var showsWelcomeInformation = false
+    var showsMemoMarkPlus = false
+    var showsHomeMemoMarkPlus = false
+    var switchPresentation =
+        V1ConfigurationSwitchPresentationState()
+    var localLibraryPresentation =
+        V1LocalConfigurationLibraryPresentationState()
+}
 #endif

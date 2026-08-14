@@ -52,12 +52,12 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("这次更新让卡片内容、标识与配置保存保持一致"))
-        #expect(simplifiedChinese.contains("编辑、保存、重新进入或切换记忆对象与配置时"))
-        #expect(simplifiedChinese.contains("修复保存、导入、备份恢复或切换配置后自选 Logo 消失或错用头像的问题"))
-        #expect(english.contains("This update keeps card content, logos, and saved configurations in sync"))
-        #expect(english.contains("after editing, saving, reopening, or switching subjects and configurations"))
-        #expect(english.contains("Fixed custom logos disappearing or using an avatar"))
+        #expect(simplifiedChinese.contains("这次更新主要完善了配置中心在切换与恢复时的状态连续性"))
+        #expect(simplifiedChinese.contains("切换记忆对象、配置和编辑页面时"))
+        #expect(simplifiedChinese.contains("相册选项等异步内容只会应用到仍然对应的记忆对象和配置"))
+        #expect(english.contains("This update keeps Configuration Center state consistent when you switch and return"))
+        #expect(english.contains("When you switch subjects, configurations, or editor pages"))
+        #expect(english.contains("Asynchronous album options are applied only when they still belong"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -72,13 +72,13 @@ struct V1ReleaseNotesContractTests {
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.1.1;"
-            ).count == 9
+                separatedBy: "MARKETING_VERSION = 2.1.2;"
+            ).count == 11
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 80;"
-            ).count == 11
+                separatedBy: "CURRENT_PROJECT_VERSION = 85;"
+            ).count == 13
         )
     }
 

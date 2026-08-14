@@ -44,7 +44,7 @@ struct PhotoProcessingInputPolicyTests {
                 UTType(filenameExtension: "dng")
             )
         let proRawType =
-            UTType(exportedAs: "com.apple.proraw")
+            UTType(importedAs: "com.apple.proraw")
 
         #expect(policy.isSupportedContentType(cameraRawType))
         #expect(policy.isSupportedContentType(adobeRawType))

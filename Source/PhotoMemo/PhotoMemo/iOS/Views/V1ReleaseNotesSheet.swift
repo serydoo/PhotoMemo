@@ -12,16 +12,16 @@ struct V1ReleaseNotesSheet: View {
                 id: "time-expression",
                 title: localized(
                     "settings.release_notes.time_expression.title",
-                    fallback: "卡片编辑更清楚"
+                    fallback: "配置中心更连贯"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.time_expression.item_one",
-                        fallback: "四个内容区域明确对应最终照片的位置，修改会实时出现在完整预览中。"
+                        fallback: "切换记忆对象、配置和编辑页面时，当前卡片内容会继续跟随正在处理的记忆。"
                     ),
                     localized(
                         "settings.release_notes.time_expression.item_two",
-                        fallback: "普通文字、照片信息与记忆表达可以连续组合，右下内容也会写入照片说明。"
+                        fallback: "卡片编辑与输出设置的状态边界更清楚，减少旧页面状态覆盖当前编辑的机会。"
                     )
                 ]
             ),
@@ -29,16 +29,16 @@ struct V1ReleaseNotesSheet: View {
                 id: "configuration",
                 title: localized(
                     "settings.release_notes.configuration.title",
-                    fallback: "重要日子更容易理解"
+                    fallback: "切换与恢复更稳定"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.configuration.item_one",
-                        fallback: "首页和记忆对象会直接呈现今天的时间答案，重要日子的设置步骤也更清楚。"
+                        fallback: "重新进入配置中心或切换记忆对象后，预览、对象信息和配置选择会保持在同一上下文。"
                     ),
                     localized(
                         "settings.release_notes.configuration.item_two",
-                        fallback: "配置中心、记忆对象和设置页面减少重复层级，小屏阅读与操作更从容。"
+                        fallback: "相册选项等异步内容只会应用到仍然对应的记忆对象和配置，避免过期结果混入当前页面。"
                     )
                 ]
             ),
@@ -46,16 +46,16 @@ struct V1ReleaseNotesSheet: View {
                 id: "saving",
                 title: localized(
                     "settings.release_notes.saving.title",
-                    fallback: "分享与恢复更可靠"
+                    fallback: "本地记忆继续由你掌握"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.saving.item_one",
-                        fallback: "从 Apple Photos 分享、查看处理进展和打开照片 App 的路径更明确。"
+                        fallback: "这次更新集中整理配置中心的状态边界，不新增云端处理，也不改变 Apple Photos 的使用方式。"
                     ),
                     localized(
                         "settings.release_notes.saving.item_two",
-                        fallback: "选图、任务重试与购买操作获得更清楚的状态和失败提示；照片仍在设备本地处理，原图保持不变。"
+                        fallback: "照片仍在设备本地处理，原图保持不变；完成后生成新的记忆照片。"
                     )
                 ]
             )
@@ -71,7 +71,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.header",
-                                    fallback: "根据大家的反馈，时光记迎来一次较大的体验更新。"
+                                    fallback: "这次更新主要完善了配置中心在切换与恢复时的状态连续性。"
                                 )
                             )
                             .font(.subheadline.weight(.semibold))
@@ -89,7 +89,7 @@ struct V1ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.positioning",
-                                    fallback: "建议及时更新，体验更清楚的卡片编辑、重要日子与 Apple Photos 工作流程。"
+                                    fallback: "建议更新，获得更连贯的配置中心、卡片编辑和本地处理体验。"
                                 )
                             )
                             .font(.caption)

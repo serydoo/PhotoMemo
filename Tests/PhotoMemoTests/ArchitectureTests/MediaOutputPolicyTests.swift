@@ -109,7 +109,7 @@ struct MediaOutputPolicyTests {
             try policy.plan(
                 for: .rawStillImage,
                 sourceContentType:
-                    UTType(exportedAs: "com.apple.proraw"),
+                    UTType(importedAs: "com.apple.proraw"),
                 preference: .jpeg
             ) == .stillImage(
                 imageType: .jpeg

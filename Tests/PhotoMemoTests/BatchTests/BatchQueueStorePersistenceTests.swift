@@ -158,6 +158,10 @@ struct BatchQueueStorePersistenceTests {
         #expect(task.renderedFileURL == nil)
         #expect(task.failure == nil)
         #expect(task.progress.fractionCompleted == 1)
+        #expect(
+            receiptStore.receipt(for: taskID.uuidString)?.phase
+            == .commitAcknowledged
+        )
 
         let persistedTask = try #require(
             BatchQueuePersistence(defaults: defaults)
@@ -172,6 +176,82 @@ struct BatchQueueStorePersistenceTests {
             persistedTask.savedAssetIdentifier
             == "receipt-backed-asset"
         )
+    }
+
+    @MainActor
+    @Test("Startup keeps a visible saving task when commit acknowledgement cannot be persisted")
+    func startupDefersVisibleReceiptBackedSavingTaskWhenAcknowledgementWriteFails() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.ReceiptAcknowledgementFailure.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(taskID: taskID)
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        #expect(
+            receiptStore.record(
+                assetIdentifier: "receipt-backed-asset",
+                for: taskID.uuidString
+            )
+        )
+
+        let failingReceiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults,
+            receiptDataWriter: { _, _, _ in }
+        )
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: failingReceiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [
+                        taskID.uuidString:
+                            "receipt-backed-asset"
+                    ]
+                ),
+            automaticallyStartsProcessing: false
+        )
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .savingToPhotoLibrary)
+        #expect(task.savedAssetIdentifier == nil)
+        #expect(
+            task.renderedFileURL
+            == URL(
+                fileURLWithPath:
+                    "/tmp/rendered-receipt-recovery.jpg"
+            )
+        )
+        #expect(
+            failingReceiptStore.receipt(for: taskID.uuidString)?.phase
+            == .transactionSubmitted
+        )
+        #expect(store.isProcessing == false)
+
+        let persistedTask = try #require(
+            BatchQueuePersistence(defaults: defaults)
+                .loadPersistedJobsResult()
+                .value?
+                .first?
+                .tasks
+                .first
+        )
+        #expect(persistedTask.phase == .savingToPhotoLibrary)
+        #expect(persistedTask.savedAssetIdentifier == nil)
     }
 
     @MainActor
@@ -410,6 +490,130 @@ struct BatchQueueStorePersistenceTests {
         #expect(
             receiptStore.assetIdentifier(for: taskID.uuidString)
             == "missing-asset"
+        )
+    }
+
+    @MainActor
+    @Test("Startup preserves a pre-commit-intent saving task without requeueing")
+    func startupPreservesPreCommitIntentSavingTask() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.IntentMissing.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(taskID: taskID)
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        #expect(
+            receiptStore.recordIntent(
+                for: taskID.uuidString
+            )
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [:]
+                ),
+            automaticallyStartsProcessing: false
+        )
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .savingToPhotoLibrary)
+        #expect(task.savedAssetIdentifier == nil)
+        #expect(
+            task.renderedFileURL
+            == URL(
+                fileURLWithPath:
+                    "/tmp/rendered-receipt-recovery.jpg"
+            )
+        )
+        #expect(
+            receiptStore.hasPendingIntent(
+                for: taskID.uuidString
+            )
+        )
+        #expect(store.isProcessing == false)
+    }
+
+    @MainActor
+    @Test("Startup materializes a placeholder-backed intent before completing the task")
+    func startupMaterializesPlaceholderBackedIntent() throws {
+        let suiteName =
+            "PhotoMemo.BatchQueueStorePersistenceTests.IntentPlaceholder.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(taskID: taskID)
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        #expect(
+            receiptStore.recordIntent(
+                for: taskID.uuidString
+            )
+        )
+        #expect(
+            receiptStore.recordIntentAssetIdentifier(
+                "placeholder-backed-asset",
+                for: taskID.uuidString
+            )
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator:
+                StubPhotoLibraryReceiptAssetLocator(
+                    visibleAssetIdentifiers: [
+                        taskID.uuidString:
+                            "placeholder-backed-asset"
+                    ]
+                ),
+            automaticallyStartsProcessing: false
+        )
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .completed)
+        #expect(
+            task.savedAssetIdentifier
+            == "placeholder-backed-asset"
+        )
+        #expect(
+            receiptStore.receipt(for: taskID.uuidString)?.phase
+            == .commitAcknowledged
+        )
+        #expect(
+            !receiptStore.hasPendingIntent(
+                for: taskID.uuidString
+            )
         )
     }
 

@@ -646,6 +646,26 @@ extension BatchQueueStore {
                 continue
             }
 
+            // Startup reconciliation has directly observed the exact
+            // PhotoKit asset. Upgrade the local receipt before completing the
+            // durable queue projection. A receipt that is already committed
+            // needs no write; otherwise a failed upgrade must leave the task
+            // in its recoverable saving phase instead of projecting success
+            // without durable acknowledgement.
+            if saveReceiptStore.assetIdentifier(
+                for: task.id.uuidString
+            ) == nil,
+               !saveReceiptStore.materializePendingIntent(
+                   for: task.id.uuidString
+               ) {
+                continue
+            }
+            guard saveReceiptStore.ensureCommitted(
+                for: task.id.uuidString
+            ) else {
+                continue
+            }
+
             reconciledResourceURLs.append(
                 (
                     rendered: task.renderedFileURL,
@@ -715,7 +735,7 @@ extension BatchQueueStore {
                 .map(\.id)
         )
         let protectedTaskIDs =
-            unresolvedReceiptBackedSavingTaskIDs()
+            unresolvedPhotoLibrarySaveTaskIDs()
 
         guard persistence.normalizeJobsForResume(
             &jobs,
@@ -779,7 +799,7 @@ extension BatchQueueStore {
         }
     }
 
-    func unresolvedReceiptBackedSavingTaskIDs()
+    func unresolvedPhotoLibrarySaveTaskIDs()
     -> Set<UUID> {
 
         Set(
@@ -787,12 +807,22 @@ extension BatchQueueStore {
                 .compactMap { task in
                     guard task.phase
                             == BatchTaskPhase
-                            .savingToPhotoLibrary,
-                          saveReceiptStore.assetIdentifier(
-                            for: task.id.uuidString
-                          ) != nil else {
+                            .savingToPhotoLibrary else {
                         return nil
                     }
+
+                    let hasAssetReceipt =
+                        saveReceiptStore.assetIdentifier(
+                            for: task.id.uuidString
+                        ) != nil
+                    let hasPendingIntent =
+                        saveReceiptStore.hasPendingIntent(
+                            for: task.id.uuidString
+                        )
+                    guard hasAssetReceipt || hasPendingIntent else {
+                        return nil
+                    }
+
                     return task.id
                 }
         )

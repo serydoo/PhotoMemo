@@ -55,137 +55,135 @@ struct PhotoMemoiOSV1View: View {
     private var regionDrafts: [CardRegion: V1EditorDraft] = [:]
 
     @State
-    private var activeModuleRegion: CardRegion?
-
-    @State
-    private var focusedEditorRegion: CardRegion?
-
-    @State
-    private var activeTextItemIDs: [CardRegion: UUID] = [:]
-
-    @State
-    private var recentInsertionRegion: CardRegion?
-
-    @State
-    private var recentInsertionItemID: UUID?
-
-    @State
-    private var slotATextKitCommandBus = V1TextKitCommandBus()
-
-    @State
-    private var slotBTextKitCommandBus = V1TextKitCommandBus()
-
-    @State
-    private var slotCTextKitCommandBus = V1TextKitCommandBus()
-
-    @State
-    private var slotDTextKitCommandBus = V1TextKitCommandBus()
+    private var editorInteractionState =
+        V1EditorInteractionState()
 
     @State
     private var entryNavigationState =
         EntryNavigationState()
 
     @State
-    private var memorySourceDisclosureState =
-        V1MemorySourceDisclosureState()
+    private var rootPresentationState =
+        V1RootPresentationState()
 
     @State
-    private var mediaPickerPresentation =
-        V1MediaPickerPresentationState()
+    private var rootConfigurationProjectionState =
+        V1RootConfigurationProjectionState()
 
-    @State
-    private var logoMode: V1LogoMode = .appleMini
+    private var logoMode: V1LogoMode {
+        get { rootConfigurationProjectionState.logoMode }
+        nonmutating set {
+            rootConfigurationProjectionState.logoMode = newValue
+        }
+    }
 
-    @State
-    private var customLogoBadge: Badge?
+    private var customLogoBadge: Badge? {
+        get { rootConfigurationProjectionState.customLogoBadge }
+        nonmutating set {
+            rootConfigurationProjectionState.customLogoBadge = newValue
+        }
+    }
 
-    @State
-    private var birthdayDate =
-        Calendar.current.date(
-            from: DateComponents(
-                year: 2024,
-                month: 1,
-                day: 1
-            )
-        ) ?? Date()
+    private var birthdayDate: Date {
+        get { rootConfigurationProjectionState.birthdayDate }
+        nonmutating set {
+            rootConfigurationProjectionState.birthdayDate = newValue
+        }
+    }
 
-    @State
     private var locationDisplayConfiguration:
-        ExpressionModuleConfiguration? =
-        LocationDisplayInspectorPresenter
-        .configuration(
-            for: "legacyDisplay"
-        )
+        ExpressionModuleConfiguration? {
+        get {
+            rootConfigurationProjectionState
+                .locationDisplayConfiguration
+        }
+        nonmutating set {
+            rootConfigurationProjectionState
+                .locationDisplayConfiguration = newValue
+        }
+    }
+
+    private var timeDisplayConfiguration:
+        ExpressionModuleConfiguration {
+        get {
+            rootConfigurationProjectionState
+                .timeDisplayConfiguration
+        }
+        nonmutating set {
+            rootConfigurationProjectionState
+                .timeDisplayConfiguration = newValue
+        }
+    }
 
     @State
-    private var timeDisplayConfiguration =
-        TimeDisplayInspectorPresenter.configuration(
-            baseStyle: .daily,
-            supplement: .none
-        )
+    private var outputDraftState =
+        V1OutputDraftState()
 
     @State
-    private var outputTarget: V1IOSOutputTarget = .automatic
+    private var rootLifecycleState =
+        V1RootLifecycleState()
 
-    @State
-    private var mediaOutputMode:
-        V1MediaOutputMode = .originalFormat
+    private var isSavingConfiguration: Bool {
+        get { rootLifecycleState.isSavingConfiguration }
+        nonmutating set {
+            rootLifecycleState.isSavingConfiguration = newValue
+        }
+    }
 
-    @State
-    private var shouldWritePhotosDescription = true
+    private var didBootstrap: Bool {
+        get { rootLifecycleState.didBootstrap }
+        nonmutating set {
+            rootLifecycleState.didBootstrap = newValue
+        }
+    }
 
-    @State
-    private var photosDescriptionOverride = ""
+    private var isApplyingBootstrapState: Bool {
+        get { rootLifecycleState.isApplyingBootstrapState }
+        nonmutating set {
+            rootLifecycleState.isApplyingBootstrapState = newValue
+        }
+    }
 
-    @State
-    private var configurationAlbumTitle = ""
+    private var isApplyingSavedOutputConfiguration: Bool {
+        get {
+            rootLifecycleState
+                .isApplyingSavedOutputConfiguration
+        }
+        nonmutating set {
+            rootLifecycleState
+                .isApplyingSavedOutputConfiguration = newValue
+        }
+    }
 
-    @State
-    private var livePhotoPolicy:
-        MemoryConfigurationRecord.Output.LivePhotoPolicy =
-        .preserveMotion
-
-    @State
-    private var availableAlbums: [PhotoAlbumOption] = []
-
-    @State
-    private var selectedExistingAlbumIdentifier = ""
-
-    @State
-    private var newAlbumName =
-        PhotoMemoAlbumSelection.defaultAlbumTitle
-
-    @State
-    private var isLoadingAlbums = false
-
-    @State
-    private var albumStatusMessage = ""
-
-    @State
-    private var isSavingConfiguration = false
-
-    @State
-    private var didBootstrap = false
-
-    @State
-    private var isApplyingBootstrapState = false
-
-    @State
-    private var isApplyingSavedOutputConfiguration = false
-
-    @State
     private var birthdayDateChangeBehavior:
-        V1BirthdayDateChangeBehavior = .userInitiated
+        V1BirthdayDateChangeBehavior {
+        get { rootLifecycleState.birthdayDateChangeBehavior }
+        nonmutating set {
+            rootLifecycleState.birthdayDateChangeBehavior = newValue
+        }
+    }
 
-    @State
-    private var shouldSaveSubjectLibrary = true
+    private var shouldSaveSubjectLibrary: Bool {
+        get { rootLifecycleState.shouldSaveSubjectLibrary }
+        nonmutating set {
+            rootLifecycleState.shouldSaveSubjectLibrary = newValue
+        }
+    }
 
-    @State
-    private var isPersistingSubjectChanges = false
+    private var isPersistingSubjectChanges: Bool {
+        get { rootLifecycleState.isPersistingSubjectChanges }
+        nonmutating set {
+            rootLifecycleState.isPersistingSubjectChanges = newValue
+        }
+    }
 
-    @State
     private var activeConfigurationStatus:
-        V1ConfigurationStatus = .idle
+        V1ConfigurationStatus {
+        get { rootLifecycleState.activeConfigurationStatus }
+        nonmutating set {
+            rootLifecycleState.activeConfigurationStatus = newValue
+        }
+    }
 
     @State
     private var shareDiagnosticEvents:
@@ -194,30 +192,6 @@ struct PhotoMemoiOSV1View: View {
     @State
     private var processingDiagnosticsSnapshot =
         PhotoMemoiOSProcessingDiagnosticsSnapshot()
-
-    @State
-    private var renamePresentation =
-        V1ConfigurationRenamePresentationState()
-
-    @State
-    private var showsRegionContentSheet = false
-
-    @State
-    private var showsWelcomeInformation = false
-
-    @State
-    private var showsMemoMarkPlus = false
-
-    @State
-    private var showsHomeMemoMarkPlus = false
-
-    @State
-    private var switchPresentation =
-        V1ConfigurationSwitchPresentationState()
-
-    @State
-    private var localLibraryPresentation =
-        V1LocalConfigurationLibraryPresentationState()
 
     @FocusState
     private var memoryPresetTitleFieldFocused: Bool
@@ -255,9 +229,9 @@ struct PhotoMemoiOSV1View: View {
         V1ModulePanelCoordinator.State {
         V1ModulePanelCoordinator.State(
             focusedRegion:
-                focusedEditorRegion,
+                editorInteractionState.focusedEditorRegion,
             activeRegion:
-                activeModuleRegion,
+                editorInteractionState.activeModuleRegion,
             usageStorage:
                 moduleUsageCountsStorage
         )
@@ -339,13 +313,18 @@ struct PhotoMemoiOSV1View: View {
                         activeConfigurationStatus == .dirty,
                     isSavingConfiguration: isSavingConfiguration,
                     availableAlbumIdentifiers: Set(
-                        availableAlbums.compactMap(\.localIdentifier)
+                        outputDraftState.availableAlbums
+                            .compactMap(\.localIdentifier)
                     ),
                     selectedCustomLogoPath: customLogoBadge?.imagePath
                 )
             },
-            presentation: { localLibraryPresentation },
-            updatePresentation: { localLibraryPresentation = $0 },
+            presentation: {
+                rootPresentationState.localLibraryPresentation
+            },
+            updatePresentation: {
+                rootPresentationState.localLibraryPresentation = $0
+            },
             applyCurrentConfiguration: {
                 await applyCurrentV1Configuration()
                 && activeConfigurationStatus == .saved
@@ -383,11 +362,11 @@ struct PhotoMemoiOSV1View: View {
                 await loadAlbumOptions()
             },
             setOutputTarget: {
-                outputTarget = $0
+                outputDraftState.outputTarget = $0
             },
             setSelectedExistingAlbumIdentifier: {
                 selectedExistingAlbumIdentifier in
-                self.selectedExistingAlbumIdentifier =
+                self.outputDraftState.selectedExistingAlbumIdentifier =
                     selectedExistingAlbumIdentifier
             },
             restoreSubject: { subject in
@@ -525,18 +504,18 @@ struct PhotoMemoiOSV1View: View {
                     projection.customLogoBadge
                 logoMode = projection.logoMode
 
-                outputTarget =
+                outputDraftState.outputTarget =
                     projection.outputTarget
-                mediaOutputMode =
+                outputDraftState.mediaOutputMode =
                     projection.mediaOutputMode
-                selectedExistingAlbumIdentifier =
+                outputDraftState.selectedExistingAlbumIdentifier =
                     projection
                     .selectedExistingAlbumIdentifier
 
                 if let suggestedNewAlbumName =
                     projection
                     .suggestedNewAlbumName {
-                    newAlbumName =
+                    outputDraftState.newAlbumName =
                         suggestedNewAlbumName
                 }
 
@@ -638,13 +617,12 @@ struct PhotoMemoiOSV1View: View {
             queueCoordinator
         self.configurationCoordinator =
             configurationCoordinator
-        self._timeDisplayConfiguration = State(
+        self._rootConfigurationProjectionState = State(
             initialValue:
-                configurationCoordinator?
-                .loadTimeDisplayConfiguration()
-                ?? TimeDisplayInspectorPresenter.configuration(
-                    baseStyle: .daily,
-                    supplement: .none
+                V1RootConfigurationProjectionState(
+                    timeDisplayConfiguration:
+                        configurationCoordinator?
+                        .loadTimeDisplayConfiguration()
                 )
         )
         self.externalIntakeCenter =
@@ -688,7 +666,8 @@ struct PhotoMemoiOSV1View: View {
         }
         .modifier(
             V1LocalConfigurationLibraryPresentationModifier(
-                presentation: $localLibraryPresentation,
+                presentation:
+                    $rootPresentationState.localLibraryPresentation,
                 subjectName:
                     session.state.selectedSubject?
                     .identity.displayName
@@ -700,13 +679,18 @@ struct PhotoMemoiOSV1View: View {
         )
         .alert(
             "有未保存的修改",
-            isPresented: $switchPresentation.showsUnsavedPresetSwitchAlert
+            isPresented:
+                $rootPresentationState
+                .switchPresentation
+                .showsUnsavedPresetSwitchAlert
         ) {
             Button("保存并切换") {
                 saveCurrentConfigurationThenActivatePendingPreset()
             }
             Button("取消", role: .cancel) {
-                switchPresentation.pendingMemoryPresetActivation = nil
+                rootPresentationState
+                    .switchPresentation
+                    .pendingMemoryPresetActivation = nil
             }
         } message: {
             Text("请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。")
@@ -718,7 +702,9 @@ struct PhotoMemoiOSV1View: View {
             V1WelcomeAndSettingsPresentationModifier(
                 flowState: $entryNavigationState.flowState,
                 showsConfigurationRequiredAlert:
-                    $switchPresentation.showsConfigurationRequiredAlert,
+                    $rootPresentationState
+                        .switchPresentation
+                        .showsConfigurationRequiredAlert,
                 hasSeenWelcome: hasSeenWelcome,
                 settingsContent: settingsPage,
                 initializeFirstConfiguration:
@@ -726,7 +712,10 @@ struct PhotoMemoiOSV1View: View {
                 completeWelcomeFlow: completeWelcomeFlow
             )
         )
-        .sheet(isPresented: $showsWelcomeInformation) {
+        .sheet(
+            isPresented:
+                $rootPresentationState.showsWelcomeInformation
+        ) {
             V1WelcomePageSurface(
                 presentation:
                     V1WelcomePresentation.localized(
@@ -734,10 +723,10 @@ struct PhotoMemoiOSV1View: View {
                     ),
                 language: .interfaceStored,
                 onStart: {
-                    showsWelcomeInformation = false
+                    rootPresentationState.showsWelcomeInformation = false
                 },
                 onShowWorkflow: {
-                    showsWelcomeInformation = false
+                    rootPresentationState.showsWelcomeInformation = false
                     entryFlowState =
                         V1EntryFlowCoordinator
                         .showWorkflowFromWelcome(
@@ -752,18 +741,19 @@ struct PhotoMemoiOSV1View: View {
         }
         .modifier(
             V1EditorPresentationModifier(
-                showsRegionContentSheet: $showsRegionContentSheet,
+                showsRegionContentSheet:
+                    $rootPresentationState.showsRegionContentSheet,
                 editorContent: editorCluster,
                 onDismissKeyboard: dismissKeyboard,
                 onToggleModuleLibrary:
                     toggleModuleLibraryFromToolbar,
                 canToggleModuleLibrary:
-                    focusedEditorRegion != nil
-                    || activeModuleRegion != nil,
+                    editorInteractionState.focusedEditorRegion != nil
+                    || editorInteractionState.activeModuleRegion != nil,
                 isModuleLibraryPresented:
-                    activeModuleRegion != nil,
+                    editorInteractionState.activeModuleRegion != nil,
                 focusedRegionTitle:
-                    focusedEditorRegion?.displayTitle,
+                    editorInteractionState.focusedEditorRegion?.displayTitle,
                 onDismissEditor:
                     resetCardEditorState
             )
@@ -772,7 +762,8 @@ struct PhotoMemoiOSV1View: View {
             V1SubjectPresentationModifier(
                 session: session,
                 flowState: $entryNavigationState.flowState,
-                switchPresentation: $switchPresentation,
+                switchPresentation:
+                    $rootPresentationState.switchPresentation,
                 birthdayDate: birthdayDate,
                 availableConfigurationCount: homeAvailablePresets.count,
                 completedPhotoCount:
@@ -797,20 +788,28 @@ struct PhotoMemoiOSV1View: View {
                 isApplyingSavedOutputConfiguration:
                     isApplyingSavedOutputConfiguration,
                 flowState: $entryNavigationState.flowState,
-                renamePresentation: $renamePresentation,
+                renamePresentation:
+                    $rootPresentationState.renamePresentation,
                 titleFieldFocus: $memoryPresetTitleFieldFocused,
-                birthdayDate: $birthdayDate,
-                birthdayDateChangeBehavior: $birthdayDateChangeBehavior,
-                memorySourceDisclosureState: $memorySourceDisclosureState,
-                mediaPickerPresentation: $mediaPickerPresentation,
-                logoMode: $logoMode,
-                customLogoBadge: $customLogoBadge,
-                outputTarget: $outputTarget,
-                mediaOutputMode: $mediaOutputMode,
+                birthdayDate:
+                    $rootConfigurationProjectionState.birthdayDate,
+                birthdayDateChangeBehavior:
+                    $rootLifecycleState.birthdayDateChangeBehavior,
+                memorySourceDisclosureState:
+                    $rootPresentationState.memorySourceDisclosureState,
+                mediaPickerPresentation:
+                    $rootPresentationState.mediaPickerPresentation,
+                logoMode:
+                    $rootConfigurationProjectionState.logoMode,
+                customLogoBadge:
+                    $rootConfigurationProjectionState.customLogoBadge,
+                outputTarget: $outputDraftState.outputTarget,
+                mediaOutputMode: $outputDraftState.mediaOutputMode,
                 selectedAlbumIdentifier:
-                    $selectedExistingAlbumIdentifier,
-                newAlbumName: $newAlbumName,
-                configurationStatus: $activeConfigurationStatus,
+                    $outputDraftState.selectedExistingAlbumIdentifier,
+                newAlbumName: $outputDraftState.newAlbumName,
+                configurationStatus:
+                    $rootLifecycleState.activeConfigurationStatus,
                 bootstrapIfNeeded: bootstrapIfNeeded,
                 refreshProcessingState: refreshProcessingState,
                 loadAlbumOptions: loadAlbumOptions,
@@ -849,7 +848,7 @@ struct PhotoMemoiOSV1View: View {
         V1SettingsPageSurface(
             commerceSnapshot: commerceStore.snapshot,
             onOpenMemoMarkPlus: {
-                showsMemoMarkPlus = true
+                rootPresentationState.showsMemoMarkPlus = true
             },
             onShowWelcome: {
                 entryFlowState =
@@ -859,7 +858,7 @@ struct PhotoMemoiOSV1View: View {
                     )
                 Task { @MainActor in
                     await Task.yield()
-                    showsWelcomeInformation = true
+                    rootPresentationState.showsWelcomeInformation = true
                 }
             },
             onDismissKeyboard: dismissKeyboard,
@@ -874,11 +873,13 @@ struct PhotoMemoiOSV1View: View {
                     .makeExport()
             }
         )
-        .sheet(isPresented: $showsMemoMarkPlus) {
+        .sheet(
+            isPresented: $rootPresentationState.showsMemoMarkPlus
+        ) {
             MemoMarkPlusPurchaseView(
                 store: commerceStore,
                 onDismiss: {
-                    showsMemoMarkPlus = false
+                    rootPresentationState.showsMemoMarkPlus = false
                 }
             )
         }
@@ -923,8 +924,10 @@ struct PhotoMemoiOSV1View: View {
             memoryPresets: homeAvailablePresets,
             selectedMemoryPresetID:
                 session.state.selectedMemoryPreset?.id,
-            isEditingMemoryPresetTitle: renamePresentation.isEditing,
-            memoryPresetTitleDraft: $renamePresentation.titleDraft,
+            isEditingMemoryPresetTitle:
+                rootPresentationState.renamePresentation.isEditing,
+            memoryPresetTitleDraft:
+                $rootPresentationState.renamePresentation.titleDraft,
             memoryPresetTitleFieldFocused: $memoryPresetTitleFieldFocused,
             isConfigurationReady:
                 hasSavedConfigurationForSelectedSubject,
@@ -962,7 +965,7 @@ struct PhotoMemoiOSV1View: View {
                 )
             },
             onOpenMemoMarkPlus: {
-                showsHomeMemoMarkPlus = true
+                rootPresentationState.showsHomeMemoMarkPlus = true
             },
             onSelectMemoryPreset: activateHomePreset,
             onRenameMemoryPreset: beginEditingMemoryPresetTitle,
@@ -973,11 +976,13 @@ struct PhotoMemoiOSV1View: View {
             onDismissKeyboard: dismissKeyboard,
             profileTrackingBackground: offsetReader(for: .profile)
         )
-        .sheet(isPresented: $showsHomeMemoMarkPlus) {
+        .sheet(
+            isPresented: $rootPresentationState.showsHomeMemoMarkPlus
+        ) {
             MemoMarkPlusPurchaseView(
                 store: commerceStore,
                 onDismiss: {
-                    showsHomeMemoMarkPlus = false
+                    rootPresentationState.showsHomeMemoMarkPlus = false
                 }
             )
         }
@@ -1026,24 +1031,27 @@ struct PhotoMemoiOSV1View: View {
             isMemorySourceExpanded:
                 Binding(
                     get: {
-                        memorySourceDisclosureState
+                        rootPresentationState.memorySourceDisclosureState
                             .isExpanded
                     },
                     set: { isExpanded in
-                        memorySourceDisclosureState
+                        rootPresentationState.memorySourceDisclosureState
                             .setExpanded(isExpanded)
                     }
                 ),
             subjectAvatarPreviewImagePath:
                 resolvedSubjectAvatarPreviewImagePath,
             logoMode: logoModeSelectionBinding,
-            selectedLogoItem: $mediaPickerPresentation.selectedLogoItem,
+            selectedLogoItem:
+                $rootPresentationState.mediaPickerPresentation.selectedLogoItem,
             isLogoPickerPresented:
-                $mediaPickerPresentation.isLogoPickerPresented,
+                $rootPresentationState.mediaPickerPresentation
+                    .isLogoPickerPresented,
             logoValue: logoMode.title,
             customLogoImagePath:
                 customLogoBadge?.imagePath,
-            isOptimizingLogo: mediaPickerPresentation.isOptimizingLogo,
+            isOptimizingLogo:
+                rootPresentationState.mediaPickerPresentation.isOptimizingLogo,
             timeAnchorTitle:
                 session.currentTimeAnchorTitle,
             timeAnchorCount:
@@ -1085,21 +1093,22 @@ struct PhotoMemoiOSV1View: View {
                 activeConfigurationStatus,
             onOpenRegionContent: {
                 resetCardEditorState()
-                showsRegionContentSheet = true
+                rootPresentationState.showsRegionContentSheet = true
             }
         )
     }
 
     private var outputPage: some View {
         V1OutputPageSurface(
-            outputTarget: $outputTarget,
+            outputTarget: $outputDraftState.outputTarget,
             mediaOutputMode:
-                $mediaOutputMode,
-            availableAlbums: availableAlbums,
-            selectedExistingAlbumIdentifier: $selectedExistingAlbumIdentifier,
-            newAlbumName: $newAlbumName,
-            isLoadingAlbums: isLoadingAlbums,
-            albumStatusMessage: albumStatusMessage,
+                $outputDraftState.mediaOutputMode,
+            availableAlbums: outputDraftState.availableAlbums,
+            selectedExistingAlbumIdentifier:
+                $outputDraftState.selectedExistingAlbumIdentifier,
+            newAlbumName: $outputDraftState.newAlbumName,
+            isLoadingAlbums: outputDraftState.isLoadingAlbums,
+            albumStatusMessage: outputDraftState.albumStatusMessage,
             onReloadAlbums: {
                 Task {
                     await loadAlbumOptions()
@@ -1173,7 +1182,9 @@ struct PhotoMemoiOSV1View: View {
 
     private func commitMemoryPresetTitle() {
         performConfigurationLibraryAction(
-            .commitRename(title: renamePresentation.titleDraft)
+            .commitRename(
+                title: rootPresentationState.renamePresentation.titleDraft
+            )
         )
     }
 
@@ -1210,18 +1221,24 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func saveCurrentConfigurationThenActivatePendingPreset() {
-        guard let preset = switchPresentation.pendingMemoryPresetActivation else {
+        guard let preset = rootPresentationState
+            .switchPresentation
+            .pendingMemoryPresetActivation else {
             return
         }
 
         Task { @MainActor in
             guard await applyCurrentV1Configuration(),
                   activeConfigurationStatus == .saved else {
-                switchPresentation.pendingMemoryPresetActivation = nil
+                rootPresentationState
+                    .switchPresentation
+                    .pendingMemoryPresetActivation = nil
                 return
             }
 
-            switchPresentation.pendingMemoryPresetActivation = nil
+            rootPresentationState
+                .switchPresentation
+                .pendingMemoryPresetActivation = nil
             performConfigurationLibraryAction(.activate(preset))
         }
     }
@@ -1238,8 +1255,12 @@ struct PhotoMemoiOSV1View: View {
                     activeConfigurationStatus
                     .hasUncommittedChanges
             ) {
-            switchPresentation.pendingSubjectSelectionID = subjectID
-            switchPresentation.showsUnsavedSubjectSwitchAlert = true
+            rootPresentationState
+                .switchPresentation
+                .pendingSubjectSelectionID = subjectID
+            rootPresentationState
+                .switchPresentation
+                .showsUnsavedSubjectSwitchAlert = true
             return
         }
 
@@ -1247,18 +1268,24 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func saveCurrentConfigurationThenSelectPendingSubject() {
-        guard let subjectID = switchPresentation.pendingSubjectSelectionID else {
+        guard let subjectID = rootPresentationState
+            .switchPresentation
+            .pendingSubjectSelectionID else {
             return
         }
 
         Task { @MainActor in
             guard await applyCurrentV1Configuration(),
                   activeConfigurationStatus == .saved else {
-                switchPresentation.pendingSubjectSelectionID = nil
+                rootPresentationState
+                    .switchPresentation
+                    .pendingSubjectSelectionID = nil
                 return
             }
 
-            switchPresentation.pendingSubjectSelectionID = nil
+            rootPresentationState
+                .switchPresentation
+                .pendingSubjectSelectionID = nil
             performSubjectSelection(subjectID)
         }
     }
@@ -1306,7 +1333,8 @@ struct PhotoMemoiOSV1View: View {
             session.restoreConfigurationLibrary(
                 durableResult.candidate
             )
-            renamePresentation.titleDraft = session.currentMemoryPresetTitle
+            rootPresentationState.renamePresentation.titleDraft =
+                session.currentMemoryPresetTitle
             bootstrapDrafts()
             activeConfigurationStatus = .saved
             presentHomeConfigurationActionFeedback(
@@ -1349,25 +1377,30 @@ struct PhotoMemoiOSV1View: View {
                 outputConfiguration:
                     currentSavedOutputConfiguration
             )
-            renamePresentation.titleDraft = session.currentMemoryPresetTitle
-            renamePresentation.isEditing = true
+            rootPresentationState.renamePresentation.titleDraft =
+                session.currentMemoryPresetTitle
+            rootPresentationState.renamePresentation.isEditing = true
             activeConfigurationStatus = .dirty
         case .reset:
             session.resetSelectedMemoryPreset()
             bootstrapDrafts()
             activeConfigurationStatus = .dirty
         case .beginRename(let title):
-            renamePresentation.titleDraft = title
-            renamePresentation.isEditing = true
+            rootPresentationState.renamePresentation.titleDraft = title
+            rootPresentationState.renamePresentation.isEditing = true
         case .commitRenameAndSave(let title):
             session.updateSelectedMemoryPresetTitle(title)
             activeConfigurationStatus = .dirty
-            renamePresentation.isEditing = false
+            rootPresentationState.renamePresentation.isEditing = false
             memoryPresetTitleFieldFocused = false
             startCurrentConfigurationSaveWithFeedback()
         case .confirmSaveBeforeActivation(let preset):
-            switchPresentation.pendingMemoryPresetActivation = preset
-            switchPresentation.showsUnsavedPresetSwitchAlert = true
+            rootPresentationState
+                .switchPresentation
+                .pendingMemoryPresetActivation = preset
+            rootPresentationState
+                .switchPresentation
+                .showsUnsavedPresetSwitchAlert = true
         case .activate(let preset):
             session.selectMemoryPreset(preset)
             synchronizeSelectedSubjectConfigurationProjection()
@@ -1388,7 +1421,7 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func openLocalConfigurationLibrary() {
-        localLibraryPresentation.isPresented = true
+        rootPresentationState.localLibraryPresentation.isPresented = true
         refreshLocalConfigurationLibrary()
     }
 
@@ -1406,18 +1439,20 @@ struct PhotoMemoiOSV1View: View {
         _ message: String,
         isBlocking: Bool = true
     ) {
-        localLibraryPresentation.statusMessage = message
+        rootPresentationState.localLibraryPresentation.statusMessage = message
         if isBlocking {
-            localLibraryPresentation.homeActionFeedback = nil
-            localLibraryPresentation.showsHomeActionFailureAlert = true
+            rootPresentationState.localLibraryPresentation.homeActionFeedback = nil
+            rootPresentationState
+                .localLibraryPresentation
+                .showsHomeActionFailureAlert = true
             return
         }
 
-        localLibraryPresentation.homeActionFeedback = message
+        rootPresentationState.localLibraryPresentation.homeActionFeedback = message
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 3_000_000_000)
-            if localLibraryPresentation.homeActionFeedback == message {
-                localLibraryPresentation.homeActionFeedback = nil
+            if rootPresentationState.localLibraryPresentation.homeActionFeedback == message {
+                rootPresentationState.localLibraryPresentation.homeActionFeedback = nil
             }
         }
     }
@@ -1425,7 +1460,7 @@ struct PhotoMemoiOSV1View: View {
     @ViewBuilder
     private var homeConfigurationStatusBanner: some View {
         if let homeConfigurationActionFeedback =
-            localLibraryPresentation.homeActionFeedback {
+            rootPresentationState.localLibraryPresentation.homeActionFeedback {
             Label(
                 homeConfigurationActionFeedback,
                 systemImage: "checkmark.circle.fill"
@@ -1492,7 +1527,7 @@ struct PhotoMemoiOSV1View: View {
                 configuration: configuration
             )
         )
-        renamePresentation.titleDraft = configuration.title
+        rootPresentationState.renamePresentation.titleDraft = configuration.title
         bootstrapDrafts()
         refreshDynamicPreview()
         activeConfigurationStatus = .saved
@@ -1712,10 +1747,14 @@ struct PhotoMemoiOSV1View: View {
 
     private var editorCluster: some View {
         V1RegionEditorCluster(
-            slotATextKitCommandBus: slotATextKitCommandBus,
-            slotBTextKitCommandBus: slotBTextKitCommandBus,
-            slotCTextKitCommandBus: slotCTextKitCommandBus,
-            slotDTextKitCommandBus: slotDTextKitCommandBus,
+            slotATextKitCommandBus:
+                editorInteractionState.slotATextKitCommandBus,
+            slotBTextKitCommandBus:
+                editorInteractionState.slotBTextKitCommandBus,
+            slotCTextKitCommandBus:
+                editorInteractionState.slotCTextKitCommandBus,
+            slotDTextKitCommandBus:
+                editorInteractionState.slotDTextKitCommandBus,
             draft: { region in
                 draft(for: region)
             },
@@ -1756,48 +1795,51 @@ struct PhotoMemoiOSV1View: View {
                 }
                 return removed
             },
-            focusedRegion: focusedEditorRegion,
-            activeModuleRegion: activeModuleRegion,
+            focusedRegion:
+                editorInteractionState.focusedEditorRegion,
+            activeModuleRegion:
+                editorInteractionState.activeModuleRegion,
             modules: modules(for:),
             categoryTitle: moduleCategoryTitle,
             valueText: moduleDisplayText,
             insertionMarkerID: { region in
-                if recentInsertionRegion == region {
-                    return recentInsertionItemID
+                if editorInteractionState.recentInsertionRegion == region {
+                    return editorInteractionState.recentInsertionItemID
                 }
 
                 // While the candidate surface is open, keep one quiet marker
                 // beside the active text node so the saved insertion context
                 // remains visible after the keyboard has been dismissed.
-                guard activeModuleRegion == region else {
+                guard editorInteractionState.activeModuleRegion == region else {
                     return nil
                 }
-                return activeTextItemIDs[region]
+                return editorInteractionState.activeTextItemIDs[region]
             },
             showsInsertionMarkerAtEnd: { region in
-                activeModuleRegion == region
-                    && activeTextItemIDs[region] == nil
+                editorInteractionState.activeModuleRegion == region
+                    && editorInteractionState.activeTextItemIDs[region] == nil
             },
             onSelectModule: { module, region in
                 if region == .slotA {
-                    slotATextKitCommandBus.insert(moduleItem(module))
-                    recentInsertionRegion = nil
-                    recentInsertionItemID = nil
+                    editorInteractionState.slotATextKitCommandBus
+                        .insert(moduleItem(module))
+                    editorInteractionState.clearInsertionContext()
                 } else if region == .slotB {
-                    slotBTextKitCommandBus.insert(moduleItem(module))
-                    recentInsertionRegion = nil
-                    recentInsertionItemID = nil
+                    editorInteractionState.slotBTextKitCommandBus
+                        .insert(moduleItem(module))
+                    editorInteractionState.clearInsertionContext()
                 } else if region == .slotC {
-                    slotCTextKitCommandBus.insert(moduleItem(module))
-                    recentInsertionRegion = nil
-                    recentInsertionItemID = nil
+                    editorInteractionState.slotCTextKitCommandBus
+                        .insert(moduleItem(module))
+                    editorInteractionState.clearInsertionContext()
                 } else if region == .slotD {
-                    slotDTextKitCommandBus.insert(moduleItem(module))
-                    recentInsertionRegion = nil
-                    recentInsertionItemID = nil
+                    editorInteractionState.slotDTextKitCommandBus
+                        .insert(moduleItem(module))
+                    editorInteractionState.clearInsertionContext()
                 } else {
-                    recentInsertionRegion = region
-                    recentInsertionItemID = insert(module, into: region)
+                    editorInteractionState.recentInsertionRegion = region
+                    editorInteractionState.recentInsertionItemID =
+                        insert(module, into: region)
                 }
                 applyModulePanelState(
                     V1ModulePanelCoordinator.selectModule(
@@ -1820,8 +1862,7 @@ struct PhotoMemoiOSV1View: View {
     private func focusRegionEditor(
         for region: CardRegion
     ) {
-        recentInsertionRegion = nil
-        recentInsertionItemID = nil
+        editorInteractionState.clearInsertionContext()
         applyModulePanelState(
             V1ModulePanelCoordinator.focusRegion(
                 region,
@@ -1842,18 +1883,19 @@ struct PhotoMemoiOSV1View: View {
     }
 
     private func toggleModuleLibraryFromToolbar() {
-        if activeModuleRegion != nil {
+        if editorInteractionState.activeModuleRegion != nil {
             applyModulePanelState(V1ModulePanelCoordinator.setSheetPresented(false, state: modulePanelState))
             return
         }
-        guard let focusedEditorRegion else { return }
+        guard let focusedEditorRegion =
+            editorInteractionState.focusedEditorRegion
+        else { return }
         dismissKeyboard()
         showModuleLibrary(for: focusedEditorRegion)
     }
 
     private func resetCardEditorState() {
-        recentInsertionRegion = nil
-        recentInsertionItemID = nil
+        editorInteractionState.clearInsertionContext()
         dismissKeyboard()
         applyModulePanelState(V1ModulePanelCoordinator.focusEditor(state: modulePanelState))
     }
@@ -1964,7 +2006,7 @@ struct PhotoMemoiOSV1View: View {
             .ViewState(
                 regionDrafts: regionDrafts,
                 activeTextItemIDs:
-                    activeTextItemIDs,
+                    editorInteractionState.activeTextItemIDs,
                 activeConfigurationStatus:
                     activeConfigurationStatus
             )
@@ -1976,7 +2018,7 @@ struct PhotoMemoiOSV1View: View {
     ) {
         regionDrafts =
             state.regionDrafts
-        activeTextItemIDs =
+        editorInteractionState.activeTextItemIDs =
             state.activeTextItemIDs
         activeConfigurationStatus =
             state.activeConfigurationStatus
@@ -2104,17 +2146,19 @@ struct PhotoMemoiOSV1View: View {
                     session.usesCustomMemoryWriteText,
                 customMemoryWriteText: session.customMemoryWriteText,
                 shouldWritePhotosDescription:
-                    shouldWritePhotosDescription,
-                photosDescriptionOverride: photosDescriptionOverride,
+                    outputDraftState.shouldWritePhotosDescription,
+                photosDescriptionOverride:
+                    outputDraftState.photosDescriptionOverride,
                 birthdayDate: birthdayDate,
-                outputTarget: outputTarget,
-                mediaOutputMode: mediaOutputMode,
-                availableAlbums: availableAlbums,
+                outputTarget: outputDraftState.outputTarget,
+                mediaOutputMode: outputDraftState.mediaOutputMode,
+                availableAlbums: outputDraftState.availableAlbums,
                 selectedAlbumIdentifier:
-                    selectedExistingAlbumIdentifier,
-                newAlbumName: newAlbumName,
-                configurationAlbumTitle: configurationAlbumTitle,
-                livePhotoPolicy: livePhotoPolicy,
+                    outputDraftState.selectedExistingAlbumIdentifier,
+                newAlbumName: outputDraftState.newAlbumName,
+                configurationAlbumTitle:
+                    outputDraftState.configurationAlbumTitle,
+                livePhotoPolicy: outputDraftState.livePhotoPolicy,
                 selectedTimeAnchorID: session.selectedTimeAnchorID,
                 language: session.language,
                 savedAt: Date()
@@ -2126,8 +2170,8 @@ struct PhotoMemoiOSV1View: View {
                 payload.configurationLibrary,
             aggregateDraft: payload.aggregateDraft,
             legacyRequest: payload.legacyRequest,
-            outputTarget: outputTarget,
-            availableAlbums: availableAlbums
+            outputTarget: outputDraftState.outputTarget,
+            availableAlbums: outputDraftState.availableAlbums
         )
     }
 
@@ -2138,17 +2182,19 @@ struct PhotoMemoiOSV1View: View {
     private var currentSavedOutputConfiguration:
         V1SavedOutputConfiguration {
         V1SavedOutputConfiguration(
-            outputTarget: outputTarget,
-            mediaOutputMode: mediaOutputMode,
+            outputTarget: outputDraftState.outputTarget,
+            mediaOutputMode: outputDraftState.mediaOutputMode,
             selectedExistingAlbumIdentifier:
-                selectedExistingAlbumIdentifier,
-            newAlbumName: newAlbumName
+                outputDraftState.selectedExistingAlbumIdentifier,
+            newAlbumName: outputDraftState.newAlbumName
         )
     }
 
     private func beginPhotoProcessingFlow() {
         guard hasSavedConfigurationForSelectedSubject else {
-            switchPresentation.showsConfigurationRequiredAlert = true
+            rootPresentationState
+                .switchPresentation
+                .showsConfigurationRequiredAlert = true
             return
         }
 
@@ -2170,14 +2216,14 @@ struct PhotoMemoiOSV1View: View {
         }
 
         isApplyingSavedOutputConfiguration = true
-        outputTarget =
+        outputDraftState.outputTarget =
             savedOutputConfiguration.outputTarget
-        mediaOutputMode =
+        outputDraftState.mediaOutputMode =
             savedOutputConfiguration.mediaOutputMode
-        selectedExistingAlbumIdentifier =
+        outputDraftState.selectedExistingAlbumIdentifier =
             savedOutputConfiguration
             .selectedExistingAlbumIdentifier
-        newAlbumName =
+        outputDraftState.newAlbumName =
             savedOutputConfiguration.newAlbumName
                 .isEmpty
             ? PhotoMemoAlbumSelection
@@ -2186,7 +2232,7 @@ struct PhotoMemoiOSV1View: View {
                 .newAlbumName
         isApplyingSavedOutputConfiguration = false
 
-        if outputTarget == .existingAlbum {
+        if outputDraftState.outputTarget == .existingAlbum {
             Task {
                 await loadAlbumOptions()
             }
@@ -2219,29 +2265,47 @@ struct PhotoMemoiOSV1View: View {
 
     @MainActor
     private func loadAlbumOptions() async {
-        guard !isLoadingAlbums else {
+        guard outputDraftState.activeAlbumLoadRequest == nil else {
             return
         }
 
-        isLoadingAlbums = true
+        let request = V1OutputAlbumLoadRequest(
+            subjectID: session.state.selectedSubject?.id,
+            configurationID: session.state.selectedMemoryPresetID
+        )
+        outputDraftState.activeAlbumLoadRequest = request
+        outputDraftState.isLoadingAlbums = true
+        defer {
+            if outputDraftState.activeAlbumLoadRequest == request {
+                outputDraftState.activeAlbumLoadRequest = nil
+                outputDraftState.isLoadingAlbums = false
+            }
+        }
+
         let projection =
             await V1ExportAlbumLoadingPresenter
             .loadProjection(
                 currentAvailableAlbums:
-                    availableAlbums,
+                    outputDraftState.availableAlbums,
                 selectedExistingAlbumIdentifier:
-                    selectedExistingAlbumIdentifier,
+                    outputDraftState.selectedExistingAlbumIdentifier,
                 coordinator:
                     exportCoordinator
             )
 
-        isApplyingSavedOutputConfiguration = true
-        availableAlbums = projection.availableAlbums
-        selectedExistingAlbumIdentifier = projection.selectedExistingAlbumIdentifier
-        albumStatusMessage =
-            projection.albumStatusMessage
+        guard request.matches(
+            subjectID: session.state.selectedSubject?.id,
+            configurationID: session.state.selectedMemoryPresetID
+        ) else {
+            return
+        }
 
-        isLoadingAlbums = false
+        isApplyingSavedOutputConfiguration = true
+        outputDraftState.availableAlbums = projection.availableAlbums
+        outputDraftState.selectedExistingAlbumIdentifier =
+            projection.selectedExistingAlbumIdentifier
+        outputDraftState.albumStatusMessage =
+            projection.albumStatusMessage
         Task { @MainActor in
             await Task.yield()
             isApplyingSavedOutputConfiguration = false
@@ -2255,8 +2319,10 @@ struct PhotoMemoiOSV1View: View {
         let request = LogoAssetOptimizationRequest(
             editingContext: currentLogoAssetEditingContext
         )
-        mediaPickerPresentation.activeLogoOptimizationRequest = request
-        mediaPickerPresentation.selectedLogoItem = nil
+        rootPresentationState
+            .mediaPickerPresentation
+            .activeLogoOptimizationRequest = request
+        rootPresentationState.mediaPickerPresentation.selectedLogoItem = nil
         applyLogoAssetUpdate(
             logoAssetCoordinator
                 .beginOptimization()
@@ -2268,17 +2334,25 @@ struct PhotoMemoiOSV1View: View {
         guard logoAssetCoordinator.shouldApplyCompletedOptimization(
             request,
             activeRequest:
-                mediaPickerPresentation.activeLogoOptimizationRequest,
+                rootPresentationState
+                    .mediaPickerPresentation
+                    .activeLogoOptimizationRequest,
             currentContext: currentLogoAssetEditingContext
         ) else {
             discardUnappliedLogoAsset(update.customLogoBadge)
-            if mediaPickerPresentation.activeLogoOptimizationRequest == request {
-                mediaPickerPresentation.activeLogoOptimizationRequest = nil
-                mediaPickerPresentation.isOptimizingLogo = false
+            if rootPresentationState
+                .mediaPickerPresentation
+                .activeLogoOptimizationRequest == request {
+                rootPresentationState
+                    .mediaPickerPresentation
+                    .activeLogoOptimizationRequest = nil
+                rootPresentationState.mediaPickerPresentation.isOptimizingLogo = false
             }
             return
         }
-        mediaPickerPresentation.activeLogoOptimizationRequest = nil
+        rootPresentationState
+            .mediaPickerPresentation
+            .activeLogoOptimizationRequest = nil
         applyLogoAssetUpdate(update)
     }
 
@@ -2306,20 +2380,26 @@ struct PhotoMemoiOSV1View: View {
         )
 
         if decision.shouldCancelActiveOptimization {
-            mediaPickerPresentation.selectedLogoItem = nil
-            mediaPickerPresentation.isOptimizingLogo = false
-            mediaPickerPresentation.activeLogoOptimizationRequest = nil
+            rootPresentationState.mediaPickerPresentation.selectedLogoItem = nil
+            rootPresentationState.mediaPickerPresentation.isOptimizingLogo = false
+            rootPresentationState
+                .mediaPickerPresentation
+                .activeLogoOptimizationRequest = nil
         }
 
         if decision.shouldPresentPhotoPicker {
-            mediaPickerPresentation.isLogoPickerPresented = true
+            rootPresentationState
+                .mediaPickerPresentation
+                .isLogoPickerPresented = true
             return
         }
 
         guard let nextLogoMode = decision.nextLogoMode else {
             return
         }
-        mediaPickerPresentation.isLogoPickerPresented = false
+        rootPresentationState
+            .mediaPickerPresentation
+            .isLogoPickerPresented = false
         logoMode = nextLogoMode
     }
 
@@ -2333,7 +2413,7 @@ struct PhotoMemoiOSV1View: View {
     private func applyLogoAssetUpdate(
         _ update: LogoAssetUpdate
     ) {
-        mediaPickerPresentation.isOptimizingLogo =
+        rootPresentationState.mediaPickerPresentation.isOptimizingLogo =
             update.isOptimizingLogo
 
         if let customLogoBadge =
@@ -2368,21 +2448,21 @@ struct PhotoMemoiOSV1View: View {
             customText:
                 projection.customMemoryWriteText
         )
-        shouldWritePhotosDescription =
+        outputDraftState.shouldWritePhotosDescription =
             projection.shouldWritePhotosDescription
-        photosDescriptionOverride =
+        outputDraftState.photosDescriptionOverride =
             projection.photosDescriptionOverride
-        outputTarget = projection.outputTarget
-        mediaOutputMode = projection.mediaOutputMode
-        selectedExistingAlbumIdentifier =
+        outputDraftState.outputTarget = projection.outputTarget
+        outputDraftState.mediaOutputMode = projection.mediaOutputMode
+        outputDraftState.selectedExistingAlbumIdentifier =
             projection.selectedAlbumIdentifier
-        configurationAlbumTitle = projection.albumTitle
+        outputDraftState.configurationAlbumTitle = projection.albumTitle
         if projection.outputTarget == .newAlbum {
-            newAlbumName = projection.albumTitle.isEmpty
+            outputDraftState.newAlbumName = projection.albumTitle.isEmpty
                 ? PhotoMemoAlbumSelection.defaultAlbumTitle
                 : projection.albumTitle
         }
-        livePhotoPolicy = projection.livePhotoPolicy
+        outputDraftState.livePhotoPolicy = projection.livePhotoPolicy
         regionDrafts = projection.regionDrafts
 
     }
@@ -2667,9 +2747,9 @@ struct PhotoMemoiOSV1View: View {
         _ state:
             V1ModulePanelCoordinator.State
     ) {
-        focusedEditorRegion =
+        editorInteractionState.focusedEditorRegion =
             state.focusedRegion
-        activeModuleRegion =
+        editorInteractionState.activeModuleRegion =
             state.activeRegion
         moduleUsageCountsStorage =
             state.usageStorage
@@ -2752,10 +2832,11 @@ struct PhotoMemoiOSV1View: View {
     ) async -> Bool {
         let previousState = session.state
         let previousBirthdayDate = birthdayDate
-        let previousOutputTarget = outputTarget
-        let previousMediaOutputMode = mediaOutputMode
+        let previousOutputTarget = outputDraftState.outputTarget
+        let previousMediaOutputMode = outputDraftState.mediaOutputMode
         let previousLogoMode = logoMode
-        let previousPresetTitleDraft = renamePresentation.titleDraft
+        let previousPresetTitleDraft =
+            rootPresentationState.renamePresentation.titleDraft
         let subject = V1SubjectLibraryFactory
             .makeFirstRunSubject(
                 name: subjectName,
@@ -2792,20 +2873,21 @@ struct PhotoMemoiOSV1View: View {
             selectedMemoryPresetID: preset.id
         )
         birthdayDate = birthday
-        outputTarget = .automatic
-        mediaOutputMode = .originalFormat
+        outputDraftState.outputTarget = .automatic
+        outputDraftState.mediaOutputMode = .originalFormat
         logoMode = .appleMini
-        renamePresentation.titleDraft = preset.title
+        rootPresentationState.renamePresentation.titleDraft = preset.title
         bootstrapDrafts()
         refreshDynamicPreview()
 
         guard await applyCurrentV1Configuration() else {
             session.state = previousState
             birthdayDate = previousBirthdayDate
-            outputTarget = previousOutputTarget
-            mediaOutputMode = previousMediaOutputMode
+            outputDraftState.outputTarget = previousOutputTarget
+            outputDraftState.mediaOutputMode = previousMediaOutputMode
             logoMode = previousLogoMode
-            renamePresentation.titleDraft = previousPresetTitleDraft
+            rootPresentationState.renamePresentation.titleDraft =
+                previousPresetTitleDraft
             bootstrapDrafts()
             refreshDynamicPreview()
             return false
@@ -2853,7 +2935,9 @@ struct PhotoMemoiOSV1View: View {
         _ items: [PhotosPickerItem]
     ) async {
         defer {
-            mediaPickerPresentation.selectedProcessingItems = []
+            rootPresentationState
+                .mediaPickerPresentation
+                .selectedProcessingItems = []
         }
         await performPhotoQuickAction(
             importItems: {

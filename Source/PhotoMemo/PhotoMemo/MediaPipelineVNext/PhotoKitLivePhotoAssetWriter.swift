@@ -316,6 +316,24 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
 
             try Task.checkCancellation()
 
+            if let idempotencyKey = operation.idempotencyKey {
+                guard receiptStore.recordIntent(
+                    for: idempotencyKey
+                ) else {
+                    throw LivePhotoAssetWritingError
+                        .savedAssetReadbackPending
+                }
+
+                do {
+                    try Task.checkCancellation()
+                } catch {
+                    receiptStore.removeIntent(
+                        for: idempotencyKey
+                    )
+                    throw error
+                }
+            }
+
             var placeholderIdentifier: String?
 
             try await performChanges {
@@ -353,11 +371,19 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
 
                 if let idempotencyKey =
                     operation.idempotencyKey {
-                    self.receiptStore.record(
+                    let didRecordReceipt =
+                        self.receiptStore.record(
                         assetIdentifier:
                             placeholder.localIdentifier,
                         for: idempotencyKey
                     )
+                    if !didRecordReceipt {
+                        _ = self.receiptStore
+                            .recordIntentAssetIdentifier(
+                                placeholder.localIdentifier,
+                                for: idempotencyKey
+                            )
+                    }
                 }
 
                 if let album,
@@ -371,9 +397,21 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 }
             }
 
+            try Task.checkCancellation()
+
             guard let placeholderIdentifier else {
                 throw LivePhotoAssetWritingError
                     .assetSaveFailed
+            }
+
+            try await PhotoLibraryCommitInterruptionTestHook
+                .pauseIfRequested()
+            if let idempotencyKey = operation.idempotencyKey {
+                // Keep the transaction-submitted receipt as the safe fallback
+                // when the post-commit acknowledgement cannot be persisted.
+                guard receiptStore.markCommitted(for: idempotencyKey) else {
+                    throw LivePhotoAssetWritingError.savedAssetReadbackPending
+                }
             }
 
             return PhotoLibrarySaveResult(
@@ -394,6 +432,9 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
     ) throws -> PHAsset? {
         guard let assetIdentifier =
                 receiptStore.assetIdentifier(
+                    for: idempotencyKey
+                )
+                ?? receiptStore.pendingAssetIdentifier(
                     for: idempotencyKey
                 ) else {
             return nil
@@ -417,6 +458,18 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
                     )
             ) {
         case .reuseAsset:
+            guard let asset else {
+                throw LivePhotoAssetWritingError
+                    .savedAssetReadbackPending
+            }
+            guard receiptStore.materializePendingIntent(
+                for: idempotencyKey
+            ), receiptStore.ensureCommitted(
+                for: idempotencyKey
+            ) else {
+                throw LivePhotoAssetWritingError
+                    .savedAssetReadbackPending
+            }
             return asset
 
         case .awaitVisibility:

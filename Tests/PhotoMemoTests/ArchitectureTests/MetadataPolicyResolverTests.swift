@@ -121,7 +121,7 @@ struct MetadataPolicyResolverTests {
     @Test("Resolves RAW HEIC still policy with generated-still warning")
     func resolvesRawHEICStillPolicyWithGeneratedStillWarning() {
         let prorawType =
-            UTType(exportedAs: "com.apple.proraw")
+            UTType(importedAs: "com.apple.proraw")
         let plan =
             MetadataPolicyResolver.standard.plan(
                 for:

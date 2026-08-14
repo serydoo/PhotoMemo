@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "name": "MemoMark Device QA",
+  "appBundleIdentifier": "com.serydoo.PhotoMemo.iOS",
+  "shareExtensionBundleIdentifier": "com.serydoo.PhotoMemo.iOS.ShareExtension",
+  "appGroupIdentifier": "group.com.serydoo.PhotoMemo",
+  "defaultDeviceName": "iPhone7",
+  "defaultScheme": "MemoMarkDeviceQA",
+  "qaTarget": "MemoMarkDeviceQA",
+  "qaHostProduct": "PhotoMemoiOS.app",
+  "qaRunnerBundleIdentifier": "com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner",
+  "inputPolicy": {
+    "mode": "userProvidedAssetIdentifiers",
+    "inputAlbumName": "MemoMark QA Inputs",
+    "outputAlbumName": "MemoMark QA Outputs",
+    "originalAssetMutation": "forbidden",
+    "automaticLibraryScan": "forbidden",
+    "automaticPersonalAssetDeletion": "forbidden"
+  },
+  "resultPolicy": {
+    "resultBundle": "required",
+    "deviceScreenshot": "bestEffort",
+    "diagnosticIdentifiers": "allowed",
+    "privateMediaExport": "forbidden"
+  },
+  "scenarios": [
+    { "id": "QA-01", "name": "App launch and Configuration Center", "status": "planned" },
+    { "id": "QA-02", "name": "JPEG processing and save", "status": "planned" },
+    { "id": "QA-03", "name": "HEIC processing and save", "status": "planned" },
+    { "id": "QA-04", "name": "Live Photo processing and save", "status": "planned" },
+    { "id": "QA-05", "name": "48MP/RAW highest-quality processing and readback", "status": "planned" },
+    { "id": "QA-06", "name": "Photos to Share Extension to MemoMark", "status": "planned" },
+    { "id": "QA-07", "name": "PhotoKit commit-window recovery", "status": "planned" },
+    { "id": "QA-08", "name": "Restart and idempotency", "status": "planned" }
+  ]
+}

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.1.2 (85) Configuration Center, Device QA, And Continuity Maintenance - 2026-08-14
+
+- Started from the finalized `1b3b9f7` source-sync checkpoint and reorganized the iOS root view's local state into explicit editor interaction, output draft, configuration projection, lifecycle, and presentation ownership containers.
+- Kept `ConfigurationSession` as the live configuration truth while preserving the existing Configuration Center hierarchy and Memory Presentation Engine boundaries.
+- Added Subject/Configuration identity protection for asynchronous album-option loading so stale results cannot be applied after a context switch.
+- Added focused contract coverage for the extracted root state containers, output draft behavior, album-load identity, and root presentation state.
+- Hardened the PhotoKit static-image and Live Photo save receipt lifecycle with a recoverable intent phase, post-commit acknowledgement, queue-startup reconciliation, and idempotent reuse behavior.
+- Corrected the Apple ProRAW declaration to an imported UTI and retained original-photo protection across the input policy and output lifecycle.
+- Restored the Device QA target, shared scheme, QA manifest, QA contracts, UI harness, and local verification scripts into the synchronized workspace, and raised all app, extension, widget, QA, and test target configurations to `2.1.2 (85)`.
+
+This is a maintenance update rather than a new product capability. Release evidence remains open for full-suite completion, manual device interaction, Apple Photos lifecycle, StoreKit, TestFlight, and App Store delivery.
+
 ## 2.1.1 (80) Card Content, Logo, And Configuration Continuity - 2026-08-13
 
 - Consolidated the source changes recorded after the 2026-08-09 `2.1.0 (76)` checkpoint, including the previously unpublished `2.1.1 (77)` subject work and the later Logo persistence closure.
