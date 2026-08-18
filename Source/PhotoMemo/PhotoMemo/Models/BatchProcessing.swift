@@ -1117,6 +1117,112 @@ extension BatchJob {
         && failedTaskCount > 0
         && completionRatio >= 0.8
     }
+
+    var deliverySummary: BatchDeliverySummary {
+        BatchDeliverySummary(job: self)
+    }
+}
+
+struct BatchDeliverySummary: Hashable {
+
+    let requestedCount: Int
+
+    let importedCount: Int
+
+    let skippedCount: Int
+
+    let skippedRequiringAttentionCount: Int
+
+    let intakeFailedCount: Int
+
+    let completedCount: Int
+
+    let processingFailedCount: Int
+
+    let validationFailedCount: Int
+
+    let saveFailedCount: Int
+
+    let verificationFailedCount: Int
+
+    init(job: BatchJob) {
+        let intakeSummary = job.intakeSummary
+        let taskFailures = job.tasks.filter {
+            $0.phase == .failed
+        }
+        let contentValidationCode = ProductionDiagnosticErrorCode
+            .processingContentValidationFailed
+            .rawValue
+        let readbackPendingCode = ProductionDiagnosticErrorCode
+            .photoLibraryAssetReadbackPending
+            .rawValue
+        let livePhotoVerificationCode = ProductionDiagnosticErrorCode
+            .photoLibraryLivePhotoVerificationFailed
+            .rawValue
+        let validationFailures = taskFailures.filter {
+            $0.failure?.diagnosticCode
+                == contentValidationCode
+        }.count
+        let verificationFailures = taskFailures.filter {
+            guard let code = $0.failure?.diagnosticCode else {
+                return false
+            }
+            return code == readbackPendingCode
+                || code == livePhotoVerificationCode
+        }.count
+        let saveFailures = taskFailures.filter {
+            guard let code = $0.failure?.diagnosticCode else {
+                return false
+            }
+            return code.hasPrefix("photoLibrary.")
+                && ![readbackPendingCode, livePhotoVerificationCode]
+                    .contains(code)
+        }.count
+        let taskCount = job.tasks.count
+        let imported = intakeSummary?.importedCount ?? taskCount
+        let skipped = intakeSummary?.skippedCount ?? 0
+        let skippedRequiringAttention =
+            intakeSummary?.skippedRequiringAttentionCount
+            ?? skipped
+        let intakeFailed = intakeSummary?.failedCount ?? 0
+
+        requestedCount = max(
+            taskCount,
+            intakeSummary?.selectedCount ?? taskCount
+        )
+        importedCount = imported
+        skippedCount = skipped
+        skippedRequiringAttentionCount = skippedRequiringAttention
+        intakeFailedCount = intakeFailed
+        completedCount = job.completedTaskCount
+        processingFailedCount = max(
+            taskFailures.count
+                - validationFailures
+                - saveFailures
+                - verificationFailures,
+            0
+        )
+        validationFailedCount = validationFailures
+        saveFailedCount = saveFailures
+        verificationFailedCount = verificationFailures
+    }
+
+    var taskFailedCount: Int {
+        processingFailedCount
+            + validationFailedCount
+            + saveFailedCount
+            + verificationFailedCount
+    }
+
+    var needsAttentionCount: Int {
+        max(
+            requestedCount
+                - completedCount
+                - skippedCount
+                + skippedRequiringAttentionCount,
+            0
+        )
+    }
 }
 
 struct BatchUsageLeaderboardEntry: Hashable {

@@ -116,6 +116,82 @@ struct BatchNotificationMessageFormatterTests {
         )
     }
 
+    @Test("Counts intake failures in the final delivery summary")
+    func countsIntakeFailuresInFinalDeliverySummary() {
+        let completedTasks = (0..<4).map { index in
+            BatchTask(
+                sourceURL: URL(fileURLWithPath: "/tmp/photo-(index).jpg"),
+                phase: .completed
+            )
+        }
+        let job = BatchJob(
+            title: "Five submitted photos",
+            configuration: BatchConfigurationSnapshot(
+                template: .classicWhite,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            ),
+            tasks: completedTasks,
+            intakeSummary: ExternalPhotoImportSummary(
+                importedCount: 4,
+                skippedCount: 0,
+                failedCount: 1
+            )
+        )
+
+        let summary = job.deliverySummary
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        #expect(summary.requestedCount == 5)
+        #expect(summary.importedCount == 4)
+        #expect(summary.intakeFailedCount == 1)
+        #expect(summary.completedCount == 4)
+        #expect(summary.needsAttentionCount == 1)
+        #expect(
+            BatchNotificationMessageFormatter.finishedTitle(
+                completedCount: summary.completedCount,
+                needsAttentionCount: summary.needsAttentionCount,
+                finishedAt: Date(timeIntervalSince1970: 0),
+                calendar: calendar
+            )
+            == "00:00 已完成 4 张，1 张需处理"
+        )
+    }
+
+    @Test("duplicate intake does not create a false attention count")
+    func duplicateIntakeDoesNotCreateFalseAttentionCount() {
+        let completedTask = BatchTask(
+            sourceURL: URL(fileURLWithPath: "/tmp/already-delivered.jpg"),
+            phase: .completed
+        )
+        let job = BatchJob(
+            title: "Duplicate intake",
+            configuration: BatchConfigurationSnapshot(
+                template: .classicWhite,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            ),
+            tasks: [completedTask],
+            intakeSummary: ExternalPhotoImportSummary(
+                importedCount: 1,
+                skippedCount: 1,
+                failedCount: 0,
+                skippedRequiringAttentionCount: 0
+            )
+        )
+
+        #expect(job.deliverySummary.requestedCount == 2)
+        #expect(job.deliverySummary.completedCount == 1)
+        #expect(job.deliverySummary.needsAttentionCount == 0)
+    }
+
     private func date(
         hour: Int,
         minute: Int,

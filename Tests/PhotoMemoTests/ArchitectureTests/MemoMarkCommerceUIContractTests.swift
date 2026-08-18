@@ -125,7 +125,17 @@ struct MemoMarkCommerceUIContractTests {
         #expect(source.contains("showsMemoMarkPlus"))
         #expect(
             settingsPageSource.contains(
-                ".sheet(isPresented: $showsMemoMarkPlus)"
+                ".sheet("
+            )
+        )
+        #expect(
+            settingsPageSource.contains(
+                "isPresented:"
+            )
+        )
+        #expect(
+            settingsPageSource.contains(
+                "$rootPresentationState.showsMemoMarkPlus"
             )
         )
         #expect(
@@ -138,7 +148,7 @@ struct MemoMarkCommerceUIContractTests {
         )
         #expect(
             !rootBodySource.contains(
-                ".sheet(isPresented: $showsMemoMarkPlus)"
+                ".sheet(isPresented: $rootPresentationState.showsMemoMarkPlus)"
             )
         )
     }

@@ -497,6 +497,170 @@ struct ProductionConfigurationContractTests {
         }
     }
 
+    @Test("empty resolved content is rejected even without a memory-summary token")
+    func emptyResolvedContentIsRejectedWithoutMemorySummaryToken() throws {
+        let emptyTemplate = Template(
+            preset: .classicWhite,
+            name: "Empty Output",
+            leftTopArea: .empty,
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: .empty,
+            badgeArea: .empty
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: emptyTemplate,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let card = RecordCard(
+            template: emptyTemplate,
+            metadata: PhotoMetadata(),
+            context: MetadataContext()
+        )
+
+        #expect(throws: ProductionConfigurationContractError.self) {
+            _ = try ProductionRenderHealthCheck.validate(
+                card: card,
+                configuration: configuration
+            )
+        }
+    }
+
+    @Test("whitespace-only resolved content is not deliverable")
+    func whitespaceOnlyResolvedContentIsRejected() throws {
+        let whitespaceTemplate = Template(
+            preset: .classicWhite,
+            name: "Whitespace Output",
+            leftTopArea: TemplateArea(
+                name: "Whitespace",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "Whitespace",
+                        value: " \n\t "
+                    )
+                ]
+            ),
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: .empty,
+            badgeArea: .empty
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: whitespaceTemplate,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let card = RecordCard(
+            template: whitespaceTemplate,
+            metadata: PhotoMetadata(),
+            context: MetadataContext()
+        )
+
+        #expect(throws: ProductionConfigurationContractError.self) {
+            _ = try ProductionRenderHealthCheck.validate(
+                card: card,
+                configuration: configuration
+            )
+        }
+    }
+
+    @Test("missing EXIF remains valid when a literal memory value is visible")
+    func missingEXIFRemainsValidWhenLiteralMemoryValueIsVisible() throws {
+        let template = Template(
+            preset: .classicWhite,
+            name: "Literal Memory",
+            leftTopArea: TemplateArea(
+                name: "Memory",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "Memory",
+                        value: "这是一段不依赖拍摄参数的回忆"
+                    )
+                ]
+            ),
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: .empty,
+            badgeArea: .empty
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let card = RecordCard(
+            template: template,
+            metadata: PhotoMetadata(),
+            context: MetadataContext()
+        )
+
+        let blocks = try ProductionRenderHealthCheck.validate(
+            card: card,
+            configuration: configuration
+        )
+
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.value == "这是一段不依赖拍摄参数的回忆")
+    }
+
+    @Test("missing smart time content degrades when literal content remains")
+    func missingSmartTimeContentDegradesWhenLiteralContentRemains() throws {
+        let template = Template(
+            preset: .classicWhite,
+            name: "Mixed Memory",
+            leftTopArea: TemplateArea(
+                name: "Memory",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "Memory",
+                        value: "这段文字仍然可以交付"
+                    )
+                ]
+            ),
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: TemplateArea(
+                name: "Smart Memory",
+                items: [.memorySummary]
+            ),
+            badgeArea: .empty
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let card = RecordCard(
+            template: template,
+            metadata: PhotoMetadata(),
+            context: MetadataContext()
+        )
+
+        let blocks = try ProductionRenderHealthCheck.validate(
+            card: card,
+            configuration: configuration
+        )
+
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.value == "这段文字仍然可以交付")
+    }
+
     @Test("custom memory copy remains newline-separated from renderer smart text")
     func customMemoryCopyRemainsNewlineSeparatedFromRendererSmartText() throws {
         let fixture = try Self.makeFixture()

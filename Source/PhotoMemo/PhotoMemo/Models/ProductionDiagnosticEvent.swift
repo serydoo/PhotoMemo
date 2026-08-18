@@ -90,6 +90,8 @@ nonisolated enum ProductionDiagnosticErrorCode:
         "processing.background.expired"
     case processingBuildFailed =
         "processing.build.failed"
+    case processingContentValidationFailed =
+        "processing.contentValidation.failed"
     case processingRenderFailed =
         "processing.render.failed"
     case processingExportFailed =
@@ -528,7 +530,21 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
             classification?.lowercased() ?? ""
         let code: ProductionDiagnosticErrorCode
 
-        if let photoLibraryCode = photoLibraryCode(for: error) {
+#if !PHOTOMEMO_SHARE_EXTENSION
+        let contentValidationCode:
+            ProductionDiagnosticErrorCode? =
+            (error as? ProductionConfigurationContractError)
+                == .emptyResolvedContent
+            ? .processingContentValidationFailed
+            : nil
+#else
+        let contentValidationCode:
+            ProductionDiagnosticErrorCode? = nil
+#endif
+
+        if let contentValidationCode {
+            code = contentValidationCode
+        } else if let photoLibraryCode = photoLibraryCode(for: error) {
             code = photoLibraryCode
         } else if let mediaInputCode = mediaInputCode(
             for: error
@@ -1027,6 +1043,17 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                 "照片内容准备失败。",
                 "请重新选择照片后再试。"
             )
+        case .processingContentValidationFailed:
+            return (
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "Batch.ContentValidation.Failed.Title",
+                    fallback: "照片缺少当前配置需要的拍摄信息。"
+                ),
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "Batch.ContentValidation.Failed.Recovery",
+                    fallback: "请检查当前预设使用的内容，或选择包含这些信息的照片后重试。"
+                )
+            )
         case .processingRenderFailed:
             return (
                 "回忆卡片绘制失败。",
@@ -1231,6 +1258,17 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
             return (
                 "The photo content could not be prepared.",
                 "Select the photo again and retry."
+            )
+        case .processingContentValidationFailed:
+            return (
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "Batch.ContentValidation.Failed.Title",
+                    fallback: "This photo is missing information required by the current preset."
+                ),
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "Batch.ContentValidation.Failed.Recovery",
+                    fallback: "Check the current preset content, or choose a photo that contains the required information and retry."
+                )
             )
         case .processingRenderFailed:
             return (

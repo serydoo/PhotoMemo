@@ -2,6 +2,9 @@ import SwiftUI
 
 struct PhotoMemoRootSceneView: View {
 
+    @State
+    private var pendingNotificationDeepLink: PhotoMemoDeepLink?
+
     @Environment(\.scenePhase)
     private var scenePhase
 
@@ -42,6 +45,8 @@ struct PhotoMemoRootSceneView: View {
                         )
                         runtime
                             .refreshExternalIntakeState()
+                    case .processing:
+                        pendingNotificationDeepLink = deepLink
                     }
                     return
                 }
@@ -54,6 +59,21 @@ struct PhotoMemoRootSceneView: View {
                     stage: .appOpenURLFile,
                     message: "fileURLReceived=true"
                 )
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: .photoMemoNotificationOpened
+                )
+            ) { notification in
+                guard
+                    let rawURL = notification.userInfo?[PhotoMemoNotificationUserInfo.deepLinkURL]
+                        as? String,
+                    let url = URL(string: rawURL),
+                    let deepLink = PhotoMemoDeepLink(url: url)
+                else {
+                    return
+                }
+                pendingNotificationDeepLink = deepLink
             }
             .onReceive(
                 runtime.externalIntakeCenter
@@ -126,7 +146,12 @@ struct PhotoMemoRootSceneView: View {
                 runtime.environment.repositories.diagnostics,
             productionDiagnosticsRepository:
                 runtime.environment.repositories
-                .productionDiagnostics
+                .productionDiagnostics,
+            notificationDeepLink:
+                pendingNotificationDeepLink,
+            onNotificationDeepLinkHandled: {
+                pendingNotificationDeepLink = nil
+            }
         )
         .preferredColorScheme(preferredColorScheme)
         #else

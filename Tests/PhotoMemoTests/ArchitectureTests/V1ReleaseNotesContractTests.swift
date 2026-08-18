@@ -52,12 +52,12 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("这次更新主要完善了配置中心在切换与恢复时的状态连续性"))
-        #expect(simplifiedChinese.contains("切换记忆对象、配置和编辑页面时"))
-        #expect(simplifiedChinese.contains("相册选项等异步内容只会应用到仍然对应的记忆对象和配置"))
-        #expect(english.contains("This update keeps Configuration Center state consistent when you switch and return"))
-        #expect(english.contains("When you switch subjects, configurations, or editor pages"))
-        #expect(english.contains("Asynchronous album options are applied only when they still belong"))
+        #expect(simplifiedChinese.contains("本次维护进一步明确照片交付状态"))
+        #expect(simplifiedChinese.contains("没有可呈现内容的照片不会再被保存成空白的成功结果"))
+        #expect(simplifiedChinese.contains("批量结果会从你交给时光记的照片数量开始说明"))
+        #expect(english.contains("This maintenance update makes each photo’s delivery result easier to understand"))
+        #expect(english.contains("A photo with no presentable content is no longer saved as a blank successful result"))
+        #expect(english.contains("Batch results now start from the number of photos you gave MemoMark"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -77,7 +77,7 @@ struct V1ReleaseNotesContractTests {
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 85;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 86;"
             ).count == 13
         )
     }

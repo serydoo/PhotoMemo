@@ -95,13 +95,14 @@ final class ShareExtensionIntakeCoordinator {
             )
             let fallbackHandoff =
                 await handoffCoordinator.requestMainAppRefresh()
-            if !fallbackHandoff.opened {
+            guard fallbackHandoff.opened else {
                 PhotoMemoShareDiagnostics.record(
                     stage: .extensionHandoffFailed,
                     message:
                         "Task is durably queued; host app handoff was unavailable.",
                     requestID: result.requestID
                 )
+                return .handoffFailed(result)
             }
             return .received(result)
         } catch let shareError as PhotoMemoShareExtensionError {

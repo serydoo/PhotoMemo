@@ -93,7 +93,7 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(renderer.contains("func normalSubtitle("))
         #expect(renderer.components(separatedBy: "title: normalTitle(input)").count == 4)
         #expect(renderer.components(separatedBy: "subtitle: normalSubtitle(input)").count == 4)
-        #expect(renderer.components(separatedBy: "statusTitle: localized(\"处理状态\"").count == 6)
+        #expect(renderer.components(separatedBy: "statusTitle: localized(\"处理状态\"").count == 5)
         #expect(renderer.components(separatedBy: "showsProcessingChecklist: true").count == 3)
         #expect(renderer.contains("showsProcessingChecklist: isNormalConfirmation"))
         #expect(renderer.contains("statusStageTitle = localized(\"等待开始\""))

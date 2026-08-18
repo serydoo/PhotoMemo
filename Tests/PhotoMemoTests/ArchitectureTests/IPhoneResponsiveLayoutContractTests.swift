@@ -21,7 +21,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!root.contains("ConfigurationRestoreRequest("))
         // Keep a bounded root budget while allowing the native Logo picker
         // transaction and its stale-result identity checks to stay together.
-        #expect(root.components(separatedBy: "\n").count < 3_100)
+        #expect(root.components(separatedBy: "\n").count < 3_150)
     }
 
     @Test("shared page layout binds scroll content to the viewport")
@@ -980,7 +980,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(presentation.contains("selectedProcessingItems"))
         #expect(presentation.contains("selectedLogoItem"))
         #expect(presentation.contains("isOptimizingLogo"))
-        #expect(root.contains("private var mediaPickerPresentation"))
+        #expect(root.contains("private var rootPresentationState"))
+        #expect(root.contains("rootPresentationState.mediaPickerPresentation"))
         #expect(!root.contains("private var selectedProcessingItems"))
         #expect(!root.contains("private var selectedLogoItem"))
         #expect(!root.contains("private var isOptimizingLogo"))

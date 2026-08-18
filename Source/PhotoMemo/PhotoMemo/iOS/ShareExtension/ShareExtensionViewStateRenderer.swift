@@ -189,16 +189,37 @@ final class ShareExtensionViewStateRenderer {
                 hidesPreview: true,
                 hidesSummary: input.photoCount == 0,
                 resetsContentPresentation: true,
-                title: localized("照片已经接收", english: "Photos Received"),
-                subtitle: localized("但这次没有顺利继续交给时光记。", english: "This batch was not handed off to MemoMark successfully."),
-                statusTitle: localized("处理状态", english: "Processing Status"),
-                statusStageTitle: localized("需要重新交接", english: "Handoff Required"),
+                title: localized(
+                    key: "ShareExtension.Handoff.Pending.Title",
+                    fallback: "照片已经接收"
+                ),
+                subtitle: localized(
+                    key: "ShareExtension.Handoff.Pending.Subtitle",
+                    fallback: "后台处理还没有开始。"
+                ),
+                statusTitle: localized(
+                    key: "ShareExtension.Handoff.Pending.StatusTitle",
+                    fallback: "处理状态"
+                ),
+                statusStageTitle: localized(
+                    key: "ShareExtension.Handoff.Pending.Stage",
+                    fallback: "需要重新交接"
+                ),
                 statusSymbolName: "arrow.clockwise.circle.fill",
-                statusMessage: localized("请点下面按钮再试一次；如果仍失败，请直接打开时光记，它会继续检查待处理照片。", english: "Tap below to try again. If it still fails, open MemoMark to check pending photos."),
+                statusMessage: localized(
+                    key: "ShareExtension.Handoff.Pending.Message",
+                    fallback: "照片已经接收，需要打开时光记继续处理。"
+                ),
                 statusColor: .secondaryLabel,
                 showsProcessingChecklist: false,
-                footer: localized("原图已经接收，原始照片不会被修改。", english: "The originals were received and will not be modified."),
-                buttonTitle: localized("重新交给时光记", english: "Hand Off to MemoMark Again"),
+                footer: localized(
+                    key: "ShareExtension.Handoff.Pending.Footer",
+                    fallback: "原图已经接收，原始照片不会被修改。"
+                ),
+                buttonTitle: localized(
+                    key: "ShareExtension.Handoff.Pending.Action",
+                    fallback: "重新交给时光记"
+                ),
                 buttonSystemImage: "arrow.clockwise",
                 buttonIsEnabled: true,
                 accessibilityAnnouncement: nil
@@ -386,6 +407,16 @@ final class ShareExtensionViewStateRenderer {
         MemoMarkLanguage.interfaceStored == .english
             ? english
             : simplifiedChinese
+    }
+
+    private func localized(
+        key: String,
+        fallback: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: key,
+            fallback: fallback
+        )
     }
 }
 #endif

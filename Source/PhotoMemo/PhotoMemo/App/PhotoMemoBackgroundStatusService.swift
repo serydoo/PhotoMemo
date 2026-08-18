@@ -409,6 +409,8 @@ final class PhotoMemoBackgroundStatusService:
     var recentJobSummaries:
         [PhotoMemoBackgroundJobSummary] = []
 
+    private var focusedJobID: UUID?
+
     private let batchQueueStore:
         BatchQueueStore
 
@@ -443,6 +445,11 @@ final class PhotoMemoBackgroundStatusService:
 
         refreshSnapshot()
     }
+
+    func focus(jobID: UUID) {
+        focusedJobID = jobID
+        refreshSnapshot()
+    }
 }
 private extension PhotoMemoBackgroundStatusService {
 
@@ -473,7 +480,9 @@ private extension PhotoMemoBackgroundStatusService {
                 activeJobID:
                     batchQueueStore.activeJobID,
                 activeTaskID:
-                    batchQueueStore.activeTaskID
+                    batchQueueStore.activeTaskID,
+                focusedJobID:
+                    focusedJobID
             )
 
         taskOverview =
@@ -494,11 +503,21 @@ private extension PhotoMemoBackgroundStatusService {
     func resolvedSnapshot(
         externalJobs: [BatchJob],
         activeJobID: UUID?,
-        activeTaskID: UUID?
+        activeTaskID: UUID?,
+        focusedJobID: UUID? = nil
     ) -> PhotoMemoBackgroundJobSnapshot? {
 
         guard !externalJobs.isEmpty else {
             return nil
+        }
+
+        if let focusedJobID,
+           let focusedJob = externalJobs.first(where: { $0.id == focusedJobID }) {
+            return snapshot(
+                for: focusedJob,
+                allExternalJobs: externalJobs,
+                activeTaskID: nil
+            )
         }
 
         if let activeJobID,

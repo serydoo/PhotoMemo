@@ -1,5 +1,30 @@
 # MemoMark Current Status
 
+## 2026-08-18 MemoMark 2.1.2 (86) User Delivery Reliability Sync Preparation
+
+- 本轮同步整理从上一次已推送基点 `2dc0f21` 开始；当前 `HEAD` 与 `origin/main` 均为该基点，目标 marketing version 保持 `2.1.2`，构建号从已推送的 `85` 顺延为 `86`。
+- 正式同步范围为用户交付可靠性整改、对应测试、双语资源、应用内更新日志和本轮四份发布材料；旧的 `2026-08-14` `2.1.2 (85)` 材料保持历史不变。
+- 已新增 `2026-08-18-2.1.2-release-notes.md`、`app-store-whats-new.md`、`testflight-notes.md` 和 `sync-manifest.md`，并更新 README、README_EN、CHANGELOG 与发布目录索引。
+- 应用内更新日志已从配置中心连续性维护内容切换为本轮交付语义：空白结果不算成功、批量结果从原始请求数统计、通知可直达对应处理状态、照片继续本地处理且原图不变。
+- 版本字段更新后的聚焦测试通过；完整 `PhotoMemoTests` 为 `1455 passed / 0 failed / 1 skipped`，generic iOS unsigned build 通过且主 App、Share Extension、Widget Extension 均核验为 `2.1.2 (86)`。独立 macOS `PhotoMemo` build 记录到 Xcode Beta 的“exit code 0 but produced no further output”工具异常，未将其包装成完整 build 通过。
+- `xcodebuild -list`、`git diff --check`、四个 Info.plist lint 和双语资源/关键键检查通过；完整结果包为 `/tmp/MemoMarkDeliveryBuild86Full/Logs/Test/Test-PhotoMemoTests-2026.08.18_11-05-27-+0800.xcresult`，iOS 产物为 `/tmp/MemoMarkDeliveryBuild86iOS/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`。
+- 当前版本状态为 `Source Checkpoint Ready; Release Evidence Open` 的准备目标；本轮不包含 Git 暂存、提交、推送、TestFlight 上传或 App Store 提交授权。
+- 真实设备的 Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos 20 张混合交付、通知冷启动/终止态、视觉/无障碍、StoreKit、TestFlight、App Store 和生产认证仍是独立待决定证据，不因版本字段或本地构建更新而关闭。
+
+## 2026-08-18 用户交付可靠性专项整改
+
+- 本轮属于 Engineering Loop、P1 可靠性整改，围绕 `Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos` 的交付语义闭环，不改 Renderer、PhotoKit、持久化或 Layout Engine 的所有权边界。
+- 根因一：`ProductionRenderHealthCheck` 只检查启用的 `memory_summary`，空模板或所有智能内容解析为空时仍可能进入 Renderer/Export。现在由 `ResolvedContentValidator` 先验证最终 `CardTextBlock` 集合：完全没有内容才终止；缺少 EXIF/智能时间信息但仍有用户文字时降级继续交付。
+- 根因二：批量完成通知只统计已入队的 `BatchTask`，没有把 intake 阶段的原始请求、跳过和导入失败纳入最终结果。新增 `BatchDeliverySummary`，最终通知使用原始请求数与 `needsAttentionCount`；例如 5 张原始请求、4 张完成、1 张导入失败会明确显示“已完成 4 张，1 张需处理”。
+- 根因三：Share Extension 在持久化成功但主 App handoff 不可用时仍返回 `.received`，导致用户无法区分“已持久化排队”和“后台已经开始”。现在返回可达的 `.handoffFailed`，界面明确显示“照片已经接收，需要打开时光记继续处理”。持久化排队事实仍保留，未被误报为丢失。
+- 诊断新增 `processing.contentValidation.failed`，包含面向用户的原因、恢复建议和既有 `JOB-` 支持编号；Share Extension target 通过条件编译保持与主 App 专属生产配置错误解耦。
+- `ExternalPhotoImportSummary` 现在区分 `skippedRequiringAttentionCount`：重复项不制造假 attention，不支持媒体仍需要用户关注；缺少该字段的旧 JSON 按保守规则兼容。`CardTextBlockEngine` 的 trim/filter 行为由 whitespace-only resolved-content 回归测试锁定。
+- 通知点击闭环已补齐：通知携带 `memomark://processing/<jobID>`，`UNUserNotificationCenterDelegate.didReceive` 转为应用内事件，背景状态服务聚焦对应 Job，iOS 根流切换到 Tasks/Processing Status；本轮新增文案已进入中英文 `Localizable.strings`。
+- 两个历史 UI Contract 已按当前状态所有权更新，完整 `PhotoMemoTests` 通过 `1455`、失败 `0`、跳过 `1`；最终结果包为 `/tmp/MemoMarkDeliveryFollowupFullFinal/Logs/Test/Test-PhotoMemoTests-2026.08.18_10-53-51-+0800.xcresult`。运行时仅有既有的 2 条 QoS warning，无测试失败。
+- macOS `PhotoMemoTests`、generic iOS `PhotoMemoiOS` unsigned build（含 Share Extension 与 Widget Extension）均成功；聚焦回归结果包为 `/tmp/MemoMarkDeliveryFollowupFocused/Logs/Test/Test-PhotoMemoTests-2026.08.18_10-39-34-+0800.xcresult`。
+- 当前证据边界：仍未进行本轮实体 iPhone 的 Apple Photos -> Share -> 20 张混合交付、通知点击、相册读回、视觉/无障碍验收；本轮不宣称生产认证，也未提交或推送。
+- 用户已确认本专项暂时关闭。当前状态为“代码整改完成，真机逐项验收暂缓”；后续由用户自行按照片类型逐项测试，恢复专项时从本条和 `HANDOFF.md` 的 20 张验收矩阵继续，不重新扩大代码整改范围。
+
 ## 2026-08-14 MemoMark 2.1.2 (85) Root View And Device QA Integration Package
 
 - 本轮从上一同步检查点 `1b3b9f7`（2026-08-13 11:04:49，Asia/Shanghai）之后开始，目标版本更新为 `2.1.2 (85)`；`84` 仅为未推送的准备构建，不作为当前版本继续使用。

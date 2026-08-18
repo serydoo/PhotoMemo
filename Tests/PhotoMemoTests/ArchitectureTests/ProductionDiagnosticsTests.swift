@@ -144,6 +144,26 @@ struct ProductionDiagnosticsTests {
         )
     }
 
+    @Test("Empty resolved content maps to actionable content guidance")
+    func emptyResolvedContentIsClassified() {
+        let failure = ProductionDiagnosticFailureClassifier
+            .processing(
+                phase: BatchTaskPhase.metadataReady.rawValue,
+                classification: "processingFailure",
+                operationID: UUID(),
+                error: ProductionConfigurationContractError
+                    .emptyResolvedContent
+            )
+
+        #expect(failure.code == .processingContentValidationFailed)
+        #expect(
+            failure.userMessage.contains(
+                "照片缺少当前配置需要的拍摄信息"
+            )
+        )
+        #expect(!failure.userMessage.contains("EXIF"))
+    }
+
     @Test("Media input rejection reasons remain actionable after repository wrapping")
     func mediaInputRejectionReasonsRemainActionableAfterWrapping() {
         let operationID = UUID()

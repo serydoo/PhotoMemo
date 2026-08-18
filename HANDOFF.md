@@ -1,5 +1,23 @@
 # MemoMark Handoff
 
+## 2026-08-18 MemoMark 2.1.2 (86) 同步整理接续点
+
+- 上一次已推送基点为 `2dc0f21`（当前 `HEAD` 与 `origin/main` 一致，上一版本 `2.1.2 (85)`）；本轮 marketing version 保持 `2.1.2`，构建号已按要求顺延为 `86`。
+- 本轮同步材料集中在 `Docs/07_Releases/2026-08-18-2.1.2-*`，并同步更新 `CHANGELOG.md`、`README.md`、`README_EN.md`、`Docs/CURRENT_STATUS.md`、发布目录索引和应用内双语更新日志。
+- 正式同步范围只包含当前用户交付可靠性整改、测试、双语资源、版本字段和发布记录；本地真机媒体、xcresult、设备容器、签名/归档产物、DerivedData、V4 研究和个人 Xcode 状态不进入同步。
+- 当前是准备整理状态：不提交、不推送、不上传 TestFlight、不提交 App Store。继续工作前先读取本节、本版本 `sync-manifest` 和 `git status --short`，再由用户单独授权外部交付动作。
+- 构建号更新后的完整 `PhotoMemoTests` 为 `1455 passed / 0 failed / 1 skipped`；generic iOS unsigned build 已通过，主 App、Share Extension、Widget Extension 均为 `2.1.2 (86)`。独立 macOS `PhotoMemo` build 遇到 Xcode Beta 的“exit code 0 but produced no further output”工具异常，完整 macOS 测试宿主构建和测试本身仍通过。
+- 既有真机 20 张混合验收矩阵仍由用户后续自行逐项测试，不能将本地测试、版本字段更新或 generic iOS build 写成真机交付完成。
+
+## 2026-08-18 用户交付可靠性专项整改接续点
+
+- 本轮已完成空结果拦截、EXIF/智能时间缺失降级、批量原始请求数统计、`skipped` attention 语义、通知点击直达 Job/Failure 状态，以及 Share Extension handoff 失败语义整改；实现和测试改动仍在工作树中，未提交、未推送。
+- `ExternalPhotoImportSummary` 的新字段为 `skippedRequiringAttentionCount`；重复项默认不制造用户待处理数，不支持媒体由 Share intake 显式计入；历史 JSON 缺字段时保守按全部 skipped 需关注处理。
+- 通知路由为 `memomark://processing/<jobID>`，点击回调通过 `PhotoMemo.NotificationOpened` 传入 `PhotoMemoRootSceneView`，再由 `PhotoMemoBackgroundStatusService.focus(jobID:)` 聚焦任务页；真机仍需验证通知点击时 App 冷启动与终止态行为。
+- 继续工作前优先查看 `Docs/CURRENT_STATUS.md` 本轮条目和当前 `git status --short`。完整 `PhotoMemoTests` 当前为 `1455 passed / 0 failed / 1 skipped`；不要把旧的两个 UI 契约失败继续作为当前基线。
+- 未完成的下一步是实体设备 Share Extension 手动验收：准备正常 iPhone 原图、去 EXIF、社交软件保存图、无有效内容配置、Live Photo 五类照片，执行 `15 + 5 = 20` 张混合交付，确认 Photos 实际新增数、通知数字、Tasks 对应失败 Job、重试隔离及 Live Photo 关系；保留设备数据，不卸载、不清空相册。
+- 用户已确认本专项暂时关闭，真机矩阵仅作为后续用户自行逐项测试的恢复入口；当前不继续改代码、不提交、不推送。恢复时先读取本条和 `Docs/CURRENT_STATUS.md`，从真实设备证据开始，不把本地测试结果升级为真机交付结论。
+
 ## MemoMark 2.0.2 (69) release handoff
 
 - Version fields are unified at `2.0.2 (69)` for the macOS app, iOS app, Share

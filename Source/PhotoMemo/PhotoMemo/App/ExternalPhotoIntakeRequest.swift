@@ -124,7 +124,61 @@ struct ExternalPhotoImportSummary:
 
     let skippedCount: Int
 
+    /// A skipped item that still needs a user-visible follow-up.
+    ///
+    /// Duplicate intake is intentionally not counted here: the original
+    /// delivery already exists and does not require the user to repair it.
+    /// Unsupported media remains actionable and is counted explicitly by the
+    /// Share Extension intake path.
+    let skippedRequiringAttentionCount: Int
+
     let failedCount: Int
+
+    init(
+        importedCount: Int,
+        skippedCount: Int,
+        failedCount: Int,
+        skippedRequiringAttentionCount: Int? = nil
+    ) {
+        self.importedCount = max(importedCount, 0)
+        self.skippedCount = max(skippedCount, 0)
+        self.failedCount = max(failedCount, 0)
+        self.skippedRequiringAttentionCount = min(
+            max(skippedRequiringAttentionCount ?? skippedCount, 0),
+            self.skippedCount
+        )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case importedCount
+        case skippedCount
+        case skippedRequiringAttentionCount
+        case failedCount
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            importedCount: try container.decode(Int.self, forKey: .importedCount),
+            skippedCount: try container.decode(Int.self, forKey: .skippedCount),
+            failedCount: try container.decode(Int.self, forKey: .failedCount),
+            skippedRequiringAttentionCount: try container.decodeIfPresent(
+                Int.self,
+                forKey: .skippedRequiringAttentionCount
+            )
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(importedCount, forKey: .importedCount)
+        try container.encode(skippedCount, forKey: .skippedCount)
+        try container.encode(
+            skippedRequiringAttentionCount,
+            forKey: .skippedRequiringAttentionCount
+        )
+        try container.encode(failedCount, forKey: .failedCount)
+    }
 
     var selectedCount: Int {
         importedCount + skippedCount + failedCount

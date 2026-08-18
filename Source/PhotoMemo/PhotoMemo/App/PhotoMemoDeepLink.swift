@@ -4,6 +4,8 @@ enum PhotoMemoDeepLink: Equatable {
 
     case share
 
+    case processing(jobID: UUID)
+
     init?(
         url: URL
     ) {
@@ -40,6 +42,16 @@ enum PhotoMemoDeepLink: Equatable {
         case "share":
             self = .share
 
+        case "processing":
+            let components = url.pathComponents
+            guard
+                let rawJobID = components.dropFirst().first,
+                let jobID = UUID(uuidString: rawJobID)
+            else {
+                return nil
+            }
+            self = .processing(jobID: jobID)
+
         default:
             return nil
         }
@@ -53,6 +65,23 @@ enum PhotoMemoDeepLink: Equatable {
             return URL(
                 string: "memomark://share"
             )!
+
+        case .processing(let jobID):
+            return URL(
+                string: "memomark://processing/\(jobID.uuidString)"
+            )!
         }
     }
+}
+
+extension Notification.Name {
+
+    static let photoMemoNotificationOpened = Notification.Name(
+        "PhotoMemo.NotificationOpened"
+    )
+}
+
+enum PhotoMemoNotificationUserInfo {
+
+    static let deepLinkURL = "photoMemo.deepLinkURL"
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.1.2 (86) User Delivery Reliability Maintenance - 2026-08-18
+
+- Prevented a photo with no meaningful resolved content from entering Renderer or Export as a blank successful result; that photo now becomes an actionable task failure while other photos continue.
+- Preserved graceful fallback when EXIF or smart-time information is missing but user-authored or other meaningful content remains available for delivery.
+- Added `BatchDeliverySummary` semantics so completion and attention counts begin with the number of photos originally handed to MemoMark, while duplicate skips do not create false attention counts and unsupported media remain actionable.
+- Made Share Extension handoff state explicit when photos are persisted but background processing has not started, so users can distinguish “received” from “processing started.”
+- Added notification deep links that open the related processing status and focus the corresponding Job/Failure instead of leaving users at the app home screen.
+- Added localized handoff and content-validation recovery messages in Simplified Chinese and U.S. English, with regression coverage for delivery summaries, whitespace-only content, diagnostics, deep links, and notification formatting.
+
+This is a reliability maintenance update rather than a new product capability. Release evidence remains open for the physical-device Apple Photos workflow, the 20-photo mixed delivery matrix, notification cold-start/terminated-state behavior, visual and accessibility acceptance, StoreKit, TestFlight, App Store delivery, and production certification.
+
 ## 2.1.2 (85) Configuration Center, Device QA, And Continuity Maintenance - 2026-08-14
 
 - Started from the finalized `1b3b9f7` source-sync checkpoint and reorganized the iOS root view's local state into explicit editor interaction, output draft, configuration projection, lifecycle, and presentation ownership containers.

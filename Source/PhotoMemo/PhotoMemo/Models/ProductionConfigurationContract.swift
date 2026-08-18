@@ -43,6 +43,7 @@ enum ProductionConfigurationContractError:
     case snapshotIdentityMismatch
     case missingMemorySubject
     case missingPrimaryAnchor
+    case emptyResolvedContent
     case emptySemanticOutput(String)
     case emptyRendererOutput(String)
 }
@@ -257,13 +258,17 @@ enum ProductionConfigurationSnapshotContract {
     }
 }
 
-enum ProductionRenderHealthCheck {
+enum ResolvedContentValidator {
 
     static func validate(
         card: RecordCard,
         configuration: BatchConfigurationSnapshot
     ) throws -> [CardTextBlock] {
         let blocks = CardTextBlockEngine().build(from: card)
+        guard !blocks.isEmpty else {
+            throw ProductionConfigurationContractError
+                .emptyResolvedContent
+        }
         guard configuration.usesEnabledMemorySummary else {
             return blocks
         }
@@ -271,8 +276,7 @@ enum ProductionRenderHealthCheck {
         let resolved = CardVariableProvider.build(from: card)[token]
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !resolved.isEmpty else {
-            throw ProductionConfigurationContractError
-                .emptySemanticOutput(token)
+            return blocks
         }
         guard configuration.enabledMemorySummaryAreas
             .allSatisfy({ area in
@@ -285,6 +289,19 @@ enum ProductionRenderHealthCheck {
                 .emptyRendererOutput(token)
         }
         return blocks
+    }
+}
+
+enum ProductionRenderHealthCheck {
+
+    static func validate(
+        card: RecordCard,
+        configuration: BatchConfigurationSnapshot
+    ) throws -> [CardTextBlock] {
+        try ResolvedContentValidator.validate(
+            card: card,
+            configuration: configuration
+        )
     }
 }
 

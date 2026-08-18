@@ -65,9 +65,33 @@ struct BackgroundProcessingContractTests {
 
         #expect(coordinator.contains("Task is durably queued"))
         #expect(coordinator.contains("return .received(result)"))
+        #expect(coordinator.contains("return .handoffFailed(result)"))
+        #expect(coordinator.contains("guard fallbackHandoff.opened else"))
         #expect(coordinator.contains("hostAppRequiresPhotoAuthorization"))
         #expect(coordinator.contains("|| hostAppRequiresPhotoAuthorization"))
         #expect(coordinator.contains("host app fallback"))
+
+        let renderer = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
+        )
+        #expect(renderer.contains("照片已经接收，需要打开时光记继续处理。"))
+
+        let notificationService = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/Services/BatchNotificationService.swift"
+        )
+        #expect(notificationService.contains("didReceive response"))
+        #expect(notificationService.contains("configureNotificationRoute"))
+        #expect(notificationService.contains(".photoMemoNotificationOpened"))
+
+        let root = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/PhotoMemoRootSceneView.swift"
+        )
+        let statusService = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/App/PhotoMemoBackgroundStatusService.swift"
+        )
+        #expect(root.contains("photoMemoNotificationOpened"))
+        #expect(root.contains("pendingNotificationDeepLink"))
+        #expect(statusService.contains("func focus(jobID: UUID)"))
     }
 }
 

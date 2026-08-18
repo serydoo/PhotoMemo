@@ -671,7 +671,9 @@ private extension ShareCoordinator {
                 existingSummary.skippedCount,
             failedCount:
                 existingSummary.failedCount
-                + additionalFailedCount
+                + additionalFailedCount,
+            skippedRequiringAttentionCount:
+                existingSummary.skippedRequiringAttentionCount
         )
     }
 }

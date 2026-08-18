@@ -11,21 +11,37 @@ enum BatchNotificationMessageFormatter {
         calendar: Calendar = .current
     ) -> String {
 
+        finishedTitle(
+            completedCount: completedCount,
+            needsAttentionCount: failedCount,
+            finishedAt: finishedAt,
+            calendar: calendar
+        )
+    }
+
+    nonisolated
+    static func finishedTitle(
+        completedCount: Int,
+        needsAttentionCount: Int,
+        finishedAt: Date,
+        calendar: Calendar = .current
+    ) -> String {
+
         let timeText =
             shortTimeText(
                 for: finishedAt,
                 calendar: calendar
             )
 
-        if failedCount == 0 {
+        if needsAttentionCount == 0 {
             return "\(timeText) 处理 \(completedCount) 张照片已完成"
         }
 
         if completedCount == 0 {
-            return "\(timeText) \(failedCount) 张照片需处理"
+            return "\(timeText) \(needsAttentionCount) 张照片需处理"
         }
 
-        return "\(timeText) 已完成 \(completedCount) 张，\(failedCount) 张需处理"
+        return "\(timeText) 已完成 \(completedCount) 张，\(needsAttentionCount) 张需处理"
     }
 
     nonisolated
@@ -36,7 +52,23 @@ enum BatchNotificationMessageFormatter {
         savedAlbumName: String? = nil
     ) -> String {
 
-        if failedCount == 0 {
+        finishedMessage(
+            completedCount: completedCount,
+            needsAttentionCount: failedCount,
+            totalCount: totalCount,
+            savedAlbumName: savedAlbumName
+        )
+    }
+
+    nonisolated
+    static func finishedMessage(
+        completedCount: Int,
+        needsAttentionCount: Int,
+        totalCount: Int,
+        savedAlbumName: String? = nil
+    ) -> String {
+
+        if needsAttentionCount == 0 {
             return savedAlbumName
                 .flatMap(normalizedAlbumName)
                 .map {
@@ -55,19 +87,19 @@ enum BatchNotificationMessageFormatter {
             if let albumName =
                 savedAlbumName
                 .flatMap(normalizedAlbumName) {
-                return "大部分结果已保存到「\(albumName)」，剩余 \(failedCount) 张可回到时光记查看。"
+                return "大部分结果已保存到「\(albumName)」，剩余 \(needsAttentionCount) 张可回到时光记查看。"
             }
 
-            return "大部分结果已经完成，剩余 \(failedCount) 张可回到时光记查看。"
+            return "大部分结果已经完成，剩余 \(needsAttentionCount) 张可回到时光记查看。"
         }
 
         if let albumName =
             savedAlbumName
             .flatMap(normalizedAlbumName) {
-            return "已保存 \(completedCount) 张到「\(albumName)」，另有 \(failedCount) 张需处理。"
+            return "已保存 \(completedCount) 张到「\(albumName)」，另有 \(needsAttentionCount) 张需处理。"
         }
 
-        return "已完成 \(completedCount) 张，仍有 \(failedCount) 张需处理。"
+        return "已完成 \(completedCount) 张，仍有 \(needsAttentionCount) 张需处理。"
     }
 
     nonisolated
@@ -147,6 +179,10 @@ final class BatchNotificationService:
                 for: job
             )
         content.sound = .default
+        configureNotificationRoute(
+            content,
+            for: job
+        )
         configureStatusPresentation(
             content,
             for: job,
@@ -181,14 +217,10 @@ final class BatchNotificationService:
             return false
         }
 
-        let completedCount =
-            job.completedTaskCount
-        let failedCount =
-            job.failedTaskCount
-        let totalCount =
-            job.totalTaskCount
+        let deliverySummary = job.deliverySummary
 
-        guard completedCount + failedCount > 0 else {
+        guard deliverySummary.completedCount
+                + deliverySummary.needsAttentionCount > 0 else {
             return false
         }
 
@@ -198,17 +230,22 @@ final class BatchNotificationService:
         content.title =
             BatchNotificationMessageFormatter
             .finishedTitle(
-                completedCount: completedCount,
-                failedCount: failedCount,
+                completedCount:
+                    deliverySummary.completedCount,
+                needsAttentionCount:
+                    deliverySummary.needsAttentionCount,
                 finishedAt:
                     job.updatedAt
             )
         content.body =
             BatchNotificationMessageFormatter
             .finishedMessage(
-                completedCount: completedCount,
-                failedCount: failedCount,
-                totalCount: totalCount,
+                completedCount:
+                    deliverySummary.completedCount,
+                needsAttentionCount:
+                    deliverySummary.needsAttentionCount,
+                totalCount:
+                    deliverySummary.requestedCount,
                 savedAlbumName:
                     savedAlbumName(
                         for: job
@@ -219,6 +256,10 @@ final class BatchNotificationService:
             notificationAttachments(
                 for: job
             )
+        configureNotificationRoute(
+            content,
+            for: job
+        )
         configureStatusPresentation(
             content,
             for: job,
@@ -265,6 +306,10 @@ final class BatchNotificationService:
                 stage: stage
             )
         content.sound = nil
+        configureNotificationRoute(
+            content,
+            for: job
+        )
         configureStatusPresentation(
             content,
             for: job,
@@ -296,6 +341,37 @@ final class BatchNotificationService:
             .list,
             .sound
         ]
+    }
+
+    nonisolated
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler:
+            @escaping () -> Void
+    ) {
+        defer {
+            completionHandler()
+        }
+
+        guard
+            let rawURL = response.notification.request.content
+                .userInfo[PhotoMemoNotificationUserInfo.deepLinkURL]
+                as? String,
+            let url = URL(string: rawURL),
+            let deepLink = PhotoMemoDeepLink(url: url)
+        else {
+            return
+        }
+
+        NotificationCenter.default.post(
+            name: .photoMemoNotificationOpened,
+            object: nil,
+            userInfo: [
+                PhotoMemoNotificationUserInfo.deepLinkURL:
+                    deepLink.url.absoluteString
+            ]
+        )
     }
 }
 
@@ -407,6 +483,19 @@ private extension BatchNotificationService {
             content.interruptionLevel =
                 isProgressUpdate ? .passive : .active
         }
+    }
+
+    func configureNotificationRoute(
+        _ content: UNMutableNotificationContent,
+        for job: BatchJob
+    ) {
+        content.userInfo = [
+            PhotoMemoNotificationUserInfo.deepLinkURL:
+                PhotoMemoDeepLink
+                .processing(jobID: job.id)
+                .url
+                .absoluteString
+        ]
     }
 
     func legacyNotificationIdentifiers(

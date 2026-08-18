@@ -42,6 +42,12 @@ struct PhotoMemoiOSV1View: View {
     private let productionDiagnosticsRepository:
         ProductionDiagnosticsRepository?
 
+    private let notificationDeepLink:
+        PhotoMemoDeepLink?
+
+    private let onNotificationDeepLinkHandled:
+        () -> Void
+
     private let localConfigurationLibraryCoordinator:
         LocalConfigurationLibraryCoordinator
 
@@ -595,7 +601,10 @@ struct PhotoMemoiOSV1View: View {
         diagnosticsRepository:
             DiagnosticsRepository? = nil,
         productionDiagnosticsRepository:
-            ProductionDiagnosticsRepository? = nil
+            ProductionDiagnosticsRepository? = nil,
+        notificationDeepLink: PhotoMemoDeepLink? = nil,
+        onNotificationDeepLinkHandled:
+            @escaping () -> Void = {}
     ) {
         self._backgroundStatusService =
             ObservedObject(
@@ -632,6 +641,9 @@ struct PhotoMemoiOSV1View: View {
             diagnosticsRepository
         self.productionDiagnosticsRepository =
             productionDiagnosticsRepository
+        self.notificationDeepLink = notificationDeepLink
+        self.onNotificationDeepLinkHandled =
+            onNotificationDeepLinkHandled
         self.localConfigurationLibraryCoordinator =
             LocalConfigurationLibraryCoordinator(
                 appVersion:
@@ -663,6 +675,12 @@ struct PhotoMemoiOSV1View: View {
         rootNavigation
         .overlay(alignment: .bottom) {
             homeConfigurationStatusBanner
+        }
+        .onAppear {
+            consumeNotificationDeepLinkIfNeeded()
+        }
+        .onChange(of: notificationDeepLink) { _, _ in
+            consumeNotificationDeepLinkIfNeeded()
         }
         .modifier(
             V1LocalConfigurationLibraryPresentationModifier(
@@ -824,6 +842,24 @@ struct PhotoMemoiOSV1View: View {
                 importPickerResults: importPickedPHPickerResults
             )
         )
+    }
+
+    private func consumeNotificationDeepLinkIfNeeded() {
+        guard let notificationDeepLink else {
+            return
+        }
+
+        switch notificationDeepLink {
+        case .share:
+            break
+        case .processing(let jobID):
+            backgroundStatusService.focus(jobID: jobID)
+            entryFlowState = V1EntryFlowCoordinator.openTasksTab(
+                from: entryFlowState
+            )
+        }
+
+        onNotificationDeepLinkHandled()
     }
 
     @ViewBuilder

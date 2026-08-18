@@ -361,6 +361,7 @@ final class PhotoMemoShareExtensionIntakeService {
             [ExternalPhotoIntakeItem] = []
         var seenSourceKeys = Set<String>()
         var skippedCount = 0
+        var skippedRequiringAttentionCount = 0
         var failedCount = 0
         var unsupportedRejectionReports:
             [PhotoMemoMediaIntakeRejectionReport] = []
@@ -416,6 +417,7 @@ final class PhotoMemoShareExtensionIntakeService {
 
             case .skippedUnsupported(let report):
                 skippedCount += 1
+                skippedRequiringAttentionCount += 1
                 unsupportedRejectionReports.append(
                     report
                 )
@@ -447,7 +449,9 @@ final class PhotoMemoShareExtensionIntakeService {
                 skippedCount:
                     skippedCount,
                 failedCount:
-                    failedCount
+                    failedCount,
+                skippedRequiringAttentionCount:
+                    skippedRequiringAttentionCount
             )
 
         guard !managedItems.isEmpty else {
