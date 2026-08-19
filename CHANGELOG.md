@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.1.3 (85) Multilingual Memory Expression And Delivery Clarity - 2026-08-19
+## 2.1.3 (86) Multilingual Memory Expression And Delivery Clarity - 2026-08-19
 
 - Added a four-language localization architecture for Simplified Chinese, English, Japanese, and Korean, with Interface Language kept independent from Preset Output Language.
 - Added semantic time and narrative formatting for age, duration, countdown, dates, and anchor expressions, while keeping legacy output APIs behind explicit-language adapters.

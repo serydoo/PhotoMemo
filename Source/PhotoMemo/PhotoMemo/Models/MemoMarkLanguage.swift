@@ -115,7 +115,7 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
         }
     }
 
-    func localized(
+    nonisolated func localized(
         key: String,
         fallback: String
     ) -> String {

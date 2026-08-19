@@ -164,6 +164,28 @@ struct ProductionDiagnosticsTests {
         #expect(!failure.userMessage.contains("EXIF"))
     }
 
+    @Test("Content validation guidance uses the explicit diagnostic language")
+    func contentValidationGuidanceUsesExplicitLanguage() {
+        let failure = ProductionDiagnosticFailureClassifier
+            .processing(
+                phase: BatchTaskPhase.metadataReady.rawValue,
+                classification: "processingFailure",
+                operationID: UUID(),
+                error: ProductionConfigurationContractError
+                    .emptyResolvedContent,
+                language: .english
+            )
+
+        #expect(
+            failure.userMessage.contains(
+                "This photo is missing information required by the current preset."
+            )
+        )
+        #expect(!failure.userMessage.contains("照片缺少当前配置需要的拍摄信息"))
+        #expect(!failure.userMessage.contains("故障编号"))
+        #expect(failure.userMessage.contains("Support ID:"))
+    }
+
     @Test("Media input rejection reasons remain actionable after repository wrapping")
     func mediaInputRejectionReasonsRemainActionableAfterWrapping() {
         let operationID = UUID()

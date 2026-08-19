@@ -909,7 +909,10 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
         language: MemoMarkLanguage
     ) -> (reason: String, recovery: String) {
         if language == .english {
-            return englishUserGuidance(for: code)
+            return englishUserGuidance(
+                for: code,
+                language: language
+            )
         }
         switch code {
         case .configurationCandidateInvalid,
@@ -1045,11 +1048,11 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
             )
         case .processingContentValidationFailed:
             return (
-                MemoMarkLanguage.interfaceStored.localized(
+                language.localized(
                     key: "Batch.ContentValidation.Failed.Title",
                     fallback: "照片缺少当前配置需要的拍摄信息。"
                 ),
-                MemoMarkLanguage.interfaceStored.localized(
+                language.localized(
                     key: "Batch.ContentValidation.Failed.Recovery",
                     fallback: "请检查当前预设使用的内容，或选择包含这些信息的照片后重试。"
                 )
@@ -1125,7 +1128,8 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
     }
 
     private static func englishUserGuidance(
-        for code: ProductionDiagnosticErrorCode
+        for code: ProductionDiagnosticErrorCode,
+        language: MemoMarkLanguage
     ) -> (reason: String, recovery: String) {
         switch code {
         case .configurationCandidateInvalid,
@@ -1261,11 +1265,11 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
             )
         case .processingContentValidationFailed:
             return (
-                MemoMarkLanguage.interfaceStored.localized(
+                language.localized(
                     key: "Batch.ContentValidation.Failed.Title",
                     fallback: "This photo is missing information required by the current preset."
                 ),
-                MemoMarkLanguage.interfaceStored.localized(
+                language.localized(
                     key: "Batch.ContentValidation.Failed.Recovery",
                     fallback: "Check the current preset content, or choose a photo that contains the required information and retry."
                 )
